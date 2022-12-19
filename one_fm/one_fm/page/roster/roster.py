@@ -453,6 +453,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			# print(query)
 			frappe.db.sql(_query)
 			frappe.db.commit()
+			# this queue up employee department and full name record update, it is not important in the initial record creation
+			# this was done to speed up record creation
 			frappe.enqueue(queue_employee_schedule_empdetail, employees=employees, id_list=id_list)
 		else:
 			_query = query
@@ -519,7 +521,6 @@ def queue_employee_schedule_empdetail(employees, id_list):
 		department = VALUES(department)
 	"""
 	frappe.db.sql(query)
-	frappe.log_error("ERROR LOGGED")
 	frappe.db.commit()
 	
 
