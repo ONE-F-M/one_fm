@@ -1914,16 +1914,19 @@ def create_roster_post_actions():
 
     operations_roles_not_filled_set = set()
 
+    list_of_dict_of_operations_roles_not_filled = []
+
     # Fetch post schedules in the date range that are active
-    post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "operations_role", "post"], order_by="date asc")
+    post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "operations_role", "post"], order_by="date asc")[:100]
     # Fetch employee schedules for employees who are working
-    employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "operations_role"], order_by="date asc")
+    employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "operations_role"], order_by="date asc")[:100]
 
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
         if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
             if ps.operations_role:
                 operations_roles_not_filled_set.add(ps.operations_role)
+                list_of_dict_of_operations_roles_not_filled.append(ps)
 
     # Convert set to tuple for passing it in the sql query as a parameter
     operations_roles_not_filled = tuple(operations_roles_not_filled_set)
@@ -1931,33 +1934,68 @@ def create_roster_post_actions():
     if not operations_roles_not_filled:
         return
 
+    for ind, val in enumerate(list_of_dict_of_operations_roles_not_filled):
+        if val["operations_role"] in ['Administration', 'Equipment Supervisor', 'Field Representative', 'Janitorial Administrator', 'Janitorial Head Supervisor', 'Training Supervisor']:
+            next = list_of_dict_of_operations_roles_not_filled[ind + 1]
+            if val["date"] == next["date"] and val["operations_role"] == next["operations_role"] and val["shift"] == next["shift"]:
+                val["quantity"] = 1 if "quantity" not in val.keys() else val["quantity"] + 1
+                val["checked"] = True
+                list_of_dict_of_operations_roles_not_filled.pop(ind + 1)
+
+            else:
+                if not "checked" in val.keys():
+                    val["quantity"] = 1
+        else:
+            list_of_dict_of_operations_roles_not_filled.remove(val)
+    print(len(list_of_dict_of_operations_roles_not_filled))
+    print(list_of_dict_of_operations_roles_not_filled)
+
     # Fetch supervisor and post types in his/her shift
-    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.operations_role)
-            from `tabPost Schedule` ps
-            join `tabOperations Shift` sh on sh.name = ps.shift
-            join `tabEmployee` sv on sh.supervisor=sv.employee
-            where ps.operations_role in {operations_roles}
-            group by sv.employee""".format(operations_roles=operations_roles_not_filled))
+    # result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.operations_role)
+    #         from `tabPost Schedule` ps
+    #         join `tabOperations Shift` sh on sh.name = ps.shift
+    #         join `tabEmployee` sv on sh.supervisor=sv.employee
+    #         where ps.operations_role in {operations_roles}
+    #         group by sv.employee""".format(operations_roles=operations_roles_not_filled))
 
-    # For each supervisor, create post actions to fill post type specifying the post types not filled
-    for res in result:
-        supervisor = res[0]
-        operations_roles = res[1].split(",")
+    # print(result)
 
-        roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
-        roster_post_actions_doc.start_date = start_date
-        roster_post_actions_doc.end_date = end_date
-        roster_post_actions_doc.status = "Pending"
-        roster_post_actions_doc.action_type = "Fill Post Type"
-        roster_post_actions_doc.supervisor = supervisor
+    # # For each supervisor, create post actions to fill post type specifying the post types not filled
+    # for res in result:
+    #     supervisor = res[0]
+    #     operations_roles = res[1].split(",")
+    #     print(operations_roles)
+    #     # clone = list_of_dict_of_operations_roles_not_filled.copy()
+    #     # print(len(clone))
 
-        for operations_role in operations_roles:
-            roster_post_actions_doc.append('operations_roles_not_filled', {
-                'operations_role': operations_role
-            })
+    #     # for ind, val in enumerate(clone):
+    #     #     if val["operations_role"] in operations_roles:
+    #     #         next = clone[ind + 1]
+    #     #         if val["date"] == next["date"] and val["operations_role"] == next["operations_role"] and val["shift"] == next["shift"]:
+    #     #             val["quantity"] = 1 if "quantity" not in val.keys() else val["quantity"] + 1
+    #     #             clone.pop(ind + 1)
+    #     #     else:
+    #     #         clone.remove(val)
 
-        roster_post_actions_doc.save()
-        frappe.db.commit()
+
+    #     # print(len(clone))
+
+
+    #     frappe.throw("")
+    #     roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
+    #     roster_post_actions_doc.start_date = start_date
+    #     roster_post_actions_doc.end_date = end_date
+    #     roster_post_actions_doc.status = "Pending"
+    #     roster_post_actions_doc.action_type = "Fill Post Type"
+    #     roster_post_actions_doc.supervisor = supervisor
+
+    #     for operations_role in operations_roles:
+    #         roster_post_actions_doc.append('operations_roles_not_filled', {
+    #             'operations_role': operations_role
+    #         })
+
+    #     roster_post_actions_doc.save()
+    #     frappe.db.commit()
 
 def send_roster_report():
     # Enqueue roster report generation to background
