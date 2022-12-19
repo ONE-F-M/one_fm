@@ -1934,68 +1934,74 @@ def create_roster_post_actions():
     if not operations_roles_not_filled:
         return
 
-    for ind, val in enumerate(list_of_dict_of_operations_roles_not_filled):
-        if val["operations_role"] in ['Administration', 'Equipment Supervisor', 'Field Representative', 'Janitorial Administrator', 'Janitorial Head Supervisor', 'Training Supervisor']:
-            next = list_of_dict_of_operations_roles_not_filled[ind + 1]
-            if val["date"] == next["date"] and val["operations_role"] == next["operations_role"] and val["shift"] == next["shift"]:
-                val["quantity"] = 1 if "quantity" not in val.keys() else val["quantity"] + 1
-                val["checked"] = True
-                list_of_dict_of_operations_roles_not_filled.pop(ind + 1)
-
-            else:
-                if not "checked" in val.keys():
-                    val["quantity"] = 1
-        else:
-            list_of_dict_of_operations_roles_not_filled.remove(val)
-    print(len(list_of_dict_of_operations_roles_not_filled))
-    print(list_of_dict_of_operations_roles_not_filled)
-
-    # Fetch supervisor and post types in his/her shift
-    # result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.operations_role)
-    #         from `tabPost Schedule` ps
-    #         join `tabOperations Shift` sh on sh.name = ps.shift
-    #         join `tabEmployee` sv on sh.supervisor=sv.employee
-    #         where ps.operations_role in {operations_roles}
-    #         group by sv.employee""".format(operations_roles=operations_roles_not_filled))
-
-    # print(result)
-
-    # # For each supervisor, create post actions to fill post type specifying the post types not filled
-    # for res in result:
-    #     supervisor = res[0]
-    #     operations_roles = res[1].split(",")
-    #     print(operations_roles)
-    #     # clone = list_of_dict_of_operations_roles_not_filled.copy()
-    #     # print(len(clone))
-
-    #     # for ind, val in enumerate(clone):
-    #     #     if val["operations_role"] in operations_roles:
-    #     #         next = clone[ind + 1]
-    #     #         if val["date"] == next["date"] and val["operations_role"] == next["operations_role"] and val["shift"] == next["shift"]:
-    #     #             val["quantity"] = 1 if "quantity" not in val.keys() else val["quantity"] + 1
-    #     #             clone.pop(ind + 1)
-    #     #     else:
-    #     #         clone.remove(val)
+    #Fetch supervisor and post types in his/her shift
+    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.operations_role)
+            from `tabPost Schedule` ps
+            join `tabOperations Shift` sh on sh.name = ps.shift
+            join `tabEmployee` sv on sh.supervisor=sv.employee
+            where ps.operations_role in {operations_roles}
+            group by sv.employee""".format(operations_roles=operations_roles_not_filled))
 
 
-    #     # print(len(clone))
+    # For each supervisor, create post actions to fill post type specifying the post types not filled
+    for index, res in enumerate(result):
+        if index > 0:
+            supervisor = res[0]
+            operations_roles = res[1].split(",")
+
+            check_list = []
+            for val in list_of_dict_of_operations_roles_not_filled:
+                if val["operations_role"] in operations_roles:
+                    check_list.append(val)
+            
+            
+            print(len(check_list))
+            print(check_list)
+            for ind, val in enumerate(check_list):
+                if ind < (len(check_list) - 1):
+                    next = check_list[ind + 1]
+                    if val["date"] == next["date"] and val["operations_role"] == next["operations_role"] and val["shift"] == next["shift"]:
+                        val["quantity"] += 1 if val["quantity"] else 1
+                        val["checked"] = True
+                        check_list.remove(next)
+
+                    else:
+                        if not "checked" in val.keys():
+                            val["quantity"] = 1
 
 
-    #     frappe.throw("")
-    #     roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
-    #     roster_post_actions_doc.start_date = start_date
-    #     roster_post_actions_doc.end_date = end_date
-    #     roster_post_actions_doc.status = "Pending"
-    #     roster_post_actions_doc.action_type = "Fill Post Type"
-    #     roster_post_actions_doc.supervisor = supervisor
+                elif ind == (len(check_list) - 1):
+                    previous = check_list[ind - 1]
+                    if val["date"] == previous["date"] and val["operations_role"] == next["operations_role"] and val["shift"] == next["shift"]:
+                        previous["quantity"] += 1 if previous["quantity"] else 1
+                        previous.update({"checked": True})
+                        check_list.remove(previous)
 
-    #     for operations_role in operations_roles:
-    #         roster_post_actions_doc.append('operations_roles_not_filled', {
-    #             'operations_role': operations_role
-    #         })
+                    else:
+                        if not "checked" in val.keys():
+                            val["quantity"] = 1
 
-    #     roster_post_actions_doc.save()
-    #     frappe.db.commit()
+            print(len(check_list))
+            print(check_list)
+            
+
+            roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
+            roster_post_actions_doc.start_date = start_date
+            roster_post_actions_doc.end_date = end_date
+            roster_post_actions_doc.status = "Pending"
+            roster_post_actions_doc.action_type = "Fill Post Type"
+            roster_post_actions_doc.supervisor = supervisor
+
+            for obj in check_list:
+                roster_post_actions_doc.append('operations_roles_not_filled', {
+                    'operations_role': obj.get("operations_role"),
+                    "operations_shift": obj.get("shift"),
+                    "date": obj.get("date"),
+                    "quantity": obj.get("quantity") if obj.get("quantity") else 1
+                })
+
+            roster_post_actions_doc.save()
+            frappe.db.commit()
 
 def send_roster_report():
     # Enqueue roster report generation to background
