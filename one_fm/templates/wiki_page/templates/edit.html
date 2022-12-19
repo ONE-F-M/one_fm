@@ -207,7 +207,14 @@ function change_lang(lang){
 		freeze_message: __("Changing  Language ..."),
 		callback: function(r) {
 				if(r.message){
-					frappe.msgprint("Changing Langauge to "+lang)
+					let lang_ = ''
+                        if(lang=='en'){
+                             lang_ = 'English'
+                        }
+                        else{
+                             lang_ = "Arabic"
+                        }
+					frappe.msgprint("Changing Langauge to "+lang_)
 					location.reload();
 				}
 				else{

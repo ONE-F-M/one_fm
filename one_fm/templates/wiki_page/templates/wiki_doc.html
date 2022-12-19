@@ -153,8 +153,15 @@ id="page-{{ name or route | e }}" data-path="{{ pathname | e }}"
 				freeze: true,
 				freeze_message: __("Changing  Language ..."),
 				callback: function(r) {
+						let lang_ = ''
+						if(lang=='en'){
+							lang_ = 'English'
+						}
+						else{
+							lang_ = "Arabic"
+						}
 						if(r.message){
-							frappe.msgprint("Changing Langauge to "+lang)
+							frappe.msgprint("Changing Langauge to "+lang_)
 							location.reload();
 						}
 						else{
