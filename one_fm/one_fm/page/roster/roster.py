@@ -422,9 +422,11 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 		"""
 		if not cint(keep_days_off):
 			_query = query
+			id_list = [] #store for schedules list
 			for employee in employees:
 				for dr in date_range:
 					name = f"{dr}_{employee}_{roster_type}"
+					id_list.append(name)
 					_query += f"""
 						(
 							"{name}", "{employee}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}", 
@@ -451,11 +453,14 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			# print(query)
 			frappe.db.sql(_query)
 			frappe.db.commit()
+			frappe.enqueue(queue_employee_schedule_empdetail, employees=employees, id_list=id_list)
 		else:
-			_query = query.copy()
+			_query = query
+			id_list = [] #store for schedules list
 			for employee in employees:
 				for dr in date_range:
 					name = f"{dr}_{employee}_{roster_type}"
+					id_list.append(name)
 					_query += f"""
 						(
 							"{name}", "{employee}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}", 
@@ -481,7 +486,42 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			# print(query)
 			frappe.db.sql(_query)
 			frappe.db.commit()
+			# this queue up employee department and full name record update, it is not important in the initial record creation
+			# this was done to speed up record creation
+			frappe.enqueue(queue_employee_schedule_empdetail, employees=employees, id_list=id_list)
 
+
+def queue_employee_schedule_empdetail(employees, id_list):
+	"""
+		This function updates employee full name and department in the schedule record
+	"""
+	employees_data = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_name", "department"])
+	employee_dict = {}
+	for emp in employees_data:
+		employee_dict[emp.name] = {'employee_name':emp.employee_name, 'department':emp.department}
+
+	query = """
+		INSERT INTO `tabEmployee Schedule` (`name`, `employee_name`, `department`)
+		VALUES 
+	"""
+	for ids in id_list:
+		_id = ids.split('_')[1]
+		if employee_dict.get(_id):
+			id_data = employee_dict.get(_id)
+			query += f"""(
+					"{ids}", "{id_data['employee_name']}", "{id_data['department']}"
+				),"""
+	query = query.replace(", None", '')
+	query = query[:-1]
+	query += f"""
+		ON DUPLICATE KEY UPDATE
+		employee_name = VALUES(employee_name),
+		department = VALUES(department)
+	"""
+	frappe.db.sql(query)
+	frappe.log_error("ERROR LOGGED")
+	frappe.db.commit()
+	
 
 
 
