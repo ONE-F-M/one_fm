@@ -377,6 +377,7 @@ standard_portal_menu_items = [
 ]
 
 website_redirects = [
+	 {"source": "wiki", "target": "wikisplash"},
 	 {"source": "wikisplash/ar", "target": "/home/"},
 	 {"source": "wikisplash/en", "target": "/home/"},
     
