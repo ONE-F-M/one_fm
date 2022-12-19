@@ -18,10 +18,12 @@ def get_opening_values():
 
 @frappe.whitelist()
 def get_filtered_values(start_date,end_date,project=None,site=None,shift=None,operations_role=None,limit_start=None,page_length=None):
+    import time
     """
         Dynamically return a list of employee data based on selected filters
     """
     try:
+        t1 = time.time()
         query_dict,post_filters,master_data = {},{},{}
         str_filters = f'es.date between "{start_date}" and "{end_date}"'
         query_dict['shift_working'] = 1
@@ -48,10 +50,12 @@ def get_filtered_values(start_date,end_date,project=None,site=None,shift=None,op
         employees = frappe.get_all("Employee", query_dict, ["employee", "employee_name"], order_by="employee_name asc" ,start=limit_start, page_length=page_length)
         post_filters.pop('operations_role',None)
         if employees:
+            t2 = time.time()
             basic_ot_roster = CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters,isOt=None)
-            operations_roster = PostMap(start=start_date,end=end_date,operations_roles_list=operations_roles_list,filters=post_filters)
-            master_data.update({'employees_data': basic_ot_roster.formated_rs,'operations_roles_data': operations_roster.template})
+            master_data.update({'employees_data': basic_ot_roster.formated_rs})
             return master_data
+            
+            
     except:
         frappe.log_error(frappe.get_traceback(),'Roster API Error')
 
