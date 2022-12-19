@@ -13,7 +13,7 @@ def get_opening_values():
     shifts = frappe.db.sql("SELECT name from `tabOperations Shift` ",as_dict=1)
     sites = frappe.db.sql("SELECT name from `tabOperations Site` ",as_dict=1)
     employees = frappe.db.sql("SELECT name from `tabEmployee` where status = 'Active' LIMIT  15 ",as_dict=1)
-    return {'project':projects,'shifts':shifts,'sites':sites,'employees':employees}
+    return {'projects':projects,'shifts':shifts,'sites':sites,'employees':employees}
 
 
 @frappe.whitelist()
@@ -26,10 +26,10 @@ def get_filtered_values(start_date,end_date,project=None,site=None,shift=None,op
         str_filters = f'es.date between "{start_date}" and "{end_date}"'
         query_dict['shift_working'] = 1
         query_dict['status'] = 'Active'
-        if not start:
-            start = 0
+        if not limit_start:
+            limit_start = 0
         if not page_length:
-            page_length = 15
+            page_length = 10
         if project:
             query_dict['project'] = project
             post_filters['project'] = project
@@ -48,12 +48,12 @@ def get_filtered_values(start_date,end_date,project=None,site=None,shift=None,op
         employees = frappe.get_all("Employee", query_dict, ["employee", "employee_name"], order_by="employee_name asc" ,start=limit_start, page_length=page_length)
         post_filters.pop('operations_role',None)
         if employees:
-            basic_ot_roster = CreateMap(start=start_date,end=end_date,employees=employees,filters=query_dict,isOt=None)
+            basic_ot_roster = CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters,isOt=None)
             operations_roster = PostMap(start=start_date,end=end_date,operations_roles_list=operations_roles_list,filters=post_filters)
             master_data.update({'employees_data': basic_ot_roster.formated_rs,'operations_roles_data': operations_roster.template})
             return master_data
     except:
-        frappe.logger_error(frappe.get_traceback(),'Roster API Error')
+        frappe.log_error(frappe.get_traceback(),'Roster API Error')
 
 
 @frappe.whitelist()
