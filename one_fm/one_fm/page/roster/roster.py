@@ -1,16 +1,11 @@
 from pandas.core.indexes.datetimes import date_range
-import frappe
 from datetime import datetime
 from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now
-import itertools
 import pandas as pd
 import numpy as np
-import time
 from frappe import _
-import json
-import multiprocessing
-import os
+import json, multiprocessing, os, time, itertools, frappe
 from multiprocessing.pool import ThreadPool as Pool
 from itertools import product
 from one_fm.api.notification import create_notification_log
