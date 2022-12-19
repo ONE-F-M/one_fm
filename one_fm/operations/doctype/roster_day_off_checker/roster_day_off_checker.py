@@ -107,8 +107,8 @@ def validate_offs(emp, project_cycle, supervisor):
 				elif (ot_days and off_days):
 					day_off_diff = f"{ot_days} OT and {emp.number_of_days_off} day(s) off scheduled, actual day off should be {emp.number_of_days_off}"
 
-				start_date_split = start_date.split('-')
-				end_date_split = end_date.split('-')
+				start_date_split = str(start_date).split('-')
+				end_date_split = str(end_date).split('-')
 				datalist.append({
 					'monthweek': f"{monthname_dict[start_date_split[1]]} {start_date_split[2]} - {monthname_dict[end_date_split[1]]} {end_date_split[2]}",
 					'emp_days_off': emp.number_of_days_off,
@@ -149,8 +149,8 @@ def validate_offs(emp, project_cycle, supervisor):
 				elif (ot_days and off_days):
 					day_off_diff = f"{ot_days} OT and {emp.number_of_days_off} day(s) off scheduled, actual day off should be {emp.number_of_days_off}"
 
-				start_date_split = start_date.split('-')
-				end_date_split = end_date.split('-')
+				start_date_split = str(start_date).split('-')
+				end_date_split = str(end_date).split('-')
 				datalist.append({
 					'monthweek': f"{monthname_dict[start_date_split[1]]} {start_date_split[2]} - {monthname_dict[end_date_split[1]]} {end_date_split[2]}",
 					'emp_days_off': emp.number_of_days_off,
