@@ -31,7 +31,7 @@ def get_filtered_values(start_date,end_date,project=None,site=None,shift=None,op
         if not limit_start:
             limit_start = 0
         if not page_length:
-            page_length = 10
+            page_length = 15
         if project:
             query_dict['project'] = project
             post_filters['project'] = project
@@ -103,7 +103,6 @@ def schedule_staff_(employee, shift, operations_role, start_date, end_date=None,
                 roster.save(ignore_permissions=True)
                 return True
             
-
     except Exception as e:
         frappe.log_error(e)
         frappe.throw(_(e))
