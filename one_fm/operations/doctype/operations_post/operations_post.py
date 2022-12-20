@@ -18,7 +18,7 @@ class OperationsPost(Document):
 			start_date, end_date = frappe.db.get_value("Contracts", {'project': self.project}, ["start_date", "end_date"])
 			if start_date and end_date:
 				frappe.enqueue(set_post_active, post=self, operations_role=self.post_template, post_abbrv=post_abbrv, shift=self.site_shift, site=self.site, project=self.project, start_date=start_date, end_date=end_date, is_async=True, queue="long")
-	
+
 	def validate(self):
 		if not self.post_name:
 			frappe.throw("Post Name cannot be empty.")
@@ -53,34 +53,30 @@ class OperationsPost(Document):
 
 def set_post_schedule(doc):
     project = frappe.get_doc("Project", doc.project)
-
-    if project.expected_end_date is None:
-        end_date = add_to_date(getdate(), days=365)
+    today = getdate()
+    if not project.expected_end_date:
+        end_date = add_to_date(today, days=365)
     else:
-        year, month, day = str(project.expected_end_date).split("-")
-        in_days = (datetime.datetime(year, month, day) - datetime.datetime.now()).days
-        end_date = add_to_date(getdate(), days=in_days)
+        end_date = project.expected_end_date
 
-    for date in pd.date_range(start=getdate(), end=end_date):
-                check_doc = frappe.get_doc({
-                "doctype": "Post Schedule",
-                "date": cstr(date.date()),
-                "post": doc.name,
-                "post_status": "Planned"
-                    })
-                check_doc.save()
-    frappe.db.commit()
-
-
-
+    if end_date > today:
+        for date in pd.date_range(start=getdate(), end=end_date):
+                    check_doc = frappe.get_doc({
+                    "doctype": "Post Schedule",
+                    "date": cstr(date.date()),
+                    "post": doc.name,
+                    "post_status": "Planned"
+                        })
+                    check_doc.save()
+        frappe.db.commit()
 
 def delete_schedule(doc):
     check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})
     for schedule in check_list:
         frappe.get_doc("Post Schedule", schedule.name).delete()
     frappe.db.commit()
-   
-		
+
+
 
 @frappe.whitelist()
 def set_post_active(post, operations_role, post_abbrv, shift, site, project, start_date, end_date):
