@@ -421,3 +421,22 @@ def update_application_function(job_applicant, data):
         "type_of_copy": "Soft Copy",
 	    })
     return new_doc
+
+
+@frappe.whitelist(allow_guest=True)
+def get_uploaded_data(data: dict=None):
+    if not isinstance(data, dict):
+        data = json.loads(data)
+    list_of_keys = []
+    try:
+        if len(data.keys()) > 0:
+            for ind, val in enumerate(data.keys()):
+                if ind == 0 and type(data[val]) == dict:
+                    for key in data[val].keys():
+                        list_of_keys.append(key)
+                break
+                    
+    except:
+        pass
+
+    return list_of_keys
