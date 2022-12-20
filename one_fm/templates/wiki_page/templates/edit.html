@@ -166,13 +166,20 @@
 <script>
 	
 	function update_dom(){
+		if('{{lang}}'=='ar'){
+            $('html').attr('dir','rtl')
+        }
+        else{
+            lang_ ='en'
+            $('html').attr('dir','ltr')
+        }
 		$('.ml-auto').append(`
         <li class="nav-item dropdown logged-in" id="website-post-login" data-label="website-post-login" style="">
 			<a href="#" class="nav-link nav-avatar" data-toggle="dropdown" aria-expanded="false">
 						<span class="langauge-wrapper">
 							<span class="avatar avatar-medium filterable" title="Language:{{lang}}" data-filter="_assign,like,%null%">
 							<div id = "lang_icon" class="avatar-frame standard-image" style="background-color: var(--green-avatar-bg); color: var(--green-avatar-color)">
-									{{lang}}</div>
+									{{lang_}}</div>
 							</span>
 						</span>
 					</a>

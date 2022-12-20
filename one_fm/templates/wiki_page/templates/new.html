@@ -35,6 +35,13 @@
 {%- block script -%}
 <script>
 	frappe.ready(() => {
+		if('{{lang}}'=='ar'){
+            $('html').attr('dir','rtl')
+        }
+        else{
+            lang_ ='en'
+            $('html').attr('dir','ltr')
+        }
 		$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 			let activeTab = $(e.target);
 

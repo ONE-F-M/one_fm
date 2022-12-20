@@ -41,6 +41,7 @@ def get_context(context):
 	context.show_my_account = False
 	context.doc.set_breadcrumbs(context)
 	context.lang = frappe.local.lang
+	context.lang_ = 'عربي' if context.lang == 'ar' else 'en'
 	context.layout_direction = "rtl" if is_rtl() else "ltr"
 	if not can_edit:
 		context.doc.redirect_to_login("edit")

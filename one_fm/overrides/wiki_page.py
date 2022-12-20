@@ -1,5 +1,6 @@
 import frappe
 from one_fm.data import md_to_html
+from frappe.utils.jinja_globals import is_rtl
 
 @frappe.whitelist()
 def change_language(lang,user=None):
@@ -69,6 +70,8 @@ def get_context(doc, context):
     context.show_sidebar = True
     context.hide_login = True
     context.lang = frappe.local.lang
+    context.lang_ = 'عربي' if context.lang == 'ar' else 'en'
+    
 
     context = context.update(
         {
