@@ -24,13 +24,14 @@ def get_recent_openings():
                                     'publish': 1,
                                     'status': 'Open'
                                 },
-                                ["name", "designation", "description", "one_fm_job_opening_created", "department"],
+                                ["name", "designation", "description", "one_fm_job_opening_created", "department", "job_title"],
                                 order_by="one_fm_job_opening_created desc",
                                 )
 
     for opening in recent_openings_raw_format:
         data = {
             'name': opening.name,
+            'job_title': opening.job_title,
             'designation': opening.designation,
             'description': ((remove_html_tags(opening.description)[0:250] + "...") if opening.description else ""),
             'department': opening.department,
