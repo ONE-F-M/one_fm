@@ -192,7 +192,7 @@ function send_request(method, data, token, type){
             $('#finalForm').css('display', 'block');
             r = request.responseText;
           }
-          
+
         } else if (request.status === 403) {
           $("#cover-spin").hide();
           $('#finalForm').css('display', 'block');
@@ -357,22 +357,27 @@ function Submit(){
 
   if($('#First_Name').attr("data")){
     frappe.freeze();
-    frappe.call({
-      type: "POST",
-      method: "one_fm.templates.pages.applicant_docs.update_job_applicant",
-      args: {
-        job_applicant: $('#First_Name').attr("data"),
-        data: applicant_details
-      },
-      btn: this,
-      callback: function(r){
-        frappe.unfreeze();
-        frappe.msgprint(frappe._("Succesfully Submitted your Details and our HR team will be responding to you soon."));
-        if(r.message){
-          window.location.href = "/careers";
-        }
-      }
-    });
+		frappe.confirm('Are you sure you want to Submit?, On Submit the link will be expired!',
+    () => {
+			frappe.call({
+				type: "POST",
+				method: "one_fm.templates.pages.applicant_docs.update_job_applicant",
+				args: {
+					job_applicant: $('#First_Name').attr("data"),
+					data: applicant_details
+				},
+				btn: this,
+				callback: function(r){
+					frappe.unfreeze();
+					frappe.msgprint(frappe._("Succesfully Submitted your Details and our HR team will be responding to you soon."));
+					if(r.message){
+						window.location.href = "/careers";
+					}
+				}
+			});
+    }, () => {
+        // action to perform if No is selected
+    })
   }
   else{
     frappe.msgprint(frappe._("Please fill All the details to submit the Job Applicant"));
@@ -394,12 +399,7 @@ function Save(){
       btn: this,
       callback: function(r){
         frappe.unfreeze();
-        frappe.msgprint(frappe._("Succesfully Saved your application as draft, you can finish up during your leisure time."));
-        console.log(r)
-        console.log(r.message)
-        if(r.message){
-          window.location.href = "/careers";
-        }
+        frappe.msgprint(frappe._("Succesfully Saved your application as draft, you can finish up and Submit later!."));
       }
     });
   }
