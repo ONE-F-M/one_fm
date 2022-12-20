@@ -2992,8 +2992,8 @@ function schedule_change_post(page) {
 						});
 
 					}
-					// let element = get_wrapper_element().slice(1);
-					// update_roster_view(element, page);
+					let element = get_wrapper_element().slice(1);
+					update_roster_view(element, page);
 				}).catch(e => {
 					$('#cover-spin').hide();
 				});
