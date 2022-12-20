@@ -173,7 +173,6 @@
   },
   {
    "default": "0",
-   "depends_on": "eval:doc.subitem_group=='Service'",
    "fieldname": "overtime_rate",
    "fieldtype": "Currency",
    "label": "Overtime Rate"
@@ -203,39 +202,35 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval:doc.subitem_group=='Service'",
    "fieldname": "rate_type",
    "fieldtype": "Select",
    "label": "Rate Type",
-   "options": "Monthly\nHourly"
+   "options": "\nMonthly\nHourly"
   },
   {
    "default": "Full Month",
-   "depends_on": "eval:doc.rate_type=='Monthly'",
    "fieldname": "rate_type_off",
    "fieldtype": "Select",
    "label": "Rate Type Off",
    "mandatory_depends_on": "eval:doc.rate_type=='Montly'",
-   "options": "Full Month\nDays Off"
+   "options": "\nFull Month\nDays Off"
   },
   {
-   "depends_on": "eval:doc.rate_type_off == 'Days Off'",
    "fieldname": "days_off_category",
    "fieldtype": "Select",
    "label": "Days off Category",
-   "options": "Weekly\nMonthly"
+   "options": "\nWeekly\nMonthly"
   },
   {
    "depends_on": "eval:doc.days_off_category",
    "fieldname": "no_of_days_off",
-   "fieldtype": "Select",
-   "label": "No of Days Off",
-   "options": "0\n1\n2\n3\n4\n5\n6"
+   "fieldtype": "Int",
+   "label": "No of Days Off"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2022-11-20 10:25:19.280452",
+ "modified": "2022-12-18 19:54:01.185966",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",

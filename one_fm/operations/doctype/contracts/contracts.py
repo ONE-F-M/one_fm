@@ -16,8 +16,20 @@ from frappe import _
 class Contracts(Document):
 	def validate(self):
 		self.calculate_contract_duration()
+		self.validate_no_of_days_off()
 		# if self.overtime_rate == 0:
 		# 	frappe.msgprint(_("Overtime rate not set."), alert=True, indicator='orange')
+
+	def validate_no_of_days_off(self):
+		if self.items:
+			for item in self.items:
+				if item.days_off_category == 'Weekly':
+					if item.no_of_days_off > 6:
+						frappe.throw(_('Row {0} - Weekly, not able to set No of Days off greater than 6!'.format(item.idx)))
+				elif item.days_off_category == 'Monthly':
+					if item.no_of_days_off > 29:
+						frappe.throw(_('Row {0} - Monthly, not able to set No of Days off greater than 29!'.format(item.idx)))
+
 
 	def before_submit(self):
 		# check if items and poc exists

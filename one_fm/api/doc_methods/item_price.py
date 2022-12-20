@@ -14,13 +14,10 @@ def validate(self):
     self.update_price_list_details()
     #change codition while going production
     #if is_service_item != None:
-    if is_service_item == 0 and item_group == 'Service':
-        self.check_duplicates()
-        self.name = f"{self.item_code} - {self.gender} - {self.uom} - {cstr(self.shift_hours)}hr - {cstr(self.days_off)} day off- {self.customer}"
-    else:
+    if is_service_item != 0 or item_group != 'Service':
         self.validate_dates()
         self.update_price_list_details()
-        self.check_duplicates()
+    self.check_duplicates()
 
 def check_duplicates(self):
     error_description = "Item Price appears multiple times based on Price List, Supplier/Customer, Currency, Item, UOM, Qty, Dates"
