@@ -101,7 +101,7 @@ function load_js(page) {
 			get_roster_data(page);
 		};
 		function otRosterClick() {
-			
+
 			$(".otRosterClick").addClass("active");
 			$(".otRosterClick").addClass("bg-primary");
 			$(".basicRosterClick").removeClass("active");
@@ -122,7 +122,7 @@ function load_js(page) {
 			if (page.employee_search_id) {
 				$(wrapper_element).find(".search-employee-id").val(page.employee_search_id);
 			}
-			
+
 			get_roster_data(page, true);
 
 		};
@@ -172,7 +172,7 @@ function load_js(page) {
 		});
 		$(".basicRosterClick").click(basicRosterClick);
 		$(".otRosterClick").click(
-			
+
 			otRosterClick);
 
 		//week view click jquery
@@ -1086,10 +1086,10 @@ function get_roster_data(page, isOt) {
 	let { limit_start, limit_page_length } = page.pagination;
 	if (project || site || shift || department || operations_role || designation){
 		$('#cover-spin').show(0);
-		
+
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, operations_role, designation, isOt, limit_start, limit_page_length })
 			.then(res => {
-				
+
 				$('#cover-spin').hide();
 				render_roster(res, page, isOt);
 			});
@@ -1157,7 +1157,10 @@ function render_roster(res, page, isOt) {
 	for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
 		// let { employee_name, employee, date } = employees_data[employee_key];
 		let employee = employees_data[employee_key][0]['employee']
-		let employee_day_off = employees_data[employee_key][0]['employee_day_off']
+		let employee_day_off = employees_data[employee_key][0]['day_off_category']
+		if(employees_data[employee_key][0]['number_of_days_off']){
+			employee_day_off += " " + employees_data[employee_key][0]['number_of_days_off'] + " Day(s) off"
+		}
 		let emp_row = `
 		<tr data-name="${employee}">
 			<td class="sticky">
@@ -1196,7 +1199,8 @@ function render_roster(res, page, isOt) {
 				'Day Off': 'DO',
 				'Sick Leave': 'SL',
 				'Annual Leave': 'AL',
-				'Emergency Leave': 'EL'
+				'Emergency Leave': 'EL',
+				'Working': '!'
 			};
 			let attendancemap = {
 				'Present': 'greenboxcolor',
@@ -1324,7 +1328,7 @@ function get_roster_week_data(page, isOt) {
 	let { project, site, shift, department, operations_role } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
 	// console.log(limit_start, limit_page_length);
-	
+
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_name, project, site, shift, department, operations_role, isOt, limit_start, limit_page_length })
 		.then(res => {
 			let { operations_roles_data, employees_data, total } = res;
@@ -1420,7 +1424,8 @@ function get_roster_week_data(page, isOt) {
 						'Day Off': 'DO',
 						'Sick Leave': 'SL',
 						'Annual Leave': 'AL',
-						'Emergency Leave': 'EL'
+						'Emergency Leave': 'EL',
+						'Working': '!'
 					};
 					let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift } = employees_data[employee_key][i];
 
@@ -1688,7 +1693,7 @@ function get_projects(page) {
 				get_sites(page);
 				get_shifts(page);
 				let element = get_wrapper_element().slice(1);
-				
+
 				page[element](page);
 			});
 		});
@@ -1712,7 +1717,7 @@ function get_sites(page) {
 				page.filters.site = $(this).val();
 				get_shifts(page);
 				let element = get_wrapper_element().slice(1);
-		
+
 
 				page[element](page);
 			});
@@ -1738,7 +1743,7 @@ function get_shifts(page) {
 			$(parent).on('select2:select', function (e) {
 				page.filters.shift = $(this).val();
 				let element = get_wrapper_element().slice(1);
-				
+
 
 				page[element](page);
 
@@ -1762,7 +1767,7 @@ function get_operations_posts(page) {
 			$(parent).on('select2:select', function (e) {
 				page.filters.operations_role = $(this).val();
 				let element = get_wrapper_element().slice(1);
-				
+
 
 				page[element](page);
 			});
@@ -1783,7 +1788,7 @@ function get_departments(page) {
 			$(parent).on('select2:select', function (e) {
 				page.filters.department = $(this).val();
 				let element = get_wrapper_element().slice(1);
-				
+
 
 				page[element](page);
 			});
@@ -2906,7 +2911,7 @@ function schedule_change_post(page) {
 			{ 'label': 'Site', 'fieldname': 'site', 'fieldtype': 'Link', 'options': 'Operations Site', 'read_only': 1 },
 			{ 'label': 'Project', 'fieldname': 'project', 'fieldtype': 'Link', 'options': 'Project', 'read_only': 1 },
 			{
-				'label': 'Choose Operations Post', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'reqd': 1, 'options': 'Operations Role', get_query: function () {
+				'label': 'Choose Operations Role', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'reqd': 1, 'options': 'Operations Role', get_query: function () {
 					return {
 						query: "one_fm.one_fm.page.roster.roster.get_filtered_operations_role",
 						filters: { "shift": d.get_value('shift') }
@@ -2981,7 +2986,7 @@ function schedule_change_post(page) {
 						res[0].forEach((emp, i) => {
 							res[1].forEach((date, i) => {
 								let selectid = emp.name+'|'+date.slice(0, 10)
-								$("[data-selectid='"+selectid+"']").addClass('bluebox')
+								$("[data-selectid='"+selectid+"']").addClass('bg-info')
 								$("[data-selectid='"+selectid+"']").removeClass('selectclass')
 							});
 						});

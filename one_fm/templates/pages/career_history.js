@@ -12,21 +12,21 @@ $(document).ready(function() {
 career_history = Class.extend({
   init: function(){
     var me = this;
-//    $('.submit-btn').hide();
+    $('.submit-btn').hide();
     $('.next-btn').hide();
     $('.main_section').hide();
     $('.back-btn').hide();
 
     this.intro_btn(me);
     this.introduction();
-    
+
     this.submit_career_history();
   },
   introduction:function(){
     var intro_section_html = `
     <h4 id="job_applicant" data="{{ job_applicant.name }}">Hey {{job_applicant.applicant_name}},
 		you’re applying for the {{job_applicant.designation}} position.</h4>
-    <h4>We would like to know more about you.</h4> 
+    <h4>We would like to know more about you.</h4>
     <h5>Give us some details about your career, and tell us how great you are!</h5>
   `
     $(".intro").append(intro_section_html);
@@ -114,11 +114,16 @@ career_history = Class.extend({
           </textarea>
         </div>`;
         $(".company_"+(company_no.toString())).append(reason_why_leave_job_html);
+				$('.submit-btn').fadeIn();
       }
       else if(still_working == 2){
         me.when_did_you_left_the_company(company_no);
         me.are_you_still_working_html(company_no);
+				$('.submit-btn').fadeOut();
       }
+			else if(still_working == 0){
+				$('.submit-btn').fadeOut();
+			}
     });
   },
   are_you_still_working_html: function(company_no) {
@@ -149,12 +154,16 @@ career_history = Class.extend({
         $('.next-btn').fadeIn();
         me.next_career_history(company_no+1);
       }
-      else if(are_you_still_working <= 1){
+			else if(are_you_still_working == 0){
+        $('.next-btn').fadeOut();
+        $('.submit-btn').fadeOut();
+      }
+      else if(are_you_still_working == 1){
         $('.next-btn').fadeOut();
         $('.submit-btn').fadeIn();
         for (let i = company_no; i < TOTAL_COMPANY_NO; i++) {
           $(".company_"+((i+1).toString())).remove();
-          
+
         }
         TOTAL_COMPANY_NO = company_no;
       }
@@ -191,22 +200,22 @@ career_history = Class.extend({
 				<label class="form-label">What was your first salary at this company?</label>
 				<input type="text" class="form-control salary_company${company_no}" placeholder="Enter your Salary in KWD"/>
 		  	</div>
-	
+
 			<div class="col-lg-12 col-md-12">
 				<hr class="my-5"/>
 			</div>
-	
+
 			<div class="mb-3 col-lg-12 col-md-12">
 				<label  class="form-label">What was your starting job title?</label>
 				<input type="text" class="form-control starting_job_title_company_${company_no}" placeholder="Enter the Job Title"/>
 			</div>
-	
+
 		  	<div class="mt-5 promotion_section_${company_no}" style="width: 100%">
-	
+
 		  	</div>
-	
+
 			<div class="col-lg-12 col-md-12 mb-3">
-				<label>Are You still working for the same company?</label>
+				<label>Are you still working for the same company?</label>
 				<select class="custom-select still_working_on_same_company_${company_no}">
 				<option value="0">Choose</option>
 				<option value="1">Yes</option>
@@ -232,7 +241,7 @@ career_history = Class.extend({
       else{
         me.create_company_section_html(company_no);
       }
-      
+
     });
   },
   back_career_history: function(company_no) {
@@ -276,7 +285,7 @@ career_history = Class.extend({
     });
   },
   intro_btn: function(me) {
-    // Create Comapany Section 
+    // Create Comapany Section
     $('.btn-intro-next').click(function(){
       $('.intro_section').fadeOut();
        me.create_company_section_html(1)
