@@ -185,12 +185,14 @@ function send_request(method, data, token, type){
             $('#finalForm').css('display', 'block');
             console.log(r.message)
             fill_form(r.message,request.type, token);
+            get_uploaded_data(r.message);
           } catch (e) {
             console.log(e)
             $("#cover-spin").hide();
             $('#finalForm').css('display', 'block');
             r = request.responseText;
           }
+
         } else if (request.status === 403) {
           $("#cover-spin").hide();
           $('#finalForm').css('display', 'block');
@@ -306,13 +308,13 @@ function fill_form(data, type,token){
       total_fill_counter += (front_side_pp_filled_fields_count + back_side_pp_filled_fields_count);
     }
 
-    if (total_fill_counter < TOTAL_FORM_FIELDS){
-      frappe.msgprint({
-        title: __("Could not obtain all information"),
-        indicator: "orange",
-        message: __("Some fields in the below form may be empty. Please fill them out correctly."),
-      });
-    }
+    // if (total_fill_counter < TOTAL_FORM_FIELDS){
+    //   frappe.msgprint({
+    //     title: __("Could not obtain all information"),
+    //     indicator: "orange",
+    //     message: __("Some fields in the below form may be empty. Please fill them out correctly."),
+    //   });
+    // }
 
   }
 };
@@ -355,22 +357,27 @@ function Submit(){
 
   if($('#First_Name').attr("data")){
     frappe.freeze();
-    frappe.call({
-      type: "POST",
-      method: "one_fm.templates.pages.applicant_docs.update_job_applicant",
-      args: {
-        job_applicant: $('#First_Name').attr("data"),
-        data: applicant_details
-      },
-      btn: this,
-      callback: function(r){
-        frappe.unfreeze();
-        frappe.msgprint(frappe._("Succesfully Submitted your Details and our HR team will be responding to you soon."));
-        if(r.message){
-          window.location.href = "/careers";
-        }
-      }
-    });
+		frappe.confirm('Are you sure you want to Submit?, On Submit the link will be expired!',
+    () => {
+			frappe.call({
+				type: "POST",
+				method: "one_fm.templates.pages.applicant_docs.update_job_applicant",
+				args: {
+					job_applicant: $('#First_Name').attr("data"),
+					data: applicant_details
+				},
+				btn: this,
+				callback: function(r){
+					frappe.unfreeze();
+					frappe.msgprint(frappe._("Succesfully Submitted your Details and our HR team will be responding to you soon."));
+					if(r.message){
+						window.location.href = "/careers";
+					}
+				}
+			});
+    }, () => {
+        // action to perform if No is selected
+    })
   }
   else{
     frappe.msgprint(frappe._("Please fill All the details to submit the Job Applicant"));
@@ -392,12 +399,7 @@ function Save(){
       btn: this,
       callback: function(r){
         frappe.unfreeze();
-        frappe.msgprint(frappe._("Succesfully Saved your application as draft, you can finish up during your leisure time."));
-        console.log(r)
-        console.log(r.message)
-        if(r.message){
-          window.location.href = "/careers";
-        }
+        frappe.msgprint(frappe._("Succesfully Saved your application as draft, you can finish up and Submit later!."));
       }
     });
   }
@@ -453,3 +455,41 @@ function get_filepath(object, value, key){
   return object
 }
 
+
+function preview_front(input){
+  var uploaded_pics = `
+  <h4>Passport Front Image</h4>
+  <img src="" alt="Front Page Of Passport" id="passport-front" class="form-control" style="height: 350px;">
+`;
+
+  document.getElementById("uploaded-passport-front").innerHTML = uploaded_pics;
+  document.getElementById('passport-front').src = window.URL.createObjectURL(input.files[0]);
+}
+
+
+function preview_back(input){
+  var uploaded_pics = `
+  <h4>Passport Back Image</h4>
+  <img src="" alt="Front Page Of Passport" id="passport-back" class="form-control" style="height: 350px;">
+`;
+  document.getElementById("uploaded-passport-back").innerHTML = uploaded_pics;
+  document.getElementById('passport-back').src = window.URL.createObjectURL(input.files[0]);
+}
+
+
+function get_uploaded_data(data){
+  return frappe.call({
+    method: "one_fm.templates.pages.applicant_docs.get_uploaded_data",
+    args: {
+      data: data
+    },
+    callback: function(r){
+      console.log(r.message)
+      frappe.unfreeze();
+      frappe.msgprint(frappe._(`The following were extracted from the Image <ul>${r.message.map(item => (
+        `<li>${item}</li>`
+      )).join('')}</ul> Kindly fill the remaining fields correctly.`));
+
+    }
+  })
+}

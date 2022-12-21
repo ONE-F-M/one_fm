@@ -36,15 +36,14 @@
 {% block page_content %}
 <!DOCTYPE html>
 <html lang="en">
+
 <body>
-    <div id="cover-spin"></div>
+    <div id="cover-spin"><div style="display: grid; height: 100%; width: 100%; place-items: center;"><span>We are extracting your information from the image...Please wait !</span></div></div>
     <main>
         <div
             class="p-5 text-center bg-image"
             style="
-            background-image:  linear-gradient( rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) ), url('assets/one_fm/assets/img/job-application/ja-banner.png');
-            height: 300px;
-            ">
+            background-image:  linear-gradient( rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) ), url('assets/one_fm/assets/img/job-application/ja-banner.png'); height: 300px; ">
             <div class="d-flex justify-content-center align-items-center">
                 <h1 style="color:#ffff; line-height: 100px;" class="mb-3">Applicant Documents</h1>
             </div>
@@ -97,20 +96,42 @@
                             <div class="row">
                                     <div class="form-group col-md-6">
                                         <label  for="file">Passport Front Side</label>
-                                        <input class="form-control" type="file" id="Passport_Front" placeholder="Front Passport"  name="file"  accept="image/png, image/jpeg" >
+                                        <input class="form-control" type="file" id="Passport_Front" placeholder="Front Passport"  name="file"  accept="image/png, image/jpeg" onchange="preview_front(this)">
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="file">Passport Back Side</label>
-                                        <input class="form-control" type="file" id="Passport_Back" placeholder="Back Passport"  name="file"  accept="image/png, image/jpeg" >
+                                        <input class="form-control" type="file" id="Passport_Back" placeholder="Back Passport"  name="file"  accept="image/png, image/jpeg" onchange="preview_back(this)">
                                         <br>
                                     </div>
                             </div>
 
 
-                            <div>
-                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()" >Upload</button>
+                            <div class="row">
+
+
+                                <div id="uploaded-passport-front" class="col-md-6">
+
+                                </div>
+
+                                <div id="uploaded-passport-back" class="col-md-6">
+
+                                </div>
+
+
                             </div>
+
+
+                            <div style="margin-top: 30px; display: flex; justify-content: end">
+                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()">Get Passport Details and Upload</button>
+                            </div>
+
+
                         </form>
+
+
+
+                    </div>
+
 
                     </div>
 
@@ -179,8 +200,8 @@
                                             <option value="select" selected disabled>Select Your Gender</option>
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
-                                            {% if job_applicant.one_fm_gender != None %} 
-                                                <option value="{{ job_applicant.one_fm_gender }}" selected>{{ job_applicant.one_fm_gender }}</option> 
+                                            {% if job_applicant.one_fm_gender != None %}
+                                                <option value="{{ job_applicant.one_fm_gender }}" selected>{{ job_applicant.one_fm_gender }}</option>
                                             {% endif %}>
                                     </div>
                                 </div>
@@ -196,8 +217,8 @@
                                             <option value="Widow">Widow</option>
                                             <option value="Divorce">Divorce</option>
                                             <option value="Unknown">Unknown</option>
-                                            {% if job_applicant.one_fm_marital_status != None %} 
-                                                <option value="{{ job_applicant.one_fm_marital_status }}" selected>{{ job_applicant.one_fm_marital_status }}</option> 
+                                            {% if job_applicant.one_fm_marital_status != None %}
+                                                <option value="{{ job_applicant.one_fm_marital_status }}" selected>{{ job_applicant.one_fm_marital_status }}</option>
                                             {% endif %}>
                                         </select>
                                         </select>
@@ -215,8 +236,8 @@
                                             <option value="Hindu">Hindu</option>
                                             <option value="Buddhist">Buddhist</option>
                                             <option value="Unknown">Unknown</option>
-                                            {% if job_applicant.one_fm_religion != None %} 
-                                                <option value="{{ job_applicant.one_fm_religion }}" selected>{{ job_applicant.one_fm_religion }}</option> 
+                                            {% if job_applicant.one_fm_religion != None %}
+                                                <option value="{{ job_applicant.one_fm_religion }}" selected>{{ job_applicant.one_fm_religion }}</option>
                                             {% endif %}>
                                         </select>
                                     </div>
@@ -230,8 +251,8 @@
                                             <option value="Diploma">Diploma</option>
                                             <option value="Under Graduate">Under Graduate</option>
                                             <option value="High School">High School</option>
-                                            {% if job_applicant.one_fm_educational_qualification != None %} 
-                                                <option value="{{ job_applicant.one_fm_educational_qualification}}" selected>{{ job_applicant.one_fm_educational_qualification }}</option> 
+                                            {% if job_applicant.one_fm_educational_qualification != None %}
+                                                <option value="{{ job_applicant.one_fm_educational_qualification}}" selected>{{ job_applicant.one_fm_educational_qualification }}</option>
                                             {% endif %}>
                                     </div>
                                         </select>
@@ -258,8 +279,8 @@
                                         <label class="form-label" for="Nationality">Nationality *</label>
                                         <select class="form-control input2" id="Nationality" name="nationality" aria-placeholder="Select Your Nationality">
                                             <option value="select" selected disabled>Select Your Nationality</option>
-                                            {% if job_applicant.one_fm_nationality != None %} 
-                                                <option value="{{ job_applicant.one_fm_nationality }}" selected>{{ job_applicant.one_fm_nationality }}</option> 
+                                            {% if job_applicant.one_fm_nationality != None %}
+                                                <option value="{{ job_applicant.one_fm_nationality }}" selected>{{ job_applicant.one_fm_nationality }}</option>
                                             {% endif %}>
                                         </select>
                                     </div>
@@ -298,8 +319,8 @@
                                             <option value="select" selected disabled>Select Passport Type</option>
                                             <option value="Normal">Normal</option>
                                             <option value="Diplomat">Diplomat</option>
-                                            {% if job_applicant.one_fm_passport_type != None %} 
-                                                <option value="{{ job_applicant.one_fm_passport_type }}" selected>{{ job_applicant.one_fm_passport_type }}</option> 
+                                            {% if job_applicant.one_fm_passport_type != None %}
+                                                <option value="{{ job_applicant.one_fm_passport_type }}" selected>{{ job_applicant.one_fm_passport_type }}</option>
                                             {% endif %}>
                                         </select>
                                     </div>
@@ -331,9 +352,6 @@
                                 <br>
                                 <div>
                                     <button class="btn btn-dark" type="button" href="json.json" value="save" id="saveForm" onclick="Save()" >Save</button>
-                                </div>
-                                <br>
-                                <div>
                                     <button class="btn btn-dark" type="button" href="json.json" value="submit" id="submitForm" onclick="Submit()" disabled="disabled" >Submit</button>
                                 </div>
                             </form>

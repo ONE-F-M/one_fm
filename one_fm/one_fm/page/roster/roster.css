@@ -107,7 +107,8 @@ body[data-route="roster"] #cover-spin {
 
 body[data-route="roster"] #cover-spin::after {
   content: "";
-  display: block;
+  display: grid;
+  place-items: center;
   position: absolute;
   left: 48%;
   top: 40%;

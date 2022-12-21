@@ -267,7 +267,6 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
 
         if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
             return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
-
         attachment_paths = []
         if proof_document_required_for_leave_type(leave_type):
             proof_doc_json = json.loads(proof_document)
@@ -287,7 +286,6 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                     fh.write(content)
 
                 attachment_paths.append(f"/files/leave-application/{employee_doc.user_id}/{filename}")
-       
         doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_paths)
 
         # if attachment_path:
@@ -333,7 +331,7 @@ def fetch_leave_approver(employee: str) -> str:
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
     if reports_to:
         approver = frappe.get_value("Employee", reports_to, ["user_id"])
-    else if employee_shift[0].shift:
+    elif len(employee_shift) > 0 and employee_shift[0].shift:
         approver, Role = get_action_user(employee,employee_shift[0].shift)
     else:
         approver = None
