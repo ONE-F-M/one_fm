@@ -22,8 +22,11 @@ class PostMap():
         # self.keys = [[one.post_abbrv,one.operations_role] for one in operations_roles_list]
         self.post_filled_summary = []
         self.post_schedule_summary = []
-        self.post_filled_count = frappe.db.get_all("Employee Schedule",["name", "employee", "date",'operations_role'] ,{'date':  ['between', (start, end)],'operations_role': ['in',self.operation_roles] })
+        filters.update({'operations_role': ['in',self.operation_roles]})
+        # self.post_filled_count = frappe.db.get_all("Employee Schedule",["name", "employee", "date",'operations_role'] ,{'date':  ['between', (start, end)],'operations_role': ['in',self.operation_roles] })
+        self.post_filled_count = frappe.db.get_all("Employee Schedule",["name", "employee", "date",'operations_role'] ,filters)
         filters.update({"post_status": "Planned",'operations_role':['in',self.operation_roles]})
+        filters.pop('operations_role')
         self.filters = filters
         self.post_schedule_count = frappe.db.get_all("Post Schedule", ['operations_role',"name", "date"], filters, ignore_permissions=True)
         self.start_mapping()
