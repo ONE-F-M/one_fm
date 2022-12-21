@@ -59,8 +59,7 @@ def check_roster_day_off():
 	# create data
 	for k, v in supervisor_dict.items():
 		if k and v:
-			# frappe.enqueue(create_record, supervisor=k, date=datetime.today().date(), detail=v)
-			create_record(k,datetime.today().date(), v)
+			frappe.enqueue(create_record, supervisor=k, date=datetime.today().date(), detail=v)
 
 def create_record(supervisor, date, detail):
 	doc = frappe.get_doc({
