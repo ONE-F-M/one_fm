@@ -486,6 +486,24 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			# this queue up employee department and full name record update, it is not important in the initial record creation
 			# this was done to speed up record creation
 			frappe.enqueue(queue_employee_schedule_empdetail, employees=employees, id_list=id_list)
+	else:
+		"""
+			HAndle request employee schedule
+			from_schedule = frappe.db.sql("""select shift, operations_role from `tabEmployee Schedule` where shift!= %(shift)s and date >= %(start_date)s and date <= %(end_date)s and employee = %(employee)s""",{
+				'shift' : shift,
+				'start_date': start_date,
+				'end_date': end_date,
+				'employee': employee
+			}, as_dict=1)
+			if len(from_schedule) > 0:
+				from_shift = from_schedule[0].shift
+				from_operations_role = from_schedule[0].operations_role
+				create_request_employee_schedule(employee=employee, from_shift=from_shift, from_operations_role=from_operations_role,
+												 to_shift=shift, to_operations_role=operations_role, otRoster=otRoster, start_date=start_date, end_date=end_date)
+		"""
+		pass
+	# update employee additional records
+	frappe.enqueue(update_employee_shift, employees=employee, shift=shift, owner=owner, creation=creation)
 
 
 def queue_employee_schedule_empdetail(employees, id_list):
@@ -517,8 +535,60 @@ def queue_employee_schedule_empdetail(employees, id_list):
 	"""
 	frappe.db.sql(query)
 	frappe.db.commit()
-	
 
+def update_employee_shift(employees, shift, owner, creation):
+	"""Update employee assignment"""
+
+	site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
+	# structure employee record
+	# filter and sort, check if employee site and project match retrieved
+	employees_data = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_name", "employee_id", "project", "site", "shift"])
+	unmatched_record = {}
+	matched_record = []
+	no_shift_assigned = []
+	for emp in employees_data:
+		if emp.project and emp.project != project or emp.site and emp.site != site or emp.shift and emp.shift != shift:
+			unmatched_record[emp.name] = emp
+		elif emp.project == project and emp.site == site and emp.shift == shift:
+			matched_record.append(emp.name)
+		else:
+			no_shift_assigned.append(emp.name)
+
+
+	# start with unmatched
+	if unmatched_record:
+		query = """
+			INSERT INTO `tabAdditional Shift Assignment` (`name`, `employee`, `employee_name`, `employee_id`, `site`, `shift`, `project`, `owner`, `modified_by`, `creation`, `modified`)
+			VALUES 
+		"""
+		for k, emp in unmatched_record.items():
+			query += f"""(
+					"{emp.name}|{shift}", "{emp.name}", "{emp.employee_name}", "{emp.employee_id}", "{site}", "{shift}", 
+					"{project}", "{owner}", "{owner}", "{creation}", "{creation}"
+			),"""
+		query = query.replace(", None", '')
+		query = query[:-1]
+		query += f"""
+			ON DUPLICATE KEY UPDATE
+			project = VALUES(project),
+			site = VALUES(site),
+			shift = VALUES(shift),
+			modified_by = VALUES(modified_by),
+			modified = VALUES(modified)
+		"""
+		frappe.db.sql(query)
+
+	if matched_record:
+		frappe.db.delete("Additional Shift Assignment", {
+			"employee": ["IN", matched_record]
+		})
+
+	if no_shift_assigned:
+		for employee in no_shift_assigned:
+			""" This function updates the employee project, site and shift in the employee doctype """
+			frappe.db.set_value("Employee", employee, {"project":project, "site":site, "shift":shift})
+
+	frappe.db.commit()
 
 
 
