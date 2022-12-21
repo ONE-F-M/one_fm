@@ -88,8 +88,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
 	operations_roles_list = []
 	employees = []
-	import time
-
+	
 	filters = {
 		'date': ['between', (start_date, end_date)]
 	}

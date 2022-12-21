@@ -33,10 +33,6 @@ class PostMap():
         return
 
 
-    def generate_highlights(self):
-        pass
-
-
 
     def sort_post_schedule(self,each):
         #Create a map that uses the operations role as the key and list of entries as the value
@@ -45,6 +41,8 @@ class PostMap():
         else:
             self.post_schedule_map[each.operations_role] = [one for one in self.post_schedule_count if one.operations_role ==each.operations_role]
         return self.post_schedule_map
+        
+
 
     def sort_post_filled(self,each):
         if self.post_filled_map.get(each.operations_role):
@@ -132,6 +130,7 @@ class CreateMap():
     """
     def __init__(self,start,end,employees,filters,isOt):
         self.start = start
+        
         self.formated_rs = {}
         self.employee_period_details = {}
         self.merged_employees =[]
@@ -139,7 +138,6 @@ class CreateMap():
         self.employees = tuple([u.employee for u in  employees])
         self.all_employees = employees
         self.str_filter = filters
-
         self.isOt = isOt
         if self.isOt:
             self.str_filter+=' and es.roster_type = "Over-Time"'
@@ -173,6 +171,7 @@ class CreateMap():
 
     def combine_maps(self,iter1,iter2):
         key = list(iter1.keys())[0]
+        
         return {key:iter1[key]+iter2[key]}
 
 
@@ -186,6 +185,7 @@ class CreateMap():
         self.employee_details = list(map(self.create_employee_schedule,self.employee_set))
         #Combine both the attenance and schedule maps,
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
+        #Add missing  calendar days 
         res=list(map(self.add_blank_days,iter(self.date_range)))
 
     def add_blanks(self,emp_dict):
@@ -207,6 +207,7 @@ class CreateMap():
                     self.formated_rs[key] = [result]
             else:
                 if self.formated_rs.get(key):
+                    #record has been previously added
                     if key not in self.merged_employees:
                         self.formated_rs[key]+=value
                         self.merged_employees.append(key)
@@ -218,6 +219,9 @@ class CreateMap():
 
     def create_missing_days(self,key):
         missing_days = []
+            
+        return self.formated_rs
+
 
     def add_blank_days(self,date):
         self.cur_date = cstr(date).split(' ')[0]
