@@ -842,6 +842,17 @@ def set_post_off(post, date, post_off_paid, post_off_unpaid):
 
 @frappe.whitelist()
 def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[], repeat_till=None, project_end_date=None):
+	creation = now()
+	owner = frappe.session.user
+	roster_type = "Basic"
+	id_list = []
+	query = """
+		INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`, 
+		`operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `owner`, `modified_by`, `creation`, `modified`)
+		VALUES 
+	"""
+	querycontent = """"""
+
 
 	if not repeat_till and not cint(project_end_date) and not selected_dates:
 		frappe.throw(_("Please select either a repeat till date or check the project end date option."))
@@ -849,8 +860,13 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 	from one_fm.api.mobile.roster import month_range
 	if cint(selected_dates):
 		for employee in json.loads(employees):
-			set_dayoff(employee["employee"], employee["date"])
-			frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
+			name = f"{employee['date']}_{employee['employee']}_{roster_type}"
+			id_list.append(name)
+			querycontent += f"""(
+				"{name}", "{employee["employee"]}", "{employee["date"]}", "", "", "", 
+				'', "Day Off", "", "", "Basic", 
+				0, "{owner}", "{owner}", "{creation}", "{creation}"
+			),"""
 	else:
 		if repeat and repeat_freq in ["Daily", "Weekly", "Monthly", "Yearly"]:
 			end_date = None
@@ -868,8 +884,13 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 						else:
 							frappe.throw(_("No contract linked with project {project}".format(project=project)))
 					for date in	pd.date_range(start=employee["date"], end=end_date):
-						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
-						frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
+						name = f"{employee['date']}_{employee['employee']}_{roster_type}"
+						id_list.append(name)
+						querycontent += f"""(
+							"{name}", "{employee["employee"]}", "{employee["date"]}", "", "", "", 
+							'', "Day Off", "", "", "Basic", 
+							0, "{owner}", "{owner}", "{creation}", "{creation}"
+						),"""
 
 			elif repeat_freq == "Weekly":
 				for employee in json.loads(employees):
@@ -883,8 +904,13 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 							frappe.throw(_("No contract linked with project {project}".format(project=project)))
 					for date in	pd.date_range(start=employee["date"], end=end_date):
 						if getdate(date).strftime('%A') in week_days:
-							frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
-							frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
+							name = f"{employee['date']}_{employee['employee']}_{roster_type}"
+							id_list.append(name)
+							querycontent += f"""(
+								"{name}", "{employee["employee"]}", "{employee["date"]}", "", "", "", 
+								'', "Day Off", "", "", "Basic", 
+								0, "{owner}", "{owner}", "{creation}", "{creation}"
+							),"""
 
 			elif repeat_freq == "Monthly":
 				for employee in json.loads(employees):
@@ -897,8 +923,13 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 						else:
 							frappe.throw(_("No contract linked with project {project}".format(project=project)))
 					for date in	month_range(employee["date"], end_date):
-						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
-						frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
+						name = f"{employee['date']}_{employee['employee']}_{roster_type}"
+						id_list.append(name)
+						querycontent += f"""(
+							"{name}", "{employee["employee"]}", "{employee["date"]}", "", "", "", 
+							'', "Day Off", "", "", "Basic", 
+							0, "{owner}", "{owner}", "{creation}", "{creation}"
+						),"""
 
 			elif repeat_freq == "Yearly":
 				for employee in json.loads(employees):
@@ -911,8 +942,37 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 						else:
 							frappe.throw(_("No contract linked with project {project}".format(project=project)))
 					for date in	pd.date_range(start=employee["date"], end=end_date, freq=pd.DateOffset(years=1)):
-						frappe.enqueue(set_dayoff, employee=employee["employee"], date=cstr(date.date()), queue='short')
-						frappe.msgprint(f"Successfully started scheduling day off for {employee}", alert=True)
+						name = f"{employee['date']}_{employee['employee']}_{roster_type}"
+						id_list.append(name)
+						querycontent += f"""(
+							"{name}", "{employee["employee"]}", "{employee["date"]}", "", "", "", 
+							'', "Day Off", "", "", "Basic", 
+							0, "{owner}", "{owner}", "{creation}", "{creation}"
+						),"""
+
+	if querycontent:
+		querycontent = querycontent.replace(", None", '')
+		querycontent = querycontent[:-1]
+		query += querycontent
+		query += """
+			ON DUPLICATE KEY UPDATE
+			modified_by = VALUES(modified_by),
+			modified = "{creation}",
+			operations_role = "",
+			post_abbrv = "",
+			roster_type = "",
+			shift = "",
+			project = "",
+			site = "",
+			shift_type = "",
+			day_off_ot = "",
+			roster_type = "Basic",
+			"employee_availability = "Day Off"
+		;"""
+		print(query)
+		frappe.db.sql(query)
+		frappe.db.commit()
+
 
 def set_dayoff(employee, date):
 	if frappe.db.exists("Employee Schedule", {"date": date, "employee": employee}):
@@ -931,6 +991,7 @@ def set_dayoff(employee, date):
 	doc.post_abbrv = None
 	doc.roster_type = 'Basic'
 	doc.save(ignore_permissions=True)
+	print(doc.as_dict())
 
 
 @frappe.whitelist()
