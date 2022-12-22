@@ -45,8 +45,6 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
 from six import string_types
 from frappe.core.doctype.doctype.doctype import validate_series
 
-
-
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
 
@@ -2798,5 +2796,3 @@ def get_payroll_cycle(filters={}):
         if not payroll_cycle.get(p.project) and p.project != None:
             payroll_cycle[p.project] = _date
     return payroll_cycle
-
-
