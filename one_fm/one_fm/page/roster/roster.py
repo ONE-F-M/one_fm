@@ -302,15 +302,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 			request_employee_schedule=request_employee_schedule
 		)
 
-		employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
-		employee_dict = {}
-		for i in employees_list:
-			employee_dict[i.name] = i
-		msgprint = "<span style='color:blue'>The following employees has been scheduled, the roster will be updated as soon as possible, please continue rostering other staffs if need be. </span><br><br>".format(frappe=frappe)
-		for i, j in enumerate(employees):
-			msgprint += f"<i>{i+1}: {employee_dict[j].employee_id} - {employee_dict[j].employee_name} - {employee_dict[j].name}</i><hr>"
-
-		frappe.msgprint(msgprint)
+		frappe.msgprint("Rostering complete")
 		update_roster(key="roster_view")
 		# frappe.publish_realtime(key, "Success")
 	return employees_list, date_range
@@ -409,7 +401,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				day_off_ot = VALUES(day_off_ot),
 				employee_availability = "Working"
 			"""
-			# print(query)
 			frappe.db.sql(_query)
 			frappe.db.commit()
 			# this queue up employee department and full name record update, it is not important in the initial record creation
