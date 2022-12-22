@@ -9,9 +9,6 @@ import json, multiprocessing, os, time, itertools, frappe
 from multiprocessing.pool import ThreadPool as Pool
 from itertools import product
 from one_fm.api.notification import create_notification_log
-# from one_fm.overrides.database import DatabaseOveride
-
-# dboveride = DatabaseOveride()
 
 
 @frappe.whitelist(allow_guest=True)
