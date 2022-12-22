@@ -3,6 +3,7 @@ from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
 from frappe.utils import getdate, cint, cstr, random_string, now_datetime
 import pandas as pd
 from frappe import _
+from one_fm.api.v1.utils import response
 
 @frappe.whitelist()
 def get_opening_values():
@@ -12,7 +13,7 @@ def get_opening_values():
     projects = frappe.db.sql("SELECT name from `tabProject` where status = 'Open' ",as_dict=1)
     shifts = frappe.db.sql("SELECT name from `tabOperations Shift` ",as_dict=1)
     sites = frappe.db.sql("SELECT name from `tabOperations Site` ",as_dict=1)
-    employees = frappe.db.sql("SELECT name from `tabEmployee` where status = 'Active' LIMIT  15 ",as_dict=1)
+    employees = frappe.db.sql("SELECT name, employee_name,  designation, department, cell_number from `tabEmployee` where status = 'Active' LIMIT  15 ",as_dict=1)
     return {'projects':projects,'shifts':shifts,'sites':sites,'employees':employees}
 
 
@@ -62,21 +63,39 @@ def get_filtered_values(start_date,end_date,project=None,site=None,shift=None,op
 
 @frappe.whitelist()
 def unschedule_staff(employee, start_date, end_date=None, never_end=0):
+    if not employee:
+        return response("Bad request", 400, None, "Employee ID must be entered")
+    
+    if not isinstance(employee, str):
+        return response("Bad request", 400, None, "Employee ID has to be a string")
+    
+    check = frappe.get_doc("Employee", employee)
+    if not check:
+        return response("Bad Request", 400, None, "Employee Does Not Exist")
+
     try:
-        if never_end:
-            rosters = frappe.get_all("Employee Schedule", {"employee": employee,"date": ('>=', start_date)})
-            for roster in rosters:
-                frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
-            return True
-        else:
-            for date in	pd.date_range(start=start_date, end=end_date):
-                if frappe.db.exists("Employee Schedule", {"employee": employee, "date":  cstr(date.date())}):
-                    roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date":  cstr(date.date())})
-                    frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
-            return True
-    except Exception as e:
-        print(e)
-        return frappe.utils.response.report_error(e.http_status_code)
+        rosters = frappe.get_all("Employee Schedule", {"employee": employee,"date": ('>=', start_date)})
+        for roster in rosters:
+            frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
+        return response("Success", 200, None, "Employee Unscheduled Successfully !")
+    except:
+        return response("Internal Server Error", 500)
+
+    # try:
+    #     if never_end:
+    #         rosters = frappe.get_all("Employee Schedule", {"employee": employee,"date": ('>=', start_date)})
+    #         for roster in rosters:
+    #             frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
+    #         return True
+    #     else:
+    #         for date in	pd.date_range(start=start_date, end=end_date):
+    #             if frappe.db.exists("Employee Schedule", {"employee": employee, "date":  cstr(date.date())}):
+    #                 roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date":  cstr(date.date())})
+    #                 frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
+    #         return response("Success", 200, None, "Employee Unscheduled Successfully !")
+    # except Exception as e:
+    #     print(e)
+    #     return frappe.utils.response.report_error(e.http_status_code)
 
 
 @frappe.whitelist()
