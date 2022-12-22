@@ -302,7 +302,8 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 			request_employee_schedule=request_employee_schedule
 		)
 
-		frappe.msgprint("Rostering complete.")
+		employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
+		frappe.msgprint("Roster Complete")
 		update_roster(key="roster_view")
 		# frappe.publish_realtime(key, "Success")
 	return employees_list, date_range
