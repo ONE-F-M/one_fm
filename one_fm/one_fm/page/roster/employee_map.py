@@ -215,6 +215,10 @@ class CreateMap():
                     self.formated_rs[key] = value
         except KeyError:
             pass
+        return self.formated_rs
+
+    def create_missing_days(self,key):
+        missing_days = []
             
         return self.formated_rs
 
