@@ -687,7 +687,7 @@ def get_filtered_values(start_date,end_date,project=None,site=None,shift=None,op
         frappe.log_error(frappe.get_traceback(),'Roster API Error')
 
 
-frappe.whitelist()
+@frappe.whitelist()
 def get_opening_values():
 	"""
 		Get the opening values the roster page
@@ -698,3 +698,15 @@ def get_opening_values():
 	employees = frappe.db.sql("SELECT name, employee_name,  designation, department, cell_number from `tabEmployee` where status = 'Active' LIMIT  15 ",as_dict=1)
 	data = {'projects':projects,'shifts':shifts,'sites':sites,'employees':employees}
 	return response("Success", 200, data)
+
+
+
+@frappe.whitelist()
+def get_opening_post_values():
+	"""
+		Get the opening values for the roster post page
+	"""
+	posts = frappe.db.sql ("SELECT post_name from `tabOperations Post`", as_dict=1)
+	return response("Success", 200,  posts)
+
+
