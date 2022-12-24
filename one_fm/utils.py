@@ -1953,17 +1953,6 @@ def create_roster_post_actions():
             if val["operations_role"] in operations_roles:
                 check_list.append(val)
 
-        list_of_not_filled_roles = []
-        for val in check_list:
-            for role in list_of_not_filled_roles:
-                if val["date"] == role["date"] and val["operations_role"] == role["operations_role"] and val["shift"] == role["shift"]:
-                    role["quantity"] += 1
-                    break
-            else:
-                val.update({"quantity": 1})
-                list_of_not_filled_roles.append(val)    
-            
-
         roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
         roster_post_actions_doc.start_date = start_date
         roster_post_actions_doc.end_date = end_date
@@ -1971,7 +1960,7 @@ def create_roster_post_actions():
         roster_post_actions_doc.action_type = "Fill Post Type"
         roster_post_actions_doc.supervisor = supervisor
 
-        for obj in list_of_not_filled_roles:
+        for obj in check_list:
             roster_post_actions_doc.append('operations_roles_not_filled', {
                 'operations_role': obj.get("operations_role"),
                 "operations_shift": obj.get("shift"),
@@ -2796,3 +2785,4 @@ def get_payroll_cycle(filters={}):
         if not payroll_cycle.get(p.project) and p.project != None:
             payroll_cycle[p.project] = _date
     return payroll_cycle
+
