@@ -1,0 +1,75 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-12-23 13:40:25.592770",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "task_settings_section",
+  "assign_task_from_email",
+  "differentiate_assignment_from_email_content_by",
+  "start_tag",
+  "end_tag"
+ ],
+ "fields": [
+  {
+   "fieldname": "task_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Task Settings"
+  },
+  {
+   "default": "0",
+   "description": "Assign Task to User Defined in Incoming Email Content",
+   "fieldname": "assign_task_from_email",
+   "fieldtype": "Check",
+   "label": "Assign Task from Email"
+  },
+  {
+   "depends_on": "eval:(doc.differentiate_assignment_from_email_content_by == 'Start and End Tag' || doc.differentiate_assignment_from_email_content_by == 'Start and End Tag or Mail to Tag') && doc.assign_task_from_email",
+   "fieldname": "start_tag",
+   "fieldtype": "Data",
+   "label": "Start Tag",
+   "mandatory_depends_on": "eval:(doc.differentiate_assignment_from_email_content_by == 'Start and End Tag' || doc.differentiate_assignment_from_email_content_by == 'Start and End Tag or Mail to Tag') && doc.assign_task_from_email"
+  },
+  {
+   "depends_on": "eval:(doc.differentiate_assignment_from_email_content_by == 'Start and End Tag' || doc.differentiate_assignment_from_email_content_by == 'Start and End Tag or Mail to Tag') && doc.assign_task_from_email",
+   "fieldname": "end_tag",
+   "fieldtype": "Data",
+   "label": "End Tag"
+  },
+  {
+   "depends_on": "assign_task_from_email",
+   "description": "Get assignments from the email content by tag selected.",
+   "fieldname": "differentiate_assignment_from_email_content_by",
+   "fieldtype": "Select",
+   "label": "Differentiate Assignment from Email Content by",
+   "mandatory_depends_on": "assign_task_from_email",
+   "options": "\nStart and End Tag\nMail to Tag\nStart and End Tag or Mail to Tag"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2022-12-23 14:18:49.272630",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Project Additional Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
