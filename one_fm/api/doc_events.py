@@ -32,6 +32,7 @@ def shift_after_insert(doc, method):
 def employee_checkin_validate(doc, method):
 	if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin'):
 		try:
+			
 			perm_map = {
 				"IN" : "Arrive Late",
 				"OUT": "Leave Early"
