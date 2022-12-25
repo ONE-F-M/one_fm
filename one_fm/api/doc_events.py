@@ -31,8 +31,7 @@ def shift_after_insert(doc, method):
 #Employee Checkin
 def employee_checkin_validate(doc, method):
 	if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin'):
-		try:
-			
+		try:			
 			perm_map = {
 				"IN" : "Arrive Late",
 				"OUT": "Leave Early"
@@ -65,6 +64,7 @@ def employee_checkin_validate(doc, method):
 def checkin_after_insert(doc, method):
 	from one_fm.api.tasks import send_notification, issue_penalty
 	# These are returned according to dates. Time is not taken into account
+
 	log_exist = frappe.db.sql("""
 			SELECT name FROM `tabEmployee Checkin` empChkin
 		 			WHERE
@@ -74,7 +74,6 @@ def checkin_after_insert(doc, method):
 		 				AND empChkin.shift_type='{shift_type}'
 						AND name !='{current_doc}'
 			""".format(date=cstr(getdate()), shift_type=doc.shift_type,log_type=doc.log_type, current_doc=doc.name), as_dict=1)
-
 	if not log_exist:
 		# In case of back to back shift
 		if doc.shift_type:
