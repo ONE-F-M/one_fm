@@ -178,12 +178,12 @@ class CreateMap():
 
     def start_mapping(self):
         filters = [[i.employee,i.employee_name] for i in  self.all_employees]
+        #Fetch all employee details
+        self.employee_details = list(map(self.create_employee_schedule,self.employee_set))
         #Create the attendance iterable for each employee using python map
         self.att_map=list(map(self.create_attendance_map,filters))
         #Create the schedule iterable for each employee using python map
         self.sch_map = list(map(self.create_schedule_map,filters))
-         #Fetch all employee details
-        self.employee_details = list(map(self.create_employee_schedule,self.employee_set))
         #Combine both the attenance and schedule maps,
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
         res=list(map(self.add_blank_days,iter(self.date_range)))
@@ -231,7 +231,7 @@ class CreateMap():
 
 
     def create_schedule_map(self,row):
-        schedule = [one for  one in self.schedule_set if one.employee==row[0] ]
+        schedule = [one.update(self.employee_period_details[row[1]]) for  one in self.schedule_set if one.employee==row[0] ]
         return {row[1]:schedule}
 
 
