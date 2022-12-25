@@ -679,8 +679,7 @@ def fetch_non_shift(date, s_type):
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
-					WHERE st.start_time >= '13:00:00'
-					AND  st.start_time < '01:00:00'
+					WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
 					)
 				AND NOT EXISTS(SELECT * from `tabHoliday` h
 					WHERE
@@ -722,7 +721,7 @@ def assign_pm_shift():
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
-				WHERE st.start_time >= '13:00:00'
+				WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
 				)
 	""".format(date=cstr(date)), as_dict=1)
 
@@ -803,12 +802,17 @@ def validate_am_shift_assignment():
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time >= '01:00:00'
 					AND  st.start_time < '13:00:00'	))
+			AND ES.employee
+			NOT IN (Select employee from `tabEmployee` E
+			WHERE
+				E.name = ES.employee
+				AND E.status = "Left")
 	""".format(date=cstr(date)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "PM")
 	if non_shift:
 		roster.extend(non_shift)
-	
+
 	if len(roster)>0:
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
@@ -828,7 +832,7 @@ def validate_pm_shift_assignment():
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
-				WHERE st.start_time >= '13:00:00'
+				WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
 				)
 			AND ES.employee
 			NOT IN (Select employee from `tabShift Assignment` tSA
@@ -837,9 +841,13 @@ def validate_pm_shift_assignment():
 				AND tSA.start_date='{date}'
 				AND tSA.roster_type = "Basic"
 				AND tSA.shift_type IN(
-				SELECT name from `tabShift Type` st
-				WHERE st.start_time >= '13:00:00'
-				))
+					SELECT name from `tabShift Type` st
+					WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'))
+			AND ES.employee
+			NOT IN (Select employee from `tabEmployee` E
+			WHERE
+				E.name = ES.employee
+				AND E.status = "Left")
 	""".format(date=cstr(date)), as_dict=1)
 	
 	non_shift = fetch_non_shift(date, "PM")
