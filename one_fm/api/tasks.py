@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from frappe import enqueue
 import frappe, erpnext
 from frappe import _
-from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today
+from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today, add_days, now
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
@@ -690,8 +690,8 @@ def fetch_non_shift(date, s_type):
 	return roster
 
 def assign_am_shift():
-	date = cstr(getdate())
-	end_previous_shifts("AM")
+	date = '2022-12-27' #cstr(getdate())
+	# end_previous_shifts("AM")
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
@@ -704,15 +704,16 @@ def assign_am_shift():
 				AND  st.start_time < '13:00:00')
 	""".format(date=cstr(date)), as_dict=1)
 
-	non_shift = fetch_non_shift(date, "AM")
-	if non_shift:
-		roster.extend(non_shift)
+	# non_shift = fetch_non_shift(date, "AM")
+	# if non_shift:
+	# 	roster.extend(non_shift)
 
-	frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
+	#frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
+	_create_shift_assignment(roster, date, 'AM')
 
 def assign_pm_shift():
-	date = cstr(getdate())
-	end_previous_shifts("PM")
+	date = '2022-12-27' #cstr(getdate())
+	# end_previous_shifts("PM")
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
@@ -725,28 +726,128 @@ def assign_pm_shift():
 				)
 	""".format(date=cstr(date)), as_dict=1)
 
-	non_shift = fetch_non_shift(date, "PM")
-	if non_shift:
-		roster.extend(non_shift)
+	# non_shift = fetch_non_shift(date, "PM")
+	# if non_shift:
+	# 	roster.extend(non_shift)
 
-	frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
+	# frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
+	_create_shift_assignment(roster, date, 'PM')
+
 
 def end_previous_shifts(time):
+	shift_type = get_shift_type(time)
+	query = f"""
+		UPDATE `tabShift Assignment`
+		SET end_date=DATE(end_datetime)
+		WHERE 
+		end_date IS NULL AND shift_type IN {tuple(shift_type)} AND docstatus=1 AND roster_type in ('Basic', 'Over-Time')
+	;"""
+	shift_assignments = frappe.db.sql(query, values=[], as_dict=1)
+	frappe.db.commit()
+
+def get_shift_type(time):
 	if time == "AM":
 		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "00:00"], "start_time": ["<", "12:00"]},['name'], pluck='name')
 	else:
 		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"]},['name'], pluck='name')
+	return shift_type
 
-	shift_assignments = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'],
-					["shift_type", "IN", shift_type], ["docstatus", "=", 1],["roster_type", "IN", "Basic"]], fields=['name','start_date'])
+def _create_shift_assignment(roster, date, time):
+	owner = frappe.session.user
+	creation = now()
+	shift_type = get_shift_type(time)
+	shift_types = frappe.db.get_list("Shift Type", filters={'name':['IN', shift_type]},
+		fields=['name', 'shift_type', 'start_time', 'end_time'])
+	shift_types_dict = {}
+	for i in shift_types:
+		i.start_datetime = f"{date} {i.start_time}"
+		if i.end_time.total_seconds() < i.start_time.total_seconds():
+			i.end_datetime = f"{add_days(date, 1)} {i.end_time}"
+		else:
+			i.end_datetime = f"{date} {i.end_time}"
+		shift_types_dict[i.name] = i
 
-	overtime_shift = frappe.get_list("Shift Assignment",  filters = [["end_date", 'IS', 'not set'],
-					["roster_type", "IN", "Over-Time"], ["docstatus", "=", 1]], fields=['name','start_date'])
-	shift_assignments = shift_assignments + overtime_shift
+	existing_shift = frappe.db.get_list("Shift Assignment", filters={
+		'start_date': date,
+		'shift_type': ['IN', shift_type],
+		'docstatus': 1,
+		'roster_type': ['IN', ['Basic', 'Over-Time']],
+		'status':'Active',
+		},
+		fields=['employee']
+	)
 
-	for shift_assignment in shift_assignments:
-		frappe.set_value("Shift Assignment", shift_assignment.name,'end_date',shift_assignment.start_date)
+	existing_shift_list = [i.employee for i in existing_shift]
+	shift_request = frappe.db.get_list("Shift Request", filters={
+		'employee': ['IN', [i.employee for i in roster]],
+		'from_date': ['<=', date],
+		'to_date': ['>=', date]
+		},
+		fields=['name', 'employee', 'check_in_site', 'check_out_site']
+	)
+	shift_request_dict = {}
+	for i in shift_request:
+		shift_request_dict[i.employee] = i
 
+	sites = []
+	for i in roster:
+		if not i.site in sites:
+			sites.append(i.site)
+	sites_list = frappe.db.get_list("Operations Site", filters={'name': ['IN', sites]}, fields=['name', 'site_location'])
+	sites_list_dict = {}
+	for i in sites_list:
+		sites_list_dict[i.name] = i.site_location
+
+	if roster:
+		query = """
+			INSERT INTO `tabShift Assignment` (`name`, `company`, `docstatus`, `employee`, `employee_name`, `shift_type`, `site`, `project`, `status`,
+			`shift_classification`, `site_location`, `start_date`, `start_datetime`, `end_datetime`, `department`, 
+			`shift`, `operations_role`, `post_abbrv`, `roster_type`, `owner`, `modified_by`, `creation`, `modified`,
+			`shift_request`, `check_in_site`, `check_out_site`)
+			VALUES 
+		"""
+		for r in roster:
+			if not r.employee in existing_shift_list:
+				_shift_type = shift_types_dict.get(r.shift_type)
+				
+				query += f"""
+				(
+					"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}', "{r.site}", "{r.project}", 'Active', 
+					"{_shift_type.shift_type}", "{sites_list_dict.get(r.site)}", "{date}", "{_shift_type.start_datetime}", "{_shift_type.end_datetime}", "{r.department}", 
+					"{r.shift}", "{r.operations_role}", "{r.post_abbrv}", "{r.roster_type}", "{owner}", "{owner}", "{creation}", "{creation}" """
+				if shift_request_dict.get(r.employee):
+					_shift_request = shift_request_dict.get(r.employee)
+					query += f""", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}"), """
+				else:
+					query += """, '', '', ''),"""
+		
+		query = query[:-1]
+		query += f"""
+				ON DUPLICATE KEY UPDATE
+				modified_by = VALUES(modified_by),
+				docstatus = VALUES(docstatus),
+				modified = "{creation}",
+				operations_role = VALUES(operations_role),
+				post_abbrv = VALUES(post_abbrv),
+				roster_type = VALUES(roster_type),
+				shift = VALUES(shift),
+				project = VALUES(project),
+				site = VALUES(site),
+				shift_type = VALUES(shift_type),
+				employee = VALUES(employee),
+				employee_name = VALUES(employee_name),
+				site_location = VALUES(site_location),
+				start_datetime = VALUES(start_datetime),
+				end_datetime = VALUES(end_datetime),
+				department = VALUES(department),
+				shift_request = VALUES(shift_request),
+				check_in_site = VALUES(check_in_site),
+				check_out_site = VALUES(check_out_site),
+				shift_classification = VALUES(shift_classification),
+				status = VALUES(status)
+			"""
+		frappe.db.sql(query, values=[], as_dict=1)
+		frappe.db.commit()
 
 def queue_shift_assignment(roster, date):
 	for schedule in roster:
