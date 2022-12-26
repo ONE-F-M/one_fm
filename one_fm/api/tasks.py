@@ -706,9 +706,10 @@ def assign_am_shift():
 
 	non_shift = fetch_non_shift(date, "AM")
 	if non_shift:
+		print(non_shift)
 		roster.extend(non_shift)
 
-	create_shift_assignment(roster, date, 'AM')
+	# create_shift_assignment(roster, date, 'AM')
 
 def assign_pm_shift():
 	date = cstr(getdate())
