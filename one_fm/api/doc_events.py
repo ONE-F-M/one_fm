@@ -64,16 +64,13 @@ def employee_checkin_validate(doc, method):
 def checkin_after_insert(doc, method):
 	from one_fm.api.tasks import send_notification, issue_penalty
 	# These are returned according to dates. Time is not taken into account
+	
+	start_time = get_datetime(cstr(getdate()) + " 00:00:00")
+	end_time = get_datetime(cstr(getdate()) + " 23:59:59")
 
-	log_exist = frappe.db.sql("""
-			SELECT name FROM `tabEmployee Checkin` empChkin
-		 			WHERE
-		 				empChkin.log_type='{log_type}'
-		 				AND empChkin.skip_auto_attendance=0
-		 				AND date(empChkin.time)='{date}'
-		 				AND empChkin.shift_type='{shift_type}'
-						AND name !='{current_doc}'
-			""".format(date=cstr(getdate()), shift_type=doc.shift_type,log_type=doc.log_type, current_doc=doc.name), as_dict=1)
+	log_exist = frappe.db.exists("Employee Checkin", {"log_type": doc.log_type, "time": [ "between", (start_time, end_time)], "skip_auto_attendance": 0 ,
+							"shift_type": doc.shift_type, "name": ["!=", doc.name]})
+
 	if not log_exist:
 		# In case of back to back shift
 		if doc.shift_type:
