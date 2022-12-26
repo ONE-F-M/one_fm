@@ -305,7 +305,7 @@ def checkin_checkout_query(date, shift_type, log_type):
 	else:
 		permission_type = ("Leave Early", "Forget to Checkout", "Checkout Issue")
 
-	query = frappe.db.sql("""SELECT emp.user_id, emp.name , emp.employee_name, emp.holiday_list, tSA.shift 
+	query = frappe.db.sql("""SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, emp.holiday_list, tSA.shift 
 					FROM `tabShift Assignment` tSA, `tabEmployee` emp
 					WHERE
 						tSA.employee=emp.name
