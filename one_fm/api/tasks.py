@@ -663,7 +663,8 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 
 def fetch_non_shift(date, s_type):
 	if s_type == "AM":
-		roster = frappe.db.sql("""SELECT name as employee, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
+		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,  
+				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
@@ -675,7 +676,7 @@ def fetch_non_shift(date, s_type):
 					AND h.holiday_date = '{date}')
 		""".format(date=cstr(date)), as_dict=1)
 	else:
-		roster = frappe.db.sql("""SELECT name as employee, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
+		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
@@ -706,10 +707,9 @@ def assign_am_shift():
 
 	non_shift = fetch_non_shift(date, "AM")
 	if non_shift:
-		print(non_shift)
 		roster.extend(non_shift)
-
-	# create_shift_assignment(roster, date, 'AM')
+		
+	create_shift_assignment(roster, date, 'AM')
 
 def assign_pm_shift():
 	date = cstr(getdate())
@@ -807,13 +807,15 @@ def create_shift_assignment(roster, date, time):
 		"""
 		for r in roster:
 			if not r.employee in existing_shift_list:
-				_shift_type = shift_types_dict.get(r.shift_type)
+				_shift_type = shift_types_dict.get(r.shift_type) or frappe.get_doc("Shift Type", '"Standard|Morning|08:00:00-17:00:00|9 hours"')
 				
 				query += f"""
 				(
-					"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}', "{r.site}", "{r.project}", 'Active', 
-					"{_shift_type.shift_type}", "{sites_list_dict.get(r.site)}", "{date}", "{_shift_type.start_datetime}", "{_shift_type.end_datetime}", "{r.department}", 
-					"{r.shift}", "{r.operations_role}", "{r.post_abbrv}", "{r.roster_type}", "{owner}", "{owner}", "{creation}", "{creation}" """
+					"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}', 
+					"{r.site or ''}", "{r.project or ''}", 'Active', "{_shift_type.shift_type}", "{sites_list_dict.get(r.site) or ''}", "{date}", 
+					"{_shift_type.start_datetime or r.start_datetime}", 
+					"{_shift_type.end_datetime or r.end_datetime}", "{r.department}", "{r.shift or ''}", "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}", 
+					"{owner}", "{owner}", "{creation}", "{creation}" """
 				if shift_request_dict.get(r.employee):
 					_shift_request = shift_request_dict.get(r.employee)
 					query += f""", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}"), """
@@ -845,6 +847,7 @@ def create_shift_assignment(roster, date, time):
 				shift_classification = VALUES(shift_classification),
 				status = VALUES(status)
 			"""
+		
 		frappe.db.sql(query, values=[], as_dict=1)
 		frappe.db.commit()
 
