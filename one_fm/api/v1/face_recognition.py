@@ -149,12 +149,9 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             media_content = video
         )
         # Call service stub and get response
-
         res = stub.FaceRecognition(req)
-
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
-
         frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
         if res.verification == "FAILED":
             msg = res.message

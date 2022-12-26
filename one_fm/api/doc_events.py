@@ -68,8 +68,7 @@ def checkin_after_insert(doc, method):
 	start_time = get_datetime(cstr(getdate()) + " 00:00:00")
 	end_time = get_datetime(cstr(getdate()) + " 23:59:59")
 
-	log_exist = frappe.db.exists("Employee Checkin", {"log_type": doc.log_type, "time": [ "between", (start_time, end_time)], "skip_auto_attendance": 0 ,
-							"shift_type": doc.shift_type, "name": ["!=", doc.name]})
+	log_exist = frappe.db.exists("Employee Checkin", {"log_type": doc.log_type, "time": [ "between", (start_time, end_time)], "skip_auto_attendance": 0 ,"shift_type": doc.shift_type, "name": ["!=", doc.name]})
 
 	if not log_exist:
 		# In case of back to back shift
