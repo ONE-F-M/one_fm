@@ -690,8 +690,8 @@ def fetch_non_shift(date, s_type):
 	return roster
 
 def assign_am_shift():
-	date = '2022-12-27' #cstr(getdate())
-	# end_previous_shifts("AM")
+	date = cstr(getdate())
+	end_previous_shifts("AM")
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
@@ -704,16 +704,15 @@ def assign_am_shift():
 				AND  st.start_time < '13:00:00')
 	""".format(date=cstr(date)), as_dict=1)
 
-	# non_shift = fetch_non_shift(date, "AM")
-	# if non_shift:
-	# 	roster.extend(non_shift)
+	non_shift = fetch_non_shift(date, "AM")
+	if non_shift:
+		roster.extend(non_shift)
 
-	#frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
-	_create_shift_assignment(roster, date, 'AM')
+	create_shift_assignment(roster, date, 'AM')
 
 def assign_pm_shift():
-	date = '2022-12-27' #cstr(getdate())
-	# end_previous_shifts("PM")
+	date = cstr(getdate())
+	end_previous_shifts("PM")
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
@@ -726,12 +725,11 @@ def assign_pm_shift():
 				)
 	""".format(date=cstr(date)), as_dict=1)
 
-	# non_shift = fetch_non_shift(date, "PM")
-	# if non_shift:
-	# 	roster.extend(non_shift)
+	non_shift = fetch_non_shift(date, "PM")
+	if non_shift:
+		roster.extend(non_shift)
 
-	# frappe.enqueue(queue_shift_assignment, roster = roster, date = date, is_async=True, queue='long')
-	_create_shift_assignment(roster, date, 'PM')
+	create_shift_assignment(roster, date, 'PM')
 
 
 def end_previous_shifts(time):
@@ -752,7 +750,7 @@ def get_shift_type(time):
 		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"]},['name'], pluck='name')
 	return shift_type
 
-def _create_shift_assignment(roster, date, time):
+def create_shift_assignment(roster, date, time):
 	owner = frappe.session.user
 	creation = now()
 	shift_type = get_shift_type(time)
@@ -849,36 +847,6 @@ def _create_shift_assignment(roster, date, time):
 		frappe.db.sql(query, values=[], as_dict=1)
 		frappe.db.commit()
 
-def queue_shift_assignment(roster, date):
-	for schedule in roster:
-		create_shift_assignment(schedule, date)
-
-def create_shift_assignment(schedule, date):
-	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":getdate(date), "status":"Active"}) and
-			frappe.db.exists('Employee', {'employee':schedule.employee, 'status':'Active'})):
-		try:
-			shift_assignment = frappe.new_doc("Shift Assignment")
-			shift_assignment.start_date = date
-			shift_assignment.employee = schedule.employee
-			shift_assignment.employee_name = schedule.employee_name
-			shift_assignment.department = schedule.department
-			shift_assignment.operations_role = schedule.operations_role
-			shift_assignment.shift = schedule.shift
-			shift_assignment.site = schedule.site
-			shift_assignment.project = schedule.project
-			shift_assignment.shift_type = schedule.shift_type
-			shift_assignment.operations_role = schedule.operations_role
-			shift_assignment.post_abbrv = schedule.post_abbrv
-			shift_assignment.roster_type = schedule.roster_type
-			shift_assignment.site_location = schedule.checkin_location
-			if frappe.db.exists("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]}):
-				shift_request, check_in_site, check_out_site = frappe.get_value("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]},["name","check_in_site","check_out_site"])
-				shift_assignment.shift_request = shift_request
-				shift_assignment.check_in_site = check_in_site
-				shift_assignment.check_out_site = check_out_site
-			shift_assignment.submit()
-		except Exception:
-			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
 
 def validate_am_shift_assignment():
 	date = cstr(getdate())
