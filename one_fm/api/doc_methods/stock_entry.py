@@ -1,7 +1,8 @@
 import frappe
 from frappe import _
 from erpnext.accounts.doctype.budget.budget import (
-	get_item_details, get_accumulated_monthly_budget, compare_expense_with_budget, get_amount
+	get_item_details, get_accumulated_monthly_budget, compare_expense_with_budget, get_ordered_amount,
+	get_actual_expense
 )
 from frappe.utils import flt, get_last_day
 
@@ -116,3 +117,51 @@ def validate_budget_records(args, budget_records):
 				compare_expense_with_budget(
 					args, flt(budget.budget_amount), _("Annual"), yearly_action, budget.budget_against, amount
 				)
+
+def get_amount(args, budget):
+	amount = 0
+
+	if budget.for_stock_entry:
+		amount = (
+			get_requested_amount(args, budget) + get_ordered_amount(args, budget) + get_actual_expense(args)
+		)
+
+	return amount
+
+def get_requested_amount(args, budget):
+	item_code = args.get("item_code")
+	condition = get_other_condition(args, budget, "Stock Entry")
+
+	data = frappe.db.sql(
+		""" select ifnull((sum(child.qty) * rate), 0) as amount
+		from `tabStock Entry Detail` child, `tabStock Entry` parent where parent.name = child.parent and
+		child.item_code = %s and parent.docstatus = 1 and {0} and
+		parent.purpose = 'Material Issue'""".format(
+			condition
+		),
+		item_code,
+		as_list=1,
+	)
+
+	return data[0][0] if data else 0
+
+def get_other_condition(args, budget, for_doc):
+	condition = "expense_account = '%s'" % (args.expense_account)
+	budget_against_field = args.get("budget_against_field")
+
+	if budget_against_field and args.get(budget_against_field):
+		condition += " and child.%s = '%s'" % (budget_against_field, args.get(budget_against_field))
+
+	if args.get("fiscal_year"):
+		start_date, end_date = frappe.db.get_value(
+			"Fiscal Year", args.get("fiscal_year"), ["year_start_date", "year_end_date"]
+		)
+
+		condition += """ and parent.%s
+			between '%s' and '%s' """ % (
+			"posting_date",
+			start_date,
+			end_date,
+		)
+
+	return condition
