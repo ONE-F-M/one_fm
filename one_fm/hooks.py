@@ -365,6 +365,9 @@ doc_events = {
 	"Email Queue": {
 		"after_insert":"one_fm.events.email_queue.after_insert",
 	},
+	"Stock Entry": {
+		"on_submit": "one_fm.api.doc_methods.stock_entry.validate_budget"
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
