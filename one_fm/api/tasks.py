@@ -928,7 +928,7 @@ def update_shift_details_in_attendance(doc, method):
 				condition += """, shift='{shift_type}' """.format(shift_type=shift_data["shift_type"])
 
 		if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
-			condition += f""", in_time="{cstr(start_datetime)}", out_time="{cstr(end_datetime)}" """
+			condition += """, in_time='{start_datetime}', out_time='{end_datetime}' """.format(start_datetime=cstr(shift_data["start_datetime"]), end_datetime=cstr(shift_data["end_datetime"]))
 	if condition:
 		query = """UPDATE `tabAttendance` SET {condition} WHERE name= "{name}" """.format(condition=condition, name = doc.name)
 		return frappe.db.sql(query)
