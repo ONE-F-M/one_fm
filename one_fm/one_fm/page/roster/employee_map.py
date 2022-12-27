@@ -195,6 +195,7 @@ class CreateMap():
         try:
             key = list(emp_dict.keys())[0]
             value = emp_dict[key]
+            
 
             if getdate(self.cur_date) not in [i['date'] for i in value]:
                 result = {
@@ -238,6 +239,7 @@ class CreateMap():
 
 
     def create_schedule_map(self,row):
+        #Update the employee data from the employee period details data structure
         schedule = [one.update(self.employee_period_details[row[1]]) for  one in self.schedule_set if one.employee==row[0] ]
         return {row[1]:schedule}
 
@@ -250,7 +252,7 @@ class CreateMap():
                     'employee_name': one.employee_name,
                     'date': one.attendance_date,
                     'attendance': one.status,
-                    'day_off_category': one.day_off_category,
-                    'number_of_days_off': one.number_of_days_off
+                    'day_off_category': self.employee_period_details[row[1]].get('day_off_category'),
+                    'number_of_days_off': self.employee_period_details[row[1]].get('number_of_days_off')
                 } for  one in self.attendance_set if one.employee == row[0]]
        return {row[1]:attendance}
