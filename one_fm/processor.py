@@ -3,20 +3,29 @@ import requests
 import json
 from twilio.rest import Client as TwilioClient
 import xml.etree.ElementTree as ET
-
+from frappe.utils.jinja import (get_email_from_template)
 
 @frappe.whitelist()
 def sendemail(recipients, subject, header=None, message=None,
 	content=None, reference_name=None, reference_doctype=None,
-	sender=None, cc=None , attachments=None, delay=None):
+	sender=None, cc=None , attachments=None, delay=None, args=None, template=None):
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
+
+	if not message:
+		message = " "
+
+	if "Administrator" in recipients:
+		recipients.remove("Administrator")
+	
+	if args:
+		extra_message, text_content = get_email_from_template("default_email", args)
+		if extra_message:
+			message += extra_message
 
 	if attachments:
 		message += """
 			<p>Please find the attached Document in the mail below.</p>
 		"""
-	if "Administrator" in recipients:
-		recipients.remove("Administrator")
 
 	for recipient in recipients:
 		if is_user_id_not_company_prefred_email_in_employee(recipient):
