@@ -190,10 +190,13 @@ class CreateMap():
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
         #Add missing  calendar days 
         res=list(map(self.add_blank_days,iter(self.date_range)))
+    
 
     def add_blanks(self,emp_dict):
+        #Add the days individually for each employee
         try:
             key = list(emp_dict.keys())[0]
+            
             value = emp_dict[key]
 
             if getdate(self.cur_date) not in [i['date'] for i in value]:
@@ -210,15 +213,18 @@ class CreateMap():
                     self.formated_rs[key] = [result]
             else:
                 if self.formated_rs.get(key):
-                    #record has been previously added
-                    if key not in self.merged_employees:
-                        self.formated_rs[key]+=value
-                        self.merged_employees.append(key)
+                    # if key not in self.merged_employees:
+                    month_data = [u for u in value if self.cur_date == cstr(u['date'])][0]
+                    self.formated_rs[key].append(month_data)
+                
                 else:
-                    self.formated_rs[key] = value
+                    self.formated_rs[key] = [u for u in value if self.cur_date == cstr(u['date'])]
         except KeyError:
             pass
         return self.formated_rs
+
+
+    
 
     def create_missing_days(self,key):
         missing_days = []
