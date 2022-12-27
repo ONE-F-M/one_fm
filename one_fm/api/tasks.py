@@ -53,7 +53,7 @@ def send_checkin_hourly_reminder():
 			message = _('<a class="btn btn-warning" href="/app/face-recognition">Hourly Check In</a>')
 			send_notification(title, subject, message, category, recipients)
 
-def checkin_checkout_reminder():
+def checkin_checkout_initial_reminder():
 	"""
 	This function sends a push notification to users to remind them to checkin/checkout at the start/end time of their shift.
 	"""
@@ -67,106 +67,93 @@ def checkin_checkout_reminder():
 		# Get list of active shifts
 		shifts_list = get_active_shifts(now_time)
 
-		for shift in shifts_list:
-			date = getdate()
-			if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
-				date = getdate() - timedelta(days=1)
-
-			# Current time == shift start time => Checkin
-			if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
-				recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
-				if len(recipients) > 0:
-
-					notification_title = _("Checkin reminder")
-					notification_body = _("Don't forget to checkin!")
-
-					for recipient in recipients:
-
-						# Get Employee ID and User Role for the given recipient
-						employee_id = recipient.name
-						user_roles = frappe.get_roles(recipient.user_id)
-
-						# Send push notifications
-						if "Head Office Employee" in user_roles:
-							# Arrive late option is true only if the employee has the user role "Head Office Employee".
-							push_notification_rest_api_for_checkin(employee_id, notification_title, notification_body, checkin=True, arriveLate=True, checkout=False)
-						else:
-							push_notification_rest_api_for_checkin(employee_id, notification_title, notification_body, checkin=True, arriveLate=False, checkout=False)
-
-
-			# current time == shift end time => Checkout
-			if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
-				recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
-
-				if len(recipients) > 0:
-
-					notification_title = _("Checkout reminder")
-					notification_body = _("Don't forget to checkout!")
-
-					for recipient in recipients:
-
-						# Get Employee ID and User Role for the given recipient
-						employee_id = recipient.name
-						user_roles = frappe.get_roles(recipient.user_id)
-
-						push_notification_rest_api_for_checkin(employee_id, notification_title, notification_body, checkin=False, arriveLate=False, checkout=True)
+		frappe.enqueue(schedule_initial_reminder, shifts_list=shifts_list, now_time=now_time, is_async=True, queue='long')
 
 	except Exception as error:
 		frappe.log_error(str(error), 'Checkin/checkout initial reminder failed')
 
+def schedule_initial_reminder(shifts_list, now_time):
+	notification_title = _("Checkout reminder")
+	notification_subject_in = _("Don't forget to Checkin!")
+	notification_subject_out = _("Don't forget to CheckOut!")
+
+	for shift in shifts_list:
+		date = getdate()
+		if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
+			date = getdate() - timedelta(days=1)
+
+		# Current time == shift start time => Checkin
+		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
+			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
+			if len(recipients) > 0:
+				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in)
+
+		# current time == shift end time => Checkout
+		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
+			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
+
+			if len(recipients) > 0:
+				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="OUT", notification_title= notification_title, notification_subject=notification_subject_out)
 
 def checkin_checkout_final_reminder():
-	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
-		return
+	"""
+	This function sends a final notification to users to remind them to checkin/checkout.
+	"""
+	try:
+		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
+			return
 
-	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
-	shifts_list = get_active_shifts(now_time)
+		now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
+		shifts_list = get_active_shifts(now_time)
 
-	#Send final reminder to checkin or checkout to employees who have not even after shift has ended
+		#Send final reminder to checkin or checkout to employees who have not even after shift has ended
+		frappe.enqueue(schedule_final_notification, shifts_list=shifts_list, now_time=now_time, is_async=True, queue='long')
+	except Exception as error:
+		frappe.log_error(str(error), 'Checkin/checkout final reminder failed')
+
+def schedule_final_notification(shifts_list, now_time):
+	notification_title = _("Final Reminder")
+	notification_subject_in =  _("Please checkin in the next five minutes.")
+	notification_subject_out =  _("Please checkin in the next five minutes.")
+
+	
 	for shift in shifts_list:
-		frappe.enqueue(schedule_final_notification, shift=shift, now_time=now_time, is_async=True, queue='long')
+		date = getdate()
+		if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
+			date = getdate() - timedelta(days=1)
+		# shift_start is equal to now time - notification reminder in mins
+		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
+		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
+			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 
-def schedule_final_notification(shift, now_time):
-	date = getdate()
-	if shift.start_time < shift.end_time and now_time < cstr(shift.start_time):
-		date = getdate() - timedelta(days=1)
+			if len(recipients) > 0:
+				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in)
 
-	# shift_start is equal to now time - notification reminder in mins
-	# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
-	if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
-		recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
+		# shift_end is equal to now time - notification reminder in mins
+		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
+		if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
+			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
 
-		if len(recipients) > 0:
-			notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN")
-
-	# shift_end is equal to now time - notification reminder in mins
-	# Employee won't receive checkout notification when accepted Leave Early shift permission is present
-	if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
-		recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
-
-		if len(recipients) > 0:
-			notify_checkin_checkout_final_reminder(recipients=recipients,log_type="OUT")
+			if len(recipients) > 0:
+				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_out)
 
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
-def notify_checkin_checkout_final_reminder(recipients,log_type):
+def notify_checkin_checkout_final_reminder(recipients, log_type, notification_title, notification_subject):
 	"""
 	params:
 	recipients: Dictionary consist of user ID and Emplloyee ID eg: [{'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}]
 	log_type: In or Out
 	"""
 	#defining the subject and message
-	title  = "Final Reminder"
 	notification_category = "Attendance"
 
-	checkin_subject = _("Please checkin in the next five minutes.")
 	checkin_message = _("""
 					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
 					Submit a Shift Permission if you are plannig to arrive late or is there any issue in checkin or forget to checkin
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					""")
 
-	checkout_subject = _("Please checkout in the next five minutes.")
 	checkout_message = _("""
 		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
 		Submit a Shift Permission if you are plannig to leave early or is there any issue in checkout or forget to checkout
@@ -188,18 +175,18 @@ def notify_checkin_checkout_final_reminder(recipients,log_type):
 		if log_type=="IN":
 			#arrive late button is true only if the employee has the user role "Head Office Employee".
 			if "Head Office Employee" in user_roles:
-				push_notification_rest_api_for_checkin(employee_id, title, checkin_subject, checkin=True,arriveLate=True,checkout=False)
+				push_notification_rest_api_for_checkin(employee_id, notification_title, notification_subject, checkin=True,arriveLate=True,checkout=False)
 			else:
-				push_notification_rest_api_for_checkin(employee_id, title, checkin_subject, checkin=True,arriveLate=False,checkout=False)
+				push_notification_rest_api_for_checkin(employee_id, notification_title, notification_subject, checkin=True,arriveLate=False,checkout=False)
 		if log_type=="OUT":
-			push_notification_rest_api_for_checkin(employee_id, title, checkout_subject, checkin=False,arriveLate=False,checkout=True)
+			push_notification_rest_api_for_checkin(employee_id, notification_title, notification_subject, checkin=False,arriveLate=False,checkout=True)
 
 
 	# send notification mail to list of employee using user_id
 	if log_type == "IN":
-		send_notification(title, checkin_subject, checkin_message,notification_category,user_id_list)
+		send_notification(notification_title, checkin_subject, checkin_message,notification_category,user_id_list)
 	elif log_type == "OUT":
-		send_notification(title, checkout_subject, checkout_message, notification_category, user_id_list)
+		send_notification(notification_title, checkout_subject, checkout_message, notification_category, user_id_list)
 
 @frappe.whitelist()
 def checkin_checkout_supervisor_reminder():
@@ -318,43 +305,44 @@ def checkin_checkout_query(date, shift_type, log_type):
 	else:
 		permission_type = ("Leave Early", "Forget to Checkout", "Checkout Issue")
 
-	query = frappe.db.sql("""
-				SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, emp.holiday_list, tSA.shift FROM `tabShift Assignment` tSA, `tabEmployee` emp
+	query = frappe.db.sql("""SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, emp.holiday_list, tSA.shift 
+					FROM `tabShift Assignment` tSA, `tabEmployee` emp
 					WHERE
 						tSA.employee=emp.name
 					AND tSA.start_date='{date}'
 					AND tSA.shift_type='{shift_type}'
 					AND tSA.docstatus=1
-					AND NOT EXISTS(SELECT * FROM `tabShift Permission` emp_sp
-					WHERE
-						emp_sp.employee=emp.name
-					AND emp_sp.workflow_state='Approved'
-					AND emp_sp.shift_type='{shift_type}'
-					AND emp_sp.date='{date}'
-					AND emp_sp.permission_type IN {permission_type})
-					AND NOT EXISTS(SELECT * FROM `tabAttendance Request` att_req
-					WHERE
-						att_req.employee=emp.name
-					AND att_req.workflow_state='Approved'
-					AND att_req.reason='Work From Home'
-					AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date)
-					AND NOT EXISTS(SELECT * FROM `tabLeave Application` LA
-					WHERE
-						LA.employee=emp.name
-					AND LA.workflow_state='Approved'
-					AND CAST('{date} ' as date) BETWEEN LA.from_date AND LA.to_date)
-					AND tSA.employee
-					NOT IN(SELECT employee FROM `tabEmployee Checkin` empChkin
-					WHERE
-						empChkin.log_type="IN"
-					AND empChkin.skip_auto_attendance=0
-					AND date(empChkin.time)='{date}'
-					AND empChkin.shift_type='{shift_type}')
-					AND NOT EXISTS(SELECT * from `tabHoliday` h
+					AND tSA.start_date NOT IN
+					(SELECT holiday_date from `tabHoliday` h
 					WHERE
 						h.parent = emp.holiday_list
 					AND h.holiday_date = '{date}')
-				""".format(date=cstr(date), shift_type=shift_type, log_type=log_type, permission_type=permission_type), as_dict=1)
+					AND emp.name NOT IN 
+					(SELECT employee FROM `tabShift Permission` emp_sp
+						WHERE
+							emp_sp.workflow_state='Approved'
+						AND emp_sp.shift_type='{shift_type}'
+						AND emp_sp.date='{date}'
+						AND emp_sp.permission_type IN {permission_type}
+					UNION ALL 
+					SELECT employee FROM `tabAttendance Request` att_req
+						WHERE
+							att_req.workflow_state='Approved'
+						AND att_req.reason='Work From Home'
+						AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date
+					UNION ALL 
+					SELECT employee FROM `tabLeave Application` LA
+						WHERE
+							LA.workflow_state='Approved'
+						AND CAST('{date} ' as date) BETWEEN LA.from_date AND LA.to_date
+					UNION ALL
+					SELECT employee FROM `tabEmployee Checkin` empChkin
+						WHERE
+							empChkin.log_type='{log_type}'
+						AND empChkin.skip_auto_attendance=0
+						AND date(empChkin.time)='{date}'
+						AND empChkin.shift_type='{shift_type}')
+					""".format(date=cstr(date), shift_type=shift_type, log_type=log_type, permission_type=permission_type), as_dict=1)
 	return query
 
 @frappe.whitelist()
