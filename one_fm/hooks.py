@@ -368,6 +368,9 @@ doc_events = {
 	"Stock Entry": {
 		"on_submit": "one_fm.api.doc_methods.stock_entry.validate_budget"
 	},
+	"Communication": {
+		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
