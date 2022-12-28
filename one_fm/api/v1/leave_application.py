@@ -43,7 +43,8 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
             return response("Resource Not Found", 404, None, "No employee record found for {employee_id}".format(employee_id=employee_id))
 
         if not leave_id:
-            leave_list = frappe.get_all("Leave Application", {'employee':employee}, ["name","leave_type", "status","from_date", "total_leave_days"])
+            leave_list = frappe.get_all("Leave Application", {'employee':employee},
+                ["name", "leave_type", "status", "from_date", "total_leave_days", "leave_approver", "posting_date"])
             if leave_list and len(leave_list) > 0:
                 return response("Success", 200, leave_list)
             else:
@@ -318,7 +319,7 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
 @frappe.whitelist()
 def fetch_leave_approver(employee: str) -> str:
     """This function fetches the leave approver for a given employee.
-    The leave approver is fetched  either Report_to or Leave Approver. 
+    The leave approver is fetched  either Report_to or Leave Approver.
     But, if both don't exist, Operation manager is the Leave Approver.
 
     Args:
@@ -327,7 +328,7 @@ def fetch_leave_approver(employee: str) -> str:
     Returns:
         str: user id of leave approver
     """
-    reports_to = frappe.get_value("Employee", employee, ["reports_to"])     
+    reports_to = frappe.get_value("Employee", employee, ["reports_to"])
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
     if reports_to:
         approver = frappe.get_value("Employee", reports_to, ["user_id"])
