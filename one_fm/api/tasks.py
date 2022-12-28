@@ -760,7 +760,7 @@ def create_shift_assignment(roster, date, time):
 		'start_date': date,
 		'shift_type': ['IN', shift_type],
 		'docstatus': 1,
-		'roster_type': ['IN', ['Basic', 'Over-Time']],
+		'roster_type': ['IN', ['Basic']],
 		'status':'Active',
 		},
 		fields=['employee']
