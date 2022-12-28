@@ -798,7 +798,7 @@ def create_shift_assignment(roster, date, time):
 		for r in roster:
 			if not r.employee in existing_shift_list:
 				_shift_type = shift_types_dict.get(r.shift_type) or frappe.get_doc("Shift Type", '"Standard|Morning|08:00:00-17:00:00|9 hours"')
-				
+				print(_shift_type)
 				query += f"""
 				(
 					"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}', 
