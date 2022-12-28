@@ -867,13 +867,44 @@ def process_overtime_shift(roster, date, time):
 				shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
 				#check if the given shift has ended
 				# Set status inactive before creating new shift
+				print(shift_end_time, time)
 				if str(shift_end_time) == str(time):
+					print('if')
 					frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
-					create_shift_assignment(schedule, date)
+					create_overtime_shift_assignment(schedule, date)
+				print('else')
 			else:
-				create_shift_assignment(schedule, date)
+				create_overtime_shift_assignment(schedule, date)
 		except Exception as e:
 			pass
+
+def create_overtime_shift_assignment(schedule, date):
+	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":getdate(date), "status":"Active"}) and
+			frappe.db.exists('Employee', {'employee':schedule.employee, 'status':'Active'})):
+		try:
+			shift_assignment = frappe.new_doc("Shift Assignment")
+			shift_assignment.start_date = date
+			shift_assignment.employee = schedule.employee
+			shift_assignment.employee_name = schedule.employee_name
+			shift_assignment.department = schedule.department
+			shift_assignment.operations_role = schedule.operations_role
+			shift_assignment.shift = schedule.shift
+			shift_assignment.site = schedule.site
+			shift_assignment.project = schedule.project
+			shift_assignment.shift_type = schedule.shift_type
+			shift_assignment.operations_role = schedule.operations_role
+			shift_assignment.post_abbrv = schedule.post_abbrv
+			shift_assignment.roster_type = schedule.roster_type
+			shift_assignment.site_location = schedule.checkin_location
+			if frappe.db.exists("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]}):
+				shift_request, check_in_site, check_out_site = frappe.get_value("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]},["name","check_in_site","check_out_site"])
+				shift_assignment.shift_request = shift_request
+				shift_assignment.check_in_site = check_in_site
+				shift_assignment.check_out_site = check_out_site
+			shift_assignment.submit()
+		except Exception:
+			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
+
 
 def update_shift_type():
 	today_datetime = now_datetime()
