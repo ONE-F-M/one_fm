@@ -747,13 +747,13 @@ def create_shift_assignment(roster, date, time):
 		fields=['name', 'shift_type', 'start_time', 'end_time'])
 	shift_types_dict = {}
 	for i in shift_types:
-		i = frappe._dict(dict(i))
 		i.start_datetime = f"{date} {i.start_time}"
 		if i.end_time.total_seconds() < i.start_time.total_seconds():
 			i.end_datetime = f"{add_days(date, 1)} {i.end_time}"
 		else:
 			i.end_datetime = f"{date} {i.end_time}"
 		shift_types_dict[i.name] = i
+	default_shift = frappe.get_doc("Shift Type", '"Standard|Morning|08:00:00-17:00:00|9 hours"').as_dict()
 
 
 	existing_shift = frappe.db.get_list("Shift Assignment", filters={
@@ -797,7 +797,7 @@ def create_shift_assignment(roster, date, time):
 		"""
 		for r in roster:
 			if not r.employee in existing_shift_list:
-				_shift_type = shift_types_dict.get(r.shift_type) or frappe.get_doc("Shift Type", '"Standard|Morning|08:00:00-17:00:00|9 hours"')
+				_shift_type = shift_types_dict.get(r.shift_type) or default_shift
 				print(_shift_type)
 				query += f"""
 				(
