@@ -457,7 +457,7 @@ def enqueue_op_list(operations_post_list):
 		frappe.enqueue(enqueue_contracts_date, operations_post=operations_post, is_async=True, queue="long")
 
 def enqueue_contracts_date(operations_post):
-	for date in	pd.date_range(today(), operations_post.contract_end_date):
+	for date in pd.date_range(today(), operations_post.contract_end_date):
 		sch = frappe.new_doc("Post Schedule")
 		sch.post = operations_post.name
 		sch.date = cstr(date.date())
