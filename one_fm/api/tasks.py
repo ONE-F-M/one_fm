@@ -795,10 +795,12 @@ def create_shift_assignment(roster, date, time):
 			`shift_request`, `check_in_site`, `check_out_site`)
 			VALUES 
 		"""
+		# check if all roster has been done
+		has_rostered = False
 		for r in roster:
 			if not r.employee in existing_shift_list:
 				_shift_type = shift_types_dict.get(r.shift_type) or default_shift
-				print(_shift_type)
+				
 				query += f"""
 				(
 					"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}', 
@@ -811,6 +813,8 @@ def create_shift_assignment(roster, date, time):
 					query += f""", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}"), """
 				else:
 					query += """, '', '', ''),"""
+			else:
+				has_rostered = True
 		
 		query = query[:-1]
 		query += f"""
@@ -837,9 +841,9 @@ def create_shift_assignment(roster, date, time):
 				shift_classification = VALUES(shift_classification),
 				status = VALUES(status)
 			"""
-		
-		frappe.db.sql(query, values=[], as_dict=1)
-		frappe.db.commit()
+		if not has_rostered:
+			frappe.db.sql(query, values=[], as_dict=1)
+			frappe.db.commit()
 
 
 def overtime_shift_assignment():
