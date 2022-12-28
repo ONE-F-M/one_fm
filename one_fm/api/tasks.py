@@ -747,6 +747,7 @@ def create_shift_assignment(roster, date, time):
 		fields=['name', 'shift_type', 'start_time', 'end_time'])
 	shift_types_dict = {}
 	for i in shift_types:
+		i = frappe._dict(dict(i))
 		i.start_datetime = f"{date} {i.start_time}"
 		if i.end_time.total_seconds() < i.start_time.total_seconds():
 			i.end_datetime = f"{add_days(date, 1)} {i.end_time}"
