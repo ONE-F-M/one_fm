@@ -56,7 +56,6 @@ def check_roster_day_off():
 				supervisor_dict[res.supervisor] += res.data
 			else:
 				supervisor_dict[res.supervisor] = res.data
-
 	# create data
 	for k, v in supervisor_dict.items():
 		if k and v:
@@ -159,7 +158,7 @@ def validate_offs(emp, project_cycle, supervisor):
 					'employee': emp.name,
 					'day_off_difference': day_off_diff
 				})
-
+				
 			start_date = add_days(end_date, 1)
 			end_date = add_days(start_date, 7)
 	return frappe._dict({'supervisor': supervisor, 'data': datalist})

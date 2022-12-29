@@ -22,8 +22,11 @@ class PostMap():
         # self.keys = [[one.post_abbrv,one.operations_role] for one in operations_roles_list]
         self.post_filled_summary = []
         self.post_schedule_summary = []
-        self.post_filled_count = frappe.db.get_all("Employee Schedule",["name", "employee", "date",'operations_role'] ,{'date':  ['between', (start, end)],'operations_role': ['in',self.operation_roles] })
+        filters.update({'operations_role': ['in',self.operation_roles]})
+        # self.post_filled_count = frappe.db.get_all("Employee Schedule",["name", "employee", "date",'operations_role'] ,{'date':  ['between', (start, end)],'operations_role': ['in',self.operation_roles] })
+        self.post_filled_count = frappe.db.get_all("Employee Schedule",["name", "employee", "date",'operations_role'] ,filters)
         filters.update({"post_status": "Planned",'operations_role':['in',self.operation_roles]})
+        filters.pop('operations_role')
         self.filters = filters
         self.post_schedule_count = frappe.db.get_all("Post Schedule", ['operations_role',"name", "date"], filters, ignore_permissions=True)
         self.start_mapping()
@@ -31,10 +34,6 @@ class PostMap():
     def create_template(self,row):
         self.template[row.post_abbrv] = []
         return
-
-
-    def generate_highlights(self):
-        pass
 
 
 
@@ -45,6 +44,8 @@ class PostMap():
         else:
             self.post_schedule_map[each.operations_role] = [one for one in self.post_schedule_count if one.operations_role ==each.operations_role]
         return self.post_schedule_map
+        
+
 
     def sort_post_filled(self,each):
         if self.post_filled_map.get(each.operations_role):
@@ -132,6 +133,7 @@ class CreateMap():
     """
     def __init__(self,start,end,employees,filters,isOt):
         self.start = start
+        
         self.formated_rs = {}
         self.employee_period_details = {}
         self.merged_employees =[]
@@ -139,7 +141,6 @@ class CreateMap():
         self.employees = tuple([u.employee for u in  employees])
         self.all_employees = employees
         self.str_filter = filters
-
         self.isOt = isOt
         if self.isOt:
             self.str_filter+=' and es.roster_type = "Over-Time"'
@@ -173,25 +174,28 @@ class CreateMap():
 
     def combine_maps(self,iter1,iter2):
         key = list(iter1.keys())[0]
+        
         return {key:iter1[key]+iter2[key]}
 
 
     def start_mapping(self):
         filters = [[i.employee,i.employee_name] for i in  self.all_employees]
+        #Fetch all employee details
+        self.employee_details = list(map(self.create_employee_schedule,self.employee_set))
         #Create the attendance iterable for each employee using python map
         self.att_map=list(map(self.create_attendance_map,filters))
         #Create the schedule iterable for each employee using python map
         self.sch_map = list(map(self.create_schedule_map,filters))
-         #Fetch all employee details
-        self.employee_details = list(map(self.create_employee_schedule,self.employee_set))
         #Combine both the attenance and schedule maps,
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
+        #Add missing  calendar days 
         res=list(map(self.add_blank_days,iter(self.date_range)))
 
     def add_blanks(self,emp_dict):
         try:
             key = list(emp_dict.keys())[0]
             value = emp_dict[key]
+            
 
             if getdate(self.cur_date) not in [i['date'] for i in value]:
                 result = {
@@ -207,6 +211,7 @@ class CreateMap():
                     self.formated_rs[key] = [result]
             else:
                 if self.formated_rs.get(key):
+                    #record has been previously added
                     if key not in self.merged_employees:
                         self.formated_rs[key]+=value
                         self.merged_employees.append(key)
@@ -218,6 +223,9 @@ class CreateMap():
 
     def create_missing_days(self,key):
         missing_days = []
+            
+        return self.formated_rs
+
 
     def add_blank_days(self,date):
         self.cur_date = cstr(date).split(' ')[0]
@@ -231,7 +239,8 @@ class CreateMap():
 
 
     def create_schedule_map(self,row):
-        schedule = [one for  one in self.schedule_set if one.employee==row[0] ]
+        #Update the employee data from the employee period details data structure
+        schedule = [one.update(self.employee_period_details[row[1]]) for  one in self.schedule_set if one.employee==row[0] ]
         return {row[1]:schedule}
 
 
@@ -243,7 +252,7 @@ class CreateMap():
                     'employee_name': one.employee_name,
                     'date': one.attendance_date,
                     'attendance': one.status,
-                    'day_off_category': one.day_off_category,
-                    'number_of_days_off': one.number_of_days_off
+                    'day_off_category': self.employee_period_details[row[1]].get('day_off_category'),
+                    'number_of_days_off': self.employee_period_details[row[1]].get('number_of_days_off')
                 } for  one in self.attendance_set if one.employee == row[0]]
        return {row[1]:attendance}

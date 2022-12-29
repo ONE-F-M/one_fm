@@ -368,6 +368,9 @@ doc_events = {
 	"Stock Entry": {
 		"on_submit": "one_fm.api.doc_methods.stock_entry.validate_budget"
 	},
+	"Communication": {
+		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -508,7 +511,7 @@ scheduler_events = {
 		],
 		"0/5 * * * *": [
 			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
-			"one_fm.api.tasks.checkin_checkout_reminder",
+			"one_fm.api.tasks.checkin_checkout_initial_reminder",
 			"one_fm.api.tasks.checkin_checkout_final_reminder",
 			"one_fm.api.tasks.checkin_deadline",
 			"one_fm.api.tasks.overtime_shift_assignment"
@@ -594,21 +597,15 @@ scheduler_events = {
 		"15 0 * * *": [
 			'one_fm.api.tasks.assign_am_shift'
 		],
-		"45 1 * * *": [
-			'one_fm.api.tasks.validate_am_shift_assignment'
-		],
 		# "45 1 * * *": [
-		# 	'one_fm.api.tasks.assign_am_shift'
+		# 	'one_fm.api.tasks.validate_am_shift_assignment'
 		# ],
 		"15 12 * * *": [
 			'one_fm.api.tasks.assign_pm_shift'
 		],
-		"45 13 * * *": [
-			'one_fm.api.tasks.validate_pm_shift_assignment'
-		],
 		# "45 13 * * *": [
-		# 	'one_fm.api.tasks.assign_pm_shift'
-		# ]
+		# 	'one_fm.api.tasks.validate_pm_shift_assignment'
+		# ],
 	}
 }
 
