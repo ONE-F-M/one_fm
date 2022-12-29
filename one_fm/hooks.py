@@ -438,6 +438,7 @@ override_doctype_class = {
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
+	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 

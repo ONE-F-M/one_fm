@@ -142,7 +142,6 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
         # setup stub
         stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
-
         # request body
         req = facial_recognition_pb2.FaceRecognitionRequest(
             username = frappe.session.user,
@@ -153,7 +152,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         res = stub.FaceRecognition(req)
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        #frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
+        frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
         if res.verification == "FAILED":
             msg = res.message
             data = res.data
@@ -161,7 +160,6 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if res.verification == "OK":
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
             return response("Success", 201, doc, None)
-
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
