@@ -3,12 +3,13 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import today, add_days, get_url, time_diff_in_hours
+from frappe.utils import today, add_days, get_url, time_diff_in_hours, cstr, getdate
 from frappe.integrations.offsite_backup_utils import get_latest_backup_file, send_email, validate_file_size, get_chunk_site
 from one_fm.api.notification import create_notification_log
 from frappe.utils.user import get_users_with_role
 from hrms.hr.utils import get_holidays_for_employee
 import json
+import pandas as pd
 
 @frappe.whitelist()
 def employee_grade_validate(doc, method):
@@ -429,3 +430,35 @@ def create_role_if_not_exists(roles, desk_access=True):
 				"desk_access": desk_access
 			})
 			doc.insert(ignore_permissions=True)
+
+@frappe.whitelist()
+def create_post_schedule(my_date=today()):
+	'''
+		Method to create Post Schedule for the Operations Post,
+		Get all the Operations Post for Project which is having contracts with end_date >= my_date
+	'''
+	user_roles = frappe.get_roles(frappe.session.user)
+	if 'System Manager' in user_roles:
+		query = """
+			select
+				op.name as op_name, cs.end_date as contract_end_date, op.project, cs.name as contract
+			from
+				`tabOperations Post` op, `tabContracts` cs
+			where
+				op.project=cs.project and cs.end_date >= '{0}' and cs.workflow_state = 'Active'
+		"""
+		operations_post_list = frappe.db.sql(query.format(getdate(my_date)), as_dict=True)
+		if operations_post_list and len(operations_post_list) > 0:
+			frappe.enqueue(enqueue_op_list, operations_post_list=operations_post_list, is_async=True, queue="long")
+
+def enqueue_op_list(operations_post_list):
+	project_contract = {}
+	for operations_post in operations_post_list:
+		frappe.enqueue(enqueue_contracts_date, operations_post=operations_post, is_async=True, queue="long")
+
+def enqueue_contracts_date(operations_post):
+	for date in pd.date_range(today(), operations_post.contract_end_date):
+		sch = frappe.new_doc("Post Schedule")
+		sch.post = operations_post.name
+		sch.date = cstr(date.date())
+		sch.save()
