@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="d7bb594c-9e63-448b-a44d-ff59a88ff080" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/api/tasks.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/tasks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/v1/roster.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/v1/roster.py" afterDir="false" />
-    </list>
+    <list default="true" id="d7bb594c-9e63-448b-a44d-ff59a88ff080" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
