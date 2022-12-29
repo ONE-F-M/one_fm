@@ -28,26 +28,27 @@ def send_slack_message(message):
             [i for i in default_api_integration.integration_setting
             if i.app_name=='Slack Issue'][0].setting)
             # attach link
-        url = f'<a href="{frappe.utils.get_url()}/app/issue?status=Open">Issue List</a>'
-        link_to_doc = {
-			"fallback": _("See the document at {0}").format(url),
-			"actions": [
-				{
-					"type": "button",
-					"text": _("Go to the document"),
-					"url": url,
-					"style": "primary",
-				}
-			],
-		}
-        data["attachments"].append(link_to_doc)
-        r = requests.post(webhook.url, data=json.dumps(data), timeout=60)
-        if not r.ok:
-            message = error_messages.get(r.status_code, r.status_code)
-            frappe.log_error(message, _('Slack Webhook Error'))
-            return 'error'
+        if webhook.active:
+            url = f'<a href="{frappe.utils.get_url()}/app/issue?status=Open">Issue List</a>'
+            link_to_doc = {
+                "fallback": _("See the document at {0}").format(url),
+                "actions": [
+                    {
+                        "type": "button",
+                        "text": _("Go to the document"),
+                        "url": url,
+                        "style": "primary",
+                    }
+                ],
+            }
+            data["attachments"].append(link_to_doc)
+            r = requests.post(webhook.url, data=json.dumps(data), timeout=60)
+            if not r.ok:
+                message = error_messages.get(r.status_code, r.status_code)
+                frappe.log_error(message, _('Slack Webhook Error'))
+                return 'error'
 
-        return 'success'
+            return 'success'
     except Exception as e:
         frappe.log_error(
             frappe.get_traceback(),
