@@ -462,3 +462,30 @@ def enqueue_contracts_date(operations_post):
 		sch.post = operations_post.name
 		sch.date = cstr(date.date())
 		sch.save()
+
+
+def attach_abbreviation_to_roles():
+    list_of_roles = frappe.db.get_list("Operations Role", {"post_abbrv": ["=", ""]})
+    if list_of_roles:
+        for role_name in list_of_roles:
+            role = frappe.get_doc("Operations Role", role_name)
+            name = str(role.post_name).split()
+            if len(name) == 1:
+                role.post_abbrv = str(name[0][0:2]).upper()
+            elif len(name) > 1:
+                post_abbrv = ""
+                for ind, val in enumerate(name):
+                    if ind == (len(name) - 1):
+                        try:
+                            last_val = int(val)
+                            post_abbrv += f" {str(last_val)}"
+                        except:
+                            post_abbrv += val[0].upper()
+                    else:
+                        post_abbrv += val[0].upper()
+                role.post_abbrv = post_abbrv
+            role.save(ignore_permissions=True)
+            frappe.db.commit()
+
+
+
