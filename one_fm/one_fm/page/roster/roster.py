@@ -479,7 +479,7 @@ def queue_employee_schedule_empdetail(employees, id_list):
 		employee_name = VALUES(employee_name),
 		department = VALUES(department)
 	"""
-	frappe.db.sql(query)
+	frappe.db.sql(query, values=[], as_dict=1)
 	frappe.db.commit()
 
 def update_employee_shift(employees, shift, owner, creation):
