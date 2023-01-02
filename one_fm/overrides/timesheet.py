@@ -3,6 +3,66 @@ import itertools
 from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
 from calendar import monthrange  
 from one_fm.api.utils import get_reports_to_employee_name
+from erpnext.projects.doctype.timesheet.timesheet import *
+
+
+class TimesheetOveride(Timesheet):
+    def validate(self):
+        self.set_status()
+        self.validate_dates()
+        self.validate_time_logs()
+        self.update_cost()
+        self.calculate_total_amounts()
+        self.calculate_percentage_billed()
+        self.set_dates()
+
+
+    def before_submit(self):
+        current_date = getdate()
+        allowed_role = "HR Manager"
+        if allowed_role not in frappe.get_roles(frappe.session.user):
+            if self.start_date != current_date or self.end_date != current_date:
+                frappe.throw("Not allowed to submit doc for previous date")
+
+
+    def on_submit(self):
+        self.validate_mandatory_fields()
+        self.update_task_and_project()
+        self.create_attendance()
+
+    def create_attendance(self):
+        employee_shift = frappe.get_value("Employee", self.employee,["default_shift"])
+        if not employee_shift:
+            frappe.throw(f"{self.employee} have no default shift assigned, please set a default shift in employee record.")
+            
+        expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
+        if expected_working_duration and expected_working_duration < self.total_hours:
+            frappe.msgprint("Kindly, note that {employee} has overtimed the expected working hour".format(employee=self.employee))
+        else:
+            if frappe.db.exists({'doctype':'Attendance', 'attendance_date': self.start_date, 'employee': self.employee,}):
+                att = frappe.get_doc("Attendance", {'attendance_date': self.start_date, 'employee': self.employee,})
+                if att.status == 'Absent':
+                    att.db_set("status", "Present")
+                    att.db_set("shift", employee_shift)
+                    att.db_set("timesheet", self.name)
+                    att.db_set("working_hours", self.total_hours, notify=True)
+            else:
+                att = frappe.new_doc("Attendance")
+                att.employee = self.employee
+                att.employee_name = self.employee_name
+                att.attendance_date = self.start_date
+                att.company = self.company
+                att.timesheet = self.name
+                att.status = "Present"
+                att.shift = employee_shift
+                att.working_hours = self.total_hours
+                att.insert(ignore_permissions=True)
+                att.submit()
+
+
+
+
+
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
     filters = {
@@ -134,24 +194,6 @@ def fetch_approver(employee):
         else:
             frappe.throw("No approver found for {employee}".format(employee=employee))
 
-def mark_attendance_from_timesheet(doc, event):
-    if doc.workflow_state == "Approved":
-        employee_shift = frappe.get_value("Employee", doc.employee,["default_shift"])
-        expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
-
-        if expected_working_duration and expected_working_duration < doc.total_hours:
-            frappe.msgprint("Kindly, note that {employee} has overtimed the expected working hour".format(employee=doc.employee))
-        else:
-            att = frappe.new_doc("Attendance")
-            att.employee = doc.employee
-            att.employee_name = doc.employee_name
-            att.attendance_date = doc.start_date
-            att.company = doc.company
-            att.status = "Present"
-            att.shift = employee_shift
-            att.working_hours = doc.total_hours
-            att.insert(ignore_permissions=True)
-            att.submit()
 
 def validate_timesheet_count(doc, event):
     if doc.workflow_state == "Approved":

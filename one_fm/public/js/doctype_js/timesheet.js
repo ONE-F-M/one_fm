@@ -7,7 +7,7 @@ frappe.ui.form.on('Timesheet', {
 function set_approver(frm){
     if(frm.doc.employee){
         frappe.call({
-            method: 'one_fm.one_fm.timesheet_custom.fetch_approver',
+            method: 'one_fm.overrides.timesheet.fetch_approver',
             args:{
                 'employee':frm.doc.employee
             },

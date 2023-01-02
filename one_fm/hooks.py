@@ -180,10 +180,6 @@ doc_events = {
 		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po",
 		"on_update_after_submit": "one_fm.purchase.utils.set_po_letter_head"
 	},
-	"Timesheet":{
-		"on_update_after_submit":"one_fm.one_fm.timesheet_custom.mark_attendance_from_timesheet",
-		"validate":"one_fm.one_fm.timesheet_custom.validate_date",
-	},
 	"Leave Application": {
 		"on_submit": ["one_fm.utils.leave_appillication_on_submit"],
 		"validate": [
@@ -440,6 +436,7 @@ override_doctype_class = {
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
+	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
 }
 
 
@@ -475,7 +472,6 @@ scheduler_events = {
 	"weekly": [
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_sites_followup',
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_penalty',
-		'one_fm.tasks.one_fm.monthly.employee_schedule_monthly',
    ],
 
 	"monthly": [

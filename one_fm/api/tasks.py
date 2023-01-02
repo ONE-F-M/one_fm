@@ -652,7 +652,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 def fetch_non_shift(date, s_type):
 	if s_type == "AM":
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,  
-				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
+				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
@@ -664,7 +664,7 @@ def fetch_non_shift(date, s_type):
 					AND h.holiday_date = '{date}')
 		""".format(date=cstr(date)), as_dict=1)
 	else:
-		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location from `tabEmployee` E
+		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
@@ -867,12 +867,9 @@ def process_overtime_shift(roster, date, time):
 				shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
 				#check if the given shift has ended
 				# Set status inactive before creating new shift
-				print(shift_end_time, time)
 				if str(shift_end_time) == str(time):
-					print('if')
 					frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
 					create_overtime_shift_assignment(schedule, date)
-				print('else')
 			else:
 				create_overtime_shift_assignment(schedule, date)
 		except Exception as e:
