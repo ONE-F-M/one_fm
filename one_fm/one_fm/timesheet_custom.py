@@ -137,10 +137,13 @@ def fetch_approver(employee):
 def mark_attendance_from_timesheet(doc, event):
     if doc.workflow_state == "Approved":
         employee_shift = frappe.get_value("Employee", doc.employee,["default_shift"])
-        expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
+        if not employee_shift:
+            frappe.throw("{employee} doesn't have a Default Shift".format(employee=doc.employee))
+        else:
+            expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
 
         if expected_working_duration and expected_working_duration < doc.total_hours:
-            frappe.msgprint("Kindly, note that {employee} has overtimed the expected working hour".format(employee=doc.employee))
+            frappe.throw("Kindly, note that {employee} has worked overtimed than expected working hour".format(employee=doc.employee))
         else:
             att = frappe.new_doc("Attendance")
             att.employee = doc.employee
