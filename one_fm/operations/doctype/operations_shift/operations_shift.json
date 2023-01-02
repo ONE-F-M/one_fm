@@ -11,6 +11,7 @@
   "column_break_2",
   "project",
   "service_type",
+  "status",
   "shift_details_section",
   "shift_number",
   "shift_type",
@@ -144,6 +145,12 @@
    "fieldtype": "Link",
    "label": "Governorate Area",
    "options": "Governorate Area"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nNot Active"
   }
  ],
  "links": [
@@ -153,7 +160,7 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2022-10-25 11:04:00.722838",
+ "modified": "2022-12-26 20:43:07.401383",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",
@@ -176,5 +183,6 @@
  "search_fields": "site, project",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
