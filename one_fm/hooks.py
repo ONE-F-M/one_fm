@@ -438,6 +438,7 @@ override_doctype_class = {
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
+	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
@@ -462,7 +463,8 @@ scheduler_events = {
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
-		'one_fm.tasks.execute.daily'
+		'one_fm.tasks.execute.daily',
+		"one_fm.utils.attach_abbreviation_to_roles"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",

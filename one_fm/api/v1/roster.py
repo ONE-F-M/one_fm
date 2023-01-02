@@ -485,11 +485,11 @@ def unschedule_staff(employee, start_date, end_date=None, never_end=0):
     except Exception as e:
         return response("Internal Server Error !", 500, None, e)
 
-
 @frappe.whitelist()
-def schedule_staff(employee, shift, operations_role, start_date, end_date=None, never=0, repeat_days=[], day_off=[]):
+def schedule_staff(employee, shift, operations_role, start_date, end_date=None, never=0, repeat_days=[], day_off=[],
+                   overtime=0):
     # For each day in the start_date end_date iterable, create an employee schedule for either working or day off
-	# depending on if the day falls on a repeat day or day off
+    # depending on if the day falls on a repeat day or day off
     # Key : Monday = 0 ,Sunday = 6
 
     try:
@@ -501,14 +501,14 @@ def schedule_staff(employee, shift, operations_role, start_date, end_date=None, 
 
         obj_shift = frappe.get_doc("Operations Shift", shift)
         if not obj_shift:
-            return response("Bad Request", 400, None, "Shift Does Not Exist !")
+            return response("Bad Request", 400, None, "Shift Does Not Exist")
 
         obj_operations_role = frappe.get_doc("Operations Role", operations_role)
         if not obj_operations_role:
             return response("Bad Request", 400, None, "Operations Role Does Not Exist!")
 
         if never:
-            end_date = cstr(getdate().year) + '-12-31'
+            end_date = cstr(getdate().year) + "-12-31"
 
         for date in pd.date_range(start=start_date, end=end_date):
             if getdate(cstr(date.date())).weekday() in repeat_days or getdate(cstr(date.date())).weekday() in day_off:
@@ -524,9 +524,11 @@ def schedule_staff(employee, shift, operations_role, start_date, end_date=None, 
                     roster.employee_availability = "Working"
                     roster.shift = obj_shift.name
                     roster.operations_role = obj_operations_role.name
+                if overtime:
+                    roster.roster_type = "Over-Time"
                 roster.save(ignore_permissions=True)
                 frappe.db.commit()
-        return True
+        return response("Success", 201, None, f"Employee Scheduled successfully ")
     except Exception as e:
         return response("Internal Server Error !", 500, None, e)
 
@@ -605,11 +607,10 @@ def get_current_shift(employee):
         current_datetime = now_datetime()
 
         # fetch the last shift assignment
-        last_shift = frappe.get_list("Shift Assignment", fields=["*"], filters={"employee": employee},
-                                     order_by='creation desc', limit_page_length=1)
+        last_shift = frappe.get_last_doc("Shift Assignment", filters={"employee": employee}, order_by="creation desc")
 
-        if len(last_shift) > 0:
-            shift = last_shift[0]
+        if last_shift:
+            shift = last_shift
             start_datetime = shift.start_datetime
             end_datetime = shift.end_datetime
             before_time, after_time = frappe.get_value("Shift Type", shift.shift_type,
@@ -723,5 +724,3 @@ def get_opening_post_values():
 	"""
     posts = frappe.db.sql("SELECT post_name from `tabOperations Post`", as_dict=1)
     return response("Success", 200, posts)
-
-
