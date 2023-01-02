@@ -7,62 +7,78 @@ from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, se
 from one_fm.utils import set_expire_magic_link
 
 def get_context(context):
-    context.title = _("Career History")
+	context.title = _("Career History")
 
-    # Authorize Magic Link
-    magic_link = authorize_magic_link(frappe.form_dict.magic_link, 'Job Applicant', 'Career History')
-    if magic_link:
-        # Find Job Applicant from the magic link
-        context.job_applicant = frappe.get_doc('Job Applicant', frappe.db.get_value('Magic Link', magic_link, 'reference_docname'))
+	# Authorize Magic Link
+	magic_link = authorize_magic_link(frappe.form_dict.magic_link, 'Job Applicant', 'Career History')
+	if magic_link:
+		# Find Job Applicant from the magic link
+		job_applicant = frappe.db.get_value('Magic Link', magic_link, 'reference_docname')
+		context.job_applicant = frappe.get_doc('Job Applicant', job_applicant)
+		draft_career_history_exists = frappe.db.exists('Career History', {'job_applicant': job_applicant, 'docstatus': 0})
+		if draft_career_history_exists:
+			context.career_history = frappe.get_doc('Career History', draft_career_history_exists)
+		else:
+			context.career_history = False
 
-    # Get Country List to the context to show in the portal
-    context.country_list = frappe.get_all('Country', fields=['name'])
+		# Get Country List to the context to show in the portal
+		context.country_list = frappe.get_all('Country', fields=['name'])
 
 @frappe.whitelist(allow_guest=True)
 def create_career_history_from_portal(job_applicant, career_history_details):
-    '''
-        Method to create Career History from Portal
-        args:
-            job_applicant: Job Applicant ID
-            career_history_details: Career History details as json
-        Return Boolean
-    '''
-    # Create Career History
-    career_history = frappe.new_doc('Career History')
-    career_history.job_applicant = job_applicant
+	'''
+		Method to create Career History from Portal
+		args:
+			job_applicant: Job Applicant ID
+			career_history_details: Career History details as json
+		Return Boolean
+	'''
+	# Create Career History
+	career_history = frappe.new_doc('Career History')
+	career_history.job_applicant = job_applicant
 
-    career_histories = json.loads(career_history_details)
-    for history in career_histories:
-        career_history_fields = ['company_name', 'country_of_employment', 'start_date', 'responsibility_one',
-            'responsibility_two', 'responsibility_three', 'job_title', 'monthly_salary_in_kwd']
+	career_histories = json.loads(career_history_details)
+	for history in career_histories:
+		print(history)
+		"""
+		{'company_name': 'c1', 'country_of_employment': 'India', 'start_date': '2021-01-01',
+		'monthly_salary_in_kwd': '250', 'job_title': 'PET', 'reason_for_leaving_job': '          cadsca',
+		'promotions': [{'start_date': '2021-02-01', 'job_title': 'JrPE', 'monthly_salary_in_kwd': '300'},
+		{'start_date': '2021-03-01', 'job_title': 'PE'}, {'start_date': '2021-04-01',
+		'monthly_salary_in_kwd': '350'}, {}]}
 
-        company = career_history.append('career_history_company')
-        for field in career_history_fields:
-            company.set(field, history.get(field))
+		"""
+		career_history_fields = ['company_name', 'country_of_employment', 'start_date', 'responsibility_one',
+			'responsibility_two', 'responsibility_three', 'job_title', 'monthly_salary_in_kwd']
 
-        last_job_title = history.get('job_title')
-        last_salary = history.get('monthly_salary_in_kwd')
-        for promotion in history.get('promotions'):
-            company = career_history.append('career_history_company')
-            company.company_name = history.get('company_name')
-            company.job_title = last_job_title
-            if promotion.get('job_title'):
-                company.job_title = promotion.get('job_title')
-                last_job_title = promotion.get('job_title')
-            company.monthly_salary_in_kwd = last_salary
-            if promotion.get('monthly_salary_in_kwd'):
-                company.monthly_salary_in_kwd = promotion.get('monthly_salary_in_kwd')
-                last_salary = promotion.get('monthly_salary_in_kwd')
-            company.start_date = getdate(promotion.get('start_date'))
-        if history.get('left_the_company'):
-            company.end_date = history.get('left_the_company')
-        if history.get('reason_for_leaving_job'):
-            company.end_date = today()
-            company.why_do_you_plan_to_leave_the_job = history.get('reason_for_leaving_job')
+		company = career_history.append('career_history_company')
+		for field in career_history_fields:
+			company.set(field, history.get(field))
 
-    career_history.save(ignore_permissions=True)
-    set_expire_magic_link('Job Applicant', job_applicant, 'Career History')
-    return True
+		last_job_title = history.get('job_title')
+		last_salary = history.get('monthly_salary_in_kwd')
+		for promotion in history.get('promotions'):
+			if len(promotion) > 0:
+				company = career_history.append('career_history_company')
+				company.company_name = history.get('company_name')
+				company.job_title = last_job_title
+				company.start_date = getdate(promotion.get('start_date'))
+				if promotion.get('job_title'):
+					company.job_title = promotion.get('job_title')
+					last_job_title = promotion.get('job_title')
+					company.monthly_salary_in_kwd = last_salary
+				if promotion.get('monthly_salary_in_kwd'):
+					company.monthly_salary_in_kwd = promotion.get('monthly_salary_in_kwd')
+					last_salary = promotion.get('monthly_salary_in_kwd')
+		if history.get('left_the_company'):
+			company.end_date = history.get('left_the_company')
+		if history.get('reason_for_leaving_job'):
+			company.end_date = today()
+			company.why_do_you_plan_to_leave_the_job = history.get('reason_for_leaving_job')
+
+	career_history.save(ignore_permissions=True)
+	#set_expire_magic_link('Job Applicant', job_applicant, 'Career History')
+	return True
 
 @frappe.whitelist()
 def send_career_history_magic_link(job_applicant, applicant_name, designation):
