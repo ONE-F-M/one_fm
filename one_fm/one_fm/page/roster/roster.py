@@ -854,10 +854,11 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 	from one_fm.api.mobile.roster import month_range
 	if cint(selected_dates):
 		for employee in json.loads(employees):
-			name = f"{date.date()}_{employee['employee']}_{roster_type}"
+			date = employee['date']
+			name = f"{date}_{employee['employee']}_{roster_type}"
 			id_list.append(name)
 			querycontent += f"""(
-				"{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
+				"{name}", "{employee["employee"]}", "{date}", "", "", "", 
 				'', "Day Off", "", "", "Basic", 
 				0, "{owner}", "{owner}", "{creation}", "{creation}"
 			),"""
