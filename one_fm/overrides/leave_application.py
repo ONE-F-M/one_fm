@@ -22,6 +22,9 @@ class LeaveApplicationOverride(LeaveApplication):
         if frappe.db.get_value("Leave Type", self.leave_type, "is_optional_leave"):
             self.validate_optional_leave()
         self.validate_applicable_after()
+    
+    def on_submit(self):
+        pass
 
 
     def validate_dates(self):
@@ -64,8 +67,18 @@ class LeaveApplicationOverride(LeaveApplication):
         if not is_lwp(self.leave_type):
             self.validate_dates_across_allocation()
             self.validate_back_dated_application()
-    
+
+    def on_update_after_submit(self):
+        # self.send_notification()
+        pass
+
+    def on_submit(self):
+        pass
+
+
+    @frappe.whitelist()
     def notify(self, args):
+        print("Hello, World", "=========================================")
         args = frappe._dict(args)
         # args -> message, message_to, subject
         if cint(self.follow_via_email):
