@@ -184,9 +184,9 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 
 	# send notification mail to list of employee using user_id
 	if log_type == "IN":
-		send_notification(notification_title, checkin_subject, checkin_message,notification_category,user_id_list)
+		send_notification(notification_title, notification_subject, checkin_message,notification_category,user_id_list)
 	elif log_type == "OUT":
-		send_notification(notification_title, checkout_subject, checkout_message, notification_category, user_id_list)
+		send_notification(notification_title, notification_subject, checkout_message, notification_category, user_id_list)
 
 @frappe.whitelist()
 def checkin_checkout_supervisor_reminder():
