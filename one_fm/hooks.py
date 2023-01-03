@@ -350,7 +350,10 @@ doc_events = {
 	"Shift Assignment":{
 		"before_insert":[
 			"one_fm.tasks.erpnext.shift_assignment.before_insert"
-		]
+		],
+		"validate":[
+			"one_fm.tasks.erpnext.shift_assignment.validate"
+		],
 	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
@@ -595,15 +598,9 @@ scheduler_events = {
 		"15 0 * * *": [
 			'one_fm.api.tasks.assign_am_shift'
 		],
-		# "45 1 * * *": [
-		# 	'one_fm.api.tasks.validate_am_shift_assignment'
-		# ],
 		"15 12 * * *": [
 			'one_fm.api.tasks.assign_pm_shift'
 		],
-		# "45 13 * * *": [
-		# 	'one_fm.api.tasks.validate_pm_shift_assignment'
-		# ],
 	}
 }
 

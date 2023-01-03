@@ -4,6 +4,12 @@
 frappe.ui.form.on('Shift Assignment', {
 	refresh: function(frm) {
 		filter_active_employee(frm);
+	},
+	employee_availability: function(frm){
+		if (frm.doc.employee_availability === 'Day Off'){
+			frm.set_value('operations_role','');
+			frm.doset_value('post_abbrv', '');
+		}
 	}
 });
 

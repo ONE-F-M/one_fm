@@ -159,7 +159,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	#The following section creates a iterable that uses the employee name and id as keys and groups  the  employee data fetched in previous queries
 
 	new_map=CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters,isOt=isOt)
-
 	master_data.update({'employees_data': new_map.formated_rs})
 
 	#----------------- Get Operations Role count and check fill status -------------------#
@@ -313,7 +312,9 @@ def update_roster(key):
 
 
 def extreme_schedule(employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, day_off_ot, request_employee_schedule):
-	
+	if not employees:
+		frappe.msgprint("Please select employees before rostering")
+		return
 	creation = now()
 	owner = frappe.session.user
 	date_range = [i.date() for i in pd.date_range(start=start_date, end=end_date)]
@@ -365,8 +366,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				day_off_ot = VALUES(day_off_ot),
 				employee_availability = "Working"
 			"""
-			# print(query)
-			frappe.db.sql(_query)
+			frappe.db.sql(_query, values=[], as_dict=1)
 			frappe.db.commit()
 			# this queue up employee department and full name record update, it is not important in the initial record creation
 			# this was done to speed up record creation
@@ -444,7 +444,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				req_es_doc.end_date = end_date
 				req_es_doc.roster_type = roster_type
 				req_es_doc.save(ignore_permissions=True)
-				print(req_es_doc.as_dict())
 			frappe.db.commit()
 			frappe.msgprint("Request Employee Schedule created successfully")
 
@@ -854,10 +853,11 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 	from one_fm.api.mobile.roster import month_range
 	if cint(selected_dates):
 		for employee in json.loads(employees):
-			name = f"{date.date()}_{employee['employee']}_{roster_type}"
+			date = employee['date']
+			name = f"{date}_{employee['employee']}_{roster_type}"
 			id_list.append(name)
 			querycontent += f"""(
-				"{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
+				"{name}", "{employee["employee"]}", "{date}", "", "", "", 
 				'', "Day Off", "", "", "Basic", 
 				0, "{owner}", "{owner}", "{creation}", "{creation}"
 			),"""

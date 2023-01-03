@@ -1089,13 +1089,42 @@ function get_roster_data(page, isOt) {
 
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, operations_role, designation, isOt, limit_start, limit_page_length })
 			.then(res => {
-
 				$('#cover-spin').hide();
 				render_roster(res, page, isOt);
 			});
 	}
 }
 // Function responsible for Rendering the Table
+let classmap = {
+	'Working': 'bluebox',
+	'Day Off': 'greyboxcolor',
+	'Sick Leave': 'purplebox',
+	'Emergency Leave': 'purplebox',
+	'Annual Leave': 'purplebox',
+	'ASA': 'pinkboxcolor',
+	'Day Off OT': 'orangeboxcolor'
+};
+let leavemap = {
+	'Day Off': 'DO',
+	'Sick Leave': 'SL',
+	'Annual Leave': 'AL',
+	'Emergency Leave': 'EL',
+	'Working': '!'
+};
+let attendancemap = {
+	'Present': 'greenboxcolor',
+	'Absent': 'redboxcolor',
+	'Work From Home': 'greenboxcolor',
+	'Half Day': 'greenboxcolor',
+	'On Leave': 'redboxcolor'
+};
+let attendance_abbr_map = {
+	'Present': 'P',
+	'Absent': 'A',
+	'Work From Home': 'WFH',
+	'Half Day': 'HD',
+	'On Leave': 'OL'
+};
 // Renders on get_roster_data function
 function render_roster(res, page, isOt) {
 	let { operations_roles_data, employees_data, total } = res;
@@ -1157,6 +1186,7 @@ function render_roster(res, page, isOt) {
 	for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
 		// let { employee_name, employee, date } = employees_data[employee_key];
 		let employee = employees_data[employee_key][0]['employee']
+		let employee_id = employees_data[employee_key][0]['employee_id']
 		let employee_day_off = employees_data[employee_key][0]['day_off_category']
 		if(employees_data[employee_key][0]['number_of_days_off']){
 			employee_day_off += " " + employees_data[employee_key][0]['number_of_days_off'] + " Day(s) off"
@@ -1165,12 +1195,12 @@ function render_roster(res, page, isOt) {
 		<tr data-name="${employee}">
 			<td class="sticky">
 				<label class="checkboxcontainer simplecheckbox">
-					<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
+					<span class="lightgrey font16 customfontweight fontw400 postname" style="color:black">${employee_key}</span>
 					<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
 					<span class="checkmark"></span>
 				</label>
 				<label >
-					<span class="lightgrey employee_day_off">${employee_day_off}</span>
+					<span class="lightgrey employee_day_off"><span id="employee_id" style="color:black; font-size:13px">${employee_id}</span> - ${employee_day_off}</span>
 				</label>
 			</td>
 		</tr>
@@ -1186,36 +1216,6 @@ function render_roster(res, page, isOt) {
 		while (day <= end_date) {
 			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 			let sch = ``;
-			let classmap = {
-				'Working': 'bluebox',
-				'Day Off': 'greyboxcolor',
-				'Sick Leave': 'purplebox',
-				'Emergency Leave': 'purplebox',
-				'Annual Leave': 'purplebox',
-				'ASA': 'pinkboxcolor',
-				'Day Off OT': 'orangeboxcolor'
-			};
-			let leavemap = {
-				'Day Off': 'DO',
-				'Sick Leave': 'SL',
-				'Annual Leave': 'AL',
-				'Emergency Leave': 'EL',
-				'Working': '!'
-			};
-			let attendancemap = {
-				'Present': 'greenboxcolor',
-				'Absent': 'redboxcolor',
-				'Work From Home': 'greenboxcolor',
-				'Half Day': 'greenboxcolor',
-				'On Leave': 'redboxcolor'
-			};
-			let attendance_abbr_map = {
-				'Present': 'P',
-				'Absent': 'A',
-				'Work From Home': 'WFH',
-				'Half Day': 'HD',
-				'On Leave': 'OL'
-			};
 			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot } = employees_data[employee_key][i];
 			//OT schedule view
 			if (isOt) {
