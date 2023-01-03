@@ -94,6 +94,7 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.employee_availability != 'Day Off'",
    "fieldname": "operations_role",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -128,6 +129,7 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.operations_role",
    "fetch_from": "operations_role.post_abbrv",
    "fieldname": "post_abbrv",
    "fieldtype": "Data",
@@ -149,7 +151,7 @@
   }
  ],
  "links": [],
- "modified": "2022-12-09 19:13:50.004622",
+ "modified": "2023-01-03 11:30:46.448108",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",

@@ -313,7 +313,9 @@ def update_roster(key):
 
 
 def extreme_schedule(employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, day_off_ot, request_employee_schedule):
-	
+	if not employees:
+		frappe.msgprint("Please select employees before rostering")
+		return
 	creation = now()
 	owner = frappe.session.user
 	date_range = [i.date() for i in pd.date_range(start=start_date, end=end_date)]
@@ -365,8 +367,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				day_off_ot = VALUES(day_off_ot),
 				employee_availability = "Working"
 			"""
-			# print(query)
-			frappe.db.sql(_query)
+			frappe.db.sql(_query, values=[], as_dict=1)
 			frappe.db.commit()
 			# this queue up employee department and full name record update, it is not important in the initial record creation
 			# this was done to speed up record creation

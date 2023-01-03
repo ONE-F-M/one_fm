@@ -1089,13 +1089,42 @@ function get_roster_data(page, isOt) {
 
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, operations_role, designation, isOt, limit_start, limit_page_length })
 			.then(res => {
-
 				$('#cover-spin').hide();
 				render_roster(res, page, isOt);
 			});
 	}
 }
 // Function responsible for Rendering the Table
+let classmap = {
+	'Working': 'bluebox',
+	'Day Off': 'greyboxcolor',
+	'Sick Leave': 'purplebox',
+	'Emergency Leave': 'purplebox',
+	'Annual Leave': 'purplebox',
+	'ASA': 'pinkboxcolor',
+	'Day Off OT': 'orangeboxcolor'
+};
+let leavemap = {
+	'Day Off': 'DO',
+	'Sick Leave': 'SL',
+	'Annual Leave': 'AL',
+	'Emergency Leave': 'EL',
+	'Working': '!'
+};
+let attendancemap = {
+	'Present': 'greenboxcolor',
+	'Absent': 'redboxcolor',
+	'Work From Home': 'greenboxcolor',
+	'Half Day': 'greenboxcolor',
+	'On Leave': 'redboxcolor'
+};
+let attendance_abbr_map = {
+	'Present': 'P',
+	'Absent': 'A',
+	'Work From Home': 'WFH',
+	'Half Day': 'HD',
+	'On Leave': 'OL'
+};
 // Renders on get_roster_data function
 function render_roster(res, page, isOt) {
 	let { operations_roles_data, employees_data, total } = res;
@@ -1186,38 +1215,9 @@ function render_roster(res, page, isOt) {
 		while (day <= end_date) {
 			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 			let sch = ``;
-			let classmap = {
-				'Working': 'bluebox',
-				'Day Off': 'greyboxcolor',
-				'Sick Leave': 'purplebox',
-				'Emergency Leave': 'purplebox',
-				'Annual Leave': 'purplebox',
-				'ASA': 'pinkboxcolor',
-				'Day Off OT': 'orangeboxcolor'
-			};
-			let leavemap = {
-				'Day Off': 'DO',
-				'Sick Leave': 'SL',
-				'Annual Leave': 'AL',
-				'Emergency Leave': 'EL',
-				'Working': '!'
-			};
-			let attendancemap = {
-				'Present': 'greenboxcolor',
-				'Absent': 'redboxcolor',
-				'Work From Home': 'greenboxcolor',
-				'Half Day': 'greenboxcolor',
-				'On Leave': 'redboxcolor'
-			};
-			let attendance_abbr_map = {
-				'Present': 'P',
-				'Absent': 'A',
-				'Work From Home': 'WFH',
-				'Half Day': 'HD',
-				'On Leave': 'OL'
-			};
 			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot } = employees_data[employee_key][i];
 			//OT schedule view
+			// console.log(employee_name, date, employee_availability);
 			if (isOt) {
 				if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
 					j++;
