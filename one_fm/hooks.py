@@ -350,7 +350,10 @@ doc_events = {
 	"Shift Assignment":{
 		"before_insert":[
 			"one_fm.tasks.erpnext.shift_assignment.before_insert"
-		]
+		],
+		"validate":[
+			"one_fm.tasks.erpnext.shift_assignment.validate"
+		],
 	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
