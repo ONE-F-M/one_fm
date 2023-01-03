@@ -159,7 +159,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 	#The following section creates a iterable that uses the employee name and id as keys and groups  the  employee data fetched in previous queries
 
 	new_map=CreateMap(start=start_date,end=end_date,employees=employees,filters=str_filters,isOt=isOt)
-
 	master_data.update({'employees_data': new_map.formated_rs})
 
 	#----------------- Get Operations Role count and check fill status -------------------#
@@ -445,7 +444,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				req_es_doc.end_date = end_date
 				req_es_doc.roster_type = roster_type
 				req_es_doc.save(ignore_permissions=True)
-				print(req_es_doc.as_dict())
 			frappe.db.commit()
 			frappe.msgprint("Request Employee Schedule created successfully")
 

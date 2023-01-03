@@ -1186,6 +1186,7 @@ function render_roster(res, page, isOt) {
 	for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
 		// let { employee_name, employee, date } = employees_data[employee_key];
 		let employee = employees_data[employee_key][0]['employee']
+		let employee_id = employees_data[employee_key][0]['employee_id']
 		let employee_day_off = employees_data[employee_key][0]['day_off_category']
 		if(employees_data[employee_key][0]['number_of_days_off']){
 			employee_day_off += " " + employees_data[employee_key][0]['number_of_days_off'] + " Day(s) off"
@@ -1194,12 +1195,12 @@ function render_roster(res, page, isOt) {
 		<tr data-name="${employee}">
 			<td class="sticky">
 				<label class="checkboxcontainer simplecheckbox">
-					<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
+					<span class="lightgrey font16 customfontweight fontw400 postname" style="color:black">${employee_key}</span>
 					<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
 					<span class="checkmark"></span>
 				</label>
 				<label >
-					<span class="lightgrey employee_day_off">${employee_day_off}</span>
+					<span class="lightgrey employee_day_off"><span id="employee_id" style="color:black; font-size:13px">${employee_id}</span> - ${employee_day_off}</span>
 				</label>
 			</td>
 		</tr>
@@ -1217,7 +1218,6 @@ function render_roster(res, page, isOt) {
 			let sch = ``;
 			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot } = employees_data[employee_key][i];
 			//OT schedule view
-			// console.log(employee_name, date, employee_availability);
 			if (isOt) {
 				if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
 					j++;
