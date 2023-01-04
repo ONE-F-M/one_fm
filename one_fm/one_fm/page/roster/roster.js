@@ -1087,11 +1087,18 @@ function get_roster_data(page, isOt) {
 	if (project || site || shift || department || operations_role || designation){
 		$('#cover-spin').show(0);
 
-		frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, operations_role, designation, isOt, limit_start, limit_page_length })
-			.then(res => {
-				$('#cover-spin').hide();
-				render_roster(res, page, isOt);
-			});
+		frappe.call({
+			method: "one_fm.one_fm.page.roster.roster.get_roster_view", //dotted path to server method
+			type: "POST",
+			args: { start_date, end_date, employee_search_id, employee_search_name, project, site, 
+				shift, department, operations_role, designation, isOt, limit_start, limit_page_length 
+			},
+			callback: function(res) {
+				// code snippet
+				error_handler(res);
+				render_roster(res.data, page, isOt);
+			}
+		});
 	}
 }
 // Function responsible for Rendering the Table
@@ -2782,14 +2789,18 @@ function unschedule_staff(page) {
 		primary_action: function () {
 			$('#cover-spin').show(0);
 			let { start_date, end_date, never_end } = d.get_values();
-			frappe.xcall('one_fm.one_fm.page.roster.roster.unschedule_staff',
-				{ employees, start_date, end_date, never_end })
-				.then(res => {
+			frappe.call({
+				method: "one_fm.one_fm.page.roster.roster.unschedule_staff",
+				type: "POST",
+				args: { employees, start_date, end_date, never_end },
+				callback: function(res) {
+					// code snippet
 					d.hide();
-					$('#cover-spin').hide();
+					error_handler(res);
 					let element = get_wrapper_element().slice(1);
 					page[element](page);
-				});
+				}
+			});
 		}
 	});
 	d.show();
@@ -2977,13 +2988,16 @@ function schedule_change_post(page) {
 			if (!employees){
 			    frappe.throw(__('Please select employees to roster.'))
 			}
-			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_staff',
-				{ employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date })
-				.then(res => {
+			frappe.call({
+				method: "one_fm.one_fm.page.roster.roster.schedule_staff",
+				type: "POST",
+				args: { employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date },
+				callback: function(res) {
+					// code snippet
 					d.hide();
-					$('#cover-spin').hide();
-					if(res && res.length > 1){
-						res[0].forEach((emp, i) => {
+					error_handler(res);
+					if(res.data && res.data.employees.length > 1){
+						res.data.employees.forEach((emp, i) => {
 							res[1].forEach((date, i) => {
 								let selectid = emp.name+'|'+date.slice(0, 10)
 								$("[data-selectid='"+selectid+"']").addClass('bg-info')
@@ -2994,9 +3008,8 @@ function schedule_change_post(page) {
 					}
 					let element = get_wrapper_element().slice(1);
 					update_roster_view(element, page);
-				}).catch(e => {
-					$('#cover-spin').hide();
-				});
+				}
+			});
 		}
 	});
 	d.show();
@@ -3196,16 +3209,18 @@ function dayoff(page) {
 				}
 			}
 			// console.log(args);
-			frappe.xcall('one_fm.one_fm.page.roster.roster.dayoff', args)
-				.then(res => {
+			frappe.call({
+				method: "one_fm.one_fm.page.roster.roster.dayoff",
+				type: "POST",
+				args: args,
+				callback: function(res) {
+					// code snippet
 					d.hide();
-					$('#cover-spin').hide();
+					error_handler(res);
 					let element = get_wrapper_element().slice(1);
 					page[element](page);
-				}).catch(e => {
-					;
-					$('#cover-spin').hide();
-				});
+				}
+			});
 		}
 	});
 	d.show();
@@ -3393,3 +3408,17 @@ function makeCall(argsObject){
             // action to perform if No is selected
     })
 }
+
+
+
+let error_handler = (res) => {
+	if (res.error){
+		$('#cover-spin').hide();
+		frappe.throw(res.error);
+	} else if (res.data.message){
+		frappe.msgprint(res.data.message);
+		$('#cover-spin').hide();
+	} else {
+		$('#cover-spin').hide();
+	}
+} 
