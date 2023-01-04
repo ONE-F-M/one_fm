@@ -592,9 +592,6 @@ scheduler_events = {
 			'one_fm.tasks.one_fm.daily.mark_future_attendance_request',
 			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
-		"30 0 1 * *": [
-			'one_fm.tasks.one_fm.monthly.execute'
-		],
 		"15 0 * * *": [
 			'one_fm.api.tasks.assign_am_shift'
 		],

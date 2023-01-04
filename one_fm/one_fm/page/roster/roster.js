@@ -843,9 +843,7 @@ function bind_events(page) {
 			$(".selectclass").map(function () {
 			    classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
-
 			});
-
 		});
 		//on checkbox select change
 		// $rosterWeek.find(`input[name="selectallcheckbox"]`).on("change", function () {
