@@ -3415,9 +3415,13 @@ let error_handler = (res) => {
 	if (res.error){
 		$('#cover-spin').hide();
 		frappe.throw(res.error);
-	} else if (res.data.message){
-		frappe.msgprint(res.data.message);
-		$('#cover-spin').hide();
+	} else if (res.data){
+		if(res.data.message){
+			frappe.msgprint(res.data.message);
+			$('#cover-spin').hide();
+		} else {
+			$('#cover-spin').hide();
+		}
 	} else {
 		$('#cover-spin').hide();
 	}

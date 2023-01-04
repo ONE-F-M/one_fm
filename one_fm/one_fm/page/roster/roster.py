@@ -311,6 +311,7 @@ def update_roster(key):
 
 
 def extreme_schedule(employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, day_off_ot, request_employee_schedule):
+	print(otRoster, day_off_ot)
 	if not employees:
 		frappe.msgprint("Please select employees before rostering")
 		return
