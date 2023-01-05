@@ -15,6 +15,7 @@
   "maximum_salary_deduction_percentage",
   "include_day_off_in_total_working_days",
   "column_break_7",
+  "enable_export",
   "default_bank",
   "exclude_salary_component",
   "basic_salary_component",
@@ -246,12 +247,18 @@
    "fieldname": "include_day_off_in_total_working_days",
    "fieldtype": "Check",
    "label": "Include day off in Total no. of Working Days"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_export",
+   "fieldtype": "Check",
+   "label": "Enable Export"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-08-30 13:57:00.427138",
+ "modified": "2023-01-05 16:12:17.217621",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
@@ -270,5 +277,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
