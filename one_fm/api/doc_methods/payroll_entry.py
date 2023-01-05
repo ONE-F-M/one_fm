@@ -121,7 +121,7 @@ def get_employee_list(sal_struct, cond, end_date, payroll_payable_account):
 			where
 				t1.name = t2.employee
 				and t2.docstatus = 1
-				and t1.status != 'Inactive'
+				and t1.status = 'Active'
 		%s order by t2.from_date desc
 		"""
 		% cond,
@@ -348,38 +348,39 @@ def export_payroll(doc, method):
 	Args:
 		payroll_entry (document object): The payroll entry document object to set the export file field for.
 	"""
-	# Get default bank used to pay salaries
-	default_bank = frappe.db.get_single_value("HR and Payroll Additional Settings", 'default_bank')
+	# Check if Export is enabled.
+	if frappe.db.get_single_value("HR and Payroll Additional Settings", 'enable_export'):
+		# Get default bank used to pay salaries
+		default_bank = frappe.db.get_single_value("HR and Payroll Additional Settings", 'default_bank')
 
-	# Fetch template and bank code for default bank
-	template_path, bank_code = frappe.db.get_value("Bank", {'name': default_bank}, ["payroll_export_template", "bank_code"])
+		# Fetch template and bank code for default bank
+		template_path, bank_code = frappe.db.get_value("Bank", {'name': default_bank}, ["payroll_export_template", "bank_code"])
 
-	cash_salary_employees = []
+		cash_salary_employees = []
 
-	for employee in doc.employees:
-		if employee.salary_mode == "Cash":
-			cash_salary_employees.append(employee)
-		elif employee.salary_mode == "Bank":
-			if not employee.iban_number:
-				frappe.throw(_("No Iban/Bank account set for employee: {employee}".format(employee=employee.employee)))
-		elif not employee.salary_mode:
-			frappe.throw(_("No salary mode set for employee: {employee}".format(employee=employee.employee)))
+		for employee in doc.employees:
+			if employee.salary_mode == "Cash":
+				cash_salary_employees.append(employee)
+			elif employee.salary_mode == "Bank":
+				if not employee.iban_number:
+					frappe.throw(_("No Iban/Bank account set for employee: {employee}".format(employee=employee.employee)))
+			elif not employee.salary_mode:
+				frappe.throw(_("No salary mode set for employee: {employee}".format(employee=employee.employee)))
 
-	if "NBK" in bank_code:
-		# Enqueue method for longer list of employees
-		if len(doc.employees) > 30:
-			frappe.enqueue(export_nbk, doc=doc, template_path=template_path)
+		if "NBK" in bank_code:
+			# Enqueue method for longer list of employees
+			if len(doc.employees) > 30:
+				frappe.enqueue(export_nbk, doc=doc, template_path=template_path)
+			else:
+				export_nbk(doc, template_path)
+
+		if len(cash_salary_employees) > 0:
+			if len(cash_salary_employees) > 30:
+				frappe.enqueue(export_cash_payroll, cash_salary_employees=cash_salary_employees, doc_name=doc.name)
+			else:
+				export_cash_payroll(cash_salary_employees, doc.name)
 		else:
-			export_nbk(doc, template_path)
-
-	if len(cash_salary_employees) > 0:
-		if len(cash_salary_employees) > 30:
-			frappe.enqueue(export_cash_payroll, cash_salary_employees=cash_salary_employees, doc_name=doc.name)
-		else:
-			export_cash_payroll(cash_salary_employees, doc.name)
-	else:
-		frappe.msgprint(_("No employees with salary mode as Cash."))
-
+			frappe.msgprint(_("No employees with salary mode as Cash."))
 
 
 def export_nbk(doc, template_path):
