@@ -593,7 +593,6 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 	except Exception as e:
 		print(e)
 		response("Error", 500, None, str(e))
-		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def edit_post(posts, values):
