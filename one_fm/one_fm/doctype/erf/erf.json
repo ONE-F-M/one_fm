@@ -347,7 +347,6 @@
    "options": "Employee Language Requirement"
   },
   {
-   "allow_on_submit": 1,
    "fieldname": "designation_skill",
    "fieldtype": "Table",
    "label": "Skills",
@@ -877,7 +876,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-12-29 12:15:24.302917",
+ "modified": "2023-01-03 15:13:10.638583",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

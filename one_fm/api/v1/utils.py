@@ -25,6 +25,13 @@ def response(message, status_code, data=None, error=None):
     return
 
 
+def response_dict(message, status_code, data=None, error=None):
+    return frappe._dict({
+        'status_code': status_code,
+        'message': message,
+        'data': data,
+        'error':error
+    })
 
 @frappe.whitelist()
 def get_current_user_details():

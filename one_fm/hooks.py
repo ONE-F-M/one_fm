@@ -350,7 +350,10 @@ doc_events = {
 	"Shift Assignment":{
 		"before_insert":[
 			"one_fm.tasks.erpnext.shift_assignment.before_insert"
-		]
+		],
+		"validate":[
+			"one_fm.tasks.erpnext.shift_assignment.validate"
+		],
 	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
@@ -461,7 +464,7 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
-		"one_fm.utils.attach_abbreviation_to_roles"
+		"one_fm.one_fm.utils.attach_abbreviation_to_roles"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -589,21 +592,12 @@ scheduler_events = {
 			'one_fm.tasks.one_fm.daily.mark_future_attendance_request',
 			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
-		"30 0 1 * *": [
-			'one_fm.tasks.one_fm.monthly.execute'
-		],
 		"15 0 * * *": [
 			'one_fm.api.tasks.assign_am_shift'
 		],
-		# "45 1 * * *": [
-		# 	'one_fm.api.tasks.validate_am_shift_assignment'
-		# ],
 		"15 12 * * *": [
 			'one_fm.api.tasks.assign_pm_shift'
 		],
-		# "45 13 * * *": [
-		# 	'one_fm.api.tasks.validate_pm_shift_assignment'
-		# ],
 	}
 }
 
