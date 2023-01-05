@@ -250,8 +250,8 @@ def get_current_user_details():
 
 @frappe.whitelist()
 def schedule_staff(
-		employees, shift, operations_role, start_date, project_end_date, keep_days_off, request_employee_schedule, 
-		day_off_ot=None, end_date=None, repeat_days=[], day_off=[]):
+		employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, 
+		day_off_ot=None, end_date=None, repeat_days='[]', day_off='[]'):
 	try:
 		repeat_days, day_off = json.loads(repeat_days), json.loads(day_off)
 		validation_logs = []
@@ -299,7 +299,7 @@ def schedule_staff(
 		else:
 			employees = json.loads(employees)
 			# extreme schedule
-			extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
+			extreme_schedule(employees=employees, otRoster=otRoster, start_date=start_date, end_date=end_date, shift=shift,
 				operations_role=operations_role, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
 				request_employee_schedule=request_employee_schedule, repeat_days=repeat_days, day_off=day_off
 			)
@@ -315,7 +315,7 @@ def update_roster(key):
 
 
 def extreme_schedule(
-		employees, shift, operations_role, start_date, end_date, keep_days_off, day_off_ot, request_employee_schedule, 
+		employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, day_off_ot, request_employee_schedule, 
 		repeat_days, day_off):
 	if not employees:
 		frappe.msgprint("Please select employees before rostering")
@@ -334,7 +334,11 @@ def extreme_schedule(
 	operations_shift = frappe.get_doc("Operations Shift", shift)
 	operations_role = frappe.get_doc("Operations Role", operations_role)
 	day_off_ot = cint(day_off_ot)
-	roster_type = 'Basic'
+	if otRoster == 'false':
+		roster_type = 'Basic'
+	elif otRoster == 'true':
+		day_off_ot = 0
+		roster_type = 'Over-Time'
 
 	if not cint(request_employee_schedule):
 		"""

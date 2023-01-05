@@ -2986,7 +2986,7 @@ function schedule_change_post(page) {
 			frappe.call({
 				method: "one_fm.one_fm.page.roster.roster.schedule_staff",
 				type: "POST",
-				args: { employees, shift, operations_role, start_date, project_end_date, keep_days_off, 
+				args: { employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, 
 					request_employee_schedule, day_off_ot, end_date },
 				callback: function(res) {
 					// code snippet
