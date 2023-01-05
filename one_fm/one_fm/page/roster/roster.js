@@ -1123,7 +1123,7 @@ let attendancemap = {
 	'Absent': 'redboxcolor',
 	'Work From Home': 'greenboxcolor',
 	'Half Day': 'greenboxcolor',
-	'On Leave': 'redboxcolor'
+	'On Leave': 'purplebox'
 };
 let attendance_abbr_map = {
 	'Present': 'P',
@@ -1291,8 +1291,8 @@ function render_roster(res, page, isOt) {
 					if (attendance == 'Present') { j++; }
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so"
-							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}</div>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${employee+'|'+attendance}</span></div>
 					</td>`;
 				} else {
 					sch = `
