@@ -249,8 +249,11 @@ def get_current_user_details():
 
 
 @frappe.whitelist()
-def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot=None, end_date=None):
+def schedule_staff(
+		employees, shift, operations_role, start_date, project_end_date, keep_days_off, request_employee_schedule, 
+		day_off_ot=None, end_date=None, repeat_days=[], day_off=[]):
 	try:
+		repeat_days, day_off = json.loads(repeat_days), json.loads(day_off)
 		validation_logs = []
 		user, user_roles, user_employee = get_current_user_details()
 
@@ -297,34 +300,41 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 			employees = json.loads(employees)
 			# extreme schedule
 			extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
-				operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
-				request_employee_schedule=request_employee_schedule
+				operations_role=operations_role, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
+				request_employee_schedule=request_employee_schedule, repeat_days=repeat_days, day_off=day_off
 			)
 			employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
 			update_roster(key="roster_view")
 			response("success", 200, {'employees':employees_list, 'date_range':date_range, 'message':'Sucessfully rostered employees'})
 	except Exception as e:
+		print(e)
 		response("error", 500, None, str(e))
 
 def update_roster(key):
 	frappe.publish_realtime(key, "Success")
 
 
-def extreme_schedule(employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, day_off_ot, request_employee_schedule):
-	print(otRoster, day_off_ot)
+def extreme_schedule(
+		employees, shift, operations_role, start_date, end_date, keep_days_off, day_off_ot, request_employee_schedule, 
+		repeat_days, day_off):
 	if not employees:
 		frappe.msgprint("Please select employees before rostering")
-		return
+		response("error", 406, None, 'Employees list should not be empty.')
 	creation = now()
 	owner = frappe.session.user
 	date_range = [i.date() for i in pd.date_range(start=start_date, end=end_date)]
+	repeat_days_dates = []
+	day_off_dates = []
+	# sort dates if reapeat weekly days is swnt over
+	for i in date_range:
+		if i.weekday() in repeat_days:
+			repeat_days_dates.append(i)
+		elif i.weekday() in day_off:
+			day_off_dates.append(i)
 	operations_shift = frappe.get_doc("Operations Shift", shift)
 	operations_role = frappe.get_doc("Operations Role", operations_role)
 	day_off_ot = cint(day_off_ot)
-	if otRoster == 'false':
-		roster_type = 'Basic'
-	elif otRoster == 'true' or day_off_ot == 1:
-		roster_type = 'Over-Time'
+	roster_type = 'Basic'
 
 	if not cint(request_employee_schedule):
 		"""
@@ -335,77 +345,85 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			`operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `owner`, `modified_by`, `creation`, `modified`)
 			VALUES 
 		"""
-		if not cint(keep_days_off):
-			_query = query
-			id_list = [] #store for schedules list
+		id_list = [] #store for schedules list
+		if repeat_days and day_off:
 			for employee in employees:
-				for dr in date_range:
+				# working days
+				for dr in repeat_days_dates:
 					name = f"{dr}_{employee}_{roster_type}"
 					id_list.append(name)
-					_query += f"""
+					query += f"""
 						(
 							"{name}", "{employee}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}", 
 							'{operations_shift.shift_type}', "Working", "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
-							"{cint(day_off_ot)}", "{owner}", "{owner}", "{creation}", "{creation}"
+							{cint(day_off_ot)}, "{owner}", "{owner}", "{creation}", "{creation}"
 						),"""
-
-			_query = _query.replace(", None", '')
-			_query = _query[:-1]
-
-			_query += f"""
-				ON DUPLICATE KEY UPDATE
-				modified_by = VALUES(modified_by),
-				modified = "{creation}",
-				operations_role = VALUES(operations_role),
-				post_abbrv = VALUES(post_abbrv),
-				roster_type = VALUES(roster_type),
-				shift = VALUES(shift),
-				project = VALUES(project),
-				site = VALUES(site),
-				shift_type = VALUES(shift_type),
-				day_off_ot = VALUES(day_off_ot),
-				employee_availability = "Working"
-			"""
-			frappe.db.sql(_query, values=[], as_dict=1)
-			frappe.db.commit()
-			# this queue up employee department and full name record update, it is not important in the initial record creation
-			# this was done to speed up record creation
-			frappe.enqueue(queue_employee_schedule_empdetail, employees=employees, id_list=id_list)
+				# days off
+				for dr in day_off_dates:
+					name = f"{dr}_{employee}_{roster_type}"
+					id_list.append(name)
+					query += f"""
+						(
+							"{name}", "{employee}", "{dr}", "", "", "", '', "Day Off", "", "", "Basic", 0, 
+							"{owner}", "{owner}", "{creation}", "{creation}"
+						),"""
+		elif repeat_days and not day_off:
+			for employee in employees:
+				# working days
+				for dr in repeat_days_dates:
+					name = f"{dr}_{employee}_{roster_type}"
+					id_list.append(name)
+					query += f"""
+						(
+							"{name}", "{employee}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}", 
+							'{operations_shift.shift_type}', "Working", "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+							{cint(day_off_ot)}, "{owner}", "{owner}", "{creation}", "{creation}"
+						),"""
+		elif not repeat_days and day_off:
+			for employee in employees:
+				# working days
+				for dr in day_off_dates:
+					name = f"{dr}_{employee}_{roster_type}"
+					id_list.append(name)
+					query += f"""
+						(
+							"{name}", "{employee}", "{dr}", "", "", "", '', "Day Off", "", "", "Basic", 0, 
+							"{owner}", "{owner}", "{creation}", "{creation}"
+						),"""
 		else:
-			_query = query
-			id_list = [] #store for schedules list
 			for employee in employees:
+				# working days
 				for dr in date_range:
 					name = f"{dr}_{employee}_{roster_type}"
 					id_list.append(name)
-					_query += f"""
+					query += f"""
 						(
 							"{name}", "{employee}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}", 
 							'{operations_shift.shift_type}', "Working", "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
-							"{day_off_ot}", "{owner}", "{owner}", "{creation}", "{creation}"
+							{cint(day_off_ot)}, "{owner}", "{owner}", "{creation}", "{creation}"
 						),"""
-			_query = _query.replace(", None", '')
-			_query = _query[:-1]
 
-			_query += f"""
-				ON DUPLICATE KEY UPDATE
-				modified_by = VALUES(modified_by),
-				modified = "{creation}",
-				operations_role = VALUES(operations_role),
-				post_abbrv = VALUES(post_abbrv),
-				roster_type = VALUES(roster_type),
-				shift = VALUES(shift),
-				project = VALUES(project),
-				site = VALUES(site),
-				shift_type = VALUES(shift_type),
-				day_off_ot = VALUES(day_off_ot),
-				employee_availability = "Working"
-			"""
-			frappe.db.sql(_query)
-			frappe.db.commit()
-			# this queue up employee department and full name record update, it is not important in the initial record creation
-			# this was done to speed up record creation
-			frappe.enqueue(queue_employee_schedule_empdetail, employees=employees, id_list=id_list)
+		query = query[:-1]
+
+		query += f"""
+			ON DUPLICATE KEY UPDATE
+			modified_by = VALUES(modified_by),
+			modified = "{creation}",
+			operations_role = VALUES(operations_role),
+			post_abbrv = VALUES(post_abbrv),
+			roster_type = VALUES(roster_type),
+			shift = VALUES(shift),
+			project = VALUES(project),
+			site = VALUES(site),
+			shift_type = VALUES(shift_type),
+			day_off_ot = VALUES(day_off_ot),
+			employee_availability = VALUES(employee_availability)
+		"""
+		frappe.db.sql(query, values=[], as_dict=1)
+		frappe.db.commit()
+		# this queue up employee department and full name record update, it is not important in the initial record creation
+		# this was done to speed up record creation
+		frappe.enqueue(queue_employee_schedule_empdetail, employees=employees, id_list=id_list)
 	else:
 		"""
 			Handle request employee schedule
@@ -421,10 +439,10 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			group_by="employee DESC"
 		)
 		if len(from_schedule):
-			if otRoster == 'false':
-				roster_type = 'Basic'
-			elif otRoster == 'true':
+			if day_off_ot == 1:
 				roster_type = 'Over-Time'
+			else:
+				roster_type = 'Basic'
 			
 			requester, requester_name = frappe.db.get_value("Employee", {"user_id":frappe.session.user}, ["name", "employee_name"])
 			# get required shift supervisors and make as dict for easy hashing
