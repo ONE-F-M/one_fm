@@ -2736,12 +2736,7 @@ function displayWeekCalendar(weekCalendarSettings, page) {
 }
 
 function unschedule_staff(page) {
-	let employees = [];
-	let selected = [... new Set(classgrt)];
-	selected.forEach(function (i) {
-		let [employee, date] = i.split("|");
-		employees.push({ employee, date });
-	});
+	let employees = window.employees_list;
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
 	let d = new frappe.ui.Dialog({
 		'title': 'Unschedule Staff',
