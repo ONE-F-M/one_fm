@@ -1862,15 +1862,17 @@ def create_roster_employee_actions():
                                 employee not in
                                 (select employee
                                 from `tabEmployee Schedule`
-                                where date >= %(start)s and date <=%(end)s UNION  
-                                select employee from `tabLeave Application` where status = 'Approved' and to_date > %(end)s )""",
+                                where date >= %(start)s and date <=%(end)s)""",
                                 {'start': start_date, 'end': end_date})
-    print(len(employees_not_rostered))
-    frappe.throw()
+
+    list_of_leaves_within_employee_action_period = frappe.db.get_list("Leave Application", {"status": "Approved", "from_date":["<", start_date ], "to_date": [">", end_date]}, pluck="employee")
+
     employees = ()
 
     # fetch employees that are not rostered from the result returned by the query and append to tuple
     for emp in employees_not_rostered:
+        if emp[0] in list_of_leaves_within_employee_action_period:
+            continue
         employees = employees + emp
 
     # fetch supervisors and list of employees(not rostered) under them
