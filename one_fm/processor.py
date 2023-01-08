@@ -65,13 +65,13 @@ def is_user_id_company_prefred_email_in_employee(user_id):
 		return True if user id is company prefered email id
 		return False if employee not exists for the user id / user id is company prefered email id
 	'''
-	user_id_not_company_prefred_in_employee = False
+	user_id_company_prefred_in_employee = False
 	employee = frappe.db.exists('Employee', {'user_id': user_id})
 	if employee:
 		prefered_email, company_email, prefered_contact_email = frappe.db.get_value("Employee", employee, ["prefered_email", "company_email", "prefered_contact_email"])
 		if prefered_contact_email == 'Company Email' and prefered_email == company_email and prefered_email == user_id:
-			user_id_not_company_prefred_in_employee = True
-	return user_id_not_company_prefred_in_employee
+			user_id_company_prefred_in_employee = True
+	return user_id_company_prefred_in_employee
 
 @frappe.whitelist()
 def send_whatsapp(sender_id, body):
