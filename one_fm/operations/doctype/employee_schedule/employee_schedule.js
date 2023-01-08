@@ -16,6 +16,12 @@ frappe.ui.form.on('Employee Schedule', {
 			});
 
 		}
+	},
+	employee_availability: function(frm){
+		if (frm.doc.employee_availability === 'Day Off'){
+			frm.set_value('operations_role','');
+			frm.set_value('post_abbrv', '');
+		}
 	}
 });
 
