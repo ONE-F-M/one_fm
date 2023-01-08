@@ -12,7 +12,7 @@ from frappe.utils.csvutils import read_csv_content
 from frappe.utils import (
     cint, cstr, flt, rounded,  nowdate, comma_and, date_diff, getdate,
     formatdate ,get_url, get_datetime, add_to_date, time_diff, get_time,
-    time_diff_in_hours
+    time_diff_in_hours, get_url_to_form
 )
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
@@ -2660,6 +2660,7 @@ def send_workflow_action_email(doc, recipients):
 
     common_args = get_common_email_args(doc)
     message = common_args.pop("message", None)
+    pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
     if not list(user_data_map[0].values()):
         email_args = {
             "recipients": recipients,
@@ -2673,7 +2674,7 @@ def send_workflow_action_email(doc, recipients):
         for d in [i for i in list(user_data_map[0].values()) if i.get('email') in recipients]:
             email_args = {
                 "recipients": recipients,
-                "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message},
+                "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message, "pdf_link": pdf_link},
                 "reference_name": doc.name,
                 "reference_doctype": doc.doctype,
             }
