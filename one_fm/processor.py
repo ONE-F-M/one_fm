@@ -10,7 +10,8 @@ def sendemail(recipients, subject, header=None, message=None,
 	content=None, reference_name=None, reference_doctype=None,
 	sender=None, cc=None , attachments=None, delay=None, args=None, template=None):
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
-
+	template = "default_email"
+	head = header[0] if header else ""
 	if not message:
 		message = " "
 
@@ -18,9 +19,11 @@ def sendemail(recipients, subject, header=None, message=None,
 		recipients.remove("Administrator")
 	
 	if args:
-		extra_message, text_content = get_email_from_template("default_email", args)
-		if extra_message:
-			message += extra_message
+		template = "default_email_with_workflow"
+		head = "Workflow Action"
+		actions = args.get("actions")
+		message = args.get("message")
+		pdf_link = args.get("pdf_link")
 
 	if attachments:
 		message += """
@@ -28,23 +31,25 @@ def sendemail(recipients, subject, header=None, message=None,
 		"""
 
 	for recipient in recipients:
-		if is_user_id_not_company_prefred_email_in_employee(recipient):
+		if not is_user_id_not_company_prefred_email_in_employee(recipient):
 			recipients.remove(recipient)
-
+	print(reference_doctype)
 	if recipients and len(recipients) > 0:
-		frappe.sendmail(template = "default_email",
+		frappe.sendmail(template = template,
 			recipients=recipients,
 			sender= sender,
 			cc=cc,
-			reference_name= reference_name,
-			reference_doctype = reference_doctype,
 			subject=subject,
 			args=dict(
-				header=header[0] if header else "",
+				header=head,
 				subject=subject,
 				message=message,
 				content=content,
-				logo=logo
+				reference_name= reference_name,
+				reference_doctype = reference_doctype,
+				logo=logo,
+				actions=actions,
+				pdf_link=pdf_link
 			),
 			attachments = attachments,
 			delayed=delay
