@@ -31,9 +31,9 @@ def sendemail(recipients, subject, header=None, message=None,
 		"""
 
 	for recipient in recipients:
-		if not is_user_id_not_company_prefred_email_in_employee(recipient):
+		if not is_user_id_company_prefred_email_in_employee(recipient):
 			recipients.remove(recipient)
-	print(reference_doctype)
+
 	if recipients and len(recipients) > 0:
 		frappe.sendmail(template = template,
 			recipients=recipients,
@@ -56,13 +56,13 @@ def sendemail(recipients, subject, header=None, message=None,
 		)
 
 @frappe.whitelist()
-def is_user_id_not_company_prefred_email_in_employee(user_id):
+def is_user_id_company_prefred_email_in_employee(user_id):
 	'''
 		This method is used for finding the receiver is company prefered_email
 		in the employee record linked with the user_id
 		args:
 			user_id: email id (Text)(Email)
-		return True if user id is not company prefered email id
+		return True if user id is company prefered email id
 		return False if employee not exists for the user id / user id is company prefered email id
 	'''
 	user_id_not_company_prefred_in_employee = False
