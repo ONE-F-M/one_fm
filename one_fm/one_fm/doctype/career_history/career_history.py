@@ -51,7 +51,7 @@ class CareerHistory(Document):
 		if not self.name:
 			# hack! if name is null, it could cause problems with !=
 			self.name = "New "+self.doctype
-		career_history = frappe.db.exists('Career History', {'job_applicant': self.job_applicant, 'name': ['!=', self.name], 'docstatus': ['<', 2]})
+		career_history = frappe.db.exists('Career History', {'job_applicant': self.job_applicant, 'name': ['!=', self.name], 'docstatus': ['>', 1]})
 		if career_history:
 			frappe.throw(_("""Career History <b><a href="#Form/Career History/{0}">{0}</a></b> is exists against \
 				Job Applicant {1}.!""").format(career_history, self.applicant_name))

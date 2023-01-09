@@ -87,10 +87,18 @@ career_history = Class.extend({
             'So {{job_applicant.applicant_name}}, after your promotion/salary increase did you get another promotion or salary increase?':
             'Did you get any promotion or salary increase?'}</label>
           <select class="custom-select promotion_select_${company_no}${promotion_no}">
-            <option value="0">No, I did not get any promotion or salary increase</option>
-            <option value="1">Yes, I got a promotion with a salary increase</option>
-            <option value="2">Yes, I only got a promotion</option>
-            <option value="3">Yes, I only got a salary increase</option>
+            <option value="0">
+							No, I did not get any promotion or salary increase
+						</option>
+            <option value="1">
+							Yes, I got a promotion with a salary increase
+						</option>
+            <option value="2">
+							Yes, I only got a promotion
+						</option>
+            <option value="3">
+							Yes, I only got a salary increase
+						</option>
           </select>
         <div class="row mx-auto col-lg-12 col-md-12 mb-12 promotion_details_section_${company_no}${promotion_no}" style="width: 100%; display: flex">
         </div>
@@ -169,36 +177,61 @@ career_history = Class.extend({
       }
     });
   },
-  create_company_section_html: function(company_no) {
+	create_company_section_html: function(company_no) {
+		var me = this;
     $('.main_section').delay(400).fadeIn();
     if(company_no>=2){
       $('.back-btn').fadeIn();
-      this.back_career_history(company_no);
+      me.back_career_history(company_no);
     }
-    var company_section_html = `
+		frappe.call({
+			method: 'one_fm.templates.pages.career_history.get_the_company_details',
+			args: {'which_company': company_no},
+			callback: function(r) {
+				var data = r.message;
+				if(data && data.length > 0){
+					data.forEach((company, i) => {
+						me.set_company_section_html(company, i+1);
+					});
+				}
+				else{
+					me.set_company_section_html(false, company_no);
+				}
+			}
+		});
+  },
+	set_company_section_html: function(company, company_no) {
+		var company_section_html = `
     <div class="section_${company_no}">
     <h3 class="mx-auto">Hello, {{job_applicant.applicant_name}}, tell us about the ${stringifyNumber(company_no)} company you worked for!</h3>
 		<div class="row mx-auto col-lg-12 col-md-12 mb-3 company_${company_no} border-top">
 		  	<div class="my-3 col-lg-12 col-md-12">
 				<label class="form-label">What was the company's name? </label>
-				<input type="text" class="form-control company_${company_no}_name" placeholder="Enter the ${stringifyNumber(company_no)} Company Name"/>
+				<input type="text" class="form-control company_${company_no}_name"
+					placeholder="Enter the ${stringifyNumber(company_no)} Company Name"
+					value="${company?company.company_name:''}"
+				/>
 		  	</div>
 		  	<div class="my-3 col-lg-12 col-md-12">
 				<label class="form-label">Which country did you get employed in?</label> <br>
 					<select class="form-control country_of_company_${company_no}">
 					<option>Select Country</option>
 					{% for country in country_list %}
-					<option>{{country.name}}</option>
+					<option ${company?(company.country_of_employment=='{{country.name}}'? 'selected': ''):''}>{{country.name}}</option>
 					{% endfor %}
 				</select>
 		  	</div>
 		  	<div class="mb-3 col-lg-12 col-md-12">
 				<label class="form-label">When did you join the company?</label>
-				<input type="date" class="form-control joined_company${company_no}"/>
+				<input type="date" class="form-control joined_company${company_no}"
+					value="${company?company.start_date:''}"
+				/>
 		  	</div>
 		  	<div class="mb-3 col-lg-12 col-md-12">
 				<label class="form-label">What was your first salary at this company?</label>
-				<input type="text" class="form-control salary_company${company_no}" placeholder="Enter your Salary in KWD"/>
+				<input type="text" class="form-control salary_company${company_no}" placeholder="Enter your Salary in KWD"
+					value="${company?company.monthly_salary_in_kwd:''}"
+				/>
 		  	</div>
 
 			<div class="col-lg-12 col-md-12">
@@ -207,7 +240,9 @@ career_history = Class.extend({
 
 			<div class="mb-3 col-lg-12 col-md-12">
 				<label  class="form-label">What was your starting job title?</label>
-				<input type="text" class="form-control starting_job_title_company_${company_no}" placeholder="Enter the Job Title"/>
+				<input type="text" class="form-control starting_job_title_company_${company_no}" placeholder="Enter the Job Title"
+					value="${company?company.job_title:''}"
+				/>
 			</div>
 
 		  	<div class="mt-5 promotion_section_${company_no}" style="width: 100%">
@@ -218,18 +253,132 @@ career_history = Class.extend({
 				<label>Are you still working for the same company?</label>
 				<select class="custom-select still_working_on_same_company_${company_no}">
 				<option value="0">Choose</option>
-				<option value="1">Yes</option>
-				<option value="2">No</option>
+				<option value="1" ${company?(company.end_date? '': 'selected'):''}>Yes</option>
+				<option value="2" ${company?(company.end_date? 'selected': ''):''}>No</option>
 				</select>
 			</div>
 	</div>
   </div>`;
     $(".main_section").append(company_section_html);
-    TOTAL_COMPANY_NO += 1;
-    this.set_promotion_section_html(company_no, 1);
+		TOTAL_COMPANY_NO += 1;
+		if(company && company.promotions && company.promotions.length > 0){
+			company.promotions.forEach((promotion, i) => {
+				this.set_promotion_section_html(company_no, i+1);
+				this.set_promotion_details(company_no, i+1, promotion)
+			});
+		}
+		else{
+			this.set_promotion_section_html(company_no, 1);
+		}
     this.on_change_still_working_on_same_company(company_no);
-  },
-  next_career_history: function(company_no) {
+		if(company){
+			this.set_still_working_on_same_company(company_no, company.reason_for_leaving_job, company.end_date, company.working_now);
+		}
+	},
+	set_still_working_on_same_company: function(company_no, reason_for_leaving_job, end_date, working_now) {
+		var still_working = $(".still_working_on_same_company_"+(company_no.toString())).val();
+		if (still_working == 1){
+			var reason_why_leave_job_html = `<div class="mx-auto col-lg-12 col-md-12 mb-12 reason_why_leave_job_${company_no}">
+				<label class="form-label">Why do you plan to leave the job?</label>
+				<textarea rows="4" cols="50" name="comment" form="usrform" class="form-control reason_why_leave_job_${company_no}_text">${reason_for_leaving_job}</textarea>
+			</div>`;
+			$(".company_"+(company_no.toString())).append(reason_why_leave_job_html);
+			$('.submit-btn').fadeIn();
+		}
+		else if(still_working == 2){
+			var when_did_you_left_the_company_html = `<div class="row mx-auto col-lg-12 col-md-12 mt-5 mb-12 when_did_you_left_${company_no}">
+				<label  class="form-label">When did you leave the company?</label>
+				<input type="date" class="form-control when_did_you_left_${company_no}_date" value = "${end_date}"/>
+			</div>`
+			$(".company_"+(company_no.toString())).append(when_did_you_left_the_company_html);
+			var are_you_still_working_html = `<div class="row mx-auto col-lg-12 col-md-12 mb-3 are_you_still_working_${company_no}">
+	      <label  class="form-label">Are you still working?</label>
+	      <select class="custom-select are_you_still_working_${company_no}_select">
+	        <option value="0">Choose</option>
+	        <option value="1" ${working_now=='No' ? 'selected' : ''}>No</option>
+	        <option value="2" ${working_now=='Yes' ? 'selected' : ''}>Yes</option>
+	      </select>
+	    </div>`
+	    $(".company_"+(company_no.toString())).append(are_you_still_working_html);
+			this.on_change_are_you_still_working(company_no)
+			var are_you_still_working = $(`.are_you_still_working_${company_no}_select`).val();
+      if(are_you_still_working == 2){
+        $('.submit-btn').fadeOut();
+        $('.next-btn').fadeIn();
+        this.next_career_history(company_no+1);
+      }
+			else if(are_you_still_working == 0){
+        $('.next-btn').fadeOut();
+        $('.submit-btn').fadeOut();
+      }
+      else if(are_you_still_working == 1){
+        $('.next-btn').fadeOut();
+        $('.submit-btn').fadeIn();
+        for (let i = company_no; i < TOTAL_COMPANY_NO; i++) {
+          $(".company_"+((i+1).toString())).remove();
+
+        }
+        TOTAL_COMPANY_NO = company_no;
+      }
+		}
+		else if(still_working == 0){
+			$('.submit-btn').fadeOut();
+		}
+	},
+	set_promotion_details: function(company_no, promotion_no, promotion) {
+		var me = this;
+		var promotion_details_html = "";
+		var promotion_details_next_job_title_html = `<div class="my-5 col-lg-12 col-md-12">
+				<label class="form-label">So, tell us what position you got promoted to first.</label>
+				<input type="text" class="form-control position_${company_no}${promotion_no}" placeholder="Enter Your New Job Title"
+					value = "${promotion.job_title}"
+				/>
+			</div>`;
+		var promotion_details_salary_html = `<div class="my-5 col-lg-12 col-md-12">
+				<label class="form-label">How much was your incremented salary in KWD?</label>
+				<input type="text" class="form-control salary_${company_no}${promotion_no}"
+					placeholder="Enter your increased Salary in KWD" value = "${promotion.monthly_salary_in_kwd}"
+				/>
+			</div>`;
+		var promotion_details_promotion_date_html = `<div class="my-5 col-lg-12 col-md-12">
+				<label class="form-label">When did you get promoted?</label>
+				<input type="date" class="form-control date_of_promotion_${company_no}${promotion_no}"
+					value = "${promotion.start_date}"
+				/>
+			</div>`;
+
+		/*
+			Got any Promotion or Salary Increase
+			value="0" if selected 'No, I did not get any promotion or salary increase'
+			value="1" if selected 'Yes, I Got a Promotion with a Salary Increase'
+			value="2" if selected 'Yes, I only got a promotion'
+			value="3" if selected 'Yes, Only Got a Salary Increase'
+		*/
+		if(promotion.promotion_value == 1){
+			promotion_details_html = promotion_details_next_job_title_html+promotion_details_salary_html+promotion_details_promotion_date_html;
+		}
+		else if(promotion.promotion_value == 2){
+			promotion_details_html = promotion_details_next_job_title_html+promotion_details_promotion_date_html;
+		}
+		else if(promotion.promotion_value == 3){
+			promotion_details_html = promotion_details_salary_html+promotion_details_promotion_date_html;
+		}
+		$(`.promotion_details_section_${company_no}${promotion_no}`).empty();
+		$(`.promotion_details_section_${company_no}${promotion_no}`).append(promotion_details_html);
+		if(promotion.promotion_value > 0){
+			me.set_promotion_section_html(company_no, promotion_no+1)
+			PROMOTIONS_IN_COMPANY[company_no] = promotion_no+1;
+		}
+		else{
+			var max_promotion = PROMOTIONS_IN_COMPANY[company_no];
+			for (let i = promotion_no; i <= max_promotion; i++) {
+				$(`.promotion_section_${company_no}${(i+1).toString()}`).remove();
+				$(`.promotion_details_section_${company_no}${(i+1).toString()}`).remove();
+			}
+			PROMOTIONS_IN_COMPANY[company_no] = promotion_no;
+		}
+	},
+	next_career_history: function(company_no) {
     // Move to Next Career History
     var me = this;
     $('.btn-next-career-history').click(function(){
@@ -286,7 +435,7 @@ career_history = Class.extend({
   },
   intro_btn: function(me) {
     // Create Comapany Section
-    $('.btn-intro-next').click(function(){
+	  $('.btn-intro-next').click(function(){
       $('.intro_section').fadeOut();
        me.create_company_section_html(1)
     });
