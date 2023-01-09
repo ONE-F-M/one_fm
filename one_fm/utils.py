@@ -737,6 +737,7 @@ def get_salary(employee):
         doc.end_date=get_last_day(getdate(nowdate()))
         doc.employee= str(employee)
         doc.posting_date= nowdate()
+        doc.flags.ignore_mandatory = True
         doc.insert(ignore_permissions=True)
 
         if doc.name:
