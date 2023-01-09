@@ -1299,10 +1299,3 @@ def mark_daily_attendance(start_date, end_date):
 			"""
 		frappe.db.sql(query, values=[], as_dict=1)
 		frappe.db.commit()
-
-
-
-	# in_checkins = frappe.db.sql(f""" SELECT * FROM `tabEmployee Checkin` WHERE shift_assignment IN {shift_assignments_tuple} AND log_type='IN'; """, values=[], as_dict=1)
-	# out_checkins = frappe.db.sql(f""" SELECT * FROM `tabEmployee Checkin` WHERE shift_assignment OUT {shift_assignments_tuple} AND log_type='OUT'; """, values=[], as_dict=1)
-	
-	# print(out_checkins_dict)
