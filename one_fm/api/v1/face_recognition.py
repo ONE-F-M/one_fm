@@ -150,6 +150,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         )
         # Call service stub and get response
         res = stub.FaceRecognition(req)
+        
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
         frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
@@ -179,6 +180,17 @@ def check_employee_non_shift(employee):
     if shift_working==0 and employement_type!="Contract":
         return True
     return False
+
+def has_day_off(employee,date):
+    """
+        Confirm if the employee schedule for that day and employee is set to day off
+    """
+    is_day_off = False
+    existing_schedule = frappe.get_value("Employee Schedule",{'employee':employee,'date':date},['employee_availability'])
+    if existing_schedule:
+        if existing_schedule == 'Day Off'
+        is_day_off = True
+    return is_day_off
 
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
@@ -213,6 +225,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         shift = get_current_shift(employee)
         site, location = None, None
         if shift:
+            if has_day_off(employee,date):
+                return response("Success", 200, None, "User is scheduled for a Day Off.")
             if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
                 check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
                 if log_type == "IN":
@@ -241,7 +255,6 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
         if not location and site:
             return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
-
 
         result=location[0]
         result['user_within_geofence_radius'] = True
