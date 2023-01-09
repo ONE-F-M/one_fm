@@ -36,7 +36,7 @@ def sendemail(recipients, subject, header=None, message=None,
 	for recipient in recipients:
 		if not is_user_id_company_prefred_email_in_employee(recipient):
 			recipients.remove(recipient)
-	p
+			
 	if recipients and len(recipients) > 0:
 		frappe.sendmail(template = template,
 			recipients=recipients,
