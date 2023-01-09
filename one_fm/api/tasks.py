@@ -1135,3 +1135,146 @@ def create_additional_salary(employee, amount, component, end_date):
 	additional_salary.notes = "Site Allowance"
 	additional_salary.insert()
 	additional_salary.submit()
+
+
+
+# mark daily attendance
+def mark_daily_attendance():
+	"""
+		This method marks attendance for all employees
+	"""
+	owner = frappe.session.user
+	creation = now()
+	start_date = "2023-01-05"
+	end_date = "2023-01-05"
+	# Get shift type and make hashmap
+	shift_types = frappe.db.get_list("Shift Type", fields="*")
+	shift_types_dict = {}
+	for i in shift_types:
+		shift_types_dict[i.name] = i
+	
+	employees = [i.name for i in frappe.db.get_list("Employee", filters={'status':'Active'})]
+	employees_dict = {}
+	# for emp in employees:
+	# 	employees_dict[emp.name] = {}
+
+
+	# get attendance for the day
+	attendance_list = frappe.db.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['!=', 'On Leave']})
+	attendance_dict = {}
+	for i in attendance_list:
+		attendance_dict[i.employee] = i
+
+	# Get shift assignment and make hashmap
+	shift_assignments = frappe.db.sql(f"""
+		SELECT * FROM `tabShift Assignment` WHERE start_date="{start_date}" AND end_datetime<="{end_date} 23:59:59" AND roster_type='Basic' 
+		AND docstatus=1
+	""", as_dict=1)
+	shift_assignments_dict = {}
+	shift_assignments_list = [i.name for i in shift_assignments]
+
+	for row in shift_assignments:
+		shift_assignments_dict[row.name] = row
+		if row.employee in employees:
+			if employees_dict.get(row.employee):
+				employees_dict[row.employee]['shift_assignments'].append(row)
+			else:
+				employees_dict[row.employee] = {'shift_assignments':[row]}
+
+	shift_assignments_tuple = str(tuple(shift_assignments_list)) #[:-2]+')'
+
+	# Get checkins and make hashmap
+	in_checkins = frappe.db.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'IN'}, fields="*",
+		order_by="creation ASC", group_by="shift_assignment")
+	out_checkins = frappe.db.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'}, fields="*",
+		order_by="creation DESC", group_by="shift_assignment")
+
+	in_checkins_dict = {}
+	for i in in_checkins:
+		in_checkins_dict[i.shift_assignment] = i
+
+	out_checkins_dict = {}
+	for i in out_checkins:
+		out_checkins_dict[i.shift_assignment] = i
+	
+
+	# create attendance object
+	employee_attendance = {}
+	for k, v in in_checkins_dict.items():
+		if out_checkins_dict.get(k):
+			check_out = out_checkins_dict.get(k)
+			shift_type = shift_types_dict.get(v.shift_type)
+			shift_assignment = shift_assignments_dict.get(v.shift_assignment)
+			in_time = v.actual_time
+			out_time = check_out.time
+			working_hours = (out_time - in_time).total_seconds() / (60 * 60)
+			late_entry = 1 if (in_time.hour * 60 + in_time.minute-shift_type.late_entry_grace_period) * 60 + in_time.second > shift_type.start_time.total_seconds() else 0
+			early_exit = 1 if (out_time.hour * 60 + out_time.minute+shift_type.early_exit_grace_period) * 60 + out_time.second < shift_type.start_time.total_seconds() else 0
+			
+			if attendance_dict.get(v.employee):
+				name = attendance_dict.get(v.employee).name
+			else:
+				name = f"HR-ATT-{start_date}-{v.employee}"
+			employee_attendance[v.employee] = frappe._dict({
+				'name':name, 'employee':v.employee, 'employee_name':v.employee_name, 'working_hours':working_hours, 'status':'Present',
+				'shift':v.shift_type, 'in_time':in_time, 'out_time':out_time, 'shift_assignment':v.shift_assignment, 'operations_shift':v.operations_shift,
+				'site':shift_assignment.site, 'project':shift_assignment.project, 'attendance_date': start_date, 'company':shift_assignment.company,
+				'department': shift_assignment.department, 'late_entry':late_entry, 'early_exit':early_exit, 'operations_role':shift_assignment.operations_role,
+				'roster_type':shift_assignment.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
+			})
+	
+	# create attendance with sql injection
+	if employee_attendance:
+		query = """
+			INSERT INTO `tabAttendance` (`name`, `employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
+			`shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`, 
+			`department`, `late_entry`, `early_exit`, `operations_role`, `roster_type`, `docstatus`, `modified_by`, `owner`,
+			`creation`, `modified`)
+			VALUES 
+
+		"""
+
+		for k, v in employee_attendance.items():
+			query+= f"""
+			(
+				"{v.name}", "{v.employee}", "{v.employee_name}", {v.working_hours}, "{v.status}", '{v.shift}', "{v.in_time}",
+				"{v.out_time}", "{v.shift_assignment}", "{v.operations_shift}", "{v.site}", "{v.project}", "{v.attendance_date}", "{v.company}", 
+				"{v.department}", {v.late_entry}, {v.early_exit}, "{v.operations_role}", "{v.roster_type}", {v.docstatus}, "{v.modified_by}",
+				"{v.created_by}", "{v.creation}", "{v.modified}"
+			),"""
+		
+		query = query[:-1]
+		query += f"""
+				ON DUPLICATE KEY UPDATE
+				employee = VALUES(modified_by),
+				employee_name = VALUES(employee_name),
+				working_hours = VALUES(working_hours),
+				status = VALUES(status),
+				shift = VALUES(shift),
+				in_time = VALUES(in_time),
+				out_time = VALUES(out_time),
+				shift_assignment = VALUES(shift_assignment),
+				operations_shift = VALUES(operations_shift),
+				site = VALUES(site),
+				project = VALUES(project),
+				attendance_date = VALUES(attendance_date),
+				company = VALUES(company),
+				department = VALUES(department),
+				late_entry = VALUES(late_entry),
+				early_exit = VALUES(early_exit),
+				operations_role = VALUES(operations_role),
+				roster_type = VALUES(roster_type),
+				docstatus = VALUES(docstatus),
+				modified_by = VALUES(modified_by),
+				modified = VALUES(modified)
+			"""
+		# print(query)
+		frappe.db.sql(query, values=[], as_dict=1)
+		frappe.db.commit()
+
+
+
+	# in_checkins = frappe.db.sql(f""" SELECT * FROM `tabEmployee Checkin` WHERE shift_assignment IN {shift_assignments_tuple} AND log_type='IN'; """, values=[], as_dict=1)
+	# out_checkins = frappe.db.sql(f""" SELECT * FROM `tabEmployee Checkin` WHERE shift_assignment OUT {shift_assignments_tuple} AND log_type='OUT'; """, values=[], as_dict=1)
+	
+	# print(out_checkins_dict)
