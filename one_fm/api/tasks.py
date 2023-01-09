@@ -1180,7 +1180,7 @@ def mark_daily_attendance(start_date, end_date):
 	# Get shift assignment and make hashmap
 	shift_assignments = frappe.db.sql(f"""
 		SELECT * FROM `tabShift Assignment` WHERE start_date="{start_date}" AND end_date="{end_date}" AND roster_type='Basic' 
-		AND docstatus=1
+		AND docstatus=1 AND status='Active'
 	""", as_dict=1)
 	shift_assignments_dict = {}
 	shift_assignments_list = [i.name for i in shift_assignments]
