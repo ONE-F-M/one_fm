@@ -366,7 +366,7 @@ career_history = Class.extend({
 		$(`.promotion_details_section_${company_no}${promotion_no}`).empty();
 		$(`.promotion_details_section_${company_no}${promotion_no}`).append(promotion_details_html);
 		if(promotion.promotion_value > 0){
-			me.set_promotion_section_html(company_no, promotion_no+1)
+			this.set_promotion_section_html(company_no, promotion_no+1)
 			PROMOTIONS_IN_COMPANY[company_no] = promotion_no+1;
 		}
 		else{
