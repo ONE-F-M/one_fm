@@ -690,7 +690,7 @@ override_whitelisted_methods = {
 	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview"
 }
-ShiftType.process_auto_attendance = process_auto_attendance
+#ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation
 required_apps = ['frappe', 'erpnext']
