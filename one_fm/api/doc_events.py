@@ -47,9 +47,9 @@ def employee_checkin_validate(doc, method):
 				doc.shift_type = curr_shift.shift_type
 
 				if curr_shift.start_datetime and curr_shift.end_datetime and existing_perm:
-					perm_doc = frappe.get_doc("Shift Permission", existing_perm)
-					test = frappe.db.sql(""" select date, arrival_time, leaving_time from `tabShift Permission` where name == {name}""".format(name=existing_perm, as_dict=1))
-					permitted_time = get_datetime(perm_doc.date) + (perm_doc.arrival_time if doc.log_type == "IN" else perm_doc.leaving_time)
+					perm_doc = frappe.db.get_value("Shift Permission", existing_perm, ["date", "arrival_time", "leaving_time"], as_dict=1)
+
+					permitted_time = get_datetime(perm_doc['date']) + (perm_doc["arrival_time"] if doc.log_type == "IN" else perm_doc["leaving_time"])
 					if doc.log_type == "IN" and (checkin_time <= permitted_time and checkin_time >= curr_shift.start_datetime):
 						doc.time = 	curr_shift.start_datetime
 						doc.skip_auto_attendance = 0
