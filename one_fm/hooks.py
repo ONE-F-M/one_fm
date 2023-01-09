@@ -595,11 +595,19 @@ scheduler_events = {
 		"30 0 1 * *": [
 			'one_fm.tasks.one_fm.monthly.execute'
 		],
+		# create shift assignment
 		"15 0 * * *": [
 			'one_fm.api.tasks.assign_am_shift'
 		],
 		"15 12 * * *": [
 			'one_fm.api.tasks.assign_pm_shift'
+		],
+		# mark attendance
+		"45 23 * * *": [
+			'one_fm.api.tasks.mark_day_attendance'
+		],
+		"45 12 * * *": [
+			'one_fm.api.tasks.mark_night_attendance'
 		],
 	}
 }
