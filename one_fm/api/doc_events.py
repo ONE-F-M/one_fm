@@ -36,6 +36,7 @@ def employee_checkin_validate(doc, method):
 				"IN" : "Arrive Late",
 				"OUT": "Leave Early"
 			}
+
 			existing_perm = None
 			checkin_time = get_datetime(doc.time)
 			curr_shift = get_current_shift(doc.employee)
@@ -47,8 +48,7 @@ def employee_checkin_validate(doc, method):
 				doc.shift_type = curr_shift.shift_type
 
 				if curr_shift.start_datetime and curr_shift.end_datetime and existing_perm:
-					perm_doc = frappe.db.get_value("Shift Permission", existing_perm, ["date", "arrival_time", "leaving_time"], as_dict=1)
-
+					perm_doc = frappe.db.sql(f"""select date, arrival_time, leaving_time from `tabShift Permission` where name = %s """, existing_perm, as_dict=1)[0]
 					permitted_time = get_datetime(perm_doc['date']) + (perm_doc["arrival_time"] if doc.log_type == "IN" else perm_doc["leaving_time"])
 					if doc.log_type == "IN" and (checkin_time <= permitted_time and checkin_time >= curr_shift.start_datetime):
 						doc.time = 	curr_shift.start_datetime
