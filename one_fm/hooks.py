@@ -102,6 +102,7 @@ doctype_list_js = {
 	"Job Offer": "public/js/doctype_js/job_offer_list.js",
 	"Issue": "public/js/doctype_list_js/issue_list.js",
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
+	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -431,6 +432,7 @@ website_route_rules = [
 override_doctype_class = {
     "Leave Policy Assignment": "one_fm.overrides.leave_policy_assignment.LeavePolicyAssignmentOverride",
 	"Attendance Request": "one_fm.overrides.attendance_request.AttendanceRequestOverride",
+	"Attendance": "one_fm.overrides.attendance.AttendanceOverride",
 	"Shift Type": "one_fm.overrides.shift_type.ShiftTypeOverride",
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
@@ -599,7 +601,7 @@ scheduler_events = {
 		"15 23 * * *": [ # mark day attendance 11:15 pm
 			'one_fm.api.tasks.mark_day_attendance'
 		],
-		"45 12 * * *": [ # mark nignt attendance for previous day at 12:45 pm today
+		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
 			'one_fm.api.tasks.mark_night_attendance'
 		],
 	}

@@ -2786,3 +2786,39 @@ def get_payroll_cycle(filters={}):
             payroll_cycle[p.project] = _date
     return payroll_cycle
 
+
+
+def mark_attendance(
+	employee,
+	attendance_date,
+	status,
+	shift=None,
+	leave_type=None,
+	ignore_validate=False,
+	late_entry=False,
+	early_exit=False,
+):
+    from hrms.hr.doctype.attendance.attendance import get_duplicate_attendance_record, get_overlapping_shift_attendance
+    if get_duplicate_attendance_record(employee, attendance_date, shift):
+        return
+    if get_overlapping_shift_attendance(employee, attendance_date, shift):
+        return
+    company = frappe.db.get_value("Employee", employee, "company")
+    employee_availability = frappe.db.get_value("Employee Schedule", {"employee": employee, "date":attendance_date}, "employee_availability")
+    attendance = frappe.get_doc(
+        {
+            "doctype": "Attendance",
+            "employee": employee,
+            "attendance_date": attendance_date,
+            "status": "Day Off" if employee_availability == "Day Off" else status,
+            "company": company,
+            "shift": shift,
+            "leave_type": leave_type,
+            "late_entry": late_entry,
+            "early_exit": early_exit,
+        }
+    )
+    attendance.flags.ignore_validate = ignore_validate
+    attendance.insert()
+    attendance.submit()
+    return attendance

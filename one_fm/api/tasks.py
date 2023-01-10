@@ -10,7 +10,7 @@ from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
-from hrms.hr.doctype.attendance.attendance import mark_attendance
+from one_fm.utils import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
@@ -1172,7 +1172,7 @@ def mark_daily_attendance(start_date, end_date):
 
 
 	# get attendance for the day
-	attendance_list = frappe.db.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home']]})
+	attendance_list = frappe.db.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off']]})
 	attendance_dict = {}
 	for i in attendance_list:
 		attendance_dict[i.employee] = i
@@ -1242,10 +1242,11 @@ def mark_daily_attendance(start_date, end_date):
 	for i in shift_assignments:
 		if not employee_attendance.get(i.employee):
 			emp = employees_data.get(i.employee)
+			employee_availability = frappe.db.get_value("Employee Schedule", {"employee": i.employee, "date":start_date}, "employee_availability")
 			if not emp:
 				emp = frappe._dict({'department': '', 'employee_name': ''})
 			employee_attendance[i.employee] = frappe._dict({
-				'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name, 'working_hours':0, 'status':'Absent',
+				'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name, 'working_hours':0, 'status':'Day Off' if employee_availability == "Day Off" else "Absent" ,
 				'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':i.name, 'operations_shift':i.shift,
 				'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':i.company,
 				'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
