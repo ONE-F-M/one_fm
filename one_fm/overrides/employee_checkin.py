@@ -69,10 +69,10 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			early_exit = 0
 			late_entry = 0
 			if self.log_type=='IN':
-				if (datetime.strptime(self.actual_time, '%Y-%m-%d %H:%M:%S') - timedelta(minutes=shift_type.late_entry_grace_period)) > curr_shift.start_datetime:
+				if (datetime.strptime(str(self.actual_time), '%Y-%m-%d %H:%M:%S') - timedelta(minutes=shift_type.late_entry_grace_period)) > curr_shift.start_datetime:
 					late_entry = 1
 			if self.log_type=='OUT':
-				if (datetime.strptime(self.actual_time, '%Y-%m-%d %H:%M:%S') + timedelta(minutes=shift_type.early_exit_grace_period)) < curr_shift.end_datetime:
+				if (datetime.strptime(str(self.actual_time), '%Y-%m-%d %H:%M:%S') + timedelta(minutes=shift_type.early_exit_grace_period)) < curr_shift.end_datetime:
 					early_exit = 1
 
 
