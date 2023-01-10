@@ -1172,7 +1172,7 @@ def mark_daily_attendance(start_date, end_date):
 
 
 	# get attendance for the day
-	attendance_list = frappe.db.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home']]})
+	attendance_list = frappe.db.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off']]})
 	attendance_dict = {}
 	for i in attendance_list:
 		attendance_dict[i.employee] = i
@@ -1247,8 +1247,9 @@ def mark_daily_attendance(start_date, end_date):
 			emp = employees_data.get(i.employee)
 			if not emp:
 				emp = frappe._dict({'department': '', 'employee_name': ''})
+				employee_availability = frappe.db.get_value("Employee Schedule", {"employee": i.employee, "date":start_date}, "employee_availability")
 			employee_attendance[i.employee] = frappe._dict({
-				'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name, 'working_hours':0, 'status':'Absent',
+				'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name, 'working_hours':0, 'status':'Day Off' if employee_availability == "Day Off" else "Absent" ,
 				'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':i.name, 'operations_shift':i.shift,
 				'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':i.company,
 				'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,

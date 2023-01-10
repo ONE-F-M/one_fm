@@ -603,7 +603,7 @@ scheduler_events = {
 		"15 23 * * *": [ # mark day attendance 11:15 pm
 			'one_fm.api.tasks.mark_day_attendance'
 		],
-		"45 12 * * *": [ # mark nignt attendance for previous day at 12:45 pm today
+		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
 			'one_fm.api.tasks.mark_night_attendance'
 		],
 	}
