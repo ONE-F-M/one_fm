@@ -248,7 +248,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                         """.format(site=site), as_dict=1)
 
         if has_day_off(employee,date):
-                return response("Success", 200, None, "User is scheduled for a Day Off.")
+            employee_name = frappe.get_value("Employee",employee,'employee_name')
+            return response("Success", 200, None, f"Dear {employee_name}, Today is your day off.  Happy Recharging!.")
 
         if not site:
             return response("Resource Not Found", 404, None, "User not assigned to a shift.")
