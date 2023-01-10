@@ -3,6 +3,7 @@ from frappe import _
 from frappe.utils import get_fullname
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
+from frappe.desk.form.assign_to import add
 
 
 class LeaveApplicationOverride(LeaveApplication):
@@ -13,7 +14,7 @@ class LeaveApplicationOverride(LeaveApplication):
         validate_active_employee(self.employee)
         set_employee_name(self)
         self.validate_dates()
-        # self.assign_to_leave_approver()
+        
         self.validate_balance_leaves()
         self.validate_leave_overlap()
         self.validate_max_days()
@@ -32,15 +33,13 @@ class LeaveApplicationOverride(LeaveApplication):
             existing_assignment = frappe.get_all("ToDO",{'allocated_to':self.leave_approver,'reference_name':self.name})
             if not existing_assignment:
                 try:
-                    todo_doc = frappe.get_doc({
-                        'doctype':'ToDo',
-                        'allocated_to':self.leave_approver,
-                        'reference_type':'Leave Application',
-                        'description':f'Please note that leave application {self.name} is awaiting for your approval',
-                        'reference_name':self.name
-                    })
-                    todo_doc.insert()
-                    todo_doc.save()
+                    args = {
+                        'assign_to':[self.leave_approver],
+                        'doctype':"Leave Application",
+                        'name':self.name,
+                        'description':f'Please note that leave application {self.name} is awaiting your approval',
+                    }
+                    add(args)
                 except:
                     
                     frappe.log_error(frappe.get_traceback(),"Error assigning to User")
