@@ -1107,7 +1107,7 @@ let classmap = {
 	'Emergency Leave': 'purplebox',
 	'Annual Leave': 'purplebox',
 	'ASA': 'pinkboxcolor',
-	'Day Off OT': 'orangeboxcolor'
+	'Day Off OT': 'yellowboxcolor'
 };
 let leavemap = {
 	'Day Off': 'DO',

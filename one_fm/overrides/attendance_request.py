@@ -88,10 +88,14 @@ class AttendanceRequestOverride(AttendanceRequest):
 			check_shift_assignment = self.check_shift_assignment(attendance_date)
 			if check_shift_assignment:
 				check_attendance = self.check_attendance(attendance_date)
+				employee_availability = frappe.db.get_value("Employee Schedule", {"employee": self.employee, "date":attendance_date}, "employee_availability")
 
 				if check_attendance:
 					if check_attendance.status=='Absent':
-						check_attendance.db_set('Status', 'Work From Home')
+						if employee_availability == "Day Off":
+							check_attendance.db_set("Status", "Day Off")
+						else:
+							check_attendance.db_set('Status', 'Work From Home')
 						check_attendance.db_set('attendance_request', self.name)
 						check_attendance.reload()
 				else:
@@ -104,6 +108,8 @@ class AttendanceRequestOverride(AttendanceRequest):
 						attendance.status = "Work From Home"
 					else:
 						attendance.status = "Present"
+					if employee_availability == "Day Off":
+						attendance.status = "Day Off"
 					attendance.attendance_date = attendance_date
 					attendance.company = self.company
 					attendance.attendance_request = self.name
