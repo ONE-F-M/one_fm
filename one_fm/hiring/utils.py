@@ -218,18 +218,18 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
         external_work_history.total_experience = exp_in_month / 12
 
 def employee_after_insert(doc, method):
-	create_salary_structure_assignment(doc, method)
-	update_erf_close_with(doc)
-	create_wp_for_transferable_employee(doc)
-	create_leave_policy_assignment(doc)
-	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_generate_employee_id_on_employee_creation") and not doc.employee_id:
-		generate_employee_id(doc)
+    create_salary_structure_assignment(doc, method)
+    update_erf_close_with(doc)
+    create_wp_for_transferable_employee(doc)
+    create_leave_policy_assignment(doc)
+    if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_generate_employee_id_on_employee_creation") and not doc.employee_id:
+        generate_employee_id(doc)
 
-	if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
-		if not doc.company_email:
-			create_employee_user_from_employee_id(doc)
-		else:
-			create_employee_user_from_company_email(doc)
+    if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
+        if not doc.company_email:
+            create_employee_user_from_employee_id(doc)
+        else:
+            create_employee_user_from_company_email(doc)
 
 def employee_before_insert(doc, method):
     # check for nationality, then set residency
@@ -379,10 +379,13 @@ def notify_grd_operator_for_transfer_wp_record(tp):
 
 def update_erf_close_with(doc):
     if doc.one_fm_erf:
-        erf = frappe.get_doc('ERF', doc.one_fm_erf)
-        employees = erf.append('erf_employee')
-        employees.employee = doc.name
-        erf.save(ignore_permissions=True)
+        erf_employee = frappe.new_doc("ERF Employee")
+        erf_employee.parent = doc.one_fm_erf
+        erf_employee.parentfield = "erf_employee"
+        erf_employee.parenttype = "ERF"
+        erf_employee.employee = doc.name
+        erf_employee.docstatus = 1
+        erf_employee.save(ignore_permissions=True)
 
 @frappe.whitelist()
 def create_salary_structure_assignment(doc, method):
