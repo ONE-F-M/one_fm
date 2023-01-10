@@ -10,15 +10,13 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 
 
 	def after_insert(self):
-		print(self.as_dict())
 		try:
 			# update shift if not exists
 			if not self.shift_assignment or not self.operations_shift:
 				curr_shift = get_current_shift(self.employee)
-				print(curr_shift, '\n\n')
 				self.db_set('shift_assignment', curr_shift.name)
 				self.db_set('operations_shift', curr_shift.shift)
 				self.db_set('shift_type', curr_shift.shift_type)
 		except Exception as e:
-			print(e)
+			pass
 
