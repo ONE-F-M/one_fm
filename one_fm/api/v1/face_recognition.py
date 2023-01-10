@@ -188,8 +188,8 @@ def has_day_off(employee,date):
     is_day_off = False
     existing_schedule = frappe.get_value("Employee Schedule",{'employee':employee,'date':date},['employee_availability'])
     if existing_schedule:
-        if existing_schedule == 'Day Off'
-        is_day_off = True
+        if existing_schedule == 'Day Off':
+            is_day_off = True
     return is_day_off
 
 @frappe.whitelist()
@@ -225,8 +225,6 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         shift = get_current_shift(employee)
         site, location = None, None
         if shift:
-            if has_day_off(employee,date):
-                return response("Success", 200, None, "User is scheduled for a Day Off.")
             if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
                 check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
                 if log_type == "IN":
@@ -249,6 +247,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                         loc.name IN (SELECT site_location FROM `tabOperations Site` where name="{site}")
                         """.format(site=site), as_dict=1)
 
+        if has_day_off(employee,date):
+                return response("Success", 200, None, "User is scheduled for a Day Off.")
 
         if not site:
             return response("Resource Not Found", 404, None, "User not assigned to a shift.")
