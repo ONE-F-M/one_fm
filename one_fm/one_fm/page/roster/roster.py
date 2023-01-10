@@ -325,12 +325,18 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	elif otRoster == 'true' or day_off_ot == 1:
 		roster_type = 'Over-Time'
 
+	# get and structure employee dictionary for easy hashing
+	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employees]}, fields=['name', 'employee_name', 'department'])
+	employees_dict = {}
+	for i in employees_list:
+		employees_dict[i.name] = i
+	
 	if not cint(request_employee_schedule):
 		"""
 			USE DIRECT SQL TO CREATE ROSTER SCHEDULE.
 		"""
 		query = """
-			INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`, 
+			INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `employee_name`, `department`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`, 
 			`operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `owner`, `modified_by`, `creation`, `modified`)
 			VALUES 
 		"""
@@ -338,13 +344,15 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			_query = query
 			id_list = [] #store for schedules list
 			for employee in employees:
+				employee_doc = employees_dict.get(employee)
 				for dr in date_range:
 					name = f"{dr}_{employee}_{roster_type}"
 					id_list.append(name)
 					_query += f"""
 						(
-							"{name}", "{employee}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}", 
-							'{operations_shift.shift_type}', "Working", "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+							"{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{dr}", "{operations_shift.name}", 
+							"{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
+							"{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
 							"{cint(day_off_ot)}", "{owner}", "{owner}", "{creation}", "{creation}"
 						),"""
 
@@ -367,19 +375,17 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			"""
 			frappe.db.sql(_query, values=[], as_dict=1)
 			frappe.db.commit()
-			# this queue up employee department and full name record update, it is not important in the initial record creation
-			# this was done to speed up record creation
-			frappe.enqueue(queue_employee_schedule_empdetail, employees=employees, id_list=id_list)
 		else:
 			_query = query
 			id_list = [] #store for schedules list
 			for employee in employees:
+				employee_doc = employees_dict.get(employee)
 				for dr in date_range:
 					name = f"{dr}_{employee}_{roster_type}"
 					id_list.append(name)
 					_query += f"""
 						(
-							"{name}", "{employee}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}", 
+							"{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}", 
 							'{operations_shift.shift_type}', "Working", "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
 							"{day_off_ot}", "{owner}", "{owner}", "{creation}", "{creation}"
 						),"""
@@ -402,9 +408,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			"""
 			frappe.db.sql(_query)
 			frappe.db.commit()
-			# this queue up employee department and full name record update, it is not important in the initial record creation
-			# this was done to speed up record creation
-			frappe.enqueue(queue_employee_schedule_empdetail, employees=employees, id_list=id_list)
 	else:
 		"""
 			Handle request employee schedule
@@ -449,36 +452,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	# update employee additional records
 	frappe.enqueue(update_employee_shift, employees=employees, shift=shift, owner=owner, creation=creation)
 
-
-def queue_employee_schedule_empdetail(employees, id_list):
-	"""
-		This function updates employee full name and department in the schedule record
-	"""
-	employees_data = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_name", "department"])
-	employee_dict = {}
-	for emp in employees_data:
-		employee_dict[emp.name] = {'employee_name':emp.employee_name, 'department':emp.department}
-
-	query = """
-		INSERT INTO `tabEmployee Schedule` (`name`, `employee_name`, `department`)
-		VALUES 
-	"""
-	for ids in id_list:
-		_id = ids.split('_')[1]
-		if employee_dict.get(_id):
-			id_data = employee_dict.get(_id)
-			query += f"""(
-					"{ids}", "{id_data['employee_name']}", "{id_data['department']}"
-				),"""
-	query = query.replace(", None", '')
-	query = query[:-1]
-	query += f"""
-		ON DUPLICATE KEY UPDATE
-		employee_name = VALUES(employee_name),
-		department = VALUES(department)
-	"""
-	frappe.db.sql(query, values=[], as_dict=1)
-	frappe.db.commit()
 
 def update_employee_shift(employees, shift, owner, creation):
 	"""Update employee assignment"""
@@ -964,8 +937,6 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 				employee_availability = "Day Off"
 			"""
 			frappe.db.sql(query, values=[], as_dict=1)
-			# update employee name and department
-			frappe.enqueue(queue_employee_schedule_empdetail, employees=[emp["employee"] for emp in json.loads(employees)], id_list=id_list)
 			frappe.db.commit()
 		response("success", 200, {'message':'Days Off set successfully.'})
 	except Exception as e:
