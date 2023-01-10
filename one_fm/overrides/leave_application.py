@@ -23,6 +23,9 @@ class LeaveApplicationOverride(LeaveApplication):
             self.validate_optional_leave()
         self.validate_applicable_after()
 
+    def validate_attendance(self):
+        pass
+
     def validate_dates(self):
         if frappe.db.get_single_value("HR Settings", "restrict_backdated_leave_application"):
             if self.from_date and getdate(self.from_date) < getdate(self.posting_date):
