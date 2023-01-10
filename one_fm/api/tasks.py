@@ -1154,6 +1154,7 @@ def mark_daily_attendance(start_date, end_date):
 	"""
 		This method marks attendance for all employees
 	"""
+	frappe.reload_doctype("Shift Assignment")
 	owner = frappe.session.user
 	creation = now()
 	# Get shift type and make hashmap
@@ -1217,7 +1218,7 @@ def mark_daily_attendance(start_date, end_date):
 		if out_checkins_dict.get(k):
 			check_out = out_checkins_dict.get(k)
 			shift_type = shift_types_dict.get(v.shift_type)
-			if shift_type: # some employees have not shift in checkins
+			if shift_type: # some employees have no shift in checkins
 				shift_assignment = shift_assignments_dict.get(v.shift_assignment)
 				in_time = v.actual_time
 				out_time = check_out.time
@@ -1238,7 +1239,7 @@ def mark_daily_attendance(start_date, end_date):
 					'roster_type':shift_assignment.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
 				})
 
-	# add attendance
+	# add absent attendance
 	for i in shift_assignments:
 		if not employee_attendance.get(i.employee):
 			emp = employees_data.get(i.employee)
