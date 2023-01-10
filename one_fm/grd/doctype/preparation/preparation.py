@@ -60,7 +60,7 @@ class Preparation(Document):
         self.recall_create_medical_insurance_renewal() # create medical insurance record for renewals
         self.recall_create_moi_renewal_and_extend() # create moi record for all employee
         self.recall_create_paci() # create paci record for all
-        self.recall_create_fp()# create fp record for all
+        # self.recall_create_fp()# create fp record for all
         self.send_notifications()
 
     def validate_mandatory_fields_on_submit(self):
