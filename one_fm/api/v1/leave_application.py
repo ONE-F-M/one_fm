@@ -269,6 +269,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
             return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
         attachment_paths = []
+        doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_paths)
         if proof_document_required_for_leave_type(leave_type):
             proof_doc_json = json.loads(proof_document)
             for proof_doc in proof_doc_json:
@@ -281,19 +282,25 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                 content = base64.b64decode(attachment)
                 filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
 
-                Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
-                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
-                with open(OUTPUT_FILE_PATH, "wb") as fh:
-                    fh.write(content)
+                # Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+                Path(frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+                # OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
+                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}/{filename}"
+                file_ = upload_file(doc, "attachments", filename, OUTPUT_FILE_PATH, content, is_private=True)
+                leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
+                leave_doc.append('proof_documents',{"attachments":file_.file_url})
+                leave_doc.save()
+                # with open(OUTPUT_FILE_PATH, "wb") as fh:
+                #     fh.write(content)
 
-                attachment_paths.append(f"/files/leave-application/{employee_doc.user_id}/{filename}")
-        doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_paths)
+                # attachment_paths.append(f"/private/files/leave-application/{employee_doc.user_id}/{filename}")
+        
 
-        # if attachment_path:
-        #     upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
+        # if attachment_paths:
+            # upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
 
         return response("Success", 201, doc)
-
+    
     except Exception as error:
         frappe.log_error(error, 'Leave API')
         return response("Internal Server Error", 500, None, error)
@@ -309,10 +316,11 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.follow_via_email=1
     leave.status=status
     leave.leave_approver = leave_approver
-    if len(attachment_paths)>0:
-        for attachment_path in attachment_paths:
-            leave.append("proof_documents",{"attachments": frappe.utils.get_url()+attachment_path})
     leave.save(ignore_permissions=True)
+    # if len(attachment_paths)>0:
+    #     for attachment_path in attachment_paths:
+    #         
+    #         leave.append("proof_documents",{"attachments": frappe.utils.get_url()+attachment_path})
     frappe.db.commit()
     return leave.as_dict()
 
