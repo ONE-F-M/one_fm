@@ -8,7 +8,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.rename_doc import rename_doc
-from frappe.utils import cstr, getdate, add_to_date
+from frappe.utils import cstr, getdate, add_to_date, date_diff
 import pandas as pd
 
 class OperationsPost(Document):
@@ -49,26 +49,31 @@ class OperationsPost(Document):
 		elif self.status == "Inactive":
 			return frappe.enqueue(delete_schedule(doc=self), is_async=True, queue="long")
 
-
-
 def set_post_schedule(doc):
-    project = frappe.get_doc("Project", doc.project)
-    today = getdate()
-    if not project.expected_end_date:
-        end_date = add_to_date(today, days=365)
-    else:
-        end_date = project.expected_end_date
+	project = frappe.get_doc("Project", doc.project)
+	today = getdate()
+	if not project.expected_end_date:
+		end_date = add_to_date(today, days=365)
+	else:
+		end_date = project.expected_end_date
 
-    if end_date > today:
-        for date in pd.date_range(start=getdate(), end=end_date):
-                    check_doc = frappe.get_doc({
-                    "doctype": "Post Schedule",
-                    "date": cstr(date.date()),
-                    "post": doc.name,
-                    "post_status": "Planned"
-                        })
-                    check_doc.save()
-        frappe.db.commit()
+	if end_date > today:
+		duration = date_diff(getdate(end_date), getdate())
+		if duration > 10:
+			frappe.enqueue(set_post_schedule_by_date(end_date=end_date, post_name=doc.name), is_async=True, queue="long")
+		else:
+			set_post_schedule_by_date(end_date=end_date, post_name=doc.name)
+
+def set_post_schedule_by_date(end_date, post_name):
+	for date in pd.date_range(start=getdate(), end=end_date):
+				check_doc = frappe.get_doc({
+				"doctype": "Post Schedule",
+				"date": cstr(date.date()),
+				"post": doc.name,
+				"post_status": "Planned"
+					})
+				check_doc.save()
+	frappe.db.commit()
 
 def delete_schedule(doc):
     check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})

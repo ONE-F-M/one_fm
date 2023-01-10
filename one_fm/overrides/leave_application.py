@@ -27,6 +27,9 @@ class LeaveApplicationOverride(LeaveApplication):
             self.validate_optional_leave()
         self.validate_applicable_after()
         
+    def validate_attendance(self):
+        pass
+
     def assign_to_leave_approver(self):
         #This function is meant to create a TODO for the leave approver
         if self.name:

@@ -1,5 +1,7 @@
 import frappe
 from frappe import _
+from frappe.desk.doctype.notification_log.notification_log import set_notifications_as_unseen, is_email_notifications_enabled_for_type, send_notification_email
+from one_fm.processor import is_user_id_company_prefred_email_in_employee
 
 def create_notification_log(subject, message, for_users, reference_doc, mobile_notification=None):
 	for user in for_users:
@@ -94,3 +96,12 @@ def response(message, data, success, status_code):
     frappe.local.response["success"] = success
     frappe.local.response["http_status_code"] = status_code
     return
+
+def after_insert(doc):
+	frappe.publish_realtime("notification", after_commit=True, user=doc.for_user)
+	set_notifications_as_unseen(doc.for_user)
+	if is_email_notifications_enabled_for_type(doc.for_user, doc.type) and is_user_id_company_prefred_email_in_employee(doc.for_user) :
+		try:
+			send_notification_email(doc)
+		except frappe.OutgoingEmailError:
+			doc.log_error(_("Failed to send notification email"))
