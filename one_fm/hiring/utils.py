@@ -37,8 +37,6 @@ def get_performance_profile_guid():
 
 def validate_job_offer(doc, method):
     job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
-    if job_applicant.status != "Accepted":
-        frappe.throw("A Job Offer cannot Be created for an applicant who is not selected")
     validate_mandatory_fields(job_applicant)
     validate_job_offer_mandatory_fields(doc)
     # Validate day off
