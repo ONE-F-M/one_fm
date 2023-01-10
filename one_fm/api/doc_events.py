@@ -168,7 +168,6 @@ def get_notification_user(doc, employee=None):
 	return get_employee_user_id(reporting_manager)
 
 def validate_location(doc):
-	print(doc.operations_shift)
 	checkin_lat, checkin_lng = doc.device_id.split(",") if doc.device_id else (0, 0)
 	site_name = frappe.get_value("Operations Shift", doc.operations_shift, "site")
 	site_location = frappe.get_value("Operations Site", site_name, "site_location")

@@ -248,8 +248,6 @@ doc_events = {
 		"validate": "one_fm.utils.validate_iban_is_filled",
 	},
 	"Employee Checkin": {
-		"validate": "one_fm.api.doc_events.employee_checkin_validate",
-		"after_insert": "one_fm.api.doc_events.checkin_after_insert",
 		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office"
 	},
 	"Purchase Receipt": {

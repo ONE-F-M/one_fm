@@ -1222,9 +1222,6 @@ def mark_daily_attendance(start_date, end_date):
 				in_time = v.actual_time
 				out_time = check_out.time
 				working_hours = (out_time - in_time).total_seconds() / (60 * 60)
-				late_entry = 1 if (in_time.hour * 60 + in_time.minute-shift_type.late_entry_grace_period) * 60 + in_time.second > shift_type.start_time.total_seconds() else 0
-				early_exit = 1 if (out_time.hour * 60 + out_time.minute+shift_type.early_exit_grace_period) * 60 + out_time.second < shift_type.start_time.total_seconds() else 0
-				
 				emp = employees_data.get(v.employee)
 
 				if attendance_dict.get(v.employee):
@@ -1236,7 +1233,7 @@ def mark_daily_attendance(start_date, end_date):
 					'name':name, 'employee':v.employee, 'employee_name':emp.employee_name, 'working_hours':working_hours, 'status':'Present',
 					'shift':v.shift_type, 'in_time':in_time, 'out_time':out_time, 'shift_assignment':v.shift_assignment, 'operations_shift':v.operations_shift,
 					'site':shift_assignment.site, 'project':shift_assignment.project, 'attendance_date': start_date, 'company':shift_assignment.company,
-					'department': emp.department, 'late_entry':late_entry, 'early_exit':early_exit, 'operations_role':shift_assignment.operations_role,
+					'department': emp.department, 'late_entry':v.late_entry, 'early_exit':check_out.early_exit, 'operations_role':shift_assignment.operations_role,
 					'post_abbrv':shift_assignment.post_abbrv,
 					'roster_type':shift_assignment.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
 				})
