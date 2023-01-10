@@ -13,7 +13,7 @@ from datetime import date, timedelta
 import calendar
 from datetime import date
 from dateutil.relativedelta import relativedelta
-from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
+from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr, get_url_to_form
 from email import policy
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
@@ -27,6 +27,7 @@ class WorkPermit(Document):
     def on_update(self):
         self.update_work_permit_details_in_tp()
         self.check_required_document_for_workflow()
+        self.notify()
 
     def validate(self):
         self.set_grd_values()
@@ -43,6 +44,12 @@ class WorkPermit(Document):
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+   
+    def notify(self):
+        if self.workflow_state == "Pending By Supervisor":
+            subject = ("Work Permit Needs Action")
+            message = "<p>Please Take Action on the Work Permit Record:  <a href='{0}'>{1}</a>.</p>".format(get_url_to_form(self.doctype, self.name),self.name )
+            send_email(self, [self.grd_supervisor], message, subject)
 
     def check_required_document_for_workflow(self):
         """

@@ -607,20 +607,17 @@ def get_current_shift(employee):
         current_datetime = now_datetime()
 
         # fetch the last shift assignment
-        last_shift = frappe.get_last_doc("Shift Assignment", filters={"employee": employee}, order_by="creation desc")
+        shift = frappe.get_last_doc("Shift Assignment", filters={"employee": employee}, order_by="creation desc")
 
-        if last_shift:
-            shift = last_shift
-            start_datetime = shift.start_datetime
-            end_datetime = shift.end_datetime
+        if shift:
             before_time, after_time = frappe.get_value("Shift Type", shift.shift_type,
                                                        ["begin_check_in_before_shift_start_time",
                                                         "allow_check_out_after_shift_end_time"])
 
-            if start_datetime and end_datetime:
+            if shift.start_datetime and shift.end_datetime:
                 # include early entry and late exit time
-                start_time = start_datetime - datetime.timedelta(minutes=before_time)
-                end_time = end_datetime + datetime.timedelta(minutes=after_time)
+                start_time = shift.start_datetime - datetime.timedelta(minutes=before_time)
+                end_time = shift.end_datetime + datetime.timedelta(minutes=after_time)
 
                 # Check if current time is within the shift start and end time.
                 if start_time <= current_datetime <= end_time:

@@ -23,10 +23,11 @@ frappe.ui.form.on("Leave Application", {
             })
             // check approvers
             if(frm.doc.workflow_state=='Open' && frappe.session.user!=frm.doc.leave_approver){
-                $('.btn .btn-primary .btn-sm').hide();
+                $('.actions-btn-group').hide();
             }
             if (frm.doc.workflow_state=='Open' && frappe.user.has_role('HR Manager')){
-                $('.btn .btn-primary .btn-sm').show();
+                $('.actions-btn-group').show();
+                // $('.btn .btn-primary .btn-sm').show();
             }
         }
 

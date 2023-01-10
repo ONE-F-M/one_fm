@@ -508,7 +508,6 @@ def update_employee_shift(employees, shift, owner, creation):
 	frappe.db.commit()
 
 
-
 def update_employee_assignment(employee, project, site, shift):
 	""" This function updates the employee project, site and shift in the employee doctype """
 	frappe.db.set_value("Employee", employee, "project", val=project)
@@ -540,32 +539,22 @@ def schedule_leave(employees, leave_type, start_date, end_date):
 @frappe.whitelist(allow_guest=True)
 def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 	try:
-		for employee in json.loads(employees):
-			st = time.time()
-			if cint(never_end) == 1:
-				rosters = frappe.get_list("Employee Schedule", {"employee": employee["employee"],"date": ('>=', start_date)}, ignore_permissions=True)
-				rosters = [roster.name for roster in rosters]
-				rosters = ', '.join(['"{}"'.format(value) for value in rosters])
-				if rosters:
-					frappe.db.sql("""
-						delete from `tabEmployee Schedule`
-						where name in ({ids})
-					""".format(ids=rosters))
-			if end_date and cint(never_end) != 1:
-				rosters = frappe.get_list("Employee Schedule", {"employee": employee["employee"], "date": ['between', (start_date, end_date)]}, ignore_permissions=True)
-				rosters = [roster.name for roster in rosters]
-				rosters = ', '.join(['"{}"'.format(value) for value in rosters])
-				if rosters:
-					frappe.db.sql("""
-						delete from `tabEmployee Schedule`
-						where name in ({ids})
-					""".format(ids=rosters))
+		employees = str(tuple(json.loads(employees))).replace(',)', ')')
+		date_filter = ""
+		if cint(never_end) == 1:
+			date_filter = f">= '{start_date}'"
+		else:
+			date_filter = f"BETWEEN '{start_date}' AND '{end_date}'"
+
+		frappe.db.sql(f"""
+			DELETE FROM `tabEmployee Schedule`
+			WHERE employee in {employees} AND date {date_filter}
+		""")
 		frappe.db.commit()
 		response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
 	except Exception as e:
 		print(e)
 		response("Error", 500, None, str(e))
-		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def edit_post(posts, values):

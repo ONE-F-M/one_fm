@@ -704,7 +704,7 @@ function bind_events(page) {
 	let d1 = performance.now();
 	let wrapper_element = $(get_wrapper_element());
 	paginateTable(page);
-	// console.log(wrapper_element.find('#paginate-parent'));
+	
 	wrapper_element.find('#paginate-parent').pageMe({ pagerSelector: '#myPager', showPrevNext: false, hidePageNumbers: false, perPage: 9999 });
 	if (["Operations Manager", "Site Supervisor", "Shift Manager", "Shift Supervisor", "Projects Manager"].some(i => frappe.user_roles.includes(i))) {
 		let $rosterMonth = $('.rosterMonth');
@@ -843,9 +843,7 @@ function bind_events(page) {
 			$(".selectclass").map(function () {
 			    classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
-
 			});
-
 		});
 		//on checkbox select change
 		// $rosterWeek.find(`input[name="selectallcheckbox"]`).on("change", function () {
@@ -1123,7 +1121,7 @@ let attendancemap = {
 	'Absent': 'redboxcolor',
 	'Work From Home': 'greenboxcolor',
 	'Half Day': 'greenboxcolor',
-	'On Leave': 'redboxcolor'
+	'On Leave': 'purplebox'
 };
 let attendance_abbr_map = {
 	'Present': 'P',
@@ -1176,7 +1174,7 @@ function render_roster(res, page, isOt) {
 		$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(operations_roles_data[operations_role_name][i - 1]["operations_role"])}']`).append(`<td></td>`);
 	}
 	let b2 = performance.now();
-	// console.log("Operations Role TIME", b2 - b1);
+	
 
 	let c1 = performance.now();
 
@@ -1192,12 +1190,18 @@ function render_roster(res, page, isOt) {
 	$rosterMonthbody.append(emp_row_wrapper);
 	for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
 		// let { employee_name, employee, date } = employees_data[employee_key];
+
+
+		
 		let employee = employees_data[employee_key][0]['employee']
 		let employee_id = employees_data[employee_key][0]['employee_id']
 		let employee_day_off = employees_data[employee_key][0]['day_off_category']
 		if(employees_data[employee_key][0]['number_of_days_off']){
 			employee_day_off += " " + employees_data[employee_key][0]['number_of_days_off'] + " Day(s) off"
 		}
+		
+		
+		
 		let emp_row = `
 		<tr data-name="${employee}">
 			<td class="sticky">
@@ -1223,8 +1227,9 @@ function render_roster(res, page, isOt) {
 		while (day <= end_date) {
 			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 			let sch = ``;
-			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot } = employees_data[employee_key][i];
+			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application } = employees_data[employee_key][i];
 			//OT schedule view
+			
 			if (isOt) {
 				if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
 					j++;
@@ -1291,8 +1296,8 @@ function render_roster(res, page, isOt) {
 					if (attendance == 'Present') { j++; }
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so"
-							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}</div>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application+'|'+leave_type}</span></div>
 					</td>`;
 				} else {
 					sch = `
@@ -1311,8 +1316,7 @@ function render_roster(res, page, isOt) {
 
 	}
 	let c2 = performance.now();
-	// console.log("EMPLOYEES TIME", c2 - c1);
-
+	
 	// frappe.show_alert({message:__("Roster updated"), indicator:'green'});
 	bind_events(page);
 
@@ -1575,7 +1579,7 @@ function get_post_week_data(page) {
 	classgrtw = [];
 	let { start_date, end_date } = page;
 	let { project, site, shift, operations_role } = page.filters;
-	// console.log(page.start_date, page.end_date);
+	
 	let { limit_start, limit_page_length } = page.pagination;
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 		.then(res => {
@@ -2736,12 +2740,7 @@ function displayWeekCalendar(weekCalendarSettings, page) {
 }
 
 function unschedule_staff(page) {
-	let employees = [];
-	let selected = [... new Set(classgrt)];
-	selected.forEach(function (i) {
-		let [employee, date] = i.split("|");
-		employees.push({ employee, date });
-	});
+	let employees = window.employees_list;
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
 	let d = new frappe.ui.Dialog({
 		'title': 'Unschedule Staff',
@@ -2991,7 +2990,8 @@ function schedule_change_post(page) {
 			frappe.call({
 				method: "one_fm.one_fm.page.roster.roster.schedule_staff",
 				type: "POST",
-				args: { employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot, end_date },
+				args: { employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, 
+					request_employee_schedule, day_off_ot, end_date },
 				callback: function(res) {
 					// code snippet
 					d.hide();
@@ -3004,7 +3004,6 @@ function schedule_change_post(page) {
 								$("[data-selectid='"+selectid+"']").removeClass('selectclass')
 							});
 						});
-
 					}
 					let element = get_wrapper_element().slice(1);
 					update_roster_view(element, page);
@@ -3208,7 +3207,7 @@ function dayoff(page) {
 					args["repeat_freq"] = repeat_freq;
 				}
 			}
-			// console.log(args);
+			
 			frappe.call({
 				method: "one_fm.one_fm.page.roster.roster.dayoff",
 				type: "POST",

@@ -4,5 +4,6 @@ __pycache__/
 *.egg-info
 *.swp
 tags
+.idea
 one_fm/docs/current
 /one_fm/public/dist

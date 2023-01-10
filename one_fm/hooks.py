@@ -593,6 +593,7 @@ scheduler_events = {
 			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
 		"15 0 * * *": [ # create shift assignment
+
 			'one_fm.api.tasks.assign_am_shift'
 		],
 		"15 12 * * *": [ # create shift assignment
