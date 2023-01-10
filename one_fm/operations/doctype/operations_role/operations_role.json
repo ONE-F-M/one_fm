@@ -29,7 +29,8 @@
    "fieldname": "post_abbrv",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Role Abbreviation"
+   "label": "Role Abbreviation",
+   "reqd": 1
   },
   {
    "fieldname": "sale_item",
@@ -87,7 +88,7 @@
   }
  ],
  "links": [],
- "modified": "2022-11-06 12:46:01.093018",
+ "modified": "2022-12-31 20:27:41.947124",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Role",

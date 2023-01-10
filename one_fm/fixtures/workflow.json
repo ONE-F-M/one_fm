@@ -5329,7 +5329,7 @@
     "docstatus": 0,
     "doctype": "Workflow",
     "document_type": "Timesheet",
-    "is_active": 1,
+    "is_active": 0,
     "modified": "2022-10-25 01:16:52.488227",
     "name": "Timesheet",
     "override_status": 0,

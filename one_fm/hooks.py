@@ -102,6 +102,7 @@ doctype_list_js = {
 	"Job Offer": "public/js/doctype_js/job_offer_list.js",
 	"Issue": "public/js/doctype_list_js/issue_list.js",
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
+	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -180,10 +181,6 @@ doc_events = {
 		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po",
 		"on_update_after_submit": "one_fm.purchase.utils.set_po_letter_head"
 	},
-	"Timesheet":{
-		"on_update_after_submit":"one_fm.one_fm.timesheet_custom.mark_attendance_from_timesheet",
-		"validate":"one_fm.one_fm.timesheet_custom.validate_date",
-	},
 	"Leave Application": {
 		"on_submit": ["one_fm.utils.leave_appillication_on_submit"],
 		"validate": [
@@ -252,8 +249,6 @@ doc_events = {
 		"validate": "one_fm.utils.validate_iban_is_filled",
 	},
 	"Employee Checkin": {
-		"validate": "one_fm.api.doc_events.employee_checkin_validate",
-		"after_insert": "one_fm.api.doc_events.checkin_after_insert",
 		"on_update": "one_fm.utils.create_additional_salary_for_overtime_request_for_head_office"
 	},
 	"Purchase Receipt": {
@@ -354,7 +349,10 @@ doc_events = {
 	"Shift Assignment":{
 		"before_insert":[
 			"one_fm.tasks.erpnext.shift_assignment.before_insert"
-		]
+		],
+		"validate":[
+			"one_fm.tasks.erpnext.shift_assignment.validate"
+		],
 	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
@@ -434,11 +432,14 @@ website_route_rules = [
 override_doctype_class = {
     "Leave Policy Assignment": "one_fm.overrides.leave_policy_assignment.LeavePolicyAssignmentOverride",
 	"Attendance Request": "one_fm.overrides.attendance_request.AttendanceRequestOverride",
+	"Attendance": "one_fm.overrides.attendance.AttendanceOverride",
 	"Shift Type": "one_fm.overrides.shift_type.ShiftTypeOverride",
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
+	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
+	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
 }
 
 
@@ -462,7 +463,8 @@ scheduler_events = {
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
-		'one_fm.tasks.execute.daily'
+		'one_fm.tasks.execute.daily',
+		"one_fm.one_fm.utils.attach_abbreviation_to_roles"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -473,7 +475,6 @@ scheduler_events = {
 	"weekly": [
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_sites_followup',
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_penalty',
-		'one_fm.tasks.one_fm.monthly.employee_schedule_monthly',
    ],
 
 	"monthly": [
@@ -591,21 +592,19 @@ scheduler_events = {
 			'one_fm.tasks.one_fm.daily.mark_future_attendance_request',
 			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
-		"30 0 1 * *": [
-			'one_fm.tasks.one_fm.monthly.execute'
-		],
-		"15 0 * * *": [
+		"15 0 * * *": [ # create shift assignment
+
 			'one_fm.api.tasks.assign_am_shift'
 		],
-		# "45 1 * * *": [
-		# 	'one_fm.api.tasks.validate_am_shift_assignment'
-		# ],
-		"15 12 * * *": [
+		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
 		],
-		# "45 13 * * *": [
-		# 	'one_fm.api.tasks.validate_pm_shift_assignment'
-		# ],
+		"15 23 * * *": [ # mark day attendance 11:15 pm
+			'one_fm.api.tasks.mark_day_attendance'
+		],
+		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
+			'one_fm.api.tasks.mark_night_attendance'
+		],
 	}
 }
 
@@ -692,7 +691,7 @@ override_whitelisted_methods = {
 	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
 	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview"
 }
-ShiftType.process_auto_attendance = process_auto_attendance
+#ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation
 required_apps = ['frappe', 'erpnext']

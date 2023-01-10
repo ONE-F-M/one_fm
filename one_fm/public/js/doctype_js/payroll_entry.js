@@ -1,6 +1,6 @@
 frappe.ui.form.on('Payroll Entry', {
     refresh: function(frm) {
-		if (frm.doc.salary_slips_created == 1){
+		if (frm.doc.salary_slips_created == 1 && frm.doc.bank_account){
 			frm.add_custom_button(__("Download Payroll Bank Export"), function() {
 				let payroll_entry = frm.doc.name
 				window.open("/files/payroll-entry/" + payroll_entry + ".xlsx", "Download");
