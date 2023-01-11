@@ -53,6 +53,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 				frappe.throw(frappe.get_traceback())
 
 	def after_insert(self):
+		frappe.db.commit()
 		frappe.enqueue(process_background, self=self.name)
 
 def process_background(self):
