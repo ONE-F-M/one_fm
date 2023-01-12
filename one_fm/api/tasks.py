@@ -1139,7 +1139,7 @@ def create_additional_salary(employee, amount, component, end_date):
 
 
 def mark_day_attendance():
-	start_date, end_date = getdate(), getdate()
+	start_date, end_date = add_days(getdate(), -1), add_days(getdate(), -1)
 	mark_daily_attendance(start_date, end_date)
 
 def mark_night_attendance():
