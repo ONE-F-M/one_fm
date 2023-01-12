@@ -62,7 +62,7 @@ def process_background(self):
 		# update shift if not exists
 		if not self.shift_assignment:
 			curr_shift = get_current_shift(self.employee)
-			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{self.shift_type}' """, as_dict=1)[0]
+			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
 			
 		else:
 			curr_shift = frappe.db.sql(f"""SELECT * FROM `tabShift Assignment` WHERE name="{self.shift_assignment}" """, as_dict=1)[0]
