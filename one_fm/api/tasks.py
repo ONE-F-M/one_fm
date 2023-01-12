@@ -1154,7 +1154,6 @@ def mark_daily_attendance(start_date, end_date):
 	"""
 		This method marks attendance for all employees
 	"""
-	frappe.reload_doctype("Employee Checkin")
 	owner = frappe.session.user
 	creation = now()
 	# Get shift type and make hashmap
