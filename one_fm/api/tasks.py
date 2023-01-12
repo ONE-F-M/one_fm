@@ -1157,12 +1157,12 @@ def mark_daily_attendance(start_date, end_date):
 	owner = frappe.session.user
 	creation = now()
 	# Get shift type and make hashmap
-	shift_types = frappe.db.get_list("Shift Type", fields="*")
+	shift_types = frappe.get_list("Shift Type", fields="*")
 	shift_types_dict = {}
 	for i in shift_types:
 		shift_types_dict[i.name] = i
 	
-	employees = frappe.db.get_list("Employee", filters={'status':["IN", ['Active', 'Absconding']]}, fields="*")
+	employees = frappe.get_list("Employee", filters={'status':["IN", ['Active', 'Absconding']]}, fields="*")
 	employees_data = {}
 	for i in employees:
 		employees_data[i.name] = i
@@ -1172,7 +1172,7 @@ def mark_daily_attendance(start_date, end_date):
 
 
 	# get attendance for the day
-	attendance_list = frappe.db.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off']]})
+	attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off']]})
 	attendance_dict = {}
 	for i in attendance_list:
 		attendance_dict[i.employee] = i
@@ -1196,9 +1196,9 @@ def mark_daily_attendance(start_date, end_date):
 	shift_assignments_tuple = str(tuple(shift_assignments_list)) #[:-2]+')'
 
 	# Get checkins and make hashmap
-	in_checkins = frappe.db.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'IN'}, fields="*",
+	in_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'IN'}, fields="*",
 		order_by="creation ASC", group_by="shift_assignment")
-	out_checkins = frappe.db.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'}, fields="*",
+	out_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'}, fields="*",
 		order_by="creation DESC", group_by="shift_assignment")
 
 	in_checkins_dict = {}
@@ -1217,7 +1217,7 @@ def mark_daily_attendance(start_date, end_date):
 		if out_checkins_dict.get(k):
 			check_out = out_checkins_dict.get(k)
 			shift_type = shift_types_dict.get(v.shift_type)
-			if shift_type: # some employees have not shift in checkins
+			if shift_type: # some employees have no shift in checkins
 				shift_assignment = shift_assignments_dict.get(v.shift_assignment)
 				in_time = v.actual_time
 				out_time = check_out.time
@@ -1238,7 +1238,7 @@ def mark_daily_attendance(start_date, end_date):
 					'roster_type':shift_assignment.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
 				})
 
-	# add attendance
+	# add absent attendance
 	for i in shift_assignments:
 		if not employee_attendance.get(i.employee):
 			emp = employees_data.get(i.employee)

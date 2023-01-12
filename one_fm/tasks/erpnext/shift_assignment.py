@@ -17,5 +17,4 @@ def before_insert(doc, events):
 
 
 def validate(doc, events):
-    if doc.employee_availability == 'Day Off':
-        doc.operations_role, doc.post_abbrv = '', ''
+    pass
