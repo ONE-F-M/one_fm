@@ -80,6 +80,8 @@ def get_staff_filters_data():
 
 @frappe.whitelist()
 def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, operations_role=None, designation=None, isOt=None, limit_start=0, limit_page_length=9999):
+	print('FROM DICT\n\n', frappe.request.environ)
+	print(frappe.form_dict)
 	try:
 		master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
 		operations_roles_list = []
@@ -162,6 +164,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		#----------------- Get Operations Role count and check fill status -------------------#
 		post_map = PostMap(start=start_date,end=end_date,operations_roles_list=operations_roles_list,filters=employee_filters)
 		master_data.update({'operations_roles_data': post_map.template})
+		print(master_data)
 		response("Success", 200, master_data)
 	except Exception as e:
 		return response("Server Error", 500, None, str(e))

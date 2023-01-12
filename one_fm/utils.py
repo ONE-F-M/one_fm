@@ -2652,6 +2652,9 @@ def create_path(path):
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
+    frappe.enqueue(queued_send_workflow_action_email, doc=doc, recipients=recipients)
+
+def queued_send_workflow_action_email(doc, recipients):
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
         workflow, get_doc_workflow_state(doc), doc
