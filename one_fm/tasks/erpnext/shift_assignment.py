@@ -14,3 +14,7 @@ def before_insert(doc, events):
             doc.end_datetime = f"{add_days(doc.start_date, 1)} {shift.end_time}"
         else:
             doc.end_datetime = f"{doc.start_date} {shift.end_time}"
+
+
+def validate(doc, events):
+    pass
