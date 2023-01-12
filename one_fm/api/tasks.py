@@ -1154,16 +1154,16 @@ def mark_daily_attendance(start_date, end_date):
 	"""
 		This method marks attendance for all employees
 	"""
-	frappe.reload_doctype("Shift Assignment")
+	frappe.reload_doctype("Employee Checkin")
 	owner = frappe.session.user
 	creation = now()
 	# Get shift type and make hashmap
-	shift_types = frappe.db.get_list("Shift Type", fields="*")
+	shift_types = frappe.get_list("Shift Type", fields="*")
 	shift_types_dict = {}
 	for i in shift_types:
 		shift_types_dict[i.name] = i
 	
-	employees = frappe.db.get_list("Employee", filters={'status':["IN", ['Active', 'Absconding']]}, fields="*")
+	employees = frappe.get_list("Employee", filters={'status':["IN", ['Active', 'Absconding']]}, fields="*")
 	employees_data = {}
 	for i in employees:
 		employees_data[i.name] = i
@@ -1173,7 +1173,7 @@ def mark_daily_attendance(start_date, end_date):
 
 
 	# get attendance for the day
-	attendance_list = frappe.db.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off']]})
+	attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off']]})
 	attendance_dict = {}
 	for i in attendance_list:
 		attendance_dict[i.employee] = i
@@ -1197,9 +1197,9 @@ def mark_daily_attendance(start_date, end_date):
 	shift_assignments_tuple = str(tuple(shift_assignments_list)) #[:-2]+')'
 
 	# Get checkins and make hashmap
-	in_checkins = frappe.db.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'IN'}, fields="*",
+	in_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'IN'}, fields="*",
 		order_by="creation ASC", group_by="shift_assignment")
-	out_checkins = frappe.db.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'}, fields="*",
+	out_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'}, fields="*",
 		order_by="creation DESC", group_by="shift_assignment")
 
 	in_checkins_dict = {}
