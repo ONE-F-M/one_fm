@@ -5,6 +5,15 @@ from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.v1.utils import response
 from frappe.utils import cstr, getdate
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
+from one_fm.api.doc_events import haversine
+
+
+
+# setup channel
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+# setup stub
+stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 
 @frappe.whitelist()
@@ -208,7 +217,6 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         return response("Bad Request", 400, None, "employee must be of type str.")
 
     try:
-        from one_fm.api.doc_events import haversine
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
         date = cstr(getdate())
