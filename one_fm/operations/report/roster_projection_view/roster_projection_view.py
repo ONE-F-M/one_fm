@@ -17,6 +17,7 @@ def get_data(filters):
 	month_end = get_last_day(month_start)
 	today = getdate()
 
+
 	# Get active contracts in the given month of the given year
 	contracts_detail = frappe.db.sql(
 		"""
@@ -43,6 +44,8 @@ def get_data(filters):
 		as_dict=True,
 	)
 	for row in contracts_detail:
+		row.employee_schedule = 0
+		row.post_schedule = 0
 		row.projection = 0
 		row.projection_rate = 0
 		row.live_projection = 0
@@ -65,6 +68,8 @@ def get_data(filters):
 				'employee_availability': 'Working',
 				'date': ['BETWEEN', [month_start, month_end]]}
 			)
+			row.employee_schedule = employee_schedule or 0
+			row.post_schedule = post_schedule or 0
 			if post_schedule and employee_schedule:
 				# Projection = Employee Schedule / Post Schedule
 				row.projection = employee_schedule/post_schedule
@@ -174,6 +179,20 @@ def get_columns():
 			'label': _('Total Rate'),
 			'fieldtype': 'Currency',
 			'width': 120,
+		},
+		{
+			'fieldname': 'employee_schedule',
+			'label': _('Emp. Sch.'),
+			'fieldtype': 'Int',
+			'width': 100,
+			'precision':2
+		},
+		{
+			'fieldname': 'post_schedule',
+			'label': _('Post Sch.'),
+			'fieldtype': 'Int',
+			'width': 100,
+			'precision':2
 		},
 		{
 			'fieldname': 'projection',
