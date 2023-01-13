@@ -247,11 +247,11 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                         loc.name IN (SELECT site_location FROM `tabOperations Site` where name="{site}")
                         """.format(site=site), as_dict=1)
 
-        if has_day_off(employee,date):
-            employee_name = frappe.get_value("Employee",employee,'employee_name')
-            return response("Resource Not Found", 404, None, f"Dear {employee_name}, Today is your day off.  Happy Recharging!.")
 
         if not site:
+            if has_day_off(employee,date):
+                employee_name = frappe.get_value("Employee",employee,'employee_name')
+                return response("Resource Not Found", 404, None, f"Dear {employee_name}, Today is your day off.  Happy Recharging!.")
             return response("Resource Not Found", 404, None, "User not assigned to a shift.")
 
         if not location and site:
