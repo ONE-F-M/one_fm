@@ -2740,7 +2740,13 @@ function displayWeekCalendar(weekCalendarSettings, page) {
 }
 
 function unschedule_staff(page) {
-	let employees = window.employees_list;
+	// let employees = window.employees_list;
+	let employees = [];
+	let selected = [... new Set(classgrt)];
+	selected.forEach(function (i) {
+		let [employee, date] = i.split("|");
+		employees.push({ employee, date });
+	});
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
 	let d = new frappe.ui.Dialog({
 		'title': 'Unschedule Staff',
@@ -2773,7 +2779,7 @@ function unschedule_staff(page) {
 			},
 			{ 'fieldtype': 'Section Break', 'depends_on': "eval:doc.select_end == 1" },
 			{
-				'label': 'End Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'default': date, onchange: function () {
+				'label': 'End Date', 'fieldname': 'end_date', 'fieldtype': 'Date', onchange: function () {
 					let end_date = d.get_value('end_date');
 					let start_date = d.get_value('start_date');
 					if (end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {

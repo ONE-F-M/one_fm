@@ -2,6 +2,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 import itertools
+import pymysql
 from one_fm.api.notification import create_notification_log
 from frappe import _
 import frappe, os, erpnext, json, math
@@ -2830,3 +2831,34 @@ def mark_attendance(
     attendance.insert()
     attendance.submit()
     return attendance
+
+
+
+def get_db_config():
+    host = frappe.conf.db_host or 'localhost'
+    return frappe._dict({
+        'host':host, 'user':frappe.conf.db_name, 'passwd': frappe.conf.db_password
+    })
+
+def query_db_list(query_list, commit=False):
+    try:
+        credentials = get_db_config()
+        connection = pymysql.connect(
+            host=credentials.host,
+            user=credentials.user,
+            password=credentials.passwd,
+            database=credentials.user,
+            cursorclass=pymysql.cursors.DictCursor
+        )
+
+        result = None
+        with connection:
+            connection.autocommit(True)
+            with connection.cursor() as cursor:
+                for i in query_list:
+                    cursor.execute(i)
+            if commit:connection.commit()
+        
+        return frappe._dict({'error':False, 'data':result})
+    except Exception as e:
+        return frappe._dict({'error':True, 'msg':str(e), 'data':result})
