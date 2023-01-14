@@ -3,14 +3,18 @@ from frappe import _
 from frappe.utils import get_fullname
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
+from frappe.desk.form.assign_to import add
 
 
 class LeaveApplicationOverride(LeaveApplication):
-
+    def after_insert(self):
+        self.assign_to_leave_approver()
+        
     def validate(self):
         validate_active_employee(self.employee)
         set_employee_name(self)
         self.validate_dates()
+        
         self.validate_balance_leaves()
         self.validate_leave_overlap()
         self.validate_max_days()
@@ -22,10 +26,27 @@ class LeaveApplicationOverride(LeaveApplication):
         if frappe.db.get_value("Leave Type", self.leave_type, "is_optional_leave"):
             self.validate_optional_leave()
         self.validate_applicable_after()
-
+        
     def validate_attendance(self):
         pass
 
+    def assign_to_leave_approver(self):
+        #This function is meant to create a TODO for the leave approver
+        if self.name:
+            existing_assignment = frappe.get_all("ToDO",{'allocated_to':self.leave_approver,'reference_name':self.name})
+            if not existing_assignment:
+                try:
+                    args = {
+                        'assign_to':[self.leave_approver],
+                        'doctype':"Leave Application",
+                        'name':self.name,
+                        'description':f'Please note that leave application {self.name} is awaiting your approval',
+                    }
+                    add(args)
+                except:
+                    
+                    frappe.log_error(frappe.get_traceback(),"Error assigning to User")
+                    
     def validate_dates(self):
         if frappe.db.get_single_value("HR Settings", "restrict_backdated_leave_application"):
             if self.from_date and getdate(self.from_date) < getdate(self.posting_date):
