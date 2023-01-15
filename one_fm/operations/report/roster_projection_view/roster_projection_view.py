@@ -22,8 +22,8 @@ def get_data(filters):
 	contracts_detail = frappe.db.sql(
 		"""
 			SELECT
-				con.client, con.project, con_item.item_code, con_item.count, con_item.rate,
-				con_item.count*con_item.rate as total_rate
+				con.client, con.project, con_item.item_code, con_item.count, con_item.rate, con_item.rate_type, con_item.rate_type_off
+				con_item.days_off_category, con_item.no_of_day_off, con_item.count*con_item.rate as total_rate
 			FROM
 				`tabContracts` con
 			LEFT JOIN
@@ -68,8 +68,18 @@ def get_data(filters):
 				'employee_availability': 'Working',
 				'date': ['BETWEEN', [month_start, month_end]]}
 			)
-			row.employee_schedule = employee_schedule or 0
-			row.post_schedule = post_schedule or 0
+			working_days = 0
+			if row.rate_type=='Monthly':
+				if row.rate_type_off=='Full Month':
+					working_days = month_end.day
+				elif row.rate_type_off=='Days Off':
+					if row.days_off_category=='Monthly':
+						working_days = month_end.day - row.no_of_days_off
+					elif row.days_off_category=='Monthly':
+						working_days = month_end.day - (row.no_of_days_off*4)
+
+			row.employee_schedule = employee_schedule/working_days or 0
+			row.post_schedule = post_schedule/working_days or 0
 			if post_schedule and employee_schedule:
 				# Projection = Employee Schedule / Post Schedule
 				row.projection = employee_schedule/post_schedule
