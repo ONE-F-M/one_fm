@@ -78,8 +78,8 @@ def get_data(filters):
 					elif row.days_off_category=='Monthly':
 						working_days = month_end.day - (row.no_of_days_off*4)
 
-			row.employee_schedule = employee_schedule/working_days or 0
-			row.post_schedule = post_schedule/working_days or 0
+			row.employee_schedule = employee_schedule/working_days  if working_days else 0
+			row.post_schedule = post_schedule/working_days if working_days else 0
 			if post_schedule and employee_schedule:
 				# Projection = Employee Schedule / Post Schedule
 				row.projection = employee_schedule/post_schedule
