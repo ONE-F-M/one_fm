@@ -20,7 +20,7 @@ from wiki.wiki.doctype.wiki_page.wiki_page import WikiPage
 from one_fm.overrides.wiki_page import get_context
 from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 from one_fm.api.notification import after_insert
-
+from one_fm.one_fm.payroll_utils import add_tax_components
 
 __version__ = '14.0.0'
 
@@ -36,6 +36,7 @@ PayrollEntry.fill_employee_details = fill_employee_details
 SalarySlip.get_working_days_details = get_working_days_details
 SalarySlip.get_unmarked_days_based_on_doj_or_relieving = get_unmarked_days_based_on_doj_or_relieving
 SalarySlip.get_unmarked_days = get_unmarked_days
+SalarySlip.add_tax_components = add_tax_components
 ItemPrice.validate = validate
 ItemPrice.check_duplicates = check_duplicates
 LeaveApplication.notify_leave_approver = notify_leave_approver

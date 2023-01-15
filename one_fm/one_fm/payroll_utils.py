@@ -11,6 +11,7 @@ from frappe.utils import (
     today,
     get_url
 )
+import datetime
 
 @frappe.whitelist()
 def get_wage_for_employee_incentive(employee, rewarded_by, on_date=False):
@@ -169,3 +170,27 @@ def update_payroll_entry_details(salary_slip):
 				'employee': salary_slip.employee,
 			}
 		)
+
+@frappe.whitelist()
+def add_tax_components(doc, payroll_period):
+    # Calculate variable_based_on_taxable_salary after all components updated in salary slip
+    tax_components, other_deduction_components = [], []
+    salary_structure = frappe.get_doc("Salary Structure",doc.salary_structure)
+    
+    if salary_structure.get("deductions"):
+        for d in salary_structure.get("deductions"):
+            if d.variable_based_on_taxable_salary == 1 and not d.formula and not flt(d.amount):
+                tax_components.append(d.salary_component)
+            else:
+                other_deduction_components.append(d.salary_component)
+        if not tax_components:
+            tax_components = [
+                d.name
+                for d in frappe.get_all("Salary Component", filters={"variable_based_on_taxable_salary": 1})
+                if d.name not in other_deduction_components
+            ]   
+    
+        for d in tax_components:
+            tax_amount = doc.calculate_variable_based_on_taxable_salary(d, payroll_period)
+            tax_row = get_salary_component_data(d)
+            doc.update_component_row(tax_row, tax_amount, "deductions")
