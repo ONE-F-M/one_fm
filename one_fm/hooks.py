@@ -593,13 +593,12 @@ scheduler_events = {
 			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
 		"15 0 * * *": [ # create shift assignment
-
 			'one_fm.api.tasks.assign_am_shift'
 		],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
 		],
-		"15 23 * * *": [ # mark day attendance 11:15 pm
+		"25 0 * * *": [ # mark day attendance 11:15 pm
 			'one_fm.api.tasks.mark_day_attendance'
 		],
 		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today

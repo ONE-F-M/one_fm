@@ -9,6 +9,7 @@ from multiprocessing.pool import ThreadPool as Pool
 from itertools import product
 from one_fm.api.notification import create_notification_log
 from one_fm.api.v1.utils import response
+from one_fm.utils import query_db_list
 
 
 @frappe.whitelist(allow_guest=True)
@@ -539,21 +540,36 @@ def schedule_leave(employees, leave_type, start_date, end_date):
 @frappe.whitelist(allow_guest=True)
 def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 	try:
-		employees = str(tuple(json.loads(employees))).replace(',)', ')')
-		date_filter = ""
-		if cint(never_end) == 1:
-			date_filter = f">= '{start_date}'"
-		else:
-			date_filter = f"BETWEEN '{start_date}' AND '{end_date}'"
+		if end_date:
+			stop_date = getdate(end_date)
+		else: stop_date = None
+		delete_list = []
+		employees = json.loads(employees)
+		if not employees:
+			response("Error", 400, None, {'message':'Employees must be selected.'})
+		delete_dict = {}
+		new_employees = []
+		if end_date:
+			for i in employees:
+				if not getdate(i['date']) >= stop_date:
+					new_employees.append(i)
+			employees = new_employees
+		for i in employees:
+			if cint(never_end) == 1:
+				_end_date = f'>="{start_date}"'
+			else:
+				_end_date = '="'+str(i['date'])+'"'
+			_line = f"""DELETE FROM `tabEmployee Schedule` WHERE employee="{i['employee']}" AND date{_end_date};"""
+			if not _line in delete_list:
+				delete_list.append(_line)
 
-		frappe.db.sql(f"""
-			DELETE FROM `tabEmployee Schedule`
-			WHERE employee in {employees} AND date {date_filter}
-		""")
-		frappe.db.commit()
+		if delete_list:
+			res = query_db_list(delete_list, commit=True)
+			if res.error:
+				response("Error", 500, None, res.msg)
 		response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
 	except Exception as e:
-		print(e)
+		frappe.throw(str(e))
 		response("Error", 500, None, str(e))
 
 @frappe.whitelist()
