@@ -32,20 +32,20 @@ class LeaveApplicationOverride(LeaveApplication):
 
     def assign_to_leave_approver(self):
         #This function is meant to create a TODO for the leave approver
-        if self.name:
-            existing_assignment = frappe.get_all("ToDO",{'allocated_to':self.leave_approver,'reference_name':self.name})
-            if not existing_assignment:
                 try:
-                    args = {
-                        'assign_to':[self.leave_approver],
-                        'doctype':"Leave Application",
-                        'name':self.name,
-                        'description':f'Please note that leave application {self.name} is awaiting your approval',
-                    }
-                    add(args)
+                    if self.name and self.leave_type =="Sick Leave":
+                        existing_assignment = frappe.get_all("ToDo",{'allocated_to':self.leave_approver,'reference_name':self.name})
+                        if not existing_assignment:
+                            args = {
+                                'assign_to':[self.leave_approver],
+                                'doctype':"Leave Application",
+                                'name':self.name,
+                                'description':f'Please note that leave application {self.name} is awaiting your approval',
+                            }
+                            add(args)
                 except:
-                    
                     frappe.log_error(frappe.get_traceback(),"Error assigning to User")
+                    frappe.throw("Error while assigning leave application")
                     
     def validate_dates(self):
         if frappe.db.get_single_value("HR Settings", "restrict_backdated_leave_application"):
