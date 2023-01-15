@@ -845,6 +845,9 @@ def create_shift_assignment(roster, date, time):
 			frappe.db.sql(query, values=[], as_dict=1)
 			frappe.db.commit()
 
+	if time == 'AM':
+		mark_day_attendance()
+
 
 def overtime_shift_assignment():
 	"""
