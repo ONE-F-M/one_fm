@@ -173,6 +173,7 @@ def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled
 		master_data['employees_data'] = employees_data
 		response("Success", 200, master_data)
 	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Get Roster View')
 		return response("Server Error", 500, None, str(e))
 
 def get_active_employees(start_date, end_date, master_data):
