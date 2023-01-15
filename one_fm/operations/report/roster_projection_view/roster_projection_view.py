@@ -23,7 +23,7 @@ def get_data(filters):
 		"""
 			SELECT
 				con.client, con.project, con_item.item_code, con_item.count, con_item.rate, con_item.rate_type, con_item.rate_type_off,
-				con_item.days_off_category, con_item.no_of_day_off, con_item.count*con_item.rate as total_rate
+				con_item.days_off_category, con_item.no_of_days_off, con_item.count*con_item.rate as total_rate
 			FROM
 				`tabContracts` con
 			LEFT JOIN
