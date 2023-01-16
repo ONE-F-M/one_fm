@@ -9,10 +9,11 @@ from one_fm.api.doc_events import haversine
 
 
 
-# setup channel
+# setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-# setup stub
+
+# setup stub for face recognition
 stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 
@@ -147,10 +148,10 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         # setup channel
-        face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-        channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+        # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+        # channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
         # setup stub
-        stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+        # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
         # request body
         req = facial_recognition_pb2.FaceRecognitionRequest(
             username = frappe.session.user,
