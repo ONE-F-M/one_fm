@@ -7,16 +7,17 @@
  "engine": "InnoDB",
  "field_order": [
   "post_name",
-  "column_break_2",
   "post_abbrv",
-  "column_break_4",
+  "column_break_2",
   "sale_item",
+  "status",
   "section_break_6",
   "shift",
   "site",
   "column_break_9",
   "project",
-  "requirements_section"
+  "requirements_section",
+  "data_14"
  ],
  "fields": [
   {
@@ -40,10 +41,6 @@
   },
   {
    "fieldname": "column_break_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_4",
    "fieldtype": "Column Break"
   },
   {
@@ -85,10 +82,22 @@
    "fieldname": "requirements_section",
    "fieldtype": "Section Break",
    "label": "Requirements"
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nActive\nHold\nStop\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "data_14",
+   "fieldtype": "Data"
   }
  ],
  "links": [],
- "modified": "2022-12-31 20:27:41.947124",
+ "modified": "2023-01-16 21:33:11.641781",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Role",

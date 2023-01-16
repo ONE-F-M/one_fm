@@ -170,6 +170,10 @@ has_permission = {
 	"Issue": "one_fm.utils.has_permission_to_issue"
 }
 
+standard_queries = {
+	"Operations Role": "one_fm.operations.doctype.operations_role.operations_role.get_operations_role_list",
+}
+
 doc_events = {
 	"Stock Entry": {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty",

@@ -10,5 +10,18 @@ frappe.ui.form.on('Operations Role', {
 				}
 			};
 		});
+		let roles = ['HR Manager', 'HR User', 'Project User', 'Project Manager']
+		let has_role = false;
+		roles.every((item, i) => {
+			if(frappe.user.has_role(item)){
+				has_role = true;
+				return false
+			}
+		});
+		if(has_role){
+			frm.set_df_property('status', 'read_only', false);
+		} else {
+			frm.set_df_property('status', 'read_only', true);
+		}
 	}
 });
