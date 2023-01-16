@@ -1,0 +1,103 @@
+{
+ "actions": [],
+ "creation": "2023-01-15 14:40:39.185945",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_doctype",
+  "google_sheet_reference_section",
+  "link",
+  "google_sheet_id",
+  "section_break",
+  "filter_list",
+  "fields_multicheck",
+  "amended_from",
+  "update_details_section",
+  "enable_auto_update"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Select Doctype",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "depends_on": "reference_doctype",
+   "fieldname": "section_break",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "filter_list",
+   "fieldtype": "HTML",
+   "label": "Filter List"
+  },
+  {
+   "fieldname": "fields_multicheck",
+   "fieldtype": "HTML",
+   "label": "Fields Multicheck"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Google Sheet Data Export",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "google_sheet_reference_section",
+   "fieldtype": "Section Break",
+   "label": "Google Sheet Reference"
+  },
+  {
+   "fieldname": "link",
+   "fieldtype": "Data",
+   "label": "Link"
+  },
+  {
+   "fieldname": "google_sheet_id",
+   "fieldtype": "Data",
+   "label": "Google Sheet ID"
+  },
+  {
+   "fieldname": "update_details_section",
+   "fieldtype": "Section Break",
+   "label": "Update Details"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_auto_update",
+   "fieldtype": "Check",
+   "label": "Enable Auto Update"
+  }
+ ],
+ "hide_toolbar": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2023-01-16 12:10:33.393368",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Google Sheet Data Export",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
