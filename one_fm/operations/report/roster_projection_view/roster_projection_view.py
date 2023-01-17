@@ -17,7 +17,10 @@ def get_data(filters):
 	month_end = get_last_day(month_start)
 	today = getdate()
 
-
+	shift_types_list = frappe.db.get_list("Shift Type", fields=['name', 'duration'])
+	shift_types_dict = {}
+	for i in shift_types_list:
+		shift_types_dict[i.name] = i.duration
 	# Get active contracts in the given month of the given year
 	contracts_detail = frappe.db.sql(
 		"""
@@ -65,12 +68,15 @@ def get_data(filters):
 				'date': ['BETWEEN', [month_start, month_end]]}
 			)
 			# Find employee schedule from month start to month end
-			employee_schedule = frappe.db.count("Employee Schedule", filters={
+			employee_schedule_list = frappe.db.get_list("Employee Schedule", filters={
 				'project':row.project,
 				'operations_role': ['IN', roles],
 				'employee_availability': 'Working',
-				'date': ['BETWEEN', [month_start, month_end]]}
+				'date': ['BETWEEN', [month_start, month_end]]},
+				fields=['name', 'shift_type']
 			)
+			employee_schedule = len(employee_schedule_list)
+
 			attendance = frappe.db.count("Attendance", filters={
 				'docstatus': 1,
 				'project':row.project,
@@ -87,14 +93,19 @@ def get_data(filters):
 						working_days = month_end.day - row.no_of_days_off
 					elif row.days_off_category=='Weekly':
 						working_days = month_end.day - (row.no_of_days_off*4)
-						
-				row.es_qty = employee_schedule / working_days
-				row.ps_qty = post_schedule / working_days
-				row.ea_qty = attendance/working_days
-				row.projection = (row.es_qty/row.ps_qty) * row.count if (row.es_qty and row.ps_qty) else 0
-				row.projection_rate = row.projection * row.rate
-				row.live_projection = ((row.es_qty+row.ea_qty)/row.ps_qty)*row.count if (row.es_qty and row.ps_qty) else 0
-				row.live_projection_rate = row.live_projection * row.rate
+			elif row.rate_type=='Weekly':
+				shifttype_duration = 0
+				for i in employee_schedule_list:
+					shifttype_duration += shift_types_dict[i.shift_type]
+				working_days = shifttype_duration
+			
+			row.es_qty = employee_schedule / working_days if working_days else 0
+			row.ps_qty = post_schedule / working_days if working_days else 0
+			row.ea_qty = attendance/working_days if working_days else 0
+			row.projection = (row.es_qty/row.ps_qty) * row.count if (row.es_qty and row.ps_qty) else 0
+			row.projection_rate = row.projection * row.rate
+			row.live_projection = ((row.es_qty+row.ea_qty)/row.ps_qty)*row.count if (row.es_qty and row.ps_qty) else 0
+			row.live_projection_rate = row.live_projection * row.rate
 
 			# row.employee_schedule = employee_schedule/working_days  if working_days else 0
 			# row.post_schedule = post_schedule/working_days if working_days else 0
