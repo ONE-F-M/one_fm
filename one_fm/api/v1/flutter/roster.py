@@ -171,6 +171,15 @@ def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled
 			for record in v:
 				employees_data.append(record)
 		master_data['employees_data'] = employees_data
+		
+		# reformat operations role data
+		operations_roles_data = []
+		for k, v in master_data['operations_roles_data'].items():
+			for record in v:
+				record['operations_role'] = k
+				operations_roles_data.append(record)
+		master_data['operations_roles_data'] = operations_roles_data
+
 		response("Success", 200, master_data)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Get Roster View')
