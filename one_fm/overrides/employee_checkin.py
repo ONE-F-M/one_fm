@@ -32,7 +32,6 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 				checkin_time = get_datetime(self.time)
 				curr_shift = get_current_shift_checkin(self.employee)
 				if curr_shift:
-					curr_shift = curr_shift[0]
 					start_date = curr_shift["start_date"].strftime("%Y-%m-%d")
 					existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{start_date}' and employee = '{self.employee}' and permission_type = '{perm_map[self.log_type]}' and workflow_state = 'Approved' """, as_dict=1)
 					self.shift_assignment = curr_shift["name"]
@@ -198,4 +197,4 @@ def get_current_shift_checkin(employee):
 
 			# Check if current time is within the shift start and end time.
 			if start_time <= current_datetime <= end_time:
-				return shift
+				return shift[0]
