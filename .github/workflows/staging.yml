@@ -14,7 +14,9 @@ jobs:
       - name: Deploying to My Droplet
         uses: appleboy/ssh-action@master # An action made to control Linux servers
         with: # We set all our secrets here for the action, these won't be shown in the action logs
-          ssh-private-key: ${{ secrets.STAGING }}
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.USERNAME }}
+          ssh-private-key: ${{ secrets.STAGING_KEY }}
           script: |
             cd /home/frappe/frappe-bench/ # we move into our app's folder
             git pull upstream staging # we pull any changes from git
