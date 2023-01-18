@@ -19,9 +19,9 @@ frappe.ui.form.on('Operations Role', {
 			}
 		});
 		if(has_role){
-			frm.set_df_property('status', 'read_only', false);
+			frm.set_df_property('is_active', 'read_only', false);
 		} else {
-			frm.set_df_property('status', 'read_only', true);
+			frm.set_df_property('is_active', 'read_only', true);
 		}
 	}
 });

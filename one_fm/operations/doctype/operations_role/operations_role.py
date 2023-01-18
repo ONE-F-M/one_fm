@@ -66,6 +66,7 @@ def get_operations_role_list(doctype, txt, searchfield, start, page_len, filters
 		select %s
 		from `tabOperations Role`
 		where docstatus < 2
+			and is_active = 1
 			and (%s like %s or post_name like %s)
 			{match_conditions}
 		order by
