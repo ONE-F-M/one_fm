@@ -1332,3 +1332,4 @@ def mark_daily_attendance(start_date, end_date):
 		frappe.log_error(frappe.get_traceback(), 'Makr Attendance')
 
 
+# this is a 

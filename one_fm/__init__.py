@@ -43,3 +43,6 @@ LeaveApplication.notify_leave_approver = notify_leave_approver
 calculate_taxes_and_totals.calculate_item_values = calculate_item_values
 WikiPage.get_context = get_context
 NotificationLog.after_insert = after_insert
+
+
+# more actions here
