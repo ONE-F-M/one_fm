@@ -6,26 +6,6 @@ on:
       - staging
 
 jobs:
-  CICD-STAGING: # names the job
-    runs-on: ubuntu-latest # sets the version of linux we want to use, should be what you have on your server
-
-    strategy:
-      fail-fast: false # tells github to not run further steps if this one fails
-      # matrix:
-        # node-version: [16.x] # sets the version of node we want to use, should be what you have on your server
-        # python-version: [3.10.x]
-    steps:
-      - uses: actions/checkout@v2 # fetches your commit to test it
-      - name: Use Python # names our step
-        uses: actions/setup-python@v4 # downloads node and npm
-        with:
-          python-version: '3.10.x'
-      # - run: npm install # installs your dependencies
-      # - run: npm run test # builds your app
-      # - run: npm test # runs your test suite
-        env:
-          CI: true # shows terminal output!
-
   deploy:
     runs-on: ubuntu-latest
     needs: CICD-STAGING # this job depends on "test" having finished
