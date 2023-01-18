@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 import frappe
 from frappe import _
-from frappe.utils import cint, get_datetime, cstr, getdate
+from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
@@ -30,27 +30,37 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			try:			
 				existing_perm = None
 				checkin_time = get_datetime(self.time)
-				curr_shift = get_current_shift(self.employee)
+				curr_shift = get_current_shift_checkin(self.employee)
 				if curr_shift:
-					start_date = (curr_shift.start_date).strftime("%Y-%m-%d")
-					existing_perm = frappe.db.exists("Shift Permission", {"date": start_date, "employee": self.employee, "permission_type": perm_map[self.log_type], "workflow_state": "Approved"})
-					self.shift_assignment = curr_shift.name
-					self.operations_shift = curr_shift.shift
-					self.shift_type = curr_shift.shift_type
+					curr_shift = curr_shift[0]
+					start_date = curr_shift["start_date"].strftime("%Y-%m-%d")
+					existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{start_date}' and employee = '{self.employee}' and permission_type = '{perm_map[self.log_type]}' and workflow_state = 'Approved' """, as_dict=1)
+					self.shift_assignment = curr_shift["name"]
+					self.operations_shift = curr_shift["shift"]
+					self.shift_type = curr_shift["shift_type"]
 
-					if curr_shift.start_datetime and curr_shift.end_datetime and existing_perm:
-						perm_doc = frappe.db.sql(f"""select date, arrival_time, leaving_time from `tabShift Permission` where name = %s """, existing_perm, as_dict=1)[0]
+					if curr_shift["start_datetime"] and curr_shift["end_datetime"] and existing_perm:
+						perm_doc = frappe.db.sql(f"""select date, arrival_time, leaving_time from `tabShift Permission` where name = %s """, existing_perm[0]["name"], as_dict=1)[0]
 						permitted_time = get_datetime(perm_doc['date']) + (perm_doc["arrival_time"] if self.log_type == "IN" else perm_doc["leaving_time"])
-						if self.log_type == "IN" and (checkin_time <= permitted_time and checkin_time >= curr_shift.start_datetime):
-							self.time = 	curr_shift.start_datetime
+						if self.log_type == "IN" and (checkin_time <= permitted_time and checkin_time >= curr_shift["start_datetime"]):
+							self.time = curr_shift["start_datetime"]
 							self.skip_auto_attendance = 0
-							self.shift_permission = existing_perm
-						elif self.log_type == "OUT" and (checkin_time >= permitted_time and checkin_time <= curr_shift.start_datetime):
-							self.time = 	curr_shift.end_datetime
+							self.shift_permission = existing_perm[0]["name"]
+						elif self.log_type == "OUT" and (checkin_time >= permitted_time and checkin_time <= curr_shift["start_datetime"]):
+							self.time = curr_shift["end_datetime"]
 							self.skip_auto_attendance = 0
-							self.shift_permission = existing_perm
+							self.shift_permission = existing_perm[0]["name"]
 			except Exception as e:
 				frappe.throw(frappe.get_traceback())
+
+
+	def validate_duplicate_log(self):
+		doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
+		if doc:
+			doc_link = frappe.get_desk_link("Employee Checkin", doc[0]["name"])
+			frappe.throw(
+				_("This employee already has a log with the same timestamp.{0}").format("<Br>" + doc_link)
+			)
 
 	def after_insert(self):
 		frappe.db.commit()
@@ -170,3 +180,22 @@ def process_background(self):
 					create_notification_log(subject, message, for_users, self)
 
 
+
+
+@frappe.whitelist()
+def get_current_shift_checkin(employee):
+	# fetch datetime
+	current_datetime = now_datetime()
+
+	# fetch the last shift assignment
+	shift = frappe.db.sql(f""" select name, shift, shift_type, start_date, start_datetime, end_datetime from `tabShift Assignment` where employee = '{employee}' order by creation desc limit 1 """, as_dict=1)
+	if shift:
+		before_time, after_time = frappe.db.sql(f""" select begin_check_in_before_shift_start_time, allow_check_out_after_shift_end_time from `tabShift Type` where name = '{shift[0]["shift_type"]}' """)[0]
+		if shift[0]["start_datetime"] and shift[0]["end_datetime"]:
+			# include early entry and late exit time
+			start_time = shift[0]["start_datetime"] - timedelta(minutes=before_time)
+			end_time = shift[0]["end_datetime"] + timedelta(minutes=after_time)
+
+			# Check if current time is within the shift start and end time.
+			if start_time <= current_datetime <= end_time:
+				return shift

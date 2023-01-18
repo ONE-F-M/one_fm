@@ -170,6 +170,10 @@ has_permission = {
 	"Issue": "one_fm.utils.has_permission_to_issue"
 }
 
+standard_queries = {
+	"Operations Role": "one_fm.operations.doctype.operations_role.operations_role.get_operations_role_list",
+}
+
 doc_events = {
 	"Stock Entry": {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty",
@@ -598,7 +602,7 @@ scheduler_events = {
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
 		],
-		"20 0 * * *": [ # mark day attendance 11:15 pm
+		"25 0 * * *": [ # mark day attendance 11:15 pm
 			'one_fm.api.tasks.mark_day_attendance'
 		],
 		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
