@@ -15,10 +15,10 @@ jobs:
         uses: webfactory/ssh-agent@v0.7.0 # An action made to control Linux servers
         with: # We set all our secrets here for the action, these won't be shown in the action logs
           ssh-private-key: ${{ secrets.STAGING_KEY }}
-          run: |
-            cd /home/frappe/frappe-bench/ # we move into our app's folder
-            git pull upstream staging # we pull any changes from git
-            bench setup requirements
-            sudo supervisorctl restart all # we remove any unused dependencies
-            bench migrate # sync database
-            bench doctor
+        run: |
+          cd /home/frappe/frappe-bench/ # we move into our app's folder
+          git pull upstream staging # we pull any changes from git
+          bench setup requirements
+          sudo supervisorctl restart all # we remove any unused dependencies
+          bench migrate # sync database
+          bench doctor
