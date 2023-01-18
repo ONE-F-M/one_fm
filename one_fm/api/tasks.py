@@ -1143,12 +1143,12 @@ def create_additional_salary(employee, amount, component, end_date):
 
 def mark_day_attendance():
 	start_date, end_date = add_days(getdate(), -1), add_days(getdate(), -1)
-	mark_daily_attendance(start_date, end_date)
+	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_night_attendance():
 	start_date = add_days(getdate(), -1)
 	end_date =  getdate()
-	mark_daily_attendance(start_date, end_date)
+	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 
 

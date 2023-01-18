@@ -305,6 +305,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 			update_roster(key="roster_view")
 			response("success", 200, {'employees':employees_list, 'date_range':date_range, 'message':'Sucessfully rostered employees'})
 	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), "Schedule Roster")
 		response("error", 500, None, str(e))
 
 def update_roster(key):
@@ -318,8 +319,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	creation = now()
 	owner = frappe.session.user
 	date_range = [i.date() for i in pd.date_range(start=start_date, end=end_date)]
-	operations_shift = frappe.get_doc("Operations Shift", shift)
-	operations_role = frappe.get_doc("Operations Role", operations_role)
+	operations_shift = frappe.get_doc("Operations Shift", shift, ignore_permissions=True)
+	operations_role = frappe.get_doc("Operations Role", operations_role, ignore_permissions=True)
 	day_off_ot = cint(day_off_ot)
 	if otRoster == 'false':
 		roster_type = 'Basic'
@@ -327,7 +328,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 		roster_type = 'Over-Time'
 
 	# get and structure employee dictionary for easy hashing
-	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employees]}, fields=['name', 'employee_name', 'department'])
+	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employees]}, fields=['name', 'employee_name', 'department'], ignore_permissions=True)
 	employees_dict = {}
 	for i in employees_list:
 		employees_dict[i.name] = i
