@@ -12,7 +12,7 @@ jobs:
     #if: github.event.push == true # we tell Github to only execute this step if we're on our master branch (so we don't put unfinished branches in production)
     steps:
       - name: Deploying to My Droplet
-        uses: appleboy/ssh-action@master # An action made to control Linux servers
+        uses: webfactory/ssh-agent@v0.7.0 # An action made to control Linux servers
         with: # We set all our secrets here for the action, these won't be shown in the action logs
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.USERNAME }}
