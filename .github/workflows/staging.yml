@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2 # fetches your commit to test it
       - name: Use Python # names our step
-        uses: actions/setup-python@v2 # downloads node and npm
+        uses: actions/setup-python@v4 # downloads node and npm
         with:
           python-version: '3.10.x'
       # - run: npm install # installs your dependencies
