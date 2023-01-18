@@ -1,8 +1,9 @@
 name: Deploy CI/CD
 
-on: [push] # tells github to run this on any push to the repository
-  branches:
-    - staging
+on:
+  push # tells github to run this on any push to the repository
+    branches:
+      - staging
 
 jobs:
   CICD-STAGING: # names the job
