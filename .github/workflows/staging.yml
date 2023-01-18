@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     #needs: CICD-STAGING # this job depends on "test" having finished
-    if: github.event.push == true # we tell Github to only execute this step if we're on our master branch (so we don't put unfinished branches in production)
+    #if: github.event.push == true # we tell Github to only execute this step if we're on our master branch (so we don't put unfinished branches in production)
     steps:
       - name: Deploying to My Droplet
         uses: appleboy/ssh-action@master # An action made to control Linux servers
