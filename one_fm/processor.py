@@ -11,13 +11,15 @@ def sendemail(recipients, subject, header=None, message=None,
 	sender=None, cc=None , attachments=None, delay=None, args=None, template=None):
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
+	actions=pdf_link=""
+
 	head = header[0] if header else ""
 	if not message:
 		message = " "
 
 	if "Administrator" in recipients:
 		recipients.remove("Administrator")
-	
+
 	if args:
 		template = "default_email_with_workflow"
 		head = "Workflow Action"
@@ -29,14 +31,14 @@ def sendemail(recipients, subject, header=None, message=None,
 		message += """
 			<p>Please find the attached Document in the mail below.</p>
 		"""
-	
+
 	if type(recipients) == str:
 		recipients = [recipients]
-	
+
 	for recipient in recipients:
 		if not is_user_id_company_prefred_email_in_employee(recipient):
 			recipients.remove(recipient)
-			
+
 	if recipients and len(recipients) > 0:
 		frappe.sendmail(template = template,
 			recipients=recipients,

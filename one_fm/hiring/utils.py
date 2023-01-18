@@ -12,6 +12,7 @@ from frappe.modules import scrub
 from frappe import _
 from frappe.desk.form import assign_to
 from one_fm.processor import sendemail
+from one_fm.utils import validate_mandatory_fields
 from one_fm.templates.pages.career_history import send_career_history_magic_link
 from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 from one_fm.one_fm.doctype.erf.erf import (
@@ -35,6 +36,8 @@ def get_performance_profile_guid():
         return get_url(file_path)
 
 def validate_job_offer(doc, method):
+    job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
+    validate_mandatory_fields(job_applicant)
     validate_job_offer_mandatory_fields(doc)
     # Validate day off
     if not doc.number_of_days_off:

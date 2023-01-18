@@ -2,6 +2,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 import itertools
+import pymysql
 from one_fm.api.notification import create_notification_log
 from frappe import _
 import frappe, os, erpnext, json, math
@@ -1581,8 +1582,8 @@ def set_job_applicant_fields(doc):
 
 def validate_mandatory_fields(doc):
     field_list = [{'First Name':'one_fm_first_name'}, {'Last Name':'one_fm_last_name'}, {'Passport Number':'one_fm_passport_number'},
-                {'Place of Birth':'one_fm_place_of_birth'}, {'Email ID':'one_fm_email_id'},
-                {'Marital Status':'one_fm_marital_status'}, {'Passport Holder of':'one_fm_passport_holder_of'},
+                {'Place of Birth':'one_fm_place_of_birth'}, {'Email ID':'one_fm_email_id'},{"First Name in Arabic": "one_fm_first_name_in_arabic"},
+                {"Last Name in Arabic": "one_fm_last_name_in_arabic"},{'Marital Status':'one_fm_marital_status'}, {'Passport Holder of':'one_fm_passport_holder_of'},
                 {'Passport Issued on':'one_fm_passport_issued'}, {'Passport Expires on ':'one_fm_passport_expire'},
                 {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
                 {'Date of Birth':'one_fm_date_of_birth'}, {'Educational Qualification':'one_fm_educational_qualification'},
@@ -2652,6 +2653,9 @@ def create_path(path):
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
+    frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
+
+def queue_send_workflow_action_email(doc, recipients):
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
         workflow, get_doc_workflow_state(doc), doc
@@ -2827,3 +2831,34 @@ def mark_attendance(
     attendance.insert()
     attendance.submit()
     return attendance
+
+
+
+def get_db_config():
+    host = frappe.conf.db_host or 'localhost'
+    return frappe._dict({
+        'host':host, 'user':frappe.conf.db_name, 'passwd': frappe.conf.db_password
+    })
+
+def query_db_list(query_list, commit=False):
+    try:
+        credentials = get_db_config()
+        connection = pymysql.connect(
+            host=credentials.host,
+            user=credentials.user,
+            password=credentials.passwd,
+            database=credentials.user,
+            cursorclass=pymysql.cursors.DictCursor
+        )
+
+        result = None
+        with connection:
+            connection.autocommit(True)
+            with connection.cursor() as cursor:
+                for i in query_list:
+                    cursor.execute(i)
+            if commit:connection.commit()
+        
+        return frappe._dict({'error':False, 'data':result})
+    except Exception as e:
+        return frappe._dict({'error':True, 'msg':str(e), 'data':result})

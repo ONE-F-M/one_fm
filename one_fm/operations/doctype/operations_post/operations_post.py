@@ -69,7 +69,7 @@ def set_post_schedule_by_date(end_date, post_name):
 				check_doc = frappe.get_doc({
 				"doctype": "Post Schedule",
 				"date": cstr(date.date()),
-				"post": doc.name,
+				"post": post_name,
 				"post_status": "Planned"
 					})
 				check_doc.save()
