@@ -1,0 +1,43 @@
+name: Deploy CI/CD
+
+on: [push] # tells github to run this on any push to the repository
+  branches:
+    - staging
+
+jobs:
+  CICD-STAGING: # names the job
+    runs-on: ubuntu-latest # sets the version of linux we want to use, should be what you have on your server
+
+    strategy:
+      fail-fast: false # tells github to not run further steps if this one fails
+      # matrix:
+        # node-version: [16.x] # sets the version of node we want to use, should be what you have on your server
+        # python-version: [3.10.x]
+    steps:
+      - uses: actions/checkout@v2 # fetches your commit to test it
+      - name: Use Python # names our step
+        uses: actions/setup-python@v2 # downloads node and npm
+        with:
+          python-version: '3.10.x'
+      # - run: npm install # installs your dependencies
+      # - run: npm run test # builds your app
+      # - run: npm test # runs your test suite
+        env:
+          CI: true # shows terminal output!
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: CICD-STAGING # this job depends on "test" having finished
+    if: github.event.push == true # we tell Github to only execute this step if we're on our master branch (so we don't put unfinished branches in production)
+    steps:
+      - name: Deploying to My Droplet
+        uses: appleboy/ssh-action@master # An action made to control Linux servers
+        with: # We set all our secrets here for the action, these won't be shown in the action logs
+          ssh-private-key: ${{ secrets.STAGING }}
+          script: |
+            cd /home/frappe/frappe-bench/ # we move into our app's folder
+            git pull upstream staging # we pull any changes from git
+            bench setup requirements
+            sudo supervisorctl restart all # we remove any unused dependencies
+            bench migrate # sync database
+            bench doctor
