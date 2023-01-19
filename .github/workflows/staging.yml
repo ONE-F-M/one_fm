@@ -5,24 +5,26 @@ on:
     branches:
       - staging
 
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-    docker_demo:
-        runs-on: ubuntu-latest
-        container:
-            image: ubuntu:latest
-        steps:
-            -   uses: actions/checkout@v3
-            -   run: ls #apt update && apt install -y openssh-client git
-            -   name: Setup key
-                uses: ./
-                with:
-                    ssh-private-key: |
-                        ${{ secrets.STAGING_KEY }}
-            -   run: |
-                    cd /home/frappe/frappe-bench/ # we move into our app's folder
-                    git pull upstream staging # we pull any changes from git
-                    bench setup requirements
-                    sudo supervisorctl restart all # we remove any unused dependencies
-                    bench migrate # sync database
-                    bench doctor
-                    
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    - name: Deploy to Staging
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.STAGING_HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.STAGING_KEY }}
+        port: 22
+        script: |
+          cd /home/frappe/frappe-bench/ # we move into our app's folder
+          git pull upstream staging # we pull any changes from git
+          bench setup requirements
+          sudo supervisorctl restart all # we remove any unused dependencies
+          bench migrate # sync database
+          bench doctor
