@@ -26,7 +26,7 @@ def change_employee_detail(employee_id:str,field:str,value)-> bool:
         bool: Returns true if the data was changed successfully.
     """
     
-    accepted_fields = ['enroll','cell_number']
+    accepted_fields = ['enrolled','cell_number']
     if not isinstance(employee_id, str):
         return response("Bad Request", 400, None, "Employee ID must of type str.")
     
@@ -34,13 +34,13 @@ def change_employee_detail(employee_id:str,field:str,value)-> bool:
         return response("Bad Request", 400, None, "Field  must be of type str.")
 
     if not employee_id:
-        return response("Error", 400, None, {'message':'An Employee must be selected.'})
+        return response("Error", 400, None, {'message':'An Employee must be provided.'})
     
     if not value:
         return response("Error", 400, None, {'message':'A Value must be provided.'})
   
     if not field:
-        return response("Error", 400, None, {'message':'A Field must be selected.'})
+        return response("Error", 400, None, {'message':'A Field must be provided.'})
         
     if field  not in accepted_fields:
         return response("Error", 400, None, {'message':'This field cannot be changed'})
@@ -59,7 +59,7 @@ def change_employee_detail(employee_id:str,field:str,value)-> bool:
                     return response("Sucess",200,True,'Data Updated Successfully') 
                 else:
                     return response("Error", 400, None, {'message':'Please set a valid phone number'})
-            elif field =='enroll':
+            elif field =='enrolled':
                 frappe.db.set_value("Employee",employee_,field,value)
                 frappe.db.commit()
                 response("Sucess",200,True,'Data Updated Successfully') 
