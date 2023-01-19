@@ -22,8 +22,9 @@ jobs:
         key: ${{ secrets.SANDBOX_KEY }}
         port: 22
         script: |
-          cd /home/frappe/frappe-bench/ # we move into our app's folder
+          cd /home/frappe/frappe-bench/apps/one_fm # we move into our app's folder
           git pull upstream sandbox # we pull any changes from git
+          cd /home/frappe/frappe-bench
           bench setup requirements
           sudo supervisorctl restart all # we remove any unused dependencies
           bench migrate # sync database
