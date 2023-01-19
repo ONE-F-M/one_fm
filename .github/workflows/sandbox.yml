@@ -14,7 +14,7 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - name: Deploy to Staging
+    - name: Deploy to Sandbox
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.SANDBOX_HOST }}
