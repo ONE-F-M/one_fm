@@ -20,7 +20,7 @@ def change_employee_detail(employee_id:str,field:str,value)-> bool:
     Args:
         employee (str): Employee ID or Name
         field (str): Field to be changed
-        value (str): new value
+        value (str): new value of field
 
     Returns:
         bool: Returns true if the data was changed successfully.
@@ -62,18 +62,14 @@ def change_employee_detail(employee_id:str,field:str,value)-> bool:
             elif field =='enrolled':
                 frappe.db.set_value("Employee",employee_,field,value)
                 frappe.db.commit()
-                response("Sucess",200,True,'Data Updated Successfully') 
+                response("Sucess",200,True,'Data Updated Successfully')
+        else:
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id)) 
             
     except Exception as e:
         response("error", 500, False, str(e))
         
      
-    
-    
-    
-    
-    
-        
     
 
 
