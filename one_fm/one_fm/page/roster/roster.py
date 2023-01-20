@@ -310,7 +310,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 			)
 			# employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
 			update_roster(key="roster_view")
-			response("success", 200, {'message':'Suscessfully rostered employees'}, 'wahala')
+			response("success", 200, {'message':'Successfully rostered employees'}, 'wahala')
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Schedule Roster")
 		response("error", 200, None, str(e))
