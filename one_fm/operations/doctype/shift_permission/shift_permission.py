@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import getdate
+from frappe.utils import getdate, get_datetime, add_to_date, format_date
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
@@ -15,14 +15,38 @@ from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 
 class ShiftPermission(Document):
 	def validate(self):
-		self.check_permission_type()
+		self.validate_permission_type()
+		self.validate_attendance()
+		self.validate_employee_checkin()
 		self.check_shift_details_value()
 		self.validate_date()
 		self.validate_record()
 		if not self.title:
 			self.title = self.emp_name
 
-	def check_permission_type(self):
+	def validate_attendance(self):
+		attendance = frappe.db.exists('Attendance',{'attendance_date': self.date, 'employee': self.employee, 'docstatus': 1})
+		if attendance:
+			frappe.throw(_('There is an Attendance {0} exists for the \
+			Employee {1} on {2}'.format(attendance, self.emp_name, format_date(self.date))))
+
+	def validate_employee_checkin(self):
+		start_date = get_datetime(self.date)
+		end_date = add_to_date(start_date, hours=23.9998)
+		employee_checkin = frappe.db.exists('Employee Checkin',
+			{'log_type': self.log_type, 'time': ["between", [start_date, end_date]], 'employee': self.employee}
+		)
+		if employee_checkin:
+			frappe.throw(_('There is an Employee Checkin {0} exists for the \
+			Employee {1} on {2}'.format(employee_checkin, self.emp_name, format_date(self.date))))
+
+	def validate_permission_type(self):
+		if self.log_type == 'IN' and self.permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
+			frappe.throw(_('Permission Type cannot be {0}. It should be one of \
+				"Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(self.permission_type)))
+		if self.log_type == 'OUT' and self.permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
+			frappe.throw(_('Permission Type cannot be {0}. It should be one of \
+				"Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(self.permission_type)))
 		if self.permission_type == "Arrive Late":
 			field_list = [{'Arrival Time':'arrival_time'}]
 			self.set_mandatory_fields(field_list)
