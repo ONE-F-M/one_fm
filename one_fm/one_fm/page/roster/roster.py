@@ -334,6 +334,14 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	elif otRoster == 'true' or day_off_ot == 1:
 		roster_type = 'Over-Time'
 
+	# check for end date
+	if end_date:
+		end_date = getdate(end_date)
+		new_employees = []
+		for i in employees:
+			if not getdate(i['date']) > end_date:
+				new_employees.append(i)
+		employees = new_employees
 	# # get and structure employee dictionary for easy hashing
 	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employee_list]}, fields=['name', 'employee_name', 'department'], ignore_permissions=True)
 	employees_dict = {}
