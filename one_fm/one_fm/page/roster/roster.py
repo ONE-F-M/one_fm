@@ -284,7 +284,6 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 		# date_range = pd.date_range(start=start_date, end=end_date)
 
 		if not cint(request_employee_schedule) and "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
-			frappe.throw("Hi")
 			all_employee_shift_query = frappe.db.sql("""
 				SELECT DISTINCT es.shift, s.supervisor
 				FROM `tabEmployee Schedule` es JOIN `tabOperations Shift` s ON es.shift = s.name
