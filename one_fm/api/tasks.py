@@ -1183,10 +1183,15 @@ def mark_daily_attendance(start_date, end_date):
 
 
 		# get attendance for the day
-		attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off', 'Holiday']]})
+		attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off', 'Holiday', 'Present']]})
 		attendance_dict = {}
 		for i in attendance_list:
 			attendance_dict[i.employee] = i
+		# present attendance
+		present_attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['IN', ['On Leave', 'Work From Home', 'Day Off', 'Holiday', 'Present']]})
+		present_attendance_dict = {}
+		for i in present_attendance_list:
+			present_attendance_dict[i.employee] = i
 
 		# Get shift assignment and make hashmap
 		shift_assignments = frappe.db.sql(f"""
@@ -1271,7 +1276,17 @@ def mark_daily_attendance(start_date, end_date):
 					'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
 				})
 
-				
+		# mark day off if non above is met
+		for i in employee_schedules:
+			if not employee_attendance.get(i.employee):
+				emp = employees_data.get(i.employee)
+				employee_attendance[i.employee] = frappe._dict({
+					'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name, 'working_hours':0, 'status':'Day Off',
+					'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':'', 'operations_shift':i.shift,
+					'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':emp.company,
+					'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
+					'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
+				})
 				
 		
 		# create attendance with sql injection
@@ -1286,13 +1301,14 @@ def mark_daily_attendance(start_date, end_date):
 			"""
 
 			for k, v in employee_attendance.items():
-				query+= f"""
-				(
-					"{v.name}", "{v.employee}", "{v.employee_name}", {v.working_hours}, "{v.status}", '{v.shift}', '{v.in_time}',
-					'{v.out_time}', "{v.shift_assignment}", "{v.operations_shift}", "{v.site}", "{v.project}", "{v.attendance_date}", "{v.company}", 
-					"{v.department}", {v.late_entry}, {v.early_exit}, "{v.operations_role}", "{v.post_abbrv}", "{v.roster_type}", {v.docstatus}, "{v.owner}",
-					"{v.owner}", "{v.creation}", "{v.modified}"
-				),"""
+				if not present_attendance_dict.get(v.employee):
+					query+= f"""
+					(
+						"{v.name}", "{v.employee}", "{v.employee_name}", {v.working_hours}, "{v.status}", '{v.shift}', '{v.in_time}',
+						'{v.out_time}', "{v.shift_assignment}", "{v.operations_shift}", "{v.site}", "{v.project}", "{v.attendance_date}", "{v.company}", 
+						"{v.department}", {v.late_entry}, {v.early_exit}, "{v.operations_role}", "{v.post_abbrv}", "{v.roster_type}", {v.docstatus}, "{v.owner}",
+						"{v.owner}", "{v.creation}", "{v.modified}"
+					),"""
 			
 			query = query[:-1]
 			query += f"""
