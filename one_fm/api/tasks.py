@@ -1160,23 +1160,30 @@ def mark_daily_attendance(start_date, end_date):
 	try:
 		owner = frappe.session.user
 		creation = now()
+		# get holiday for today
+		holiday_today = get_holiday_today(start_date)
 		# Get shift type and make hashmap
 		shift_types = frappe.get_list("Shift Type", fields="*")
 		shift_types_dict = {}
 		for i in shift_types:
 			shift_types_dict[i.name] = i
 		
-		employees = frappe.get_list("Employee", filters={'status':["IN", ['Active', 'Absconding']]}, fields="*")
+		# get employee schedule
+		employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':start_date, 'employee_availability':'Day Off'}, fields="*")
+		employee_schedule_dict = {}
+		for i in employee_schedules:
+			employee_schedule_dict[i.employee] = i
+		
+		employees = frappe.get_list("Employee", fields="*")
 		employees_data = {}
 		for i in employees:
 			employees_data[i.name] = i
+
 		employees_dict = {}
-		# for emp in employees:
-		# 	employees_dict[emp.name] = {}
 
 
 		# get attendance for the day
-		attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off']]})
+		attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off', 'Holiday']]})
 		attendance_dict = {}
 		for i in attendance_list:
 			attendance_dict[i.employee] = i
@@ -1242,20 +1249,29 @@ def mark_daily_attendance(start_date, end_date):
 						'roster_type':shift_assignment.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
 					})
 
-		# add absent attendance
+		# add absent, day off and holiday in shift assignment
 		for i in shift_assignments:
 			if not employee_attendance.get(i.employee):
+				# check for day off
+				if employee_schedule_dict.get(i.employee):
+					availability = 'Day Off'
+				elif holiday_today and holiday_today.get(employees_data[i.employee].holiday_list):
+					availability = 'Holiday'
+				else:
+					availability = 'Absent'
+
 				emp = employees_data.get(i.employee)
-				employee_availability = frappe.db.get_value("Employee Schedule", {"employee": i.employee, "date":start_date}, "employee_availability")
 				if not emp:
 					emp = frappe._dict({'department': '', 'employee_name': ''})
 				employee_attendance[i.employee] = frappe._dict({
-					'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name, 'working_hours':0, 'status':'Day Off' if employee_availability == "Day Off" else "Absent" ,
+					'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name, 'working_hours':0, 'status':availability,
 					'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':i.name, 'operations_shift':i.shift,
 					'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':i.company,
 					'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
 					'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
 				})
+
+				
 				
 		
 		# create attendance with sql injection
@@ -1329,6 +1345,23 @@ def mark_daily_attendance(start_date, end_date):
 				frappe.db.sql(query, values=[], as_dict=1)
 				frappe.db.commit()
 	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), 'Makr Attendance')
+		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 
 
+def get_holiday_today(curr_date):
+	start_date = curr_date.replace(day=1, month=1)
+	end_date = start_date.replace(day=31, month=12)
+
+	holidays = frappe.db.sql(f"""
+		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
+		JOIN `tabHoliday List` hl ON hl.name=h.parent 
+		WHERE from_date='{start_date}' AND to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
+
+	holiday_dict = {}
+	for i in holidays:
+		if(holiday_dict.get(i.holiday)):
+			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{i.holiday_date:i.description}}
+		else:
+			holiday_dict[i.holiday] = {i.holiday_date:i.description}
+	
+	return holiday_dict
