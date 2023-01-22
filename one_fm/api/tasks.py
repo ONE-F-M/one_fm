@@ -1229,30 +1229,54 @@ def mark_daily_attendance(start_date, end_date):
 		# create attendance object
 		employee_checkin = []
 		employee_attendance = {}
+		checkin_no_out = []
 		for k, v in in_checkins_dict.items():
-			if out_checkins_dict.get(k):
-				check_out = out_checkins_dict.get(k)
-				shift_type = shift_types_dict.get(v.shift_type)
-				if shift_type: # some employees have no shift in checkins
-					shift_assignment = shift_assignments_dict.get(v.shift_assignment)
-					in_time = v.actual_time
-					out_time = check_out.time
-					working_hours = (out_time - in_time).total_seconds() / (60 * 60)
-					emp = employees_data.get(v.employee)
+			emp = employees_data.get(v.employee)
+			if attendance_dict.get(v.employee):
+				name = attendance_dict.get(v.employee).name
+			else:
+				name = f"HR-ATT-{start_date}-{v.employee}"
+			shift_type = shift_types_dict.get(v.shift_type)
+			shift_assignment = shift_assignments_dict.get(v.shift_assignment)
+			in_time = v.actual_time
 
-					if attendance_dict.get(v.employee):
-						name = attendance_dict.get(v.employee).name
-					else:
-						name = f"HR-ATT-{start_date}-{v.employee}"
-					employee_checkin.append({name:{'in':v.name, 'out':check_out.name}}) # add checkin for update
-					employee_attendance[v.employee] = frappe._dict({
-						'name':name, 'employee':v.employee, 'employee_name':emp.employee_name, 'working_hours':working_hours, 'status':'Present',
-						'shift':v.shift_type, 'in_time':in_time, 'out_time':out_time, 'shift_assignment':v.shift_assignment, 'operations_shift':v.operations_shift,
-						'site':shift_assignment.site, 'project':shift_assignment.project, 'attendance_date': start_date, 'company':shift_assignment.company,
-						'department': emp.department, 'late_entry':v.late_entry, 'early_exit':check_out.early_exit, 'operations_role':shift_assignment.operations_role,
-						'post_abbrv':shift_assignment.post_abbrv,
-						'roster_type':shift_assignment.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
-					})
+			# check if late entry > 4hrs
+			if ((in_time - shift_assignment.start_datetime).total_seconds() / (60*60)) > 4:
+				working_hours = 0
+				employee_attendance[i.employee] = frappe._dict({
+					'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name, 'working_hours':0, 'status':'Absent',
+					'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':v.shift_assignment, 'operations_shift':v.operations_shift,
+					'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':emp.company,
+					'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
+					'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, "comment":f"Checked in 4hrs late at {in_time}"
+				})
+			# check if checkout exists
+			elif out_checkins_dict.get(k):
+				check_out = out_checkins_dict.get(k)
+				out_time = check_out.time
+				working_hours = (out_time - in_time).total_seconds() / (60 * 60)
+				employee_checkin.append({name:{'in':v.name, 'out':check_out.name}}) # add checkin for update
+				employee_attendance[v.employee] = frappe._dict({
+					'name':name, 'employee':v.employee, 'employee_name':emp.employee_name, 'working_hours':working_hours, 'status':'Present',
+					'shift':v.shift_type, 'in_time':in_time, 'out_time':out_time, 'shift_assignment':v.shift_assignment, 'operations_shift':v.operations_shift,
+					'site':shift_assignment.site, 'project':shift_assignment.project, 'attendance_date': start_date, 'company':shift_assignment.company,
+					'department': emp.department, 'late_entry':v.late_entry, 'early_exit':check_out.early_exit, 'operations_role':shift_assignment.operations_role,
+					'post_abbrv':shift_assignment.post_abbrv,
+					'roster_type':shift_assignment.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':""
+				})
+			else: # no checkout record found
+				working_hours = (shift_assignment.start_datetime - in_time).total_seconds() / (60 * 60)
+				employee_checkin.append({name:{'in':v.name, 'out':v.name}}) # add checkin for update
+				employee_attendance[v.employee] = frappe._dict({
+					'name':name, 'employee':v.employee, 'employee_name':emp.employee_name, 'working_hours':working_hours, 'status':'Present',
+					'shift':v.shift_type, 'in_time':in_time, 'out_time':shift_assignment.end_datetime, 'shift_assignment':v.shift_assignment, 'operations_shift':v.operations_shift,
+					'site':shift_assignment.site, 'project':shift_assignment.project, 'attendance_date': start_date, 'company':shift_assignment.company,
+					'department': emp.department, 'late_entry':v.late_entry, 'early_exit':check_out.early_exit, 'operations_role':shift_assignment.operations_role,
+					'post_abbrv':shift_assignment.post_abbrv,
+					'roster_type':shift_assignment.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':"Checkin but no checkout record found"
+				})
+				# add employee to no checkour record found
+				checkin_no_out.append({'employee':v.employee, 'in':v.name, 'shift_assignment':v.shift_assignment})
 
 		# add absent, day off and holiday in shift assignment
 		for i in shift_assignments:
@@ -1273,7 +1297,7 @@ def mark_daily_attendance(start_date, end_date):
 					'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':i.name, 'operations_shift':i.shift,
 					'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':i.company,
 					'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
-					'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
+					'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':""
 				})
 
 		# mark day off if non above is met
@@ -1285,7 +1309,7 @@ def mark_daily_attendance(start_date, end_date):
 					'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':'', 'operations_shift':i.shift,
 					'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':emp.company,
 					'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
-					'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation
+					'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':f"{i.name}"
 				})
 				
 		
@@ -1295,7 +1319,7 @@ def mark_daily_attendance(start_date, end_date):
 				INSERT INTO `tabAttendance` (`name`, `employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
 				`shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`, 
 				`department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
-				`creation`, `modified`)
+				`creation`, `modified`, `comment`)
 				VALUES 
 
 			"""
@@ -1307,7 +1331,7 @@ def mark_daily_attendance(start_date, end_date):
 						"{v.name}", "{v.employee}", "{v.employee_name}", {v.working_hours}, "{v.status}", '{v.shift}', '{v.in_time}',
 						'{v.out_time}', "{v.shift_assignment}", "{v.operations_shift}", "{v.site}", "{v.project}", "{v.attendance_date}", "{v.company}", 
 						"{v.department}", {v.late_entry}, {v.early_exit}, "{v.operations_role}", "{v.post_abbrv}", "{v.roster_type}", {v.docstatus}, "{v.owner}",
-						"{v.owner}", "{v.creation}", "{v.modified}"
+						"{v.owner}", "{v.creation}", "{v.modified}", "{v.comment}"
 					),"""
 			
 			query = query[:-1]
@@ -1360,13 +1384,16 @@ def mark_daily_attendance(start_date, end_date):
 				"""
 				frappe.db.sql(query, values=[], as_dict=1)
 				frappe.db.commit()
+		if checkin_no_out:
+			pass
 	except Exception as e:
+		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 
 
 def get_holiday_today(curr_date):
-	start_date = curr_date.replace(day=1, month=1)
-	end_date = start_date.replace(day=31, month=12)
+	start_date = getdate(curr_date).replace(day=1, month=1)
+	end_date = getdate(start_date).replace(day=31, month=12)
 
 	holidays = frappe.db.sql(f"""
 		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
