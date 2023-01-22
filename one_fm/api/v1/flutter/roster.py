@@ -339,10 +339,11 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	operations_shift = frappe.get_doc("Operations Shift", shift)
 	operations_role = frappe.get_doc("Operations Role", operations_role)
 	day_off_ot = cint(day_off_ot)
-	if otRoster == 'false':
-		roster_type = 'Basic'
-	elif otRoster == 'true' or day_off_ot == 1:
+	if otRoster:
 		roster_type = 'Over-Time'
+	elif otRoster or day_off_ot == 1:
+		roster_type = 'Basic'
+		
 
 	# get and structure employee dictionary for easy hashing
 	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employees]}, fields=['name', 'employee_name', 'department'])
@@ -442,10 +443,10 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			group_by="employee DESC"
 		)
 		if len(from_schedule):
-			if otRoster == 'false':
-				roster_type = 'Basic'
-			elif otRoster == 'true':
+			if otRoster:
 				roster_type = 'Over-Time'
+			elif otRoster or day_off_ot == 1:
+				roster_type = 'Basic'
 			
 			requester, requester_name = frappe.db.get_value("Employee", {"user_id":frappe.session.user}, ["name", "employee_name"])
 			# get required shift supervisors and make as dict for easy hashing
