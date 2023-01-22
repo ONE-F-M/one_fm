@@ -274,47 +274,49 @@ def filter_redundant_employees(employees):
 
 @frappe.whitelist(allow_guest=True)
 def get_post_view(start_date, end_date,  project=None, site=None, shift=None, operations_role=None, active_posts=1, limit_start=0, limit_page_length=100):
+	try:
+		user, user_roles, user_employee = get_current_user_details()
+		if "Operations Manager" not in user_roles and "Projects Manager" not in user_roles and "Site Supervisor" not in user_roles:
+			frappe.throw(_("Insufficient permissions for Post View."))
 
-    user, user_roles, user_employee = get_current_user_details()
-    if "Operations Manager" not in user_roles and "Projects Manager" not in user_roles and "Site Supervisor" not in user_roles:
-        frappe.throw(_("Insufficient permissions for Post View."))
+		filters, master_data, post_data = {}, {}, {}
+		if project:
+			filters.update({'project': project})
+		if site:
+			filters.update({'site': site})
+		if shift:
+			filters.update({'site_shift': shift})
+		if operations_role:
+			filters.update({'post_template': operations_role})
+		post_total = len(frappe.db.get_list("Operations Post", filters))
+		post_list = frappe.db.get_list("Operations Post", filters, "name", order_by="name asc", limit_start=limit_start, limit_page_length=limit_page_length)
+		fields = ['name', 'post', 'operations_role','date', 'post_status', 'site', 'shift', 'project']
 
-    filters, master_data, post_data = {}, {}, {}
-    if project:
-        filters.update({'project': project})
-    if site:
-        filters.update({'site': site})
-    if shift:
-        filters.update({'site_shift': shift})
-    if operations_role:
-        filters.update({'post_template': operations_role})
-    post_total = len(frappe.db.get_list("Operations Post", filters))
-    post_list = frappe.db.get_list("Operations Post", filters, "name", order_by="name asc", limit_start=limit_start, limit_page_length=limit_page_length)
-    fields = ['name', 'post', 'operations_role','date', 'post_status', 'site', 'shift', 'project']
+		filters.pop('post_template', None)
+		filters.pop('site_shift', None)
+		if operations_role:
+			filters.update({'operations_role': operations_role})
+		if shift:
+			filters.update({'shift': shift})
+		for key, group in itertools.groupby(post_list, key=lambda x: (x['name'])):
+			schedule_list = []
+			filters.update({'date': ['between', (start_date, end_date)], 'post': key})
+			schedules = frappe.db.get_list("Post Schedule", filters, fields, order_by="date asc, post asc")
+			for date in	pd.date_range(start=start_date, end=end_date):
+				if not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
+					schedule = {
+					'post': key,
+					'date': cstr(date).split(" ")[0]
+					}
+				else:
+					schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {})
+				schedule_list.append(schedule)
+			post_data.update({key: schedule_list})
 
-    filters.pop('post_template', None)
-    filters.pop('site_shift', None)
-    if operations_role:
-        filters.update({'operations_role': operations_role})
-    if shift:
-        filters.update({'shift': shift})
-    for key, group in itertools.groupby(post_list, key=lambda x: (x['name'])):
-        schedule_list = []
-        filters.update({'date': ['between', (start_date, end_date)], 'post': key})
-        schedules = frappe.db.get_list("Post Schedule", filters, fields, order_by="date asc, post asc")
-        for date in	pd.date_range(start=start_date, end=end_date):
-            if not any(cstr(schedule.date) == cstr(date).split(" ")[0] for schedule in schedules):
-                schedule = {
-                'post': key,
-                'date': cstr(date).split(" ")[0]
-                }
-            else:
-                schedule = next((sch for sch in schedules if cstr(sch.date) == cstr(date).split(" ")[0]), {})
-            schedule_list.append(schedule)
-        post_data.update({key: schedule_list})
-
-    master_data.update({"post_data": post_data, "total": post_total})
-    return master_data
+		master_data.update({"post_data": post_data, "total": post_total})
+		response("success", 200, master_data)
+	except Exception as e:
+		response("error", 500, None, frappe.get_traceback())
 
 @frappe.whitelist()
 def get_filtered_operations_role(doctype, txt, searchfield, start, page_len, filters):
