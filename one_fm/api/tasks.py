@@ -1385,6 +1385,7 @@ def mark_daily_attendance(start_date, end_date):
 				frappe.db.sql(query, values=[], as_dict=1)
 				frappe.db.commit()
 		if checkin_no_out:
+			# report no checkout 
 			pass
 	except Exception as e:
 		print(frappe.get_traceback())
