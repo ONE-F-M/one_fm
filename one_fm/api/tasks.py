@@ -1397,9 +1397,9 @@ def mark_daily_attendance(start_date, end_date):
 				errors.append(str(e))
 
 		# check for error
-		if errors:
+		if len(errors):
 			frappe.log_error(str(errors), "Mark Attendance")
-		if checkin_no_out:
+		if len(checkin_no_out):
 			# report no checkout
 			frappe.get_doc({
 				"doctype": "Issue",
