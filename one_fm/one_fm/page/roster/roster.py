@@ -284,7 +284,6 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 		# date_range = pd.date_range(start=start_date, end=end_date)
 
 		if not cint(request_employee_schedule) and "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
-			frappe.throw("Hi")
 			all_employee_shift_query = frappe.db.sql("""
 				SELECT DISTINCT es.shift, s.supervisor
 				FROM `tabEmployee Schedule` es JOIN `tabOperations Shift` s ON es.shift = s.name
@@ -310,7 +309,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 			)
 			# employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
 			update_roster(key="roster_view")
-			response("success", 200, {'message':'Suscessfully rostered employees'}, 'wahala')
+			response("success", 200, {'message':'Successfully rostered employees'})
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Schedule Roster")
 		response("error", 200, None, str(e))
@@ -335,6 +334,14 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	elif otRoster == 'true' or day_off_ot == 1:
 		roster_type = 'Over-Time'
 
+	# check for end date
+	if end_date:
+		end_date = getdate(end_date)
+		new_employees = []
+		for i in employees:
+			if not getdate(i['date']) > end_date:
+				new_employees.append(i)
+		employees = new_employees
 	# # get and structure employee dictionary for easy hashing
 	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employee_list]}, fields=['name', 'employee_name', 'department'], ignore_permissions=True)
 	employees_dict = {}
