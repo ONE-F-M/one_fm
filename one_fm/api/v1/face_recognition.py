@@ -150,6 +150,14 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
+        if log_type == "IN":
+            shift_type = frappe.db.sql(f""" select shift_type from `tabShift Assignment` where employee = '{employee}' order by creation desc limit 1 """, as_dict=1)[0]
+            val_in_shift_type = frappe.db.sql(f""" select begin_check_in_before_shift_start_time, start_time, late_entry_grace_period from `tabShift Type` where name = '{shift_type["shift_type"]}' """, as_dict=1)[0]
+            time_threshold = datetime.strptime(str(val_in_shift_type["start_time"] - timedelta(minutes=val_in_shift_type["begin_check_in_before_shift_start_time"])), "%H:%M:%S").time()
+            
+            if right_now.time() < time_threshold:
+                return response("Bad Request", 400, None, f"You cannot check in right now, kindly try again by or later than {time_threshold}, Thank You !  ")
+        
         # setup channel
         # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
         # channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
@@ -175,6 +183,12 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response(msg, 400, None, data)
         if res.verification == "OK":
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
+
+            if log_type == "IN":
+                if doc.time.time() > datetime.strptime(str(val_in_shift_type["start_time"] + timedelta(minutes=val_in_shift_type["late_entry_grace_period"])), "%H:%M:%S").time():
+                    existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{right_now.date()}' and employee = '{employee}' and permission_type = '{log_type}' and workflow_state = 'Approved' """, as_dict=1)
+                    if not existing_perm:
+                        return response("You Checked in, but you were late, try to checkin early next time !", 201, doc, None)
             return response("Success", 201, doc, None)
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
