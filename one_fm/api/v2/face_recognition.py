@@ -1,9 +1,11 @@
 import frappe, ast, base64, time, grpc, json
 from frappe import _
+from datetime import timedelta
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.api.v1.roster import get_current_shift
+from one_fm.overrides.employee_checkin import get_current_shift_checkin
 from one_fm.api.v1.utils import response
-from frappe.utils import cstr, getdate
+from frappe.utils import cstr, getdate,get_datetime,now,get_date_str
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
 
@@ -287,3 +289,42 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
+    
+
+@frappe.whitelist()
+def is_before_grace_period(employee_id:str)->bool:
+    """_summary_
+        Checks if an employee is checkin out before the grace_period, it returns a boolean value
+    Args:
+        employee_id (_type_): _description_
+    """
+    if not employee_id:
+        return response("Bad Request", 400, None, "employee ID required.")
+
+    if not isinstance(employee_id, str):
+        return response("Bad Request", 400, None, "employee must be of type str.")
+    
+    employee = frappe.get_value('Employee',{'employee_id':employee_id})
+    if not employee:
+         return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+    today = get_date_str(getdate())
+    time_now = now()
+    current_schedule = frappe.db.sql("SELECT name,shift_type from `tabEmployee Schedule` where date between '{}' and '{}'  and employee = '{}' ".format(today,today,employee),as_dict=1)
+    if not current_schedule:
+        return response("Resource Not Found", 404, None, "No schedule found for {employee_id} on {}".format(employee_id=employee_id))
+    shift_type = current_schedule[0].shift_type
+    shift_type_details = frappe.get_all("Shift Type",{'name':shift_type},['enable_exit_grace_period','early_exit_grace_period','end_time'])
+    curr_shift = get_current_shift_checkin(employee)
+    if curr_shift:
+        if not shift_type_details:
+            return response("Resource Not Found", 404, None, "Unable to fetch shift type details")
+        if not shift_type_details[0].get('enable_exit_grace_period'):
+            return response("Early exit disabled for shift type {}".format(shift_type), 400, None,"Early exit disabled for shift type {}".format(shift_type))
+        else:
+            if get_datetime(time_now) < (get_datetime(curr_shift[0].end_datetime) - timedelta(minutes=shift_type_details[0].get('early_exit_grace_period'))):
+                return response("Early Exit".format(shift_type), 200, True)
+            else:
+                return response("Not Early Exit.".format(shift_type), 200, False)
+    else:
+        return response("Resource Not Found", 404, None, "No Active shift found for {}. Please confirm the shift has started".format(employee))
+        
