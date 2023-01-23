@@ -209,6 +209,6 @@ def get_shift_from_checkin(checkin):
 		ignore_permissions=1
 	)
 	for s in shifts:
-		if ((s.start_datetime + timedelta(minutes=-60)) <= checkin.actual_time <= (s.end_datetime + timedelta(minutes=60))):
+		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.actual_time <= (s.end_datetime + timedelta(minutes=60))):
 			return s
-	return FalseSS
+	return False
