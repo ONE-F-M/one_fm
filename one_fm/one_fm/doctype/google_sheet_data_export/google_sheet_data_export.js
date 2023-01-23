@@ -3,10 +3,15 @@
 
 frappe.ui.form.on('Google Sheet Data Export', {
 	refresh: (frm) => {
-		frm.disable_save();
-		frm.page.set_primary_action("Export", () => {
-			can_export(frm) ? export_data(frm) : null;
-		});
+		if(!frm.is_new()){
+			frm.add_custom_button(__('Export Sheet'), function(){
+				export_data(frm);
+			});	
+			const doctype = frm.doc.reference_doctype;
+			if (doctype) {
+				frappe.model.with_doctype(doctype, () => set_filters_and_field(frm));	
+			}
+		}
 	},
 	onload: (frm) => {
 		frm.set_query("reference_doctype", () => {
@@ -19,6 +24,22 @@ frappe.ui.form.on('Google Sheet Data Export', {
 			};
 		});
 	},
+	before_save:(frm)=>{
+		// Check if exportable
+		can_export(frm);
+
+		//save filter and fields
+		let columns = {};
+		Object.keys(frm.fields_multicheck).forEach((dt) => {
+		const options = frm.fields_multicheck[dt].get_checked_options();
+		columns[dt] = options;
+		});
+		let filters = frm.filter_list.get_filters().map((filter) => filter.slice(1, 4))
+		
+		frm.set_value('filter_cache',  JSON.stringify(filters) )
+		frm.set_value('field_cache',  JSON.stringify(columns))		
+	},
+	
 	reference_doctype: (frm) => {
 		const doctype = frm.doc.reference_doctype;
 		if (doctype) {
@@ -46,24 +67,48 @@ const can_export = (frm) => {
 };
 
 const export_data = (frm) => {
-	let get_template_url = "/api/method/one_fm.one_fm.doctype.google_sheet_data_export.exporter.export_data";
-	var export_params = () => {
+	var select_columns, filters;
+	if(frm.doc.field_cache == null && frm.doc.filter_cache == null){
+		filters = frm.filter_list.get_filters().map((filter) => filter.slice(1, 4))
+
 		let columns = {};
 		Object.keys(frm.fields_multicheck).forEach((dt) => {
 			const options = frm.fields_multicheck[dt].get_checked_options();
 			columns[dt] = options;
 		});
-		return {
+		select_columns = JSON.stringify(columns);
+	}
+	else{
+		filters = JSON.parse(frm.doc.filter_cache)
+		select_columns = frm.doc.field_cache;
+	}
+	frappe.call({
+		method: "one_fm.one_fm.doctype.google_sheet_data_export.exporter.export_data",
+		args: {
 			doctype: frm.doc.reference_doctype,
-			select_columns: JSON.stringify(columns),
-			filters: frm.filter_list.get_filters().map((filter) => filter.slice(1, 4)),
+			select_columns: select_columns,
+			filters: filters,
 			file_type: frm.doc.file_type,
 			template: true,
 			with_data: 1,
-		};
-	};
-
-	open_url_post(get_template_url, export_params());
+			link: frm.doc.link,
+			google_sheet_id: frm.doc.google_sheet_id,
+			sheet_name: frm.doc.sheet_name,
+			owner:frm.doc.owner
+		},
+		callback: function(r) {
+			if(r.message) {
+				if(frm.doc.link == null && frm.doc.google_sheet_id == null){
+					frm.set_value('link', r.message['link'])
+					frm.set_value('google_sheet_id', r.message['google_sheet_id'])
+				}
+				if(frm.doc.sheet_name == null){
+					frm.set_value('sheet_name', r.message['sheet_name'])
+				}
+				
+			}
+		}
+	});
 };
 
 const reset_filter_and_field = (frm) => {
@@ -75,12 +120,40 @@ const reset_filter_and_field = (frm) => {
 	frm.fields_multicheck = {};
 };
 
-const set_field_options = (frm) => {
+const set_filters_and_field = (frm) => {
 	const parent_wrapper = frm.fields_dict.fields_multicheck.$wrapper;
 	const filter_wrapper = frm.fields_dict.filter_list.$wrapper;
 	const doctype = frm.doc.reference_doctype;
 	const related_doctypes = get_doctypes(doctype);
 
+	parent_wrapper.empty();
+	filter_wrapper.empty();
+
+	let filters = JSON.parse(frm.doc.filter_cache)
+	frm.filter_list = new frappe.ui.FilterGroup({
+		parent: filter_wrapper,
+		doctype: doctype,
+		on_change: () => {},
+	});
+	filters.forEach((filter) => {
+		frm.filter_list.add_filter(doctype, filter[0],filter[1],filter[2])
+	})
+	
+	// Add 'Select All' and 'Unselect All' button
+	
+	make_multiselect_buttons(parent_wrapper);
+	frm.fields_multicheck = {};
+	related_doctypes.forEach((dt) => {
+		frm.fields_multicheck[dt] = add_doctype_field_multicheck_control(frm, dt, parent_wrapper);
+	});
+
+}
+const set_field_options = (frm) => {
+	const parent_wrapper = frm.fields_dict.fields_multicheck.$wrapper;
+	const filter_wrapper = frm.fields_dict.filter_list.$wrapper;
+	const doctype = frm.doc.reference_doctype;
+	const related_doctypes = get_doctypes(doctype);
+	
 	parent_wrapper.empty();
 	filter_wrapper.empty();
 
@@ -95,7 +168,7 @@ const set_field_options = (frm) => {
 
 	frm.fields_multicheck = {};
 	related_doctypes.forEach((dt) => {
-		frm.fields_multicheck[dt] = add_doctype_field_multicheck_control(dt, parent_wrapper);
+		frm.fields_multicheck[dt] = add_doctype_field_multicheck_control(frm, dt, parent_wrapper);
 	});
 
 	frm.refresh();
@@ -138,16 +211,32 @@ const get_doctypes = (parentdt) => {
 	return [parentdt].concat(frappe.meta.get_table_fields(parentdt).map((df) => df.options));
 };
 
-const add_doctype_field_multicheck_control = (doctype, parent_wrapper) => {
+const add_doctype_field_multicheck_control = (frm, doctype, parent_wrapper) => {
 	const fields = get_fields(doctype);
 
+	var selected_fields = []
+	var column;
+	if(frm.doc.field_cache !== undefined){
+		column = JSON.parse(frm.doc.field_cache)
+		let c =[]
+		selected_fields = Object.values(column)
+		for (let i = 1; i < selected_fields.length; i++) {
+			selected_fields[0] = c.concat(selected_fields[0],selected_fields[i])
+		}
+		selected_fields = selected_fields[0]
+	}
 	const options = fields.map((df) => {
+		let check = 1
+		if(!selected_fields.includes(df.fieldname)){
+			check = 0
+		}
 		return {
 			label: df.label,
 			value: df.fieldname,
 			danger: df.reqd,
-			checked: 1,
+			checked: check,
 		};
+		
 	});
 
 	const multicheck_control = frappe.ui.form.make_control({

@@ -7,6 +7,7 @@ import os.path
 import csv
 import os
 import re
+import json
 
 import frappe
 import frappe.permissions
@@ -21,23 +22,9 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
+from googleapiclient import discovery
 
 from google.oauth2 import service_account
-
-SERVICE_ACCOUNT_FILE = cstr(frappe.local.site) + frappe.local.conf.google_sheet_credentials
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-
-credentials = None
-credentials = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-
-# The ID and range of a sample spreadsheet.
-SAMPLE_SPREADSHEET_ID = '1jgO0p6HBJkuWMaSp1dlcAYt2BqR3vuozf7vEHrcXRSc'
-
-
-reflags = {"I": re.I, "L": re.L, "M": re.M, "U": re.U, "S": re.S, "X": re.X, "D": re.DEBUG}
 
 
 def get_data_keys():
@@ -50,8 +37,7 @@ def get_data_keys():
 			"doctype": _("DocType") + ":",
 		}
 	)
-
-
+	
 @frappe.whitelist()
 def export_data(
 	doctype=None,
@@ -59,16 +45,18 @@ def export_data(
 	all_doctypes=True,
 	with_data=False,
 	select_columns=None,
-	file_type="CSV",
 	template=False,
 	filters=None,
+	link=None,
+	google_sheet_id=None,
+	sheet_name=None,
+	owner=None
 ):
 	_doctype = doctype
 	if isinstance(_doctype, list):
 		_doctype = _doctype[0]
 	make_access_log(
 		doctype=_doctype,
-		file_type=file_type,
 		columns=select_columns,
 		filters=filters,
 		method=parent_doctype,
@@ -79,11 +67,16 @@ def export_data(
 		all_doctypes=all_doctypes,
 		with_data=with_data,
 		select_columns=select_columns,
-		file_type=file_type,
 		template=template,
 		filters=filters,
+		link=link,
+		google_sheet_id=google_sheet_id,
+		sheet_name=sheet_name,
+		owner=owner
 	)
-	exporter.build_response()
+	google_sheet_id, link, sheet_name = exporter.build_response()
+	result = {"google_sheet_id":google_sheet_id, "link":link,"sheet_name":sheet_name}
+	return result
 
 
 class DataExporter:
@@ -94,28 +87,45 @@ class DataExporter:
 		all_doctypes=True,
 		with_data=False,
 		select_columns=None,
-		file_type="CSV",
 		template=False,
 		filters=None,
+		link=None,
+		google_sheet_id=None,
+		sheet_name=None,
+		owner=None
 	):
 		self.doctype = doctype
 		self.parent_doctype = parent_doctype
 		self.all_doctypes = all_doctypes
 		self.with_data = cint(with_data)
 		self.select_columns = select_columns
-		self.file_type = file_type
 		self.template = template
 		self.filters = filters
 		self.data_keys = get_data_keys()
+		self.google_sheet_id = google_sheet_id
+		self.link = link
+		self.sheet_name = sheet_name
+		self.owner = owner
 
 		self.prepare_args()
+
+	def init_google_sheet_service(self):
+		SERVICE_ACCOUNT_FILE = cstr(frappe.local.site) + frappe.local.conf.google_sheet
+		SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+
+		credentials = None
+		credentials = service_account.Credentials.from_service_account_file(
+				SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+		service = discovery.build('sheets', 'v4', credentials=credentials)
+
+		return service
 
 	def prepare_args(self):
 		if self.select_columns:
 			self.select_columns = parse_json(self.select_columns)
 		if self.filters:
 			self.filters = parse_json(self.filters)
-
 		self.docs_to_export = {}
 		if self.doctype:
 			if isinstance(self.doctype, str):
@@ -134,84 +144,37 @@ class DataExporter:
 			self.child_doctypes = []
 			for df in frappe.get_meta(self.doctype).get_table_fields():
 				self.child_doctypes.append(dict(doctype=df.options, parentfield=df.fieldname))
+		
+		if not self.sheet_name:
+			self.sheet_name = 'sheet1'
 
 	def build_response(self):
 		self.writer = UnicodeWriter()
 		self.name_field = "parent" if self.parent_doctype != self.doctype else "name"
-
-		if self.template:
-			self.add_main_header()
-
+		service = self.init_google_sheet_service()
 		self.writer.writerow([""])
-		self.tablerow = [self.data_keys.doctype]
-		self.labelrow = [_("Column Labels:")]
-		self.fieldrow = [self.data_keys.columns]
-		self.mandatoryrow = [_("Mandatory:")]
-		self.typerow = [_("Type:")]
-		self.inforow = [_("Info:")]
+		self.labelrow = []
+		self.fieldrow = []
+
 		self.columns = []
 
 		self.build_field_columns(self.doctype)
+		
+		self.column = self.labelrow
+		values = self.add_data()
 
-		if self.all_doctypes:
-			for d in self.child_doctypes:
-				self.append_empty_field_column()
-				if (
-					self.select_columns and self.select_columns.get(d["doctype"], None)
-				) or not self.select_columns:
-					# if atleast one column is selected for this doctype
-					self.build_field_columns(d["doctype"], d["parentfield"])
-
-		self.add_field_headings()
-		self.add_data()
-		if self.with_data and not self.data:
+		if not self.link:
+			self.create(service)
+		if not self.check_if_sheet_exist(service):
+			self.add_sheet(service)
+		self.update_sheet(values, service)
+		# print(self.data)
+		if self.with_data and not values:
 			frappe.respond_as_web_page(
 				_("No Data"), _("There is no data to be exported"), indicator_color="orange"
 			)
+		return self.link, self.google_sheet_id, self.sheet_name
 
-		if self.file_type == "Excel":
-			self.build_response_as_excel()
-		else:
-			# write out response as a type csv
-			frappe.response["result"] = cstr(self.writer.getvalue())
-			frappe.response["type"] = "csv"
-			frappe.response["doctype"] = self.doctype
-
-	def add_main_header(self):
-		self.writer.writerow([_("Data Import Template")])
-		self.writer.writerow([self.data_keys.main_table, self.doctype])
-
-		if self.parent_doctype != self.doctype:
-			self.writer.writerow([self.data_keys.parent_table, self.parent_doctype])
-		else:
-			self.writer.writerow([""])
-
-		self.writer.writerow([""])
-		self.writer.writerow([_("Notes:")])
-		self.writer.writerow([_("Please do not change the template headings.")])
-		self.writer.writerow([_("First data column must be blank.")])
-		self.writer.writerow(
-			[_('If you are uploading new records, leave the "name" (ID) column blank.')]
-		)
-		self.writer.writerow(
-			[_('If you are uploading new records, "Naming Series" becomes mandatory, if present.')]
-		)
-		self.writer.writerow(
-			[
-				_(
-					"Only mandatory fields are necessary for new records. You can delete non-mandatory columns if you wish."
-				)
-			]
-		)
-		self.writer.writerow([_("For updating, you can update only selective columns.")])
-		self.writer.writerow(
-			[_("You can only upload upto 5000 records in one go. (may be less in some cases)")]
-		)
-		if self.name_field == "parent":
-			self.writer.writerow([_('"Parent" signifies the parent table in which this row must be added')])
-			self.writer.writerow(
-				[_('If you are updating, please select "Overwrite" else existing rows will not be deleted.')]
-			)
 
 	def build_field_columns(self, dt, parentfield=None):
 		meta = frappe.get_meta(dt)
@@ -264,15 +227,6 @@ class DataExporter:
 		for docfield in tablecolumns:
 			self.append_field_column(docfield, False)
 
-		# if there is one column, add a blank column (?)
-		if len(self.columns) - _column_start_end.start == 1:
-			self.append_empty_field_column()
-
-		# append DocType name
-		self.tablerow[_column_start_end.start + 1] = dt
-
-		if parentfield:
-			self.tablerow[_column_start_end.start + 2] = parentfield
 
 		_column_start_end.end = len(self.columns) + 1
 
@@ -296,53 +250,11 @@ class DataExporter:
 		):
 			return
 
-		self.tablerow.append("")
 		self.fieldrow.append(docfield.fieldname)
 		self.labelrow.append(_(docfield.label))
-		self.mandatoryrow.append(docfield.reqd and "Yes" or "No")
-		self.typerow.append(docfield.fieldtype)
-		self.inforow.append(self.getinforow(docfield))
-		self.columns.append(docfield.fieldname)
-
-	def append_empty_field_column(self):
-		self.tablerow.append("~")
-		self.fieldrow.append("~")
-		self.labelrow.append("")
-		self.mandatoryrow.append("")
-		self.typerow.append("")
-		self.inforow.append("")
-		self.columns.append("")
-
-	@staticmethod
-	def getinforow(docfield):
-		"""make info comment for options, links etc."""
-		if docfield.fieldtype == "Select":
-			if not docfield.options:
-				return ""
-			else:
-				return _("One of") + ": %s" % ", ".join(filter(None, docfield.options.split("\n")))
-		elif docfield.fieldtype == "Link":
-			return "Valid %s" % docfield.options
-		elif docfield.fieldtype == "Int":
-			return "Integer"
-		elif docfield.fieldtype == "Check":
-			return "0 or 1"
-		elif docfield.fieldtype in ["Date", "Datetime"]:
-			return cstr(frappe.defaults.get_defaults().date_format)
-		elif hasattr(docfield, "info"):
-			return docfield.info
-		else:
-			return ""
 
 	def add_field_headings(self):
-		self.writer.writerow(self.tablerow)
 		self.writer.writerow(self.labelrow)
-		self.writer.writerow(self.fieldrow)
-		self.writer.writerow(self.mandatoryrow)
-		self.writer.writerow(self.typerow)
-		self.writer.writerow(self.inforow)
-		if self.template:
-			self.writer.writerow([self.data_keys.data_separator])
 
 	def add_data(self):
 		from frappe.query_builder import DocType
@@ -359,53 +271,17 @@ class DataExporter:
 			order_by = f"`tab{self.parent_doctype}`.`lft` asc"
 		# get permitted data only
 		self.data = frappe.get_list(
-			self.doctype, fields=["*"], filters=self.filters, limit_page_length=None, order_by=order_by
+			self.doctype, fields=self.fieldrow, filters=self.filters, limit_page_length=None, order_by=order_by
 		)
-
-		for doc in self.data:
-			op = self.docs_to_export.get("op")
-			names = self.docs_to_export.get("name")
-
-			if names and op:
-				if op == "=" and doc.name not in names:
-					continue
-				elif op == "!=" and doc.name in names:
-					continue
-			elif names:
-				try:
-					sflags = self.docs_to_export.get("flags", "I,U").upper()
-					flags = 0
-					for a in re.split(r"\W+", sflags):
-						flags = flags | reflags.get(a, 0)
-
-					c = re.compile(names, flags)
-					m = c.match(doc.name)
-					if not m:
-						continue
-				except Exception:
-					if doc.name not in names:
-						continue
 			# add main table
-			rows = []
+		rows = [self.fieldrow]
+		for doc in self.data:
+			row = []
+			for field in self.fieldrow:
+				row.append(doc[field])
+			rows.append(row)
 
-			self.add_data_row(rows, self.doctype, None, doc, 0)
-
-			if self.all_doctypes:
-				# add child tables
-				for c in self.child_doctypes:
-					child_doctype_table = DocType(c["doctype"])
-					data_row = (
-						frappe.qb.from_(child_doctype_table)
-						.select("*")
-						.where(child_doctype_table.parent == doc.name)
-						.where(child_doctype_table.parentfield == c["parentfield"])
-						.orderby(child_doctype_table.idx)
-					)
-					for ci, child in enumerate(data_row.run(as_dict=True)):
-						self.add_data_row(rows, c["doctype"], c["parentfield"], child, ci)
-
-			for row in rows:
-				self.writer.writerow(row)
+		return rows
 
 	def add_data_row(self, rows, dt, parentfield, doc, rowidx):
 		d = doc.copy()
@@ -418,6 +294,7 @@ class DataExporter:
 		row = rows[rowidx]
 
 		_column_start_end = self.column_start_end.get((dt, parentfield))
+
 
 		if _column_start_end:
 			for i, c in enumerate(self.columns[_column_start_end.start : _column_start_end.end]):
@@ -433,26 +310,7 @@ class DataExporter:
 						value = format_duration(value, df.hide_days)
 
 				row[_column_start_end.start + i + 1] = value
-
-	def build_response_as_excel(self):
-		filename = frappe.generate_hash(length=10)
-		with open(filename, "wb") as f:
-			f.write(cstr(self.writer.getvalue()).encode("utf-8"))
-		f = open(filename)
-		reader = csv.reader(f)
-
-		from frappe.utils.xlsxutils import make_xlsx
-
-		xlsx_file = make_xlsx(reader, "Data Import Template" if self.template else "Data Export")
-
-		f.close()
-		os.remove(filename)
-
-		# write out response as a xlsx type
-		frappe.response["filename"] = self.doctype + ".xlsx"
-		frappe.response["filecontent"] = xlsx_file.getvalue()
-		frappe.response["type"] = "binary"
-
+		
 	def _append_name_column(self, dt=None):
 		self.append_field_column(
 			frappe._dict(
@@ -467,60 +325,130 @@ class DataExporter:
 			True,
 		)
 
+	def create(self, service):
+		"""
+		BEFORE RUNNING:
+		---------------
+		1. If not already done, enable the Google Sheets API
+		and check the quota for your project at
+		https://console.developers.google.com/apis/api/sheets
+		2. Install the Python client library for Google APIs by running
+		`pip install --upgrade google-api-python-client`
+		"""
+		from pprint import pprint
 
 
+		# TODO: Change placeholder below to generate authentication credentials. See
+		# https://developers.google.com/sheets/quickstart/python#step_3_set_up_the_sample
+		#
+		# Authorize using one of the following scopes:
+		#     'https://www.googleapis.com/auth/drive'
+		#     'https://www.googleapis.com/auth/drive.file'
+		#     'https://www.googleapis.com/auth/spreadsheets'
 
-
-def create():
-	"""
-	BEFORE RUNNING:
-	---------------
-	1. If not already done, enable the Google Sheets API
-	and check the quota for your project at
-	https://console.developers.google.com/apis/api/sheets
-	2. Install the Python client library for Google APIs by running
-	`pip install --upgrade google-api-python-client`
-	"""
-	from pprint import pprint
-
-	from googleapiclient import discovery
-
-	# TODO: Change placeholder below to generate authentication credentials. See
-	# https://developers.google.com/sheets/quickstart/python#step_3_set_up_the_sample
-	#
-	# Authorize using one of the following scopes:
-	#     'https://www.googleapis.com/auth/drive'
-	#     'https://www.googleapis.com/auth/drive.file'
-	#     'https://www.googleapis.com/auth/spreadsheets'
-
-	service = discovery.build('sheets', 'v4', credentials=credentials)
-
-	spreadsheet = {
-			'properties': {
-				'title': "Sheet"
-			}
+		service = discovery.build('sheets', 'v4', credentials=credentials)
+		drive_api = build('drive', 'v3', credentials=credentials)
+		
+		domain_permission = {
+			'type': 'user',
+			'role': 'writer',
+			'emailAddress': "{0}".format(self.owner)
 		}
-	request = service.spreadsheets().create(body=spreadsheet)
-	response = request.execute()
+		spreadsheet = {
+				'properties': {
+				'title': "{0}".format(self.doctype)
+				},
+			}
+		request = service.spreadsheets().create(body=spreadsheet)
+		response = request.execute()
 
-	# TODO: Change code below to process the `response` dict:
-	pprint(response)
+		#Grant Permission 
+		req = drive_api.permissions().create(
+					fileId=response["spreadsheetId"],
+					body=domain_permission,
+				)
 
-def readsheet():
-    """Shows basic usage of the Sheets API.
-    Prints values from a sample spreadsheet.
-    """
-    try:
-        service = build('sheets', 'v4', credentials=credentials)
-        sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                    range="Country!A1:A23").execute()
-        aoa = [['United Arab Emirates'], ['Kuwait'], ['India'], ['Pakistan']]
+		req.execute()
+		self.google_sheet_id = response["spreadsheetId"]
+		self.link = response["spreadsheetUrl"]
 
-        values = result.get('values', [])
-        request = service.spreadsheets().values().update(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Country!A24", valueInputOption="USER_ENTERED", body={"values":aoa}).execute()
+	def check_if_sheet_exist(self, service):
+		sheet_metadata = service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
+		
+		sheets = sheet_metadata.get('sheets', '')
+		sheetNames = []
+		for i in range(len(sheets)):
+			sheetNames.append(sheets[i].get("properties").get("title"))
+
+		if self.sheet_name in sheetNames:
+			return True
+		return False
+
+	def add_sheet(self, service):
+		try:
+			request_body = {
+				'requests': [{
+					'addSheet': {
+						'properties': {
+							'title': self.sheet_name,
+						}
+					}
+				}]
+			}
+
+			response = service.spreadsheets().batchUpdate(
+				spreadsheetId=self.google_sheet_id,
+				body=request_body
+			).execute()
+
+			return response
+		except Exception as e:
+			print(e)
 
 
-        print(values)
-    except HttpError as err:
-        print(err)
+	def update_sheet(self, values, service):
+		"""Shows basic usage of the Sheets API.
+		Prints values from a sample spreadsheet.
+		"""
+		try:
+			no_of_row = len(values)
+			no_of_col = len(self.column)
+			ranges = self.sheet_name + "!A1:" + chr(ord('A') + no_of_col) + str(no_of_row)
+
+			# clear sheet
+			service.spreadsheets().values().clear(spreadsheetId=self.google_sheet_id, 
+				range='{0}!A1:Z'.format(self.sheet_name), body={}).execute()
+
+			# add new value
+			result = service.spreadsheets().values().update(
+						spreadsheetId=self.google_sheet_id, range=ranges,valueInputOption="USER_ENTERED", body={"values":values}).execute()
+
+			
+			# request = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Country!A1:B22").execute()
+			# request = service.spreadsheets().values().update(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Country!A24", valueInputOption="USER_ENTERED", body={"values":aoa}).execute()
+			
+
+			
+			return result
+		except HttpError as err:
+			print(err)
+
+@frappe.whitelist()
+def update_google_sheet_daily():
+	list_of_export = frappe.get_list("Google Sheet Data Export",{"enable_auto_update":1}, ['name'])
+
+	for e in list_of_export:
+		doc = frappe.get_doc("Google Sheet Data Export",e.name)
+
+		select_columns = doc.field_cache
+		filters = doc.filter_cache
+
+		frappe.enqueue(export_data, 
+			doctype= doc.reference_doctype,
+			select_columns= select_columns,
+			filters= filters,
+			link= doc.link,
+			google_sheet_id= doc.google_sheet_id,
+			sheet_name= doc.sheet_name,
+			owner= doc.owner, 
+			is_async=True, queue="long")
