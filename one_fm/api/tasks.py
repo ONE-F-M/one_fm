@@ -1411,7 +1411,7 @@ def mark_daily_attendance(start_date, end_date):
 				"company": "One Facilities Management",
 				"via_customer_portal": 0,
 				"description": f"<div class=\"ql-editor read-mode\"><p>{str(checkin_no_out)}</p></div>",
-				"subject": f"Attendance Issue (in no out) - {str(get-date)}",
+				"subject": f"Attendance Issue (in no out) - {str(start_date)}",
 				"priority": "Medium",
 				"department": "IT - ONEFM",
 				"issue_type": "Idea/Feedback",
