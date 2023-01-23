@@ -6,30 +6,37 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "reference_doctype",
+  "enable_auto_update",
   "google_sheet_reference_section",
   "link",
   "google_sheet_id",
-  "section_break",
+  "column_break_14",
+  "sheet_name",
+  "select_doctype_section",
+  "reference_doctype",
+  "select_fields_section",
   "filter_list",
+  "filter_cache",
+  "section_break",
   "fields_multicheck",
+  "field_cache",
   "amended_from",
-  "update_details_section",
-  "enable_auto_update"
+  "update_details_section"
  ],
  "fields": [
   {
    "fieldname": "reference_doctype",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Select Doctype",
+   "label": "Doctype",
    "options": "DocType",
    "reqd": 1
   },
   {
    "depends_on": "reference_doctype",
    "fieldname": "section_break",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Add Filters"
   },
   {
    "fieldname": "filter_list",
@@ -58,12 +65,15 @@
   {
    "fieldname": "link",
    "fieldtype": "Data",
-   "label": "Link"
+   "label": "Link",
+   "read_only": 1
   },
   {
    "fieldname": "google_sheet_id",
    "fieldtype": "Data",
-   "label": "Google Sheet ID"
+   "hidden": 1,
+   "label": "Google Sheet ID",
+   "read_only": 1
   },
   {
    "fieldname": "update_details_section",
@@ -75,12 +85,42 @@
    "fieldname": "enable_auto_update",
    "fieldtype": "Check",
    "label": "Enable Auto Update"
+  },
+  {
+   "fieldname": "select_fields_section",
+   "fieldtype": "Section Break",
+   "label": "Select Fields"
+  },
+  {
+   "fieldname": "filter_cache",
+   "fieldtype": "Long Text",
+   "hidden": 1,
+   "label": "Filter Cache"
+  },
+  {
+   "fieldname": "field_cache",
+   "fieldtype": "JSON",
+   "hidden": 1,
+   "label": "Field Cache"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sheet_name",
+   "fieldtype": "Data",
+   "label": "Sheet Name"
+  },
+  {
+   "fieldname": "select_doctype_section",
+   "fieldtype": "Section Break",
+   "label": "Select Doctype"
   }
  ],
  "hide_toolbar": 1,
- "is_submittable": 1,
  "links": [],
- "modified": "2023-01-16 12:10:33.393368",
+ "modified": "2023-01-23 09:56:20.579288",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Google Sheet Data Export",
