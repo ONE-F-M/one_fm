@@ -57,6 +57,7 @@ def checkin_checkout_initial_reminder():
 	"""
 	This function sends a push notification to users to remind them to checkin/checkout at the start/end time of their shift.
 	"""
+
 	try:
 		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
 			return
@@ -73,7 +74,7 @@ def checkin_checkout_initial_reminder():
 		frappe.log_error(str(error), 'Checkin/checkout initial reminder failed')
 
 def schedule_initial_reminder(shifts_list, now_time):
-	notification_title = _("Checkout reminder")
+	notification_title = _("Checkin/Checkout reminder")
 	notification_subject_in = _("Don't forget to Checkin!")
 	notification_subject_out = _("Don't forget to CheckOut!")
 
@@ -95,6 +96,7 @@ def schedule_initial_reminder(shifts_list, now_time):
 			if len(recipients) > 0:
 				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="OUT", notification_title= notification_title, notification_subject=notification_subject_out)
 
+
 def checkin_checkout_final_reminder():
 	"""
 	This function sends a final notification to users to remind them to checkin/checkout.
@@ -111,9 +113,10 @@ def checkin_checkout_final_reminder():
 	except Exception as error:
 		frappe.log_error(str(error), 'Checkin/checkout final reminder failed')
 
+
 def schedule_final_notification(shifts_list, now_time):
 	notification_title = _("Final Reminder")
-	notification_subject_in =  _("Please checkin in the next five minutes.")
+	notification_subject_in =  _("Please checkin within the next 3 hours or you will be marked absent.")
 	notification_subject_out =  _("Please checkin in the next five minutes.")
 
 	
@@ -121,13 +124,14 @@ def schedule_final_notification(shifts_list, now_time):
 		date = getdate()
 		if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
 			date = getdate() - timedelta(days=1)
+
 		# shift_start is equal to now time - notification reminder in mins
 		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
 		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
 			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 
 			if len(recipients) > 0:
-				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in)
+				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in, is_after_grace_checkin=1)
 
 		# shift_end is equal to now time - notification reminder in mins
 		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
@@ -137,9 +141,10 @@ def schedule_final_notification(shifts_list, now_time):
 			if len(recipients) > 0:
 				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_out)
 
+
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
-def notify_checkin_checkout_final_reminder(recipients, log_type, notification_title, notification_subject):
+def notify_checkin_checkout_final_reminder(recipients, log_type, notification_title, notification_subject, is_after_grace_checkin=0):
 	"""
 	params:
 	recipients: Dictionary consist of user ID and Emplloyee ID eg: [{'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}]
@@ -150,13 +155,38 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 
 	checkin_message = _("""
 					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
-					Submit a Shift Permission if you are plannig to arrive late or is there any issue in checkin or forget to checkin
+					<br>
+					Submit a Shift Permission if you are planing to arrive late 
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+					<br>
+					Submit an Attendance Request if there are issues in checkin or you forgot to checkin
+					<a class="btn btn-secondary" href="/app/attendance-request/new-attendance-request-1">Submit Attendance Request</a>&nbsp;
+					<br>
+					Submit a Shift Request if you are trying to checkin from another site location
+					<a class="btn btn-info" href="/app/shift-request/new-shift-request-1">Submit Shift Request</a>&nbsp;
+
+					<h3>DON'T FORGET TO CHECKIN</h3>
+					""")
+
+	if is_after_grace_checkin:
+		checkin_message = _("""
+					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
+					<br>
+					Submit a Shift Permission if you are planing to arrive late 
+					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+					<br>
+					Submit an Attendance Request if there are issues in checkin or you forgot to checkin
+					<a class="btn btn-secondary" href="/app/attendance-request/new-attendance-request-1">Submit Attendance Request</a>&nbsp;
+					<br>
+					Submit a Shift Request if you are trying to checkin from another site location
+					<a class="btn btn-info" href="/app/shift-request/new-shift-request-1">Submit Shift Request</a>&nbsp;
+
+					<h3>IF YOU DO NOT CHECK-IN WITHIN THE NEXT 3 HOURS, YOU WOULD BE MARKED AS ABSENT</h3>
 					""")
 
 	checkout_message = _("""
 		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
-		Submit a Shift Permission if you are plannig to leave early or is there any issue in checkout or forget to checkout
+		Submit a Shift Permission if you are planing to leave early or is there any issue in checkout or forget to checkout
 		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 		""")
 	
