@@ -2,6 +2,12 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Shift Permission', {
+	refresh: function(frm) {
+		set_options_for_permission_type(frm);
+	},
+	log_type: function(frm) {
+		set_options_for_permission_type(frm);
+	},
 	employee: function(frm) {
 		get_shift_assignment(frm);
 	},
@@ -12,6 +18,20 @@ frappe.ui.form.on('Shift Permission', {
 		get_shift_assignment(frm);
 	},
 });
+
+function set_options_for_permission_type(frm) {
+	if(frm.doc.log_type){
+		if(frm.doc.log_type == 'IN'){
+			frm.set_df_property('permission_type', 'options', ['', 'Arrive Late', 'Forget to Checkin', 'Checkin Issue']);
+		}
+		else{
+			frm.set_df_property('permission_type', 'options', ['', 'Leave Early', 'Forget to Checkout', 'Checkout Issue']);
+		}
+	}
+	else{
+		frm.set_df_property('permission_type', 'options', ['Select Log Type first']);
+	}
+};
 
 function get_shift_assignment(frm){
 	let {employee, emp_name, start_date} = frm.doc;
@@ -25,10 +45,10 @@ function get_shift_assignment(frm){
 				let val = r.message
                 if(val && val.includes(null) != true){
 					let [name, approver, shift, shift_type] = r.message;
-					set_shift_details(frm, name, approver, shift, shift_type);			
+					set_shift_details(frm, name, approver, shift, shift_type);
                 }
 				else{
-					frappe.msgprint(__(`No shift assigned to ${emp_name}. Please check again.`));				
+					frappe.msgprint(__(`No shift assigned to ${emp_name}. Please check again.`));
 					set_shift_details(frm, undefined, undefined, undefined, undefined);
 				}
             }
