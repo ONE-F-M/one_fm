@@ -12,6 +12,7 @@ def sendemail(recipients, subject, header=None, message=None,
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
 	actions=pdf_link=""
+	doc_url = ""
 
 	head = header[0] if header else ""
 	if not message:
@@ -26,6 +27,7 @@ def sendemail(recipients, subject, header=None, message=None,
 		actions = args.get("actions")
 		message = args.get("message")
 		pdf_link = args.get("pdf_link")
+		doc_url = args.get("doc_url")
 
 	if attachments:
 		message += """
@@ -54,7 +56,8 @@ def sendemail(recipients, subject, header=None, message=None,
 				reference_doctype = reference_doctype,
 				logo=logo,
 				actions=actions,
-				pdf_link=pdf_link
+				pdf_link=pdf_link,
+				doc_url=doc_url
 			),
 			attachments = attachments,
 			delayed=delay

@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 import frappe
 from frappe import _
-from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime
+from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
@@ -64,20 +64,16 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 
 	def after_insert(self):
 		frappe.db.commit()
-		frappe.enqueue(process_background, self=self.name)
+		self.reload()
+		if not self.shift_assignment and self.shift_type and self.operations_shift:
+			frappe.enqueue(after_insert_background, self=self.name)
 
-def process_background(self):
+def after_insert_background(self):
 	self = frappe.get_doc("Employee Checkin", self)
 	try:
 		# update shift if not exists
-		if not self.shift_assignment:
-			curr_shift = get_current_shift(self.employee)
-			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
-			
-		else:
-			curr_shift = frappe.db.sql(f"""SELECT * FROM `tabShift Assignment` WHERE name="{self.shift_assignment}" """, as_dict=1)[0]
-			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{self.shift_type}' """, as_dict=1)[0]
-		
+		curr_shift = get_shift_from_checkin(self)
+		shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
 		# calculate entry
 		early_exit = 0
 		late_entry = 0
@@ -101,8 +97,8 @@ def process_background(self):
 			late_entry={late_entry}
 			WHERE name="{self.name}"
 		"""
-		
 		frappe.db.sql(query, values=[], as_dict=1)
+		frappe.db.commit()
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
 	
@@ -199,3 +195,20 @@ def get_current_shift_checkin(employee):
 			# Check if current time is within the shift start and end time.
 			if start_time <= current_datetime <= end_time:
 				return shift
+
+
+def get_shift_from_checkin(checkin):
+	"""
+		This method returns shift assignment for a specific checkin based on a specific date
+	"""
+	shifts = frappe.db.get_list(
+		"Shift Assignment", 
+		filters={'employee':checkin.employee, 
+			'start_date': ["BETWEEN", [str(add_days(checkin.actual_time.date(), -1)), str(checkin.actual_time.date())]], 'docstatus':1},
+		fields="*",
+		ignore_permissions=1
+	)
+	for s in shifts:
+		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.actual_time <= (s.end_datetime + timedelta(minutes=60))):
+			return s
+	return False

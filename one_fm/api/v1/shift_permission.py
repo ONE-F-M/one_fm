@@ -5,12 +5,14 @@ from one_fm.api.v1.utils import response, validate_date, validate_time
 from one_fm.operations.doctype.shift_permission.shift_permission import fetch_approver
 
 @frappe.whitelist()
-def create_shift_permission(employee_id: str = None, permission_type: str = None, date: str = None, reason: str = None,
-    leaving_time: str = None, arrival_time: str = None, latitude: str = None, longitude: str = None) -> dict:
+def create_shift_permission(employee_id: str = None, log_type: str = None, permission_type: str = None, date: str = None,
+    reason: str = None, leaving_time: str = None, arrival_time: str = None, latitude: str = None,
+    longitude: str = None) -> dict:
     """This method creates a shift permission for a given employee.
 
     Args:
         employee (str): employee id
+        log_type (str): type of log(IN/OUT).
         permission_type (str): type of permission requested.
         date (str): yyyy-mm-dd
         reason (str): reason to create a shift permission
@@ -31,6 +33,9 @@ def create_shift_permission(employee_id: str = None, permission_type: str = None
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
 
+    if not log_type:
+        return response("Bad Request", 400, None, "log_type required.")
+
     if not permission_type:
         return response("Bad Request", 400, None, "permission_type required.")
 
@@ -39,6 +44,14 @@ def create_shift_permission(employee_id: str = None, permission_type: str = None
 
     if not reason:
         return response("Bad Request", 400, None, "reason required.")
+
+    if log_type == "IN" and permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
+        return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
+            "Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(permission_type))
+
+    if log_type == "OUT" and permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
+        return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
+            "Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(permission_type))
 
     if permission_type == "Arrive Late" and not arrival_time:
         return response("Bad Request", 400, None, "Arrival time required for late arrival shift permission.")
@@ -111,6 +124,7 @@ def create_shift_permission(employee_id: str = None, permission_type: str = None
             shift_permission_doc = frappe.new_doc('Shift Permission')
             shift_permission_doc.employee = employee
             shift_permission_doc.date = date
+            shift_permission_doc.log_type = log_type
             shift_permission_doc.permission_type = permission_type
             shift_permission_doc.reason = reason
             if permission_type == "Arrive Late" and arrival_time:
@@ -142,7 +156,7 @@ def get_shift_details(employee):
     shift_supervisor = None
 
     shift_assignment, shift_supervisor, shift, shift_type = fetch_approver(employee)
-    
+
     if not shift_assignment:
         return frappe._dict({'found':False})
 
