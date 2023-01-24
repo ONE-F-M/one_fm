@@ -44,7 +44,7 @@ class WorkPermit(Document):
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
-   
+
     def notify(self):
         if self.workflow_state == "Pending By Supervisor":
             subject = ("Work Permit Needs Action")
@@ -269,22 +269,14 @@ class WorkPermit(Document):
         today = date.today()
         Find = False
         employee = frappe.get_doc('Employee', self.employee)
-        document_dic = frappe.get_list('Employee Document',fields={'attach','document_name','issued_on','valid_till'},filters={'parent':self.employee})
-        for index,document in enumerate(document_dic):
-            if document.document_name == "Work Permit":
-                Find = True
-                break
-        if Find:
-            document_dic.insert(index,{
-                "attach": work_permit_attachment,
-                "document_name": "Work Permit",
-                "issued_on":today,
-                "valid_till": new_expiry_date
-            })
-            employee.set('one_fm_employee_documents',[]) #clear the child table
-            for document in document_dic:                # append the sorted list
-                employee.append('one_fm_employee_documents',document)
-
+        if employee.one_fm_employee_documents:
+            for employee_document in employee.one_fm_employee_documents:
+                if employee_document.document_name == 'Work Permit':
+                    employee_document.attach = work_permit_attachment
+                    employee_document.issued_on = today
+                    valid_till.attach = new_expiry_date
+                    Find = True
+                    break
         if not Find:
             employee.append("one_fm_employee_documents", {
             "attach": work_permit_attachment,
