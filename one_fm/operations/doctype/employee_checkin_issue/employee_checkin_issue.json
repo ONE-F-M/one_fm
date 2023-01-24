@@ -1,0 +1,205 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "EMP-CKIN-ISS-.MM.-.YYYY.-.######",
+ "creation": "2023-01-18 11:36:32.497211",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "latitude",
+  "longitude",
+  "column_break_3",
+  "date",
+  "log_type",
+  "issue_type",
+  "issue_details",
+  "section_break_5",
+  "assigned_shift",
+  "shift_supervisor",
+  "approver_name",
+  "approver_user_id",
+  "column_break_9",
+  "shift",
+  "shift_type",
+  "section_break_17",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.employee !=undefined && doc.date !=undefined && doc.permission_type!=\"\"",
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break",
+   "label": "Shift Details"
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Shift",
+   "options": "Operations Shift",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shift_type",
+   "fieldtype": "Link",
+   "label": "Shift Type",
+   "options": "Shift Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "assigned_shift",
+   "fieldtype": "Link",
+   "label": "Shift Assignment",
+   "options": "Shift Assignment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shift_supervisor",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_list_view": 1,
+   "label": "Approver",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Shift Permission",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "latitude",
+   "fieldtype": "Float",
+   "label": "Latitude"
+  },
+  {
+   "fieldname": "longitude",
+   "fieldtype": "Float",
+   "label": "Longitude"
+  },
+  {
+   "fieldname": "section_break_17",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "shift_supervisor.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "approver_name",
+   "fieldtype": "Data",
+   "label": "Approver Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift_supervisor.user_id",
+   "fieldname": "approver_user_id",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Approver User ID",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "log_type",
+   "fieldtype": "Select",
+   "label": "Log Type",
+   "options": "\nIN\nOUT",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issue_type",
+   "fieldtype": "Select",
+   "label": "Issue Type",
+   "options": "\nCamera Failing\nApp Showing Outside Location\nTimeout Issue\nInternet Issue\nOther"
+  },
+  {
+   "depends_on": "eval:doc.issue_type==\"Other\"",
+   "fieldname": "issue_details",
+   "fieldtype": "Small Text",
+   "label": "Issue Details",
+   "mandatory_depends_on": "eval:doc.issue_type==\"Other\""
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2023-01-24 10:11:22.926666",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Employee Checkin Issue",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Shift Supervisor",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "employee_name",
+ "track_changes": 1
+}
