@@ -331,7 +331,7 @@ def is_before_after_grace_period(employee_id:str,operator:str)->bool:
          return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
     today = get_date_str(getdate())
     time_now = now()
-    current_schedule = frappe.db.sql("SELECT name,shift_type from `tabEmployee Schedule` where date between '{}' and '{}'  and employee = '{}' ".format(today,today,employee),as_dict=1)
+    current_schedule = frappe.db.sql("SELECT name,shift_type from `tabShift Assignment` where end_date between '{}' and '{}'  and employee = '{}' ".format(today,today,employee),as_dict=1)
     if not current_schedule:
         return response("Resource Not Found", 404, None, "No schedule found for {employee_id} on {today}".format(employee_id=employee_id,today=today))
     shift_type = current_schedule[0].shift_type
