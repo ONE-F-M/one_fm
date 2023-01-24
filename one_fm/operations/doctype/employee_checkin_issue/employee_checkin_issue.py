@@ -60,6 +60,30 @@ class EmployeeCheckinIssue(Document):
 		if frappe.db.exists("Employee Checkin Issue", {"employee": self.employee, "date":self.date,
 			"assigned_shift": self.assigned_shift, "log_type": self.log_type, "name": ["not in", [self.name]]}):
 			frappe.throw(_("{employee} has already created a Employee Checkin Issue for {log_type} on {date}.".format(employee=self.employee_name, log_type=self.log_type, date=date)))
+
+	@frappe.whitelist()
+	def create_issue(self):
+		if not self.issue:
+			issue_type = False
+			if frappe.db.exists('Issue Type', {'name': 'Checkin Issue'}):
+				issue_type = 'Checkin Issue'
+			else:
+				issue_type_doc = frappe.get_doc({"doctype": "Issue Type", "__newname": "Checkin Issue"}).insert()
+				issue_type = issue_type_doc.name
+			if issue_type:
+				issue = frappe.new_doc('Issue')
+				issue.subject = "Employee Checkin Issue - {0}".format(self.issue_type)
+				issue.raised_by = frappe.session.user
+				doc_link = frappe.utils.get_url(self.get_url())
+				description = issue.subject + "<br/><p>The user found an issue in the app \
+				 	and recorded in <a href='{0}'>Employee Checkin Issue</a>.</p>".format(doc_link)
+				issue.description = description
+				issue.issue_type = issue_type
+				issue.save(ignore_permissions=True)
+				self.issue = issue.name
+				self.save(ignore_permissions=True)
+				self.reload()
+
 	def on_update(self):
 		if self.workflow_state == 'Approved':
 			create_employee_checkin_for_employee_checkin_issue(self)
