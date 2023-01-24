@@ -13,8 +13,8 @@ from one_fm.api.doc_events import haversine
 
 
 # # setup channel for face recognition
-# face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-# channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
 
 # # setup stub for face recognition
 stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
