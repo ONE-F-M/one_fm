@@ -1461,7 +1461,7 @@ def get_holiday_today(curr_date):
 		JOIN `tabHoliday List` hl ON hl.name=h.parent 
 		WHERE from_date='{start_date}' AND to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
 
-	holiday_dict = {}
+holiday_dict = {}
 	for i in holidays:
 		if(holiday_dict.get(i.holiday)):
 			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{i.holiday_date:i.description}}
