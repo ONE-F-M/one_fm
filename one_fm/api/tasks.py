@@ -1240,7 +1240,7 @@ def mark_daily_attendance(start_date, end_date):
 					name = f"HR-ATT-{start_date}-{v.employee}"
 				shift_type = shift_types_dict.get(v.shift_type)
 				shift_assignment = shift_assignments_dict.get(v.shift_assignment)
-				in_time = v.actual_time
+				in_time = v.time
 
 				# check if late entry > 4hrs
 				if ((in_time - shift_assignment.start_datetime).total_seconds() / (60*60)) > 4:
