@@ -8,9 +8,10 @@
  "field_order": [
   "title",
   "employee",
+  "emp_name",
   "date",
   "column_break_3",
-  "emp_name",
+  "log_type",
   "permission_type",
   "section_break_5",
   "assigned_shift",
@@ -24,6 +25,7 @@
   "arrival_time",
   "leaving_time",
   "latitude",
+  "column_break_20",
   "longitude",
   "section_break_17",
   "reason",
@@ -117,14 +119,16 @@
    "fieldname": "arrival_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "Arrival Time"
+   "label": "Arrival Time",
+   "mandatory_depends_on": "eval:doc.permission_type == \"Arrive Late\""
   },
   {
    "depends_on": "eval:doc.permission_type== \"Leave Early\"",
    "fieldname": "leaving_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "Leaving Time"
+   "label": "Leaving Time",
+   "mandatory_depends_on": "eval:doc.permission_type== \"Leave Early\""
   },
   {
    "fieldname": "amended_from",
@@ -184,11 +188,22 @@
    "label": "Approver User ID",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "fieldname": "log_type",
+   "fieldtype": "Select",
+   "label": "Log Type",
+   "options": "\nIN\nOUT",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-28 11:58:06.332859",
+ "modified": "2023-01-19 14:50:04.904720",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
