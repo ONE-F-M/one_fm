@@ -2804,6 +2804,7 @@ function unschedule_staff(page) {
 					error_handler(res);
 					let element = get_wrapper_element().slice(1);
 					page[element](page);
+					$(".filterhideshow").addClass("d-none");
 				}
 			});
 		}
@@ -2891,16 +2892,17 @@ function change_post(page) {
 
 function schedule_change_post(page) {
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
-	let employees = window.employees_list;
+	// let employees = window.employees_list;
+	let employees = [];
 	let selected = [... new Set(classgrt)];
 	let otRoster = false;
-//	if (selected.length > 0) {
-//		selected.forEach(function (i) {
-//			let [employee, date] = i.split("|");
-//			employees.push(employee);
-//			employees = [... new Set(employees)];
-//		});
-//	}
+	if (selected.length > 0) {
+		selected.forEach(function (i) {
+			let [employee, date] = i.split("|");
+			employees.push({employee, date});
+			employees = [... new Set(employees)];
+		});
+	}
 	var hide_day_off_ot_check = 0;
 	var hide_keep_days_off_check = 0;
 	let element = get_wrapper_element();
@@ -3002,17 +3004,18 @@ function schedule_change_post(page) {
 					// code snippet
 					d.hide();
 					error_handler(res);
-					if(res.data && res.data.employees.length > 1){
-						res.data.employees.forEach((emp, i) => {
-							res[1].forEach((date, i) => {
-								let selectid = emp.name+'|'+date.slice(0, 10)
-								$("[data-selectid='"+selectid+"']").addClass('bg-info')
-								$("[data-selectid='"+selectid+"']").removeClass('selectclass')
-							});
-						});
-					}
+					// if(res.data && res.data.employees.length > 1){
+					// 	res.data.employees.forEach((emp, i) => {
+					// 		res[1].forEach((date, i) => {
+					// 			let selectid = emp.name+'|'+date.slice(0, 10)
+					// 			$("[data-selectid='"+selectid+"']").addClass('bg-info')
+					// 			$("[data-selectid='"+selectid+"']").removeClass('selectclass')
+					// 		});
+					// 	});
+					// }
 					let element = get_wrapper_element().slice(1);
 					update_roster_view(element, page);
+					$(".filterhideshow").addClass("d-none");
 				}
 			});
 		}
@@ -3224,6 +3227,7 @@ function dayoff(page) {
 					error_handler(res);
 					let element = get_wrapper_element().slice(1);
 					page[element](page);
+					$(".filterhideshow").addClass("d-none");
 				}
 			});
 		}
