@@ -2,10 +2,26 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Employee Checkin Issue', {
+	refresh: function(frm) {
+		if(!frm.doc.issue && frm.doc.workflow_state == 'Approved'){
+			frm.add_custom_button(__('Create Issue'), function() {
+				create_issue(frm);
+			}).addClass('btn-primary');
+		}
+	},
 	employee: function(frm) {
 		get_shift_assignment(frm);
 	}
 });
+
+function create_issue(frm) {
+	frappe.call({
+		method: 'create_issue',
+		doc: frm.doc,
+		freeze: true,
+		freeze_message: __("Creating the Issue...!")
+	})
+};
 
 function get_shift_assignment(frm){
 	if(frm.doc.employee){
