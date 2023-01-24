@@ -74,8 +74,8 @@ def export_data(
 		sheet_name=sheet_name,
 		owner=owner
 	)
-	google_sheet_id, link, sheet_name = exporter.build_response()
-	result = {"google_sheet_id":google_sheet_id, "link":link,"sheet_name":sheet_name}
+	result = exporter.build_response()
+
 	return result
 
 
@@ -111,15 +111,17 @@ class DataExporter:
 
 	def init_google_sheet_service(self):
 		SERVICE_ACCOUNT_FILE = cstr(frappe.local.site) + frappe.local.conf.google_sheet
+
 		SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
-		credentials = None
-		credentials = service_account.Credentials.from_service_account_file(
-				SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+		credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 
 		service = discovery.build('sheets', 'v4', credentials=credentials)
+		drive_api = build('drive', 'v3', credentials=credentials)
 
-		return service
+		service_collection = {'service':service, 'drive_api':drive_api}
+
+		return service_collection
 
 	def prepare_args(self):
 		if self.select_columns:
@@ -152,6 +154,7 @@ class DataExporter:
 		self.writer = UnicodeWriter()
 		self.name_field = "parent" if self.parent_doctype != self.doctype else "name"
 		service = self.init_google_sheet_service()
+		print(service)
 		self.writer.writerow([""])
 		self.labelrow = []
 		self.fieldrow = []
@@ -165,6 +168,7 @@ class DataExporter:
 
 		if not self.link:
 			self.create(service)
+
 		if not self.check_if_sheet_exist(service):
 			self.add_sheet(service)
 		self.update_sheet(values, service)
@@ -173,7 +177,8 @@ class DataExporter:
 			frappe.respond_as_web_page(
 				_("No Data"), _("There is no data to be exported"), indicator_color="orange"
 			)
-		return self.link, self.google_sheet_id, self.sheet_name
+		result = {"google_sheet_id":self.google_sheet_id, "link":self.link,"sheet_name":self.sheet_name}
+		return result
 
 
 	def build_field_columns(self, dt, parentfield=None):
@@ -325,7 +330,7 @@ class DataExporter:
 			True,
 		)
 
-	def create(self, service):
+	def create(self, services):
 		"""
 		BEFORE RUNNING:
 		---------------
@@ -346,9 +351,9 @@ class DataExporter:
 		#     'https://www.googleapis.com/auth/drive.file'
 		#     'https://www.googleapis.com/auth/spreadsheets'
 
-		service = discovery.build('sheets', 'v4', credentials=credentials)
-		drive_api = build('drive', 'v3', credentials=credentials)
-		
+		service = services["service"]
+		drive_api = services["drive_api"]
+
 		domain_permission = {
 			'type': 'user',
 			'role': 'writer',
@@ -358,21 +363,29 @@ class DataExporter:
 				'properties': {
 				'title': "{0}".format(self.doctype)
 				},
+				"sheets": [
+					{
+						"properties": {
+							"sheetId": 1,
+							"title": "{0}".format(self.sheet_name)
+						},
+					}
+				]
 			}
-		request = service.spreadsheets().create(body=spreadsheet)
-		response = request.execute()
+		request = service.spreadsheets().create(body=spreadsheet).execute()
 
 		#Grant Permission 
-		req = drive_api.permissions().create(
-					fileId=response["spreadsheetId"],
+		permission = drive_api.permissions().create(
+					fileId=request["spreadsheetId"],
 					body=domain_permission,
-				)
+				).execute()
+		print(request)
+		self.google_sheet_id = request["spreadsheetId"]
+		self.link = request["spreadsheetUrl"]
 
-		req.execute()
-		self.google_sheet_id = response["spreadsheetId"]
-		self.link = response["spreadsheetUrl"]
+	def check_if_sheet_exist(self, services):
+		service = services["service"]
 
-	def check_if_sheet_exist(self, service):
 		sheet_metadata = service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
 		
 		sheets = sheet_metadata.get('sheets', '')
@@ -384,8 +397,10 @@ class DataExporter:
 			return True
 		return False
 
-	def add_sheet(self, service):
+	def add_sheet(self, services):
 		try:
+			service = services["service"]
+
 			request_body = {
 				'requests': [{
 					'addSheet': {
@@ -406,11 +421,13 @@ class DataExporter:
 			print(e)
 
 
-	def update_sheet(self, values, service):
+	def update_sheet(self, values, services):
 		"""Shows basic usage of the Sheets API.
 		Prints values from a sample spreadsheet.
 		"""
 		try:
+			service = services["service"]
+
 			no_of_row = len(values)
 			no_of_col = len(self.column)
 			ranges = self.sheet_name + "!A1:" + chr(ord('A') + no_of_col) + str(no_of_row)

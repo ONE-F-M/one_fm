@@ -98,7 +98,9 @@ const export_data = (frm) => {
 		},
 		callback: function(r) {
 			if(r.message) {
+				console.log(r.message)
 				if(frm.doc.link == null && frm.doc.google_sheet_id == null){
+					
 					frm.set_value('link', r.message['link'])
 					frm.set_value('google_sheet_id', r.message['google_sheet_id'])
 				}
