@@ -78,6 +78,7 @@ def create_employee_checkin_for_employee_checkin_issue(employee_checkin_issue):
 	employee_checkin.skip_auto_attendance = False
 	employee_checkin.operations_shift = employee_checkin_issue.shift
 	employee_checkin.shift_assignment = employee_checkin_issue.assigned_shift
+	employee_checkin.employee_checkin_issue = employee_checkin_issue.name
 	if employee_checkin_issue.latitude and employee_checkin_issue.longitude:
 		employee_checkin.device_id = cstr(employee_checkin_issue.latitude)+","+cstr(employee_checkin_issue.longitude)
 	employee_checkin.save(ignore_permissions=True)
