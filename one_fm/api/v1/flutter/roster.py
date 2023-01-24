@@ -1,4 +1,5 @@
 from pandas.core.indexes.datetimes import date_range
+from frappe.utils import validate_phone_number
 from datetime import datetime
 from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now
@@ -12,61 +13,7 @@ from one_fm.api.v1.utils import response
 from one_fm.utils import query_db_list
 
 
-@frappe.whitelist()
-def change_employee_detail(employee_id:str,field:str,value)-> bool:
-    """ summary
-        Update the Employee and User record of a employee
-    Args:
-        employee (str): Employee ID or Name
-        field (str): Field to be changed
-        value (str): new value of field
 
-    Returns:
-        bool: Returns true if the data was changed successfully.
-    """
-    
-    accepted_fields = ['enrolled','cell_number']
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "Employee ID must of type str.")
-    
-    if not isinstance(field, str):
-        return response("Bad Request", 400, None, "Field  must be of type str.")
-
-    if not employee_id:
-        return response("Error", 400, None, {'message':'An Employee must be provided.'})
-    
-    if not value:
-        return response("Error", 400, None, {'message':'A Value must be provided.'})
-  
-    if not field:
-        return response("Error", 400, None, {'message':'A Field must be provided.'})
-        
-    if field  not in accepted_fields:
-        return response("Error", 400, None, {'message':'This field cannot be changed'})
-    
-    try:
-        employee = frappe.get_all("Employee",{"employee_id":employee_id})
-        if employee:
-            employee_ = employee[0]['name']
-            if field == 'cell_number':
-                if validate_phone_number(value):
-                    frappe.db.set_value("Employee",employee_,field,value)
-                    if frappe.db.get_value("Employee",employee_,'user_id'):
-                        user_id = frappe.db.get_value("Employee",employee_,'user_id')
-                        frappe.db.set_value("User",user_id,'phone',value)
-                    frappe.db.commit()
-                    return response("Sucess",200,True,'Data Updated Successfully') 
-                else:
-                    return response("Error", 400, None, {'message':'Please set a valid phone number'})
-            elif field =='enrolled':
-                frappe.db.set_value("Employee",employee_,field,value)
-                frappe.db.commit()
-                response("Sucess",200,True,'Data Updated Successfully')
-        else:
-            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id)) 
-            
-    except Exception as e:
-        response("error", 500, False, str(e))
         
      
     
