@@ -6,9 +6,8 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr
 from frappe import _
-from one_fm.api.notification import create_notification_log, get_employee_user_id
+from one_fm.api.notification import get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
-from one_fm.api.tasks import get_action_user
 from one_fm.api.utils import get_reports_to_employee_name
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 
@@ -51,7 +50,37 @@ class EmployeeCheckinIssue(Document):
 		date = getdate(self.date).strftime('%d-%m-%Y')
 		if frappe.db.exists("Employee Checkin Issue", {"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift, "log_type": self.log_type}):
 			frappe.throw(_("{employee} has already created a Employee Checkin Issue for {log_type} on {date}.".format(employee=self.employee_name, type=self.log_type, date=date)))
+	def on_update(self):
+		if self.workflow_state == 'Approved':
+			create_employee_checkin_for_employee_checkin_issue(self)
+			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
 
+		if self.workflow_state == 'Pending':
+			send_workflow_action_email(self, recipients=[get_employee_user_id(self.shift_supervisor)])
+
+		if self.workflow_state in ['Rejected']:
+			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
+
+def create_employee_checkin_for_employee_checkin_issue(employee_checkin_issue):
+	"""
+		Method to create Employee Checkin from the Employee Checkin Issue
+		args:
+			employee_checkin_issue: Object of Employee Checkin Issue
+	"""
+	# Get shift details for the employee
+	shift_details = get_shift_details(employee_checkin_issue.shift_type, getdate(employee_checkin_issue.date))
+
+	employee_checkin = frappe.new_doc('Employee Checkin')
+	employee_checkin.employee = employee_checkin_issue.employee
+	employee_checkin.log_type = employee_checkin_issue.log_type
+	employee_checkin.shift = employee_checkin_issue.shift_type
+	employee_checkin.time = shift_details.start_datetime if employee_checkin_issue.log_type == "IN" else shift_details.end_datetime
+	employee_checkin.skip_auto_attendance = False
+	employee_checkin.operations_shift = employee_checkin_issue.shift
+	employee_checkin.shift_assignment = employee_checkin_issue.assigned_shift
+	if employee_checkin_issue.latitude and employee_checkin_issue.longitude:
+		employee_checkin.device_id = cstr(employee_checkin_issue.latitude)+","+cstr(employee_checkin_issue.longitude)
+	employee_checkin.save(ignore_permissions=True)
 
 @frappe.whitelist()
 def fetch_approver(employee):
