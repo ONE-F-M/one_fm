@@ -11,6 +11,15 @@ from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
 from one_fm.api.utils import get_reports_to_employee_name
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 
+class ExistAttendance(frappe.ValidationError):
+	pass
+
+class ExistCheckin(frappe.ValidationError):
+	pass
+
+class ShiftDetailsMissing(frappe.ValidationError):
+	pass
+
 class EmployeeCheckinIssue(Document):
 	def validate(self):
 		self.validate_attendance()
@@ -48,8 +57,9 @@ class EmployeeCheckinIssue(Document):
 	# This method validates any dublicate ECI for the employee on same day
 	def validate_duplicate_record(self):
 		date = getdate(self.date).strftime('%d-%m-%Y')
-		if frappe.db.exists("Employee Checkin Issue", {"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift, "log_type": self.log_type}):
-			frappe.throw(_("{employee} has already created a Employee Checkin Issue for {log_type} on {date}.".format(employee=self.employee_name, type=self.log_type, date=date)))
+		if frappe.db.exists("Employee Checkin Issue", {"employee": self.employee, "date":self.date,
+			"assigned_shift": self.assigned_shift, "log_type": self.log_type, "name": ["not in", [self.name]]}):
+			frappe.throw(_("{employee} has already created a Employee Checkin Issue for {log_type} on {date}.".format(employee=self.employee_name, log_type=self.log_type, date=date)))
 	def on_update(self):
 		if self.workflow_state == 'Approved':
 			create_employee_checkin_for_employee_checkin_issue(self)
