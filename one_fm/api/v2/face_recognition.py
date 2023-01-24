@@ -16,7 +16,7 @@ from one_fm.api.doc_events import haversine
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
 
-# setup stub for face recognition
+# # setup stub for face recognition
 stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 right_now = now_datetime()
@@ -333,7 +333,7 @@ def is_before_after_grace_period(employee_id:str,operator:str)->bool:
     time_now = now()
     current_schedule = frappe.db.sql("SELECT name,shift_type from `tabEmployee Schedule` where date between '{}' and '{}'  and employee = '{}' ".format(today,today,employee),as_dict=1)
     if not current_schedule:
-        return response("Resource Not Found", 404, None, "No schedule found for {employee_id} on {}".format(employee_id=employee_id))
+        return response("Resource Not Found", 404, None, "No schedule found for {employee_id} on {today}".format(employee_id=employee_id,today=today))
     shift_type = current_schedule[0].shift_type
     shift_type_details = frappe.get_all("Shift Type",{'name':shift_type},['notification_reminder_after_shift_end','enable_exit_grace_period','early_exit_grace_period','end_time'])
     curr_shift = get_current_shift_checkin(employee)
