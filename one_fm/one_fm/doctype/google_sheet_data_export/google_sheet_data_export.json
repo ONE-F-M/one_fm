@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "autoname": "format:{reference_doctype}-{####}",
  "creation": "2023-01-15 14:40:39.185945",
  "default_view": "List",
  "doctype": "DocType",
@@ -120,10 +121,11 @@
  ],
  "hide_toolbar": 1,
  "links": [],
- "modified": "2023-01-23 09:56:20.579288",
+ "modified": "2023-01-23 16:11:47.282315",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Google Sheet Data Export",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {
