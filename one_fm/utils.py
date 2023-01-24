@@ -2668,7 +2668,7 @@ def queue_send_workflow_action_email(doc, recipients):
     if not list(user_data_map[0].values()):
         email_args = {
             "recipients": recipients,
-            "args": {"message": message, "doc_url": doc.get_url()},
+            "args": {"message": message, "doc_url": frappe.utils.get_url() + doc.get_url()},
             "reference_name": doc.name,
             "reference_doctype": doc.doctype,
         }
@@ -2678,7 +2678,7 @@ def queue_send_workflow_action_email(doc, recipients):
         for d in [i for i in list(user_data_map[0].values()) if i.get('email') in recipients]:
             email_args = {
                 "recipients": recipients,
-                "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message, "pdf_link": pdf_link, "doc_url": doc.get_url()},
+                "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message, "pdf_link": pdf_link, "doc_url": frappe.utils.get_url() + doc.get_url()},
                 "reference_name": doc.name,
                 "reference_doctype": doc.doctype,
                 
