@@ -15,7 +15,47 @@ from one_fm.utils import query_db_list
 
 
 @frappe.whitelist()
-def change_employee_detail(employee_id:str,field:str,value)-> bool:
+def change_employee_shift(employees:str,shift:str):
+    """_summary_
+            Update the shift of a number of employees
+    Args:
+        employees (str): _description_
+        shift (_type_): _description_
+
+    Returns:
+        _type_: updated employee document
+    """
+    if not employees:
+        return response("Bad Request", 400, None, "Employees must be selected.")
+    if not shift:
+        return response("Bad Request", 400, None, "A shift must be selected.")
+    if not frappe.db.exists("Operations Shift",shift):
+        return response("Bad Request", 400, None, "Please provide a valid Operations Shift. {} is invalid".format(shift))
+    try:
+        data = []
+        emp_tuple = employees.replace('[', '(').replace(']',')')
+        all_employees = frappe.db.sql("SELECT name from `tabEmployee` where name in {}".format(emp_tuple),as_dict=1)
+        if all_employees:
+            for each in all_employees:
+                frappe.db.set_value("Employee",each.name,'shift',shift)
+                emp_doc = frappe.get_doc("Employee",each.name)
+                data.append(emp_doc.as_dict())
+            frappe.db.commit()
+            response("Sucess",200,{'employees':data})
+                
+        else:
+            return response("Bad Request", 400, None, "No Employees found with the provided IDs")
+            
+    except Exception as e:
+        response("Internal Server Error", 500, False, str(e))
+
+        
+        
+        
+
+
+@frappe.whitelist()
+def change_employee_detail(employee_id:str,field:str=None,value=None)-> bool:
     """ summary
         Update the Employee and User record of a employee
     Args:
@@ -27,21 +67,17 @@ def change_employee_detail(employee_id:str,field:str,value)-> bool:
         bool: Returns true if the data was changed successfully.
     """
     
-    accepted_fields = ['enrolled','cell_number','shift']
+    accepted_fields = ['enrolled','cell_number']
     if not isinstance(employee_id, str):
         return response("Bad Request", 400, None, "Employee ID must of type str.")
     
     if not isinstance(field, str):
         return response("Bad Request", 400, None, "Field  must be of type str.")
-    
-    if field == 'shift':
-         if not frappe.db.exists("Operations Shift",value):
-               return response("Bad Request", 400, None, "This shift does not exist")
            
     if not employee_id:
-        return response("Error", 400, None, {'message':'An Employee must be provided.'})
+        return response("Error", 400, None, {'message':'Atleast 1 Employee must be provided.'})
     
-    if not value:
+    if not value :
         return response("Error", 400, None, {'message':'A Value must be provided.'})
   
     if not field:
@@ -73,7 +109,7 @@ def change_employee_detail(employee_id:str,field:str,value)-> bool:
                 employee_doc.reload()
                 response("Sucess",200,{'employee':employee_doc.as_dict()})
         else:
-            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id)) 
+            return response("Resource Not Found", 404, None, "No employees found with {employee_id}".format(employee_id=employee_ids)) 
             
     except Exception as e:
         response("error", 500, False, str(e))
