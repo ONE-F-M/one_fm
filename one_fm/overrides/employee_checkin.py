@@ -65,7 +65,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 	def after_insert(self):
 		frappe.db.commit()
 		self.reload()
-		if not self.shift_assignment and self.shift_type and self.operations_shift:
+		if not self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end:
 			frappe.enqueue(after_insert_background, self=self.name)
 
 def after_insert_background(self):
@@ -77,7 +77,7 @@ def after_insert_background(self):
 		# calculate entry
 		early_exit = 0
 		late_entry = 0
-		actual_time = str(self.actual_time)
+		actual_time = str(self.time)
 		if not '.' in actual_time:
 			actual_time += '.000000'
 
@@ -204,11 +204,11 @@ def get_shift_from_checkin(checkin):
 	shifts = frappe.db.get_list(
 		"Shift Assignment", 
 		filters={'employee':checkin.employee, 
-			'start_date': ["BETWEEN", [str(add_days(checkin.actual_time.date(), -1)), str(checkin.actual_time.date())]], 'docstatus':1},
+			'start_date': ["BETWEEN", [str(add_days(checkin.time.date(), -1)), str(checkin.time.date())]], 'docstatus':1},
 		fields="*",
 		ignore_permissions=1
 	)
 	for s in shifts:
-		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.actual_time <= (s.end_datetime + timedelta(minutes=60))):
+		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.time <= (s.end_datetime + timedelta(minutes=60))):
 			return s
 	return False
