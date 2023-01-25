@@ -109,7 +109,7 @@ def change_employee_detail(employee_id:str,field:str=None,value=None)-> bool:
                 employee_doc.reload()
                 response("Sucess",200,{'employee':employee_doc.as_dict()})
         else:
-            return response("Resource Not Found", 404, None, "No employees found with {employee_id}".format(employee_id=employee_ids)) 
+            return response("Resource Not Found", 404, None, "No employees found with {employee_id}".format(employee_id=employee_id)) 
             
     except Exception as e:
         response("error", 500, False, str(e))
