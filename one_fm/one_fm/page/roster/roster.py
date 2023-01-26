@@ -342,6 +342,28 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			if not getdate(i['date']) > end_date:
 				new_employees.append(i)
 		employees = new_employees
+	# check keep days_off
+	if keep_days_off:
+		days_off_list = frappe.db.get_list("Employee Schedule", filters={
+			'employee':['IN', [i['employee'] for i in employees]],
+			'date': ['IN', [i['date'] for i in employees]],
+			'employee_availability': 'Day Off'
+		}, fields=['name', 'employee', 'date'])
+		days_off_dict = {}
+		if days_off_list:
+			# build a dict in the form {'hr-emp-0002:['2023-01-01,]} 
+			for i in days_off_list:
+				if days_off_dict.get(i.employee):
+					days_off_dict[i.employee].append(str(i.date))
+				else:
+					days_off_dict[i.employee] = [str(i.date)]
+			# remove records from employees
+			new_employees = []
+			for i in employees:
+				if not (i['date'] in days_off_dict.get(i['employee'])):
+					new_employees.append(i)
+			employees = new_employees
+	
 	# # get and structure employee dictionary for easy hashing
 	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employee_list]}, fields=['name', 'employee_name', 'department'], ignore_permissions=True)
 	employees_dict = {}
