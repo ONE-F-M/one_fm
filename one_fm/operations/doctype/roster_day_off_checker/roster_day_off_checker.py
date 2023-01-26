@@ -2,8 +2,8 @@
 # For license information, please see license.txt
 
 from datetime import datetime
-import frappe
-from frappe.utils import getdate, add_days, add_months
+import frappe, random
+from frappe.utils import getdate, add_days, add_months, now
 from frappe.model.document import Document
 from one_fm.utils import get_payroll_cycle
 
@@ -59,15 +59,48 @@ def check_roster_day_off():
 	# create data
 	for k, v in supervisor_dict.items():
 		if k and v:
-			frappe.enqueue(create_record, supervisor=k, date=datetime.today().date(), detail=v)
+			create_record(supervisor=k, detail=v)
+			# frappe.enqueue(create_record, supervisor=k, date=datetime.today().date(), detail=v)
 
-def create_record(supervisor, date, detail):
+def create_record(supervisor, detail):
+	creation = now()
+	owner = frappe.session.user
+	date = str(getdate())
+	employee_list = frappe.db.get_list("Employee", 
+		fields=['name', 'employee_name', 'employee_id', 'day_off_category', 'number_of_days_off'])
+	employee_dict = {}
+	for i in employee_list:
+		employee_dict[i.name] = i
+	supervisor = employee_dict[supervisor]
+	# check if document exists
+	if frappe.db.exists("Roster Day Off Checker", {'name':f"{date}-{supervisor.employee_name}"}):
+		frappe.get_doc("Roster Day Off Checker", f"{date}-{supervisor.employee_name}").delete()
+		frappe.db.commit()
+
 	doc = frappe.get_doc({
 		'doctype': 'Roster Day Off Checker',
-		'supervisor': supervisor,
+		'supervisor': supervisor.name,
+		'supervisor_name':supervisor.employee_name,
 		'date': date,
-		'detail': detail
 	}).insert(ignore_permissions=True)
+	frappe.db.commit()
+	query = query = """
+		INSERT INTO `tabRoster Day Off Detail` (`name`, `employee`, `employee_id`, `employee_name`, `monthweek`, 
+		`day_off_category`, `number_of_days_off`, `day_off_schedule`, `days_off_ot`, `day_off_difference`, 
+		`owner`, `modified_by`, `creation`, `modified`, `parent`, `parenttype`, `parentfield`)
+		VALUES 
+	"""
+	for i in detail:
+		emp = employee_dict[i['employee']]
+		child_name = f"{doc.name}-{emp.name}-{str(creation)}-{random.random()}"
+		query += f"""
+			("{child_name}", "{emp.name}", "{emp.employee_id}", "{emp.employee_name}", "{i['monthweek']}", 
+			"{emp.day_off_category}", {emp.number_of_days_off}, "{i['day_off_schedule']}", '{i['days_off_ot']}', 
+			"{i['day_off_difference']}", "{owner}", "{owner}", "{creation}", "{creation}", "{doc.name}", "{doc.doctype}", 
+			"detail"
+			),"""
+	query = query[:-1]
+	frappe.db.sql(query, values=[], as_dict=1)
 	frappe.db.commit()
 
 def validate_offs(emp, project_cycle, supervisor):
