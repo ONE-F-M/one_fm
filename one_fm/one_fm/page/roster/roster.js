@@ -2478,13 +2478,16 @@ function ClearServiceBoard(e) {
 
 function staff_edit_dialog() {
 	let employees = [];
-	if ($(".layoutSidenav_content").attr("data-view") == "list") {
-		employees = window.employees_list;
-	} else if ($(".layoutSidenav_content").attr("data-view") == "card") {
-		employees = $(".cardviewcheckbox:checked").map(function () {
-			return $(this).attr("data-employee-id");
-		}).get();
-	}
+	$(".checkboxcontainer").map(function (i, data) {
+		let selected = data.querySelectorAll('input[type="checkbox"]:checked');
+		if (selected.length){
+			let id = ''
+			id = selected[0].getAttribute('data-employee-id');
+			if (id){
+				employees.push(id);
+			}
+		}
+	});
 
 	let d = new frappe.ui.Dialog({
 		'title': 'Edit',
@@ -2515,7 +2518,7 @@ function staff_edit_dialog() {
 					let site = d.get_value('site');
 					if (site) {
 						return {
-							"filters": { site },
+							"filters": { site, 'status':'Active' },
 							"page_len": 9999
 						};
 					}
