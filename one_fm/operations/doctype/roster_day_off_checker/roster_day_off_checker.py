@@ -199,5 +199,5 @@ def validate_offs(emp, project_cycle, supervisor):
 
 @frappe.whitelist()
 def generate_checker():
-	frappe.enqueue(check_roster_day_off)
+	frappe.enqueue(check_roster_day_off, queue='long', timeout=4000)
 	return True
