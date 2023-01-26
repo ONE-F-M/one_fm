@@ -2518,7 +2518,7 @@ function staff_edit_dialog() {
 					let site = d.get_value('site');
 					if (site) {
 						return {
-							"filters": { site, 'status':1 },
+							"filters": { site, 'status':'Active' },
 							"page_len": 9999
 						};
 					}
