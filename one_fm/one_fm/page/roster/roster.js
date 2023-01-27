@@ -2530,7 +2530,7 @@ function staff_edit_dialog() {
 					let site = d.get_value('site');
 					if (site) {
 						return {
-							"filters": { site, 'status':'Active' },
+							"filters": { site },
 							"page_len": 9999
 						};
 					}
