@@ -82,7 +82,7 @@ def fetch_key():
     if not cached_api:
         cached_api = frappe.local.conf.zenquotes_api
         if not cached_api:
-            return response("Bad Request", 400, None, f"You are extremely late, you cannot checkin!")       
+            return response("Bad Request", 400, None, f"No API found in site config file")       
         frappe.cache().set_value('zenquotes_api',cached_api)
     return cached_api
 
