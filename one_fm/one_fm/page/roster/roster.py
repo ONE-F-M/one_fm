@@ -992,8 +992,8 @@ def assign_staff(employees, shift, request_employee_assignment):
 		for emp in json.loads(employees):
 			emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
 			supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
-			if user_employee.name != supervisor:
-				validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
+			# if user_employee.name != supervisor:
+			# 	validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
 
 	if len(validation_logs) > 0:
 		frappe.throw(str(validation_logs))
