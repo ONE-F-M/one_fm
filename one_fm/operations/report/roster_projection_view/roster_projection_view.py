@@ -50,7 +50,6 @@ def get_data(filters):
 	for row in contracts_detail:
 		if row.rate_type=='Monthly':
 			row.days_off_cat = row.days_off_category
-			row.start_date = month_start
 			row.employee_schedule = 0
 			row.post_schedule = 0
 			row.projection = 0
@@ -63,19 +62,18 @@ def get_data(filters):
 			working_days = 0 # total number of working days for each item
 			working_days_type = ''
 			if row.rate_type_off=='Full Month': # working days is number of days in the current month
-				row.end_date = month_end
 				working_days = month_end.day
 				working_days_type = 'Monthly'
 			elif row.rate_type_off=='Days Off':
 				if row.days_off_category=='Monthly':
 					working_days_type = 'Monthly'
 					working_days = month_end.day - row.no_of_days_off
-					row.end_date = month_end
 				elif row.days_off_category=='Weekly':
 					working_days_type = 'Weekly'
-					working_days = 7 - row.no_of_days_off
-					row.end_date = add_days(month_start, 27)# for weekly rate, start day to 28th day from start date
-					month_end = row.end_date
+					working_days = 28 - row.no_of_days_off*4
+					month_start = get_week_start_end(month_start).start
+					month_end = add_days(month_start, 27)# for weekly rate, start day to 28th day from start date
+
 
 			roles = [i.name for i in frappe.db.sql(f"""
 				SELECT name FROM `tabOperations Role`
@@ -94,7 +92,8 @@ def get_data(filters):
 					'operations_role': ['IN', roles],
 					'employee_availability': 'Working',
 					'date': ['BETWEEN', [month_start, month_end]]},
-					fields=['name', 'shift_type']
+					fields=['name', 'shift_type'],
+					ignore_permissions=True
 				)
 				employee_schedule = len(employee_schedule_list)
 
@@ -103,7 +102,7 @@ def get_data(filters):
 					'project':row.project,
 					'operations_role': ['IN', roles],
 					'status': ['IN', ['Present', 'Work From Home', 'On Leave']],
-					'attendance_date': ['BETWEEN', [month_start, month_end]]},
+					'attendance_date': ['BETWEEN', [month_start, month_end]]}
 				)
 				
 				
@@ -114,7 +113,6 @@ def get_data(filters):
 				row.projection_rate = round(row.projection * row.rate, 2)
 				row.live_projection = round(((row.es_qty+row.ea_qty)/row.ps_qty)*row.count if (row.es_qty and row.ps_qty) else 0, 2)
 				row.live_projection_rate = round(row.live_projection * row.rate, 2)
-
 				# row.employee_schedule = employee_schedule/working_days  if working_days else 0
 				# row.post_schedule = post_schedule/working_days if working_days else 0
 				# if post_schedule and employee_schedule:
@@ -150,6 +148,16 @@ def get_data(filters):
 				# 		row.live_projection_rate = row.live_projection * row.rate
 		else:
 			row.days_off_cat = ''
+
+		row.start_date = month_start
+		row.end_date = month_end
+				
+		if not row.start_date:
+			print(row.project, row.item_code)
+		
+		# reset start and end date
+		month_start = getdate().replace(day=1, month=int(filters.get('month')), year=int(filters.get('year')))
+		month_end = get_last_day(month_start)
 
 	results = contracts_detail
 	return results
