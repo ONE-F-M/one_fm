@@ -2736,13 +2736,13 @@ def notify_live_user(company, message, users=False):
 
 
 def get_week_start_end(date_str):
-    dt = datetime.strptime(day, '%Y-%m-%d')
+    dt = datetime.strptime(str(date_str), '%Y-%m-%d')
     start = add_days(dt - timedelta(days=dt.weekday()), -1)
     end = start + timedelta(days=6)
-    return frappe._dict({'start': str(start), 'end': str(end)})
+    return frappe._dict({'start': str(start).split(' ')[0], 'end': str(end).split(' ')[0]})
 
 def get_month_start_end(date_str):
-    cur_date = datetime.strptime(date_str, '%Y-%m-%d')
+    cur_date = datetime.strptime(str(date_str), '%Y-%m-%d')
     start = cur_date.replace(day=1)
     _end = cur_date.replace(day=28) + timedelta(days=4)
     end = _end - timedelta(days=_end.day)
