@@ -106,13 +106,16 @@ def get_data(filters):
 				)
 				
 				
-				row.es_qty = employee_schedule / working_days if working_days else 0
-				row.ps_qty = post_schedule / working_days if working_days else 0
-				row.ea_qty = attendance/working_days if working_days else 0
-				row.projection = (row.es_qty/row.ps_qty) * row.count if (row.es_qty and row.ps_qty) else 0
-				row.projection_rate = row.projection * row.rate
-				row.live_projection = ((row.es_qty+row.ea_qty)/row.ps_qty)*row.count if (row.es_qty and row.ps_qty) else 0
-				row.live_projection_rate = row.live_projection * row.rate
+				row.es_qty = round(employee_schedule / working_days if working_days else 0, 2)
+				row.ps_qty = round(post_schedule / working_days if working_days else 0, 2)
+				row.ea_qty = round(attendance/working_days if working_days else 0, 2)
+				row.projection = round((row.es_qty/row.ps_qty) * row.count if (row.es_qty and row.ps_qty) else 0, 2)
+				row.projection_rate = round(row.projection * row.rate, 2)
+				row.live_projection = round(((row.es_qty+row.ea_qty)/row.ps_qty)*row.count if (row.es_qty and row.ps_qty) else 0, 2)
+				row.live_projection_rate = round(row.live_projection * row.rate, 2)
+
+				# clear days_off_type
+				row.days_off_category = row.days_off_category if row.rate_type=='Hourly' else ''
 				# row.employee_schedule = employee_schedule/working_days  if working_days else 0
 				# row.post_schedule = post_schedule/working_days if working_days else 0
 				# if post_schedule and employee_schedule:
@@ -239,16 +242,16 @@ def get_columns():
 		},
 		{
 			'fieldname': 'es_qty',
-			'label': _('ES. qty.'),
+			'label': _('Employee Schedule QTY'),
 			'fieldtype': 'Int',
-			'width': 100,
+			'width': 150,
 			'precision':2
 		},
 		{
 			'fieldname': 'ea_qty',
-			'label': _('EA qty.'),
+			'label': _('Employee Attendance QTY'),
 			'fieldtype': 'Int',
-			'width': 100,
+			'width': 150,
 			'precision':2
 		},
 		{
@@ -262,24 +265,31 @@ def get_columns():
 			'fieldname': 'projection_rate',
 			'label': _('Projection Rate'),
 			'fieldtype': 'Currency',
-			'width': 100
+			'width': 150
 		},
 		{
 			'fieldname': 'live_projection',
 			'label': _('Live Projection'),
 			'fieldtype': 'Float',
-			'width': 100
+			'width': 150
 		},
 		{
 			'fieldname': 'live_projection_rate',
-			'label': _('Projection Rate'),
+			'label': _('Live Projection Rate'),
 			'fieldtype': 'Currency',
-			'width': 100
+			'width': 150
 		},
 		{
 			'fieldname': 'rate_type',
 			'label': _('Rate Type'),
 			'fieldtype': 'Data',
-			'width': 100
+			'width': 150
+		},
+		{
+			'fieldname': 'days_off_category',
+			'label': _('Days Of Category'),
+			'fieldtype': 'Data',
+			'width': 100,
+			'default': ''
 		},
 	]
