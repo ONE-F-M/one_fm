@@ -115,7 +115,7 @@ def get_data(filters):
 				row.live_projection_rate = round(row.live_projection * row.rate, 2)
 
 				# clear days_off_type
-				row.days_off_category = row.days_off_category if row.rate_type=='Hourly' else ''
+				row.days_off_cat = row.days_off_category if row.rate_type=='Monthly' else ''
 				# row.employee_schedule = employee_schedule/working_days  if working_days else 0
 				# row.post_schedule = post_schedule/working_days if working_days else 0
 				# if post_schedule and employee_schedule:
@@ -286,7 +286,7 @@ def get_columns():
 			'width': 150
 		},
 		{
-			'fieldname': 'days_off_category',
+			'fieldname': 'days_off_cat',
 			'label': _('Days Of Category'),
 			'fieldtype': 'Data',
 			'width': 100,
