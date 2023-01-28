@@ -115,7 +115,10 @@ def get_data(filters):
 				row.live_projection_rate = round(row.live_projection * row.rate, 2)
 
 				# clear days_off_type
-				row.days_off_cat = row.days_off_category if row.rate_type=='Monthly' else ''
+				row.days_off_cat =  ''
+				if row.rate_type=='Monthly':
+					row.days_off_cat = row.days_off_category
+				else: row.days_off_cat = ''
 				# row.employee_schedule = employee_schedule/working_days  if working_days else 0
 				# row.post_schedule = post_schedule/working_days if working_days else 0
 				# if post_schedule and employee_schedule:
