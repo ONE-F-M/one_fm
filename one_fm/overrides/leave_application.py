@@ -13,6 +13,8 @@ class LeaveApplicationOverride(LeaveApplication):
         
     def notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
+        parent_doc = frappe.get_doc("Leave Application", self.name)
+        args = parent_doc.as_dict()
         if not template:
             frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
             return
@@ -22,12 +24,6 @@ class LeaveApplicationOverride(LeaveApplication):
             employee = frappe.get_doc("Employee", self.employee)
             if not employee.user_id:
                 return
-
-            parent_doc = frappe.get_doc("Leave Application", self.name)
-            args = parent_doc.as_dict()
-
-            
-
             self.notify(
                 {
                     # for post in messages
@@ -146,18 +142,18 @@ class LeaveApplicationOverride(LeaveApplication):
 
 
 
-def is_company_email(self):
-    """Returns true if the user id email associated with the employee in this leave application  is the same as the employee id
+    def is_company_email(self):
+        """Returns true if the user id email associated with the employee in this leave application  is the same as the employee id
 
-    Returns:
-        A Boolean value
-    """
-    matched = False
-    employee_details = frappe.get_all("Employee",{'name':self.employee},['employee_id','user_id'])
-    if employee_details:
-        if employee_details[0].get('employee_id') in  employee_details[0].get('user_id').split('@'):
-            matched = True
-    return matched
+        Returns:
+            A Boolean value
+        """
+        matched = False
+        employee_details = frappe.get_all("Employee",{'name':self.employee},['employee_id','user_id'])
+        if employee_details:
+            if employee_details[0].get('employee_id').lower() in  employee_details[0].get('user_id').split('@'):
+                matched = True
+        return matched
 
 @frappe.whitelist()
 def get_leave_approver(employee):
