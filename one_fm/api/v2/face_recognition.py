@@ -74,8 +74,8 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
 
 @frappe.whitelist()
-def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None,
-        shift_assignment: str = None, skip_attendance: str = None, latitude: str = None, longitude: str = None,):
+def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None, 
+    shift_assignment: str = None, skip_attendance: str = None, latitude: str = None, longitude: str = None):
     """This method verifies user checking in/checking out.
 
     Args:
@@ -291,6 +291,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             **data,
             **{'employee':employee_id, 'user_latitude':latitude, 'user_longitude':longitude, 'user_distance':distance, 'diff':distance-result.geofence_radius}
         }
+        
         if not result.user_within_geofence_radius:
             frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
                        **{'data':data})
