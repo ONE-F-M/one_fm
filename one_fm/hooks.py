@@ -468,7 +468,8 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
-		"one_fm.one_fm.utils.attach_abbreviation_to_roles"
+		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
+  		"one_fm.api.v2.zenquotes.set_cached_quote"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
