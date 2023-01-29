@@ -9,10 +9,10 @@
  "field_order": [
   "enable_auto_update",
   "google_sheet_reference_section",
+  "have_existing_sheet",
   "link",
-  "google_sheet_id",
-  "column_break_14",
   "sheet_name",
+  "google_sheet_id",
   "select_doctype_section",
   "reference_doctype",
   "select_fields_section",
@@ -22,7 +22,7 @@
   "fields_multicheck",
   "field_cache",
   "amended_from",
-  "update_details_section"
+  "client_id"
  ],
  "fields": [
   {
@@ -64,10 +64,12 @@
    "label": "Google Sheet Reference"
   },
   {
+   "depends_on": "eval:doc.have_existing_sheet == 1 || doc.link != null;",
    "fieldname": "link",
    "fieldtype": "Data",
    "label": "Link",
-   "read_only": 1
+   "mandatory_depends_on": "eval:doc.have_existing_sheet == 1;",
+   "read_only_depends_on": "eval:doc.have_existing_sheet == 0;"
   },
   {
    "fieldname": "google_sheet_id",
@@ -75,11 +77,6 @@
    "hidden": 1,
    "label": "Google Sheet ID",
    "read_only": 1
-  },
-  {
-   "fieldname": "update_details_section",
-   "fieldtype": "Section Break",
-   "label": "Update Details"
   },
   {
    "default": "0",
@@ -105,23 +102,34 @@
    "label": "Field Cache"
   },
   {
-   "fieldname": "column_break_14",
-   "fieldtype": "Column Break"
-  },
-  {
+   "depends_on": "eval:doc.have_existing_sheet == 1 || doc.sheet_name != null;",
    "fieldname": "sheet_name",
    "fieldtype": "Data",
-   "label": "Sheet Name"
+   "label": "Sheet Name",
+   "mandatory_depends_on": "eval:doc.have_existing_sheet == 1;",
+   "read_only_depends_on": "eval:doc.have_existing_sheet == 0;"
   },
   {
    "fieldname": "select_doctype_section",
    "fieldtype": "Section Break",
    "label": "Select Doctype"
+  },
+  {
+   "default": "0",
+   "fieldname": "have_existing_sheet",
+   "fieldtype": "Check",
+   "label": "Have Existing Sheet"
+  },
+  {
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "client_id"
   }
  ],
  "hide_toolbar": 1,
  "links": [],
- "modified": "2023-01-23 16:11:47.282315",
+ "modified": "2023-01-29 16:32:24.789931",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Google Sheet Data Export",
