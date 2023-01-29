@@ -383,7 +383,7 @@ def is_before_grace_period(employee_id:str)->bool:
             if not curr_shift[0].get('shift_type'):
                 return response("Resource Not Found", 404, None, "No Shift Type set in shift assignment".format())
             #set grace period
-            grace_period = 0 if not frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period') else frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period')
+            grace_period = 0 if not frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period') else frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'early_exit_grace_period')
                 
             if get_datetime(time_now) < (get_datetime(curr_shift[0].end_datetime) - timedelta(minutes=grace_period)):
                 return response("Success", 200, {'early_exit':1})
