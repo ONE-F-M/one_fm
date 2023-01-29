@@ -196,7 +196,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-
+@frappe.whitelist()
 def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float) -> dict:
     checkin = frappe.new_doc("Employee Checkin")
     checkin.employee = employee
