@@ -369,27 +369,29 @@ def is_before_grace_period(employee_id:str)->bool:
     Args:
         employee_id (_type_): _description_
     """
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee ID required.")
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee must be of type str.")
-    employee = frappe.get_value('Employee',{'employee_id':employee_id})
-    if not employee:
-         return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-    today = get_date_str(getdate())
-    time_now = now()
-    curr_shift = get_current_shift_checkin(employee)
-    if curr_shift:
-        if not curr_shift[0].get('shift_type'):
-            return response("Resource Not Found", 404, None, "No Shift Type set in shift assignment".format())
-        #set grace period
-        grace_period = 0 if not frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period') else frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period')
-            
-        
-        if get_datetime(time_now) < (get_datetime(curr_shift[0].end_datetime) - timedelta(minutes=grace_period)):
-            return response("Success", 200, {'early_exit':1})
+    try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee ID required.")
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee must be of type str.")
+        employee = frappe.get_value('Employee',{'employee_id':employee_id})
+        if not employee:
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        time_now = now()
+        curr_shift = get_current_shift_checkin(employee)
+        if curr_shift:
+            if not curr_shift[0].get('shift_type'):
+                return response("Resource Not Found", 404, None, "No Shift Type set in shift assignment".format())
+            #set grace period
+            grace_period = 0 if not frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period') else frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period')
+                
+            if get_datetime(time_now) < (get_datetime(curr_shift[0].end_datetime) - timedelta(minutes=grace_period)):
+                return response("Success", 200, {'early_exit':1})
+            else:
+                return response("Success", 200, {'early_exit':0})
         else:
-            return response("Success", 200, {'early_exit':0})
-    else:
-        return response("Resource Not Found", 404, None, "No Active shift found for {}. Please confirm the shift has started".format(employee))
+            return response("Resource Not Found", 404, None, "No Active shift found for {}. Please confirm the shift has started".format(employee))
+    except Exception as error:
+        frappe.log_error(error,"Early Exit Error")
+        return response("Internal Server Error", 500, None, error)
         
