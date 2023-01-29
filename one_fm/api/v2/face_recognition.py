@@ -161,16 +161,21 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         # Call service stub and get response
         res = stub.FaceRecognition(req)
         
-        data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
-            'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-        if res.verification == "FAILED":
-            msg = res.message
-            data = res.data
-            return response(msg, 400, None, data)
-        if res.verification == "OK":
+        if res.verification == "FAILED" and res.data == 'Invalid media content':
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
             return response("Success", 201, doc, None)
+        elif res.verification == "FAILED":
+            msg = res.message
+            data = res.data
+            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+            **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
+                'message':res.message, 'data':res.data, 'source': 'Checkin'}})
+            return response(msg, 400, None, data)
+        elif res.verification == "OK":
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            return response("Success", 201, doc, None)
+        else:
+            return response("Success", 400, None, "No response from face recognition server")
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
