@@ -373,28 +373,23 @@ def is_before_grace_period(employee_id:str)->bool:
         return response("Bad Request", 400, None, "employee ID required.")
     if not isinstance(employee_id, str):
         return response("Bad Request", 400, None, "employee must be of type str.")
-    
     employee = frappe.get_value('Employee',{'employee_id':employee_id})
     if not employee:
          return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
     today = get_date_str(getdate())
     time_now = now()
-    default_shift_type = frappe.db.sql("""SELECT shift_type from `tabOperations Shift` where name in  (SELECT shift from `tabEmployee` where name = '{}')""".format(employee),as_dict=1)
-    if not default_shift_type:
-        return response("Resource Not Found", 404, None, "No Shift has been assigned to {employee_id} ".format(employee_id=employee_id))
-    shift_type = default_shift_type[0].shift_type
-    shift_type_details = frappe.get_all("Shift Type",{'name':shift_type},['notification_reminder_after_shift_end','enable_exit_grace_period','early_exit_grace_period','end_time'])
     curr_shift = get_current_shift_checkin(employee)
     if curr_shift:
-        if not shift_type_details:
-            return response("Resource Not Found", 404, None, "Unable to fetch shift type details")
-        if not shift_type_details[0].get('enable_exit_grace_period'):
-            return response("Bad Request", 400, None,"Early exit disabled for shift type {}".format(shift_type))
+        if not curr_shift[0].get('shift_type'):
+            return response("Resource Not Found", 404, None, "No Shift Type set in shift assignment".format())
+        #set grace period
+        grace_period = 0 if not frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period') else frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period')
+            
+        
+        if get_datetime(time_now) < (get_datetime(curr_shift[0].end_datetime) - timedelta(minutes=grace_period)):
+            return response("Success", 200, {'early_exit':1})
         else:
-            if get_datetime(time_now) < (get_datetime(curr_shift[0].end_datetime) - timedelta(minutes=shift_type_details[0].get('early_exit_grace_period'))):
-                return response("Success", 200, {'early_exit':1})
-            else:
-                return response("Success", 200, {'early_exit':0})
+            return response("Success", 200, {'early_exit':0})
     else:
         return response("Resource Not Found", 404, None, "No Active shift found for {}. Please confirm the shift has started".format(employee))
         
