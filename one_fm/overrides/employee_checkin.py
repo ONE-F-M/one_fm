@@ -85,7 +85,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
             frappe.enqueue(after_insert_background, self=self.name)
         if self.early_exit:
             supervisor_user = get_notification_user(self, self.employee)
-            info_= "Please note that {} has checked out early"
+            info_= "Please note that {} has checked out early".format(self.employee)
             send_notification("Early Exit",'Early Exit for {}'.format(self.employee),info_,"Checkout",[supervisor_user])
             
 def after_insert_background(self):
