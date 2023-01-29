@@ -1,4 +1,5 @@
 from pandas.core.indexes.datetimes import date_range
+from frappe.utils import validate_phone_number
 from datetime import datetime
 from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now
@@ -10,6 +11,107 @@ from itertools import product
 from one_fm.api.notification import create_notification_log
 from one_fm.api.v1.utils import response
 from one_fm.utils import query_db_list
+
+
+
+
+@frappe.whitelist()
+def change_employee_shift(employees:str,shift:str):
+    """_summary_
+            Update the shift of a number of employees
+    Args:
+        employees (str): _description_
+        shift (_type_): _description_
+    Returns:
+        _type_: updated employee document
+    """
+    if not employees:
+        return response("Bad Request", 400, None, "Employees must be selected.")
+    if not shift:
+        return response("Bad Request", 400, None, "A shift must be selected.")
+    if not frappe.db.exists("Operations Shift",shift):
+        return response("Bad Request", 400, None, "Please provide a valid Operations Shift. {} is invalid".format(shift))
+    try:
+        data = []
+        emp_tuple = employees.replace('[', '(').replace(']',')')
+        all_employees = frappe.db.sql("SELECT name from `tabEmployee` where name in {}".format(emp_tuple),as_dict=1)
+        if all_employees:
+            for each in all_employees:
+                frappe.db.set_value("Employee",each.name,'shift',shift)
+                emp_doc = frappe.get_doc("Employee",each.name)
+                data.append(emp_doc.as_dict())
+            frappe.db.commit()
+            response("Sucess",200,{'employees':data})
+                
+        else:
+            return response("Bad Request", 400, None, "No Employees found with the provided IDs")
+            
+    except Exception as e:
+        response("Internal Server Error", 500, False, str(e))
+
+        
+        
+        
+
+
+@frappe.whitelist()
+def change_employee_detail(employee_id:str,field:str=None,value=None)-> bool:
+    """ summary
+        Update the Employee and User record of a employee
+    Args:
+        employee (str): Employee ID or Name
+        field (str): Field to be changed
+        value (str): new value of field
+    Returns:
+        bool: Returns true if the data was changed successfully.
+    """
+    
+    accepted_fields = ['enrolled','cell_number']
+    if not isinstance(employee_id, str):
+        return response("Bad Request", 400, None, "Employee ID must of type str.")
+    
+    if not isinstance(field, str):
+        return response("Bad Request", 400, None, "Field  must be of type str.")
+           
+    if not employee_id:
+        return response("Error", 400, None, {'message':'Atleast 1 Employee must be provided.'})
+    
+    if not value :
+        return response("Error", 400, None, {'message':'A Value must be provided.'})
+  
+    if not field:
+        return response("Error", 400, None, {'message':'A Field must be provided.'})
+        
+    if field  not in accepted_fields:
+        return response("Error", 400, None, {'message':'This field cannot be changed'})
+    
+    try:
+        employee = frappe.get_all("Employee",{"employee_id":employee_id})
+        if employee:
+            employee_ = employee[0]['name']
+            employee_doc = frappe.get_doc("Employee",employee_)
+            if field == 'cell_number':
+                if validate_phone_number(value):
+                    frappe.db.set_value("Employee",employee_,field,value)
+                    if frappe.db.get_value("Employee",employee_,'user_id'):
+                        user_id = frappe.db.get_value("Employee",employee_,'user_id')
+                        frappe.db.set_value("User",user_id,'mobile_no',value)
+                        frappe.db.set_value("User",user_id,'phone',value)
+                    frappe.db.commit()
+                    employee_doc.reload()
+                    return response("Sucess",200,{'employee':employee_doc.as_dict()}) 
+                else:
+                    return response("Error", 400, None, {'message':'Please set a valid phone number'})
+            else:
+                frappe.db.set_value("Employee",employee_,field,value)
+                frappe.db.commit()
+                employee_doc.reload()
+                response("Sucess",200,{'employee':employee_doc.as_dict()})
+        else:
+            return response("Resource Not Found", 404, None, "No employees found with {employee_id}".format(employee_id=employee_id)) 
+            
+    except Exception as e:
+        response("error", 500, False, str(e))
 
 
 @frappe.whitelist(allow_guest=True)
