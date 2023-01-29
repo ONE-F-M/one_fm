@@ -205,7 +205,6 @@ def has_day_off(employee,date):
 
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
-
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
 
@@ -282,13 +281,15 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
         # log to checkin radius log
         data = result.copy()
+        result = frappe._dict(result)
         data = {
             **data,
             **{'employee':employee_id, 'user_latitude':latitude, 'user_longitude':longitude, 'user_distance':distance, 'diff':distance-result.geofence_radius}
         }
-        frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
+        if not result.user_within_geofence_radius:
+            frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
                        **{'data':data})
         return response("Success", 200, result)
 
     except Exception as error:
-        return response("Internal Server Error", 500, None, error)
+        return response("Internal Server Error", 500, None, frappe.get_traceback())
