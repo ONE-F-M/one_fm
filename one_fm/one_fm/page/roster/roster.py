@@ -562,7 +562,7 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 		new_employees = []
 		if end_date:
 			for i in employees:
-				if not getdate(i['date']) >= stop_date:
+				if not getdate(i['date']) > stop_date:
 					new_employees.append(i)
 			employees = new_employees
 		for i in employees:
