@@ -175,7 +175,8 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response(msg, 400, None, data)
         elif res.verification == "OK":
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
-            return response("Success", 201, doc, None)
+            quote = fetch_quote(direct_response=True)
+            return response("Success", 201, {'doc':doc,'quote':quote}, None)
         else:
             return response("Success", 400, None, "No response from face recognition server")
     except Exception as error:
