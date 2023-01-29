@@ -80,7 +80,7 @@ def fetch_key():
     """
     cached_api = frappe.cache().get_value('zenquotes_api')
     if not cached_api:
-        cached_api = frappe.local.conf.zenquotes_api
+        cached_api = frappe.local.conf.zenquotes_api or frappe.get_doc("ONEFM General Setting",None).get_password('zenquotes_api_key')
         if not cached_api:
             return response("Bad Request", 400, None, f"No API found in site config file")       
         frappe.cache().set_value('zenquotes_api',cached_api)
