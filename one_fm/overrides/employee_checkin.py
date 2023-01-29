@@ -26,6 +26,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 	def validate(self):
 		validate_active_employee(self.employee)
 		self.validate_duplicate_log()
+		
 		if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin'):
 			try:			
 				existing_perm = None
@@ -61,8 +62,22 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			frappe.throw(
 				_("This employee already has a log with the same timestamp.{0}").format("<Br>" + doc_link)
 			)
+	def validate_early_exit(self):
+		"""
+			Set the employee checkin as early exit if the employee is checkin out early
+		"""
+		actual_time = str(self.actual_time)
+		if not '.' in actual_time:
+			actual_time += '.000000'
+		if self.log_type=='OUT':
+			curr_shift = get_shift_from_checkin(self)
+			#Assign grace period to 0 if it is not enabled
+			grace_period = frappe.get_value("Shift Type",self.shift_type,'early_exit_grace_period') or 0
+			if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=grace_period)) < curr_shift.end_datetime:
+				frappe.db.set_value(self.doctype,self.name,'early_exit',1)
 
 	def after_insert(self):
+		self.validate_early_exit()
 		frappe.db.commit()
 		self.reload()
 		if not self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end:
