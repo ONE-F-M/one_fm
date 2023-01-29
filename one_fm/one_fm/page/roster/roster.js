@@ -1231,7 +1231,7 @@ function render_roster(res, page, isOt) {
 			//OT schedule view
 			
 			if (isOt) {
-				if ((actual_shift && shift) && (actual_shift!=shift) && roster_type == 'Over-Time') {
+				if ((actual_shift && shift) && (actual_shift!=shift) && roster_type == 'Over-Time'  && day_off_ot==0) {
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
@@ -1270,7 +1270,7 @@ function render_roster(res, page, isOt) {
 			}
 			//Basic schedule view
 			else {
-			 	if ((actual_shift && shift) && (actual_shift!=shift)) {
+			 	if ((actual_shift && shift) && (actual_shift!=shift) && day_off_ot==0) {
 				sch = `
 				<td>
 					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
