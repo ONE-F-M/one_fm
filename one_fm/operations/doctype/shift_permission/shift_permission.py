@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import getdate
+from frappe.utils import getdate, get_datetime, add_to_date, format_date
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
@@ -13,16 +13,54 @@ from one_fm.api.tasks import get_action_user
 from one_fm.api.utils import get_reports_to_employee_name
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 
+class PermissionTypeandLogTypeError(frappe.ValidationError):
+	pass
+
+class ExistAttendance(frappe.ValidationError):
+	pass
+
+class ExistCheckin(frappe.ValidationError):
+	pass
+
+class ShiftDetailsMissing(frappe.ValidationError):
+	pass
+
 class ShiftPermission(Document):
 	def validate(self):
-		self.check_permission_type()
+		self.validate_permission_type()
+		self.validate_attendance()
+		self.validate_employee_checkin()
 		self.check_shift_details_value()
 		self.validate_date()
 		self.validate_record()
 		if not self.title:
 			self.title = self.emp_name
 
-	def check_permission_type(self):
+	def validate_attendance(self):
+		attendance = frappe.db.exists('Attendance',{'attendance_date': self.date, 'employee': self.employee, 'docstatus': 1})
+		if attendance:
+			frappe.throw(_('There is an Attendance {0} exists for the \
+			Employee {1} on {2}'.format(attendance, self.emp_name, format_date(self.date))), exc=ExistAttendance)
+
+	def validate_employee_checkin(self):
+		start_date = get_datetime(self.date)
+		end_date = add_to_date(start_date, hours=23.9998)
+		employee_checkin = frappe.db.exists('Employee Checkin',
+			{'log_type': self.log_type, 'time': ["between", [start_date, end_date]], 'employee': self.employee}
+		)
+		if employee_checkin:
+			frappe.throw(_('There is an Employee Checkin {0} exists for the \
+			Employee {1} on {2}'.format(employee_checkin, self.emp_name, format_date(self.date))), exc=ExistCheckin)
+
+	def validate_permission_type(self):
+		if self.log_type == 'IN' and self.permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
+			frappe.throw(_('Permission Type cannot be {0}. It should be one of \
+				"Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(self.permission_type)),
+				exc = PermissionTypeandLogTypeError)
+		if self.log_type == 'OUT' and self.permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
+			frappe.throw(_('Permission Type cannot be {0}. It should be one of \
+				"Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(self.permission_type)),
+				exc = PermissionTypeandLogTypeError)
 		if self.permission_type == "Arrive Late":
 			field_list = [{'Arrival Time':'arrival_time'}]
 			self.set_mandatory_fields(field_list)
@@ -33,7 +71,7 @@ class ShiftPermission(Document):
 	# This method validates the shift details availability for employee
 	def check_shift_details_value(self):
 		if not self.assigned_shift or not self.shift or not self.shift_supervisor or not self.shift_type:
-			frappe.throw(_("Shift details are missing. Please make sure date is correct."))
+			frappe.throw(_("Shift details are missing. Please make sure date is correct."), exc=ShiftDetailsMissing)
 
 	# This method validates the permission date and avoid creating permission for previous days
 	def validate_date(self):
@@ -53,13 +91,12 @@ class ShiftPermission(Document):
 			for field in fields:
 				if not self.get(fields[field]):
 					mandatory_fields.append(field)
-
 		if len(mandatory_fields) > 0:
 			message= 'Mandatory fields required in Shift Permission<br><br><ul>'
 			for mandatory_field in mandatory_fields:
 				message += '<li>' + mandatory_field +'</li>'
 			message += '</ul>'
-			frappe.throw(message)
+			frappe.throw(message, exc=frappe.MandatoryError)
 
 	def after_insert(self):
 		pass
@@ -121,3 +158,27 @@ def fetch_approver(employee):
 			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
 
 		frappe.throw("No approver found for {employee}".format(employee=employee))
+
+
+# approve open shift permission before marking attendance
+def approve_open_shift_permission(start_date, end_date):
+	shift_permissions = frappe.db.sql(f"""
+		SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa ON sa.name=sp.assigned_shift
+		WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}' AND sp.docstatus=0
+	""", as_dict=1)
+	# apply workflow
+	for i in shift_permissions:
+		sp = frappe.get_doc("Shift Permission", i.name)
+		sp.db_set('Workflow_state', 'Approved')
+		sp.db_set('docstatus', 1)
+		sp.reload()
+		# Get shift details for the employee
+		shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
+		employee_checkin = frappe.new_doc('Employee Checkin')
+		employee_checkin.employee = sp.employee
+		employee_checkin.log_type = sp.log_type
+		employee_checkin.time = shift_assignment.start_datetime if sp.log_type == "IN" else shift_assignment.end_datetime
+		employee_checkin.skip_auto_attendance = False
+		employee_checkin.shift_assignment = sp.assigned_shift
+		employee_checkin.shift_permission = sp.name
+		employee_checkin.save(ignore_permissions=True)

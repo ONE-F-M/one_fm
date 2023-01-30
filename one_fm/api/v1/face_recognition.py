@@ -1,9 +1,10 @@
+from datetime import timedelta, datetime
 import frappe, ast, base64, time, grpc, json
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.v1.utils import response
-from frappe.utils import cstr, getdate
+from frappe.utils import cstr, getdate, now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
 
@@ -15,6 +16,8 @@ channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_cre
 
 # setup stub for face recognition
 stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+
+right_now = now_datetime()
 
 
 @frappe.whitelist()
@@ -153,12 +156,14 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         # setup stub
         # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
         # request body
+
         req = facial_recognition_pb2.FaceRecognitionRequest(
             username = frappe.session.user,
             media_type = "video",
             media_content = video
         )
-        # Call service stub and get response
+         # Call service stub and get response
+
         res = stub.FaceRecognition(req)
         
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,

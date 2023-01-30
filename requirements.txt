@@ -28,15 +28,20 @@ defusedxml==0.7.1
 docopt==0.6.2
 dropbox==11.7.0
 email-reply-parser==0.5.12
+-e git+https://github.com/frappe/erpnext.git@36b99265274f5e34a9507a29bf4ed13507d6be47#egg=erpnext
 et-xmlfile==1.1.0
 executing==1.1.0
+filelock==3.8.2
 firebase-admin==6.0.0
+-e git+https://github.com/frappe/frappe.git@565ee374af0498eb27fe4755f22dff3c46950520#egg=frappe
+-e git+https://github.com/frappe/desk@a9c5e29cac4bae425ac152e27856dbaa8beeaed5#egg=frappedesk
+ghdiff==0.4
 git-url-parse==1.2.2
 gitdb==4.0.9
 GitPython==3.1.28
 gocardless-pro==1.22.0
 google-api-core==2.10.2
-google-api-python-client
+google-api-python-client==2.73.0
 google-auth==1.29.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.4.6
@@ -54,6 +59,7 @@ grpcio-status==1.49.1
 grpcio-tools==1.49.1
 gunicorn==20.1.0
 hiredis==2.0.0
+-e git+https://github.com/frappe/hrms.git@2f6186f7edad923e0b15e83bd70210f853e99df9#egg=hrms
 html2text==2020.1.16
 html5lib==1.1
 httplib2==0.20.4
@@ -65,7 +71,9 @@ Jinja2==3.1.2
 jmespath==0.10.0
 jsonobject==2.0.0
 ldap3==2.9.1
+-e git+https://github.com/frappe/lms.git@cbf852828caecce9d42a29f9f83bdae3abd9d060#egg=lms
 lxml==4.9.1
+Markdown==3.4.1
 markdown2==2.4.5
 markdownify==0.11.6
 MarkupSafe==2.1.1
@@ -79,11 +87,16 @@ mypy-extensions==0.4.3
 num2words==0.5.12
 numpy==1.23.3
 oauthlib==3.2.1
+-e git+https://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@github.com/ONE-F-M/One-FM@f1fce03309ce22215ccc66fc2f5f889bad068e85#egg=one_fm
+-e git+https://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@github.com/ONE-F-M/password_management@11d0fe7bbafd1809d13b577eef89bcdb0e8488ff#egg=one_fm_password_management
+# Editable Git install with no remote (one-fm-website==0.0.1)
+-e /home/hackace/onefm_14/apps/one_fm_website
 openpyxl==3.0.10
 packaging==21.3
 pandas==1.5.0
 parso==0.8.3
 passlib==1.7.4
+-e git+https://github.com/frappe/payments.git@487747b73f658de78fbe1741a06e7447927cfa79#egg=payments
 paytmchecksum==1.7.0
 pbr==5.10.0
 pdfkit==1.0.0
@@ -97,6 +110,7 @@ premailer==3.8.0
 prompt-toolkit==3.0.31
 proto-plus==1.22.1
 protobuf==4.21.7
+prun==0.3.1
 psutil==5.9.2
 psycopg2-binary==2.9.4
 ptyprocess==0.7.0
@@ -106,6 +120,8 @@ pyasn1-modules==0.2.8
 pycountry==20.7.3
 pycparser==2.21
 pycryptodome==3.10.4
+pydantic==1.8.2
+pygls==0.10.2
 Pygments==2.13.0
 PyJWT==2.4.0
 PyMySQL==1.0.2
@@ -127,7 +143,7 @@ pytz==2022.1
 PyYAML==5.4.1
 rauth==0.7.3
 razorpay==1.2.0
-redis
+redis==3.5.3
 redisearch==2.1.1
 regex==2022.9.13
 rejson==0.5.6
@@ -156,6 +172,8 @@ traceback-with-variables==2.0.4
 traitlets==5.4.0
 tweepy==3.10.0
 twilio==6.44.2
+-e git+https://github.com/frappe/twilio-integration.git@cb474c54d794c3a58a8c5287d387cf3d41e5ed0a#egg=twilio_integration
+typeguard==2.13.3
 typing-inspect==0.8.0
 typing_extensions==4.4.0
 Unidecode==1.2.0
@@ -164,7 +182,9 @@ urllib3==1.26.12
 wcwidth==0.2.5
 WeasyPrint==52.5
 webencodings==0.5.1
+websocket-client==1.4.1
 Werkzeug==2.2.2
 Whoosh==2.7.4
+-e git+https://github.com/frappe/wiki.git@976a4fcfbe787045e1538901ad4403d740f7e51a#egg=wiki
 xlrd==2.0.1
 zxcvbn-python==4.4.24
