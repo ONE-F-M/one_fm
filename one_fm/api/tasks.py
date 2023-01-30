@@ -1273,7 +1273,7 @@ def mark_daily_attendance(start_date, end_date):
 					name = f"HR-ATT-{start_date}-{v.employee}"
 				shift_type = shift_types_dict.get(v.shift_type)
 				shift_assignment = shift_assignments_dict.get(v.shift_assignment)
-				in_time = v.actual_time
+				in_time = v.time
 
 				# check if late entry > 4hrs
 				if ((in_time - shift_assignment.start_datetime).total_seconds() / (60*60)) > 4:
@@ -1430,9 +1430,9 @@ def mark_daily_attendance(start_date, end_date):
 				errors.append(str(e))
 
 		# check for error
-		if errors:
+		if len(errors):
 			frappe.log_error(str(errors), "Mark Attendance")
-		if checkin_no_out:
+		if len(checkin_no_out):
 			# report no checkout
 			frappe.get_doc({
 				"doctype": "Issue",
@@ -1444,7 +1444,7 @@ def mark_daily_attendance(start_date, end_date):
 				"company": "One Facilities Management",
 				"via_customer_portal": 0,
 				"description": f"<div class=\"ql-editor read-mode\"><p>{str(checkin_no_out)}</p></div>",
-				"subject": f"Attendance Issue (in no out) - {str(get-date)}",
+				"subject": f"Attendance Issue (in no out) - {str(start_date)}",
 				"priority": "Medium",
 				"department": "IT - ONEFM",
 				"issue_type": "Idea/Feedback",
@@ -1455,3 +1455,17 @@ def mark_daily_attendance(start_date, end_date):
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 
 
+
+	holidays = frappe.db.sql(f"""
+		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
+		JOIN `tabHoliday List` hl ON hl.name=h.parent 
+		WHERE from_date='{start_date}' AND to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
+
+	holiday_dict = {}
+	for i in holidays:
+		if(holiday_dict.get(i.holiday)):
+			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{i.holiday_date:i.description}}
+		else:
+			holiday_dict[i.holiday] = {i.holiday_date:i.description}
+	
+	return holiday_dict
