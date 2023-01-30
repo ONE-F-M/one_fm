@@ -70,9 +70,9 @@ def get_data(filters):
 					working_days = month_end.day - row.no_of_days_off
 				elif row.days_off_category=='Weekly':
 					working_days_type = 'Weekly'
-					working_days = 28 - row.no_of_days_off*4
-					month_start = get_week_start_end(month_start).start
-					month_end = add_days(month_start, 27)# for weekly rate, start day to 28th day from start date
+					working_days = 26 #28 - row.no_of_days_off*4
+					# month_start = get_week_start_end(month_start).start
+					# month_end = add_days(month_start, 27)# for weekly rate, start day to 28th day from start date
 
 
 			roles = [i.name for i in frappe.db.sql(f"""
@@ -259,6 +259,13 @@ def get_columns():
 		{
 			'fieldname': 'ea_qty',
 			'label': _('Employee Attendance QTY'),
+			'fieldtype': 'Int',
+			'width': 150,
+			'precision':2
+		},
+		{
+			'fieldname': 'ps_qty',
+			'label': _('Post Schedule QTY'),
 			'fieldtype': 'Int',
 			'width': 150,
 			'precision':2
