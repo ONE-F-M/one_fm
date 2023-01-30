@@ -13,6 +13,44 @@ from one_fm.api.v1.utils import response
 from one_fm.utils import query_db_list
 
 
+@frappe.whitelist()
+def assign_staff(employees, shift, request_employee_assignment=0):
+	if not employees:
+		return response("Bad Request", 400, None, 'Please select employees first')
+
+	validation_logs = []
+	user, user_roles, user_employee = get_current_user_details()
+	shift, site, project = frappe.db.get_value("Operations Shift", shift, ['name', 'site', 'project'])
+	if not cint(request_employee_assignment):
+		for emp in json.loads(employees):
+			emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
+			supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
+			# if user_employee.name != supervisor:
+			# 	validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
+
+	if len(validation_logs) > 0:
+		frappe.log_error(str(validation_logs))
+		return response("Internal Server Error", 500, None, str(validation_logs) )
+		
+	else:
+		try:
+			start = time.time()
+			for employee in json.loads(employees):
+				if not cint(request_employee_assignment):
+					frappe.enqueue(assign_job, employee=employee, shift=shift, site=site, project=project, is_async=True, queue="long")
+				else:
+					emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", employee, ["project", "site", "shift"])
+					site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
+					if emp_project != project or emp_site != site or emp_shift != shift:
+						frappe.enqueue(create_request_employee_assignment, employee=employee, from_shift=emp_shift, to_shift=shift, is_async=True, queue="long")
+			frappe.enqueue(update_roster, key="staff_view", is_async=True, queue="long")
+			end = time.time()
+
+			return response("Success", 200, {'message':'Shift changed successfully.'})
+
+		except Exception as e:
+			frappe.log_error(str(e))
+			return response("Internal Server Error", 500, None,str(e))
 
 @frappe.whitelist()
 def change_employee_shift(employees:str,shift:str):
