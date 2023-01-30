@@ -272,25 +272,28 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_paths)
         if proof_document_required_for_leave_type(leave_type):
             proof_doc_json = json.loads(proof_document)
-            for proof_doc in proof_doc_json:
-                attachment = proof_doc['attachment']
-                attachment_name = proof_doc['attachment_name']
-                if not attachment or not attachment_name:
-                    return response('proof_document key requires attachment and attachment_name', {}, 400)
+            try:
+                for proof_doc in proof_doc_json:
+                    attachment = proof_doc['attachment']
+                    attachment_name = proof_doc['attachment_name']
+                    if not attachment or not attachment_name:
+                        return response('proof_document key requires attachment and attachment_name', {}, 400)
 
-                file_ext = "." + attachment_name.split(".")[-1]
-                content = base64.b64decode(attachment)
-                filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
+                    file_ext = "." + attachment_name.split(".")[-1]
+                    content = base64.b64decode(attachment)
+                    filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
 
-                # Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
-                Path(frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
-                # OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
-                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}/{filename}"
-                file_ = upload_file(doc, "attachments", filename, OUTPUT_FILE_PATH, content, is_private=True)
-                leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
-                leave_doc.append('proof_documents',{"attachments":file_.file_url})
-                leave_doc.save()
-                frappe.db.commit()
+                    # Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+                    Path(frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+                    # OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
+                    OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}/{filename}"
+                    file_ = upload_file(doc, "attachments", filename, OUTPUT_FILE_PATH, content, is_private=True)
+                    leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
+                    leave_doc.append('proof_documents',{"attachments":file_.file_url})
+                    leave_doc.save()
+                    frappe.db.commit()
+            except Exception as error:
+                frappe.log_error("Sick Leave Attach Error",str(error))
                 # with open(OUTPUT_FILE_PATH, "wb") as fh:
                 #     fh.write(content)
 
