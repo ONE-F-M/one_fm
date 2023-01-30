@@ -17,7 +17,7 @@ channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_cre
 # setup stub for face recognition
 stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
-right_now = now_datetime()
+right_now = now_datetime() 
 
 @frappe.whitelist()
 def enroll(employee_id: str = None, video: str = None) -> dict:
@@ -179,10 +179,10 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if res.verification == "FAILED" and res.data == 'Invalid media content':
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
             if log_type == "IN":
-                if doc.time.time() > datetime.strptime(str(val_in_shift_type["start_time"] + timedelta(minutes=val_in_shift_type["late_entry_grace_period"])), "%H:%M:%S").time():
-                    if not existing_perm:
-                        doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" + + "\U0001F612"})
-                        return response("Success", 201, doc, None)
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" +  "\U0001F612"})
+                    return response("Success", 201, doc, None)
             return response("Success", 201, doc, None)
         elif res.verification == "FAILED":
             msg = res.message
@@ -194,10 +194,10 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         elif res.verification == "OK":
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
             if log_type == "IN":
-                if doc.time.time() > datetime.strptime(str(val_in_shift_type["start_time"] + timedelta(minutes=val_in_shift_type["late_entry_grace_period"])), "%H:%M:%S").time():
-                    if not existing_perm:
-                        doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" + + "\U0001F612"})
-                        return response("Success", 201, doc, None)
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" +  "\U0001F612"})
+                    return response("Success", 201, doc, None)
             return response("Success", 201, doc, None)
         else:
             return response("Success", 400, None, "No response from face recognition server")
@@ -328,3 +328,9 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
     except Exception as error:
 
         return response("Internal Server Error", 500, None, frappe.get_traceback())
+
+
+def late_checkin_checker(doc, val_in_shift_type, existing_perm=None):
+    if doc.time.time() > datetime.strptime(str(val_in_shift_type["start_time"] + timedelta(minutes=val_in_shift_type["late_entry_grace_period"])), "%H:%M:%S").time():
+        if not existing_perm:
+            return True
