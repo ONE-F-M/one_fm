@@ -290,6 +290,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                 leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
                 leave_doc.append('proof_documents',{"attachments":file_.file_url})
                 leave_doc.save()
+                frappe.db.commit()
                 # with open(OUTPUT_FILE_PATH, "wb") as fh:
                 #     fh.write(content)
 
@@ -299,7 +300,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         # if attachment_paths:
             # upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
 
-        return response("Success", 201, doc)
+        return response("Success", 201, leave_doc)
     
     except Exception as error:
         frappe.log_error(error, 'Leave API')
