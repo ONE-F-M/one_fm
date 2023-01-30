@@ -278,38 +278,12 @@ class DataExporter:
 		for doc in self.data:
 			row = []
 			for field in self.fieldrow:
-				row.append(doc[field])
+				value = str(doc[field])
+				row.append(value)
 			rows.append(row)
 
 		return rows
 
-	def add_data_row(self, rows, dt, parentfield, doc, rowidx):
-		d = doc.copy()
-		meta = frappe.get_meta(dt)
-		if self.all_doctypes:
-			d.name = f'"{d.name}"'
-
-		if len(rows) < rowidx + 1:
-			rows.append([""] * (len(self.columns) + 1))
-		row = rows[rowidx]
-
-		_column_start_end = self.column_start_end.get((dt, parentfield))
-
-
-		if _column_start_end:
-			for i, c in enumerate(self.columns[_column_start_end.start : _column_start_end.end]):
-				df = meta.get_field(c)
-				fieldtype = df.fieldtype if df else "Data"
-				value = d.get(c, "")
-				if value:
-					if fieldtype == "Date":
-						value = formatdate(value)
-					elif fieldtype == "Datetime":
-						value = format_datetime(value)
-					elif fieldtype == "Duration":
-						value = format_duration(value, df.hide_days)
-
-				row[_column_start_end.start + i + 1] = value
 		
 	def _append_name_column(self, dt=None):
 		self.append_field_column(
@@ -408,7 +382,7 @@ class DataExporter:
 
 			return response
 		except Exception as e:
-			print(e)
+			frappe.log_error(e)
 
 
 	def update_sheet(self, values):
@@ -430,13 +404,12 @@ class DataExporter:
 
 			
 			# request = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Country!A1:B22").execute()
-			# request = service.spreadsheets().values().update(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Country!A24", valueInputOption="USER_ENTERED", body={"values":aoa}).execute()
 			
 
 			
 			return result
 		except HttpError as err:
-			print(err)
+			frappe.log_error(err)
 
 @frappe.whitelist()
 def build_connection_with_sheet(doc):
