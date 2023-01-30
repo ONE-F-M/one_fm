@@ -1,0 +1,32 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-01-26 15:14:46.498607",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "keyword"
+ ],
+ "fields": [
+  {
+   "fieldname": "keyword",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Keyword",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2023-01-26 17:41:07.615565",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Zenquote Keyword Category",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
