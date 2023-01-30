@@ -969,18 +969,21 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 
 @frappe.whitelist()
 def assign_staff(employees, shift, request_employee_assignment):
+	if not employees:
+		frappe.throw("Please select employees first")
 	validation_logs = []
 	user, user_roles, user_employee = get_current_user_details()
+	shift, site, project = frappe.db.get_value("Operations Shift", shift, ['name', 'site', 'project'])
 	if not cint(request_employee_assignment):
 		for emp in json.loads(employees):
 			emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
 			supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
-			if user_employee.name != supervisor:
-				validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
+			# if user_employee.name != supervisor:
+			# 	validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
 
 	if len(validation_logs) > 0:
-		frappe.throw(validation_logs)
-		frappe.log_error(validation_logs)
+		frappe.log_error(str(validation_logs))
+		frappe.throw(str(validation_logs))
 	else:
 		try:
 			start = time.time()
@@ -998,8 +1001,9 @@ def assign_staff(employees, shift, request_employee_assignment):
 			return True
 
 		except Exception as e:
-			frappe.log_error(e)
-			frappe.throw(_(e))
+			frappe.log_error(str(e))
+			frappe.throw(_(str(e)))
+
 
 def create_request_employee_assignment(employee, from_shift, to_shift):
 	req_ea_doc = frappe.new_doc("Request Employee Assignment")
