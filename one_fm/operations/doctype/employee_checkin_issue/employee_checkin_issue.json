@@ -1,18 +1,20 @@
 {
  "actions": [],
- "autoname": "SP-.######",
- "creation": "2020-06-01 20:37:39.777928",
+ "allow_import": 1,
+ "autoname": "EMP-CKIN-ISS-.MM.-.YYYY.-.######",
+ "creation": "2023-01-18 11:36:32.497211",
  "doctype": "DocType",
- "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "title",
   "employee",
-  "emp_name",
-  "date",
+  "employee_name",
+  "latitude",
+  "longitude",
   "column_break_3",
+  "date",
   "log_type",
-  "permission_type",
+  "issue_type",
+  "issue_details",
   "section_break_5",
   "assigned_shift",
   "shift_supervisor",
@@ -21,22 +23,16 @@
   "column_break_9",
   "shift",
   "shift_type",
-  "section_break_12",
-  "arrival_time",
-  "leaving_time",
-  "latitude",
-  "column_break_20",
-  "longitude",
   "section_break_17",
-  "reason",
-  "amended_from"
+  "amended_from",
+  "issue"
  ],
  "fields": [
   {
    "fieldname": "employee",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Employee Id",
+   "label": "Employee",
    "options": "Employee",
    "reqd": 1
   },
@@ -45,13 +41,13 @@
    "fieldtype": "Column Break"
   },
   {
-   "collapsible": 1,
-   "depends_on": "eval:doc.employee !=undefined && doc.date !=undefined && doc.permission_type!=\"\"",
+   "depends_on": "employee",
    "fieldname": "section_break_5",
    "fieldtype": "Section Break",
    "label": "Shift Details"
   },
   {
+   "default": "Today",
    "fieldname": "date",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -83,15 +79,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "permission_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Permission Type",
-   "options": "\nArrive Late\nLeave Early\nForget to Checkin\nForget to Checkout\nCheckin Issue\nCheckout Issue",
-   "reqd": 1
-  },
-  {
    "fieldname": "shift_supervisor",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
@@ -105,32 +92,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "section_break_12",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "reason",
-   "fieldtype": "Small Text",
-   "label": "Reason",
-   "reqd": 1
-  },
-  {
-   "depends_on": "eval:doc.permission_type == \"Arrive Late\"",
-   "fieldname": "arrival_time",
-   "fieldtype": "Time",
-   "in_list_view": 1,
-   "label": "Arrival Time",
-   "mandatory_depends_on": "eval:doc.permission_type == \"Arrive Late\""
-  },
-  {
-   "depends_on": "eval:doc.permission_type== \"Leave Early\"",
-   "fieldname": "leaving_time",
-   "fieldtype": "Time",
-   "in_list_view": 1,
-   "label": "Leaving Time",
-   "mandatory_depends_on": "eval:doc.permission_type== \"Leave Early\""
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "hidden": 1,
@@ -141,21 +102,11 @@
    "read_only": 1
   },
   {
-   "fetch_from": "employee.employee_name",
-   "fieldname": "emp_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee Name",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:doc.permission_type == \"Checkin Issue\" || doc.permission_type == \"Checkout Issue\"",
    "fieldname": "latitude",
    "fieldtype": "Float",
    "label": "Latitude"
   },
   {
-   "depends_on": "eval:doc.permission_type == \"Checkin Issue\" || doc.permission_type == \"Checkout Issue\"",
    "fieldname": "longitude",
    "fieldtype": "Float",
    "label": "Longitude"
@@ -171,14 +122,6 @@
    "fieldtype": "Data",
    "label": "Approver Name",
    "read_only": 1
-  },
-  {
-   "fetch_from": "emp_name",
-   "fetch_if_empty": 1,
-   "fieldname": "title",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "Title"
   },
   {
    "fetch_from": "shift_supervisor.user_id",
@@ -197,16 +140,41 @@
    "reqd": 1
   },
   {
-   "fieldname": "column_break_20",
-   "fieldtype": "Column Break"
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "issue_type",
+   "fieldtype": "Select",
+   "label": "Issue Type",
+   "options": "\nCamera Failing\nApp Showing Outside Location\nTimeout Issue\nInternet Issue\nOther"
+  },
+  {
+   "depends_on": "eval:doc.issue_type==\"Other\"",
+   "fieldname": "issue_details",
+   "fieldtype": "Small Text",
+   "label": "Issue Details",
+   "mandatory_depends_on": "eval:doc.issue_type==\"Other\""
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "issue",
+   "fieldtype": "Link",
+   "label": "Issue",
+   "options": "Issue",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-01-19 14:50:04.904720",
+ "modified": "2023-01-24 12:30:38.577875",
  "modified_by": "Administrator",
  "module": "Operations",
- "name": "Shift Permission",
+ "name": "Employee Checkin Issue",
  "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
@@ -238,8 +206,8 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC",
+ "sort_order": "ASC",
  "states": [],
- "title_field": "title",
+ "title_field": "employee_name",
  "track_changes": 1
 }

@@ -1,20 +1,25 @@
+from datetime import timedelta, datetime
 import frappe, ast, base64, time, grpc, json
 from frappe import _
+from datetime import timedelta
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.api.v1.roster import get_current_shift
+from one_fm.overrides.employee_checkin import get_current_shift_checkin
 from one_fm.api.v1.utils import response
-from frappe.utils import cstr, getdate
+from one_fm.api.v2.zenquotes import fetch_quote
+from frappe.utils import cstr, getdate,get_datetime,now,get_date_str, now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
 
 
 
-# setup channel for face recognition
+# # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
 
-# setup stub for face recognition
 stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+
+right_now = now_datetime()
 
 
 @frappe.whitelist()
@@ -147,18 +152,33 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
+        if log_type == "IN":
+            shift_type = frappe.db.sql(f""" select shift_type from `tabShift Assignment` where employee = '{employee}' order by creation desc limit 1 """, as_dict=1)[0]
+            val_in_shift_type = frappe.db.sql(f""" select begin_check_in_before_shift_start_time, start_time, late_entry_grace_period from `tabShift Type` where name = '{shift_type["shift_type"]}' """, as_dict=1)[0]
+            time_threshold = datetime.strptime(str(val_in_shift_type["start_time"] - timedelta(minutes=val_in_shift_type["begin_check_in_before_shift_start_time"])), "%H:%M:%S").time()
+        
+            if right_now.time() < time_threshold:
+                return response("Bad Request", 400, None, f"You cannot check in right now, kindly try again by or later than {time_threshold}, Thank You !  ")
+
+            existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{right_now.date()}' and employee = '{employee}' and permission_type = '{log_type}' and workflow_state = 'Approved' """, as_dict=1)
+            if not existing_perm and ((right_now + timedelta(hours=4)).time() >  datetime.strptime(str(val_in_shift_type["start_time"]), "%H:%M:%S").time() ):
+                return response("Bad Request", 400, None, f"You are extremely late, you cannot checkin!")       
+
         # setup channel
         # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
         # channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
         # setup stub
         # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
         # request body
+
         req = facial_recognition_pb2.FaceRecognitionRequest(
             username = frappe.session.user,
             media_type = "video",
             media_content = video
         )
+
         # Call service stub and get response
+        
         res = stub.FaceRecognition(req)
         
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
@@ -170,11 +190,16 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response(msg, 400, None, data)
         if res.verification == "OK":
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
-            return response("Success", 201, doc, None)
+            quote = fetch_quote(direct_response=True)
+            if log_type == "IN":
+                if doc.time.time() > datetime.strptime(str(val_in_shift_type["start_time"] + timedelta(minutes=val_in_shift_type["late_entry_grace_period"])), "%H:%M:%S").time():
+                    if not existing_perm:
+                        return response("You Checked in, but you were late, try to checkin early next time !", 201, doc, None)
+        return response("Success", 201, {'doc':doc,'quote':quote}, None)
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
-
+@frappe.whitelist()
 def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float) -> dict:
     checkin = frappe.new_doc("Employee Checkin")
     checkin.employee = employee
@@ -202,9 +227,51 @@ def has_day_off(employee,date):
             is_day_off = True
     return is_day_off
 
+def has_attendance(employee, date):
+    '''
+    This method is to check if employee has an attendance marked for the day.
+    '''
+    attendance_marked = False
+    attendance = frappe.db.exists("Attendance", {"employee":employee, "attendance_date":date})
+    if attendance:
+        attendance_marked = True
+    return attendance_marked
+
+def has_checkout_record(employee, shift_type):
+    '''
+    This method is to check if employee has an check out record for the day.
+    '''
+    checkout_record = False
+
+    start_time = get_datetime(cstr(getdate()) + " 00:00:00")
+    end_time = get_datetime(cstr(getdate()) + " 23:59:59")
+
+    log_exist = frappe.db.exists("Employee Checkin", {"employee": employee, "log_type": "OUT", "time": [ "between", (start_time, end_time)], "skip_auto_attendance": 0 ,"shift_type": shift_type})
+
+    if log_exist:
+        checkout_record = True
+    return checkout_record
+
+def has_shift_permission(employee, log_type, date):
+    """
+        Confirm if the employee has shift permission at current time.
+    """
+    has_shift_permission = False
+    
+    current_time = datetime.strptime(now_datetime().strftime("%H:%M:%S"), "%H:%M:%S") - datetime(1900, 1, 1)
+
+    permission_type = "Arrive Late" if log_type=="IN" else "Leave Early"
+    shift_permission = frappe.get_list("Shift Permission",{'employee':employee,'date':date, "permission_type": permission_type},['*'])
+    if shift_permission:
+        if permission_type == "Arrive Late" and current_time < shift_permission[0].arrival_time:
+            has_shift_permission = True
+        if permission_type == "Leave Early" and current_time > shift_permission[0].leaving_time:
+            has_shift_permission = True
+    return has_shift_permission
+
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
-
+# "{'employee_id': '2105002IN196', 'latitude': 29.3660164, 'longitude':47.9658118}"
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
 
@@ -231,9 +298,18 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
+        if has_attendance(employee, date):
+            return response("Resource Not Found", 404, None, "Your attendance has been marked For the Day")
+
         shift = get_current_shift(employee)
         site, location = None, None
         if shift:
+            if shift.shift_type and has_checkout_record(employee, shift.shift_type):
+                return response("Resource Not Found", 404, None, "You have already Checked Out of the your current shift")
+            
+            if has_shift_permission(employee, log_type, date):
+                return response("Resource Not Found", 404, None, "You have currently applied for Shift Permission")
+
             if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
                 check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
                 if log_type == "IN":
@@ -287,3 +363,38 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
+    
+
+@frappe.whitelist()
+def is_before_grace_period(employee_id:str)->bool:
+    """_summary_
+        Checks if an employee is checkin out before or after the grace period, it returns a boolean value
+    Args:
+        employee_id (_type_): _description_
+    """
+    try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee ID required.")
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee must be of type str.")
+        employee = frappe.get_value('Employee',{'employee_id':employee_id})
+        if not employee:
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        time_now = now()
+        curr_shift = get_current_shift_checkin(employee)
+        if curr_shift:
+            if not curr_shift[0].get('shift_type'):
+                return response("Resource Not Found", 404, None, "No Shift Type set in shift assignment".format())
+            #set grace period
+            grace_period = 0 if not frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'enable_exit_grace_period') else frappe.get_value("Shift Type",curr_shift[0].get('shift_type'),'early_exit_grace_period')
+                
+            if get_datetime(time_now) < (get_datetime(curr_shift[0].end_datetime) - timedelta(minutes=grace_period)):
+                return response("Success", 200, {'early_exit':1})
+            else:
+                return response("Success", 200, {'early_exit':0})
+        else:
+            return response("Resource Not Found", 404, None, "No Active shift found for {}. Please confirm the shift has started".format(employee))
+    except Exception as error:
+        frappe.log_error(error,"Early Exit Error")
+        return response("Internal Server Error", 500, None, error)
+        
