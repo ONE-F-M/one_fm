@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from frappe import enqueue
 import frappe, erpnext
 from frappe import _
+from frappe.model.workflow import apply_workflow
 from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today, add_days, now
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
@@ -875,8 +876,6 @@ def create_shift_assignment(roster, date, time):
 			frappe.db.sql(query, values=[], as_dict=1)
 			frappe.db.commit()
 
-	if time == 'AM':
-		mark_day_attendance()
 
 
 def overtime_shift_assignment():
@@ -1172,12 +1171,16 @@ def create_additional_salary(employee, amount, component, end_date):
 
 
 def mark_day_attendance():
+	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
 	start_date, end_date = add_days(getdate(), -1), add_days(getdate(), -1)
+	approve_open_shift_permission(str(start_date), str(end_date))
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_night_attendance():
+	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
 	start_date = add_days(getdate(), -1)
 	end_date =  getdate()
+	approve_open_shift_permission(str(start_date), str(end_date))
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 
@@ -1452,9 +1455,6 @@ def mark_daily_attendance(start_date, end_date):
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 
 
-def get_holiday_today(curr_date):
-	start_date = getdate(curr_date).replace(day=1, month=1)
-	end_date = getdate(start_date).replace(day=31, month=12)
 
 	holidays = frappe.db.sql(f"""
 		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h

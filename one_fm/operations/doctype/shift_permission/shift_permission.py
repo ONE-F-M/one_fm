@@ -158,3 +158,27 @@ def fetch_approver(employee):
 			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
 
 		frappe.throw("No approver found for {employee}".format(employee=employee))
+
+
+# approve open shift permission before marking attendance
+def approve_open_shift_permission(start_date, end_date):
+	shift_permissions = frappe.db.sql(f"""
+		SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa ON sa.name=sp.assigned_shift
+		WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}' AND sp.docstatus=0
+	""", as_dict=1)
+	# apply workflow
+	for i in shift_permissions:
+		sp = frappe.get_doc("Shift Permission", i.name)
+		sp.db_set('Workflow_state', 'Approved')
+		sp.db_set('docstatus', 1)
+		sp.reload()
+		# Get shift details for the employee
+		shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
+		employee_checkin = frappe.new_doc('Employee Checkin')
+		employee_checkin.employee = sp.employee
+		employee_checkin.log_type = sp.log_type
+		employee_checkin.time = shift_assignment.start_datetime if sp.log_type == "IN" else shift_assignment.end_datetime
+		employee_checkin.skip_auto_attendance = False
+		employee_checkin.shift_assignment = sp.assigned_shift
+		employee_checkin.shift_permission = sp.name
+		employee_checkin.save(ignore_permissions=True)
