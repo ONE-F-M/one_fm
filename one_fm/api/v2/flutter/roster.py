@@ -1070,9 +1070,10 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 
 
 @frappe.whitelist()
-def assign_staff(employees, shift, request_employee_assignment):
+def assign_staff(employees, shift, request_employee_assignment=0):
 	if not employees:
-		frappe.throw("Please select employees first")
+		return response("Bad Request", 400, None, 'Please select employees first')
+
 	validation_logs = []
 	user, user_roles, user_employee = get_current_user_details()
 	shift, site, project = frappe.db.get_value("Operations Shift", shift, ['name', 'site', 'project'])
@@ -1085,7 +1086,8 @@ def assign_staff(employees, shift, request_employee_assignment):
 
 	if len(validation_logs) > 0:
 		frappe.log_error(str(validation_logs))
-		frappe.throw(str(validation_logs))
+		return response("Internal Server Error", 500, None, str(validation_logs) )
+		
 	else:
 		try:
 			start = time.time()
@@ -1100,11 +1102,11 @@ def assign_staff(employees, shift, request_employee_assignment):
 			frappe.enqueue(update_roster, key="staff_view", is_async=True, queue="long")
 			end = time.time()
 
-			return True
+			return response("Success", 200, {'message':'Shift changed successfully.'})
 
 		except Exception as e:
 			frappe.log_error(str(e))
-			frappe.throw(_(str(e)))
+			return response("Internal Server Error", 500, None,str(e))
 
 def create_request_employee_assignment(employee, from_shift, to_shift):
 	req_ea_doc = frappe.new_doc("Request Employee Assignment")
