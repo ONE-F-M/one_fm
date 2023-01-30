@@ -12,7 +12,7 @@ def sendemail(recipients, subject, header=None, message=None,
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
 	actions=pdf_link=""
-	doc_url = "#"
+	doc_link = "#"
 
 	head = header[0] if header else ""
 	if not message:

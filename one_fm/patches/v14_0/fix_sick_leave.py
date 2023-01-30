@@ -8,17 +8,10 @@ def execute():
     for each in all_leaves:
         try:
             leave_doc = frappe.get_doc("Leave Application",each.name)
-            print("1")
-            print(each.name)
             leave_doc.status = "Approved"
             leave_doc.flags.ignore_validate = True
-            print("2")
             leave_doc.submit()
-            print("3")
         except:
             frappe.log_error("An Error Occured while closing {}".format(each.name))
             continue
     frappe.db.commit()
-    
-        
-    
