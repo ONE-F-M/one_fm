@@ -122,6 +122,8 @@ const export_data = (frm) => {
 							have_existing_sheet: frm.doc.have_existing_sheet,
 							owner:frm.doc.owner
 						},
+						freeze: true,
+						freeze_message: __("Exporting Data to the Sheet"),
 						callback: function(r) {
 							if(r.message) {
 								
