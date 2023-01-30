@@ -19,7 +19,6 @@ stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 right_now = now_datetime()
 
-
 @frappe.whitelist()
 def enroll(employee_id: str = None, video: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
@@ -77,8 +76,8 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
 
 @frappe.whitelist()
-def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None,
-                            skip_attendance: str = None, latitude: str = None, longitude: str = None):
+def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None, 
+    shift_assignment: str = None, skip_attendance: str = None, latitude: str = None, longitude: str = None):
     """This method verifies user checking in/checking out.
 
     Args:
@@ -161,8 +160,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{right_now.date()}' and employee = '{employee}' and permission_type = '{log_type}' and workflow_state = 'Approved' """, as_dict=1)
             if not existing_perm and (right_now.time() >  datetime.strptime(str(val_in_shift_type["start_time"] + + timedelta(hours=int(val_in_shift_type['working_hours_threshold_for_absent']))), "%H:%M:%S").time()):
                 return response("Bad Request", 400, None, f"Oops! You are late beyond the  {int(val_in_shift_type['working_hours_threshold_for_absent'])} - hour time mark and you are marked absent !" + "\U0001F612")       
-
-
+                
         # setup channel
         # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
         # channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
@@ -177,31 +175,43 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         # Call service stub and get response
         res = stub.FaceRecognition(req)
         
-        data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
-            'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-        if res.verification == "FAILED":
-            msg = res.message
-            data = res.data
-            return response(msg, 400, None, data)
-        if res.verification == "OK":
-            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
+
+        if res.verification == "FAILED" and res.data == 'Invalid media content':
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
             if log_type == "IN":
                 if doc.time.time() > datetime.strptime(str(val_in_shift_type["start_time"] + timedelta(minutes=val_in_shift_type["late_entry_grace_period"])), "%H:%M:%S").time():
                     if not existing_perm:
                         doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" + + "\U0001F612"})
                         return response("Success", 201, doc, None)
             return response("Success", 201, doc, None)
+        elif res.verification == "FAILED":
+            msg = res.message
+            data = res.data
+            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+            **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
+                'message':res.message, 'data':res.data, 'source': 'Checkin'}})
+            return response(msg, 400, None, data)
+        elif res.verification == "OK":
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            if log_type == "IN":
+                if doc.time.time() > datetime.strptime(str(val_in_shift_type["start_time"] + timedelta(minutes=val_in_shift_type["late_entry_grace_period"])), "%H:%M:%S").time():
+                    if not existing_perm:
+                        doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" + + "\U0001F612"})
+                        return response("Success", 201, doc, None)
+            return response("Success", 201, doc, None)
+        else:
+            return response("Success", 400, None, "No response from face recognition server")
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
 
-def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float) -> dict:
+def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float, shift_assignment: str) -> dict:
     checkin = frappe.new_doc("Employee Checkin")
     checkin.employee = employee
     checkin.log_type = log_type
     checkin.device_id = frappe.utils.cstr(latitude)+","+frappe.utils.cstr(longitude)
     checkin.skip_auto_attendance = 0 #skip_attendance
+    checkin.shift_assignment = shift_assignment
     checkin.save()
     frappe.db.commit()
     return checkin.as_dict()
@@ -225,7 +235,6 @@ def has_day_off(employee,date):
 
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
-
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
 
@@ -253,8 +262,11 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         shift = get_current_shift(employee)
-        site, location = None, None
+
+        site, location, shift_assignment = None, None, None
         if shift:
+            shift_assignment = shift.name
+
             if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
                 check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
                 if log_type == "IN":
@@ -296,15 +308,23 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
         result['site_name'] = site
 
+        result = {**result, **{
+            'shift_assignment':shift_assignment,
+        }}
+
         # log to checkin radius log
         data = result.copy()
+        result = frappe._dict(result)
         data = {
             **data,
             **{'employee':employee_id, 'user_latitude':latitude, 'user_longitude':longitude, 'user_distance':distance, 'diff':distance-result.geofence_radius}
         }
-        frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
+        
+        if not result.user_within_geofence_radius:
+            frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
                        **{'data':data})
         return response("Success", 200, result)
 
     except Exception as error:
-        return response("Internal Server Error", 500, None, error)
+
+        return response("Internal Server Error", 500, None, frappe.get_traceback())
