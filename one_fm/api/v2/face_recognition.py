@@ -4,7 +4,8 @@ from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.v1.utils import response
-from frappe.utils import cstr, getdate, now_datetime
+from one_fm.api.v2.zenquotes import fetch_quote
+from frappe.utils import cstr, getdate,get_datetime,now,get_date_str, now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
 
@@ -173,6 +174,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             media_content = video
         )
         # Call service stub and get response
+        
         res = stub.FaceRecognition(req)
         
 
@@ -198,7 +200,9 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
                 if check:
                     doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" +  "\U0001F612"})
                     return response("Success", 201, doc, None)
-            return response("Success", 201, doc, None)
+            quote = fetch_quote(direct_response=True)
+            return response("Success", 201, {'doc':doc,'quote':quote}, None)
+
         else:
             return response("Success", 400, None, "No response from face recognition server")
     except Exception as error:
