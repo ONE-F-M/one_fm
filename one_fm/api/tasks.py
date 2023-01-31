@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from frappe import enqueue
 import frappe, erpnext
 from frappe import _
+from one_fm.api.v1.utils import response
 from frappe.model.workflow import apply_workflow
 from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today, add_days, now
 from one_fm.api.doc_events import get_employee_user_id
@@ -54,24 +55,29 @@ def send_checkin_hourly_reminder():
 			message = _('<a class="btn btn-warning" href="/app/face-recognition">Hourly Check In</a>')
 			send_notification(title, subject, message, category, recipients)
 
-def checkin_checkout_initial_reminder():
-	"""
-	This function sends a push notification to users to remind them to checkin/checkout at the start/end time of their shift.
-	"""
-	try:
-		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
-			return
+@frappe.whitelist()
+def checkin_checkout_initial_reminder(from_api=False):
+    """
+    This function sends a push notification to users to remind them to checkin/checkout at the start/end time of their shift.
+    """
 
-		# Get current date and time
-		now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
+    try:
+        if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
+            return
 
-		# Get list of active shifts
-		shifts_list = get_active_shifts(now_time)
+        # Get current date and time
+        now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 
-		frappe.enqueue(schedule_initial_reminder, shifts_list=shifts_list, now_time=now_time, is_async=True, queue='long')
+        # Get list of active shifts
+        shifts_list = get_active_shifts(now_time)
 
-	except Exception as error:
-		frappe.log_error(str(error), 'Checkin/checkout initial reminder failed')
+        frappe.enqueue(schedule_initial_reminder, shifts_list=shifts_list, now_time=now_time, is_async=True, queue='long')
+        if from_api:
+            return response("Success",200,"Checkin/Checkout Reminder Initiated Successfully")
+
+    except Exception as error:
+        frappe.log_error(str(error), 'Checkin/checkout initial reminder failed')
+        return response("Internal Server Error",500,str(error))
 
 def schedule_initial_reminder(shifts_list, now_time):
 	notification_title = _("Checkout reminder")
@@ -96,22 +102,28 @@ def schedule_initial_reminder(shifts_list, now_time):
 			if len(recipients) > 0:
 				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="OUT", notification_title= notification_title, notification_subject=notification_subject_out)
 
-def checkin_checkout_final_reminder():
-	"""
-	This function sends a final notification to users to remind them to checkin/checkout.
-	"""
-	try:
-		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
-			return
+@frappe.whitelist()
+def checkin_checkout_final_reminder(from_api=False):
+    """
+    This function sends a final notification to users to remind them to checkin/checkout.
+    """
+    try:
+        if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
+            return
 
-		now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
-		shifts_list = get_active_shifts(now_time)
+        now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
+        shifts_list = get_active_shifts(now_time)
 
-		#Send final reminder to checkin or checkout to employees who have not even after shift has ended
-		frappe.enqueue(schedule_final_notification, shifts_list=shifts_list, now_time=now_time, is_async=True, queue='long')
-	except Exception as error:
-		frappe.log_error(str(error), 'Checkin/checkout final reminder failed')
-
+        #Send final reminder to checkin or checkout to employees who have not even after shift has ended
+        frappe.enqueue(schedule_final_notification, shifts_list=shifts_list, now_time=now_time, is_async=True, queue='long')
+        if from_api:
+            return response("Success",200,"Checkin/Checkout Reminder Initiated Successfully")
+    except Exception as error:
+        frappe.log_error(str(error), 'Checkin/checkout final reminder failed')
+        return response("Internal Server Error",500,str(error))
+    
+    
+    
 def schedule_final_notification(shifts_list, now_time):
 	notification_title = _("Final Reminder")
 	notification_subject_in =  _("Please checkin in the next five minutes.")
