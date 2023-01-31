@@ -44,10 +44,10 @@ class OperationsPost(Document):
 		if self.status == "Active":
 			check_list = frappe.db.get_list("Post Schedule", filters={"post":self.name, "date": [">", getdate()]})
 			if len(check_list) < 1 :
-				return frappe.enqueue(set_post_schedule(doc=self), is_async=True, queue="long")
+				frappe.enqueue(set_post_schedule, doc=self, is_async=True, queue="long")
 
 		elif self.status == "Inactive":
-			return frappe.enqueue(delete_schedule(doc=self), is_async=True, queue="long")
+			frappe.enqueue(delete_schedule, doc=self, is_async=True, queue="long")
 
 def set_post_schedule(doc):
 	project = frappe.get_doc("Project", doc.project)
