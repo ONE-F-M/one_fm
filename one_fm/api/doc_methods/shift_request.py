@@ -5,7 +5,7 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
 	get_common_email_args, deduplicate_actions, get_next_possible_transitions,
 	get_doc_workflow_state, get_workflow_name, get_users_next_action_data
 )
-from frappe.utils import getdate, today
+from frappe.utils import getdate, today, cstr
 from frappe.model.workflow import apply_workflow
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 from one_fm.api.notification import create_notification_log, get_employee_user_id
@@ -14,10 +14,10 @@ from one_fm.api.notification import create_notification_log, get_employee_user_i
 def shift_request_submit(self):
 	if self.workflow_state != 'Update Request':
 		self.db_set("status", self.workflow_state)
-
-	if self.from_date == getdate():
-		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date], "docstatus": 1}):
-			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date":["<=", self.from_date ]}, "status" , "Inactive")
+	
+	if self.from_date == cstr(getdate()):
+		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date": self.from_date, "docstatus": 1}):
+			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date": self.from_date }, "status" , "Inactive")
 		if self.workflow_state == 'Approved':
 			create_shift_assignment_from_request(self)
 
@@ -76,6 +76,8 @@ def cancel_shift_assignment_of_request(shift_request):
 			shift_request: Object of shift request
 			submit: Boolean
 	'''
+	schedule_exists = frappe.db.exists("Employee Schedule",{"employee":shift_request.employee, "date":cstr(getdate()), "employee_availability":"Working"})
+
 	shift_assignment_list = frappe.get_list(
 		"Shift Assignment",
 		{
@@ -88,6 +90,24 @@ def cancel_shift_assignment_of_request(shift_request):
 		for shift in shift_assignment_list:
 			shift_assignment_doc = frappe.get_doc("Shift Assignment", shift["name"])
 			shift_assignment_doc.cancel()
+	if shift_request.from_date <= cstr(getdate()) <= shift_request.to_date and schedule_exists:
+		schedule = frappe.get_doc("Employee Schedule",{"employee":shift_request.employee, "date":cstr(getdate())})
+		if schedule:
+			sa = frappe.get_doc(dict(
+            doctype='Shift Assignment',
+			start_date = cstr(getdate()),
+			employee = schedule.employee,
+			employee_name = schedule.employee_name,
+			department = schedule.department,
+			operations_role = schedule.operations_role,
+			shift = schedule.shift,
+			site = schedule.site,
+			project = schedule.project,
+			shift_type = schedule.shift_type,
+			roster_type = schedule.roster_type,
+        	)).insert()
+			sa.submit()
+
 
 def validate_approver(self):
 	shift, department = frappe.get_value("Employee", self.employee, ["shift","department"])
