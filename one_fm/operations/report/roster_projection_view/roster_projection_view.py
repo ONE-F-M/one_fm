@@ -5,6 +5,7 @@ from datetime import datetime
 import frappe
 from frappe import _
 from frappe.utils import today, add_days, getdate, get_last_day
+from one_fm.utils import get_week_start_end
 
 def execute(filters=None):
 	columns, data = get_columns(), get_data(filters)
@@ -47,99 +48,116 @@ def get_data(filters):
 		as_dict=True,
 	)
 	for row in contracts_detail:
-		row.employee_schedule = 0
-		row.post_schedule = 0
-		row.projection = 0
-		row.projection_rate = 0
-		row.live_projection = 0
-		row.live_projection_rate = 0
-		row.es_qty = 0 # employee schedule qty
-		row.ps_qty = 0 # post schedule qty
-		row.ea_qty = 0 # employee attendance qty
-		roles = [i.name for i in frappe.db.sql(f"""
-			SELECT name FROM `tabOperations Role`
-			WHERE sale_item="{row.item_code}" AND project="{row.project}"
-		""", as_dict=1)]
-		if roles:
-			# Find post schedule from month start to month end
-			post_schedule = frappe.db.count("Post Schedule", filters={
-				'project':row.project,
-				'operations_role': ['IN', roles],
-				'date': ['BETWEEN', [month_start, month_end]]}
-			)
-			# Find employee schedule from month start to month end
-			employee_schedule_list = frappe.db.get_list("Employee Schedule", filters={
-				'project':row.project,
-				'operations_role': ['IN', roles],
-				'employee_availability': 'Working',
-				'date': ['BETWEEN', [month_start, month_end]]},
-				fields=['name', 'shift_type']
-			)
-			employee_schedule = len(employee_schedule_list)
+		if row.rate_type=='Monthly':
+			row.days_off_cat = row.days_off_category
+			row.employee_schedule = 0
+			row.post_schedule = 0
+			row.projection = 0
+			row.projection_rate = 0
+			row.live_projection = 0
+			row.live_projection_rate = 0
+			row.es_qty = 0 # employee schedule qty
+			row.ps_qty = 0 # post schedule qty
+			row.ea_qty = 0 # employee attendance qty
+			working_days = 0 # total number of working days for each item
+			working_days_type = ''
+			if row.rate_type_off=='Full Month': # working days is number of days in the current month
+				working_days = month_end.day
+				working_days_type = 'Monthly'
+			elif row.rate_type_off=='Days Off':
+				if row.days_off_category=='Monthly':
+					working_days_type = 'Monthly'
+					working_days = month_end.day - row.no_of_days_off
+				elif row.days_off_category=='Weekly':
+					working_days_type = 'Weekly'
+					working_days = 26 #28 - row.no_of_days_off*4
+					# month_start = get_week_start_end(month_start).start
+					# month_end = add_days(month_start, 27)# for weekly rate, start day to 28th day from start date
 
-			attendance = frappe.db.count("Attendance", filters={
-				'docstatus': 1,
-				'project':row.project,
-				'operations_role': ['IN', roles],
-				'status': ['IN', ['Present', 'Work From Home', 'On Leave']],
-				'attendance_date': ['BETWEEN', [month_start, month_end]]},
-			)
-			working_days = 0
-			if row.rate_type=='Monthly':
-				if row.rate_type_off=='Full Month':
-					working_days = month_end.day
-				elif row.rate_type_off=='Days Off':
-					if row.days_off_category=='Monthly': 
-						working_days = month_end.day - row.no_of_days_off
-					elif row.days_off_category=='Weekly':
-						working_days = month_end.day - (row.no_of_days_off*4)
-			elif row.rate_type=='Weekly':
-				shifttype_duration = 0
-				for i in employee_schedule_list:
-					shifttype_duration += shift_types_dict[i.shift_type]
-				working_days = shifttype_duration
-			
-			row.es_qty = employee_schedule / working_days if working_days else 0
-			row.ps_qty = post_schedule / working_days if working_days else 0
-			row.ea_qty = attendance/working_days if working_days else 0
-			row.projection = (row.es_qty/row.ps_qty) * row.count if (row.es_qty and row.ps_qty) else 0
-			row.projection_rate = row.projection * row.rate
-			row.live_projection = ((row.es_qty+row.ea_qty)/row.ps_qty)*row.count if (row.es_qty and row.ps_qty) else 0
-			row.live_projection_rate = row.live_projection * row.rate
 
-			# row.employee_schedule = employee_schedule/working_days  if working_days else 0
-			# row.post_schedule = post_schedule/working_days if working_days else 0
-			# if post_schedule and employee_schedule:
-			# 	# Projection = Employee Schedule / Post Schedule
-			# 	row.projection = employee_schedule/post_schedule
-			# 	row.projection_rate = row.rate*row.projection
+			roles = [i.name for i in frappe.db.sql(f"""
+				SELECT name FROM `tabOperations Role`
+				WHERE sale_item="{row.item_code}" AND project="{row.project}"
+			""", as_dict=1)]
+			if roles:
+				# Find post schedule from month/week start to month/week end
+				post_schedule = frappe.db.count("Post Schedule", filters={
+					'project':row.project,
+					'operations_role': ['IN', roles],
+					'date': ['BETWEEN', [month_start, month_end]]}
+				)
+				# Find employee schedule from month start to month end
+				employee_schedule_list = frappe.db.get_list("Employee Schedule", filters={
+					'project':row.project,
+					'operations_role': ['IN', roles],
+					'employee_availability': 'Working',
+					'date': ['BETWEEN', [month_start, month_end]]},
+					fields=['name', 'shift_type'],
+					ignore_permissions=True
+				)
+				employee_schedule = len(employee_schedule_list)
 
-			# # Find live projection, if today is in the selected month
-			# if today > month_start and today < month_end and post_schedule:
-			# 	yesterday = add_days(today, -1)
-			# 	# Find attendance from month start to yesterday
-			# 	attendance = frappe.db.count("Attendance", filters={
-			# 		'docstatus': 1,
-			# 		'project':row.project,
-			# 		'operations_role': ['IN', roles],
-			# 		'status': ['IN', ['Present', 'Work From Home', 'On Leave']],
-			# 		'attendance_date': ['BETWEEN', [month_start, yesterday]]},
-			# 	)
-			# 	# Find employee schedules from today to month end
-			# 	schedules = frappe.db.count("Employee Schedule", filters={
-			# 		'project':row.project,
-			# 		'operations_role': ['IN', roles],
-			# 		'employee_availability': 'Working',
-			# 		'date': ['BETWEEN', [today, month_end]]}
-			# 	)
-			# 	if schedules and attendance:
-			# 		'''
-			# 			Live Projection = [Employee Attendance(From Start of Month till Yesterday)
-			# 				+
-			# 				Employee Schedule (From Today to End of Month)] / Post Schedule
-			# 		'''
-			# 		row.live_projection = (attendance + schedules)/post_schedule
-			# 		row.live_projection_rate = row.live_projection * row.rate
+				attendance = frappe.db.count("Attendance", filters={
+					'docstatus': 1,
+					'project':row.project,
+					'operations_role': ['IN', roles],
+					'status': ['IN', ['Present', 'Work From Home', 'On Leave']],
+					'attendance_date': ['BETWEEN', [month_start, month_end]]}
+				)
+				
+				
+				row.es_qty = round(employee_schedule / working_days if working_days else 0, 2)
+				row.ps_qty = round(post_schedule / working_days if working_days else 0, 2)
+				row.ea_qty = round(attendance/working_days if working_days else 0, 2)
+				row.projection = round((row.es_qty/row.ps_qty) * row.count if (row.es_qty and row.ps_qty) else 0, 2)
+				row.projection_rate = round(row.projection * row.rate, 2)
+				row.live_projection = round(((row.es_qty+row.ea_qty)/row.ps_qty)*row.count if (row.es_qty and row.ps_qty) else 0, 2)
+				row.live_projection_rate = round(row.live_projection * row.rate, 2)
+				# row.employee_schedule = employee_schedule/working_days  if working_days else 0
+				# row.post_schedule = post_schedule/working_days if working_days else 0
+				# if post_schedule and employee_schedule:
+				# 	# Projection = Employee Schedule / Post Schedule
+				# 	row.projection = employee_schedule/post_schedule
+				# 	row.projection_rate = row.rate*row.projection
+
+				# # Find live projection, if today is in the selected month
+				# if today > month_start and today < month_end and post_schedule:
+				# 	yesterday = add_days(today, -1)
+				# 	# Find attendance from month start to yesterday
+				# 	attendance = frappe.db.count("Attendance", filters={
+				# 		'docstatus': 1,
+				# 		'project':row.project,
+				# 		'operations_role': ['IN', roles],
+				# 		'status': ['IN', ['Present', 'Work From Home', 'On Leave']],
+				# 		'attendance_date': ['BETWEEN', [month_start, yesterday]]},
+				# 	)
+				# 	# Find employee schedules from today to month end
+				# 	schedules = frappe.db.count("Employee Schedule", filters={
+				# 		'project':row.project,
+				# 		'operations_role': ['IN', roles],
+				# 		'employee_availability': 'Working',
+				# 		'date': ['BETWEEN', [today, month_end]]}
+				# 	)
+				# 	if schedules and attendance:
+				# 		'''
+				# 			Live Projection = [Employee Attendance(From Start of Month till Yesterday)
+				# 				+
+				# 				Employee Schedule (From Today to End of Month)] / Post Schedule
+				# 		'''
+				# 		row.live_projection = (attendance + schedules)/post_schedule
+				# 		row.live_projection_rate = row.live_projection * row.rate
+		else:
+			row.days_off_cat = ''
+
+		row.start_date = month_start
+		row.end_date = month_end
+				
+		if not row.start_date:
+			print(row.project, row.item_code)
+		
+		# reset start and end date
+		month_start = getdate().replace(day=1, month=int(filters.get('month')), year=int(filters.get('year')))
+		month_end = get_last_day(month_start)
 
 	results = contracts_detail
 	return results
@@ -220,17 +238,36 @@ def get_columns():
 			'width': 120,
 		},
 		{
-			'fieldname': 'es_qty',
-			'label': _('ES. qty.'),
-			'fieldtype': 'Int',
+			'fieldname': 'start_date',
+			'label': _('Start Date'),
+			'fieldtype': 'Date',
 			'width': 100,
+		},
+		{
+			'fieldname': 'end_date',
+			'label': _('End Date'),
+			'fieldtype': 'Date',
+			'width': 100,
+		},
+		{
+			'fieldname': 'es_qty',
+			'label': _('Employee Schedule QTY'),
+			'fieldtype': 'Int',
+			'width': 150,
 			'precision':2
 		},
 		{
 			'fieldname': 'ea_qty',
-			'label': _('EA qty.'),
+			'label': _('Employee Attendance QTY'),
 			'fieldtype': 'Int',
-			'width': 100,
+			'width': 150,
+			'precision':2
+		},
+		{
+			'fieldname': 'ps_qty',
+			'label': _('Post Schedule QTY'),
+			'fieldtype': 'Int',
+			'width': 150,
 			'precision':2
 		},
 		{
@@ -244,24 +281,31 @@ def get_columns():
 			'fieldname': 'projection_rate',
 			'label': _('Projection Rate'),
 			'fieldtype': 'Currency',
-			'width': 100
+			'width': 150
 		},
 		{
 			'fieldname': 'live_projection',
 			'label': _('Live Projection'),
 			'fieldtype': 'Float',
-			'width': 100
+			'width': 150
 		},
 		{
 			'fieldname': 'live_projection_rate',
-			'label': _('Projection Rate'),
+			'label': _('Live Projection Rate'),
 			'fieldtype': 'Currency',
-			'width': 100
+			'width': 150
 		},
 		{
 			'fieldname': 'rate_type',
 			'label': _('Rate Type'),
 			'fieldtype': 'Data',
-			'width': 100
+			'width': 150
+		},
+		{
+			'fieldname': 'days_off_cat',
+			'label': _('Days Of Category'),
+			'fieldtype': 'Data',
+			'width': 100,
+			'default': ''
 		},
 	]

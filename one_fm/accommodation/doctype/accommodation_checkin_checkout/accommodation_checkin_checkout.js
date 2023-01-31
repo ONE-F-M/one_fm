@@ -131,6 +131,14 @@ var set_field_properties = function(frm) {
 	if(frm.doc.tenant_category == 'Granted Service'){
 		frm.set_df_property('employee', 'reqd', true);
 		frm.set_df_property('employee', 'hidden', false);
+		if(frm.doc.type == "OUT" && frm.doc.checkin_reference && frm.doc.employee){
+			frm.set_df_property('employee', 'read_only', true);
+			frm.set_df_property('employee', 'description', "To change the Employee, change the Checkin Reference");
+		}
+		else{
+			frm.set_df_property('employee', 'read_only', false);
+			frm.set_df_property('employee', 'description', "");
+		}
 	}
 	else{
 		frm.set_df_property('employee', 'reqd', false);
@@ -162,6 +170,7 @@ var set_checkin_details = function(frm) {
 		method: 'get_checkin_details_from_booking',
 		doc: frm.doc,
 		callback: function(r) {
+			set_field_properties(frm);
 			frm.refresh_fields();
 		}
 	});
@@ -178,9 +187,6 @@ var set_filters = function(frm) {
 
 	frm.set_query('checkin_reference', function () {
 		var filters = {'type': 'IN', 'checked_out': false};
-		if(frm.doc.employee){
-			filters['employee'] = frm.doc.employee
-		}
 		return {
 			filters: filters
 		};

@@ -468,7 +468,8 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
-		"one_fm.one_fm.utils.attach_abbreviation_to_roles"
+		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
+  		"one_fm.api.v2.zenquotes.set_cached_quote"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -537,7 +538,7 @@ scheduler_events = {
 		"10 4 * * *": [ #“At 04:10.”
 			'one_fm.utils.check_grp_operator_submission_four',
 			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.schedule_roster_checker',
-			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.check_roster_day_off'
+			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker'
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'

@@ -164,7 +164,7 @@ class CreateMap():
             self.attendance_query = f"SELECT at.status,at.leave_type,at.leave_application, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{self.end}' and docstatus = 1 order by at.employee """
             self.employee_query = f"SELECT name,  employee_id, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
 
-
+        
         self.schedule_set = frappe.db.sql(self.schedule_query,as_dict=1) if self.employees else []
         self.attendance_set = frappe.db.sql(self.attendance_query,as_dict=1) if self.employees else []
 
