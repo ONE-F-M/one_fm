@@ -771,7 +771,8 @@ def create_shift_assignment(roster, date, time):
 	shift_request = frappe.db.get_list("Shift Request", filters={
 		'employee': ['IN', [i.employee for i in roster]],
 		'from_date': ['<=', date],
-		'to_date': ['>=', date]
+		'to_date': ['>=', date],
+		'workflow_state': 'Approved'
 		},
 		fields=['name', 'employee', 'check_in_site', 'check_out_site']
 	)
