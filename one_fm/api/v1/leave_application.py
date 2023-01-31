@@ -5,7 +5,7 @@ from datetime import date
 import datetime
 import collections
 from one_fm.api.api import upload_file
-from frappe.client import attach_file
+
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
 from one_fm.api.v1.roster import get_current_shift
@@ -289,10 +289,9 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                     # OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
                     OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}/{filename}"
                     file_ = upload_file(doc, "attachments", filename, OUTPUT_FILE_PATH, content, is_private=True)
-                    attach_file(filename=filename, filedata=content, doctype="Leave Application", docname=doc.get('name'))
-                    # leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
-                    # leave_doc.append('proof_documents',{"attachments":file_.file_url})
-                    # leave_doc.save()
+                    leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
+                    leave_doc.append('proof_documents',{"attachments":file_.file_url})
+                    leave_doc.save()
                     frappe.db.commit()
             except Exception as error:
                 frappe.log_error("Sick Leave Attach Error",str(error))
@@ -305,7 +304,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         # if attachment_paths:
             # upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
 
-        return response("Success", 201, doc)
+        return response("Success", 201, leave_doc)
     
     except Exception as error:
         frappe.log_error(error, 'Leave API')
