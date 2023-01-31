@@ -20,7 +20,7 @@ jobs:
       with:
         host: ${{ secrets.LMS_HOST }}
         username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.LMS_KEY }}
+        key: ${{ secrets.LMS_SECRET }}
         port: 22
         script: |
           cd /home/frappe/master-14/apps/one_fm # we move into our app's folder
