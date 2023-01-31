@@ -15,7 +15,6 @@ from frappe import _
 from frappe.core.doctype.access_log.access_log import make_access_log
 from frappe.utils import cint, cstr, format_datetime, format_duration, formatdate, parse_json
 from frappe.utils.csvutils import UnicodeWriter
-
 import google.auth
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -26,6 +25,15 @@ from googleapiclient import discovery
 
 from google.oauth2 import service_account
 
+#initialize Google Sheet Service
+SERVICE_ACCOUNT_FILE = cstr(frappe.local.site) + frappe.local.conf.google_sheet
+
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+
+credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+service = discovery.build('sheets', 'v4', credentials=credentials)
+drive_api = build('drive', 'v3', credentials=credentials)
 
 def get_data_keys():
 	return frappe._dict(
@@ -109,20 +117,6 @@ class DataExporter:
 
 		self.prepare_args()
 
-	def init_google_sheet_service(self):
-		SERVICE_ACCOUNT_FILE = cstr(frappe.local.site) + frappe.local.conf.google_sheet
-
-		SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-
-		credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-		service = discovery.build('sheets', 'v4', credentials=credentials)
-		drive_api = build('drive', 'v3', credentials=credentials)
-
-		service_collection = {'service':service, 'drive_api':drive_api}
-
-		return service_collection
-
 	def prepare_args(self):
 		if self.select_columns:
 			self.select_columns = parse_json(self.select_columns)
@@ -153,8 +147,7 @@ class DataExporter:
 	def build_response(self):
 		self.writer = UnicodeWriter()
 		self.name_field = "parent" if self.parent_doctype != self.doctype else "name"
-		service = self.init_google_sheet_service()
-		print(service)
+
 		self.writer.writerow([""])
 		self.labelrow = []
 		self.fieldrow = []
@@ -167,11 +160,13 @@ class DataExporter:
 		values = self.add_data()
 
 		if not self.link:
-			self.create(service)
+			self.create()
 
-		if not self.check_if_sheet_exist(service):
-			self.add_sheet(service)
-		self.update_sheet(values, service)
+		if not self.check_if_sheet_exist():
+			self.add_sheet()
+		
+
+		self.update_sheet(values)
 		# print(self.data)
 		if self.with_data and not values:
 			frappe.respond_as_web_page(
@@ -283,38 +278,12 @@ class DataExporter:
 		for doc in self.data:
 			row = []
 			for field in self.fieldrow:
-				row.append(doc[field])
+				value = str(doc[field])
+				row.append(value)
 			rows.append(row)
 
 		return rows
 
-	def add_data_row(self, rows, dt, parentfield, doc, rowidx):
-		d = doc.copy()
-		meta = frappe.get_meta(dt)
-		if self.all_doctypes:
-			d.name = f'"{d.name}"'
-
-		if len(rows) < rowidx + 1:
-			rows.append([""] * (len(self.columns) + 1))
-		row = rows[rowidx]
-
-		_column_start_end = self.column_start_end.get((dt, parentfield))
-
-
-		if _column_start_end:
-			for i, c in enumerate(self.columns[_column_start_end.start : _column_start_end.end]):
-				df = meta.get_field(c)
-				fieldtype = df.fieldtype if df else "Data"
-				value = d.get(c, "")
-				if value:
-					if fieldtype == "Date":
-						value = formatdate(value)
-					elif fieldtype == "Datetime":
-						value = format_datetime(value)
-					elif fieldtype == "Duration":
-						value = format_duration(value, df.hide_days)
-
-				row[_column_start_end.start + i + 1] = value
 		
 	def _append_name_column(self, dt=None):
 		self.append_field_column(
@@ -330,7 +299,7 @@ class DataExporter:
 			True,
 		)
 
-	def create(self, services):
+	def create(self):
 		"""
 		BEFORE RUNNING:
 		---------------
@@ -350,9 +319,6 @@ class DataExporter:
 		#     'https://www.googleapis.com/auth/drive'
 		#     'https://www.googleapis.com/auth/drive.file'
 		#     'https://www.googleapis.com/auth/spreadsheets'
-
-		service = services["service"]
-		drive_api = services["drive_api"]
 
 		domain_permission = {
 			'type': 'user',
@@ -379,28 +345,26 @@ class DataExporter:
 					fileId=request["spreadsheetId"],
 					body=domain_permission,
 				).execute()
-		print(request)
 		self.google_sheet_id = request["spreadsheetId"]
 		self.link = request["spreadsheetUrl"]
 
-	def check_if_sheet_exist(self, services):
-		service = services["service"]
-
-		sheet_metadata = service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
-		
-		sheets = sheet_metadata.get('sheets', '')
-		sheetNames = []
-		for i in range(len(sheets)):
-			sheetNames.append(sheets[i].get("properties").get("title"))
-
-		if self.sheet_name in sheetNames:
-			return True
-		return False
-
-	def add_sheet(self, services):
+	def check_if_sheet_exist(self):
 		try:
-			service = services["service"]
+			sheet_metadata = service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
+			
+			sheets = sheet_metadata.get('sheets', '')
+			sheetNames = []
+			for i in range(len(sheets)):
+				sheetNames.append(sheets[i].get("properties").get("title"))
 
+			if self.sheet_name in sheetNames:
+				return True
+			return False
+		except HttpError as err:
+			frappe.throw(_("This sheet is not linked"))
+
+	def add_sheet(self):
+		try:
 			request_body = {
 				'requests': [{
 					'addSheet': {
@@ -418,16 +382,14 @@ class DataExporter:
 
 			return response
 		except Exception as e:
-			print(e)
+			frappe.log_error(e)
 
 
-	def update_sheet(self, values, services):
+	def update_sheet(self, values):
 		"""Shows basic usage of the Sheets API.
 		Prints values from a sample spreadsheet.
 		"""
 		try:
-			service = services["service"]
-
 			no_of_row = len(values)
 			no_of_col = len(self.column)
 			ranges = self.sheet_name + "!A1:" + chr(ord('A') + no_of_col) + str(no_of_row)
@@ -442,13 +404,24 @@ class DataExporter:
 
 			
 			# request = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Country!A1:B22").execute()
-			# request = service.spreadsheets().values().update(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Country!A24", valueInputOption="USER_ENTERED", body={"values":aoa}).execute()
 			
 
 			
 			return result
 		except HttpError as err:
-			print(err)
+			frappe.log_error(err)
+
+@frappe.whitelist()
+def build_connection_with_sheet(doc):
+	doc = parse_json(doc)
+	try:
+		if doc.google_sheet_id:
+			service.spreadsheets().get(spreadsheetId=doc.google_sheet_id).execute()
+			return True
+		if not doc.google_sheet_id:
+			return True
+	except HttpError as err:
+		return False
 
 @frappe.whitelist()
 def update_google_sheet_daily():
@@ -469,3 +442,9 @@ def update_google_sheet_daily():
 			sheet_name= doc.sheet_name,
 			owner= doc.owner, 
 			is_async=True, queue="long")
+
+@frappe.whitelist()
+def get_client_id():
+	f = open(SERVICE_ACCOUNT_FILE)
+	cred = json.load(f)
+	return cred['client_email']
