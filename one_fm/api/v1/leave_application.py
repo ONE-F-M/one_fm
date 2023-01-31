@@ -283,11 +283,11 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                     content = base64.b64decode(attachment)
                     filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
 
-                    Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
-                    # Path(frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
-                    OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
-                    # OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}/{filename}"
-                    file_ = upload_file(doc, "attachments", filename, OUTPUT_FILE_PATH, content, is_private=False)
+                    # Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+                    Path(frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+                    # OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
+                    OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}/{filename}"
+                    file_ = upload_file(doc, "attachments", filename, OUTPUT_FILE_PATH, content, is_private=True)
                     leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
                     leave_doc.append('proof_documents',{"attachments":file_.file_url})
                     leave_doc.save()
