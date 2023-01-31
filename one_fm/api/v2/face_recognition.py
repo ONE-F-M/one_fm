@@ -6,6 +6,7 @@ from one_fm.one_fm.page.face_recognition.face_recognition import update_onboardi
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.overrides.employee_checkin import get_current_shift_checkin
 from one_fm.api.v1.utils import response
+from one_fm.api.v2.zenquotes import fetch_quote
 from frappe.utils import cstr, getdate,get_datetime,now,get_date_str, now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
@@ -177,6 +178,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         )
 
         # Call service stub and get response
+        
         res = stub.FaceRecognition(req)
         
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
@@ -188,11 +190,12 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response(msg, 400, None, data)
         if res.verification == "OK":
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
+            quote = fetch_quote(direct_response=True)
             if log_type == "IN":
                 if doc.time.time() > datetime.strptime(str(val_in_shift_type["start_time"] + timedelta(minutes=val_in_shift_type["late_entry_grace_period"])), "%H:%M:%S").time():
                     if not existing_perm:
                         return response("You Checked in, but you were late, try to checkin early next time !", 201, doc, None)
-        return response("Success", 201, doc, None)
+        return response("Success", 201, {'doc':doc,'quote':quote}, None)
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 

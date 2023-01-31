@@ -11,8 +11,7 @@
   "column_break_3",
   "date",
   "detail_section_section",
-  "detail",
-  "amended_from"
+  "detail"
  ],
  "fields": [
   {
@@ -32,8 +31,7 @@
    "fieldname": "detail",
    "fieldtype": "Table",
    "label": "Detail",
-   "options": "Roster Day Off Detail",
-   "reqd": 1
+   "options": "Roster Day Off Detail"
   },
   {
    "fetch_from": "supervisor.employee_name",
@@ -48,15 +46,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Roster Day Off Checker",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "date",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -67,7 +56,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-10-13 17:11:18.230560",
+ "modified": "2023-01-26 15:00:15.199966",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Roster Day Off Checker",
