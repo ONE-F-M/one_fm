@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from frappe import enqueue
 import frappe, erpnext
 from frappe import _
+from frappe.model.workflow import apply_workflow
 from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, datetime, today, add_days, now
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
@@ -73,7 +74,7 @@ def checkin_checkout_initial_reminder():
 		frappe.log_error(str(error), 'Checkin/checkout initial reminder failed')
 
 def schedule_initial_reminder(shifts_list, now_time):
-	notification_title = _("Checkout reminder")
+	notification_title = _("Checkin/Checkout reminder")
 	notification_subject_in = _("Don't forget to Checkin!")
 	notification_subject_out = _("Don't forget to CheckOut!")
 
@@ -113,7 +114,7 @@ def checkin_checkout_final_reminder():
 
 def schedule_final_notification(shifts_list, now_time):
 	notification_title = _("Final Reminder")
-	notification_subject_in =  _("Please checkin in the next five minutes.")
+	notification_subject_in =  _("Please checkin within the next 3 hours or you will be marked absent.")
 	notification_subject_out =  _("Please checkin in the next five minutes.")
 
 	
@@ -127,7 +128,7 @@ def schedule_final_notification(shifts_list, now_time):
 			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 
 			if len(recipients) > 0:
-				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in)
+				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in, is_after_grace_checkin=1)
 
 		# shift_end is equal to now time - notification reminder in mins
 		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
@@ -139,7 +140,7 @@ def schedule_final_notification(shifts_list, now_time):
 
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
-def notify_checkin_checkout_final_reminder(recipients, log_type, notification_title, notification_subject):
+def notify_checkin_checkout_final_reminder(recipients, log_type, notification_title, notification_subject,  is_after_grace_checkin=0):
 	"""
 	params:
 	recipients: Dictionary consist of user ID and Emplloyee ID eg: [{'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}]
@@ -150,13 +151,37 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 
 	checkin_message = _("""
 					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
-					Submit a Shift Permission if you are plannig to arrive late or is there any issue in checkin or forget to checkin
+					<br>
+					Submit a Shift Permission if you are planing to arrive late 
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+					<br>
+					Submit an Attendance Request if there are issues in checkin or you forgot to checkin
+					<a class="btn btn-secondary" href="/app/attendance-request/new-attendance-request-1">Submit Attendance Request</a>&nbsp;
+					<br>
+					Submit a Shift Request if you are trying to checkin from another site location
+					<a class="btn btn-info" href="/app/shift-request/new-shift-request-1">Submit Shift Request</a>&nbsp;
+					<h3>DON'T FORGET TO CHECKIN</h3>
 					""")
+
+	if is_after_grace_checkin:
+		checkin_message = _("""
+					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
+					<br>
+					Submit a Shift Permission if you are planing to arrive late 
+					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+					<br>
+					Submit an Attendance Request if there are issues in checkin or you forgot to checkin
+					<a class="btn btn-secondary" href="/app/attendance-request/new-attendance-request-1">Submit Attendance Request</a>&nbsp;
+					<br>
+					Submit a Shift Request if you are trying to checkin from another site location
+					<a class="btn btn-info" href="/app/shift-request/new-shift-request-1">Submit Shift Request</a>&nbsp;
+					<h3>IF YOU DO NOT CHECK-IN WITHIN THE NEXT 3 HOURS, YOU WOULD BE MARKED AS ABSENT</h3>
+					""")
+
 
 	checkout_message = _("""
 		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
-		Submit a Shift Permission if you are plannig to leave early or is there any issue in checkout or forget to checkout
+		Submit a Shift Permission if you are planing to leave early or is there any issue in checkout or forget to checkout
 		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 		""")
 	
@@ -770,7 +795,8 @@ def create_shift_assignment(roster, date, time):
 	shift_request = frappe.db.get_list("Shift Request", filters={
 		'employee': ['IN', [i.employee for i in roster]],
 		'from_date': ['<=', date],
-		'to_date': ['>=', date]
+		'to_date': ['>=', date],
+		'workflow_state': 'Approved'
 		},
 		fields=['name', 'employee', 'check_in_site', 'check_out_site']
 	)
@@ -845,8 +871,6 @@ def create_shift_assignment(roster, date, time):
 			frappe.db.sql(query, values=[], as_dict=1)
 			frappe.db.commit()
 
-	if time == 'AM':
-		mark_day_attendance()
 
 
 def overtime_shift_assignment():
@@ -1142,12 +1166,16 @@ def create_additional_salary(employee, amount, component, end_date):
 
 
 def mark_day_attendance():
+	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
 	start_date, end_date = add_days(getdate(), -1), add_days(getdate(), -1)
+	approve_open_shift_permission(str(start_date), str(end_date))
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_night_attendance():
+	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
 	start_date = add_days(getdate(), -1)
 	end_date =  getdate()
+	approve_open_shift_permission(str(start_date), str(end_date))
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 

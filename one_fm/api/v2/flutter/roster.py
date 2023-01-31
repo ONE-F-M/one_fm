@@ -1007,7 +1007,6 @@ def assign_staff(employees, shift, request_employee_assignment):
 			frappe.log_error(str(e))
 			frappe.throw(_(str(e)))
 
-
 def create_request_employee_assignment(employee, from_shift, to_shift):
 	req_ea_doc = frappe.new_doc("Request Employee Assignment")
 	req_ea_doc.employee = employee
