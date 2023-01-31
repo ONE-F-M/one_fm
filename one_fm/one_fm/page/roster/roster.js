@@ -1227,11 +1227,17 @@ function render_roster(res, page, isOt) {
 		while (day <= end_date) {
 			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 			let sch = ``;
-			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application } = employees_data[employee_key][i];
+			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, actual_shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application } = employees_data[employee_key][i];
 			//OT schedule view
 			
 			if (isOt) {
-				if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
+				if ((actual_shift && shift) && (actual_shift!=shift) && roster_type == 'Over-Time'  && day_off_ot==0) {
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+					</td>`;
+				}else if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
 					j++;
 					sch = `
 					<td>
@@ -1264,14 +1270,20 @@ function render_roster(res, page, isOt) {
 			}
 			//Basic schedule view
 			else {
-				if (post_abbrv && roster_type == 'Basic' && !asa && day_off_ot==0) {
+			 	if ((actual_shift && shift) && (actual_shift!=shift) && day_off_ot==0) {
+				sch = `
+				<td>
+					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
+						data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+				</td>`;
+				} else if (post_abbrv && roster_type == 'Basic' && !asa && day_off_ot==0) {
 					j++;
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
-				}else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
+				} else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
 					j++;
 					sch = `
 					<td>
@@ -2478,13 +2490,16 @@ function ClearServiceBoard(e) {
 
 function staff_edit_dialog() {
 	let employees = [];
-	if ($(".layoutSidenav_content").attr("data-view") == "list") {
-		employees = window.employees_list;
-	} else if ($(".layoutSidenav_content").attr("data-view") == "card") {
-		employees = $(".cardviewcheckbox:checked").map(function () {
-			return $(this).attr("data-employee-id");
-		}).get();
-	}
+	$(".checkboxcontainer").map(function (i, data) {
+		let selected = data.querySelectorAll('input[type="checkbox"]:checked');
+		if (selected.length){
+			let id = ''
+			id = selected[0].getAttribute('data-employee-id');
+			if (id){
+				employees.push(id);
+			}
+		}
+	});
 
 	let d = new frappe.ui.Dialog({
 		'title': 'Edit',
