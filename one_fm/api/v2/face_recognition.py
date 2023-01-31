@@ -18,8 +18,6 @@ channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_cre
 # setup stub for face recognition
 stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
-right_now = now_datetime() 
-
 @frappe.whitelist()
 def enroll(employee_id: str = None, video: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
@@ -149,6 +147,8 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+
+        right_now = now_datetime() 
 
         if log_type == "IN":
             shift_type = frappe.db.sql(f""" select shift_type from `tabShift Assignment` where employee = '{employee}' order by creation desc limit 1 """, as_dict=1)[0]
