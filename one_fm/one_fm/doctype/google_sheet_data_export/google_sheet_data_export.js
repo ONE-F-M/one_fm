@@ -126,10 +126,14 @@ const export_data = (frm) => {
 						freeze_message: __("Exporting Data to the Sheet"),
 						callback: function(r) {
 							if(r.message) {
-								
 								frm.set_value('link', r.message['link'])
 								frm.set_value('google_sheet_id', r.message['google_sheet_id'])
 								frm.set_value('sheet_name', r.message['sheet_name'])
+								frappe.msgprint({
+									message: __("The Data has been submitted successfully"),
+									title: __("Success"),
+									indicator: "green"
+								  });
 								}
 							}
 						});

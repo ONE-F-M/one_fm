@@ -19,6 +19,12 @@ from one_fm.api.api import push_notification_for_checkin, push_notification_rest
 
 class DeltaTemplate(Template):
     delimiter = "%"
+    delimiter = "%"
+
+
+
+
+
 
 def strfdelta(tdelta, fmt):
     d = {"D": tdelta.days}
@@ -34,7 +40,24 @@ def strfdelta(tdelta, fmt):
 def send_checkin_hourly_reminder():
     now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
     shifts_list = get_active_shifts(now_time)
+    now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
+    shifts_list = get_active_shifts(now_time)
 
+    title = "Hourly Reminder"
+    category = "Attendance"
+    #Send notifications to employees assigned to a shift for hourly checkin
+    for shift in shifts_list:
+        if strfdelta(shift.start_time, '%H:%M:%S') != cstr(get_datetime(now_time).time()) and strfdelta(shift.end_time, '%H:%M:%S') != cstr(get_datetime(now_time).time()):
+            date = getdate() if shift.start_time < shift.end_time else (getdate() - timedelta(days=1))
+            recipients = frappe.db.sql("""
+                SELECT DISTINCT emp.user_id FROM `tabShift Assignment` tSA, `tabEmployee` emp
+                WHERE
+                      tSA.employee = emp.name
+                AND tSA.start_date='{date}'
+                AND tSA.shift_type='{shift_type}'
+                AND tSA.docstatus=1
+            """.format(date=cstr(date), shift_type=shift.name), as_list=1)
+            recipients = [recipient[0] for recipient in recipients if recipient[0]]
     title = "Hourly Reminder"
     category = "Attendance"
     #Send notifications to employees assigned to a shift for hourly checkin
