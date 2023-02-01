@@ -1308,16 +1308,18 @@ def mark_daily_attendance(start_date, end_date):
 					# add employee to no checkout record found
 					checkin_no_out.append({'employee':v.employee, 'in':v.name, 'shift_assignment':v.shift_assignment})
 			except Exception as e:
-				errors.append(str(e))
+				errors.append(str(frappe.get_traceback()))
 		# add absent, day off and holiday in shift assignment
 		for i in shift_assignments:
 			try:
 				if not employee_attendance.get(i.employee):
 					# check for day off
+					comment = ""
 					if employee_schedule_dict.get(i.employee):
 						availability = 'Day Off'
 					elif holiday_today and holiday_today.get(employees_data[i.employee].holiday_list):
 						availability = 'Holiday'
+						comment = str(holiday_today.get(employees_data[i.employee].holiday_list))
 					else:
 						availability = 'Absent'
 
@@ -1329,10 +1331,11 @@ def mark_daily_attendance(start_date, end_date):
 						'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':i.name, 'operations_shift':i.shift,
 						'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':i.company,
 						'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
-						'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':""
+						'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 
+						'comment':comment
 					})
 			except Exception as e:
-				errors.append(str(e))
+				errors.append(str(frappe.get_traceback()))
 
 		# mark day off if non above is met
 		for i in employee_schedules:
@@ -1347,7 +1350,7 @@ def mark_daily_attendance(start_date, end_date):
 						'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':f"Employee Schedule - {i.name}"
 					})
 			except Exception as e:
-				errors.append(str(e))
+				errors.append(str(frappe.get_traceback()))
 				
 		
 		# create attendance with sql injection
@@ -1422,7 +1425,7 @@ def mark_daily_attendance(start_date, end_date):
 					frappe.db.sql(query, values=[], as_dict=1)
 					frappe.db.commit()
 			except Exception as e:
-				errors.append(str(e))
+				errors.append(frappe.get_traceback())
 
 		# check for error
 		if len(errors):
