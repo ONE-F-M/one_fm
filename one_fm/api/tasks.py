@@ -1210,7 +1210,12 @@ def mark_daily_attendance(start_date, end_date):
 
 		employees_dict = {}
 
-
+		# get open leaves
+		open_leaves = frappe.db.get_list("Leave Application", filters={
+			'status':'Open',
+			'from_date':['>=', start_date],
+			'to_date':["<=", start_date],
+		}, fields=['name', 'employee'])
 		# get attendance for the day
 		attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off', 'Holiday', 'Present']]})
 		attendance_dict = {}
@@ -1221,7 +1226,9 @@ def mark_daily_attendance(start_date, end_date):
 		present_attendance_dict = {}
 		for i in present_attendance_list:
 			present_attendance_dict[i.employee] = i
-
+		# exempt leave applicants from attendance
+		for i in open_leaves:
+			present_attendance_dict[i.employee] = i
 		# Get shift assignment and make hashmap
 		shift_assignments = frappe.db.sql(f"""
 			SELECT * FROM `tabShift Assignment` WHERE start_date="{start_date}" AND end_date="{end_date}" AND roster_type='Basic' 
