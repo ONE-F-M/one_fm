@@ -163,7 +163,8 @@ def fetch_approver(employee):
 # approve open shift permission before marking attendance
 def approve_open_shift_permission(start_date, end_date):
 	shift_permissions = frappe.db.sql(f"""
-		SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa ON sa.name=sp.assigned_shift
+		SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa 
+		ON sa.name=sp.assigned_shift
 		WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}' AND sp.docstatus=0
 	""", as_dict=1)
 	# apply workflow
