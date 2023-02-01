@@ -1437,7 +1437,12 @@ def mark_daily_attendance(start_date, end_date):
 		# check for error
 		if len(errors):
 			frappe.log_error(str(errors), "Mark Attendance")
-		if len(checkin_no_out):
+		# no checkin and out
+		no_checkin_out_records = """"""
+		for k in shift_assignments:
+			if not (out_checkins_dict.get(k.name) and in_checkins_dict.get(k.name)):
+				no_checkin_out_records += f"{k.name} - {k.employee} - {k.employee_name}<br>"
+		if len(no_checkin_out_records):
 			# report no checkout
 			frappe.get_doc({
 				"doctype": "Issue",
@@ -1448,14 +1453,14 @@ def mark_daily_attendance(start_date, end_date):
 				"opening_date": "2023-01-23",
 				"company": "One Facilities Management",
 				"via_customer_portal": 0,
-				"description": f"<div class=\"ql-editor read-mode\"><p>{str(checkin_no_out)}</p></div>",
-				"subject": f"Attendance Issue (in no out) - {str(start_date)}",
+				"description": f"<div class=\"ql-editor read-mode\"><p>{no_checkin_out_records}</p></div>",
+				"subject": f"Attendance Marking (No checkins/out) - {str(start_date)}|{str(end_date)}",
 				"priority": "Medium",
 				"department": "IT - ONEFM",
 				"issue_type": "Idea/Feedback",
 				"raised_by": "e.anthony@one-fm.com"
-			})
-			frappe.log_error(str(errors), "Mark Attendance")
+			}).insert()
+			frappe.db.commit()
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 
