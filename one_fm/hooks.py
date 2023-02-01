@@ -292,6 +292,9 @@ doc_events = {
 		]
 	},
 	"Salary Structure Assignment": {
+		"validate": [
+			"one_fm.api.doc_methods.salary_structure_assignment.set_salary_components_details_to_salary_structure_assignment",
+		],
 		"before_submit": [
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_indemnity_amount",
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_leave_allocation_amount",
