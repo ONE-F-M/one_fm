@@ -51,7 +51,7 @@ class EmployeeCheckinIssue(Document):
 
 	# This method validates the ECI date and avoid creating ECI for previous days
 	def validate_date(self):
-		if self.docstatus==0 and getdate(self.date) < getdate():
+		if self.docstatus==0 and getdate(self.date) < getdate() and self.is_new():
 			frappe.throw(_("Oops! You cannot create a Employee Checkin Issue for a previous date."))
 
 	# This method validates any dublicate ECI for the employee on same day
