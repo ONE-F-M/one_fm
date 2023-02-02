@@ -12,6 +12,12 @@ frappe.ui.form.on('Google Sheet Data Export', {
 				frappe.model.with_doctype(doctype, () => set_filters_and_field(frm));	
 			}
 		}
+		if(frm.doc.reference_doctype == null){
+			// Clear the field and filter
+			frm.fields_dict.fields_multicheck.$wrapper.empty();
+			frm.fields_dict.filter_list.$wrapper.empty();
+
+		}
 	},
 	onload: (frm) => {
 		frm.set_query("reference_doctype", () => {
