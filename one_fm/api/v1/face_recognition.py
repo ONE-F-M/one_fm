@@ -160,17 +160,16 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         )
         # Call service stub and get response
         res = stub.FaceRecognition(req)
-        
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        if not res.verification == "OK":
-            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
         if res.verification == "FAILED" and res.data == 'Invalid media content':
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
             return response("Success", 201, doc, None)
         elif res.verification == "FAILED":
             msg = res.message
             data = res.data
+            if not res.verification == "OK":
+                frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
             return response(msg, 400, None, data)
         elif res.verification == "OK":
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
