@@ -131,9 +131,9 @@ def create_employee_checkin_for_shift_permission(shift_permission):
 	try:
 		if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin')\
 			and not frappe.db.exists('Employee Checkin', {'shift_permission': shift_permission.name, 'docstatus': 1}):
-			if shift_permission.permission_type in ["Arrive Late", "Forget to Checkin", "Checkin Issue"]:
+			if shift_permission.permission_type in ["Arrive Late", "Forget to Checkin", "Checkin Issue"] and not shift_permission.log_type:
 				shift_permission.db_set('log_type', "IN")
-			elif shift_permission.permission_type in ["Leave Early", "Forget to Checkout", "Checkout Issue"]:
+			elif shift_permission.permission_type in ["Leave Early", "Forget to Checkout", "Checkout Issue"] and not shift_permission.log_type:
 				shift_permission.db_set('log_type', "OUT")
 			shift_permission.reload()
 			if not shift_permission.log_type:
