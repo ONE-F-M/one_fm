@@ -1250,10 +1250,10 @@ def mark_daily_attendance(start_date, end_date):
 		# Get checkins and make hashmap
 		in_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'IN'}, 
 			fields="name, owner, creation, modified, modified_by, docstatus, idx, employee, employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, shift_permission, actual_time, MIN(time) as time",
-			order_by="time ASC", group_by="shift_assignment")
+			order_by="employee ASC", group_by="shift_assignment")
 		out_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'}, 
 			fields="name, owner, creation, modified, modified_by, docstatus, idx, employee, employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, shift_permission, actual_time, MIN(time) as time",
-			order_by="time DESC", group_by="shift_assignment")
+			order_by="employee DESC", group_by="shift_assignment")
 
 		in_checkins_dict = {}
 		for i in in_checkins:
