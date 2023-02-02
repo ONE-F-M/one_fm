@@ -1248,10 +1248,28 @@ def mark_daily_attendance(start_date, end_date):
 		shift_assignments_tuple = str(tuple(shift_assignments_list)) #[:-2]+')'
 
 		# Get checkins and make hashmap
-		in_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'IN'}, fields="*",
-			order_by="creation ASC", group_by="shift_assignment")
-		out_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'}, fields="*",
-			order_by="creation DESC", group_by="shift_assignment")
+		in_checkins = frappe.db.sql(f"""
+			SELECT name, owner, creation, modified, modified_by, docstatus, idx, 
+			employee, employee_name, log_type, late_entry, early_exit, time, date, 
+			skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, 
+			operations_shift, shift_type, shift_permission, actual_time, MIN(time) as time
+			FROM `tabEmployee Checkin` 
+			WHERE shift_assignment IN {tuple(shift_assignments_tuple)}
+			AND log_type='IN'
+			GROUP BY employee
+			ORDER BY employee ASC
+		""", as_dict=1)
+		out_checkins = frappe.db.sql(f"""
+			SELECT name, owner, creation, modified, modified_by, docstatus, idx, 
+			employee, employee_name, log_type, late_entry, early_exit, time, date, 
+			skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, 
+			operations_shift, shift_type, shift_permission, actual_time, MAX(time) as time
+			FROM `tabEmployee Checkin` 
+			WHERE shift_assignment IN {tuple(shift_assignments_tuple)}
+			AND log_type='OUT'
+			GROUP BY employee
+			ORDER BY employee ASC
+		""", as_dict=1)
 
 		in_checkins_dict = {}
 		for i in in_checkins:
