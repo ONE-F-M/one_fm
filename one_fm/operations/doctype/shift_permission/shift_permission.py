@@ -75,7 +75,7 @@ class ShiftPermission(Document):
 
 	# This method validates the permission date and avoid creating permission for previous days
 	def validate_date(self):
-		if self.docstatus==0 and getdate(self.date) < getdate() and not self.is_new():
+		if self.docstatus==0 and getdate(self.date) < getdate() and self.is_new():
 			frappe.throw(_("Oops! You cannot apply for permission for a previous date."))
 
 	# This method validates any dublicate permission for the employee on same day
