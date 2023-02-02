@@ -74,7 +74,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 	def after_insert(self):
 		frappe.db.commit()
 		self.reload()
-		if not self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end:
+		if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
 			frappe.enqueue(after_insert_background, self=self.name)
 
 def after_insert_background(self):
@@ -97,13 +97,12 @@ def after_insert_background(self):
 			if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=shift_type.early_exit_grace_period)) < curr_shift.end_datetime:
 				early_exit = 1
 
-
 		query = f"""
 			UPDATE `tabEmployee Checkin` SET
 			shift_assignment="{curr_shift.name}", operations_shift="{curr_shift.shift}", shift_type='{curr_shift.shift_type}',
 			shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
 			shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
-			late_entry={late_entry}
+			late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}'
 			WHERE name="{self.name}"
 		"""
 		frappe.db.sql(query, values=[], as_dict=1)
