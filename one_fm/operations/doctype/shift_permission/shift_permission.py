@@ -199,6 +199,6 @@ def create_checkin(name):
 		employee_checkin.shift_actual_end = shift_assignment.end_datetime
 		employee_checkin.flags.ignore_validate = True
 		employee_checkin.save(ignore_permissions=True)
-		employee_checkin.db_set('creation', shift_assignment.start_datetime if employee_checkin.log_type == "IN" else shift_assignment.end_datetime)
+		employee_checkin.db_set('creation', str(shift_assignment.start_datetime)+'.000000' if employee_checkin.log_type == "IN" else str(shift_assignment.end_datetime)+'.999999')
 		employee_checkin.db_set('actual_time', shift_assignment.start_datetime if employee_checkin.log_type == "IN" else shift_assignment.end_datetime)
 		frappe.db.commit()
