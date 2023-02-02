@@ -589,6 +589,8 @@ def create_salary_slips(doc):
 				"salary_slip_based_on_timesheet": doc.salary_slip_based_on_timesheet,
 				"payroll_frequency": doc.payroll_frequency,
 				"company": doc.company,
+				"start_date": doc.start_date,
+				"end_date": doc.end_date,
 				"posting_date": doc.posting_date,
 				"deduct_tax_for_unclaimed_employee_benefits": doc.deduct_tax_for_unclaimed_employee_benefits,
 				"deduct_tax_for_unsubmitted_tax_exemption_proof": doc.deduct_tax_for_unsubmitted_tax_exemption_proof,
@@ -603,10 +605,9 @@ def create_salary_slips(doc):
 			frappe.enqueue(
 				create_salary_slips_for_employees,
 				timeout=600,
+				queue='short',
 				employees=employees,
 				args=args,
-				start_date=doc.start_date,
-				end_date=doc.end_date,
 				publish_progress=False,
 			)
 			frappe.msgprint(
@@ -615,7 +616,7 @@ def create_salary_slips(doc):
 				indicator="blue",
 			)
 		else:
-			create_salary_slips_for_employees(employees, args, start_date=doc.start_date, end_date=doc.end_date, publish_progress=False)
+			create_salary_slips_for_employees(employees, args, publish_progress=False)
 			# since this method is called via frm.call this doc needs to be updated manually
 			doc.reload()
 
@@ -636,11 +637,16 @@ def log_payroll_failure(process, payroll_entry, error):
 
 	payroll_entry.db_set({"error_message": error_message, "status": "Failed"})
 
-def create_salary_slips_for_employees(employees, args, start_date, end_date, publish_progress=True ):
+def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 	try:
 		payroll_entry = frappe.get_doc("Payroll Entry", args.payroll_entry)
 		salary_slips_exist_for = get_existing_salary_slips(employees, args)
 		count = 0
+		start_date = args.start_date
+		end_date = args.start_date
+
+		args.pop('start_date')
+		args.pop('end_date')
 
 		employees_list = seperate_salary_slip(employees, start_date, end_date)
 
