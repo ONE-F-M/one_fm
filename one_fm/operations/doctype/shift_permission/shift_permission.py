@@ -175,14 +175,6 @@ def approve_open_shift_permission(start_date, end_date):
 			sp.db_set('docstatus', 1)
 			sp.reload()
 			# Get shift details for the employee
-			shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
-			employee_checkin = frappe.new_doc('Employee Checkin')
-			employee_checkin.employee = sp.employee
-			employee_checkin.log_type = sp.log_type
-			employee_checkin.time = shift_assignment.start_datetime if sp.log_type == "IN" else shift_assignment.end_datetime
-			employee_checkin.skip_auto_attendance = False
-			employee_checkin.shift_assignment = sp.assigned_shift
-			employee_checkin.shift_permission = sp.name
-			employee_checkin.save(ignore_permissions=True)
+			create_employee_checkin_for_shift_permission(sp)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Shift Permission')

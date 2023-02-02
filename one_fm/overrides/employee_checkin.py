@@ -61,6 +61,15 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			frappe.throw(
 				_("This employee already has a log with the same timestamp.{0}").format("<Br>" + doc_link)
 			)
+	def before_insert(self):
+		if self.shift_permission:
+			sp = frappe.get_doc("Shift Permission", self.shift_permission, ignore_permissions=True)
+			sa = frappe.get_doc("Shift Assignment", sp.assigned_shift, ignore_permissions=True)
+			self.shift_assignment = sa.name
+			self.operations_shift = sa.shift
+			self.shift_type = sa.shift_type
+			self.shift_actual_start = sa.start_datetime
+			self.shift_actual_end = sa.end_datetime
 
 	def after_insert(self):
 		frappe.db.commit()
