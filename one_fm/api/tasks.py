@@ -1210,7 +1210,12 @@ def mark_daily_attendance(start_date, end_date):
 
 		employees_dict = {}
 
-
+		# get open leaves
+		open_leaves = frappe.db.get_list("Leave Application", filters={
+			'status':'Open',
+			'from_date':['>=', start_date],
+			'to_date':["<=", start_date],
+		}, fields=['name', 'employee'])
 		# get attendance for the day
 		attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off', 'Holiday', 'Present']]})
 		attendance_dict = {}
@@ -1221,7 +1226,9 @@ def mark_daily_attendance(start_date, end_date):
 		present_attendance_dict = {}
 		for i in present_attendance_list:
 			present_attendance_dict[i.employee] = i
-
+		# exempt leave applicants from attendance
+		for i in open_leaves:
+			present_attendance_dict[i.employee] = i
 		# Get shift assignment and make hashmap
 		shift_assignments = frappe.db.sql(f"""
 			SELECT * FROM `tabShift Assignment` WHERE start_date="{start_date}" AND end_date="{end_date}" AND roster_type='Basic' 
@@ -1308,16 +1315,18 @@ def mark_daily_attendance(start_date, end_date):
 					# add employee to no checkout record found
 					checkin_no_out.append({'employee':v.employee, 'in':v.name, 'shift_assignment':v.shift_assignment})
 			except Exception as e:
-				errors.append(str(e))
+				errors.append(str(frappe.get_traceback()))
 		# add absent, day off and holiday in shift assignment
 		for i in shift_assignments:
 			try:
 				if not employee_attendance.get(i.employee):
 					# check for day off
+					comment = ""
 					if employee_schedule_dict.get(i.employee):
 						availability = 'Day Off'
 					elif holiday_today and holiday_today.get(employees_data[i.employee].holiday_list):
 						availability = 'Holiday'
+						comment = str(holiday_today.get(employees_data[i.employee].holiday_list))
 					else:
 						availability = 'Absent'
 
@@ -1329,10 +1338,11 @@ def mark_daily_attendance(start_date, end_date):
 						'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':i.name, 'operations_shift':i.shift,
 						'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':i.company,
 						'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
-						'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':""
+						'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 
+						'comment':comment
 					})
 			except Exception as e:
-				errors.append(str(e))
+				errors.append(str(frappe.get_traceback()))
 
 		# mark day off if non above is met
 		for i in employee_schedules:
@@ -1347,7 +1357,7 @@ def mark_daily_attendance(start_date, end_date):
 						'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':f"Employee Schedule - {i.name}"
 					})
 			except Exception as e:
-				errors.append(str(e))
+				errors.append(str(frappe.get_traceback()))
 				
 		
 		# create attendance with sql injection
@@ -1422,12 +1432,17 @@ def mark_daily_attendance(start_date, end_date):
 					frappe.db.sql(query, values=[], as_dict=1)
 					frappe.db.commit()
 			except Exception as e:
-				errors.append(str(e))
+				errors.append(frappe.get_traceback())
 
 		# check for error
 		if len(errors):
 			frappe.log_error(str(errors), "Mark Attendance")
-		if len(checkin_no_out):
+		# no checkin and out
+		no_checkin_out_records = """"""
+		for k in shift_assignments:
+			if not (out_checkins_dict.get(k.name) and in_checkins_dict.get(k.name)):
+				no_checkin_out_records += f"{k.name} - {k.employee} - {k.employee_name}<br>"
+		if len(no_checkin_out_records):
 			# report no checkout
 			frappe.get_doc({
 				"doctype": "Issue",
@@ -1438,14 +1453,14 @@ def mark_daily_attendance(start_date, end_date):
 				"opening_date": "2023-01-23",
 				"company": "One Facilities Management",
 				"via_customer_portal": 0,
-				"description": f"<div class=\"ql-editor read-mode\"><p>{str(checkin_no_out)}</p></div>",
-				"subject": f"Attendance Issue (in no out) - {str(start_date)}",
+				"description": f"<div class=\"ql-editor read-mode\"><p>{no_checkin_out_records}</p></div>",
+				"subject": f"Attendance Marking (No checkins/out) - {str(start_date)}|{str(end_date)}",
 				"priority": "Medium",
 				"department": "IT - ONEFM",
 				"issue_type": "Idea/Feedback",
 				"raised_by": "e.anthony@one-fm.com"
-			})
-			frappe.log_error(str(errors), "Mark Attendance")
+			}).insert()
+			frappe.db.commit()
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 
@@ -1457,13 +1472,13 @@ def get_holiday_today(curr_date):
 	holidays = frappe.db.sql(f"""
 		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
 		JOIN `tabHoliday List` hl ON hl.name=h.parent 
-		WHERE from_date='{start_date}' AND to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
+		WHERE hl.from_date='{start_date}' AND hl.to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
 
 	holiday_dict = {}
 	for i in holidays:
 		if(holiday_dict.get(i.holiday)):
-			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{i.holiday_date:i.description}}
+			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{str(i.holiday_date):i.description}}
 		else:
-			holiday_dict[i.holiday] = {i.holiday_date:i.description}
+			holiday_dict[i.holiday] = {str(i.holiday_date):i.description}
 	
 	return holiday_dict
