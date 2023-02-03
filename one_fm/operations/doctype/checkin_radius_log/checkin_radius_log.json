@@ -7,12 +7,14 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "employee_id",
   "employee",
   "employee_name",
+  "employee_id",
   "site",
   "project",
   "column_break_4",
+  "date",
+  "time",
   "user_latitude",
   "user_longitude",
   "user_distance_from_site_location",
@@ -39,6 +41,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
@@ -50,6 +53,7 @@
    "fetch_if_empty": 1,
    "fieldname": "employee_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Employee Name",
    "read_only": 1
   },
@@ -157,11 +161,25 @@
    "fieldname": "map",
    "fieldtype": "Geolocation",
    "label": "Map"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "time",
+   "fieldtype": "Time",
+   "label": "Time",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-10-25 10:18:50.538767",
+ "modified": "2023-02-02 18:30:01.427792",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Checkin Radius Log",

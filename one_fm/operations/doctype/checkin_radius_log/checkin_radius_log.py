@@ -2,9 +2,14 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe.utils import getdate, now
 from frappe.model.document import Document
 
 class CheckinRadiusLog(Document):
+	def before_insert(self):
+		_date = str(now()).split(' ')
+		self.date = _date[0]
+		self.time = _date[1]
 
 	def validate(self):
 		self.set_employee()
