@@ -33,7 +33,7 @@ executing==1.1.0
 firebase-admin==6.0.0
 git-url-parse==1.2.2
 gitdb==4.0.9
-GitPython==3.1.28
+GitPython==3.1.30
 gocardless-pro==1.22.0
 google-api-core==2.10.2
 google-api-python-client
