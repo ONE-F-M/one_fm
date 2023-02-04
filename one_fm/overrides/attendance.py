@@ -1,3 +1,4 @@
+import pandas as pd
 import frappe
 from frappe.utils import getdate, add_days
 from hrms.hr.doctype.attendance.attendance import Attendance
@@ -211,3 +212,11 @@ def create_single_attendance_record(record):
         frappe.db.set_value("Employee Checkin", record.checkout.name, 'attendance', doc.name)
     frappe.db.commit()
 
+
+@frappe.whitelist()
+def mark_bulk_attendance(employee, from_date, to_date):
+    date_range = pd.date_range(from_date, to_date)
+    for i in date_range:
+        mark_single_attendance(employee, i)
+
+    frappe.msgprint(f"Marked Attendance successfully for {employee} between {from_date} and {to_date}")
