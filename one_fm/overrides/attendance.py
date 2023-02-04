@@ -88,17 +88,7 @@ def mark_single_attendance(emp, att_date):
                         })
                     )
                     return
-                elif employee_schedule.employee_availability == 'Working':
-                    # checkin if any open shift permission
-                    shift_permissions = frappe.db.get_list("Shift Permission", filters={
-                        'employee':emp,
-                        'date':att_date,
-                        'docstatus':0,
-                        'workflow_state':'Pending'
-                    })
-                    for i in shift_permissions:
-                        approve_shift_permission(i.name)
-                    
+                elif employee_schedule.employee_availability == 'Working':                  
                     # continue to mark attendance if checkin exists
                     mark_for_shift_assignment(employee, att_date)
             
@@ -116,6 +106,16 @@ def mark_for_shift_assignment(employee, att_date):
         }, ["*"], as_dict=1
     )
     if shift_assignment:
+        # checkin if any open shift permission and approve
+        shift_permissions = frappe.db.get_list("Shift Permission", filters={
+            'employee':employee.name,
+            'date':att_date,
+            'docstatus':0,
+            'workflow_state':'Pending'
+        })
+        for i in shift_permissions:
+            approve_shift_permission(i.name)
+
         status = 'Absent'
         comment = 'No checkin records found'
         working_hours = 0
