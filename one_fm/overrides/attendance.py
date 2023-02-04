@@ -17,9 +17,14 @@ class AttendanceOverride(Attendance):
         self.validate_overlapping_shift_attendance()
         self.validate_employee_status()
         self.check_leave_record()
+        self.validate_working_hours()
+
+    def validate_working_hours(self):
+        if self.status not in ['Absent', 'Day Off', 'Holiday', 'On Leave'] and not self.working_hours:
+            frappe.throw("Working hours is required.")
 
     def before_save(self):
-        if not self.shift_assignment and self.status not in ['Absent', 'Day Off', 'Holiday']:
+        if not self.shift_assignment and self.status not in ['Absent', 'Day Off', 'Holiday', 'On Leave']:
             shift_assignment = frappe.db.get_value("Shift Assignment", {
                 'employee':self.employee,
                 'start_date':self.attendance_date,
