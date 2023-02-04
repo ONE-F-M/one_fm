@@ -18,6 +18,22 @@ class AttendanceOverride(Attendance):
         self.validate_employee_status()
         self.check_leave_record()
 
+    def before_save(self):
+        if not self.shift_assignment and self.status not in ['Absent', 'Day Off', 'Holiday']:
+            shift_assignment = frappe.db.get_value("Shift Assignment", {
+                'employee':self.employee,
+                'start_date':self.attendance_date,
+                'status':'Active',
+                'roster_type':'Basic',
+                'docstatus':1
+            }, ['*'], as_dict=1)
+            if shift_assignment:
+                self.shift_assignment = shift_assignment.name
+                self.shift = shift_assignment.shift_type
+                self.operations_shift = shift_assignment.shift
+                self.site = shift_assignment.site
+
+
 
 @frappe.whitelist()
 def mark_single_attendance(emp, att_date):
