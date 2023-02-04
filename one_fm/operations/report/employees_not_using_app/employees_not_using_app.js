@@ -16,7 +16,13 @@ frappe.query_reports["Employees Not Using App"] = {
             "label": __("Supervisor"),
             "fieldtype": "Link",
             "reqd": 0,
-            "options": "Employee"
+			"read_only": frappe.user.has_role('HR Manager') ? 0 : 1,
+            "options": "Employee",
+			"default": frappe.db.get_value('Employee', {'user_id':frappe.session.user}, 'name').then(
+				res=>{
+					frappe.query_report.set_filter_value('supervisor', res.message.name);
+				}
+			)
         },
 		{
             "fieldname": "company",
