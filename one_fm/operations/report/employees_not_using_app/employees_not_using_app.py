@@ -1,5 +1,10 @@
 # Copyright (c) 2023, omar jaber and contributors
 # For license information, please see license.txt
+"""
+	THIS REPORT GENERATES LIST OF USERS WITH NO ATTENDANCE
+	THIS MEAN THAT THEY NEITHER HAVE LEAVE, WORK FROM HOME, TIMESHEETNOR HOLIDAY
+	IF USER IS NOT HR, THE REPORT IS LOCKED TO THE USER RECORD AS THE SUPERVISOR
+"""
 
 import frappe
 from frappe import _
