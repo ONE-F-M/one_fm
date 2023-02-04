@@ -57,6 +57,12 @@
    "options": "Location"
   },
   {
+    "fieldname": "status",
+    "fieldtype": "Select",
+    "label": "Status",
+    "options": "Active\nInactive"
+   },
+  {
    "fieldname": "column_break_7",
    "fieldtype": "Column Break"
   },
