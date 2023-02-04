@@ -263,6 +263,7 @@ class CreateMap():
                     'leave_type':one.leave_type,
                     'date': one.attendance_date,
                     'attendance': one.status,
+                    'employee_availability':one.status if one.status == "Day Off" else "",
                     'day_off_category': self.employee_period_details[row[1]].get('day_off_category'),
                     'number_of_days_off': self.employee_period_details[row[1]].get('number_of_days_off'),
                     'employee_id': self.employee_period_details[row[1]].get('employee_id')
