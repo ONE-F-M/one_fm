@@ -10,7 +10,7 @@ class AttendanceOverride(Attendance):
     def validate(self):
         from erpnext.controllers.status_updater import validate_status
 
-        validate_status(self.status, ["Present", "Absent", "On Leave", "Half Day", "Work From Home", "Day Off"])
+        validate_status(self.status, ["Present", "Absent", "On Leave", "Half Day", "Work From Home", "Day Off", "Holiday"])
         validate_active_employee(self.employee)
         self.validate_attendance_date()
         self.validate_duplicate_record()
@@ -64,7 +64,7 @@ def mark_single_attendance(emp, att_date):
 
             if holiday_today.get(employee.holiday_list):
                 status = "Holiday"
-                comment = str(holiday_today.get(employee.holiday_list))
+                comment = "Holiday - " +str(holiday_today.get(employee.holiday_list))
                 create_single_attendance_record(
                     frappe._dict({
                         'employee':employee,
@@ -116,7 +116,7 @@ def mark_for_shift_assignment(employee, att_date):
     )
     if shift_assignment:
         status = 'Absent'
-        comment = ''
+        comment = 'No checkin records found'
         working_hours = 0
         checkin = ''
         checkout = ''
@@ -196,5 +196,17 @@ def create_single_attendance_record(record):
             AND attendance_date='{doc.attendance_date}'
         """)
     
-    frappe.get_doc(doc).submit()
+    doc = frappe.get_doc(doc)
+    if doc.status in ['Work From Home', 'Day Off', 'Holiday']:
+        doc.flags.ignore_validate = True
+        doc.save()
+        doc.db_set('docstatus', 1)
+    else:
+        doc.submit()
+    # updated checkins if exists
+    if record.checkin:
+        frappe.db.set_value("Employee Checkin", record.checkin.name, 'attendance', doc.name)
+    if record.checkout:
+        frappe.db.set_value("Employee Checkin", record.checkout.name, 'attendance', doc.name)
+    frappe.db.commit()
 
