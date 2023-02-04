@@ -16,7 +16,7 @@ def execute(filters=None):
 
 
 def get_data(filters):
-	conditions = f""" sa.start_date='{filters.date}' """
+	conditions = f""" sa.start_date='{filters.date}' AND sa.company="{filters.company}" """
 	if filters.supervisor:
 		conditions += f""" AND os.supervisor='{filters.supervisor}'"""
 	query = frappe.db.sql(f"""
