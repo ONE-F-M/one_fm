@@ -48,11 +48,12 @@ def mark_single_attendance(emp, att_date):
     if not frappe.db.exists("Attendance", {
         'employee': emp,
         'attendance_date':att_date,
-        'status': ['!=', 'Absent']
+        'status': ['!=', 'Absent'],
+        'docstatus':1
         }):
         open_leaves = frappe.db.sql(f"""
             SELECT name, employee FROM `tabLeave Application` 
-            WHERE employee='{emp}' AND status='Open' AND {att_date} BETWEEN from_date AND to_date;
+            WHERE employee='{emp}' AND status='Open' AND '{att_date}' BETWEEN from_date AND to_date;
         """, as_dict=1)
         if not open_leaves: # continue if no open leaves
             employee = frappe.get_doc("Employee", emp)
