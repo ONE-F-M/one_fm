@@ -9,7 +9,7 @@ frappe.query_reports["Employees Not Using App"] = {
             "label": __("Date"),
             "fieldtype": "Date",
             "reqd": 1,
-            "default": frappe.datetime.get_today()
+            "default": frappe.datetime.add_days(frappe.datetime.get_today(), -1)
         },
 		{
             "fieldname": "supervisor",
