@@ -20,8 +20,9 @@ class AttendanceOverride(Attendance):
         self.validate_working_hours()
 
     def validate_working_hours(self):
-        if self.status not in ['Absent', 'Day Off', 'Holiday', 'On Leave'] and not self.working_hours:
-            frappe.throw("Working hours is required.")
+        if self.status not in ['Absent', 'Day Off', 'Holiday', 'On Leave']:
+            if not self.working_hours:frappe.throw("Working hours is required.")
+            if self.working_hours <= 0:frappe.throw("Working hours must be greater than 0 if staus is Presnet ot Work From Home.")
 
     def before_save(self):
         if not self.shift_assignment and self.status not in ['Absent', 'Day Off', 'Holiday', 'On Leave']:
@@ -186,5 +187,14 @@ def create_single_attendance_record(record):
     if record.comment:
         doc.comment = record.comment
     
-    print(doc)
+    if frappe.db.exists("Attendance", {
+        'employee':doc.employee,
+        'attendance_date':doc.attendance_date,
+        }):
+        frappe.db.sql(f"""
+            DELETE FROM `tabAttendance` WHERE employee='{doc.employee}'
+            AND attendance_date='{doc.attendance_date}'
+        """)
+    
+    frappe.get_doc(doc).submit()
 
