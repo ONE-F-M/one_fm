@@ -16,10 +16,7 @@ frappe.query_reports["Employees Not Using App"] = {
             "label": __("Supervisor"),
             "fieldtype": "Link",
             "reqd": 0,
-            "options": "Employee",
-			// get_data: function(txt) {
-			// 	return frappe.db.get_link_options('Employee', 'HR-EMP-00022');
-			// }
+            "options": "Employee"
         },
 		{
             "fieldname": "company",
