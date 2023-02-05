@@ -1506,7 +1506,7 @@ function get_post_data(page) {
 		// console.log(start_date, end_date, project, site, shift, operations_role,limit_start, limit_page_length);
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 			.then(res => {
-
+				console.log(res);
 				$('#cover-spin').hide();
 				page.pagination.total = res.total;
 				let $postMonth = $('.postMonth');
