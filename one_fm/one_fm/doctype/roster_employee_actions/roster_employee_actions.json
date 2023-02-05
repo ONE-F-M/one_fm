@@ -19,6 +19,8 @@
   {
    "fieldname": "start_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Start Date",
    "reqd": 1
   },
@@ -55,6 +57,8 @@
    "fieldname": "supervisor",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Supervisor",
    "options": "Employee",
    "reqd": 1
@@ -76,7 +80,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-02-05 10:08:31.413506",
+ "modified": "2023-02-05 10:36:32.302301",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Employee Actions",
