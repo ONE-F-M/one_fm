@@ -54,6 +54,7 @@
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Supervisor",
    "options": "Employee",
    "reqd": 1
@@ -75,7 +76,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-10-12 11:54:11.265138",
+ "modified": "2023-02-05 10:08:31.413506",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Employee Actions",
@@ -144,5 +145,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
