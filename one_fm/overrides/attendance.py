@@ -196,7 +196,7 @@ def create_single_attendance_record(record):
         }):
         frappe.db.sql(f"""
             DELETE FROM `tabAttendance` WHERE employee='{doc.employee}'
-            AND attendance_date='{doc.attendance_date}'
+            AND attendance_date='{record.attendance_date}'
         """)
         frappe.db.commit()
     
