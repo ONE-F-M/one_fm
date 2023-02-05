@@ -97,6 +97,90 @@ def change_employee_detail(employees:str,field:str=None,value=None)-> bool:
         response("error", 500, False, str(e))
 
 
+@frappe.whitelist()
+def assign_staff(employees, shift, request_employee_assignment=None):
+	if not employees:
+		return response("Bad Request", 400, None, 'Please select employees first')
+
+	validation_logs = []
+	user, user_roles, user_employee = get_current_user_details()
+	shift, site, project = frappe.db.get_value("Operations Shift", shift, ['name', 'site', 'project'])
+	if not cint(request_employee_assignment):
+		for emp in json.loads(employees):
+			emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
+			supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
+			# if user_employee.name != supervisor:
+			# 	validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
+
+	if len(validation_logs) > 0:
+		frappe.log_error(str(validation_logs))
+		return response("Internal Server Error", 500, None, str(validation_logs) )
+		
+	else:
+		try:
+			start = time.time()
+			for employee in json.loads(employees):
+				if not cint(request_employee_assignment):
+					frappe.enqueue(assign_job, employee=employee, shift=shift, site=site, project=project, is_async=True, queue="long")
+				else:
+					emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", employee, ["project", "site", "shift"])
+					site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
+					if emp_project != project or emp_site != site or emp_shift != shift:
+						frappe.enqueue(create_request_employee_assignment, employee=employee, from_shift=emp_shift, to_shift=shift, is_async=True, queue="long")
+			frappe.enqueue(update_roster, key="staff_view", is_async=True, queue="long")
+			end = time.time()
+
+			return response("Success", 200, {'message':'Shift changed successfully.'})
+
+		except Exception as e:
+			frappe.log_error(str(e))
+			return response("Internal Server Error", 500, None,str(e))
+
+
+def update_employee_record(employee:dict):
+    """summary
+     Update the cell number and enrolled details for employee
+    Args:
+        employee (_type_): dict
+    """
+    if frappe.db.exists("Employee",employee.get('employee')):
+        if employee.get('enrolled') in [0,1]:
+            frappe.db.set_value("Employee",employee.get('employee'),'enrolled',employee.get('enrolled') or 0)
+        if employee.get('cell_number'):
+            frappe.db.set_value("Employee",employee.get('employee'),'cell_number',employee.get('cell_number'))
+            if frappe.db.get_value("Employee",employee.get('employee'),'user_id'):
+                user_id = frappe.db.get_value("Employee",employee.get('employee'),'user_id')
+                frappe.db.set_value("User",user_id,'mobile_no',employee.get('cell_number'))
+                frappe.db.set_value("User",user_id,'phone',employee.get('cell_number'))
+        frappe.db.commit()
+    else:
+        return response("Resource not found",'404',None,"Employee {}  not found".format(employee.get('employee')))
+
+@frappe.whitelist()
+def change_employee_detail(employees:str,field:str=None,value=None)-> bool:
+    """ summary
+        Update the Employee and User record of a employee
+    Args:
+        employee (str): Employee ID or Name
+        field (str): Field to be changed
+        value (str): new value of field
+    Returns:
+        bool: Returns true if the data was changed successfully.
+    """
+    
+    accepted_fields = ['enrolled','cell_number']
+    if not isinstance(employees, str):
+        return response("Bad Request", 400, None, "Employee value must of type str.")
+    
+    try:
+        employee_json = json.loads(employees)
+        if employee_json:
+            list(map(update_employee_record,employee_json.get('employees')))
+            return response('Success',200,{'Data Updated Successfully'})
+            
+    except Exception as e:
+        response("error", 500, False, str(e))
+
 @frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
     date = cstr(add_to_date(nowdate(), days=1))
@@ -166,17 +250,17 @@ def get_staff_filters_data():
 
 @frappe.whitelist()
 def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled: int = 0, employee_search_id: str = None, 
-        employee_search_name: str = None, project: str = None, site: str = None, shift: str = None, department: str = None, 
-        operations_role: str = None, designation: str = None, isOt: str = None, limit_start: int = 0, limit_page_length: int  = 9999) -> dict:
-    try:
-        master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
-        operations_roles_list = []
-        employees = []
-        
-        filters = {
-            'date': ['between', (start_date, end_date)]
-        }
-        str_filters = f'es.date between "{start_date}" and "{end_date}"'
+		employee_search_name: str = None, project: str = None, site: str = None, shift: str = None, department: str = None, 
+		operations_role: str = None, designation: str = None, isOt: str = None, limit_start: int = 0, limit_page_length: int  = 9999) -> dict:
+	try:
+		master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
+		operations_roles_list = []
+		employees = []
+		
+		filters = {
+			'date': ['between', (start_date, end_date)]
+		}
+		str_filters = f'es.date between "{start_date}" and "{end_date}"'
 
         if operations_role:
             filters.update({'operations_role': operations_role})
@@ -1055,44 +1139,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
         response("error", 500, None, str(e))
 
 
-@frappe.whitelist()
-def assign_staff(employees, shift, request_employee_assignment=0):
-    if not employees:
-        return response("Bad Request", 400, None, 'Please select employees first')
 
-    validation_logs = []
-    user, user_roles, user_employee = get_current_user_details()
-    shift, site, project = frappe.db.get_value("Operations Shift", shift, ['name', 'site', 'project'])
-    if not cint(request_employee_assignment):
-        for emp in json.loads(employees):
-            emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
-            supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
-            # if user_employee.name != supervisor:
-            # 	validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
-
-    if len(validation_logs) > 0:
-        frappe.log_error(str(validation_logs))
-        return response("Internal Server Error", 500, None, str(validation_logs) )
-        
-    else:
-        try:
-            start = time.time()
-            for employee in json.loads(employees):
-                if not cint(request_employee_assignment):
-                    frappe.enqueue(assign_job, employee=employee, shift=shift, site=site, project=project, is_async=True, queue="long")
-                else:
-                    emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", employee, ["project", "site", "shift"])
-                    site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
-                    if emp_project != project or emp_site != site or emp_shift != shift:
-                        frappe.enqueue(create_request_employee_assignment, employee=employee, from_shift=emp_shift, to_shift=shift, is_async=True, queue="long")
-            frappe.enqueue(update_roster, key="staff_view", is_async=True, queue="long")
-            end = time.time()
-
-            return response("Success", 200, {'message':'Shift changed successfully.'})
-
-        except Exception as e:
-            frappe.log_error(str(e))
-            return response("Internal Server Error", 500, None,str(e))
 
 def create_request_employee_assignment(employee, from_shift, to_shift):
     req_ea_doc = frappe.new_doc("Request Employee Assignment")

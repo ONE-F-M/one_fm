@@ -1,8 +1,10 @@
 from datetime import timedelta, datetime
 import frappe, ast, base64, time, grpc, json
 from frappe import _
+from datetime import timedelta
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.api.v1.roster import get_current_shift
+from one_fm.overrides.employee_checkin import get_current_shift_checkin
 from one_fm.api.v1.utils import response
 from one_fm.api.v2.zenquotes import fetch_quote
 
@@ -12,11 +14,10 @@ from one_fm.api.doc_events import haversine
 
 
 
-# setup channel for face recognition
+# # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
 
-# setup stub for face recognition
 stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 @frappe.whitelist()
@@ -169,11 +170,13 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         # setup stub
         # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
         # request body
+
         req = facial_recognition_pb2.FaceRecognitionRequest(
             username = frappe.session.user,
             media_type = "video",
             media_content = video
         )
+
         # Call service stub and get response
         
         res = stub.FaceRecognition(req)
