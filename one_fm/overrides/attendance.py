@@ -198,6 +198,7 @@ def create_single_attendance_record(record):
             DELETE FROM `tabAttendance` WHERE employee='{doc.employee}'
             AND attendance_date='{doc.attendance_date}'
         """)
+        frappe.db.comment()
     
     doc = frappe.get_doc(doc)
     if doc.status in ['Work From Home', 'Day Off', 'Holiday']:
