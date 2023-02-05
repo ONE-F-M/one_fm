@@ -12,7 +12,6 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
-   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
@@ -22,7 +21,6 @@
    "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
-   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Employee Name",
    "read_only": 1
@@ -31,7 +29,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-02-05 10:10:02.594687",
+ "modified": "2023-02-05 11:13:59.465533",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Employees Not Rostered",

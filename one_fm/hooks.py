@@ -718,3 +718,6 @@ jenv = {
 }
 
 # after_migrate = "one_fm.patches.v1_0.rename_posttype_to_operationsrole.execute"
+
+# add more info to session on boot
+on_session_creation = "one_fm.session_hooks.on_session_creation"
