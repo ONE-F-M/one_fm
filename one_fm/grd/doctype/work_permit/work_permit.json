@@ -440,8 +440,7 @@
    "allow_on_submit": 1,
    "fieldname": "upload_work_permit_on",
    "fieldtype": "Data",
-   "label": "Upload On",
-   "read_only": 1
+   "label": "Upload On"
   },
   {
    "allow_on_submit": 1,
@@ -874,7 +873,7 @@
    "label": "Payment Details Section"
   },
   {
-   "depends_on": "eval:frappe.session.user == doc.grd_operator &&\ndoc.work_permit_type != \"Local Transfer\" && (doc.work_permit_status == \"Pending by Operator\" || doc.work_permit_status == \"Completed\");",
+   "depends_on": "eval:frappe.session.user == doc.grd_operator",
    "fieldname": "work_permit_information_section",
    "fieldtype": "Section Break",
    "label": "Work Permit Information"
@@ -886,7 +885,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-01-09 12:36:55.434356",
+ "modified": "2023-02-05 15:56:10.611873",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
