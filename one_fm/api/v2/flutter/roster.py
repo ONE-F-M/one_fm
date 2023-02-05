@@ -52,108 +52,50 @@ def assign_staff(employees, shift, request_employee_assignment=None):
 			frappe.log_error(str(e))
 			return response("Internal Server Error", 500, None,str(e))
 
-@frappe.whitelist()
-def change_employee_shift(employees:str,shift:str):
-	"""_summary_
-			Update the shift of a number of employees
-	Args:
-		employees (str): _description_
-		shift (_type_): _description_
 
-	Returns:
-		_type_: updated employee document
-	"""
-	if not employees:
-		return response("Bad Request", 400, None, "Employees must be selected.")
-	if not shift:
-		return response("Bad Request", 400, None, "A shift must be selected.")
-	if not frappe.db.exists("Operations Shift",shift):
-		return response("Bad Request", 400, None, "Please provide a valid Operations Shift. {} is invalid".format(shift))
-	try:
-		data = []
-		emp_tuple = employees.replace('[', '(').replace(']',')')
-		all_employees = frappe.db.sql("SELECT name from `tabEmployee` where name in {}".format(emp_tuple),as_dict=1)
-		if all_employees:
-			for each in all_employees:
-				frappe.db.set_value("Employee",each.name,'shift',shift)
-				emp_doc = frappe.get_doc("Employee",each.name)
-				data.append(emp_doc.as_dict())
-			frappe.db.commit()
-			response("Sucess",200,{'employees':data})
-				
-		else:
-			return response("Bad Request", 400, None, "No Employees found with the provided IDs")
-			
-	except Exception as e:
-		response("Internal Server Error", 500, False, str(e))
-
-		
-		
-		
-
+def update_employee_record(employee:dict):
+    """summary
+     Update the cell number and enrolled details for employee
+    Args:
+        employee (_type_): dict
+    """
+    if frappe.db.exists("Employee",employee.get('employee')):
+        if employee.get('enrolled') in [0,1]:
+            frappe.db.set_value("Employee",employee.get('employee'),'enrolled',employee.get('enrolled') or 0)
+        if employee.get('cell_number'):
+            frappe.db.set_value("Employee",employee.get('employee'),'cell_number',employee.get('cell_number'))
+            if frappe.db.get_value("Employee",employee.get('employee'),'user_id'):
+                user_id = frappe.db.get_value("Employee",employee.get('employee'),'user_id')
+                frappe.db.set_value("User",user_id,'mobile_no',employee.get('cell_number'))
+                frappe.db.set_value("User",user_id,'phone',employee.get('cell_number'))
+        frappe.db.commit()
+    else:
+        return response("Resource not found",'404',None,"Employee {}  not found".format(employee.get('employee')))
 
 @frappe.whitelist()
-def change_employee_detail(employee_id:str,field:str=None,value=None)-> bool:
-	""" summary
-		Update the Employee and User record of a employee
-	Args:
-		employee (str): Employee ID or Name
-		field (str): Field to be changed
-		value (str): new value of field
-
-	Returns:
-		bool: Returns true if the data was changed successfully.
-	"""
-	
-	accepted_fields = ['enrolled','cell_number']
-	if not isinstance(employee_id, str):
-		return response("Bad Request", 400, None, "Employee ID must of type str.")
-	
-	if not isinstance(field, str):
-		return response("Bad Request", 400, None, "Field  must be of type str.")
-		   
-	if not employee_id:
-		return response("Error", 400, None, {'message':'Atleast 1 Employee must be provided.'})
-	
-	if not value :
-		return response("Error", 400, None, {'message':'A Value must be provided.'})
-  
-	if not field:
-		return response("Error", 400, None, {'message':'A Field must be provided.'})
-		
-	if field  not in accepted_fields:
-		return response("Error", 400, None, {'message':'This field cannot be changed'})
-	
-	try:
-		employee = frappe.get_all("Employee",{"employee_id":employee_id})
-		if employee:
-			employee_ = employee[0]['name']
-			employee_doc = frappe.get_doc("Employee",employee_)
-			if field == 'cell_number':
-				if validate_phone_number(value):
-					frappe.db.set_value("Employee",employee_,field,value)
-					if frappe.db.get_value("Employee",employee_,'user_id'):
-						user_id = frappe.db.get_value("Employee",employee_,'user_id')
-						frappe.db.set_value("User",user_id,'mobile_no',value)
-						frappe.db.set_value("User",user_id,'phone',value)
-					frappe.db.commit()
-					employee_doc.reload()
-					return response("Sucess",200,{'employee':employee_doc.as_dict()}) 
-				else:
-					return response("Error", 400, None, {'message':'Please set a valid phone number'})
-			else:
-				frappe.db.set_value("Employee",employee_,field,value)
-				frappe.db.commit()
-				employee_doc.reload()
-				response("Sucess",200,{'employee':employee_doc.as_dict()})
-		else:
-			return response("Resource Not Found", 404, None, "No employees found with {employee_id}".format(employee_id=employee_id)) 
-			
-	except Exception as e:
-		response("error", 500, False, str(e))
-
-
-
+def change_employee_detail(employees:str,field:str=None,value=None)-> bool:
+    """ summary
+        Update the Employee and User record of a employee
+    Args:
+        employee (str): Employee ID or Name
+        field (str): Field to be changed
+        value (str): new value of field
+    Returns:
+        bool: Returns true if the data was changed successfully.
+    """
+    
+    accepted_fields = ['enrolled','cell_number']
+    if not isinstance(employees, str):
+        return response("Bad Request", 400, None, "Employee value must of type str.")
+    
+    try:
+        employee_json = json.loads(employees)
+        if employee_json:
+            list(map(update_employee_record,employee_json.get('employees')))
+            return response('Success',200,{'Data Updated Successfully'})
+            
+    except Exception as e:
+        response("error", 500, False, str(e))
 
 @frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
