@@ -4,7 +4,8 @@ from frappe.utils import get_fullname
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
 from frappe.desk.form.assign_to import add
-from one_fm.api.api import push_notification_rest_api_for_leave_application
+from frappe.utils import getdate
+import pandas as pd
 
 
 class LeaveApplicationOverride(LeaveApplication):
@@ -139,21 +140,37 @@ class LeaveApplicationOverride(LeaveApplication):
                 frappe.msgprint(_("Email sent to {0}").format(contact))
             except frappe.OutgoingEmailError:
                 pass
+    def on_update(self):
+        if self.workflow_state=='Rejected':
+            attendance_range = []
+            for i in pd.date_range(self.from_date, self.to_date):
+                attendance_range.append(getdate(i))
+            for i in attendance_range:
+                if getdate()>i:
+                    if frappe.db.exists("Attendance", {
+                        'employee':self.employee,
+                        'attendance_date': str(i),
+                        'docstatus':1
+                        }):
+                        frappe.db.sql(f""" 
+                            UPDATE `tabAttendance` SET status='Absent', comment="Leave Appication {self.name} Rejected"
+                            WHERE attendance_date='{str(i)}' and employee='{self.employee}'
+                        """)
+                    else:
+                        frappe.get_doc({
+                            'doctype':'Attendance',
+                            'employee':self.employee,
+                            'attendance_date':str(i),
+                            'roster_type':'Basic',
+                            'status':'Absent'
+                        }).submit()
+
+                    frappe.db.commit()
+
+            
+        
 
 
-
-    def is_company_email(self):
-        """Returns true if the user id email associated with the employee in this leave application  is the same as the employee id
-
-        Returns:
-            A Boolean value
-        """
-        matched = False
-        employee_details = frappe.get_all("Employee",{'name':self.employee},['employee_id','user_id'])
-        if employee_details:
-            if employee_details[0].get('employee_id').lower() in  employee_details[0].get('user_id').split('@'):
-                matched = True
-        return matched
 
 @frappe.whitelist()
 def get_leave_approver(employee):

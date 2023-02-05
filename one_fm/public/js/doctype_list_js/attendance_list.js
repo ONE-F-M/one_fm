@@ -10,6 +10,8 @@ frappe.listview_settings["Attendance"] = {
 			return [__(doc.status), "orange", "status,=," + doc.status];
 		}else if (doc.status == "Day Off"){
             return [__(doc.status), "blue", "status,=," + doc.status];
+        }else if (doc.status == "Holiday"){
+            return [__(doc.status), "blue", "status,=," + doc.status];
         }
 	},
 

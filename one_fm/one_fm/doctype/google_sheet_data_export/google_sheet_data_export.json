@@ -85,6 +85,7 @@
    "label": "Enable Auto Update"
   },
   {
+   "depends_on": "reference_doctype",
    "fieldname": "select_fields_section",
    "fieldtype": "Section Break",
    "label": "Select Fields"
@@ -129,7 +130,7 @@
  ],
  "hide_toolbar": 1,
  "links": [],
- "modified": "2023-01-30 08:02:30.871112",
+ "modified": "2023-02-02 10:46:22.206991",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Google Sheet Data Export",

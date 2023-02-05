@@ -75,13 +75,16 @@ class ShiftPermission(Document):
 
 	# This method validates the permission date and avoid creating permission for previous days
 	def validate_date(self):
-		if self.docstatus==0 and getdate(self.date) < getdate():
+		if self.docstatus==0 and getdate(self.date) < getdate() and self.is_new():
 			frappe.throw(_("Oops! You cannot apply for permission for a previous date."))
 
 	# This method validates any dublicate permission for the employee on same day
 	def validate_record(self):
 		date = getdate(self.date).strftime('%d-%m-%Y')
-		if self.docstatus==0 and frappe.db.exists("Shift Permission", {"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift, "permission_type": self.permission_type, "workflow_state":"Pending"}):
+		if self.docstatus==0 and frappe.db.exists("Shift Permission", {
+			"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift, 
+			"permission_type": self.permission_type, "workflow_state":"Pending", 'name':['!=', self.name]
+			}):
 			frappe.throw(_("{employee} has already applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date)))
 
 	# This method will display the mandatory fields for the user
@@ -125,29 +128,20 @@ def create_employee_checkin_for_shift_permission(shift_permission):
 		args:
 			shift_permission: Object of Shift Permission
 	"""
-	if not frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin')\
-		and not frappe.db.exists('Employee Checkin', {'shift_permission': shift_permission.name, 'docstatus': 1}):
-		log_type = False
-		if shift_permission.permission_type in ["Arrive Late", "Forget to Checkin", "Checkin Issue"]:
-			log_type = "IN"
-		elif shift_permission.permission_type in ["Leave Early", "Forget to Checkout", "Checkout Issue"]:
-			log_type = "OUT"
-		if not log_type:
-			return False
-
-		# Get shift details for the employee
-		shift_details = get_shift_details(shift_permission.shift_type, getdate(shift_permission.date))
-
-		employee_checkin = frappe.new_doc('Employee Checkin')
-		employee_checkin.employee = shift_permission.employee
-		employee_checkin.log_type = log_type
-		employee_checkin.shift = shift_permission.shift_type
-		employee_checkin.time = shift_details.start_datetime if log_type == "IN" else shift_details.end_datetime
-		employee_checkin.skip_auto_attendance = False
-		employee_checkin.operations_shift = shift_permission.shift
-		employee_checkin.shift_assignment = shift_permission.assigned_shift
-		employee_checkin.shift_permission = shift_permission.name
-		employee_checkin.save(ignore_permissions=True)
+	try:
+		if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin')\
+			and not frappe.db.exists('Employee Checkin', {'shift_permission': shift_permission.name, 'docstatus': 1}):
+			if shift_permission.permission_type in ["Arrive Late", "Forget to Checkin", "Checkin Issue"] and not shift_permission.log_type:
+				shift_permission.db_set('log_type', "IN")
+			elif shift_permission.permission_type in ["Leave Early", "Forget to Checkout", "Checkout Issue"] and not shift_permission.log_type:
+				shift_permission.db_set('log_type', "OUT")
+			shift_permission.reload()
+			if not shift_permission.log_type:
+				return False
+			# Get shift details for the employee
+			create_checkin(shift_permission.name)
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), "Shift Permission")
 
 @frappe.whitelist()
 def fetch_approver(employee):
@@ -162,23 +156,49 @@ def fetch_approver(employee):
 
 # approve open shift permission before marking attendance
 def approve_open_shift_permission(start_date, end_date):
-	shift_permissions = frappe.db.sql(f"""
-		SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa ON sa.name=sp.assigned_shift
-		WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}' AND sp.docstatus=0
-	""", as_dict=1)
-	# apply workflow
-	for i in shift_permissions:
-		sp = frappe.get_doc("Shift Permission", i.name)
+	try:
+		shift_permissions = frappe.db.sql(f"""
+			SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa 
+			ON sa.name=sp.assigned_shift
+			WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}' 
+			AND sp.workflow_state='Pending' AND sp.docstatus=0
+		""", as_dict=1)
+		# apply workflow
+		error_list = """"""
+		for i in shift_permissions:
+			try:
+				create_checkin(i.name)
+			except Exception as e:
+				error_list += str(e)+'\n\n'
+		if error_list:frappe.log_error(error_list, 'Shift Permission')
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Shift Permission')
+
+def create_checkin(name):
+	# create checkin from shift permission
+	if not frappe.db.exists("Employee Checkin", {
+		'shift_permission':name
+		}):
+		sp = frappe.get_doc("Shift Permission", name)
 		sp.db_set('Workflow_state', 'Approved')
 		sp.db_set('docstatus', 1)
 		sp.reload()
-		# Get shift details for the employee
-		shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
+		# Get shift details for the employee shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
 		employee_checkin = frappe.new_doc('Employee Checkin')
+		shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
 		employee_checkin.employee = sp.employee
 		employee_checkin.log_type = sp.log_type
 		employee_checkin.time = shift_assignment.start_datetime if sp.log_type == "IN" else shift_assignment.end_datetime
-		employee_checkin.skip_auto_attendance = False
+		employee_checkin.date = shift_assignment.start_date if sp.log_type=='IN' else shift_assignment.end_datetime
+		employee_checkin.skip_auto_attendance = 0
 		employee_checkin.shift_assignment = sp.assigned_shift
 		employee_checkin.shift_permission = sp.name
+		employee_checkin.operations_shift = shift_assignment.shift
+		employee_checkin.shift_type = shift_assignment.shift_type
+		employee_checkin.shift_actual_start = shift_assignment.start_datetime
+		employee_checkin.shift_actual_end = shift_assignment.end_datetime
+		employee_checkin.flags.ignore_validate = True
 		employee_checkin.save(ignore_permissions=True)
+		employee_checkin.db_set('creation', str(shift_assignment.start_datetime)+'.000000' if employee_checkin.log_type == "IN" else str(shift_assignment.end_datetime)+'.999999')
+		employee_checkin.db_set('actual_time', shift_assignment.start_datetime if employee_checkin.log_type == "IN" else shift_assignment.end_datetime)
+		frappe.db.commit()

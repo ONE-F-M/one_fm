@@ -1923,7 +1923,7 @@ def create_roster_post_actions():
     # start date to be from tomorrow
     start_date = add_to_date(cstr(getdate()), days=1)
     # end date to be 14 days after start date
-    end_date = add_to_date(start_date, days=3)
+    end_date = add_to_date(start_date, days=14)
 
     operations_roles_not_filled_set = set()
 
@@ -1974,7 +1974,7 @@ def create_roster_post_actions():
                 if (item["date"] == second_item["date"]) and (item["shift"] == second_item["shift"]) and (item["operations_role"] == second_item["operations_role"]):
                     second_item["quantity"] = second_item["quantity"] + 1
                     break
-                
+
             else:
                 item.update({"quantity": 1})
                 second_check_list.append(item)

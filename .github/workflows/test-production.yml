@@ -1,9 +1,9 @@
-name: Deploy CI/CD to Sandbox
+name: Deploy CI/CD to Test production
 
 on:
   push: # tells github to run this on any push to the repository
     branches:
-      - sandbox
+      - master-14
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -11,22 +11,21 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - name: Deploy to Sandbox
+    - name: Deploy to Test Production
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.SANDBOX_HOST }}
+        host: ${{ secrets.LMS_HOST }}
         username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SANDBOX_KEY }}
+        key: ${{ secrets.LMS_SECRET }}
         port: 22
         script: |
-          cd /home/frappe/frappe-bench/apps/one_fm # we move into our app's folder
-          git pull upstream sandbox # we pull any changes from git
-          cd /home/frappe/frappe-bench
-          bench setup requirements
+          cd /home/frappe/master-14/apps/one_fm # we move into our app's folder
+          git pull upstream master-14 # we pull any changes from git
+          cd /home/frappe/master-14
           sudo supervisorctl restart all # we remove any unused dependencies
           bench migrate # sync database
           bench doctor

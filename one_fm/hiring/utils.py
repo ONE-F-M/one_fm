@@ -399,7 +399,7 @@ def create_salary_structure_assignment(doc, method):
         assignment.company = doc.company
         assignment.from_date = doc.date_of_joining
         assignment.base = doc.one_fm_basic_salary
-        assignment.save(ignore_permissions = True)
+        assignment.submit()
 
 @frappe.whitelist()
 def update_job_offer_from_applicant(jo, status):

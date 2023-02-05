@@ -49,13 +49,17 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
 
 	data = frappe.db.sql("""
 		select
-			distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site, emp.project
-		from `tabEmployee` as emp, `tabUser` as usr
+			distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, 
+   		usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site,
+     	emp.project,opsite.account_supervisor_name as site_supervisor,opshift.supervisor_name as shift_supervisor
+		from `tabEmployee` as emp, `tabUser` as usr,`tabOperations Shift` as opshift,`tabOperations Site` as opsite
 		where
 		emp.project is not NULL
 		and emp.site is not NULL
 		and emp.shift is not NULL
 		and emp.user_id=usr.name
+		and emp.shift = opshift.name
+		and emp.site = opsite.name
 		{conds}
 	""".format(date=date, conds=conds), as_dict=1)
 	return data
@@ -339,9 +343,10 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 		end_date = getdate(end_date)
 		new_employees = []
 		for i in employees:
-			if not getdate(i['date']) > end_date:
+			if getdate(i['date']) <= end_date:
 				new_employees.append(i)
-		employees = new_employees
+		if new_employees:
+			employees = new_employees.copy()
 	# check keep days_off
 	if keep_days_off:
 		days_off_list = frappe.db.get_list("Employee Schedule", filters={
@@ -362,7 +367,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			for i in employees:
 				if not (i['date'] in days_off_dict.get(i['employee'])):
 					new_employees.append(i)
-			employees = new_employees
+			if new_employees:
+				employees = new_employees.copy()
 	
 	# # get and structure employee dictionary for easy hashing
 	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employee_list]}, fields=['name', 'employee_name', 'department'], ignore_permissions=True)

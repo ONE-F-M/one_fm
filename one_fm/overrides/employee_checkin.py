@@ -55,39 +55,29 @@ class EmployeeCheckinOverride(EmployeeCheckin):
                 frappe.throw(frappe.get_traceback())
 
 
-    def validate_duplicate_log(self):
-        doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
-        if doc:
-            doc_link = frappe.get_desk_link("Employee Checkin", doc[0]["name"])
-            frappe.throw(
-                _("This employee already has a log with the same timestamp.{0}").format("<Br>" + doc_link)
-            )
-   
-    def validate_early_exit(self):
-        """
-            Set the employee checkin as early exit if the employee is checkin out early
-        """
-        actual_time = str(self.actual_time)
-        if not '.' in actual_time:
-            actual_time += '.000000'
-        if self.log_type=='OUT':
-            curr_shift = get_shift_from_checkin(self)
-            #Assign grace period to 0 if it is not enabled
-            grace_period = frappe.get_value("Shift Type",self.shift_type,'early_exit_grace_period') or 0
-            if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=grace_period)) < curr_shift.end_datetime:
-                frappe.db.set_value(self.doctype,self.name,'early_exit',1)
+	def validate_duplicate_log(self):
+		doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
+		if doc:
+			doc_link = frappe.get_desk_link("Employee Checkin", doc[0]["name"])
+			frappe.throw(
+				_("This employee already has a log with the same timestamp.{0}").format("<Br>" + doc_link)
+			)
+	def before_insert(self):
+		if self.shift_permission:
+			sp = frappe.get_doc("Shift Permission", self.shift_permission, ignore_permissions=True)
+			sa = frappe.get_doc("Shift Assignment", sp.assigned_shift, ignore_permissions=True)
+			self.shift_assignment = sa.name
+			self.operations_shift = sa.shift
+			self.shift_type = sa.shift_type
+			self.shift_actual_start = sa.start_datetime
+			self.shift_actual_end = sa.end_datetime
 
-    def after_insert(self):
-        self.validate_early_exit()
-        frappe.db.commit()
-        self.reload()
-        if not self.shift_assignment and self.shift_type and self.operations_shift:
-            frappe.enqueue(after_insert_background, self=self.name)
-        if self.early_exit:
-            supervisor_user = get_notification_user(self, self.employee)
-            info_= "Please note that {} has checked out early".format(self.employee)
-            send_notification("Early Exit",'Early Exit for {}'.format(self.employee),info_,"Checkout",[supervisor_user])
-            
+	def after_insert(self):
+		frappe.db.commit()
+		self.reload()
+		if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
+			frappe.enqueue(after_insert_background, self=self.name)
+
 def after_insert_background(self):
     self = frappe.get_doc("Employee Checkin", self)
     try:
@@ -108,26 +98,25 @@ def after_insert_background(self):
             if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=shift_type.early_exit_grace_period)) < curr_shift.end_datetime:
                 early_exit = 1
 
-
-        query = f"""
-            UPDATE `tabEmployee Checkin` SET
-            shift_assignment="{curr_shift.name}", operations_shift="{curr_shift.shift}", shift_type='{curr_shift.shift_type}',
-            shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
-            shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
-            late_entry={late_entry}
-            WHERE name="{self.name}"
-        """
-        frappe.db.sql(query, values=[], as_dict=1)
-        frappe.db.commit()
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
-    
-    # send notification
-    # continue to notification
-    # These are returned according to dates. Time is not taken into account
-    
-    start_time = get_datetime(cstr(getdate()) + " 00:00:00")
-    end_time = get_datetime(cstr(getdate()) + " 23:59:59")
+		query = f"""
+			UPDATE `tabEmployee Checkin` SET
+			shift_assignment="{curr_shift.name}", operations_shift="{curr_shift.shift}", shift_type='{curr_shift.shift_type}',
+			shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
+			shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
+			late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}'
+			WHERE name="{self.name}"
+		"""
+		frappe.db.sql(query, values=[], as_dict=1)
+		frappe.db.commit()
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
+	
+	# send notification
+	# continue to notification
+	# These are returned according to dates. Time is not taken into account
+	
+	start_time = get_datetime(cstr(getdate()) + " 00:00:00")
+	end_time = get_datetime(cstr(getdate()) + " 23:59:59")
 
     log_exist = frappe.db.exists("Employee Checkin", {"log_type": self.log_type, "time": [ "between", (start_time, end_time)], "skip_auto_attendance": 0 ,"shift_type": self.shift_type, "name": ["!=", self.name]})
 
