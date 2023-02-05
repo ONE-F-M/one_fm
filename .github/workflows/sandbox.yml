@@ -27,6 +27,6 @@ jobs:
           git pull upstream sandbox # we pull any changes from git
           cd /home/frappe/frappe-bench
           bench setup requirements
-          sudo supervisorctl restart all # we remove any unused dependencies
           bench migrate # sync database
+          sudo supervisorctl restart all # we remove any unused dependencies
           bench doctor

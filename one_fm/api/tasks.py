@@ -1211,11 +1211,10 @@ def mark_daily_attendance(start_date, end_date):
 		employees_dict = {}
 
 		# get open leaves
-		open_leaves = frappe.db.get_list("Leave Application", filters={
-			'status':'Open',
-			'from_date':['>=', start_date],
-			'to_date':["<=", start_date],
-		}, fields=['name', 'employee'])
+		open_leaves = frappe.db.sql(f"""
+            SELECT name, employee FROM `tabLeave Application` 
+            WHERE '{start_date}' BETWEEN from_date AND to_date AND status='Open';
+        """, as_dict=1)
 		# get attendance for the day
 		attendance_list = frappe.get_list("Attendance", filters={"attendance_date":start_date, 'status': ['NOT IN', ['On Leave', 'Work From Home', 'Day Off', 'Holiday', 'Present']]})
 		attendance_dict = {}
@@ -1252,7 +1251,7 @@ def mark_daily_attendance(start_date, end_date):
 			fields="name, owner, creation, modified, modified_by, docstatus, idx, employee, employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, shift_permission, actual_time, MIN(time) as time",
 			order_by="employee ASC", group_by="shift_assignment")
 		out_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'}, 
-			fields="name, owner, creation, modified, modified_by, docstatus, idx, employee, employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, shift_permission, actual_time, MIN(time) as time",
+			fields="name, owner, creation, modified, modified_by, docstatus, idx, employee, employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, shift_permission, actual_time, MAX(time) as time",
 			order_by="employee DESC", group_by="shift_assignment")
 
 		in_checkins_dict = {}
