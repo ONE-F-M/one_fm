@@ -19,6 +19,8 @@
   {
    "fieldname": "start_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Start Date",
    "reqd": 1
   },
@@ -54,6 +56,8 @@
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
    "label": "Supervisor",
    "options": "Employee",
    "reqd": 1
@@ -75,7 +79,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-10-12 11:54:11.265138",
+ "modified": "2023-02-05 13:33:12.111623",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Employee Actions",
@@ -140,9 +144,22 @@
    "role": "Site Supervisor",
    "share": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operation Admin",
+   "share": 1,
+   "write": 1
   }
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

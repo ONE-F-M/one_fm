@@ -96,6 +96,7 @@ doctype_js = {
 	"Company" : "public/js/doctype_js/company.js",
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
+	"Attendance" :  "public/js/doctype_js/attendance.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -445,8 +446,8 @@ override_doctype_class = {
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
-	# "User": "one_fm.overrides.user.UserOverrideLMS",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
+	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
 
@@ -716,4 +717,7 @@ jenv = {
     ]
 }
 
-# after_migrate = "one_fm.patches.v1_0.rename_posttype_to_operationsrole.execute"
+after_migrate = "one_fm.after_migrate.execute.comment_timesheet_in_hrms"
+
+# add more info to session on boot
+on_session_creation = "one_fm.session_hooks.on_session_creation"
