@@ -446,8 +446,8 @@ override_doctype_class = {
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
-	# "User": "one_fm.overrides.user.UserOverrideLMS",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
+	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
 
@@ -717,7 +717,7 @@ jenv = {
     ]
 }
 
-# after_migrate = "one_fm.patches.v1_0.rename_posttype_to_operationsrole.execute"
+after_migrate = "one_fm.after_migrate.execute.comment_timesheet_in_hrms"
 
 # add more info to session on boot
 on_session_creation = "one_fm.session_hooks.on_session_creation"

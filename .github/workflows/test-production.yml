@@ -26,6 +26,6 @@ jobs:
           cd /home/frappe/master-14/apps/one_fm # we move into our app's folder
           git pull upstream master-14 # we pull any changes from git
           cd /home/frappe/master-14
-          sudo supervisorctl restart all # we remove any unused dependencies
           bench migrate # sync database
+          sudo supervisorctl restart all # we remove any unused dependencies
           bench doctor
