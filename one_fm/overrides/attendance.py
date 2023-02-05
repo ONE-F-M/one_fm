@@ -63,18 +63,19 @@ def mark_single_attendance(emp, att_date):
             # check holiday
             holiday_today = get_holiday_today(att_date)
             employee_schedule = frappe.db.get_value("Employee Schedule", {'employee':emp, 'date':att_date}, ["*"], as_dict=1)
-            if employee_schedule.employee_availability == 'Day Off':
-                status = "Day Off"
-                comment = f"Employee Schedule - {employee_schedule.name}"
-                create_single_attendance_record(
-                    frappe._dict({
-                    'employee':employee,
-                    'attendance_date':att_date,
-                    'status':status,
-                    'comment':comment
-                    })
-                )
-                return
+            if employee_schedule:
+                if employee_schedule.employee_availability == 'Day Off':
+                    status = "Day Off"
+                    comment = f"Employee Schedule - {employee_schedule.name}"
+                    create_single_attendance_record(
+                        frappe._dict({
+                        'employee':employee,
+                        'attendance_date':att_date,
+                        'status':status,
+                        'comment':comment
+                        })
+                    )
+                    return
                 
             if holiday_today.get(employee.holiday_list):
                 status = "Holiday"
@@ -88,7 +89,8 @@ def mark_single_attendance(emp, att_date):
                     })
                 )
                 return
-            elif employee_schedule.employee_availability == 'Working':                  
+            elif employee_schedule:
+                if employee_schedule.employee_availability == 'Working':                  
                     # continue to mark attendance if checkin exists
                     mark_for_shift_assignment(employee, att_date)
             
