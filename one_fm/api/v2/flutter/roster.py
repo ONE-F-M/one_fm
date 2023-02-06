@@ -269,7 +269,8 @@ def get_current_user_details():
 
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, project_end_date=0, 
-	keep_days_off=0, request_employee_schedule=0, day_off_ot=0, end_date=None):
+	keep_days_off=0, request_employee_schedule=0, day_off_ot=0, end_date=None, repeat_days=[],
+	day_off=[]):
 	try:
 		validation_logs = []
 		user, user_roles, user_employee = get_current_user_details()
@@ -278,7 +279,6 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
 			frappe.throw("Employees must be selected.")
 		employee_list = []
 		for i in employees:
-			print(i, '\n\n')
 			if not i['employee'] in employee_list:
 				employee_list.append(i['employee'])
 		
@@ -325,7 +325,8 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
 			# extreme schedule
 			extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
 				operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
-				request_employee_schedule=request_employee_schedule, employee_list=employee_list
+				request_employee_schedule=request_employee_schedule, employee_list=employee_list,
+				repeat_days=repeat_days, day_off=day_off
 			)
 			# employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
 			update_roster(key="roster_view")
@@ -339,8 +340,8 @@ def update_roster(key):
 	frappe.publish_realtime(key, "Success")
 
 
-def extreme_schedule(employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, day_off_ot, 
-	request_employee_schedule, employee_list):
+def extreme_schedule(employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, 
+	day_off_ot, request_employee_schedule, employee_list, repeat_days, day_off):
 	if not employees:
 		frappe.msgprint("Please select employees before rostering")
 		return
@@ -408,13 +409,23 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				employee_doc = employees_dict.get(employee['employee'])
 				name = f"{employee['date']}_{employee['employee']}_{roster_type}"
 				id_list.append(name)
-				query += f"""
+				weekday_check = getdate(employee['date']).weekday()
+				if weekday_check in repeat_days:
+					query += f"""
 					(
 						"{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
 						"{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
 						"{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
 						{day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
 					),"""
+				elif weekday_check in day_off:
+					query += f"""
+						(
+							"{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "", 
+							"", "", '', "Day Off", 
+							"", "", "{roster_type}", 
+							{day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
+						),"""
 
 			query = query[:-1]
 
@@ -430,7 +441,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				site = VALUES(site),
 				shift_type = VALUES(shift_type),
 				day_off_ot = VALUES(day_off_ot),
-				employee_availability = "Working"
+				employee_availability = VALUES(employee_availability)
 			"""
 			frappe.db.sql(query, values=[], as_dict=1)
 			frappe.db.commit()
@@ -440,13 +451,23 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				employee_doc = employees_dict.get(employee['employee'])
 				name = f"{employee['date']}_{employee['employee']}_{roster_type}"
 				id_list.append(name)
-				query += f"""
+				weekday_check = getdate(employee['date']).weekday()
+				if weekday_check in repeat_days:
+					query += f"""
 					(
 						"{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
 						"{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
 						"{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
 						{day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
 					),"""
+				elif weekday_check in day_off:
+					query += f"""
+						(
+							"{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "", 
+							"", "", '', "Day Off", 
+							"", "", "{roster_type}", 
+							{day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
+						),"""
 
 			query = query[:-1]
 
@@ -462,7 +483,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				site = VALUES(site),
 				shift_type = VALUES(shift_type),
 				day_off_ot = VALUES(day_off_ot),
-				employee_availability = "Working"
+				employee_availability = VALUES(employee_availability)
 			"""
 			frappe.db.sql(query, values=[], as_dict=1)
 			frappe.db.commit()
