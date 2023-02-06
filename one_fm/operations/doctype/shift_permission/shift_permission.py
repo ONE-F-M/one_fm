@@ -39,8 +39,7 @@ class ShiftPermission(Document):
 	def validate_attendance(self):
 		attendance = frappe.db.exists('Attendance',{'attendance_date': self.date, 'employee': self.employee, 'docstatus': 1})
 		if attendance:
-			frappe.throw(_('There is an Attendance {0} exists for the \
-			Employee {1} on {2}'.format(attendance, self.emp_name, format_date(self.date))), exc=ExistAttendance)
+			frappe.throw(_('There is an Attendance {0} exists for the Employee {1} on {2}'.format(attendance, self.emp_name, format_date(self.date))), exc=ExistAttendance)
 
 	def validate_employee_checkin(self):
 		start_date = get_datetime(self.date)
@@ -49,17 +48,14 @@ class ShiftPermission(Document):
 			{'log_type': self.log_type, 'time': ["between", [start_date, end_date]], 'employee': self.employee}
 		)
 		if employee_checkin:
-			frappe.throw(_('There is an Employee Checkin {0} exists for the \
-			Employee {1} on {2}'.format(employee_checkin, self.emp_name, format_date(self.date))), exc=ExistCheckin)
+			frappe.throw(_('There is an Employee Checkin {0} exists for the Employee {1} on {2}'.format(employee_checkin, self.emp_name, format_date(self.date))), exc=ExistCheckin)
 
 	def validate_permission_type(self):
 		if self.log_type == 'IN' and self.permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
-			frappe.throw(_('Permission Type cannot be {0}. It should be one of \
-				"Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(self.permission_type)),
+			frappe.throw(_('Permission Type cannot be {0}. It should be one of "Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(self.permission_type)),
 				exc = PermissionTypeandLogTypeError)
 		if self.log_type == 'OUT' and self.permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
-			frappe.throw(_('Permission Type cannot be {0}. It should be one of \
-				"Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(self.permission_type)),
+			frappe.throw(_('Permission Type cannot be {0}. It should be one of "Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(self.permission_type)),
 				exc = PermissionTypeandLogTypeError)
 		if self.permission_type == "Arrive Late":
 			field_list = [{'Arrival Time':'arrival_time'}]
