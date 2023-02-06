@@ -268,16 +268,17 @@ def get_current_user_details():
 
 
 @frappe.whitelist()
-def schedule_staff(employees, shift, operations_role, otRoster=0, start_date, project_end_date=None, 
+def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, project_end_date=0, 
 	keep_days_off=0, request_employee_schedule=0, day_off_ot=0, end_date=None):
 	try:
 		validation_logs = []
 		user, user_roles, user_employee = get_current_user_details()
-		employees = json.loads(employees)
+		# employees = json.loads(employees)
 		if not employees:
 			frappe.throw("Employees must be selected.")
 		employee_list = []
 		for i in employees:
+			print(i, '\n\n')
 			if not i['employee'] in employee_list:
 				employee_list.append(i['employee'])
 		
@@ -331,7 +332,7 @@ def schedule_staff(employees, shift, operations_role, otRoster=0, start_date, pr
 			response("success", 200, {'message':'Successfully rostered employees'})
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Schedule Roster")
-		response("error", 200, None, str(e))
+		response("error", 200, None, str(frappe.get_traceback()))
 
 
 def update_roster(key):
@@ -349,9 +350,9 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	operations_shift = frappe.get_doc("Operations Shift", shift, ignore_permissions=True)
 	operations_role = frappe.get_doc("Operations Role", operations_role, ignore_permissions=True)
 	day_off_ot = cint(day_off_ot)
-	if otRoster == 'false':
+	if not cint(otRoster) or cint(day_off_ot):
 		roster_type = 'Basic'
-	elif otRoster == 'true' or day_off_ot == 1:
+	else:
 		roster_type = 'Over-Time'
 
 	# check for end date
