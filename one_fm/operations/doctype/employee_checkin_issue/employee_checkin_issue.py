@@ -95,27 +95,34 @@ class EmployeeCheckinIssue(Document):
 		if self.workflow_state in ['Rejected']:
 			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
 
-def create_employee_checkin_for_employee_checkin_issue(employee_checkin_issue):
+def create_employee_checkin_for_employee_checkin_issue(employee_checkin_issue, from_api=False):
 	"""
 		Method to create Employee Checkin from the Employee Checkin Issue
 		args:
 			employee_checkin_issue: Object of Employee Checkin Issue
 	"""
 	# Get shift details for the employee
-	shift_details = get_shift_details(employee_checkin_issue.shift_type, getdate(employee_checkin_issue.date))
+	shift_assignment = frappe.get_doc("Shift Assignment", employee_checkin_issue.assigned_shift)
 
 	employee_checkin = frappe.new_doc('Employee Checkin')
 	employee_checkin.employee = employee_checkin_issue.employee
 	employee_checkin.log_type = employee_checkin_issue.log_type
-	employee_checkin.shift = employee_checkin_issue.shift_type
-	employee_checkin.time = shift_details.start_datetime if employee_checkin_issue.log_type == "IN" else shift_details.end_datetime
+	employee_checkin.time = shift_assignment.start_datetime if employee_checkin_issue.log_type == "IN" else shift_assignment.end_datetime
+	employee_checkin.date = shift_assignment.start_date if employee_checkin_issue.log_type=='IN' else shift_assignment.end_datetime
 	employee_checkin.skip_auto_attendance = False
-	employee_checkin.operations_shift = employee_checkin_issue.shift
-	employee_checkin.shift_assignment = employee_checkin_issue.assigned_shift
 	employee_checkin.employee_checkin_issue = employee_checkin_issue.name
+	# The field shift in shift assignment is operations shift
+	employee_checkin.operations_shift = shift_assignment.shift
+	employee_checkin.shift_type = shift_assignment.shift_type
+	# The field shift_type in shift assignment is shift type and in employee checkin the field shift is shift type
+	employee_checkin.shift = shift_assignment.shift_type
+	employee_checkin.shift_assignment = employee_checkin_issue.assigned_shift
 	if employee_checkin_issue.latitude and employee_checkin_issue.longitude:
 		employee_checkin.device_id = cstr(employee_checkin_issue.latitude)+","+cstr(employee_checkin_issue.longitude)
+	if from_api:
+		employee_checkin.flags.ignore_validate = True
 	employee_checkin.save(ignore_permissions=True)
+	frappe.db.commit()
 
 @frappe.whitelist()
 def fetch_approver(employee):
@@ -126,3 +133,29 @@ def fetch_approver(employee):
 			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
 
 		frappe.throw("No approver found for {employee}".format(employee=employee))
+
+# Approve pemding employee checkin issue before marking attendance
+def approve_open_employee_checkin_issue(start_date, end_date):
+	try:
+		employee_checkin_issue_list = frappe.db.sql(f"""
+			SELECT eci.name FROM `tabEmployee Checkin Issue` eci JOIN `tabShift Assignment` sa
+			ON sa.name=eci.assigned_shift
+			WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}'
+			AND eci.workflow_state='Pending' AND eci.docstatus=0
+		""", as_dict=1)
+		error_list = """"""
+		for employee_checkin_issue in employee_checkin_issue_list:
+			try:
+				# Apply workflow
+				employee_checkin_issue_doc = frappe.get_doc("Employee Checkin Issue", employee_checkin_issue.name)
+				employee_checkin_issue_doc.db_set('workflow_state', 'Approved')
+				employee_checkin_issue_doc.db_set('docstatus', 1)
+				employee_checkin_issue_doc.add_comment("Info", "This record is System Aprroved")
+				employee_checkin_issue_doc.reload()
+				# Create checkin from employee checkin issue
+				create_employee_checkin_for_employee_checkin_issue(employee_checkin_issue_doc, True)
+			except Exception as e:
+				error_list += str(e)+'\n\n'
+		if error_list:frappe.log_error(error_list, 'Employee Checkin Issue')
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Employee Checkin Issue')
