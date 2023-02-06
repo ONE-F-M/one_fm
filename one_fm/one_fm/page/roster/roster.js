@@ -2225,7 +2225,9 @@ function render_staff_list_view(data) {
 	}
 	let $staffdatatable = $('#staffdatatable tbody');
 	data.forEach(function (employee) {
-		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department } = employee;
+		
+		
+		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department,site_supervisor,shift_supervisor } = employee;
 		let row = `
 		<tr>
 			<td>
@@ -2265,7 +2267,13 @@ function render_staff_list_view(data) {
 				${site || 'N/A'}
 			</td>
 			<td>
+				${site_supervisor || 'N/A'}
+			</td>
+			<td>
 				${shift || 'N/A'}
+			</td>
+			<td>
+				${shift_supervisor || 'N/A'}
 			</td>
 			<td>
 				${department || 'N/A'}
@@ -2291,6 +2299,7 @@ function render_staff_list_view(data) {
 function render_staff_card_view(data) {
 	$('.staff-card-wrapper').empty();
 	data.forEach(function (employee, i) {
+		
 		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department, image } = employee;
 		let row = `
 		<div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 mb30">
