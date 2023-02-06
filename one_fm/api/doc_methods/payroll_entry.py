@@ -250,7 +250,7 @@ def auto_create_payroll_entry(payroll_date=None):
 	if not payroll_date:
 		payroll_date_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
 		# Calculate payroll date
-		payroll_date = datetime.datetime(getdate().year, getdate().month, cint(payroll_date_day)).strftime("%Y-%m-%d")
+		payroll_date = (datetime(getdate().year, getdate().month, cint(payroll_date_day))).strftime("%Y-%m-%d")
 
 	for payroll_start_day in payroll_start_day_list:
 		# Find from date and end date for payroll
@@ -604,11 +604,11 @@ def create_salary_slips(doc):
 			doc.db_set("status", "Queued")
 			frappe.enqueue(
 				create_salary_slips_for_employees,
-				timeout=600,
-				queue='short',
 				employees=employees,
 				args=args,
 				publish_progress=False,
+				timeout=4000, 
+				queue='long'
 			)
 			frappe.msgprint(
 				_("Salary Slip creation is queued. It may take a few minutes"),
@@ -618,7 +618,7 @@ def create_salary_slips(doc):
 		else:
 			create_salary_slips_for_employees(employees, args, publish_progress=False)
 			# since this method is called via frm.call this doc needs to be updated manually
-			doc.reload()
+	doc.reload()
 
 def log_payroll_failure(process, payroll_entry, error):
 	error_log = frappe.log_error(
@@ -681,6 +681,7 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 
 	finally:
 		frappe.db.commit()  # nosemgrep
+		doc.db_set("status", "Submitted")
 		frappe.publish_realtime("completed_salary_slip_creation")
 
 def get_existing_salary_slips(employees, args):
