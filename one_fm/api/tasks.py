@@ -1442,24 +1442,8 @@ def mark_daily_attendance(start_date, end_date):
 			if not (out_checkins_dict.get(k.name) and in_checkins_dict.get(k.name)):
 				no_checkin_out_records += f"{k.name} - {k.employee} - {k.employee_name}<br>"
 		if len(no_checkin_out_records):
-			# report no checkout
-			frappe.get_doc({
-				"doctype": "Issue",
-				"naming_series": "ISS-.YYYY.-",
-				"communication_medium": "Email",
-				"status": "Open",
-				"agreement_status": "First Response Due",
-				"opening_date": "2023-01-23",
-				"company": "One Facilities Management",
-				"via_customer_portal": 0,
-				"description": f"<div class=\"ql-editor read-mode\"><p>{no_checkin_out_records}</p></div>",
-				"subject": f"Attendance Marking (No checkins/out) - {str(start_date)}|{str(end_date)}",
-				"priority": "Medium",
-				"department": "IT - ONEFM",
-				"issue_type": "Idea/Feedback",
-				"raised_by": "e.anthony@one-fm.com"
-			}).insert()
-			frappe.db.commit()
+			# report no checkout create issue
+			pass
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 
