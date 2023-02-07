@@ -647,23 +647,44 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 
 		args.pop('start_date')
 		args.pop('end_date')
+		salary_slip_chunk = []
+		chunk_counter = 0
 
 		employees_list = seperate_salary_slip(employees, start_date, end_date)
+		if len(employees_list) < 30:
+			for emp in employees_list:
+				if emp['employee'] not in salary_slips_exist_for:
+					args.update({"doctype": "Salary Slip"})
+					args.update(emp)
+					
+					frappe.get_doc(args).insert()
+					count += 1
+					if publish_progress:
+						frappe.publish_progress(
+							count * 100 / len(set(employees) - set(salary_slips_exist_for)),
+							title=_("Creating Salary Slips..."),
+						)
+			
+		else:
+			for emp in employees_list:
+				if emp['employee'] not in salary_slips_exist_for:
+					args.update({"doctype": "Salary Slip"})
+					args.update(emp)
+					
+					# salary_slip_list.append(frappe.get_doc(args))
+					salary_slip_chunk.append(frappe.get_doc(args))
+					chunk_counter += 1
+					if len(salary_slip_chunk) >= 30:
+						frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk.copy())
+						salary_slip_chunk = []
+						chunk_counter=0
 
-		for emp in employees_list:
-			if emp['employee'] not in salary_slips_exist_for:
-				args.update({"doctype": "Salary Slip"})
-				args.update(emp)
-				
-				frappe.get_doc(args).insert()
-
-				count += 1
-				if publish_progress:
-					frappe.publish_progress(
-						count * 100 / len(set(employees) - set(salary_slips_exist_for)),
-						title=_("Creating Salary Slips..."),
-					)
-
+					# frappe.get_doc(args).insert()
+		
+			if salary_slip_chunk:
+				frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk)
+		
+		
 		payroll_entry.db_set({"status": "Submitted", "salary_slips_created": 1, "error_message": ""})
 
 		if salary_slips_exist_for:
@@ -681,8 +702,11 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 
 	finally:
 		frappe.db.commit()  # nosemgrep
-		doc.db_set("status", "Submitted")
 		frappe.publish_realtime("completed_salary_slip_creation")
+
+def create_salary_slip_chunk(slips):
+	for slip in slips:
+		slip.insert()
 
 def get_existing_salary_slips(employees, args):
 	return frappe.db.sql_list(
