@@ -219,3 +219,4 @@ def get_shift_from_checkin(checkin):
 		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.time <= (s.end_datetime + timedelta(minutes=60))):
 			return s
 	return False
+	##
