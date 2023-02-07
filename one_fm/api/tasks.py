@@ -772,11 +772,11 @@ def create_shift_assignment(roster, date, time):
 		fields=['name', 'shift_type', 'start_time', 'end_time'])
 	shift_types_dict = {}
 	for i in shift_types:
-		i.start_datetime = f"{date} {i.start_time}"
+		i.start_datetime = f"{date} {(datetime.datetime.min + i.start_time).time()}"
 		if i.end_time.total_seconds() < i.start_time.total_seconds():
-			i.end_datetime = f"{add_days(date, 1)} {i.end_time}"
+			i.end_datetime = f"{add_days(date, 1)} {(datetime.datetime.min + i.end_time).time()}"
 		else:
-			i.end_datetime = f"{date} {i.end_time}"
+			i.end_datetime = f"{date} {(datetime.datetime.min + i.end_time).time()}"
 		shift_types_dict[i.name] = i
 	default_shift = frappe.get_doc("Shift Type", '"Standard|Morning|08:00:00-17:00:00|9 hours"').as_dict()
 
@@ -1020,7 +1020,6 @@ def generate_penalties():
 
 def calculate_penalty_amount(employee, start_date, end_date, logs):
 	"""This Funtion Calculates the Penalty Amount based on the occurance and employees basic salary.
-
 	Args:
 		employee (String): employee ID
 		start_date (date): Start Date of the payroll
@@ -1369,7 +1368,6 @@ def mark_daily_attendance(start_date, end_date):
 				`department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
 				`creation`, `modified`, `comment`)
 				VALUES 
-
 			"""
 
 			for k, v in employee_attendance.items():
