@@ -53,7 +53,6 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			except Exception as e:
 				frappe.throw(frappe.get_traceback())
 
-
 	def validate_duplicate_log(self):
 		doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
 		if doc:
