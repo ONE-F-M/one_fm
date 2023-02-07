@@ -333,7 +333,7 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
 			response("success", 200, {'message':'Successfully rostered employees'})
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Schedule Roster")
-		response("error", 200, None, str(frappe.get_traceback()))
+		response("error", 500, None, str(frappe.get_traceback()))
 
 
 def update_roster(key):
