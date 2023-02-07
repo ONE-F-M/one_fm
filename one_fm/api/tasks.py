@@ -1020,7 +1020,6 @@ def generate_penalties():
 
 def calculate_penalty_amount(employee, start_date, end_date, logs):
 	"""This Funtion Calculates the Penalty Amount based on the occurance and employees basic salary.
-
 	Args:
 		employee (String): employee ID
 		start_date (date): Start Date of the payroll
@@ -1369,7 +1368,6 @@ def mark_daily_attendance(start_date, end_date):
 				`department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
 				`creation`, `modified`, `comment`)
 				VALUES 
-
 			"""
 
 			for k, v in employee_attendance.items():

@@ -12,6 +12,32 @@ class LeaveApplicationOverride(LeaveApplication):
     def after_insert(self):
         self.assign_to_leave_approver()
         
+    def notify_employee(self):
+        template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
+        parent_doc = frappe.get_doc("Leave Application", self.name)
+        args = parent_doc.as_dict()
+        if not template:
+            frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
+            return
+        email_template = frappe.get_doc("Email Template", template)
+        message = frappe.render_template(email_template.response, args)
+        if not self.is_company_email():
+            employee = frappe.get_doc("Employee", self.employee)
+            if not employee.user_id:
+                return
+            self.notify(
+                {
+                    # for post in messages
+                    "message": message,
+                    "message_to": employee.user_id,
+                    # for email
+                    "subject": email_template.subject,
+                    "notify": "employee",
+                }
+            )
+        else:
+            push_notification_rest_api_for_leave_application(self.employee,"Leave Application",message,self.name)
+        
     def validate(self):
         validate_active_employee(self.employee)
         set_employee_name(self)

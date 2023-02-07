@@ -16,6 +16,88 @@ from one_fm.utils import query_db_list
 
 
 @frappe.whitelist()
+def change_employee_shift(employees:str,shift:str):
+    """_summary_
+            Update the shift of a number of employees
+    Args:
+        employees (str): _description_
+        shift (_type_): _description_
+    Returns:
+        _type_: updated employee document
+    """
+    if not employees:
+        return response("Bad Request", 400, None, "Employees must be selected.")
+    if not shift:
+        return response("Bad Request", 400, None, "A shift must be selected.")
+    if not frappe.db.exists("Operations Shift",shift):
+        return response("Bad Request", 400, None, "Please provide a valid Operations Shift. {} is invalid".format(shift))
+    try:
+        data = []
+        emp_tuple = employees.replace('[', '(').replace(']',')')
+        all_employees = frappe.db.sql("SELECT name from `tabEmployee` where name in {}".format(emp_tuple),as_dict=1)
+        if all_employees:
+            for each in all_employees:
+                frappe.db.set_value("Employee",each.name,'shift',shift)
+                emp_doc = frappe.get_doc("Employee",each.name)
+                data.append(emp_doc.as_dict())
+            frappe.db.commit()
+            response("Sucess",200,{'employees':data})
+                
+        else:
+            return response("Bad Request", 400, None, "No Employees found with the provided IDs")
+            
+    except Exception as e:
+        response("Internal Server Error", 500, False, str(e))
+
+        
+        
+def update_employee_record(employee:dict):
+    """summary
+     Update the cell number and enrolled details for employee
+
+    Args:
+        employee (_type_): dict
+    """
+    if frappe.db.exists("Employee",employee.get('employee')):
+        if employee.get('enrolled') in [0,1]:
+            frappe.db.set_value("Employee",employee.get('employee'),'enrolled',employee.get('enrolled') or 0)
+        if employee.get('cell_number'):
+            frappe.db.set_value("Employee",employee.get('employee'),'cell_number',employee.get('cell_number'))
+            if frappe.db.get_value("Employee",employee.get('employee'),'user_id'):
+                user_id = frappe.db.get_value("Employee",employee.get('employee'),'user_id')
+                frappe.db.set_value("User",user_id,'mobile_no',employee.get('cell_number'))
+                frappe.db.set_value("User",user_id,'phone',employee.get('cell_number'))
+        frappe.db.commit()
+    else:
+        return response("Resource not found",'404',None,"Employee {}  not found".format(employee.get('employee')))
+
+@frappe.whitelist()
+def change_employee_detail(employees:str,field:str=None,value=None)-> bool:
+    """ summary
+        Update the Employee and User record of a employee
+    Args:
+        employee (str): Employee ID or Name
+        field (str): Field to be changed
+        value (str): new value of field
+    Returns:
+        bool: Returns true if the data was changed successfully.
+    """
+    
+    accepted_fields = ['enrolled','cell_number']
+    if not isinstance(employees, str):
+        return response("Bad Request", 400, None, "Employee value must of type str.")
+    
+    try:
+        employee_json = json.loads(employees)
+        if employee_json:
+            list(map(update_employee_record,employee_json.get('employees')))
+            return response('Success',200,{'Data Updated Successfully'})
+            
+    except Exception as e:
+        response("error", 500, False, str(e))
+
+
+@frappe.whitelist()
 def assign_staff(employees, shift, request_employee_assignment=None):
     if not employees:
         return response("Bad Request", 400, None, 'Please select employees first')
@@ -680,60 +762,60 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 
 @frappe.whitelist()
 def edit_post(posts, values):
-	try:
-		user, user_roles, user_employee = get_current_user_details()
+    try:
+        user, user_roles, user_employee = get_current_user_details()
 
-		if "Operations Manager" not in user_roles and "Projects Manager" not in user_roles:
-			response("error", 400, None, _("Insufficient permissions to Edit Post."))
+        if "Operations Manager" not in user_roles and "Projects Manager" not in user_roles:
+            response("error", 400, None, _("Insufficient permissions to Edit Post."))
 
-		args = frappe._dict(json.loads(values))
+        args = frappe._dict(json.loads(values))
 
-		if args.post_status == "Plan Post":
-			if args.plan_end_date and cint(args.project_end_date):
-				response("error", 400, None, _("Cannot set both project end date and custom end date!"))
+        if args.post_status == "Plan Post":
+            if args.plan_end_date and cint(args.project_end_date):
+                response("error", 400, None, _("Cannot set both project end date and custom end date!"))
 
-			if not args.plan_end_date and not cint(args.project_end_date):
-				response("error", 400, None, _("Please set an end date!"))
+            if not args.plan_end_date and not cint(args.project_end_date):
+                response("error", 400, None, _("Please set an end date!"))
 
-			frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
-
-
-		elif args.post_status == "Cancel Post":
-			if args.cancel_end_date and cint(args.project_end_date):
-				response("error", 400, None, _("Cannot set both project end date and custom end date!"))
-
-			if not args.cancel_end_date and not cint(args.project_end_date):
-				response("error", 400, None, _("Please set an end date!"))
-
-			frappe.enqueue(cancel_post,posts=posts, args=args, is_async=True, queue='long')
+            frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
 
 
-		elif args.post_status == "Suspend Post":
-			if args.suspend_to_date and cint(args.project_end_date):
-				response("error", 400, None, _("Cannot set both project end date and custom end date!"))
+        elif args.post_status == "Cancel Post":
+            if args.cancel_end_date and cint(args.project_end_date):
+                response("error", 400, None, _("Cannot set both project end date and custom end date!"))
 
-			if not args.suspend_to_date and not cint(args.project_end_date):
-				response("error", 400, None, _("Please set an end date!"))
+            if not args.cancel_end_date and not cint(args.project_end_date):
+                response("error", 400, None, _("Please set an end date!"))
 
-			frappe.enqueue(suspend_post, posts=posts, args=args, is_async=True, queue='long')
+            frappe.enqueue(cancel_post,posts=posts, args=args, is_async=True, queue='long')
 
 
-		elif args.post_status == "Post Off":
-			if args.repeat_till and cint(args.project_end_date):
-				response("error", 400, None, _("Cannot set both project end date and custom end date!"))
+        elif args.post_status == "Suspend Post":
+            if args.suspend_to_date and cint(args.project_end_date):
+                response("error", 400, None, _("Cannot set both project end date and custom end date!"))
 
-			if not args.repeat_till and not cint(args.project_end_date):
-				response("error", 400, None, _("Please set an end date!"))
+            if not args.suspend_to_date and not cint(args.project_end_date):
+                response("error", 400, None, _("Please set an end date!"))
 
-			if args.repeat == "Does not repeat" and cint(args.project_end_date):
-				response("error", 400, None, _("Cannot set both project end date and choose 'Does not repeat' option!"))
+            frappe.enqueue(suspend_post, posts=posts, args=args, is_async=True, queue='long')
 
-			frappe.enqueue(post_off, posts=posts, args=args, is_async=True, queue='long')
 
-		#frappe.enqueue(update_roster, key="staff_view", is_async=True, queue='long')
-		response("success", 200, {'message':'Post Edit successfully scheduled.'})
-	except Exception as e:
-		response("error", 500, None, frappe.get_traceback())
+        elif args.post_status == "Post Off":
+            if args.repeat_till and cint(args.project_end_date):
+                response("error", 400, None, _("Cannot set both project end date and custom end date!"))
+
+            if not args.repeat_till and not cint(args.project_end_date):
+                response("error", 400, None, _("Please set an end date!"))
+
+            if args.repeat == "Does not repeat" and cint(args.project_end_date):
+                response("error", 400, None, _("Cannot set both project end date and choose 'Does not repeat' option!"))
+
+            frappe.enqueue(post_off, posts=posts, args=args, is_async=True, queue='long')
+
+        #frappe.enqueue(update_roster, key="staff_view", is_async=True, queue='long')
+        response("success", 200, {'message':'Post Edit successfully scheduled.'})
+    except Exception as e:
+        response("error", 500, None, frappe.get_traceback())
 
 def plan_post(posts, args):
     """ This function sets the post status to planned provided a post, start date and an end date """
