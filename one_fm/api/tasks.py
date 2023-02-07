@@ -15,6 +15,7 @@ from one_fm.utils import mark_attendance
 from one_fm.api.mobile.roster import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
+from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import approve_open_employee_checkin_issue
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -117,7 +118,7 @@ def schedule_final_notification(shifts_list, now_time):
 	notification_subject_in =  _("Please checkin within the next 3 hours or you will be marked absent.")
 	notification_subject_out =  _("Please checkin in the next five minutes.")
 
-	
+
 	for shift in shifts_list:
 		date = getdate()
 		if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
@@ -152,7 +153,7 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 	checkin_message = _("""
 					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
 					<br>
-					Submit a Shift Permission if you are planing to arrive late 
+					Submit a Shift Permission if you are planing to arrive late
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					<br>
 					Submit an Attendance Request if there are issues in checkin or you forgot to checkin
@@ -167,7 +168,7 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 		checkin_message = _("""
 					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
 					<br>
-					Submit a Shift Permission if you are planing to arrive late 
+					Submit a Shift Permission if you are planing to arrive late
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					<br>
 					Submit an Attendance Request if there are issues in checkin or you forgot to checkin
@@ -184,7 +185,7 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 		Submit a Shift Permission if you are planing to leave early or is there any issue in checkout or forget to checkout
 		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 		""")
-	
+
 	user_id_list = []
 
 	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
@@ -330,7 +331,7 @@ def checkin_checkout_query(date, shift_type, log_type):
 	else:
 		permission_type = ("Leave Early", "Forget to Checkout", "Checkout Issue")
 
-	query = frappe.db.sql("""SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, emp.holiday_list, tSA.shift 
+	query = frappe.db.sql("""SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, emp.holiday_list, tSA.shift
 					FROM `tabShift Assignment` tSA, `tabEmployee` emp
 					WHERE
 						tSA.employee=emp.name
@@ -342,20 +343,20 @@ def checkin_checkout_query(date, shift_type, log_type):
 					WHERE
 						h.parent = emp.holiday_list
 					AND h.holiday_date = '{date}')
-					AND emp.name NOT IN 
+					AND emp.name NOT IN
 					(SELECT employee FROM `tabShift Permission` emp_sp
 						WHERE
 							emp_sp.workflow_state='Approved'
 						AND emp_sp.shift_type='{shift_type}'
 						AND emp_sp.date='{date}'
 						AND emp_sp.permission_type IN {permission_type}
-					UNION ALL 
+					UNION ALL
 					SELECT employee FROM `tabAttendance Request` att_req
 						WHERE
 							att_req.workflow_state='Approved'
 						AND att_req.reason='Work From Home'
 						AND CAST('{date} ' as date) BETWEEN att_req.from_date AND att_req.to_date
-					UNION ALL 
+					UNION ALL
 					SELECT employee FROM `tabLeave Application` LA
 						WHERE
 							LA.workflow_state='Approved'
@@ -676,7 +677,7 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 
 def fetch_non_shift(date, s_type):
 	if s_type == "AM":
-		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,  
+		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,
 				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
 				WHERE E.shift_working = 0
 				AND E.default_shift IN(
@@ -721,7 +722,7 @@ def assign_am_shift():
 	non_shift = fetch_non_shift(date, "AM")
 	if non_shift:
 		roster.extend(non_shift)
-		
+
 	create_shift_assignment(roster, date, 'AM')
 
 def assign_pm_shift():
@@ -751,7 +752,7 @@ def end_previous_shifts(time):
 	query = f"""
 		UPDATE `tabShift Assignment`
 		SET end_date=DATE(end_datetime)
-		WHERE 
+		WHERE
 		end_date IS NULL AND shift_type IN {tuple(shift_type)} AND docstatus=1 AND roster_type in ('Basic', 'Over-Time')
 	;"""
 	shift_assignments = frappe.db.sql(query, values=[], as_dict=1)
@@ -812,27 +813,27 @@ def create_shift_assignment(roster, date, time):
 	sites_list_dict = {}
 	for i in sites_list:
 		sites_list_dict[i.name] = i.site_location
-	
+
 	if roster:
 		query = """
 			INSERT INTO `tabShift Assignment` (`name`, `company`, `docstatus`, `employee`, `employee_name`, `shift_type`, `site`, `project`, `status`,
-			`shift_classification`, `site_location`, `start_date`, `start_datetime`, `end_datetime`, `department`, 
+			`shift_classification`, `site_location`, `start_date`, `start_datetime`, `end_datetime`, `department`,
 			`shift`, `operations_role`, `post_abbrv`, `roster_type`, `owner`, `modified_by`, `creation`, `modified`,
 			`shift_request`, `check_in_site`, `check_out_site`)
-			VALUES 
+			VALUES
 		"""
 		# check if all roster has been done
 		has_rostered = False
 		for r in roster:
 			if not r.employee in existing_shift_list:
 				_shift_type = shift_types_dict.get(r.shift_type) or default_shift
-				
+
 				query += f"""
 				(
-					"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}', 
-					"{r.site or ''}", "{r.project or ''}", 'Active', "{_shift_type.shift_type}", "{sites_list_dict.get(r.site) or ''}", "{date}", 
-					"{_shift_type.start_datetime or str(date)+' 08:00:00'}", 
-					"{_shift_type.end_datetime or str(date)+' 17:00:00'}", "{r.department}", "{r.shift or ''}", "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}", 
+					"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}',
+					"{r.site or ''}", "{r.project or ''}", 'Active', "{_shift_type.shift_type}", "{sites_list_dict.get(r.site) or ''}", "{date}",
+					"{_shift_type.start_datetime or str(date)+' 08:00:00'}",
+					"{_shift_type.end_datetime or str(date)+' 17:00:00'}", "{r.department}", "{r.shift or ''}", "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}",
 					"{owner}", "{owner}", "{creation}", "{creation}" """
 				if shift_request_dict.get(r.employee):
 					_shift_request = shift_request_dict.get(r.employee)
@@ -841,7 +842,7 @@ def create_shift_assignment(roster, date, time):
 					query += """, '', '', ''),"""
 			else:
 				has_rostered = True
-		
+
 		query = query[:-1]
 		query += f"""
 				ON DUPLICATE KEY UPDATE
@@ -969,9 +970,9 @@ def update_shift_details_in_attendance(doc, method):
 	if shift_assignment and len(shift_assignment) > 0 :
 		shift_data = shift_assignment[0]
 		condition += """ shift_assignment="{shift_assignment[0].name}" """.format(shift_assignment=shift_assignment)
-		
+
 		for key in shift_assignment[0]:
-			if shift_data[key] and key not in ["name","start_datetime","end_datetime", "shift", "shift_type"]: 
+			if shift_data[key] and key not in ["name","start_datetime","end_datetime", "shift", "shift_type"]:
 				condition += """, {key}="{value}" """.format(key= key,value=shift_data[key])
 			if key == "shift" and shift_data["shift"]:
 				condition += """, operations_shift="{shift}" """.format(shift=shift_data["shift"])
@@ -1169,6 +1170,7 @@ def mark_day_attendance():
 	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
 	start_date, end_date = add_days(getdate(), -1), add_days(getdate(), -1)
 	approve_open_shift_permission(str(start_date), str(end_date))
+	approve_open_employee_checkin_issue(str(start_date), str(end_date))
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_night_attendance():
@@ -1176,9 +1178,8 @@ def mark_night_attendance():
 	start_date = add_days(getdate(), -1)
 	end_date =  getdate()
 	approve_open_shift_permission(str(start_date), str(end_date))
+	approve_open_employee_checkin_issue(str(start_date), str(end_date))
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
-
-
 
 # mark daily attendance
 def mark_daily_attendance(start_date, end_date):
@@ -1188,7 +1189,7 @@ def mark_daily_attendance(start_date, end_date):
 	try:
 		if frappe.get_single("ONEFM General Setting").mark_atttendance_per_employee:
 			from one_fm.overrides.attendance import mark_attendance_per_employee
-			frappe.enqueue(mark_attendance_per_employee, start_date=start_date, 
+			frappe.enqueue(mark_attendance_per_employee, start_date=start_date,
 				end_date=end_date, queue='long', timeout=6000)
 		else:
 			errors = []
@@ -1201,13 +1202,13 @@ def mark_daily_attendance(start_date, end_date):
 			shift_types_dict = {}
 			for i in shift_types:
 				shift_types_dict[i.name] = i
-			
+
 			# get employee schedule
 			employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':start_date, 'employee_availability':'Day Off'}, fields="*")
 			employee_schedule_dict = {}
 			for i in employee_schedules:
 				employee_schedule_dict[i.employee] = i
-			
+
 			employees = frappe.get_list("Employee", fields="*")
 			employees_data = {}
 			for i in employees:
@@ -1217,7 +1218,7 @@ def mark_daily_attendance(start_date, end_date):
 
 			# get open leaves
 			open_leaves = frappe.db.sql(f"""
-				SELECT name, employee FROM `tabLeave Application` 
+				SELECT name, employee FROM `tabLeave Application`
 				WHERE '{start_date}' BETWEEN from_date AND to_date AND status='Open';
 			""", as_dict=1)
 			# get attendance for the day
@@ -1235,7 +1236,7 @@ def mark_daily_attendance(start_date, end_date):
 				present_attendance_dict[i.employee] = i
 			# Get shift assignment and make hashmap
 			shift_assignments = frappe.db.sql(f"""
-				SELECT * FROM `tabShift Assignment` WHERE start_date="{start_date}" AND end_date="{end_date}" AND roster_type='Basic' 
+				SELECT * FROM `tabShift Assignment` WHERE start_date="{start_date}" AND end_date="{end_date}" AND roster_type='Basic'
 				AND docstatus=1 AND status='Active'
 			""", as_dict=1)
 			shift_assignments_dict = {}
@@ -1252,10 +1253,10 @@ def mark_daily_attendance(start_date, end_date):
 			shift_assignments_tuple = str(tuple(shift_assignments_list)) #[:-2]+')'
 
 			# Get checkins and make hashmap
-			in_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'IN'}, 
+			in_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'IN'},
 				fields="name, owner, creation, modified, modified_by, docstatus, idx, employee, employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, shift_permission, actual_time, MIN(time) as time",
 				order_by="employee ASC", group_by="shift_assignment")
-			out_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'}, 
+			out_checkins = frappe.get_list("Employee Checkin", filters={"shift_assignment": ["IN", shift_assignments_list], 'log_type': 'OUT'},
 				fields="name, owner, creation, modified, modified_by, docstatus, idx, employee, employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, shift_permission, actual_time, MAX(time) as time",
 				order_by="employee DESC", group_by="shift_assignment")
 
@@ -1266,7 +1267,7 @@ def mark_daily_attendance(start_date, end_date):
 			out_checkins_dict = {}
 			for i in out_checkins:
 				out_checkins_dict[i.shift_assignment] = i
-			
+
 
 			# create attendance object
 			employee_checkin = []
@@ -1344,7 +1345,7 @@ def mark_daily_attendance(start_date, end_date):
 							'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':i.name, 'operations_shift':i.shift,
 							'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':i.company,
 							'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
-							'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 
+							'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation,
 							'comment':comment
 						})
 				except Exception as e:
@@ -1364,16 +1365,16 @@ def mark_daily_attendance(start_date, end_date):
 						})
 				except Exception as e:
 					errors.append(str(frappe.get_traceback()))
-					
-			
+
+
 			# create attendance with sql injection
 			if employee_attendance:
 				query = """
 					INSERT INTO `tabAttendance` (`name`, `employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
-					`shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`, 
+					`shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`,
 					`department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
 					`creation`, `modified`, `comment`)
-					VALUES 
+					VALUES
 
 				"""
 
@@ -1382,11 +1383,11 @@ def mark_daily_attendance(start_date, end_date):
 						query+= f"""
 						(
 							"{v.name}", "{v.employee}", "{v.employee_name}", {v.working_hours}, "{v.status}", '{v.shift}', '{v.in_time}',
-							'{v.out_time}', "{v.shift_assignment}", "{v.operations_shift}", "{v.site}", "{v.project}", "{v.attendance_date}", "{v.company}", 
+							'{v.out_time}', "{v.shift_assignment}", "{v.operations_shift}", "{v.site}", "{v.project}", "{v.attendance_date}", "{v.company}",
 							"{v.department}", {v.late_entry}, {v.early_exit}, "{v.operations_role}", "{v.post_abbrv}", "{v.roster_type}", {v.docstatus}, "{v.owner}",
 							"{v.owner}", "{v.creation}", "{v.modified}", "{v.comment}"
 						),"""
-				
+
 				query = query[:-1]
 				query += f"""
 						ON DUPLICATE KEY UPDATE
@@ -1420,8 +1421,8 @@ def mark_daily_attendance(start_date, end_date):
 						query = """
 							INSERT INTO `tabEmployee Checkin`
 							(`name`, `attendance`)
-							VALUES 
-							
+							VALUES
+
 						"""
 						for i in employee_checkin:
 							k = list(i.keys())[0]
@@ -1458,7 +1459,7 @@ def get_holiday_today(curr_date):
 
 	holidays = frappe.db.sql(f"""
 		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
-		JOIN `tabHoliday List` hl ON hl.name=h.parent 
+		JOIN `tabHoliday List` hl ON hl.name=h.parent
 		WHERE hl.from_date='{start_date}' AND hl.to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
 
 	holiday_dict = {}
@@ -1467,5 +1468,5 @@ def get_holiday_today(curr_date):
 			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{str(i.holiday_date):i.description}}
 		else:
 			holiday_dict[i.holiday] = {str(i.holiday_date):i.description}
-	
+
 	return holiday_dict
