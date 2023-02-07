@@ -607,7 +607,7 @@ def create_salary_slips(doc):
 				employees=employees,
 				args=args,
 				publish_progress=False,
-				timeout=4000, 
+				timeout=6000, 
 				queue='long'
 			)
 			frappe.msgprint(
