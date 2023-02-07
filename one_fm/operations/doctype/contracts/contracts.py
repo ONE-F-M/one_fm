@@ -970,3 +970,10 @@ def get_delivery_note(contracts, date):
 		AND dn.customer="{contracts.client}" AND posting_date
 		BETWEEN '{first_day}' AND '{last_day}' AND dn.status='To Bill';
 	;""", as_dict=1)
+
+
+def get_active_contracts_for_project(project):
+	contracts_exists = frappe.db.exists('Contracts', {'project': project, 'workflow_state': 'Active'})
+	if contracts_exists:
+		return frappe.get_doc('Contracts', contracts_exists)
+	return False
