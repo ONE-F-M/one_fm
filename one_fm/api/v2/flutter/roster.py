@@ -967,7 +967,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 			frappe.db.commit()
 		response("success", 200, {'message':'Days Off set successfully.'})
 	except Exception as e:
-		response("error", 500, None, str(e))
+		response("error", 200, None, str(frappe.get_traceback()))
 
 
 @frappe.whitelist()
