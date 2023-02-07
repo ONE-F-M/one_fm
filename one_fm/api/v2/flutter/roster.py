@@ -648,7 +648,7 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 		response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
 	except Exception as e:
 		frappe.throw(str(e))
-		response("Error", 500, None, str(e))
+		response("Error", 500, None, str(frappe.get_traceback()))
 
 @frappe.whitelist()
 def edit_post(posts, values):
@@ -1026,7 +1026,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 			frappe.db.commit()
 		response("success", 200, {'message':'Days Off set successfully.'})
 	except Exception as e:
-		response("error", 200, None, str(frappe.get_traceback()))
+		response("error", 500, None, str(frappe.get_traceback()))
 
 
 @frappe.whitelist()
