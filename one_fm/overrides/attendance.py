@@ -222,3 +222,25 @@ def mark_bulk_attendance(employee, from_date, to_date):
         mark_single_attendance(employee, i)
 
     frappe.msgprint(f"Marked Attendance successfully for {employee} between {from_date} and {to_date}")
+
+def mark_attendance_per_employee(start_date, end_date):
+    try:
+        active_employees = frappe.db.get_list("Employee", {'status':'Active'})
+        for i in active_employees:
+            if frappe.db.exists("Shift Assignment", {
+                'employee':i.name,
+                'start_date':start_date,
+                'end_date':end_date,
+                'status':'Active',
+                'docstatus':1
+                }):
+                mark_single_attendance(emp=i.name, att_date=start_date)
+            elif not frappe.db.exists("Shift Assignment", {
+                'employee':i.name,
+                'start_date':start_date,
+                'status':'Active',
+                'docstatus':1
+                }):
+                mark_single_attendance(emp=i.name, att_date=start_date)
+    except:
+        frappe.log_error(frappe.get_traceback(), 'Mark Attendance')

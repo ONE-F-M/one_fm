@@ -7,6 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "mobile_app_version",
+  "column_break_xyl05",
+  "mark_atttendance_per_employee",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key"
@@ -33,12 +35,22 @@
    "fieldname": "zenquotes_api_key",
    "fieldtype": "Password",
    "label": "Zenquotes API Key"
+  },
+  {
+   "fieldname": "column_break_xyl05",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "mark_atttendance_per_employee",
+   "fieldtype": "Check",
+   "label": "Mark Atttendance Per Employee"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-01-29 23:26:39.917969",
+ "modified": "2023-02-06 11:22:02.538497",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
