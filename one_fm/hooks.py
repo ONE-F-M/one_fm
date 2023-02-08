@@ -103,6 +103,7 @@ doctype_list_js = {
 	"Job Offer": "public/js/doctype_js/job_offer_list.js",
 	"Issue": "public/js/doctype_list_js/issue_list.js",
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
+	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
 }
 doctype_tree_js = {

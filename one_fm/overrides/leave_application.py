@@ -4,8 +4,41 @@ from frappe.utils import get_fullname
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
 from frappe.desk.form.assign_to import add
+from one_fm.api.notification import create_notification_log
 from frappe.utils import getdate
 import pandas as pd
+
+
+
+def close_leaves(all_leaves,user=None):
+    for each in all_leaves:
+        try:
+            leave_doc = frappe.get_doc("Leave Application",each.name)
+            leave_doc.status = "Approved"
+            leave_doc.flags.ignore_validate = True            
+            leave_doc.submit()
+        except:
+            frappe.log_error("Error while closing {}".format(each.name))
+            continue
+    frappe.db.commit()
+    if user:
+        message = "Please note that all open sick leaves have been approved"
+        create_notification_log('Leaves Closed!', 'Please', [user],leave_doc)
+        
+
+@frappe.whitelist()
+def fix_sick_leave():
+    all_leaves = frappe.get_all("Leave Application",{'leave_type':"Sick Leave","docstatus":0})
+    if all_leaves:
+        if len(all_leaves)<=5:
+            close_leaves(all_leaves)
+        else:
+            frappe.enqueue(method=close_leaves,user=frappe.session.user,all_leaves = all_leaves, queue='long',timeout=1200,job_name='Closing Leaves')
+            frappe.msgprint("Leaves are being closed in the background, <br> You will recieve a notification after the process.",alert = 1)
+            
+
+
+    
 
 
 class LeaveApplicationOverride(LeaveApplication):
