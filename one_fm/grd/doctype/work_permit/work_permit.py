@@ -93,11 +93,6 @@ class WorkPermit(Document):
             self.reload()
 
         if self.workflow_state == "Completed":
-            if self.work_permit_type == "Renewal Non Kuwaiti" or self.work_permit_type == "Renewal Kuwaiti":
-                field_list = [{'Upload Work Permit':'upload_work_permit'},{'Updated Work Permit Expiry Date':'new_work_permit_expiry_date'}]
-                message_detail = '<b style="color:red; text-align:center;">First, You Need to Attch Work Permit taken from <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
-                self.set_mendatory_fields(field_list,message_detail)
-
             if self.work_permit_type == "Cancellation":
                 field_list = [{'Work Permit Cancellation ':'work_permit_cancellation'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Attach the Work Permit Cancellation taken from <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
