@@ -829,11 +829,12 @@ def create_shift_assignment(roster, date, time):
 				
 				query += f"""
 				(
-					"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '\{r.shift_type}\', 
-					"{r.site or ''}", "{r.project or ''}", 'Active', "{_shift_type.shift_type}", "{sites_list_dict.get(r.site) or ''}", "{date}", 
+					"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}', 
+					"{r.site or ''}", "{r.project or ''}", 'Active', '{_shift_type.shift_type}', "{sites_list_dict.get(r.site) or ''}", "{date}", 
 					"{_shift_type.start_datetime or str(date)+' 08:00:00'}", 
-					"{_shift_type.end_datetime or str(date)+' 17:00:00'}", "{r.department}", "{r.shift or ''}", "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}", 
+					"{_shift_type.end_datetime or str(date)+' 17:00:00'}", "{r.department}", '{r.shift or ""}', "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}", 
 					"{owner}", "{owner}", "{creation}", "{creation}" """
+
 				if shift_request_dict.get(r.employee):
 					_shift_request = shift_request_dict.get(r.employee)
 					query += f""", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}"), """
