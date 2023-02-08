@@ -3,7 +3,7 @@ import frappe
 from frappe.utils import getdate, add_days
 from hrms.hr.doctype.attendance.attendance import Attendance
 from hrms.hr.utils import  validate_active_employee
-from one_fm.api.tasks import get_holiday_today
+from one_fm.utils import get_holiday_today
 from one_fm.operations.doctype.shift_permission.shift_permission import create_checkin as approve_shift_permission
 
 
@@ -39,7 +39,16 @@ class AttendanceOverride(Attendance):
                 self.shift = shift_assignment.shift_type
                 self.operations_shift = shift_assignment.shift
                 self.site = shift_assignment.site
+        if self.attendance_request and not self.working_hours and not self.status in [
+            'Holiday', 'Day Off', 'Absent'    
+            ]:
+            self.working_hours = frappe.db.get_value("Shift Type", self.shift_type, 'duration')
 
+    def on_submit(self):
+        if self.status in ['Holiday', 'Day Off']:
+            pass
+        else:
+            super(AttendanceOverride, self).on_submit()
 
 
 @frappe.whitelist()

@@ -11,7 +11,7 @@ from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
-from one_fm.utils import mark_attendance
+from one_fm.utils import mark_attendance, get_holiday_today
 from one_fm.api.mobile.roster import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
@@ -1449,21 +1449,3 @@ def mark_daily_attendance(start_date, end_date):
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 
-
-def get_holiday_today(curr_date):
-	start_date = getdate(curr_date).replace(day=1, month=1)
-	end_date = getdate(start_date).replace(day=31, month=12)
-
-	holidays = frappe.db.sql(f"""
-		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
-		JOIN `tabHoliday List` hl ON hl.name=h.parent 
-		WHERE hl.from_date='{start_date}' AND hl.to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
-
-	holiday_dict = {}
-	for i in holidays:
-		if(holiday_dict.get(i.holiday)):
-			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{str(i.holiday_date):i.description}}
-		else:
-			holiday_dict[i.holiday] = {str(i.holiday_date):i.description}
-	
-	return holiday_dict
