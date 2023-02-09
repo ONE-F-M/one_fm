@@ -599,7 +599,7 @@ scheduler_events = {
 			'one_fm.api.tasks.generate_payroll'
 		],
 		"05 23 1-31 * *": [ #“At 23:05 on every day-of-month from 1 through 31.”
-			'one_fm.tasks.one_fm.overrides.attendance_request.mark_future_attendance_request',
+			'one_fm.overrides.attendance_request.mark_future_attendance_request',
 			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
 		"15 0 * * *": [ # create shift assignment

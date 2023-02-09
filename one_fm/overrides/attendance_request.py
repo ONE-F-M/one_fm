@@ -134,7 +134,6 @@ class AttendanceRequestOverride(AttendanceRequest):
 						attendance.db_set('docstatus', 1)
 					else:
 						attendance.submit()
-			print(attendance_date, status)
 		except Exception as e:
 			print(frappe.get_traceback())
 			frappe.log_error(str(frappe.get_traceback()), 'Attendance Request')
