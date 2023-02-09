@@ -150,40 +150,34 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 	#defining the subject and message
 	notification_category = "Attendance"
 
-	checkin_message = _("""
+	checkin_message_body = """
 					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
 					<br>
 					Submit a Shift Permission if you are planing to arrive late
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 					<br>
-					Submit an Attendance Request if there are issues in checkin or you forgot to checkin
+					Submit an Attendance Request if you forgot to checkin
 					<a class="btn btn-secondary" href="/app/attendance-request/new-attendance-request-1">Submit Attendance Request</a>&nbsp;
+					<br>
+					Submit a Employee Checkin Issue if there are issues in checkin
+					<a class="btn btn-secondary" href="/app/employee-checkin-issue/new-employee-checkin-issue-1?log_type=IN">Submit Employee Checkin Issue</a>&nbsp;
 					<br>
 					Submit a Shift Request if you are trying to checkin from another site location
 					<a class="btn btn-info" href="/app/shift-request/new-shift-request-1">Submit Shift Request</a>&nbsp;
-					<h3>DON'T FORGET TO CHECKIN</h3>
-					""")
+					<h3>{0}</h3>
+					"""
+	checkin_message = _(checkin_message_body.format("DON'T FORGET TO CHECKIN"))
 
 	if is_after_grace_checkin:
-		checkin_message = _("""
-					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
-					<br>
-					Submit a Shift Permission if you are planing to arrive late
-					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-					<br>
-					Submit an Attendance Request if there are issues in checkin or you forgot to checkin
-					<a class="btn btn-secondary" href="/app/attendance-request/new-attendance-request-1">Submit Attendance Request</a>&nbsp;
-					<br>
-					Submit a Shift Request if you are trying to checkin from another site location
-					<a class="btn btn-info" href="/app/shift-request/new-shift-request-1">Submit Shift Request</a>&nbsp;
-					<h3>IF YOU DO NOT CHECK-IN WITHIN THE NEXT 3 HOURS, YOU WOULD BE MARKED AS ABSENT</h3>
-					""")
-
+		checkin_message = _(checkin_message_body.format("IF YOU DO NOT CHECK-IN WITHIN THE NEXT 3 HOURS, YOU WOULD BE MARKED AS ABSENT"))
 
 	checkout_message = _("""
 		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
 		Submit a Shift Permission if you are planing to leave early or is there any issue in checkout or forget to checkout
 		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+		<br>
+		Submit a Employee Checkin Issue if there are issues in checkout
+		<a class="btn btn-secondary" href="/app/employee-checkin-issue/new-employee-checkin-issue-1?log_type=OUT">Submit Employee Checkin Issue</a>&nbsp;
 		""")
 
 	user_id_list = []
