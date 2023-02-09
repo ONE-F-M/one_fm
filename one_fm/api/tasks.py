@@ -116,7 +116,7 @@ def checkin_checkout_final_reminder():
 def schedule_final_notification(shifts_list, now_time):
 	notification_title = _("Final Reminder")
 	notification_subject_in =  _("Please checkin within the next 3 hours or you will be marked absent.")
-	notification_subject_out =  _("Please checkin in the next five minutes.")
+	notification_subject_out =  _("Please checkout in the next five minutes.")
 
 
 	for shift in shifts_list:
@@ -137,7 +137,7 @@ def schedule_final_notification(shifts_list, now_time):
 			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
 
 			if len(recipients) > 0:
-				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_out)
+				notify_checkin_checkout_final_reminder(recipients=recipients, log_type="OUT", notification_title=notification_title, notification_subject=notification_subject_out)
 
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
