@@ -11,7 +11,7 @@ from frappe.utils import now_datetime,nowtime, cstr, getdate, get_datetime, cint
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
-from one_fm.utils import mark_attendance, get_holiday_today
+from one_fm.utils import mark_attendance, get_holiday_today, production_domain
 from one_fm.api.mobile.roster import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
@@ -60,7 +60,7 @@ def checkin_checkout_initial_reminder():
 	This function sends a push notification to users to remind them to checkin/checkout at the start/end time of their shift.
 	"""
 	try:
-		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
+		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
 			return
 
 		# Get current date and time
@@ -102,7 +102,7 @@ def checkin_checkout_final_reminder():
 	This function sends a final notification to users to remind them to checkin/checkout.
 	"""
 	try:
-		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout'):
+		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
 			return
 
 		now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
@@ -216,7 +216,7 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 
 @frappe.whitelist()
 def checkin_checkout_supervisor_reminder():
-	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_supervisor_checkin_checkout'):
+	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
 		return
 
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
