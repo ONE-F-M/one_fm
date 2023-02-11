@@ -12,7 +12,7 @@ from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
 from one_fm.utils import mark_attendance, get_holiday_today, production_domain
-from one_fm.api.mobile.roster import get_current_shift
+from one_fm.api.v1.roster import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import approve_open_employee_checkin_issue
@@ -198,14 +198,16 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 		user_roles = frappe.get_roles(recipient.user_id)
 
 		#cutomizing buttons according to log type.
-		if log_type=="IN":
-			#arrive late button is true only if the employee has the user role "Head Office Employee".
-			if "Head Office Employee" in user_roles:
-				push_notification_rest_api_for_checkin(employee_id, notification_title, notification_subject, checkin=True,arriveLate=True,checkout=False)
-			else:
-				push_notification_rest_api_for_checkin(employee_id, notification_title, notification_subject, checkin=True,arriveLate=False,checkout=False)
-		if log_type=="OUT":
-			push_notification_rest_api_for_checkin(employee_id, notification_title, notification_subject, checkin=False,arriveLate=False,checkout=True)
+		# check if employee yet to have record for attendance
+		if get_current_schedules(recipient.name, log_type):
+			if log_type=="IN":
+				#arrive late button is true only if the employee has the user role "Head Office Employee".
+				if "Head Office Employee" in user_roles:
+					push_notification_rest_api_for_checkin(employee_id, notification_title, notification_subject, checkin=True,arriveLate=True,checkout=False)
+				else:
+					push_notification_rest_api_for_checkin(employee_id, notification_title, notification_subject, checkin=True,arriveLate=False,checkout=False)
+			if log_type=="OUT":
+				push_notification_rest_api_for_checkin(employee_id, notification_title, notification_subject, checkin=False,arriveLate=False,checkout=True)
 
 
 	# send notification mail to list of employee using user_id
@@ -243,24 +245,25 @@ def supervisor_reminder(shift, today_datetime, now_time):
 
 		if len(recipients) > 0:
 			for recipient in recipients:
-				action_user, Role = get_action_user(recipient.name,recipient.shift)
-				#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
-				subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
-				action_message = _("""
-				Submit a Shift Permission for the employee to give an excuse and not need to penalize
-				<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-				<br/><br/>
-				Issue penalty for the employee
-				<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
-				""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkin_time)
-				if action_user is not None:
-					send_notification(title, subject, action_message, category, [action_user])
+				if get_current_schedules(recipient.name, 'IN'):
+					action_user, Role = get_action_user(recipient.name,recipient.shift)
+					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
+					subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
+					action_message = _("""
+					Submit a Shift Permission for the employee to give an excuse and not need to penalize
+					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+					<br/><br/>
+					Issue penalty for the employee
+					<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
+					""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkin_time)
+					if action_user is not None:
+						send_notification(title, subject, action_message, category, [action_user])
 
-				notify_message = _("""Note that {employee} from Shift {shift} has Not Checked in yet.""").format(employee=recipient.employee_name, shift=recipient.shift)
-				if Role:
-					notify_user = get_notification_user(recipient.name,recipient.shift, Role)
-					if notify_user is not None:
-						send_notification(title, subject, notify_message, category, notify_user)
+					notify_message = _("""Note that {employee} from Shift {shift} has Not Checked in yet.""").format(employee=recipient.employee_name, shift=recipient.shift)
+					if Role:
+						notify_user = get_notification_user(recipient.name,recipient.shift, Role)
+						if notify_user is not None:
+							send_notification(title, subject, notify_message, category, notify_user)
 
 	"""
 		Send notification to supervisor of those who haven't checked in and don't have accepted shift permission
@@ -273,24 +276,25 @@ def supervisor_reminder(shift, today_datetime, now_time):
 
 		if len(recipients) > 0:
 			for recipient in recipients:
-				action_user, Role = get_action_user(recipient.name,recipient.shift)
-				#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
-				subject = _('{employee} has not checked out yet.'.format(employee=recipient.employee_name))
-				action_message = _("""
-					Submit a Shift Permission for the employee to give an excuse and not need to penalize
-					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-					<br/><br/>
-					Issue penalty for the employee
-					<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
-					""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
-				if action_user is not None:
-						send_notification(title, subject, action_message, category, [action_user])
+				if get_current_schedules(recipient.name, 'OUT'):
+					action_user, Role = get_action_user(recipient.name,recipient.shift)
+					#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
+					subject = _('{employee} has not checked out yet.'.format(employee=recipient.employee_name))
+					action_message = _("""
+						Submit a Shift Permission for the employee to give an excuse and not need to penalize
+						<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
+						<br/><br/>
+						Issue penalty for the employee
+						<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
+						""").format(shift=recipient.shift, date=cstr(now_time), employee=recipient.name, time=checkout_time)
+					if action_user is not None:
+							send_notification(title, subject, action_message, category, [action_user])
 
-				notify_message = _("""Note that {employee} from Shift {shift} has Not Checked Out yet.""").format(employee=recipient.employee_name, shift=recipient.shift)
-				if Role:
-						notify_user = get_notification_user(recipient.name,recipient.shift, Role)
-						if notify_user is not None:
-							send_notification(title, subject, notify_message, category, notify_user)
+					notify_message = _("""Note that {employee} from Shift {shift} has Not Checked Out yet.""").format(employee=recipient.employee_name, shift=recipient.shift)
+					if Role:
+							notify_user = get_notification_user(recipient.name,recipient.shift, Role)
+							if notify_user is not None:
+								send_notification(title, subject, notify_message, category, notify_user)
 @frappe.whitelist()
 def send_notification(title, subject, message, category, recipients):
 	for user in recipients:
@@ -1451,3 +1455,70 @@ def mark_daily_attendance(start_date, end_date):
 					no_checkin_out_records += f"{k.name} - {k.employee} - {k.employee_name}<br>"
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
+
+
+
+def get_current_schedules(employee, log_type=None):
+	# check if employee has logs in
+	# Employee Checkin, Shift Request, Shift Permission
+	# Attendance Request, Leaves
+	employee_doc = frappe.db.get_value("Employee", employee, ['name', 'holiday_list'])
+	start_date = str(getdate())
+	curr_shift = get_current_shift(employee)
+	# check day off
+	if frappe.db.exists('Employee Schedule', {
+			'employee':employee,
+			'date':start_date,
+			'employee_availability':'Day Off'
+			}
+		):
+		return False
+	
+	# check holiday
+	if get_holiday_today(start_date).get(employee_doc.holiday_list):
+		return False
+	
+	if curr_shift:
+		# check for leaves
+		if frappe.db.sql(f"""
+				SELECT name, employee FROM `tabLeave Application` 
+				WHERE employee='{employee}' AND status IN ('Open', 'Approved') 
+				AND '{start_date}' BETWEEN from_date AND to_date;
+			""", as_dict=1):
+			return False
+		# check for shift permission:
+		if frappe.db.exists('Shift Permission', {
+			'employee':employee,
+			'assigned_shift': curr_shift.name,
+			'log_type':log_type
+			}):
+			return False
+
+		# check for shift request:
+		if frappe.db.sql(f"""
+				SELECT name, employee FROM `tabShift Request` 
+				WHERE employee='{employee}' AND docstatus=1 
+				AND '{start_date}' BETWEEN from_date AND to_date;
+			""", as_dict=1):
+			return False
+		# check attendance request
+		if frappe.db.sql(f"""
+				SELECT name, employee FROM `tabAttendance Request` 
+				WHERE employee='{employee}' AND docstatus=1 
+				AND '{start_date}' BETWEEN from_date AND to_date;
+			""", as_dict=1):
+			return False
+		# check employee checkin
+		if frappe.db.exists('Employee Checkin', {
+			'employee':employee,
+			'shift_assignment': curr_shift.name,
+			'log_type':log_type
+			}):
+			return False
+		return True
+	else:
+		return False
+
+
+
+

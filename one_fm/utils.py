@@ -2905,3 +2905,11 @@ def get_domain():
 
 def production_domain():
     return get_domain() == 'one-fm.com'
+
+def check_employee_attendance_dependents(employee):
+    """
+        This method checks if employee have Checkin/out, shift request
+        shift permission, attendance request, leave application, day off
+        or holiday
+    """
+
