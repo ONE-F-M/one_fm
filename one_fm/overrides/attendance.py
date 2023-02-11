@@ -3,7 +3,7 @@ import frappe
 from frappe.utils import getdate, add_days
 from hrms.hr.doctype.attendance.attendance import Attendance
 from hrms.hr.utils import  validate_active_employee
-from one_fm.api.tasks import get_holiday_today
+from one_fm.utils import get_holiday_today
 from one_fm.operations.doctype.shift_permission.shift_permission import create_checkin as approve_shift_permission
 
 
@@ -39,7 +39,10 @@ class AttendanceOverride(Attendance):
                 self.shift = shift_assignment.shift_type
                 self.operations_shift = shift_assignment.shift
                 self.site = shift_assignment.site
-
+        if self.attendance_request and not self.working_hours and not self.status in [
+            'Holiday', 'Day Off', 'Absent'    
+            ]:
+            self.working_hours = frappe.db.get_value("Shift Type", self.shift_type, 'duration')
 
 
 @frappe.whitelist()
@@ -222,25 +225,3 @@ def mark_bulk_attendance(employee, from_date, to_date):
         mark_single_attendance(employee, i)
 
     frappe.msgprint(f"Marked Attendance successfully for {employee} between {from_date} and {to_date}")
-
-def mark_attendance_per_employee(start_date, end_date):
-    try:
-        active_employees = frappe.db.get_list("Employee", {'status':'Active'})
-        for i in active_employees:
-            if frappe.db.exists("Shift Assignment", {
-                'employee':i.name,
-                'start_date':start_date,
-                'end_date':end_date,
-                'status':'Active',
-                'docstatus':1
-                }):
-                mark_single_attendance(emp=i.name, att_date=start_date)
-            elif not frappe.db.exists("Shift Assignment", {
-                'employee':i.name,
-                'start_date':start_date,
-                'status':'Active',
-                'docstatus':1
-                }):
-                mark_single_attendance(emp=i.name, att_date=start_date)
-    except:
-        frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
