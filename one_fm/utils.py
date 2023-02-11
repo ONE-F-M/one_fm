@@ -2896,3 +2896,20 @@ def get_holiday_today(curr_date):
 			holiday_dict[i.holiday] = {str(i.holiday_date):i.description}
 	
 	return holiday_dict
+
+def get_domain():
+    try:
+        return frappe.utils.get_url().split('://')[1]
+    except:
+        return ''
+
+def production_domain():
+    return get_domain() == 'one-fm.com'
+
+def check_employee_attendance_dependents(employee):
+    """
+        This method checks if employee have Checkin/out, shift request
+        shift permission, attendance request, leave application, day off
+        or holiday
+    """
+
