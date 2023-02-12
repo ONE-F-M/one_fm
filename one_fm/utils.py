@@ -2876,3 +2876,40 @@ def query_db_list(query_list, commit=False):
         return frappe._dict({'error':False, 'data':result})
     except Exception as e:
         return frappe._dict({'error':True, 'msg':str(e), 'data':result})
+
+
+
+def get_holiday_today(curr_date):
+	start_date = getdate(curr_date).replace(day=1, month=1)
+	end_date = getdate(start_date).replace(day=31, month=12)
+
+	holidays = frappe.db.sql(f"""
+		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
+		JOIN `tabHoliday List` hl ON hl.name=h.parent 
+		WHERE hl.from_date='{start_date}' AND hl.to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
+
+	holiday_dict = {}
+	for i in holidays:
+		if(holiday_dict.get(i.holiday)):
+			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{str(i.holiday_date):i.description}}
+		else:
+			holiday_dict[i.holiday] = {str(i.holiday_date):i.description}
+	
+	return holiday_dict
+
+def get_domain():
+    try:
+        return frappe.utils.get_url().split('://')[1]
+    except:
+        return ''
+
+def production_domain():
+    return get_domain() == 'one-fm.com'
+
+def check_employee_attendance_dependents(employee):
+    """
+        This method checks if employee have Checkin/out, shift request
+        shift permission, attendance request, leave application, day off
+        or holiday
+    """
+
