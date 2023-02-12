@@ -182,7 +182,6 @@ class DataExporter:
 		# build list of valid docfields
 		tablecolumns = []
 		table_name = "tab" + dt
-		print(self.select_columns)
 
 		fields = [ sub['name'] for sub in frappe.db.get_table_columns_description(table_name) ]
 		for f in self.select_columns[dt]:
