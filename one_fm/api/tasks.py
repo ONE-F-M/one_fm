@@ -274,6 +274,7 @@ def supervisor_reminder(shift, today_datetime, now_time):
 
 		if len(recipients) > 0:
 			for recipient in recipients:
+				
 				action_user, Role = get_action_user(recipient.name,recipient.shift)
 				#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
 				subject = _('{employee} has not checked out yet.'.format(employee=recipient.employee_name))

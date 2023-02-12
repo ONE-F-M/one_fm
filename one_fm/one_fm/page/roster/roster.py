@@ -579,6 +579,7 @@ def schedule_leave(employees, leave_type, start_date, end_date):
 @frappe.whitelist(allow_guest=True)
 def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 	try:
+		_start_date = getdate(start_date)
 		if end_date:
 			stop_date = getdate(end_date)
 		else: stop_date = None
@@ -586,26 +587,27 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 		employees = json.loads(employees)
 		if not employees:
 			response("Error", 400, None, {'message':'Employees must be selected.'})
-		delete_dict = {}
-		new_employees = []
-		if end_date:
-			for i in employees:
-				if not getdate(i['date']) > stop_date:
-					new_employees.append(i)
-			employees = new_employees
-		for i in employees:
-			if cint(never_end) == 1:
-				_end_date = f'>="{start_date}"'
-			else:
-				_end_date = '="'+str(i['date'])+'"'
-			_line = f"""DELETE FROM `tabEmployee Schedule` WHERE employee="{i['employee']}" AND date{_end_date};"""
-			if not _line in delete_list:
-				delete_list.append(_line)
+		employees = [i for i in employees if getdate(i['date'])>=_start_date]
 
-		if delete_list:
-			res = query_db_list(delete_list, commit=True)
-			if res.error:
-				response("Error", 500, None, res.msg)
+		if end_date:
+			employees = [i for i in employees if getdate(i['date'])<=stop_date]
+
+		# check if no end date
+		if cint(never_end) == 1:
+			employees_to_delete = []
+			for i in employees:
+				if not i['employee'] in employees_to_delete:
+					employees_to_delete.append(i['employee'])
+			# delete all schedules greater than start date
+			employees_to_delete=str(tuple(employees_to_delete)).replace(',)', ')')
+			frappe.db.sql(f"""
+				DELETE FROM `tabEmployee Schedule` WHERE employee IN {employees_to_delete} and date>='{start_date}'
+			""")
+		else:
+			for i in employees:
+				frappe.db.sql(f"""
+					DELETE FROM `tabEmployee Schedule` WHERE employee='{i['employee']}' and date='{i['date']}'
+				""")
 		response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
 	except Exception as e:
 		frappe.throw(str(e))
