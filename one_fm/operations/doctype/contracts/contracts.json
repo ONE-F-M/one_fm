@@ -32,6 +32,10 @@
   "section_break_20",
   "engagement_type",
   "start_date",
+  "contract_termination_decision_period",
+  "contract_termination_decision_period_date",
+  "contract_end_internal_notification",
+  "contract_end_internal_notification_date",
   "end_date",
   "is_auto_renewal",
   "contract_date",
@@ -453,10 +457,32 @@
    "label": "Contract Date",
    "options": "Contracts Date",
    "read_only": 1
+  },
+  {
+   "fieldname": "contract_end_internal_notification",
+   "fieldtype": "Int",
+   "label": "Contract End Internal Notification"
+  },
+  {
+   "fieldname": "contract_termination_decision_period",
+   "fieldtype": "Int",
+   "label": "Contract Termination Decision Period"
+  },
+  {
+   "fieldname": "contract_termination_decision_period_date",
+   "fieldtype": "Date",
+   "label": "Contract Termination Decision Period Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "contract_end_internal_notification_date",
+   "fieldtype": "Date",
+   "label": "Contract End Internal Notification Date",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2022-12-06 10:41:14.586289",
+ "modified": "2023-02-12 11:24:51.635872",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
