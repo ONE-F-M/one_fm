@@ -182,14 +182,15 @@ class DataExporter:
 		# build list of valid docfields
 		tablecolumns = []
 		table_name = "tab" + dt
-		for f in frappe.db.get_table_columns_description(table_name):
-			field = meta.get_field(f.name)
-			if field and (
-				(self.select_columns and f.name in self.select_columns[dt]) or not self.select_columns
-			):
+		print(self.select_columns)
+
+		fields = [ sub['name'] for sub in frappe.db.get_table_columns_description(table_name) ]
+		for f in self.select_columns[dt]:
+			field = meta.get_field(f)
+			if field:
 				tablecolumns.append(field)
 
-		tablecolumns.sort(key=lambda a: int(a.idx))
+		# tablecolumns.sort(key=lambda a: int(a.idx))
 
 		_column_start_end = frappe._dict(start=0)
 
@@ -209,8 +210,7 @@ class DataExporter:
 							"reqd": 1,
 							"info": _("Parent is the name of the document to which the data will get added to."),
 						}
-					),
-					True,
+					)
 				)
 
 			_column_start_end = frappe._dict(start=0)
@@ -220,24 +220,16 @@ class DataExporter:
 			if self.with_data:
 				self._append_name_column(dt)
 
-		for docfield in tablecolumns:
-			self.append_field_column(docfield, True)
 
-		# all non mandatory fields
 		for docfield in tablecolumns:
-			self.append_field_column(docfield, False)
-
+			self.append_field_column(docfield)
 
 		_column_start_end.end = len(self.columns) + 1
 
 		self.column_start_end[(dt, parentfield)] = _column_start_end
 
-	def append_field_column(self, docfield, for_mandatory):
+	def append_field_column(self, docfield):
 		if not docfield:
-			return
-		if for_mandatory and not docfield.reqd:
-			return
-		if not for_mandatory and docfield.reqd:
 			return
 		if docfield.fieldname in ("parenttype", "trash_reason"):
 			return
@@ -249,6 +241,8 @@ class DataExporter:
 			and docfield.fieldname != "name"
 		):
 			return
+		print(docfield.fieldname)
+		print(self.fieldrow)
 
 		self.fieldrow.append(docfield.fieldname)
 		self.labelrow.append(_(docfield.label))
@@ -295,8 +289,7 @@ class DataExporter:
 					"fieldtype": "Data",
 					"reqd": 1,
 				}
-			),
-			True,
+			)
 		)
 
 	def create(self):
