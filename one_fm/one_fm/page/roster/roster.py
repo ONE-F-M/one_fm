@@ -852,7 +852,6 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 	"""
 		Set days of done with sql query for instant response
 	"""
-	return
 	try:
 		creation = now()
 		owner = frappe.session.user
