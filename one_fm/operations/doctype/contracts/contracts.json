@@ -459,11 +459,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "contract_end_internal_notification",
-   "fieldtype": "Int",
-   "label": "Contract End Internal Notification"
-  },
-  {
    "fieldname": "contract_termination_decision_period",
    "fieldtype": "Int",
    "label": "Contract Termination Decision Period"
@@ -475,6 +470,11 @@
    "read_only": 1
   },
   {
+   "fieldname": "contract_end_internal_notification",
+   "fieldtype": "Int",
+   "label": "Contract End Internal Notification"
+  },
+  {
    "fieldname": "contract_end_internal_notification_date",
    "fieldtype": "Date",
    "label": "Contract End Internal Notification Date",
@@ -482,7 +482,7 @@
   }
  ],
  "links": [],
- "modified": "2023-02-12 11:24:51.635872",
+ "modified": "2023-02-13 13:42:40.351849",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

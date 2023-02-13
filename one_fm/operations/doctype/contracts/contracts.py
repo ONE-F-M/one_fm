@@ -10,6 +10,8 @@ from frappe.model.document import Document
 from frappe.utils import (
     cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
     get_last_day, get_datetime, flt, add_days,add_months
+    cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
+    get_last_day, get_datetime, flt, add_days,add_months
 )
 from frappe import _
 
@@ -22,6 +24,18 @@ class Contracts(Document):
         # 	frappe.msgprint(_("Overtime rate not set."), alert=True, indicator='orange')
 
  
+ 
+    def update_contract_dates(self):
+        if self.contract_termination_decision_period:
+            self.contract_termination_decision_period_date=add_months(getdate(self.end_date),-(int(self.contract_termination_decision_period)*1))
+        else:
+            self.contract_termination_decision_period_date = None
+            
+        if self.contract_end_internal_notification and self.contract_termination_decision_period_date:
+            self.contract_end_internal_notification_date = add_months(getdate(self.contract_termination_decision_period_date),-(int(self.contract_end_internal_notification)*1))
+        
+        else:
+            self.contract_end_internal_notification_date = None
             
     def validate_no_of_days_off(self):
         if self.items:
@@ -986,3 +1000,26 @@ def get_due_contracts():
     #Get all the contracts that are due to expire today and send a reminder to the relevant parties
     pass
 
+def send_contract_reminders():
+    """
+    Generate Reminders for Contract Termination Decision Period and Contract End Internal Notification periods
+    """
+    contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':today()})
+    contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':today()})
+    relevant_roles = ["Finance Manager",'Legal Manager','Projects Manager','Operations Manager']
+    active_users = frappe.get_all("User",{'enabled':1})
+    active_users_ = [i.name for i in active_users] if active_users else []
+    relevant_users = frappe.get_all("Has Role",{'role':['IN',relevant_roles],'parent':['IN',active_users_]},['distinct parent'])
+    users = [i.parent for i in relevant_users]
+    if contracts_due_internal_notification:
+        print(contracts_due_internal_notification)
+        #get the  users with the relevant roles
+        contracts_due_internal_notification_list = [i.name for i in contracts_due_internal_notification ]
+        due_contracts = "<br>".join(contracts_due_internal_notification_list)
+        message = "Good Day <br>Please note that today is the  Internal Notification period for the following contracts." + due_contracts
+        frappe.sendmail(recipients=users, content=message, subject="Expiring Contracts")
+    if contracts_due_termination_notification:
+        contracts_due_termination_notification_list = [i.name for i in contracts_due_termination_notification]
+        due_contracts_ = "<br>".join(contracts_due_termination_notification_list)
+        message = "Good Day <br>Please note that today is the Contract Termination Decision Period is due for the following contracts." + due_contracts_
+        frappe.sendmail(recipients=[users], content=message, subject="Expiring Contracts")
