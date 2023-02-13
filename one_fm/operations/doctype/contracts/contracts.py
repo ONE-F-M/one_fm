@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import frappe, json
 from datetime import datetime
 from frappe.model.document import Document
+
 from frappe.utils import (
     cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
     get_last_day, get_datetime, flt, add_days,add_months
@@ -1010,7 +1011,7 @@ def send_contract_reminders():
     relevant_users = frappe.get_all("Has Role",{'role':['IN',relevant_roles],'parent':['IN',active_users_]},['distinct parent'])
     users = [i.parent for i in relevant_users]
     if contracts_due_internal_notification:
-        print(contracts_due_internal_notification)
+        
         #get the  users with the relevant roles
         contracts_due_internal_notification_list = [i.name for i in contracts_due_internal_notification ]
         due_contracts = "<br>".join(contracts_due_internal_notification_list)
@@ -1020,4 +1021,49 @@ def send_contract_reminders():
         contracts_due_termination_notification_list = [i.name for i in contracts_due_termination_notification]
         due_contracts_ = "<br>".join(contracts_due_termination_notification_list)
         message = "Good Day <br>Please note that today is the Contract Termination Decision Period is due for the following contracts." + due_contracts_
-        frappe.sendmail(recipients=[users], content=message, subject="Due Contracts")
+        frappe.sendmail(recipients=[users], content=message, subject="Expiring Contracts")
+        
+
+def renew_contracts_by_termination_date():
+    """
+    Renew an existing contract by the Termination date
+    """
+    all_due_contracts = frappe.get_all("Contracts",{'workflow_state': 'Active','is_auto_renewal':1,'contract_termination_decision_period_date':getdate()},\
+        ['contract_end_internal_notification','contract_termination_decision_period','start_date','name','end_date','project'])
+    if all_due_contracts:
+        
+        for each in all_due_contracts:
+            old_date = frappe.new_doc("Contracts Date")
+            old_date.parent = each.name
+            old_date.parenttype = "Contracts"
+            old_date.parentfield = "contract_date"
+            duration = date_diff(each.end_date, each.start_date)
+            old_date.contract_start_date = each.start_date
+            old_date.contract_end_date = each.end_date
+            old_date.insert()
+            
+            frappe.db.set_value('Contracts',each.name,'start_date',add_days(each.end_date, 1))
+            frappe.db.set_value('Contracts',each.name,'end_date',add_days(each.end_date, duration+1))
+            
+            if each.get('end_date'):
+                frappe.db.set_value('Contracts',each.name,'contract_termination_decision_period_date',add_months(each.end_date,-int(each.contract_termination_decision_period)))
+            if each.get('contract_termination_decision_period_date'):
+                frappe.db.set_value('Contracts',each.name,'contract_end_internal_notification_date',add_months(each.end_date,each.contract_termination_decision_period))
+        
+        #Get all operations post that belong to a project and recreate the post schedule for that period
+        
+        relevant_projects = [i.project for i in all_due_contracts] if all_due_contracts else []
+        all_operations_post = frappe.get_all("Operations Post",{'project':['IN',relevant_projects]})
+        all_operations_post_ = [i.name for i in all_operations_post]
+        
+        if all_operations_post_:
+            frappe.enqueue(create_post_schedules, operations_posts=all_operations_post_, queue="long",job_name = 'Create Post Schedules')
+            
+            
+
+def create_post_schedules(operations_posts):
+    from one_fm.operations.doctype.operations_post.operations_post import create_post_schedule_for_operations_post
+    
+    list(map(create_post_schedule_for_operations_post,operations_posts))
+    
+            
