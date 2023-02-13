@@ -10,8 +10,7 @@ from frappe.model.document import Document
 from frappe.utils import (
     cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
     get_last_day, get_datetime, flt, add_days,add_months
-    cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
-    get_last_day, get_datetime, flt, add_days,add_months
+    
 )
 from frappe import _
 
