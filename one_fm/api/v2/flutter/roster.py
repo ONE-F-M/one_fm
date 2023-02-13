@@ -410,7 +410,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
             update_roster(key="roster_view")
             response("success", 200, {'employees':employees_list, 'date_range':date_range, 'message':'Sucessfully rostered employees'})
     except Exception as e:
-        response("error", 500, None, str(e))
+        response("error", 500, None, str(frappe.get_traceback()))
 
 def update_roster(key):
     frappe.publish_realtime(key, "Success")
