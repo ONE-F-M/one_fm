@@ -1015,9 +1015,9 @@ def send_contract_reminders():
         contracts_due_internal_notification_list = [i.name for i in contracts_due_internal_notification ]
         due_contracts = "<br>".join(contracts_due_internal_notification_list)
         message = "Good Day <br>Please note that today is the  Internal Notification period for the following contracts." + due_contracts
-        frappe.sendmail(recipients=users, content=message, subject="Due Contracts")
+        frappe.sendmail(recipients=users, content=message, subject="Expiring Contracts")
     if contracts_due_termination_notification:
         contracts_due_termination_notification_list = [i.name for i in contracts_due_termination_notification]
         due_contracts_ = "<br>".join(contracts_due_termination_notification_list)
         message = "Good Day <br>Please note that today is the Contract Termination Decision Period is due for the following contracts." + due_contracts_
-        frappe.sendmail(recipients=[users], content=message, subject="Due Contracts")
+        frappe.sendmail(recipients=[users], content=message, subject="Expiring Contracts")
