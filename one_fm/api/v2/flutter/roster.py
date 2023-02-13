@@ -378,7 +378,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
         elif cint(project_end_date) and end_date:
             validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")
 
-        emp_tuple = employees.replace('[', '(').replace(']',')')
+        emp_tuple = tuple([i['employee'] for i in employees]).replace(',)', ')')
         date_range = pd.date_range(start=start_date, end=end_date)
 
         if not cint(request_employee_schedule) and "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
