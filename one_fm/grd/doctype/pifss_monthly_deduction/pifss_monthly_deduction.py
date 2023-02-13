@@ -76,7 +76,6 @@ class PIFSSMonthlyDeduction(Document):
 			self.notify_grd_supervisor()# Notify supervisor to check the document before sending it finance.
 
 		if self.workflow_state == "Pending By Finance":
-			pass
 			# field_list = [{'Total Payment Required':'total_payment_required'}]
 			# self.set_mandatory_fields(field_list)
 			# create_payment_request(self.total_payment_required,self.name, self.attach_manual_report)
