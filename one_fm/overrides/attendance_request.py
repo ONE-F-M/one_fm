@@ -1,4 +1,4 @@
-import frappe
+import frappe, pandas as pd
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_days, date_diff, getdate, nowdate
@@ -6,7 +6,7 @@ from erpnext.setup.doctype.employee.employee import is_holiday
 from hrms.hr.utils import validate_active_employee, validate_dates
 from hrms.hr.doctype.attendance_request.attendance_request import AttendanceRequest
 from frappe.model.workflow import apply_workflow
-from one_fm.utils import send_workflow_action_email
+from one_fm.utils import send_workflow_action_email, get_holiday_today
 
 
 class AttendanceRequestOverride(AttendanceRequest):
@@ -18,6 +18,9 @@ class AttendanceRequestOverride(AttendanceRequest):
 				frappe.throw(_("Half day date should be in between from date and to date"))
 
 	def on_submit(self):
+		reports_to = self.reports_to()
+		if not reports_to:
+			frappe.throw("You are not the employee supervisor")
 		self.create_attendance()
 
 	def on_cancel(self):
@@ -64,41 +67,47 @@ class AttendanceRequestOverride(AttendanceRequest):
 		return False
 
 	def create_attendance(self):
-		if(not self.future_request):
-			request_days = date_diff(self.to_date, self.from_date) + 1
-			for number in range(request_days):
-				attendance_date = add_days(self.from_date, number)
-				skip_attendance = self.validate_if_attendance_not_applicable(attendance_date)
-				if not skip_attendance:
-					self.mark_attendance(attendance_date)
+		date_range = pd.date_range(self.from_date, self.to_date)
+		for d in date_range:
+			if d.date()<= getdate():
+				self.mark_attendance(str(d.date()))
 
-	def create_future_attendance(self):
-		reports_to = self.reports_to()
-		if not reports_to:
-			frappe.throw("You are not the employee supervisor")
-		if(self.future_request and (getdate(self.from_date) <= getdate(nowdate()) <= getdate(self.to_date))):
-			attendance_date = nowdate()
-			skip_attendance = self.validate_if_attendance_not_applicable(attendance_date)
-			if not skip_attendance:
-				self.mark_attendance(attendance_date)
-
+	def get_employee(self):
+		return frappe.get_doc("Employee", self.employee)
 
 	def mark_attendance(self, attendance_date):
 		try:
+			employee = self.get_employee()
+			status = False
+			employee_availability = frappe.db.get_value("Employee Schedule", {"employee": self.employee, "date":attendance_date}, "employee_availability")
+			if employee_availability == 'Day Off':
+					status = 'Day Off'
+
 			check_shift_assignment = self.check_shift_assignment(attendance_date)
 			if check_shift_assignment:
-				check_attendance = self.check_attendance(attendance_date)
-				employee_availability = frappe.db.get_value("Employee Schedule", {"employee": self.employee, "date":attendance_date}, "employee_availability")
-
-				if check_attendance:
-					if check_attendance.status=='Absent':
-						if employee_availability == "Day Off":
-							check_attendance.db_set("Status", "Day Off")
-						else:
-							check_attendance.db_set('Status', 'Work From Home')
-						check_attendance.db_set('attendance_request', self.name)
-						check_attendance.reload()
+				holiday_today = get_holiday_today(attendance_date).get(employee.holiday_list)
+				
+				if holiday_today:
+					status = 'Holiday'
+				elif frappe.db.sql(f"""
+						SELECT name, employee FROM `tabLeave Application` 
+						WHERE employee='{employee}' AND status='Open' AND '{attendance_date}' BETWEEN from_date AND to_date;
+					""", as_dict=1):
+					status = False
 				else:
+					status = 'Work From Home'
+				
+			working_hours = frappe.db.get_value('Shift Type', check_shift_assignment.shift_type, 'duration')  if (check_shift_assignment and not status in ['Holiday', 'Day Off', 'Absent']) else 0
+			# check if attendance exists	
+			check_attendance = self.check_attendance(attendance_date)		
+			if check_attendance:
+				if not check_attendance.status in ['Work From Home', 'Present', 'Holiday', 'On Leave'] and status:
+					check_attendance.db_set('Status', status)
+					check_attendance.db_set('working_hours', working_hours)
+					check_attendance.db_set('attendance_request', self.name)
+					check_attendance.reload()
+			else:
+				if status:
 					attendance = frappe.new_doc("Attendance")
 					attendance.employee = self.employee
 					attendance.employee_name = self.employee_name
@@ -112,17 +121,22 @@ class AttendanceRequestOverride(AttendanceRequest):
 						attendance.status = "Day Off"
 					attendance.attendance_date = attendance_date
 					attendance.company = self.company
+					attendance.working_hours = working_hours
 					attendance.attendance_request = self.name
-					attendance.operations_shift = check_shift_assignment.shift
-					attendance.roster_type = check_shift_assignment.roster_type
-					attendance.shift = check_shift_assignment.shift_type
-					attendance.project = check_shift_assignment.project
-					attendance.site = check_shift_assignment.site
-					attendance.operations_role = check_shift_assignment.operations_role
+					attendance.operations_shift = check_shift_assignment.shift if check_shift_assignment else ''
+					attendance.roster_type = check_shift_assignment.roster_type if check_shift_assignment else ''
+					attendance.shift = check_shift_assignment.shift_type if check_shift_assignment else ''
+					attendance.project = check_shift_assignment.project if check_shift_assignment else ''
+					attendance.site = check_shift_assignment.site if check_shift_assignment else ''
+					attendance.operations_role = check_shift_assignment.operations_role if check_shift_assignment else ''
 					attendance.save(ignore_permissions=True)
-					attendance.submit()
+					if attendance.status in ['Holiday', 'Day Off']:
+						attendance.db_set('docstatus', 1)
+					else:
+						attendance.submit()
 		except Exception as e:
-			frappe.log_error(str(e), 'Attendance Request')
+			print(frappe.get_traceback())
+			frappe.log_error(str(frappe.get_traceback()), 'Attendance Request')
 
 
 	def send_notification(self):
@@ -175,10 +189,6 @@ def validate_future_dates(doc, from_date, to_date):
 	)
 	if getdate(from_date) > getdate(to_date):
 		frappe.throw(_("To date can not be less than from date"))
-	elif (getdate(from_date) > getdate(nowdate()) or (getdate(to_date) > getdate(nowdate()))) and (not doc.future_request):
-		frappe.throw(_("Future dates not allowed"))
-	elif ((getdate(from_date) < getdate(nowdate())) or (getdate(from_date) < getdate(nowdate()))) and (doc.future_request):
-		frappe.throw(_("Past dates not allowed for future request"))
 	elif date_of_joining and getdate(from_date) < getdate(date_of_joining):
 		frappe.throw(_("From date can not be less than employee's joining date"))
 	elif relieving_date and getdate(to_date) > getdate(relieving_date):
@@ -196,3 +206,21 @@ def update_request(attendance_request, from_date, to_date):
 	attendance_request_obj.db_set("to_date", to_date)
 	attendance_request_obj.db_set("update_request", True)
 	apply_workflow(attendance_request_obj, "Update Request")
+
+
+
+def mark_future_attendance_request():
+    """
+        GET attendance request for the future where date is today
+    """
+    attendance_requests = frappe.db.sql(f"""
+        SELECT name FROM `tabAttendance Request`
+        WHERE '{getdate()}' BETWEEN from_date AND to_date
+        AND docstatus=1
+    """, as_dict=1)
+    for row in attendance_requests:
+        try:
+            frappe.get_doc("Attendance Request", row.name).mark_attendance(str(getdate()))
+        except Exception as e:
+            frappe.log_error(str(e), 'Attendance Request')
+

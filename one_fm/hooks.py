@@ -294,7 +294,7 @@ doc_events = {
 			"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
 		]
 	},
-	"Salary Structure Assignment": {
+	"Salary aStructure Assignment": {
 		"validate": [
 			"one_fm.api.doc_methods.salary_structure_assignment.set_salary_components_details_to_salary_structure_assignment",
 		],
@@ -475,7 +475,8 @@ scheduler_events = {
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
-  		"one_fm.api.v2.zenquotes.set_cached_quote"
+  		"one_fm.api.v2.zenquotes.set_cached_quote",
+		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -600,7 +601,7 @@ scheduler_events = {
 			'one_fm.api.tasks.generate_payroll'
 		],
 		"05 23 1-31 * *": [ #“At 23:05 on every day-of-month from 1 through 31.”
-			'one_fm.tasks.one_fm.daily.mark_future_attendance_request',
+			'one_fm.overrides.attendance_request.mark_future_attendance_request',
 			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
 		"15 0 * * *": [ # create shift assignment
