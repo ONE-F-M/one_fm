@@ -80,7 +80,7 @@ class PIFSSMonthlyDeduction(Document):
 			# field_list = [{'Total Payment Required':'total_payment_required'}]
 			# self.set_mandatory_fields(field_list)
 			# create_payment_request(self.total_payment_required,self.name, self.attach_manual_report)
-			# self.notify_finance()# Notify finance with the created payment request.
+			self.notify_finance()# Notify finance with the created payment request.
 
 		if self.workflow_state == "Completed":
 			field_list = [{'Attach Invoice':'attach_invoice'}]
