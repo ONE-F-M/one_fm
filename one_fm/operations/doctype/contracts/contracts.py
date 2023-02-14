@@ -1023,7 +1023,7 @@ def send_contract_reminders():
         message = "Good Day <br>Please note that today is the Contract Termination Decision Period is due for the following contracts." + due_contracts_
         frappe.sendmail(recipients=[users], content=message, subject="Expiring Contracts")
         
-
+@frappe.whitelist()
 def renew_contracts_by_termination_date():
     """
     Renew an existing contract by the Termination date
