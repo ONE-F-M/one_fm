@@ -8,6 +8,7 @@ from frappe.model.document import Document
 from frappe.model.rename_doc import rename_doc
 from frappe.utils import cstr, getdate, add_to_date
 import pandas as pd
+from frappe import _
 from frappe.desk.reportview import build_match_conditions, get_filters_cond
 
 class OperationsRole(Document):
@@ -21,10 +22,26 @@ class OperationsRole(Document):
 	def validate(self):
 		if not self.post_name:
 			frappe.throw("Post Name cannot be empty.")
-
 		if not self.shift:
 			frappe.throw("Shift cannot be empty.")
+		if not self.is_active:
+			self.set_operation_post_inactive()
 
+	def set_operation_post_inactive(self):
+		operations_post_list = frappe.get_all('Operations Post', {'status': 'Active', 'post_template': self.name})
+		if operations_post_list:
+			if len(operations_post_list) > 10:
+				frappe.enqueue(queue_operation_post_inactive, operations_post_list=operations_post_list, is_async=True, queue="long")
+				frappe.msgprint(_("Operations Post linked to this Role {0} will set to Inactive!".format(self.name)), alert=True, indicator='green')
+			else:
+				queue_operation_post_inactive(operations_post_list)
+				frappe.msgprint(_("Operations Post linked to this Role {0} is set to Inactive!".format(self.name)), alert=True, indicator='green')
+
+def queue_operation_post_inactive(operations_post_list):
+	for operations_post in operations_post_list:
+		doc = frappe.get_doc('Operations Post', operations_post.name)
+		doc.status = 'Inactive'
+		doc.save(ignore_permissions=True)
 
 @frappe.whitelist()
 def set_post_active(post, operations_role, post_abbrv, shift, site, project, start_date, end_date):

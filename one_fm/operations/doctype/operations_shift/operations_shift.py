@@ -13,7 +13,6 @@ import schedule, time
 from datetime import timedelta
 
 class OperationsShift(Document):
-	
 	def autoname(self):
 		#this method is updating the name of the record and sending clear message through exception if any of the records are missing
 		try:
@@ -34,6 +33,26 @@ class OperationsShift(Document):
 		except Exception as e:
 			if not self.service_type and self.site and self.shift_classification:
 				frappe.throw("Kindly, make sure all required fields are not missing")
+
+	def validate(self):
+		if self.status != 'Active':
+			self.set_operation_role_inactive()
+
+	def set_operation_role_inactive(self):
+		operations_role_list = frappe.get_all('Operations Role', {'is_active': 1, 'shift': self.name})
+		if operations_role_list:
+			if len(operations_role_list) > 10:
+				frappe.enqueue(queue_operation_role_inactive, operations_role_list=operations_role_list, is_async=True, queue="long")
+				frappe.msgprint(_("Operations Role linked to the Shift {0} will set to Inactive!".format(self.name)), alert=True, indicator='green')
+			else:
+				queue_operation_role_inactive(operations_role_list)
+				frappe.msgprint(_("Operations Role linked to the Shift {0} is set to Inactive!".format(self.name)), alert=True, indicator='green')
+
+def queue_operation_role_inactive(operations_role_list):
+	for operations_role in operations_role_list:
+		doc = frappe.get_doc('Operations Role', operations_role.name)
+		doc.is_active = False
+		doc.save(ignore_permissions=True)
 
 @frappe.whitelist()
 def create_posts(data, site_shift, site, project=None):
@@ -76,4 +95,3 @@ def create_posts(data, site_shift, site, project=None):
 		frappe.msgprint(_("Posts created successfully."))
 	except Exception as e:
 		frappe.throw(_(frappe.get_traceback()))
-	
