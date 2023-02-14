@@ -999,6 +999,7 @@ def get_active_contracts_for_project(project):
 def get_due_contracts():
     #Get all the contracts that are due to expire today and send a reminder to the relevant parties
     pass
+
 @frappe.whitelist()
 def send_contract_reminders():
     """
@@ -1009,6 +1010,7 @@ def send_contract_reminders():
     relevant_roles = ["Finance Manager",'Legal Manager','Projects Manager','Operations Manager']
     active_users = frappe.get_all("User",{'enabled':1})
     active_users_ = [i.name for i in active_users] if active_users else []
+    active_users_.remove("Administrator")
     relevant_users = frappe.get_all("Has Role",{'role':['IN',relevant_roles],'parent':['IN',active_users_]},['distinct parent'])
     users = [i.parent for i in relevant_users]
     if contracts_due_internal_notification:
