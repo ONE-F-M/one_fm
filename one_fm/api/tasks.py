@@ -824,7 +824,7 @@ def create_shift_assignment(roster, date, time):
 				VALUES
 			"""
 			# check if all roster has been done
-			has_rostered = False
+			has_rostered = []
 			for r in roster:
 				if not r.employee in existing_shift_list:
 					_shift_type = shift_types_dict.get(r.shift_type) or default_shift
@@ -842,36 +842,38 @@ def create_shift_assignment(roster, date, time):
 					else:
 						query += """, '', '', ''),"""
 				else:
-					has_rostered = True
+					has_rostered.append(r)
 
 			query = query[:-1]
 			query += f"""
-					ON DUPLICATE KEY UPDATE
-					modified_by = VALUES(modified_by),
-					docstatus = VALUES(docstatus),
-					modified = "{creation}",
-					operations_role = VALUES(operations_role),
-					post_abbrv = VALUES(post_abbrv),
-					roster_type = VALUES(roster_type),
-					shift = VALUES(shift),
-					project = VALUES(project),
-					site = VALUES(site),
-					shift_type = VALUES(shift_type),
-					employee = VALUES(employee),
-					employee_name = VALUES(employee_name),
-					site_location = VALUES(site_location),
-					start_datetime = VALUES(start_datetime),
-					end_datetime = VALUES(end_datetime),
-					department = VALUES(department),
-					shift_request = VALUES(shift_request),
-					check_in_site = VALUES(check_in_site),
-					check_out_site = VALUES(check_out_site),
-					shift_classification = VALUES(shift_classification),
-					status = VALUES(status)
-				"""
-			if not has_rostered:
-				frappe.db.sql(query, values=[], as_dict=1)
-				frappe.db.commit()
+				ON DUPLICATE KEY UPDATE
+				modified_by = VALUES(modified_by),
+				docstatus = VALUES(docstatus),
+				modified = "{creation}",
+				operations_role = VALUES(operations_role),
+				post_abbrv = VALUES(post_abbrv),
+				roster_type = VALUES(roster_type),
+				shift = VALUES(shift),
+				project = VALUES(project),
+				site = VALUES(site),
+				shift_type = VALUES(shift_type),
+				employee = VALUES(employee),
+				employee_name = VALUES(employee_name),
+				site_location = VALUES(site_location),
+				start_datetime = VALUES(start_datetime),
+				end_datetime = VALUES(end_datetime),
+				department = VALUES(department),
+				shift_request = VALUES(shift_request),
+				check_in_site = VALUES(check_in_site),
+				check_out_site = VALUES(check_out_site),
+				shift_classification = VALUES(shift_classification),
+				status = VALUES(status)
+			"""
+			frappe.db.sql(query, values=[], as_dict=1)
+			frappe.db.commit()
+
+			if has_rostered:
+				frappe.log_error(str(has_rostered), 'Duplicate Shift Assignment')
 	except Exception as e:
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
