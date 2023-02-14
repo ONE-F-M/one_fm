@@ -103,6 +103,7 @@ doctype_list_js = {
 	"Job Offer": "public/js/doctype_js/job_offer_list.js",
 	"Issue": "public/js/doctype_list_js/issue_list.js",
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
+	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
 }
 doctype_tree_js = {
@@ -193,7 +194,8 @@ doc_events = {
 			"one_fm.utils.validate_hajj_leave",
 			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
 		],
-		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
+		"on_cancel": "one_fm.utils.leave_appillication_on_cancel",
+		
 	},
 	"Leave Type": {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
