@@ -997,7 +997,7 @@ def get_active_contracts_for_project(project):
 def get_due_contracts():
     #Get all the contracts that are due to expire today and send a reminder to the relevant parties
     pass
-
+@frappe.whitelist()
 def send_contract_reminders():
     """
     Generate Reminders for Contract Termination Decision Period and Contract End Internal Notification periods
