@@ -27,6 +27,13 @@ class OperationsRole(Document):
 		if not self.is_active:
 			self.set_operation_post_inactive()
 
+		self.validate_operations_shift_status()
+
+	def validate_operations_shift_status(self):
+		if self.is_active and self.shift \
+			and frappe.db.get_value('Operations Shift', self.shift, 'status') != 'Active':
+			frappe.throw(_("The Shift <br/>'<b>{0}</b>' selected in the Role '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Role atcive first make the Shift active".format(self.shift, self.name)))
+
 	def set_operation_post_inactive(self):
 		operations_post_list = frappe.get_all('Operations Post', {'status': 'Active', 'post_template': self.name})
 		if operations_post_list:

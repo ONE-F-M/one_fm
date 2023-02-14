@@ -37,6 +37,12 @@ class OperationsShift(Document):
 	def validate(self):
 		if self.status != 'Active':
 			self.set_operation_role_inactive()
+		self.validate_operations_site_status()
+
+	def validate_operations_site_status(self):
+		if self.status == "Active" and self.site \
+			and frappe.db.get_value('Operations Site', self.site, 'status') != 'Active':
+			frappe.throw(_("The Site '<b>{0}</b>' selected in the Shift '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Shift atcive first make the Site active".format(self.site, self.name)))
 
 	def set_operation_role_inactive(self):
 		operations_role_list = frappe.get_all('Operations Role', {'is_active': 1, 'shift': self.name})

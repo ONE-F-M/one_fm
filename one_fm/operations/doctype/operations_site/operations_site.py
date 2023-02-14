@@ -17,6 +17,12 @@ class OperationsSite(Document):
 			frappe.throw("POC list is mandatory.")
 		if self.status != 'Active':
 			self.set_operation_shift_inactive()
+		self.validate_project_status()
+
+	def validate_project_status(self):
+		if self.status == "Active" and self.project \
+			and frappe.db.get_value('Project', self.project, 'status') != 'Open':
+			frappe.throw(_("The Project '<b>{0}</b>' selected in the Site '<b>{1}</b>' is <b>Not Open</b>. <br/> To make the Site atcive first make the Project open".format(self.project, self.name)))
 
 	def set_operation_shift_inactive(self):
 		operations_shift_list = frappe.get_all('Operations Shift', {'status': 'Active', 'site': self.name})
