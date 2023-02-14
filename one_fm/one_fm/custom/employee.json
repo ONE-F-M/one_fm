@@ -6130,6 +6130,7 @@
    "dt": "Employee",
    "fetch_from": null,
    "fetch_if_empty": 0,
+
    "fieldname": "employee_id",
    "fieldtype": "Data",
    "hidden": 0,
