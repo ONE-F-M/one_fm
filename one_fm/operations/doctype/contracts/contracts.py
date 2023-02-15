@@ -1003,8 +1003,8 @@ def send_contract_reminders():
     """
     Generate Reminders for Contract Termination Decision Period and Contract End Internal Notification periods
     """
-    contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':today()})
-    contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':today()})
+    contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':getdate()})
+    contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':getdate()})
     relevant_roles = ["Finance Manager",'Legal Manager','Projects Manager','Operations Manager']
     active_users = frappe.get_all("User",{'enabled':1})
     active_users_ = [i.name for i in active_users] if active_users else []
