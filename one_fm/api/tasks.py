@@ -876,7 +876,6 @@ def create_shift_assignment(roster, date, time):
 			frappe.db.commit()
 
 			if has_rostered:
-				print(has_rostered)
 				frappe.log_error(str(has_rostered), 'Duplicate Shift Assignment')
 	except Exception as e:
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
