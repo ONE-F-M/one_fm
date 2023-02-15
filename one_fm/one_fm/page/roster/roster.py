@@ -169,7 +169,8 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		master_data.update({'operations_roles_data': post_map.template})
 		response("Success", 200, master_data)
 	except Exception as e:
-		return response("Server Error", 500, None, str(e))
+		print(frappe.get_traceback())
+		return response("Server Error", 500, None, str(frappe.get_traceback()))
 
 def get_active_employees(start_date, end_date, master_data):
 	employees = [i.name for i in frappe.db.get_list('Employee', filters={'status': ['!=', 'Left']})]
@@ -254,7 +255,7 @@ def get_current_user_details():
 
 
 @frappe.whitelist()
-def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot=None, end_date=None):
+def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None):
 	try:
 		_start_date = getdate(start_date)
 		validation_logs = []
