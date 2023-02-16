@@ -228,7 +228,6 @@ def mark_bulk_attendance(employee, from_date, to_date):
 
 
 def remark_absent_for_employees(employees, date):
-    print("processing attendance absent")
     # mark attendance
     for emp in employees:
         mark_single_attendance(emp, date)
