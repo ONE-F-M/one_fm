@@ -60,8 +60,7 @@ def delete_schedule(doc):
     frappe.db.commit()
 
 def create_post_schedule_for_operations_post(operations_post):
-    if type(operations_post) == str:
-        operations_post = frappe.get_doc("Operations Post",operations_post)
+    
     contracts = get_active_contracts_for_project(operations_post.project)
     if contracts:
         if contracts.end_date >= getdate():

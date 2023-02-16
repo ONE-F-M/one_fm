@@ -1010,7 +1010,6 @@ def send_contract_reminders():
     relevant_users = frappe.get_all("Has Role",{'role':['IN',relevant_roles],'parent':['IN',active_users_]},['distinct parent'])
     users = [i.parent for i in relevant_users]
     if contracts_due_internal_notification:
-        print(contracts_due_internal_notification)
         #get the  users with the relevant roles
         contracts_due_internal_notification_list = [i.name for i in contracts_due_internal_notification ]
         due_contracts = "<br>".join(contracts_due_internal_notification_list)
@@ -1053,7 +1052,7 @@ def renew_contracts_by_termination_date():
         
         relevant_projects = [i.project for i in all_due_contracts] if all_due_contracts else []
         all_operations_post = frappe.get_all("Operations Post",{'project':['IN',relevant_projects]})
-        all_operations_post_ = [i.name for i in all_operations_post]
+        all_operations_post_ = [frappe.get_doc("Operations Post",i.name) for i in all_operations_post]
         
         if all_operations_post_:
             frappe.enqueue(create_post_schedules, operations_posts=all_operations_post_, queue="long",job_name = 'Create Post Schedules')
