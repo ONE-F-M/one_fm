@@ -114,6 +114,7 @@ class DataExporter:
 		self.link = link
 		self.sheet_name = sheet_name
 		self.owner = owner
+		self.cell_colour = []
 
 		self.prepare_args()
 
@@ -167,6 +168,7 @@ class DataExporter:
 		
 
 		self.update_sheet(values)
+		self.batch_update()
 		# print(self.data)
 		if self.with_data and not values:
 			frappe.respond_as_web_page(
@@ -240,8 +242,6 @@ class DataExporter:
 			and docfield.fieldname != "name"
 		):
 			return
-		print(docfield.fieldname)
-		print(self.fieldrow)
 
 		self.fieldrow.append(docfield.fieldname)
 		self.labelrow.append(_(docfield.label))
@@ -268,13 +268,22 @@ class DataExporter:
 		)
 			# add main table
 		rows = [self.fieldrow]
-		for doc in self.data:
+		cell_colour = []
+		row_index = 1
+		for doc in self.data:		
 			row = []
+			column_index = 0
+			row_index += 1
 			for field in self.fieldrow:
 				value = str(doc[field])
-				row.append(value)
+				if len(value) >= 50000:
+					cell_colour.append(self.sheet_name + "!" +chr(ord('A') + column_index) + str(row_index))
+					row.append("ERROR - Description Length is more than 50,000 so can not import Data")
+				else:
+					row.append(value)
+				column_index += 1
 			rows.append(row)
-
+		self.cell_colour = cell_colour
 		return rows
 
 		
@@ -402,6 +411,38 @@ class DataExporter:
 			return result
 		except HttpError as err:
 			frappe.log_error(err)
+
+	def batch_update(self):
+		# sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id, ranges=[], includeGridData=False).execute()
+		# print(sheet['sheetId'])
+		batch_update_spreadsheet_request_body = {
+			"requests": [
+				{
+					"repeatCell": {
+						"range": {
+							"sheetId": 1,
+							"startRowIndex": 0,
+							"endRowIndex": 1,
+							"startColumnIndex": 0,
+							"endColumnIndex": 1
+						},
+						"cell": {
+							"userEnteredFormat": {
+								"backgroundColor": {
+									"red": 1,
+									"green": 0,
+									"blue": 0
+								}
+							}
+						},
+						"fields": "userEnteredFormat.backgroundColor"
+					}
+				}
+			]
+		}
+
+		request = service.spreadsheets().batchUpdate(spreadsheetId=self.google_sheet_id, body=batch_update_spreadsheet_request_body).execute()
+		return request
 
 @frappe.whitelist()
 def build_connection_with_sheet(doc):
