@@ -164,7 +164,7 @@ urllib3==1.26.12
 wcwidth==0.2.5
 WeasyPrint==52.5
 webencodings==0.5.1
-Werkzeug==2.2.2
+Werkzeug==2.2.3
 Whoosh==2.7.4
 xlrd==2.0.1
 zxcvbn-python==4.4.24
