@@ -693,7 +693,16 @@ fixtures = [
 	},
 	{
 		"dt": "Email Template"
-	}
+	},
+	{
+		"doctype": "DocType Layout",
+		"filters": {
+			"name": ("in", (
+					"Employee",
+				)
+			)
+		}
+	},
 ]
 
 # before_tests = "one_fm.install.before_tests"
