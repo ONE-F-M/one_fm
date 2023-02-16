@@ -174,7 +174,7 @@ def get_data(filters):
 			JOIN `tabPayroll Employee Detail` ped ON e.name=ped.employee
 			JOIN `tabPayroll Entry` pe ON pe.name=ped.parent
 			JOIN `tabAttendance` at ON at.employee=e.name
-		WHERE ssa.docstatus=1 AND pe.posting_date BETWEEN '{first_day_of_month}' and '{last_day_of_month}'
+		WHERE ssa.docstatus=1 AND pe.end_date BETWEEN '{first_day_of_month}' and '{last_day_of_month}'
 			AND pe.docstatus=1
 			AND at.attendance_date BETWEEN pe.start_date AND pe.end_date
 			AND at.roster_type='Basic'
