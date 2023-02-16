@@ -293,7 +293,7 @@ doc_events = {
 			"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
 		]
 	},
-	"Salary aStructure Assignment": {
+	"Salary Structure Assignment": {
 		"validate": [
 			"one_fm.api.doc_methods.salary_structure_assignment.set_salary_components_details_to_salary_structure_assignment",
 		],
