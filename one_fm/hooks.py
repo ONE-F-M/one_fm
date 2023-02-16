@@ -298,7 +298,7 @@ doc_events = {
 			"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
 		]
 	},
-	"Salary aStructure Assignment": {
+	"Salary Structure Assignment": {
 		"validate": [
 			"one_fm.api.doc_methods.salary_structure_assignment.set_salary_components_details_to_salary_structure_assignment",
 		],
@@ -611,8 +611,14 @@ scheduler_events = {
 		"15 0 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_am_shift'
 		],
+		"45 1 * * *": [ # validate shift assignment
+			'one_fm.api.tasks.validate_am_shift_assignment'
+		],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
+		],
+		"45 13 * * *": [ # validate shift assignmet
+			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
 		"25 0 * * *": [ # mark day attendance 11:15 pm
 			'one_fm.api.tasks.mark_day_attendance'

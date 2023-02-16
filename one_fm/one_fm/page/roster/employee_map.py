@@ -253,10 +253,15 @@ class CreateMap():
         return {row[1]:schedule}
 
 
-
+    
     def create_attendance_map(self,row):
        """ Create a data structure in the form of """
-       attendance = [{
+       print(self.attendance_set)
+       attendance = []
+       for  one in self.attendance_set:
+        try:
+            if one.employee == row[0]:
+                attendance.append({
                     'employee': one.employee,
                     'employee_name': one.employee_name,
                     'leave_application': one.leave_application,
@@ -267,5 +272,8 @@ class CreateMap():
                     'day_off_category': self.employee_period_details[row[1]].get('day_off_category'),
                     'number_of_days_off': self.employee_period_details[row[1]].get('number_of_days_off'),
                     'employee_id': self.employee_period_details[row[1]].get('employee_id')
-                } for  one in self.attendance_set if one.employee == row[0]]
+                })
+        except Exception as e:
+            pass
+       
        return {row[1]:attendance}
