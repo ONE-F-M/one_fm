@@ -9,10 +9,29 @@ frappe.ui.form.on('Employee Checkin Issue', {
 			}).addClass('btn-primary');
 		}
 	},
+	onload: function(frm) {
+		set_employee_from_the_session_user(frm);
+	},
 	employee: function(frm) {
 		get_shift_assignment(frm);
 	}
 });
+
+function set_employee_from_the_session_user(frm) {
+	if(frappe.session.user != 'Administrator'){
+		frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
+			if(r && r.name){
+				frm.set_value('employee', r.name);
+			}
+			else{
+				frappe.show_alert({
+					message: __('Not find employee record for the user <b>{0}</b>', [frappe.session.user]),
+					indicator: 'yellow'
+				});
+			}
+		});
+	}
+};
 
 function create_issue(frm) {
 	frappe.call({
