@@ -549,16 +549,16 @@ def update_onboarding_doc(doc, is_trash=False, cancel_oe=False):
 def job_offer_on_update_after_submit(doc, method):
     validate_job_offer_mandatory_fields(doc)
     if doc.workflow_state == 'Submit to Onboarding Officer':
-        if not doc.estimated_date_of_joining:
-            frappe.throw(_('Please Select Estimated Date of Joining to Accept Offer'))
-        if not doc.onboarding_officer:
-            frappe.throw(_("Please Select Onboarding Officer to Process Onboard"))
-        # Send Notification to Assined Officer to accept the Onboarding Task
-        notify_onboarding_officer(doc)
-    if doc.workflow_state == 'Onboarding Officer Rejected':
-        # Notify Recruiter
-        notify_recruiter(doc)
-    if doc.workflow_state == 'Accepted':
+        msg = "Please select {0} to Accept the Offer and Process Onboard"
+        if not doc.estimated_date_of_joining and not doc.onboarding_officer:
+            frappe.throw(_(msg.format("<b>Estimated Date of Joining</b> and <b>Onboarding Officer</b>")))
+        elif not doc.estimated_date_of_joining:
+            frappe.throw(_(msg.format("<b>Estimated Date of Joining</b>")))
+        elif not doc.onboarding_officer:
+            frappe.throw(_(msg.format("<b>Onboarding Officer</b>")))
+    # Send Notification to Assined Officer to accept the Onboarding Task
+    notify_onboarding_officer(doc)
+    if doc.workflow_state in ['Onboarding Officer Rejected', 'Accepted']:
         # Notify Recruiter
         notify_recruiter(doc)
 
