@@ -401,6 +401,7 @@ frappe.ui.form.on('Request for Material', {
 		set_employee_or_project(frm);
 		set_item_field_property(frm);
 		set_warehouse_filters(frm);
+		set_filters(frm);
 	},
 	project: function(frm) {
 		set_warehouse_filters(frm);

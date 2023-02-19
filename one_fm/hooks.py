@@ -96,12 +96,14 @@ doctype_js = {
 	"Company" : "public/js/doctype_js/company.js",
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
+	"Attendance" :  "public/js/doctype_js/attendance.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
 	"Job Offer": "public/js/doctype_js/job_offer_list.js",
 	"Issue": "public/js/doctype_list_js/issue_list.js",
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
+	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
 }
 doctype_tree_js = {
@@ -192,7 +194,8 @@ doc_events = {
 			"one_fm.utils.validate_hajj_leave",
 			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
 		],
-		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
+		"on_cancel": "one_fm.utils.leave_appillication_on_cancel",
+		
 	},
 	"Leave Type": {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
@@ -202,7 +205,7 @@ doc_events = {
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"before_insert": "one_fm.hiring.utils.employee_before_insert",
 		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
-		"before_save": "one_fm.events.employee.before_save",
+		"on_update": "one_fm.events.employee.on_update",
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -263,8 +266,12 @@ doc_events = {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	"Project": {
-		"validate": "one_fm.one_fm.project_custom.validate_poc_list",
-		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount"
+		"validate": [
+			"one_fm.one_fm.project_custom.validate_poc_list",
+			"one_fm.one_fm.project_custom.validate_project"
+		],
+		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
+		"on_update": "one_fm.one_fm.utils.switch_shift_site_post_to_inactive"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
@@ -292,6 +299,9 @@ doc_events = {
 		]
 	},
 	"Salary Structure Assignment": {
+		"validate": [
+			"one_fm.api.doc_methods.salary_structure_assignment.set_salary_components_details_to_salary_structure_assignment",
+		],
 		"before_submit": [
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_indemnity_amount",
 			"one_fm.api.doc_methods.salary_structure_assignment.calculate_leave_allocation_amount",
@@ -442,8 +452,8 @@ override_doctype_class = {
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
-	# "User": "one_fm.overrides.user.UserOverrideLMS",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
+	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
 
@@ -468,7 +478,9 @@ scheduler_events = {
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
-		"one_fm.one_fm.utils.attach_abbreviation_to_roles"
+		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
+  		"one_fm.api.v2.zenquotes.set_cached_quote",
+		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -537,7 +549,7 @@ scheduler_events = {
 		"10 4 * * *": [ #“At 04:10.”
 			'one_fm.utils.check_grp_operator_submission_four',
 			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.schedule_roster_checker',
-			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.check_roster_day_off'
+			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker'
 		],
 		"30 4 * * *": [
 			'one_fm.utils.check_grp_operator_submission_four_half'
@@ -593,14 +605,20 @@ scheduler_events = {
 			'one_fm.api.tasks.generate_payroll'
 		],
 		"05 23 1-31 * *": [ #“At 23:05 on every day-of-month from 1 through 31.”
-			'one_fm.tasks.one_fm.daily.mark_future_attendance_request',
+			'one_fm.overrides.attendance_request.mark_future_attendance_request',
 			'one_fm.tasks.one_fm.daily.roster_projection_view_task',
 		],
 		"15 0 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_am_shift'
 		],
+		"45 1 * * *": [ # validate shift assignment
+			'one_fm.api.tasks.validate_am_shift_assignment'
+		],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
+		],
+		"45 13 * * *": [ # validate shift assignmet
+			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
 		"25 0 * * *": [ # mark day attendance 11:15 pm
 			'one_fm.api.tasks.mark_day_attendance'
@@ -684,7 +702,16 @@ fixtures = [
 	},
 	{
 		"dt": "Email Template"
-	}
+	},
+    {
+		"doctype": "DocType Layout",
+		"filters": {
+			"name": ("in", (
+					"Employee",
+				)
+			)
+		}
+	},
 ]
 
 # before_tests = "one_fm.install.before_tests"
@@ -712,4 +739,7 @@ jenv = {
     ]
 }
 
-# after_migrate = "one_fm.patches.v1_0.rename_posttype_to_operationsrole.execute"
+after_migrate = "one_fm.after_migrate.execute.comment_timesheet_in_hrms"
+
+# add more info to session on boot
+on_session_creation = "one_fm.session_hooks.on_session_creation"

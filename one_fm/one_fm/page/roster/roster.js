@@ -405,6 +405,7 @@ function load_js(page) {
 					primary_action_label: 'Submit',
 					primary_action(values) {
 						$('#cover-spin').show(0);
+						console.log({ posts, values })
 						frappe.call({
 							method: 'one_fm.one_fm.page.roster.roster.edit_post',
 							args: { posts, values },
@@ -1227,11 +1228,17 @@ function render_roster(res, page, isOt) {
 		while (day <= end_date) {
 			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 			let sch = ``;
-			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application } = employees_data[employee_key][i];
+			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, actual_shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application } = employees_data[employee_key][i];
 			//OT schedule view
 			
 			if (isOt) {
-				if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
+				if ((actual_shift && shift) && (actual_shift!=shift) && roster_type == 'Over-Time'  && day_off_ot==0) {
+					sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+					</td>`;
+				}else if (post_abbrv && roster_type == 'Over-Time' && day_off_ot==0) {
 					j++;
 					sch = `
 					<td>
@@ -1264,14 +1271,20 @@ function render_roster(res, page, isOt) {
 			}
 			//Basic schedule view
 			else {
-				if (post_abbrv && roster_type == 'Basic' && !asa && day_off_ot==0) {
+			 	if ((actual_shift && shift) && (actual_shift!=shift) && day_off_ot==0) {
+				sch = `
+				<td>
+					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
+						data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
+				</td>`;
+				} else if (post_abbrv && roster_type == 'Basic' && !asa && day_off_ot==0) {
 					j++;
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
-				}else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
+				} else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
 					j++;
 					sch = `
 					<td>
@@ -1494,7 +1507,7 @@ function get_post_data(page) {
 		// console.log(start_date, end_date, project, site, shift, operations_role,limit_start, limit_page_length);
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 			.then(res => {
-
+				console.log(res);
 				$('#cover-spin').hide();
 				page.pagination.total = res.total;
 				let $postMonth = $('.postMonth');
@@ -2213,7 +2226,9 @@ function render_staff_list_view(data) {
 	}
 	let $staffdatatable = $('#staffdatatable tbody');
 	data.forEach(function (employee) {
-		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department } = employee;
+		
+		
+		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department,site_supervisor,shift_supervisor } = employee;
 		let row = `
 		<tr>
 			<td>
@@ -2253,7 +2268,13 @@ function render_staff_list_view(data) {
 				${site || 'N/A'}
 			</td>
 			<td>
+				${site_supervisor || 'N/A'}
+			</td>
+			<td>
 				${shift || 'N/A'}
+			</td>
+			<td>
+				${shift_supervisor || 'N/A'}
 			</td>
 			<td>
 				${department || 'N/A'}
@@ -2279,6 +2300,7 @@ function render_staff_list_view(data) {
 function render_staff_card_view(data) {
 	$('.staff-card-wrapper').empty();
 	data.forEach(function (employee, i) {
+		
 		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department, image } = employee;
 		let row = `
 		<div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 mb30">
@@ -2478,13 +2500,16 @@ function ClearServiceBoard(e) {
 
 function staff_edit_dialog() {
 	let employees = [];
-	if ($(".layoutSidenav_content").attr("data-view") == "list") {
-		employees = window.employees_list;
-	} else if ($(".layoutSidenav_content").attr("data-view") == "card") {
-		employees = $(".cardviewcheckbox:checked").map(function () {
-			return $(this).attr("data-employee-id");
-		}).get();
-	}
+	$(".checkboxcontainer").map(function (i, data) {
+		let selected = data.querySelectorAll('input[type="checkbox"]:checked');
+		if (selected.length){
+			let id = ''
+			id = selected[0].getAttribute('data-employee-id');
+			if (id){
+				employees.push(id);
+			}
+		}
+	});
 
 	let d = new frappe.ui.Dialog({
 		'title': 'Edit',

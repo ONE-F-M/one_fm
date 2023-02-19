@@ -2,14 +2,14 @@ import frappe, erpnext, json
 from dateutil.relativedelta import relativedelta
 from frappe.utils import (
 	cint, cstr, flt, nowdate, add_days, getdate, fmt_money, add_to_date, DATE_FORMAT, date_diff,
-	get_first_day, get_last_day
+	get_first_day, get_last_day, get_link_to_form
 )
 from frappe import _
 from frappe.utils.pdf import get_pdf
 import openpyxl as xl
 import time
 import datetime
-from datetime import datetime
+from datetime import datetime, timedelta
 from copy import copy
 from pathlib import Path
 from hrms.payroll.doctype.payroll_entry.payroll_entry import (
@@ -250,7 +250,7 @@ def auto_create_payroll_entry(payroll_date=None):
 	if not payroll_date:
 		payroll_date_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
 		# Calculate payroll date
-		payroll_date = datetime.datetime(getdate().year, getdate().month, cint(payroll_date_day)).strftime("%Y-%m-%d")
+		payroll_date = (datetime(getdate().year, getdate().month, cint(payroll_date_day))).strftime("%Y-%m-%d")
 
 	for payroll_start_day in payroll_start_day_list:
 		# Find from date and end date for payroll
@@ -515,7 +515,7 @@ def export_nbk(doc, template_path):
 
 		end = time.time()
 
-		print("Total Execution Time: ", end-start)
+		# print("Total Execution Time: ", end-start)
 
 	except Exception as e:
 		frappe.throw(e)
@@ -573,5 +573,174 @@ def email_missing_payment_information(recipients):
 		Send missing salary payment information
 		as an email.
 	"""
-	print(frappe.session.data)
-	print(recipients, '\n\n\n')
+	# print(frappe.session.data)
+	# print(recipients, '\n\n\n')
+
+@frappe.whitelist()
+def create_salary_slips(doc):
+	"""
+	Creates salary slip for selected employees if already not created
+	"""
+	doc.check_permission("write")
+	employees = [emp.employee for emp in doc.employees]
+	if employees:
+		args = frappe._dict(
+			{
+				"salary_slip_based_on_timesheet": doc.salary_slip_based_on_timesheet,
+				"payroll_frequency": doc.payroll_frequency,
+				"company": doc.company,
+				"start_date": doc.start_date,
+				"end_date": doc.end_date,
+				"posting_date": doc.posting_date,
+				"deduct_tax_for_unclaimed_employee_benefits": doc.deduct_tax_for_unclaimed_employee_benefits,
+				"deduct_tax_for_unsubmitted_tax_exemption_proof": doc.deduct_tax_for_unsubmitted_tax_exemption_proof,
+				"payroll_entry": doc.name,
+				"exchange_rate": doc.exchange_rate,
+				"currency": doc.currency,
+			}
+		)
+
+		if len(employees) > 30 or frappe.flags.enqueue_payroll_entry:
+			doc.db_set("status", "Queued")
+			frappe.enqueue(
+				create_salary_slips_for_employees,
+				employees=employees,
+				args=args,
+				publish_progress=False,
+				timeout=6000, 
+				queue='long'
+			)
+			frappe.msgprint(
+				_("Salary Slip creation is queued. It may take a few minutes"),
+				alert=True,
+				indicator="blue",
+			)
+		else:
+			create_salary_slips_for_employees(employees, args, publish_progress=False)
+			# since this method is called via frm.call this doc needs to be updated manually
+			doc.reload()
+
+def log_payroll_failure(process, payroll_entry, error):
+	error_log = frappe.log_error(
+		title=_("Salary Slip {0} failed for Payroll Entry {1}").format(process, payroll_entry.name)
+	)
+	message_log = frappe.message_log.pop() if frappe.message_log else str(error)
+
+	try:
+		error_message = json.loads(message_log).get("message")
+	except Exception:
+		error_message = message_log
+
+	error_message += "\n" + _("Check Error Log {0} for more details.").format(
+		get_link_to_form("Error Log", error_log.name)
+	)
+
+	payroll_entry.db_set({"error_message": error_message, "status": "Failed"})
+
+def create_salary_slips_for_employees(employees, args, publish_progress=True ):
+	try:
+		payroll_entry = frappe.get_doc("Payroll Entry", args.payroll_entry)
+		salary_slips_exist_for = get_existing_salary_slips(employees, args)
+		count = 0
+		start_date = args.start_date
+		end_date = args.start_date
+
+		args.pop('start_date')
+		args.pop('end_date')
+		salary_slip_chunk = []
+		chunk_counter = 0
+
+		employees_list = seperate_salary_slip(employees, start_date, end_date)
+		if len(employees_list) < 30:
+			for emp in employees_list:
+				if emp['employee'] not in salary_slips_exist_for:
+					args.update({"doctype": "Salary Slip"})
+					args.update(emp)
+					
+					frappe.get_doc(args).insert()
+					count += 1
+					if publish_progress:
+						frappe.publish_progress(
+							count * 100 / len(set(employees) - set(salary_slips_exist_for)),
+							title=_("Creating Salary Slips..."),
+						)
+			
+		else:
+			for emp in employees_list:
+				if emp['employee'] not in salary_slips_exist_for:
+					args.update({"doctype": "Salary Slip"})
+					args.update(emp)
+					
+					# salary_slip_list.append(frappe.get_doc(args))
+					salary_slip_chunk.append(frappe.get_doc(args))
+					chunk_counter += 1
+					if len(salary_slip_chunk) >= 30:
+						frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk.copy())
+						salary_slip_chunk = []
+						chunk_counter=0
+
+					# frappe.get_doc(args).insert()
+		
+			if salary_slip_chunk:
+				frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk)
+		
+		
+		payroll_entry.db_set({"status": "Submitted", "salary_slips_created": 1, "error_message": ""})
+
+		if salary_slips_exist_for:
+			frappe.msgprint(
+				_(
+					"Salary Slips already exist for employees {}, and will not be processed by this payroll."
+				).format(frappe.bold(", ".join(emp for emp in salary_slips_exist_for))),
+				title=_("Message"),
+				indicator="orange",
+			)
+
+	except Exception as e:
+		frappe.db.rollback()
+		log_payroll_failure("creation", payroll_entry, e)
+
+	finally:
+		frappe.db.commit()  # nosemgrep
+		frappe.publish_realtime("completed_salary_slip_creation")
+
+def create_salary_slip_chunk(slips):
+	for slip in slips:
+		slip.insert()
+
+def get_existing_salary_slips(employees, args):
+	return frappe.db.sql_list(
+		"""
+		select distinct employee from `tabSalary Slip`
+		where docstatus!= 2 and company = %s and payroll_entry = %s
+			and start_date >= %s and end_date <= %s
+			and employee in (%s)
+	"""
+		% ("%s", "%s", "%s", "%s", ", ".join(["%s"] * len(employees))),
+		[args.company, args.payroll_entry, args.start_date, args.end_date] + employees,
+	)
+
+def seperate_salary_slip(employees, start_date, end_date):
+	parm = []
+	for emp in employees:
+		salary_structure_assignment = frappe.get_all("Salary Structure Assignment", {"employee":emp, "from_date":["between",(start_date, end_date)]},["*"])
+
+		if len(salary_structure_assignment) > 0:
+			mid_date = ""
+			for ssa in salary_structure_assignment:
+				start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+				end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+				if ssa.from_date > start_date and ssa.from_date < end_date:
+					mid_date = ssa.from_date
+			if mid_date:
+				parm.append({"employee": emp, "start_date":start_date, "end_date":mid_date - timedelta(days=1)})
+				parm.append({"employee": emp, "start_date":mid_date , "end_date":end_date})
+		else:
+			parm.append({"employee": emp, "start_date":start_date , "end_date":end_date})
+		
+	return parm
+
+				
+
+				

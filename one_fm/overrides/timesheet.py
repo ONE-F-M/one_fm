@@ -3,7 +3,7 @@ import itertools
 from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
 from calendar import monthrange  
 from one_fm.api.utils import get_reports_to_employee_name
-from erpnext.projects.doctype.timesheet.timesheet import *
+from hrms.overrides.employee_timesheet import *
 
 
 class TimesheetOveride(Timesheet):

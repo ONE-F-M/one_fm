@@ -290,6 +290,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                 leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
                 leave_doc.append('proof_documents',{"attachments":file_.file_url})
                 leave_doc.save()
+                frappe.db.commit()
                 # with open(OUTPUT_FILE_PATH, "wb") as fh:
                 #     fh.write(content)
 

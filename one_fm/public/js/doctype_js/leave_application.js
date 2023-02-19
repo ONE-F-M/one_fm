@@ -35,12 +35,3 @@ frappe.ui.form.on("Leave Application", {
 })
 
 
-frappe.ui.form.on("Proof Documents",{
-    
-    // This ensures that the attachment field is not shown until the row is saved
-    proof_documents_add:function(frm,cdt,cdn) {
-        if(frm.doc.name.includes('new')){
-            frm.save()
-        }
-    }
-})

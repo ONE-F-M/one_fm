@@ -346,3 +346,55 @@ def get_last_salary_slip(employee):
 	if last_salary_slip and len(last_salary_slip) > 0:
 		return last_salary_slip
 	return False
+
+@frappe.whitelist()
+def get_data_for_eval(doc):
+	"""Returns data for evaluating formula"""
+	data = frappe._dict()
+	employee = frappe.get_doc("Employee", doc.employee).as_dict()
+
+	start_date = getdate(doc.start_date)
+	date_to_validate = (
+		employee.date_of_joining if employee.date_of_joining > start_date else start_date
+	)
+
+	salary_structure_assignment = frappe.get_value(
+		"Salary Structure Assignment",
+		{
+			"employee": doc.employee,
+			"salary_structure": doc.salary_structure,
+			"docstatus": 1,
+		},
+		"*",
+		order_by="from_date desc",
+		as_dict=True,
+	)
+
+	if not salary_structure_assignment:
+		frappe.throw(
+			_(
+				"Please assign a Salary Structure for Employee {0} " "applicable from or before {1} first"
+			).format(
+				frappe.bold(doc.employee_name),
+				frappe.bold(formatdate(date_to_validate)),
+			)
+		)
+
+	data.update(salary_structure_assignment)
+	data.update(employee)
+	data.update(doc.as_dict())
+
+	# set values for components
+	salary_components = frappe.get_all("Salary Component", fields=["salary_component_abbr"])
+	for sc in salary_components:
+		data.setdefault(sc.salary_component_abbr, 0)
+
+	# shallow copy of data to store default amounts (without payment days) for tax calculation
+	default_data = data.copy()
+
+	for key in ("earnings", "deductions"):
+		for d in doc.get(key):
+			default_data[d.abbr] = d.default_amount or 0
+			data[d.abbr] = d.amount or 0
+
+	return data, default_data

@@ -1,9 +1,9 @@
 import frappe
-
+from frappe import _
 
 def get_depreciation_expense_amount(doc, handler=""):
-    from_asset_depreciation = frappe.db.sql("""select sum(ja.debit) as depreciation_amount 
-            from `tabJournal Entry Account` ja,`tabJournal Entry` j 
+    from_asset_depreciation = frappe.db.sql("""select sum(ja.debit) as depreciation_amount
+            from `tabJournal Entry Account` ja,`tabJournal Entry` j
             where j.name = ja.parent and ja.parenttype = 'Journal Entry'
             and ja.project = %s and ja.reference_type = 'Asset'
             and j.voucher_type = 'Depreciation Entry' and ja.docstatus = 1 """,(doc.name),as_dict = 1)[0]
@@ -38,3 +38,23 @@ def validate_poc_list(doc, method):
     project_type = str(doc.project_type)
     if project_type.lower() == "external" and len(doc.poc) == 0:
         frappe.throw('POC list is mandatory for project type <b>External</b>')
+
+def validate_project(doc, method):
+	if doc.status != 'Open':
+		set_operation_site_inactive(doc)
+
+def set_operation_site_inactive(doc):
+	operations_site_list = frappe.get_all('Operations Site', {'status': 'Active', 'project': doc.name})
+	if operations_site_list:
+		if len(operations_site_list) > 10:
+			frappe.enqueue(queue_operation_site_inactive, operations_site_list=operations_site_list, is_async=True, queue="long")
+			frappe.msgprint(_("Operations Site linked to the Project {0} will set to Inactive!".format(doc.name)), alert=True, indicator='green')
+		else:
+			queue_operation_site_inactive(operations_site_list)
+			frappe.msgprint(_("Operations Site linked to the Project {0} is set to Inactive!".format(doc.name)), alert=True, indicator='green')
+
+def queue_operation_site_inactive(operations_site_list):
+	for operations_site in operations_site_list:
+		doc = frappe.get_doc('Operations Site', operations_site.name)
+		doc.status = "Inactive"
+		doc.save(ignore_permissions=True)

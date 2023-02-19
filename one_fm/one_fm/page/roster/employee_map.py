@@ -164,7 +164,7 @@ class CreateMap():
             self.attendance_query = f"SELECT at.status,at.leave_type,at.leave_application, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{self.end}' and docstatus = 1 order by at.employee """
             self.employee_query = f"SELECT name,  employee_id, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
 
-
+        
         self.schedule_set = frappe.db.sql(self.schedule_query,as_dict=1) if self.employees else []
         self.attendance_set = frappe.db.sql(self.attendance_query,as_dict=1) if self.employees else []
 
@@ -253,18 +253,27 @@ class CreateMap():
         return {row[1]:schedule}
 
 
-
+    
     def create_attendance_map(self,row):
        """ Create a data structure in the form of """
-       attendance = [{
+       print(self.attendance_set)
+       attendance = []
+       for  one in self.attendance_set:
+        try:
+            if one.employee == row[0]:
+                attendance.append({
                     'employee': one.employee,
                     'employee_name': one.employee_name,
                     'leave_application': one.leave_application,
                     'leave_type':one.leave_type,
                     'date': one.attendance_date,
                     'attendance': one.status,
+                    'employee_availability':one.status if one.status == "Day Off" else "",
                     'day_off_category': self.employee_period_details[row[1]].get('day_off_category'),
                     'number_of_days_off': self.employee_period_details[row[1]].get('number_of_days_off'),
                     'employee_id': self.employee_period_details[row[1]].get('employee_id')
-                } for  one in self.attendance_set if one.employee == row[0]]
+                })
+        except Exception as e:
+            pass
+       
        return {row[1]:attendance}

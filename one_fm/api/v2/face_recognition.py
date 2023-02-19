@@ -78,8 +78,8 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
 
 @frappe.whitelist()
-def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None,
-                            skip_attendance: str = None, latitude: str = None, longitude: str = None):
+def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None, 
+    shift_assignment: str = None, skip_attendance: str = None, latitude: str = None, longitude: str = None):
     """This method verifies user checking in/checking out.
 
     Args:
@@ -177,14 +177,24 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         )
 
         # Call service stub and get response
+        
         res = stub.FaceRecognition(req)
         
-        data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
-            'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-        if res.verification == "FAILED":
+
+        if res.verification == "FAILED" and res.data == 'Invalid media content':
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            if log_type == "IN":
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" +  "\U0001F612"})
+                    return response("Success", 201, doc, None)
+            return response("Success", 201, doc, None)
+        elif res.verification == "FAILED":
             msg = res.message
             data = res.data
+            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+            **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
+                'message':res.message, 'data':res.data, 'source': 'Checkin'}})
             return response(msg, 400, None, data)
         if res.verification == "OK":
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
@@ -197,12 +207,13 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         return response("Internal Server Error", 500, None, error)
 
 
-def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float) -> dict:
+def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float, shift_assignment: str) -> dict:
     checkin = frappe.new_doc("Employee Checkin")
     checkin.employee = employee
     checkin.log_type = log_type
     checkin.device_id = frappe.utils.cstr(latitude)+","+frappe.utils.cstr(longitude)
     checkin.skip_auto_attendance = 0 #skip_attendance
+    checkin.shift_assignment = shift_assignment
     checkin.save()
     frappe.db.commit()
     return checkin.as_dict()
@@ -299,7 +310,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             return response("Resource Not Found", 404, None, "Your attendance has been marked For the Day")
 
         shift = get_current_shift(employee)
-        site, location = None, None
+
+        site, location, shift_assignment = None, None, None
         if shift:
             if shift.shift_type and has_checkout_record(employee, shift.shift_type):
                 return response("Resource Not Found", 404, None, "You have already Checked Out of the your current shift")
@@ -348,13 +360,20 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
         result['site_name'] = site
 
+        result = {**result, **{
+            'shift_assignment':shift_assignment,
+        }}
+
         # log to checkin radius log
         data = result.copy()
+        result = frappe._dict(result)
         data = {
             **data,
             **{'employee':employee_id, 'user_latitude':latitude, 'user_longitude':longitude, 'user_distance':distance, 'diff':distance-result.geofence_radius}
         }
-        frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
+        
+        if not result.user_within_geofence_radius:
+            frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
                        **{'data':data})
         return response("Success", 200, result)
 

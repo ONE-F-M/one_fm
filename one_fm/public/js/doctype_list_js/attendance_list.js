@@ -10,6 +10,8 @@ frappe.listview_settings["Attendance"] = {
 			return [__(doc.status), "orange", "status,=," + doc.status];
 		}else if (doc.status == "Day Off"){
             return [__(doc.status), "blue", "status,=," + doc.status];
+        }else if (doc.status == "Holiday"){
+            return [__(doc.status), "blue", "status,=," + doc.status];
         }
 	},
 
@@ -70,19 +72,6 @@ frappe.listview_settings["Attendance"] = {
 						hidden: 1,
 					},
 					{
-						label: __("Status"),
-						fieldtype: "Select",
-						fieldname: "status",
-						options: ["Present", "Absent", "Half Day", "Work From Home", "Day Off"],
-						reqd: 1,
-					},
-					{
-						label: __("Exclude Holidays"),
-						fieldtype: "Check",
-						fieldname: "exclude_holidays",
-						onchange: () => me.get_unmarked_days(dialog),
-					},
-					{
 						label: __("Unmarked Attendance for days"),
 						fieldname: "unmarked_days",
 						fieldtype: "MultiCheck",
@@ -106,9 +95,11 @@ frappe.listview_settings["Attendance"] = {
 							]),
 							() => {
 								frappe.call({
-									method: "hrms.hr.doctype.attendance.attendance.mark_bulk_attendance",
+									method: "one_fm.overrides.attendance.mark_bulk_attendance",
 									args: {
-										data: data,
+										employee: data.employee,
+										from_date: data.from_date,
+										to_date: data.to_date
 									},
 									callback: function (r) {
 										if (r.message === 1) {

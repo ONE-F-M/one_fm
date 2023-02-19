@@ -13,13 +13,30 @@ from frappe.core.doctype.version.version import get_diff
 class OperationsSite(Document):
 	def validate(self):
 		self.validate_user_role()
-
 		if len(self.poc) == 0:
 			frappe.throw("POC list is mandatory.")
+		if self.status != 'Active':
+			self.set_operation_shift_inactive()
+		self.validate_project_status()
+
+	def validate_project_status(self):
+		if self.status == "Active" and self.project \
+			and frappe.db.get_value('Project', self.project, 'status') != 'Open':
+			frappe.throw(_("The Project '<b>{0}</b>' selected in the Site '<b>{1}</b>' is <b>Not Open</b>. <br/> To make the Site atcive first make the Project open".format(self.project, self.name)))
+
+	def set_operation_shift_inactive(self):
+		operations_shift_list = frappe.get_all('Operations Shift', {'status': 'Active', 'site': self.name})
+		if operations_shift_list:
+			if len(operations_shift_list) > 10:
+				frappe.enqueue(queue_operation_shift_inactive, operations_shift_list=operations_shift_list, is_async=True, queue="long")
+				frappe.msgprint(_("Operations Shift linked to the Site {0} will set to Inactive!".format(self.name)), alert=True, indicator='green')
+			else:
+				queue_operation_shift_inactive(operations_shift_list)
+				frappe.msgprint(_("Operations Shift linked to the Site {0} is set to Inactive!".format(self.name)), alert=True, indicator='green')
 
 	def validate_user_role(self):
 		site_supervisor = self.get_employee_user_id(self.account_supervisor)
-		# project_manager = self.get_project_manager()		
+		# project_manager = self.get_project_manager()
 		# roles = frappe.get_roles(frappe.session.user)
 
 		# if "Operations Manager" not in roles and site_supervisor != frappe.session.user and project_manager != frappe.session.user:
@@ -35,11 +52,11 @@ class OperationsSite(Document):
 	def get_changes(self):
 		doc_before_save = self.get_doc_before_save()
 		return get_diff(doc_before_save, self, for_child=True)
-	
+
 	def get_field_label(self, doctype, fieldname):
 		print(frappe.get_meta(doctype), frappe.get_meta(doctype).get_field(fieldname), fieldname)
 		return frappe.get_meta(doctype).get_field(fieldname).label
-		
+
 	def notify_changes(self):
 		changes = self.get_changes()
 		if changes:
@@ -53,16 +70,16 @@ class OperationsSite(Document):
 						fieldname, old_value, new_value = change
 						label = self.get_field_label(self.doctype, fieldname)
 						message = message + 'Value of {label} was changed from {old_value} to {new_value}.\n'.format(label=label, old_value=old_value, new_value=new_value)
-							
+
 					diff = frappe.as_json(changes.changed)
-					self.update_log(diff, message, line_manager)	
+					self.update_log(diff, message, line_manager)
 					recipients = [line_manager]
 					create_notification_log(_(subject), _(message), recipients, self)
 
 				# create_notification_log(subject, message,[line_manager], self)
 			if changes.added or changes.removed or changes.row_changed:
 				self.notify_poc_changes(changes)
-			
+
 	def get_line_manager(self):
 		manager = frappe.get_value("Employee", {"user_id": frappe.session.user}, "reports_to")
 		return frappe.get_value("Employee", {"name": manager}, "user_id")
@@ -86,16 +103,16 @@ class OperationsSite(Document):
 				perm_doc.allow_to_all_doctypes = 1
 				perm_doc.save(ignore_permissions=True)
 			frappe.db.commit()
-	
+
 	def get_employee_user_id(self, employee):
 		return frappe.get_value("Employee", {"name": employee}, "user_id")
-	
+
 	def get_project_manager(self):
 		project_manager = frappe.get_value("Project", { "name": self.project}, "account_manager")
 		project_manager_user = self.get_employee_user_id(project_manager)
 		return project_manager_user
 
-	def notify_poc_changes(self, changes):	
+	def notify_poc_changes(self, changes):
 		# Variables needed for notification
 		subject = '{person} made below changes to Site POC: {site}.\n'.format(person=self.modified_by, site=self.name)
 		message = ''
@@ -107,7 +124,7 @@ class OperationsSite(Document):
 					fieldname, old_value, new_value = field_change
 					label = self.get_field_label("POC", fieldname)
 					message = message + "Value of {label} changed from {old_value} to {new_value}.\n".format(label=label, old_value=old_value, new_value=new_value)
-				
+
 		if changes.added:
 			for change in changes.added:
 				if(change[0] == "poc"):
@@ -125,21 +142,21 @@ class OperationsSite(Document):
 
 	def update_log(self, diff, message, line_manager):
 		frappe.db.sql("""
-			INSERT INTO 
-				`tabOperations Changes` 
+			INSERT INTO
+				`tabOperations Changes`
 			(idx, parent, parentfield, parenttype, name, diff, review_status, modified_by_user, modified_on, assigned_to, message)
 			VALUES ({idx}, "{parent}","{parentfield}","{parenttype}","{name}",'{diff}',"{status}","{modified_by}","{modified}","{assigned_to}","{message}")
 		""".format(
 			idx=(len(self.changes_log or [])+1),
-			parent=self.name, 
-			parentfield="changes_log", 
-			parenttype=self.doctype, 
-			name=frappe.generate_hash(length=10), 
-			diff=diff, 
-			message=message, 
-			status="Pending", 
-			modified_by=self.modified_by, 
-			modified=self.modified, 
+			parent=self.name,
+			parentfield="changes_log",
+			parenttype=self.doctype,
+			name=frappe.generate_hash(length=10),
+			diff=diff,
+			message=message,
+			status="Pending",
+			modified_by=self.modified_by,
+			modified=self.modified,
 			assigned_to=line_manager))
 
 
@@ -154,8 +171,14 @@ class OperationsSite(Document):
 		for manager in operations_manager:
 			manager_user = self.get_employee_user_id(manager.name)
 			recipient_list.append(manager_user)
-		recipient_list.append(project_manager_user)		
+		recipient_list.append(project_manager_user)
 		return recipient_list
+
+def queue_operation_shift_inactive(operations_shift_list):
+	for operations_shift in operations_shift_list:
+		doc = frappe.get_doc('Operations Shift', operations_shift.name)
+		doc.status = "Not Active"
+		doc.save(ignore_permissions=True)
 
 def create_notification_log(subject, message, for_users, reference_doc):
 	for user in for_users:
@@ -168,14 +191,14 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		doc.from_user = reference_doc.modified_by
 		doc.insert(ignore_permissions=True)
 		frappe.publish_realtime(event='eval_js', message="frappe.show_alert({message: '"+message+"', indicator: 'blue'})", user=user)
-	
+
 
 @frappe.whitelist()
 def changes_action(action, parent, ids):
 	ids = [id for id in ids.rstrip(",").split(",")]
 	ids = ', '.join(['"{}"'.format(value) for value in ids])
 	if action == "Approved":
-		cleanup_logs(parent, ids) 
+		cleanup_logs(parent, ids)
 	elif action == "Rejected":
 		log = frappe.db.sql("""
 			select diff from `tabOperations Changes` where name in ({ids})
@@ -200,7 +223,7 @@ def revert_changes(change, doctype, docname):
 def cleanup_logs(parent, ids):
 	if parent and ids:
 		frappe.db.sql("""
-			delete from `tabOperations Changes` where parenttype="Operations Site" and parent="{parent}" and name in ({ids})			
+			delete from `tabOperations Changes` where parenttype="Operations Site" and parent="{parent}" and name in ({ids})
 		""".format(parent=parent,ids=ids))
 		frappe.db.commit()
 
@@ -250,4 +273,3 @@ def create_posts(data, site, project=None):
 		frappe.msgprint(_("Posts created successfully."))
 	except Exception as e:
 		frappe.throw(_(frappe.get_traceback()))
-	

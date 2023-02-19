@@ -173,15 +173,9 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
          # Call service stub and get response
 
         res = stub.FaceRecognition(req)
-        
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-        if res.verification == "FAILED":
-            msg = res.message
-            data = res.data
-            return response(msg, 400, None, data)
-        if res.verification == "OK":
+        if res.verification == "FAILED" and res.data == 'Invalid media content':
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
 
             if log_type == "IN":
@@ -190,6 +184,16 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
                     if not existing_perm:
                         return response("You Checked in, but you were late, try to checkin early next time !", 201, doc, None)
             return response("Success", 201, doc, None)
+        elif res.verification == "FAILED":
+            msg = res.message
+            if not res.verification == "OK":
+                frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
+            return response(msg, 400, None, data)
+        elif res.verification == "OK":
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
+            return response("Success", 201, doc, None)
+        else:
+            return response("Success", 400, None, "No response from face recognition server")
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
@@ -300,8 +304,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             **data,
             **{'employee':employee_id, 'user_latitude':latitude, 'user_longitude':longitude, 'user_distance':distance, 'diff':distance-result.geofence_radius}
         }
-        frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
-                       **{'data':data})
+        if not result['user_within_geofence_radius']:
+            frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log', **{'data':data})
         return response("Success", 200, result)
 
     except Exception as error:

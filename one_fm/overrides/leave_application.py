@@ -4,6 +4,41 @@ from frappe.utils import get_fullname
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
 from frappe.desk.form.assign_to import add
+from one_fm.api.notification import create_notification_log
+from frappe.utils import getdate
+import pandas as pd
+
+
+
+def close_leaves(all_leaves,user=None):
+    for each in all_leaves:
+        try:
+            leave_doc = frappe.get_doc("Leave Application",each.name)
+            leave_doc.status = "Approved"
+            leave_doc.flags.ignore_validate = True            
+            leave_doc.submit()
+        except:
+            frappe.log_error("Error while closing {}".format(each.name))
+            continue
+    frappe.db.commit()
+    if user:
+        message = "Please note that all open sick leaves have been approved"
+        create_notification_log('Leaves Closed!', 'Please', [user],leave_doc)
+        
+
+@frappe.whitelist()
+def fix_sick_leave():
+    all_leaves = frappe.get_all("Leave Application",{'leave_type':"Sick Leave","docstatus":0})
+    if all_leaves:
+        if len(all_leaves)<=5:
+            close_leaves(all_leaves)
+        else:
+            frappe.enqueue(method=close_leaves,user=frappe.session.user,all_leaves = all_leaves, queue='long',timeout=1200,job_name='Closing Leaves')
+            frappe.msgprint("Leaves are being closed in the background, <br> You will recieve a notification after the process.",alert = 1)
+            
+
+
+    
 
 
 class LeaveApplicationOverride(LeaveApplication):
@@ -26,7 +61,17 @@ class LeaveApplicationOverride(LeaveApplication):
         if frappe.db.get_value("Leave Type", self.leave_type, "is_optional_leave"):
             self.validate_optional_leave()
         self.validate_applicable_after()
-        
+    
+    
+    
+    def after_insert(self):
+        if self.proof_documents:
+            for each in self.proof_documents:
+                if each.attachments:
+                    all_files = frappe.get_all("File",{'file_url':each.attachments},['attached_to_name','name'])
+                    if all_files and 'new' in all_files[0].attached_to_name:
+                        frappe.db.set_value("File",all_files[0].name,'attached_to_name',self.name)
+                
     def validate_attendance(self):
         pass
 
@@ -112,6 +157,36 @@ class LeaveApplicationOverride(LeaveApplication):
                 frappe.msgprint(_("Email sent to {0}").format(contact))
             except frappe.OutgoingEmailError:
                 pass
+    def on_update(self):
+        if self.workflow_state=='Rejected':
+            attendance_range = []
+            for i in pd.date_range(self.from_date, self.to_date):
+                attendance_range.append(getdate(i))
+            for i in attendance_range:
+                if getdate()>i:
+                    if frappe.db.exists("Attendance", {
+                        'employee':self.employee,
+                        'attendance_date': str(i),
+                        'docstatus':1
+                        }):
+                        frappe.db.sql(f""" 
+                            UPDATE `tabAttendance` SET status='Absent', comment="Leave Appication {self.name} Rejected"
+                            WHERE attendance_date='{str(i)}' and employee='{self.employee}'
+                        """)
+                    else:
+                        frappe.get_doc({
+                            'doctype':'Attendance',
+                            'employee':self.employee,
+                            'attendance_date':str(i),
+                            'roster_type':'Basic',
+                            'status':'Absent'
+                        }).submit()
+
+                    frappe.db.commit()
+
+            
+        
+
 
 
 @frappe.whitelist()

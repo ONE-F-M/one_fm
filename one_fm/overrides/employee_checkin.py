@@ -53,7 +53,6 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			except Exception as e:
 				frappe.throw(frappe.get_traceback())
 
-
 	def validate_duplicate_log(self):
 		doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
 		if doc:
@@ -61,11 +60,20 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			frappe.throw(
 				_("This employee already has a log with the same timestamp.{0}").format("<Br>" + doc_link)
 			)
+	def before_insert(self):
+		if self.shift_permission:
+			sp = frappe.get_doc("Shift Permission", self.shift_permission, ignore_permissions=True)
+			sa = frappe.get_doc("Shift Assignment", sp.assigned_shift, ignore_permissions=True)
+			self.shift_assignment = sa.name
+			self.operations_shift = sa.shift
+			self.shift_type = sa.shift_type
+			self.shift_actual_start = sa.start_datetime
+			self.shift_actual_end = sa.end_datetime
 
 	def after_insert(self):
 		frappe.db.commit()
 		self.reload()
-		if not self.shift_assignment and self.shift_type and self.operations_shift:
+		if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
 			frappe.enqueue(after_insert_background, self=self.name)
 
 def after_insert_background(self):
@@ -77,7 +85,7 @@ def after_insert_background(self):
 		# calculate entry
 		early_exit = 0
 		late_entry = 0
-		actual_time = str(self.actual_time)
+		actual_time = str(self.time)
 		if not '.' in actual_time:
 			actual_time += '.000000'
 
@@ -88,13 +96,12 @@ def after_insert_background(self):
 			if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=shift_type.early_exit_grace_period)) < curr_shift.end_datetime:
 				early_exit = 1
 
-
 		query = f"""
 			UPDATE `tabEmployee Checkin` SET
 			shift_assignment="{curr_shift.name}", operations_shift="{curr_shift.shift}", shift_type='{curr_shift.shift_type}',
 			shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
 			shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
-			late_entry={late_entry}
+			late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}'
 			WHERE name="{self.name}"
 		"""
 		frappe.db.sql(query, values=[], as_dict=1)
@@ -204,11 +211,11 @@ def get_shift_from_checkin(checkin):
 	shifts = frappe.db.get_list(
 		"Shift Assignment", 
 		filters={'employee':checkin.employee, 
-			'start_date': ["BETWEEN", [str(add_days(checkin.actual_time.date(), -1)), str(checkin.actual_time.date())]], 'docstatus':1},
+			'start_date': ["BETWEEN", [str(add_days(checkin.time.date(), -1)), str(checkin.time.date())]], 'docstatus':1},
 		fields="*",
 		ignore_permissions=1
 	)
 	for s in shifts:
-		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.actual_time <= (s.end_datetime + timedelta(minutes=60))):
+		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.time <= (s.end_datetime + timedelta(minutes=60))):
 			return s
 	return False

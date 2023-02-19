@@ -49,13 +49,17 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
 
 	data = frappe.db.sql("""
 		select
-			distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site, emp.project
-		from `tabEmployee` as emp, `tabUser` as usr
+			distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, 
+   		usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site,
+     	emp.project,opsite.account_supervisor_name as site_supervisor,opshift.supervisor_name as shift_supervisor
+		from `tabEmployee` as emp, `tabUser` as usr,`tabOperations Shift` as opshift,`tabOperations Site` as opsite
 		where
 		emp.project is not NULL
 		and emp.site is not NULL
 		and emp.shift is not NULL
 		and emp.user_id=usr.name
+		and emp.shift = opshift.name
+		and emp.site = opsite.name
 		{conds}
 	""".format(date=date, conds=conds), as_dict=1)
 	return data
@@ -165,7 +169,8 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 		master_data.update({'operations_roles_data': post_map.template})
 		response("Success", 200, master_data)
 	except Exception as e:
-		return response("Server Error", 500, None, str(e))
+		print(frappe.get_traceback())
+		return response("Server Error", 500, None, str(frappe.get_traceback()))
 
 def get_active_employees(start_date, end_date, master_data):
 	employees = [i.name for i in frappe.db.get_list('Employee', filters={'status': ['!=', 'Left']})]
@@ -250,13 +255,16 @@ def get_current_user_details():
 
 
 @frappe.whitelist()
-def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, request_employee_schedule, day_off_ot=None, end_date=None):
+def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None):
 	try:
+		_start_date = getdate(start_date)
 		validation_logs = []
 		user, user_roles, user_employee = get_current_user_details()
 		employees = json.loads(employees)
 		if not employees:
 			frappe.throw("Employees must be selected.")
+		
+		employees = [i for i in employees if getdate(i['date']) >= _start_date]
 		employee_list = []
 		for i in employees:
 			if not i['employee'] in employee_list:
@@ -339,9 +347,33 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 		end_date = getdate(end_date)
 		new_employees = []
 		for i in employees:
-			if not getdate(i['date']) > end_date:
+			if getdate(i['date']) <= end_date:
 				new_employees.append(i)
-		employees = new_employees
+		if new_employees:
+			employees = new_employees.copy()
+	# check keep days_off
+	if keep_days_off:
+		days_off_list = frappe.db.get_list("Employee Schedule", filters={
+			'employee':['IN', [i['employee'] for i in employees]],
+			'date': ['IN', [i['date'] for i in employees]],
+			'employee_availability': 'Day Off'
+		}, fields=['name', 'employee', 'date'])
+		days_off_dict = {}
+		if days_off_list:
+			# build a dict in the form {'hr-emp-0002:['2023-01-01,]} 
+			for i in days_off_list:
+				if days_off_dict.get(i.employee):
+					days_off_dict[i.employee].append(str(i.date))
+				else:
+					days_off_dict[i.employee] = [str(i.date)]
+			# remove records from employees
+			new_employees = []
+			for i in employees:
+				if not (i['date'] in days_off_dict.get(i['employee'])):
+					new_employees.append(i)
+			if new_employees:
+				employees = new_employees.copy()
+	
 	# # get and structure employee dictionary for easy hashing
 	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employee_list]}, fields=['name', 'employee_name', 'department'], ignore_permissions=True)
 	employees_dict = {}
@@ -551,6 +583,7 @@ def schedule_leave(employees, leave_type, start_date, end_date):
 @frappe.whitelist(allow_guest=True)
 def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 	try:
+		_start_date = getdate(start_date)
 		if end_date:
 			stop_date = getdate(end_date)
 		else: stop_date = None
@@ -558,26 +591,27 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 		employees = json.loads(employees)
 		if not employees:
 			response("Error", 400, None, {'message':'Employees must be selected.'})
-		delete_dict = {}
-		new_employees = []
-		if end_date:
-			for i in employees:
-				if not getdate(i['date']) >= stop_date:
-					new_employees.append(i)
-			employees = new_employees
-		for i in employees:
-			if cint(never_end) == 1:
-				_end_date = f'>="{start_date}"'
-			else:
-				_end_date = '="'+str(i['date'])+'"'
-			_line = f"""DELETE FROM `tabEmployee Schedule` WHERE employee="{i['employee']}" AND date{_end_date};"""
-			if not _line in delete_list:
-				delete_list.append(_line)
+		employees = [i for i in employees if getdate(i['date'])>=_start_date]
 
-		if delete_list:
-			res = query_db_list(delete_list, commit=True)
-			if res.error:
-				response("Error", 500, None, res.msg)
+		if end_date:
+			employees = [i for i in employees if getdate(i['date'])<=stop_date]
+
+		# check if no end date
+		if cint(never_end) == 1:
+			employees_to_delete = []
+			for i in employees:
+				if not i['employee'] in employees_to_delete:
+					employees_to_delete.append(i['employee'])
+			# delete all schedules greater than start date
+			employees_to_delete=str(tuple(employees_to_delete)).replace(',)', ')')
+			frappe.db.sql(f"""
+				DELETE FROM `tabEmployee Schedule` WHERE employee IN {employees_to_delete} and date>='{start_date}'
+			""")
+		else:
+			for i in employees:
+				frappe.db.sql(f"""
+					DELETE FROM `tabEmployee Schedule` WHERE employee='{i['employee']}' and date='{i['date']}'
+				""")
 		response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
 	except Exception as e:
 		frappe.throw(str(e))
@@ -590,7 +624,7 @@ def edit_post(posts, values):
 
 	if "Operations Manager" not in user_roles and "Projects Manager" not in user_roles:
 		frappe.throw(_("Insufficient permissions to Edit Post."))
-
+	
 	args = frappe._dict(json.loads(values))
 
 	if args.post_status == "Plan Post":
@@ -961,18 +995,21 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
 
 @frappe.whitelist()
 def assign_staff(employees, shift, request_employee_assignment):
+	if not employees:
+		frappe.throw("Please select employees first")
 	validation_logs = []
 	user, user_roles, user_employee = get_current_user_details()
+	shift, site, project = frappe.db.get_value("Operations Shift", shift, ['name', 'site', 'project'])
 	if not cint(request_employee_assignment):
 		for emp in json.loads(employees):
 			emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
 			supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
-			if user_employee.name != supervisor:
-				validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
+			# if user_employee.name != supervisor:
+			# 	validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
 
 	if len(validation_logs) > 0:
-		frappe.throw(validation_logs)
-		frappe.log_error(validation_logs)
+		frappe.throw(str(validation_logs))
+		frappe.log_error(str(validation_logs))
 	else:
 		try:
 			start = time.time()
@@ -990,8 +1027,8 @@ def assign_staff(employees, shift, request_employee_assignment):
 			return True
 
 		except Exception as e:
-			frappe.log_error(e)
-			frappe.throw(_(e))
+			frappe.log_error(str(e))
+			frappe.throw(_(str(e)))
 
 def create_request_employee_assignment(employee, from_shift, to_shift):
 	req_ea_doc = frappe.new_doc("Request Employee Assignment")
