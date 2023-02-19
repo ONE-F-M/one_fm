@@ -527,11 +527,12 @@ scheduler_events = {
 			"one_fm.events.email_queue.flush_emails",
 		],
 		"0/5 * * * *": [
-			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
-			"one_fm.api.tasks.checkin_checkout_initial_reminder",
-			"one_fm.api.tasks.checkin_checkout_final_reminder",
-			"one_fm.api.tasks.checkin_deadline",
-			"one_fm.api.tasks.overtime_shift_assignment"
+			"one_fm.api.tasks.run_checkin_reminder",
+			# "one_fm.api.tasks.checkin_checkout_supervisor_reminder",
+			# "one_fm.api.tasks.checkin_checkout_initial_reminder",
+			# "one_fm.api.tasks.checkin_checkout_final_reminder",
+			# "one_fm.api.tasks.checkin_deadline",
+			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout"
 		],
 		"0/15 * * * *": [
