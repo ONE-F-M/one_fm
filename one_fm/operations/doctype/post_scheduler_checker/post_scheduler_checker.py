@@ -72,11 +72,6 @@ class PostSchedulerChecker(Document):
 				elif len(operations_post)<item.count:
 					message += f"""Less operations post created, expected: {item.count}, created: {len(operations_post)} for roles {roles}\n\n"""
 
-				# get the days off
-				
-				# else:
-				# 	pass
-				
 				# create final records
 				if item.rate_type == 'Monthly':
 					expected = 0
@@ -93,8 +88,6 @@ class PostSchedulerChecker(Document):
 							last_day = week_range.end
 							expected = 7 - item.no_of_days_off
 							no_of_days_off = item.no_of_days_off
-					if item.item_code=='SER-FMG-000230-KWT-M-22DY-2HR' and contract.project=='Wafra Living':
-						frappe.log_error(str(f"{expected},{getdate(get_last_day(current_date)).day}, {item.no_of_days_off}"), 'Post scheduler')
 					for post in operations_post:
 						post_schedules = get_post_schedules(project=contract.project, post=post, first_day=first_day, last_day=last_day)
 						if not post_schedules:
