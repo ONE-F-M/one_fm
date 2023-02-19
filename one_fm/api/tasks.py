@@ -1620,6 +1620,8 @@ def fetch_employees_not_in_checkin():
 	attendance request, shift request, leave application based on log_type and 
 	if their shift start or end falls withing the current hour
 	"""
+	if not production_domain():
+		return
 	# if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
 	# 	return
 
