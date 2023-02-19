@@ -360,50 +360,31 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
-    
 
-@frappe.whitelist()
-def is_before_after_grace_period(employee_id:str,operator:str)->bool:
-    """_summary_
-        Checks if an employee is checkin out before or after the grace period, it returns a boolean value
-    Args:
-        employee_id (_type_): _description_
-    """
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee ID required.")
-    if operator not in ['before','after']:
-        return response("Bad Request", 400, None, "Invalid operator. operator must be before/after.")
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee must be of type str.")
-    
-    employee = frappe.get_value('Employee',{'employee_id':employee_id})
-    if not employee:
-         return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-    today = get_date_str(getdate())
-    time_now = now()
-    current_schedule = frappe.db.sql("SELECT name,shift_type from `tabShift Assignment` where end_date between '{}' and '{}'  and employee = '{}' ".format(today,today,employee),as_dict=1)
-    if not current_schedule:
-        return response("Resource Not Found", 404, None, "No schedule found for {employee_id} on {today}".format(employee_id=employee_id,today=today))
-    shift_type = current_schedule[0].shift_type
-    shift_type_details = frappe.get_all("Shift Type",{'name':shift_type},['notification_reminder_after_shift_end','enable_exit_grace_period','early_exit_grace_period','end_time'])
-    curr_shift = get_current_shift_checkin(employee)
-    if curr_shift:
-        if not shift_type_details:
-            return response("Resource Not Found", 404, None, "Unable to fetch shift type details")
-        if not shift_type_details[0].get('enable_exit_grace_period'):
-            return response("Early exit disabled for shift type {}".format(shift_type), 400, None,"Early exit disabled for shift type {}".format(shift_type))
-        else:
-            if operator =='before':
-                if get_datetime(time_now) < (get_datetime(curr_shift[0].end_datetime) - timedelta(minutes=shift_type_details[0].get('early_exit_grace_period'))):
-                    return response("Early Exit".format(shift_type), 200, True)
-                else:
-                    return response("Not Early Exit.".format(shift_type), 200, False)
-            else:
-                if get_datetime(time_now) > (get_datetime(curr_shift[0].end_datetime) + timedelta(minutes=shift_type_details[0].get('early_exit_grace_period'))):
-                    return response("Late Exit".format(shift_type), 200, True)
-                else:
-                    return response("Not Late Exit.".format(shift_type), 200, False)
-                
-    else:
-        return response("Resource Not Found", 404, None, "No Active shift found for {}. Please confirm the shift has started".format(employee))
-        
+
+# @frappe.whitelist()
+# def validate_check_in(employee_id, log_type):
+#     if not isinstance(employee_id, str):
+#         return response("Bad Request", 400, None, f"{employee_id} is not a string !!")
+
+#     if not isinstance(log_type, str) or log_type != "IN":
+#         return response("Bad Request", 400, None, f"{log_type} is invalid!")
+
+
+#     employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+
+#     if not employee:
+#         return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+
+#     if log_type == "IN":
+#             shift_type = frappe.db.sql(f""" select shift_type from `tabShift Assignment` where employee = '{employee}' order by creation desc limit 1 """, as_dict=1)[0]
+#             val_in_shift_type = frappe.db.sql(f""" select begin_check_in_before_shift_start_time, start_time, late_entry_grace_period from `tabShift Type` where name = '{shift_type["shift_type"]}' """, as_dict=1)[0]
+#             time_threshold = datetime.strptime(str(val_in_shift_type["start_time"] - timedelta(minutes=val_in_shift_type["begin_check_in_before_shift_start_time"])), "%H:%M:%S").time()
+            
+#             if right_now.time() < time_threshold:
+#                 return response("Bad Request", 400, None, f"You cannot check in right now, kindly try again by or later than {time_threshold}, Thank You !  ")
+
+#             existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{right_now.date()}' and employee = '{employee}' and permission_type = '{log_type}' and workflow_state = 'Approved' """, as_dict=1)
+#             if not existing_perm and ((right_now + timedelta(hours=4)).time() >  datetime.strptime(str(val_in_shift_type["start_time"]), "%H:%M:%S").time() ):
+#                 return response("Bad Request", 400, None, f"You are past the 4-Hour mark, you will be marked absent !")
+
