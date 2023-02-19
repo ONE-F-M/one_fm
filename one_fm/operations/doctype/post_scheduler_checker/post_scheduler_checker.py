@@ -76,11 +76,11 @@ class PostSchedulerChecker(Document):
 				no_of_days_off = 0
 				if item.rate_type == 'Monthly':
 					if item.rate_type_off == 'Full Month':
-						expected = datediff
+						expected = getdate(get_last_day(current_date)).day
 						no_of_days_off = 0
 					elif item.rate_type_off == 'Days Off':
 						if item.days_off_category == 'Monthly':
-							expected = datediff - item.no_of_days_off
+							expected = getdate(get_last_day(current_date)).day - item.no_of_days_off
 							no_of_days_off = item.no_of_days_off
 						elif item.days_off_category == 'Weekly':
 							# first_day = getdate(week_range.start)
