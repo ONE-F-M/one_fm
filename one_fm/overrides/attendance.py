@@ -225,3 +225,9 @@ def mark_bulk_attendance(employee, from_date, to_date):
         mark_single_attendance(employee, i)
 
     frappe.msgprint(f"Marked Attendance successfully for {employee} between {from_date} and {to_date}")
+
+
+def remark_absent_for_employees(employees, date):
+    # mark attendance
+    for emp in employees:
+        mark_single_attendance(emp, date)

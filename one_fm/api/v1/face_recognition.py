@@ -167,7 +167,6 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response("Success", 201, doc, None)
         elif res.verification == "FAILED":
             msg = res.message
-            data = res.data
             if not res.verification == "OK":
                 frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
             return response(msg, 400, None, data)

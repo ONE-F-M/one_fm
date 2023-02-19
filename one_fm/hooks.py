@@ -295,7 +295,7 @@ doc_events = {
 			"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
 		]
 	},
-	"Salary aStructure Assignment": {
+	"Salary Structure Assignment": {
 		"validate": [
 			"one_fm.api.doc_methods.salary_structure_assignment.set_salary_components_details_to_salary_structure_assignment",
 		],
@@ -524,11 +524,12 @@ scheduler_events = {
 			"one_fm.events.email_queue.flush_emails",
 		],
 		"0/5 * * * *": [
-			"one_fm.api.tasks.checkin_checkout_supervisor_reminder",
-			"one_fm.api.tasks.checkin_checkout_initial_reminder",
-			"one_fm.api.tasks.checkin_checkout_final_reminder",
-			"one_fm.api.tasks.checkin_deadline",
-			"one_fm.api.tasks.overtime_shift_assignment"
+			"one_fm.api.tasks.run_checkin_reminder",
+			# "one_fm.api.tasks.checkin_checkout_supervisor_reminder",
+			# "one_fm.api.tasks.checkin_checkout_initial_reminder",
+			# "one_fm.api.tasks.checkin_checkout_final_reminder",
+			# "one_fm.api.tasks.checkin_deadline",
+			"one_fm.api.tasks.overtime_shift_assignment",
 			#"one_fm.api.tasks.automatic_checkout"
 		],
 		"0/15 * * * *": [
@@ -608,8 +609,14 @@ scheduler_events = {
 		"15 0 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_am_shift'
 		],
+		"45 1 * * *": [ # validate shift assignment
+			'one_fm.api.tasks.validate_am_shift_assignment'
+		],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
+		],
+		"45 13 * * *": [ # validate shift assignmet
+			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
 		"25 0 * * *": [ # mark day attendance 11:15 pm
 			'one_fm.api.tasks.mark_day_attendance'
