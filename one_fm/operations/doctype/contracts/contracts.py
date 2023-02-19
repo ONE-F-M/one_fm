@@ -9,7 +9,7 @@ from datetime import datetime
 from frappe.model.document import Document
 from frappe.utils import (
     cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
-    get_last_day, get_datetime, flt, add_days,add_months
+    get_last_day, get_datetime, flt, add_days,add_months,get_date_str
 )
 from frappe import _
 
@@ -1003,8 +1003,9 @@ def send_contract_reminders():
     """
     Generate Reminders for Contract Termination Decision Period and Contract End Internal Notification periods
     """
-    contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':getdate()})
-    contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':getdate()})
+    
+    contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':getdate()},['name','start_date','end_date','duration','client'])
+    contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':getdate()},['name','start_date','end_date','duration','client'])
     relevant_roles = ["Finance Manager",'Legal Manager','Projects Manager','Operations Manager']
     active_users = frappe.get_all("User",{'enabled':1})
     active_users_ = [i.name for i in active_users] if active_users else []
@@ -1012,13 +1013,17 @@ def send_contract_reminders():
     relevant_users = frappe.get_all("Has Role",{'role':['IN',relevant_roles],'parent':['IN',active_users_]},['distinct parent'])
     users = [i.parent for i in relevant_users]
     if contracts_due_internal_notification:
+        due_contracts = ""
         #get the  users with the relevant roles
-        contracts_due_internal_notification_list = [i.name for i in contracts_due_internal_notification]
-        due_contracts = "<br>".join(contracts_due_internal_notification_list)
-        message = "Good Day <br>Please note that today is the  Internal Notification period for the following expiring contracts." + due_contracts
+        contracts_due_internal_notification_list = [[i.name,get_date_str(i.start_date),get_date_str(i.end_date),i.duration,i.client] for i in contracts_due_internal_notification]
+        for each in contracts_due_internal_notification_list:
+            due_contracts += f"Contract: {each[4]}<br> Start Date: {each[1]} <br> End Date: {each[2]} <br> Duration: {each[3]} <br>"
+        message = "Good Day <br><p>Please note that today is the Contract Termination Decision Period  for the following expiring contracts.</p>" + due_contracts
         frappe.sendmail(recipients=users, content=message, subject="Expiring Contracts")
     if contracts_due_termination_notification:
-        contracts_due_termination_notification_list = [i.name for i in contracts_due_termination_notification]
-        due_contracts_ = "<br>".join(contracts_due_termination_notification_list)
-        message = "Good Day <br>Please note that today is the Contract Termination Decision Period is due for the following expiring contracts." + due_contracts_
+        due_contracts = ""
+        contracts_due_termination_notification_list = [[i.name,get_date_str(i.start_date),get_date_str(i.end_date),i.duration,i.client] for i in contracts_due_termination_notification]
+        for each in contracts_due_termination_notification_list:
+            due_contracts += f"<br/>Contract: {each[4]} <br> Start Date: {each[1]} <br> End Date: {each[2]} <br>  Duration: {each[3]} <br>"
+        message = "Good Day <br><p>Please note that today is the Contract Termination Decision Period  for the following expiring contracts.</p>" + due_contracts
         frappe.sendmail(recipients=users, content=message, subject="Expiring Contracts")
