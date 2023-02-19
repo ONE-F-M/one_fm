@@ -1624,7 +1624,7 @@ def fetch_employees_not_in_checkin():
 		return
 	# if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
 	# 	return
-
+	
 	shift_start_time = f"{now_datetime().time().hour}:00:00"
 	minute = now_datetime().time().minute
 	hour = now_datetime().time().hour
@@ -1795,6 +1795,7 @@ def initiate_checkin_notification(res):
 	recipients: Dictionary consist of user ID and Emplloyee ID eg: [{'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}]
 	log_type: In or Out
 	"""
+	now_time = now()
 	checkin_message = _(f"""
 		<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
 		<br>
@@ -1879,7 +1880,7 @@ def initiate_checkin_notification(res):
 			notification_category, checkin_reminder_id_list
 		)
 
-	# process checkins after grace period
+	# # process checkins after grace period
 	if after_grace_checkin_reminder:
 		checkin_reminder_id_list = []
 		notification_category = 'Attendance'
@@ -1904,7 +1905,7 @@ def initiate_checkin_notification(res):
 			notification_category, checkin_reminder_id_list
 		)
 	
-	# process supervisor checkin reminder
+	# # process supervisor checkin reminder
 	if supervisor_checkin_reminder:
 		title = "Checkin Report"
 		category = "Attendance"
@@ -1912,13 +1913,13 @@ def initiate_checkin_notification(res):
 		for recipient in supervisor_checkin_reminder:
 			action_user, Role = get_action_user(recipient.employee,recipient.operations_shift)
 			subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
-			action_message = _(f"""
+			action_message = _("""
 				Submit a Shift Permission for the employee to give an excuse and not need to penalize
 				<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1?employee={recipient.employee}&log_type=IN">Submit Shift Permission</a>&nbsp;
 				<br/><br/>
 				Issue penalty for the employee
 				<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
-			""").format(shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
+			""").format(recipient=recipient, shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
 			if action_user is not None and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 				send_notification(title, subject, action_message, category, [action_user])
 
@@ -1928,7 +1929,7 @@ def initiate_checkin_notification(res):
 				if notify_user is not None and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 					send_notification(title, subject, notify_message, category, notify_user)
 
-	# process initial checkout
+	# # process initial checkout
 	if checkout_reminders:
 		checkout_reminder_id_list = []
 		notification_category = 'Attendance'
@@ -1954,7 +1955,7 @@ def initiate_checkin_notification(res):
 		)
 
 	
-	# process supervisor checkout reminder
+	# # process supervisor checkout reminder
 	if supervisor_checkout_reminder:
 		title = "Checkout Report"
 		category = "Attendance"
@@ -1962,13 +1963,13 @@ def initiate_checkin_notification(res):
 		for recipient in supervisor_checkout_reminder:
 			action_user, Role = get_action_user(recipient.employee,recipient.operations_shift)
 			subject = _("{employee} has not checked out yet.".format(employee=recipient.employee_name))
-			action_message = _(f"""
+			action_message = _("""
 				Submit a Shift Permission for the employee to give an excuse and not need to penalize
 				<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1?employee={recipient.employee}&log_type=OUT">Submit Shift Permission</a>&nbsp;
 				<br/><br/>
 				Issue penalty for the employee
 				<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
-			""").format(shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
+			""").format(recipient=recipient, shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
 			if action_user is not None and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 				send_notification(title, subject, action_message, category, [action_user])
 
@@ -1981,6 +1982,9 @@ def initiate_checkin_notification(res):
 
 def run_checkin_reminder():
 	# execute first checkin reminder
-	res = fetch_employees_not_in_checkin()
-	if res:
-		initiate_checkin_notification(res)
+	try:
+		res = fetch_employees_not_in_checkin()
+		if res:
+			initiate_checkin_notification(res)
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Checkin Notification')
