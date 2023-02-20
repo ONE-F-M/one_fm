@@ -1860,25 +1860,25 @@ def initiate_checkin_notification(res):
 		checkin_reminder_id_list = []
 		notification_category = 'Attendance'
 		notification_title = _("Checkin reminder")
-		notification_subject = _("Don't forget to Checkin!")
+		notification_subject = _("Checkin in the next 5 minutes!")
 		for recipient in checkin_reminders:
-			if not has_checkin_record(recipient.employee, recipient.log_type, res.date):
-				# Append the list of user ID to send notification through email.
-				checkin_reminder_id_list.append(recipient.user_id)
-				#arrive late button is true only if the employee has the user role "Head Office Employee".
-				user_roles = frappe.get_roles(recipient.user_id)
-				if "Head Office Employee" in user_roles:
-					push_notification_rest_api_for_checkin(
-						recipient.employee, notification_title, notification_subject, 
-						checkin=True, arriveLate=True, checkout=False)
-				else:
-					push_notification_rest_api_for_checkin(
-						recipient.employee, notification_title, notification_subject, 
-						checkin=True,arriveLate=False,checkout=False)
-		send_notification(
-			notification_title, notification_subject, checkin_message,
-			notification_category, checkin_reminder_id_list
-		)
+			# if not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+			# Append the list of user ID to send notification through email.
+			checkin_reminder_id_list.append(recipient.user_id)
+			#arrive late button is true only if the employee has the user role "Head Office Employee".
+			user_roles = frappe.get_roles(recipient.user_id)
+			if "Head Office Employee" in user_roles:
+				push_notification_rest_api_for_checkin(
+					recipient.employee, notification_title, notification_subject, 
+					checkin=True, arriveLate=True, checkout=False)
+			else:
+				push_notification_rest_api_for_checkin(
+					recipient.employee, notification_title, notification_subject, 
+					checkin=True,arriveLate=False,checkout=False)
+		# send_notification(
+		# 	notification_title, notification_subject, checkin_message,
+		# 	notification_category, checkin_reminder_id_list
+		# )
 
 	# # process checkins after grace period
 	if after_grace_checkin_reminder:
@@ -1887,23 +1887,23 @@ def initiate_checkin_notification(res):
 		notification_title = _("Checkin reminder")
 		notification_subject = _("Don't forget to Checkin!")
 		for recipient in after_grace_checkin_reminder:
-			if not has_checkin_record(recipient.employee, recipient.log_type, res.date):
-				# Append the list of user ID to send notification through email.
-				checkin_reminder_id_list.append(recipient.user_id)
-				#arrive late button is true only if the employee has the user role "Head Office Employee".
-				user_roles = frappe.get_roles(recipient.user_id)
-				if "Head Office Employee" in user_roles:
-					push_notification_rest_api_for_checkin(
-						recipient.employee, notification_title, notification_subject, 
-						checkin=True, arriveLate=True, checkout=False)
-				else:
-					push_notification_rest_api_for_checkin(
-						recipient.employee, notification_title, notification_subject, 
-						checkin=True,arriveLate=False,checkout=False)
-		send_notification(
-			notification_title, notification_subject, checkin_message_after_grace,
-			notification_category, checkin_reminder_id_list
-		)
+			# if not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+			# Append the list of user ID to send notification through email.
+			checkin_reminder_id_list.append(recipient.user_id)
+			#arrive late button is true only if the employee has the user role "Head Office Employee".
+			user_roles = frappe.get_roles(recipient.user_id)
+			if "Head Office Employee" in user_roles:
+				push_notification_rest_api_for_checkin(
+					recipient.employee, notification_title, notification_subject, 
+					checkin=True, arriveLate=True, checkout=False)
+			else:
+				push_notification_rest_api_for_checkin(
+					recipient.employee, notification_title, notification_subject, 
+					checkin=True,arriveLate=False,checkout=False)
+		# send_notification(
+		# 	notification_title, notification_subject, checkin_message_after_grace,
+		# 	notification_category, checkin_reminder_id_list
+		# )
 	
 	# # process supervisor checkin reminder
 	if supervisor_checkin_reminder:
@@ -1920,13 +1920,13 @@ def initiate_checkin_notification(res):
 				Issue penalty for the employee
 				<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
 			""").format(recipient=recipient, shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
-			if action_user is not None and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+			if action_user is not None: #and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 				send_notification(title, subject, action_message, category, [action_user])
 
 			notify_message = _("""Note that {employee} from Shift {shift} has Not Checked in yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
 			if Role:
 				notify_user = get_notification_user(recipient.employee,recipient.operations_shift, Role)
-				if notify_user is not None and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+				if notify_user is not None: #and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 					send_notification(title, subject, notify_message, category, notify_user)
 
 	# # process initial checkout
@@ -1936,19 +1936,19 @@ def initiate_checkin_notification(res):
 		notification_title = _("Checkout reminder")
 		notification_subject = _("Don't forget to Checkout!")
 		for recipient in checkout_reminders:
-			if not has_checkin_record(recipient.employee, recipient.log_type, res.date):
-				# Append the list of user ID to send notification through email.
-				checkout_reminder_id_list.append(recipient.user_id)
-				#arrive late button is true only if the employee has the user role "Head Office Employee".
-				user_roles = frappe.get_roles(recipient.user_id)
-				if "Head Office Employee" in user_roles:
-					push_notification_rest_api_for_checkin(
-						recipient.employee, notification_title, notification_subject, 
-						checkin=False, arriveLate=False, checkout=True)
-				else:
-					push_notification_rest_api_for_checkin(
-						recipient.employee, notification_title, notification_subject, 
-						checkin=False,arriveLate=False,checkout=True)
+			# if not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+			# Append the list of user ID to send notification through email.
+			checkout_reminder_id_list.append(recipient.user_id)
+			#arrive late button is true only if the employee has the user role "Head Office Employee".
+			user_roles = frappe.get_roles(recipient.user_id)
+			if "Head Office Employee" in user_roles:
+				push_notification_rest_api_for_checkin(
+					recipient.employee, notification_title, notification_subject, 
+					checkin=False, arriveLate=False, checkout=True)
+			else:
+				push_notification_rest_api_for_checkin(
+					recipient.employee, notification_title, notification_subject, 
+					checkin=False,arriveLate=False,checkout=True)
 		send_notification(
 			notification_title, notification_subject, checkout_message,
 			notification_category, checkout_reminder_id_list
@@ -1970,13 +1970,13 @@ def initiate_checkin_notification(res):
 				Issue penalty for the employee
 				<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
 			""").format(recipient=recipient, shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
-			if action_user is not None and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+			if action_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 				send_notification(title, subject, action_message, category, [action_user])
 
 			notify_message = _("""Note that {employee} from Shift {shift} has Not Checked out yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
 			if Role:
 				notify_user = get_notification_user(recipient.employee,recipient.operations_shift, Role)
-				if notify_user is not None and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+				if notify_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 					send_notification(title, subject, notify_message, category, notify_user)
 
 
