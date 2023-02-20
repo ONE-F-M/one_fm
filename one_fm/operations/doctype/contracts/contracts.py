@@ -1027,3 +1027,48 @@ def send_contract_reminders():
             due_contracts += f"<br/>Contract: {each[4]} <br> Start Date: {each[1]} <br> End Date: {each[2]} <br>  Duration: {each[3]} <br>"
         message = "Good Day <br><p>Please note that today is the Contract Termination Decision Period  for the following expiring contracts.</p>" + due_contracts
         frappe.sendmail(recipients=users, content=message, subject="Expiring Contracts")
+        
+@frappe.whitelist()
+def renew_contracts_by_termination_date():
+    """
+    Renew an existing contract by the Termination date
+    """
+    all_due_contracts = frappe.get_all("Contracts",{'workflow_state': 'Active','is_auto_renewal':1,'contract_termination_decision_period_date':getdate()},\
+        ['contract_end_internal_notification','contract_termination_decision_period','start_date','name','end_date','project'])
+    if all_due_contracts:
+        
+        for each in all_due_contracts:
+            old_date = frappe.new_doc("Contracts Date")
+            old_date.parent = each.name
+            old_date.parenttype = "Contracts"
+            old_date.parentfield = "contract_date"
+            duration = date_diff(each.end_date, each.start_date)
+            old_date.contract_start_date = each.start_date
+            old_date.contract_end_date = each.end_date
+            old_date.insert()
+            
+            frappe.db.set_value('Contracts',each.name,'start_date',add_days(each.end_date, 1))
+            frappe.db.set_value('Contracts',each.name,'end_date',add_days(each.end_date, duration+1))
+            
+            if each.get('end_date'):
+                frappe.db.set_value('Contracts',each.name,'contract_termination_decision_period_date',add_months(each.end_date,-int(each.contract_termination_decision_period)))
+            if each.get('contract_termination_decision_period_date'):
+                frappe.db.set_value('Contracts',each.name,'contract_end_internal_notification_date',add_months(each.end_date,each.contract_termination_decision_period))
+        
+        #Get all operations post that belong to a project and recreate the post schedule for that period
+        
+        relevant_projects = [i.project for i in all_due_contracts] if all_due_contracts else []
+        all_operations_post = frappe.get_all("Operations Post",{'project':['IN',relevant_projects]})
+        all_operations_post_ = [frappe.get_doc("Operations Post",i.name) for i in all_operations_post]
+        
+        if all_operations_post_:
+            frappe.enqueue(create_post_schedules, operations_posts=all_operations_post_, queue="long",job_name = 'Create Post Schedules')
+            
+            
+
+def create_post_schedules(operations_posts):
+    from one_fm.operations.doctype.operations_post.operations_post import create_post_schedule_for_operations_post
+    
+    list(map(create_post_schedule_for_operations_post,operations_posts))
+    
+            
