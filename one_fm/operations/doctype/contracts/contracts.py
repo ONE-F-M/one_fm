@@ -1054,7 +1054,7 @@ def renew_contracts_by_termination_date():
         
         relevant_projects = [i.project for i in all_due_contracts] if all_due_contracts else []
         all_operations_post = frappe.get_all("Operations Post",{'project':['IN',relevant_projects]})
-        all_operations_post_ = [i.name for i in all_operations_post]
+        all_operations_post_ = [frappe.get_doc("Operations Post",i.name) for i in all_operations_post]
         
         if all_operations_post_:
             frappe.enqueue(create_post_schedules, operations_posts=all_operations_post_, queue="long",job_name = 'Create Post Schedules')
