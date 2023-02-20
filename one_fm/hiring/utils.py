@@ -595,7 +595,7 @@ def create_onboarding_from_job_offer(job_offer):
         elif not frappe.db.exists('Onboard Employee', {'job_offer': job_offer.name}):
             # Fields in the job offer
             fields = ['employee_grade', 'job_applicant', 'is_g2g_fees_needed', 'is_residency_fine_needed',
-                'g2g_fee_amount', 'is_residency_fine_needed']
+                'g2g_fee_amount', 'is_residency_fine_needed', 'shift_working']
             # Custom Fields in the Job Offer
             one_fm_fields = ['salary_structure', 'job_offer_total_salary', 'provide_salary_advance', 'salary_advance_amount',
                 'provide_accommodation_by_company', 'provide_transportation_by_company']
