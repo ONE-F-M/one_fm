@@ -1949,10 +1949,10 @@ def initiate_checkin_notification(res):
 				push_notification_rest_api_for_checkin(
 					recipient.employee, notification_title, notification_subject, 
 					checkin=False,arriveLate=False,checkout=True)
-		send_notification(
-			notification_title, notification_subject, checkout_message,
-			notification_category, checkout_reminder_id_list
-		)
+		# send_notification(
+		# 	notification_title, notification_subject, checkout_message,
+		# 	notification_category, checkout_reminder_id_list
+		# )
 
 	
 	# # process supervisor checkout reminder
