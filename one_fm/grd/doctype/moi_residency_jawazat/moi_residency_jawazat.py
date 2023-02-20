@@ -105,7 +105,10 @@ class MOIResidencyJawazat(Document):
         today = date.today()
         Find = False
         employee = frappe.get_doc('Employee', self.employee)
-        document_dic = frappe.get_list('Employee Document',fields={'attach','document_name','issued_on','valid_till'},filters={'parent':self.employee})
+        document_dic = frappe.get_list('Employee Document',
+            fields={'attach','document_name','issued_on','valid_till'},
+            filters={'parent':self.employee}, ignore_permissions=True
+        )
         for index,document in enumerate(document_dic):
             if document.document_name == "Residency Expiry Attachment":
                 Find = True
