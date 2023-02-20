@@ -20,9 +20,14 @@ class OperationsSite(Document):
 		self.validate_project_status()
 
 	def validate_project_status(self):
-		if self.status == "Active" and self.project \
-			and frappe.db.get_value('Project', self.project, 'status') != 'Open':
-			frappe.throw(_("The Project '<b>{0}</b>' selected in the Site '<b>{1}</b>' is <b>Not Open</b>. <br/> To make the Site atcive first make the Project open".format(self.project, self.name)))
+		if self.status == "Active" and self.project:
+			active_open = False
+			if frappe.db.get_value('Project', self.project, 'status') != 'Open':
+				active_open = "Open"
+			elif frappe.db.get_value('Project', self.project, 'is_active') != 'Yes':
+				active_open = "Active"
+			if active_open:
+				frappe.throw(_("The Project '<b>{0}</b>' selected in the Site '<b>{1}</b>' is <b>Not {2}</b>. <br/> To make the Site atcive first make the project {2}".format(self.project, self.name, active_open)))
 
 	def set_operation_shift_inactive(self):
 		operations_shift_list = frappe.get_all('Operations Shift', {'status': 'Active', 'site': self.name})
