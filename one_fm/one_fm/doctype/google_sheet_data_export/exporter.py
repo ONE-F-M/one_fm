@@ -22,6 +22,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient import discovery
+import gspread
 
 from google.oauth2 import service_account
 
@@ -277,7 +278,7 @@ class DataExporter:
 			for field in self.fieldrow:
 				value = str(doc[field])
 				if len(value) >= 50000:
-					cell_colour.append(self.sheet_name + "!" +chr(ord('A') + column_index) + str(row_index))
+					cell_colour.append({'column':column_index, 'row':row_index})
 					row.append("ERROR - Description Length is more than 50,000 so can not import Data")
 				else:
 					row.append(value)
@@ -413,33 +414,74 @@ class DataExporter:
 			frappe.log_error(err)
 
 	def batch_update(self):
-		# sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id, ranges=[], includeGridData=False).execute()
-		# print(sheet['sheetId'])
-		batch_update_spreadsheet_request_body = {
-			"requests": [
-				{
-					"repeatCell": {
-						"range": {
-							"sheetId": 1,
-							"startRowIndex": 0,
-							"endRowIndex": 1,
-							"startColumnIndex": 0,
-							"endColumnIndex": 1
-						},
-						"cell": {
-							"userEnteredFormat": {
-								"backgroundColor": {
-									"red": 1,
-									"green": 0,
-									"blue": 0
-								}
-							}
-						},
-						"fields": "userEnteredFormat.backgroundColor"
+		'''
+			This method is to update the cell that have errors in displaying the value.
+		'''
+		# get spreadsheet details
+		client = gspread.authorize(credentials)
+		spreadsheet = client.open_by_key(self.google_sheet_id)
+
+		# get list of worksheets
+		sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id, ranges=[], includeGridData=False).execute()
+		sheets= sheet['sheets']
+		
+		# define sheetId of the give sheet name
+		sheetId = None
+		for sheet in sheets:
+			properties = sheet['properties']
+			if properties['title'] == self.sheet_name:
+				sheetId = properties['sheetId']
+		
+		if sheetId:
+			
+			# clear sheet design
+			spreadsheet.batch_update({
+				"requests": [
+					{
+						"updateCells": {
+							"range": {
+								"sheetId": sheetId
+							},
+							"fields": "userEnteredFormat"
+						}
 					}
+				]
+			}
+			)
+			
+			# Add font colour to cell
+			if self.cell_colour:
+				batch_update_spreadsheet_request_body = {
+					"requests": []
 				}
-			]
-		}
+				for e in self.cell_colour:
+					batch_update_spreadsheet_request_body["requests"].append(
+						{
+							"repeatCell":
+							{
+								"range": {
+									"sheetId": sheetId,
+									"startRowIndex": e["row"]-1,
+									"endRowIndex": e["row"],
+									"startColumnIndex":e["column"],
+									"endColumnIndex": e["column"]+1
+								},
+								"cell": {
+									"userEnteredFormat": {
+										"textFormat": {
+											"foregroundColor": {
+												"red": 1,
+												"green": 0,
+												"blue":0
+											},
+											"bold": True
+											}
+									}
+								},
+								"fields": "userEnteredFormat(textFormat)"
+							}
+						}
+					)
 
 		request = service.spreadsheets().batchUpdate(spreadsheetId=self.google_sheet_id, body=batch_update_spreadsheet_request_body).execute()
 		return request
