@@ -14,44 +14,44 @@ from one_fm.operations.doctype.contracts.contracts import get_active_contracts_f
 from frappe.model.naming import NamingSeries
 
 class OperationsPost(Document):
-	def after_insert(self):
-		create_post_schedule_for_operations_post(self)
+    def after_insert(self):
+        create_post_schedule_for_operations_post(self)
 
-	def validate(self):
-		if not self.post_name:
-			frappe.throw("Post Name cannot be empty.")
+    def validate(self):
+        if not self.post_name:
+            frappe.throw("Post Name cannot be empty.")
 
-		if not self.gender:
-			frappe.throw("Gender cannot be empty.")
+        if not self.gender:
+            frappe.throw("Gender cannot be empty.")
 
-		if not self.site_shift:
-			frappe.throw("Shift cannot be empty.")
+        if not self.site_shift:
+            frappe.throw("Shift cannot be empty.")
 
-		if(frappe.db.get_value('Operations Role', self.post_template, 'shift') != self.site_shift):
-			frappe.throw(f"Operations Role ({self.post_template}) does not belong to selected shift ({self.site_shift})")
+        if(frappe.db.get_value('Operations Role', self.post_template, 'shift') != self.site_shift):
+            frappe.throw(f"Operations Role ({self.post_template}) does not belong to selected shift ({self.site_shift})")
 
-		self.validate_operations_role_status()
+        self.validate_operations_role_status()
 
-	def validate_operations_role_status(self):
-		if self.status == 'Active' and self.post_template \
-			and frappe.db.get_value('Operations Role', self.post_template, 'is_active') != 1:
-			frappe.throw(_("The Operations Role <br/>'<b>{0}</b>' selected in the Post '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Post atcive first make the Role active".format(self.post_template, self.name)))
+    def validate_operations_role_status(self):
+        if self.status == 'Active' and self.post_template \
+            and frappe.db.get_value('Operations Role', self.post_template, 'is_active') != 1:
+            frappe.throw(_("The Operations Role <br/>'<b>{0}</b>' selected in the Post '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Post atcive first make the Role active".format(self.post_template, self.name)))
 
-	def on_update(self):
-		self.validate_name()
+    def on_update(self):
+        self.validate_name()
 
-	def validate_name(self):
-		condition = self.post_name+"-"+self.gender+"|"+self.site_shift
-		if condition != self.name:
-			rename_doc(self.doctype, self.name, condition, force=True)
+    def validate_name(self):
+        condition = self.post_name+"-"+self.gender+"|"+self.site_shift
+        if condition != self.name:
+            rename_doc(self.doctype, self.name, condition, force=True)
 
-	def on_update(self):
-		if self.status == "Active":
-			check_list = frappe.db.get_list("Post Schedule", filters={"post":self.name, "date": [">", getdate()]})
-			if len(check_list) < 1 :
-				create_post_schedule_for_operations_post(self)
-		elif self.status == "Inactive":
-			frappe.enqueue(delete_schedule, doc=self, is_async=True, queue="long")
+    def on_update(self):
+        if self.status == "Active":
+            check_list = frappe.db.get_list("Post Schedule", filters={"post":self.name, "date": [">", getdate()]})
+            if len(check_list) < 1 :
+                create_post_schedule_for_operations_post(self)
+        elif self.status == "Inactive":
+            frappe.enqueue(delete_schedule, doc=self, is_async=True, queue="long")
 
 def delete_schedule(doc):
     check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})
