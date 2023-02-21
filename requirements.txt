@@ -168,3 +168,4 @@ Werkzeug==2.2.2
 Whoosh==2.7.4
 xlrd==2.0.1
 zxcvbn-python==4.4.24
+gspread==5.7.2
