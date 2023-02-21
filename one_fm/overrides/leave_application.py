@@ -24,7 +24,7 @@ def close_leaves(all_leaves,user=None):
     frappe.db.commit()
     if user:
         message = "Please note that all open sick leaves have been approved"
-        create_notification_log('Leaves Closed!', 'Please', [user],leave_doc)
+        create_notification_log('Leaves Closed!', 'Please Note that all sick leaves have been closed ', [user],leave_doc)
         
 
 @frappe.whitelist()
