@@ -59,10 +59,15 @@ class ShiftPermission(Document):
 				exc = PermissionTypeandLogTypeError)
 		if self.permission_type == "Arrive Late":
 			field_list = [{'Arrival Time':'arrival_time'}]
+			self.leaving_time = ''
 			self.set_mandatory_fields(field_list)
 		if self.permission_type == "Leave Early":
 			field_list = [{'Leaving Time':'leaving_time'}]
+			self.arrival_time = ''
 			self.set_mandatory_fields(field_list)
+		if self.permission_type not in ['Arrive Late', 'Leave Early']:
+			self.arrival_time = ''
+			self.leaving_time = ''
 
 	# This method validates the shift details availability for employee
 	def check_shift_details_value(self):
@@ -78,7 +83,7 @@ class ShiftPermission(Document):
 	def validate_record(self):
 		date = getdate(self.date).strftime('%d-%m-%Y')
 		if self.docstatus==0 and frappe.db.exists("Shift Permission", {
-			"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift, 
+			"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift,
 			"permission_type": self.permission_type, "workflow_state":"Pending", 'name':['!=', self.name]
 			}):
 			frappe.throw(_("{employee} has already applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date)))
@@ -154,9 +159,9 @@ def fetch_approver(employee):
 def approve_open_shift_permission(start_date, end_date):
 	try:
 		shift_permissions = frappe.db.sql(f"""
-			SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa 
+			SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa
 			ON sa.name=sp.assigned_shift
-			WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}' 
+			WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}'
 			AND sp.workflow_state='Pending' AND sp.docstatus=0
 		""", as_dict=1)
 		# apply workflow
