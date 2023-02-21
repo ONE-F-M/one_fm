@@ -13,7 +13,7 @@ from one_fm.hiring.utils import make_employee_from_job_offer, get_employee_recor
 from frappe.utils import now, today, getdate
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 from one_fm.processor import sendemail
-
+from frappe.utils.data import get_absolute_url
 
 class OnboardEmployee(Document):
 
@@ -103,10 +103,7 @@ class OnboardEmployee(Document):
 			wc = frappe.new_doc('Work Contract')
 			for filter in filters:
 				wc.set(filter, filters[filter])
-
-
 			wc.save(ignore_permissions=True)
-
 
 	@frappe.whitelist()
 	def create_duty_commencement(self):
@@ -117,7 +114,8 @@ class OnboardEmployee(Document):
 			duty_commencement.flags.ignore_mandatory = True
 			duty_commencement.save(ignore_permissions=True)
 		else:
-			frappe.throw(_("Work Contract needs to be Signed by Applicant to Create Duty Commencement"))
+			msg = "<a href='{url}'>Work Contract</a> needs to be Signed by Applicant to Create Duty Commencement"
+			frappe.throw(_(msg.format(url = get_absolute_url('Work Contract', self.work_contract))))
 
 	@frappe.whitelist()
 	def create_employee(self):
