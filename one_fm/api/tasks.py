@@ -1875,10 +1875,10 @@ def initiate_checkin_notification(res):
 				push_notification_rest_api_for_checkin(
 					recipient.employee, notification_title, notification_subject, 
 					checkin=True,arriveLate=False,checkout=False)
-		# send_notification(
-		# 	notification_title, notification_subject, checkin_message,
-		# 	notification_category, checkin_reminder_id_list
-		# )
+		send_notification(
+			notification_title, notification_subject, checkin_message,
+			notification_category, checkin_reminder_id_list
+		)
 
 	# # process checkins after grace period
 	if after_grace_checkin_reminder:
@@ -1900,10 +1900,10 @@ def initiate_checkin_notification(res):
 				push_notification_rest_api_for_checkin(
 					recipient.employee, notification_title, notification_subject, 
 					checkin=True,arriveLate=False,checkout=False)
-		# send_notification(
-		# 	notification_title, notification_subject, checkin_message_after_grace,
-		# 	notification_category, checkin_reminder_id_list
-		# )
+		send_notification(
+			notification_title, notification_subject, checkin_message_after_grace,
+			notification_category, checkin_reminder_id_list
+		)
 	
 	# # process supervisor checkin reminder
 	if supervisor_checkin_reminder:
@@ -1949,10 +1949,10 @@ def initiate_checkin_notification(res):
 				push_notification_rest_api_for_checkin(
 					recipient.employee, notification_title, notification_subject, 
 					checkin=False,arriveLate=False,checkout=True)
-		# send_notification(
-		# 	notification_title, notification_subject, checkout_message,
-		# 	notification_category, checkout_reminder_id_list
-		# )
+		send_notification(
+			notification_title, notification_subject, checkout_message,
+			notification_category, checkout_reminder_id_list
+		)
 
 	
 	# # process supervisor checkout reminder
