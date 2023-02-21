@@ -2757,13 +2757,16 @@ def notify_live_user(company, message, users=False):
 	else:
 		frappe.throw(__("System Manger can only send the notification!!"))
 
-
-
+# this is used to map weekday starting from sundat to saturday
+# in get week start and end date based on entered date string value
+week_day_map = {
+    0: 1, 1:2, 2:3, 3:4, 4:5, 5:6, 6:0
+}
 def get_week_start_end(date_str):
     dt = datetime.strptime(str(date_str), '%Y-%m-%d')
-    start = add_days(dt - timedelta(days=dt.weekday()), -1)
+    start = dt - timedelta(days=week_day_map[dt.weekday()])
     end = start + timedelta(days=6)
-    return frappe._dict({'start': str(start).split(' ')[0], 'end': str(end).split(' ')[0]})
+    return frappe._dict({'start': str(getdate(start)), 'end': str(getdate(end))})
 
 def get_month_start_end(date_str):
     cur_date = datetime.strptime(str(date_str), '%Y-%m-%d')
