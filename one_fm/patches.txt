@@ -23,4 +23,4 @@ one_fm.patches.v14_0.set_job_offer_field_valuse_from_applicant
 one_fm.patches.v14_0.patch_contract_items
 one_fm.patches.v14_0.update_place_of_birth
 one_fm.patches.v14_0.update_working_hours_threshold_for_absent_in_shift_type
-one_fm.patches.v14_0.fix_sick_leaves
+one_fm.patches.v14_0.fix_sick__leaves
