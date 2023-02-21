@@ -1038,22 +1038,16 @@ def renew_contracts_by_termination_date():
     if all_due_contracts:
         
         for each in all_due_contracts:
-            old_date = frappe.new_doc("Contracts Date")
-            old_date.parent = each.name
-            old_date.parenttype = "Contracts"
-            old_date.parentfield = "contract_date"
-            duration = date_diff(each.end_date, each.start_date)
-            old_date.contract_start_date = each.start_date
-            old_date.contract_end_date = each.end_date
-            old_date.insert()
             
-            frappe.db.set_value('Contracts',each.name,'start_date',add_days(each.end_date, 1))
-            frappe.db.set_value('Contracts',each.name,'end_date',add_days(each.end_date, duration+1))
-            
-            if each.get('end_date'):
-                frappe.db.set_value('Contracts',each.name,'contract_termination_decision_period_date',add_months(each.end_date,-int(each.contract_termination_decision_period)))
-            if each.get('contract_termination_decision_period_date'):
-                frappe.db.set_value('Contracts',each.name,'contract_end_internal_notification_date',add_months(each.end_date,each.contract_termination_decision_period))
+            contract_doc = frappe.get_doc('Contracts', each.name)
+            contract_date = contract_doc.append('contract_date')
+            contract_date.contract_start_date = contract_doc.start_date
+            contract_date.contract_end_date = contract_doc.end_date
+            duration = date_diff(contract_doc.end_date, contract_doc.start_date)
+            contract_doc.start_date = add_days(contract_doc.end_date, 1)
+            contract_doc.end_date = add_days(contract_doc.end_date, duration+1)
+            contract_doc.save()    
+            frappe.db.commit()
         
         #Get all operations post that belong to a project and recreate the post schedule for that period
         
@@ -1068,7 +1062,6 @@ def renew_contracts_by_termination_date():
 
 def create_post_schedules(operations_posts):
     from one_fm.operations.doctype.operations_post.operations_post import create_post_schedule_for_operations_post
-    
     list(map(create_post_schedule_for_operations_post,operations_posts))
     
             
