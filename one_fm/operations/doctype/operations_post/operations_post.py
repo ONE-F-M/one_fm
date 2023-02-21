@@ -30,15 +30,15 @@ class OperationsPost(Document):
         if(frappe.db.get_value('Operations Role', self.post_template, 'shift') != self.site_shift):
             frappe.throw(f"Operations Role ({self.post_template}) does not belong to selected shift ({self.site_shift})")
 
-		self.validate_operations_role_status()
+        self.validate_operations_role_status()
 
-	def validate_operations_role_status(self):
-		if self.status == 'Active' and self.post_template \
-			and frappe.db.get_value('Operations Role', self.post_template, 'is_active') != 1:
-			frappe.throw(_("The Operations Role <br/>'<b>{0}</b>' selected in the Post '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Post atcive first make the Role active".format(self.post_template, self.name)))
+    def validate_operations_role_status(self):
+        if self.status == 'Active' and self.post_template \
+            and frappe.db.get_value('Operations Role', self.post_template, 'is_active') != 1:
+            frappe.throw(_("The Operations Role <br/>'<b>{0}</b>' selected in the Post '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Post atcive first make the Role active".format(self.post_template, self.name)))
 
-	def on_update(self):
-		self.validate_name()
+    def on_update(self):
+        self.validate_name()
 
     def validate_name(self):
         condition = self.post_name+"-"+self.gender+"|"+self.site_shift
