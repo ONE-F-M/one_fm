@@ -1038,6 +1038,7 @@ def renew_contracts_by_termination_date():
     if all_due_contracts:
         
         for each in all_due_contracts:
+            contract_doc = frappe.get_doc("Contracts",each.name)
             old_date = frappe.new_doc("Contracts Date")
             old_date.parent = each.name
             old_date.parenttype = "Contracts"
@@ -1046,6 +1047,7 @@ def renew_contracts_by_termination_date():
             old_date.contract_start_date = each.start_date
             old_date.contract_end_date = each.end_date
             old_date.insert()
+            contract_doc.save()
             
             frappe.db.set_value('Contracts',each.name,'start_date',add_days(each.end_date, 1))
             frappe.db.set_value('Contracts',each.name,'end_date',add_days(each.end_date, duration+1))
@@ -1068,7 +1070,6 @@ def renew_contracts_by_termination_date():
 
 def create_post_schedules(operations_posts):
     from one_fm.operations.doctype.operations_post.operations_post import create_post_schedule_for_operations_post
-    
     list(map(create_post_schedule_for_operations_post,operations_posts))
     
             
