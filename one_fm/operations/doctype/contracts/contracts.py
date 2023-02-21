@@ -1038,15 +1038,14 @@ def renew_contracts_by_termination_date():
     if all_due_contracts:
         
         for each in all_due_contracts:
-            contract_doc = frappe.get_doc("Contracts",each.name)
-            old_date = frappe.new_doc("Contracts Date")
-            old_date.parent = each.name
-            old_date.parenttype = "Contracts"
-            old_date.parentfield = "contract_date"
-            duration = date_diff(each.end_date, each.start_date)
-            old_date.contract_start_date = each.start_date
-            old_date.contract_end_date = each.end_date
-            old_date.insert()
+            contract_doc = frappe.get_doc('Contracts', each.name)
+            contract_date = contract_doc.append('contract_date')
+            contract_date.contract_start_date = contract_doc.start_date
+            contract_date.contract_end_date = contract_doc.end_date
+            duration = date_diff(contract_doc.end_date, contract_doc.start_date)
+            contract_doc.start_date = add_days(contract_doc.end_date, 1)
+            contract_doc.end_date = add_days(contract_doc.end_date, duration+1)
+            contract_doc.save()    
             frappe.db.commit()
             frappe.db.set_value('Contracts',each.name,'start_date',add_days(each.end_date, 1))
             frappe.db.set_value('Contracts',each.name,'end_date',add_days(each.end_date, duration+1))
