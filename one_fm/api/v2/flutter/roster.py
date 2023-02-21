@@ -18,7 +18,7 @@ from one_fm.utils import query_db_list
 @frappe.whitelist()
 def assign_staff(employees, shift, request_employee_assignment=None):
     if not employees:
-        return response("Bad Request", 400, None, 'Please select employees first')
+        response("Bad Request", 400, None, 'Please select employees first')
 
     validation_logs = []
     user, user_roles, user_employee = get_current_user_details()
@@ -32,7 +32,7 @@ def assign_staff(employees, shift, request_employee_assignment=None):
 
     if len(validation_logs) > 0:
         frappe.log_error(str(validation_logs))
-        return response("Internal Server Error", 500, None, str(validation_logs) )
+        response("Internal Server Error", 500, None, str(validation_logs) )
         
     else:
         try:
@@ -48,11 +48,11 @@ def assign_staff(employees, shift, request_employee_assignment=None):
             frappe.enqueue(update_roster, key="staff_view", is_async=True, queue="long")
             end = time.time()
 
-            return response("Success", 200, {'message':'Shift changed successfully.'})
+            response("Success", 200, {'message':'Shift changed successfully.'})
 
         except Exception as e:
             frappe.log_error(str(e))
-            return response("Internal Server Error", 500, None,str(e))
+            response("Internal Server Error", 500, None,str(e))
 
 
 def update_employee_record(employee:dict):
@@ -72,7 +72,7 @@ def update_employee_record(employee:dict):
                 frappe.db.set_value("User",user_id,'phone',employee.get('cell_number'))
         frappe.db.commit()
     else:
-        return response("Resource not found",'404',None,"Employee {}  not found".format(employee.get('employee')))
+        response("Resource not found",'404',None,"Employee {}  not found".format(employee.get('employee')))
 
 @frappe.whitelist()
 def change_employee_detail(employees:str,field:str=None,value=None)-> bool:
@@ -88,13 +88,13 @@ def change_employee_detail(employees:str,field:str=None,value=None)-> bool:
     
     accepted_fields = ['enrolled','cell_number']
     if not isinstance(employees, str):
-        return response("Bad Request", 400, None, "Employee value must of type str.")
+        response("Bad Request", 400, None, "Employee value must of type str.")
     
     try:
         employee_json = json.loads(employees)
         if employee_json:
             list(map(update_employee_record,employee_json.get('employees')))
-            return response('Success',200,{'Data Updated Successfully'})
+            response('Success',200,{'Data Updated Successfully'})
             
     except Exception as e:
         response("error", 500, False, str(e))
@@ -270,7 +270,7 @@ def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled
         response("Success", 200, master_data)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), 'Get Roster View')
-        return response("Server Error", 500, None, str(e))
+        response("Server Error", 500, None, str(e))
 
 def get_active_employees(start_date, end_date, master_data):
     employees = [i.name for i in frappe.db.get_list('Employee', filters={'status': ['!=', 'Left']})]
@@ -699,7 +699,6 @@ def schedule_leave(employees, leave_type, start_date, end_date):
                 roster.employee_availability = leave_type
                 roster.save(ignore_permissions=True)
     except Exception as e:
-        print(e)
         return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist(allow_guest=True)
@@ -789,6 +788,10 @@ def edit_post(posts, values):
             # 	frappe.throw(_("Cannot set both project end date and choose 'Does not repeat' option!"))
 
             frappe.enqueue(post_off, posts=posts, args=args, is_async=True, queue='long')
+
+        # return response
+
+        response("Success", 201, {"msg":"Post Schedule created."})
     except Exception as e:
         response("Error", 500, None, _(frappe.get_traceback()))
 
@@ -828,7 +831,6 @@ def plan_post(posts, args):
         doc.post_status = "Planned"
         doc.save()
     frappe.db.commit()
-    return response("Success", 201, {"msg":"Post Schedule created."}))
 
 def cancel_post(posts, args):
 	end_date = None

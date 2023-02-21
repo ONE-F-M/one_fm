@@ -256,7 +256,6 @@ class CreateMap():
     
     def create_attendance_map(self,row):
        """ Create a data structure in the form of """
-       print(self.attendance_set)
        attendance = []
        for  one in self.attendance_set:
         try:
