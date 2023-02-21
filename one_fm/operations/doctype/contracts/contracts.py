@@ -1038,6 +1038,7 @@ def renew_contracts_by_termination_date():
     if all_due_contracts:
         
         for each in all_due_contracts:
+            
             contract_doc = frappe.get_doc('Contracts', each.name)
             contract_date = contract_doc.append('contract_date')
             contract_date.contract_start_date = contract_doc.start_date
@@ -1047,13 +1048,6 @@ def renew_contracts_by_termination_date():
             contract_doc.end_date = add_days(contract_doc.end_date, duration+1)
             contract_doc.save()    
             frappe.db.commit()
-            frappe.db.set_value('Contracts',each.name,'start_date',add_days(each.end_date, 1))
-            frappe.db.set_value('Contracts',each.name,'end_date',add_days(each.end_date, duration+1))
-            
-            if each.get('end_date'):
-                frappe.db.set_value('Contracts',each.name,'contract_termination_decision_period_date',add_months(each.end_date,-int(each.contract_termination_decision_period)))
-            if each.get('contract_termination_decision_period_date'):
-                frappe.db.set_value('Contracts',each.name,'contract_end_internal_notification_date',add_months(each.end_date,each.contract_termination_decision_period))
         
         #Get all operations post that belong to a project and recreate the post schedule for that period
         
