@@ -1047,8 +1047,7 @@ def renew_contracts_by_termination_date():
             old_date.contract_start_date = each.start_date
             old_date.contract_end_date = each.end_date
             old_date.insert()
-            contract_doc.save()
-            
+            frappe.db.commit()
             frappe.db.set_value('Contracts',each.name,'start_date',add_days(each.end_date, 1))
             frappe.db.set_value('Contracts',each.name,'end_date',add_days(each.end_date, duration+1))
             
