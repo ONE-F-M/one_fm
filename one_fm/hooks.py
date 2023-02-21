@@ -205,7 +205,7 @@ doc_events = {
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"before_insert": "one_fm.hiring.utils.employee_before_insert",
 		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
-		"before_save": "one_fm.events.employee.before_save",
+		"on_update": "one_fm.events.employee.on_update",
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -266,7 +266,10 @@ doc_events = {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	"Project": {
-		"validate": "one_fm.one_fm.project_custom.validate_poc_list",
+		"validate": [
+			"one_fm.one_fm.project_custom.validate_poc_list",
+			"one_fm.one_fm.project_custom.validate_project"
+		],
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
 		"on_update": "one_fm.one_fm.utils.switch_shift_site_post_to_inactive"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
