@@ -1021,16 +1021,16 @@ def send_contract_reminders():
             get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
             get_date_str(i.end_date),i.duration,i.client,i.engagement_type] for i in contracts_due_internal_notification]
         for each in contracts_due_internal_notification_list:
-            due_contracts += f"Project: {each[8]}<br/> Engagement Type: {each[9]} <br/> Start Date: {each[4]} <br/> \
-                Contract End Internal Notification Period (Months):{each[1]} Months <br/> \
-                Contract End Internal Notification Date:{each[5]} <br/> \
-                Contract Termination Decision Period (Months):{each[0]} Months <br/> \
-                Contract Termination Decision Period Date:{each[2]} <br/>\
-                End Date: {each[6]}\
+            due_contracts += f"Project: {each[8]}<br/> <br/>Engagement Type: {each[9]} <br/> <br/>Start Date: {each[4]} <br/> \
+                <br/>Contract End Internal Notification Period (Months):{each[1]} Months <br/> \
+                <br/>Contract End Internal Notification Date:{each[5]} <br/> \
+                <br/>Contract Termination Decision Period (Months):{each[0]} Months <br/> \
+                <br/>Contract Termination Decision Period Date:{each[2]} <br/>\
+                <br/>End Date: {each[6]}<br/>\
                 <br/> Duration: {each[7]} <br/>\
-                Document ID: {each[3]} <br/>"
+                <br/>Document ID: {each[3]} <br/>"
             link_to_form = '<a href={}>Contracts Form </a> <br/>'.format(frappe.utils.get_url_to_form("Contracts",each[3]))
-            due_contracts+="Link: {}".format(link_to_form)
+            due_contracts+="<br/>Link: {}".format(link_to_form)
         message = "Good Day <br/><p>Please note that today is the Contract internal notification Period  for the following expiring contracts.</p>" + due_contracts
         
         frappe.sendmail(recipients=users, content=message, subject="Expiring Contracts")
@@ -1040,15 +1040,15 @@ def send_contract_reminders():
             get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
             get_date_str(i.end_date),i.duration,i.client,i.engagement_type] for i in contracts_due_termination_notification]
         for each in contracts_due_termination_notification_list:
-            due_contracts += f"Project: {each[8]}<br/> Engagement Type: {each[9]} <br/> Start Date: {each[4]} <br/> \
-                Contract End Internal Notification Period (Months):{each[1]} Months <br/> \
-                Contract End Internal Notification Date:{each[5]} <br/> \
-                Contract Termination Decision Period (Months):{each[0]} Months <br/> \
-                Contract Termination Decision Period Date:{each[2]} <br/>\
-                End Date: {each[6]}\
+            due_contracts += f"Project: {each[8]}<br/> <br/>Engagement Type: {each[9]} <br/> <br/>Start Date: {each[4]} <br/> \
+                <br/>Contract End Internal Notification Period (Months):{each[1]} Months <br/> \
+                <br/>Contract End Internal Notification Date:{each[5]} <br/> \
+                <br/>Contract Termination Decision Period (Months):{each[0]} Months <br/> \
+                <br/>Contract Termination Decision Period Date:{each[2]} <br/>\
+                <br/>End Date: {each[6]}<br/>\
                 <br/> Duration: {each[7]} <br/>\
-                Document ID: {each[3]} <br/>"
+                <br/>Document ID: {each[3]} <br/>"
             link_to_form = '<a href={}>Contracts Form </a><br/>'.format(frappe.utils.get_url_to_form("Contracts",each[3]))
-            due_contracts+="Link: {}".format(link_to_form)
+            due_contracts+="<br/>Link: {}".format(link_to_form)
         message = "Good Day <br><p>Please note that today is the Contract Termination Decision Period  for the following expiring contracts.</p>" + due_contracts
         frappe.sendmail(recipients=users, content=message, subject="Expiring Contracts")
