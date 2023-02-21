@@ -739,57 +739,58 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
 
 @frappe.whitelist()
 def edit_post(posts, values):
-    user, user_roles, user_employee = get_current_user_details()
+    try:
+        user, user_roles, user_employee = get_current_user_details()
 
-    if "Operations Manager" not in user_roles and "Projects Manager" not in user_roles:
-        frappe.throw(_("Insufficient permissions to Edit Post."))
-    posts = json.loads(posts)
-    args = frappe._dict(json.loads(values))
-    
-    if args.post_status == "Plan Post":
-        # if args.plan_end_date and cint(args.project_end_date):
-        # 	frappe.throw(_("Cannot set both project end date and custom end date!"))
+        if "Operations Manager" not in user_roles and "Projects Manager" not in user_roles:
+            response("Permission Error", 401, None, _("Insufficient permissions to Edit Post."))
+        posts = json.loads(posts)
+        args = frappe._dict(json.loads(values))
+        
+        if args.post_status == "Plan Post":
+            # if args.plan_end_date and cint(args.project_end_date):
+            # 	frappe.throw(_("Cannot set both project end date and custom end date!"))
 
-        # if not args.plan_end_date and not cint(args.project_end_date):
-        # 	frappe.throw(_("Please set an end date!"))
+            # if not args.plan_end_date and not cint(args.project_end_date):
+            # 	frappe.throw(_("Please set an end date!"))
 
-        # frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
-        plan_post(posts=posts, args=args)
-
-
-    elif args.post_status == "Cancel Post":
-        if args.cancel_end_date and cint(args.project_end_date):
-            frappe.throw(_("Cannot set both project end date and custom end date!"))
-
-        # if not args.cancel_end_date and not cint(args.project_end_date):
-        # 	frappe.throw(_("Please set an end date!"))
-
-        frappe.enqueue(cancel_post,posts=posts, args=args, is_async=True, queue='long')
+            # frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
+            plan_post(posts=posts, args=args)
 
 
-    elif args.post_status == "Suspend Post":
-        # if args.suspend_to_date and cint(args.project_end_date):
-        # 	frappe.throw(_("Cannot set both project end date and custom end date!"))
+        elif args.post_status == "Cancel Post":
+            if args.cancel_end_date and cint(args.project_end_date):
+                frappe.throw(_("Cannot set both project end date and custom end date!"))
 
-        # if not args.suspend_to_date and not cint(args.project_end_date):
-        # 	frappe.throw(_("Please set an end date!"))
+            # if not args.cancel_end_date and not cint(args.project_end_date):
+            # 	frappe.throw(_("Please set an end date!"))
 
-        frappe.enqueue(suspend_post, posts=posts, args=args, is_async=True, queue='long')
+            frappe.enqueue(cancel_post,posts=posts, args=args, is_async=True, queue='long')
 
 
-    elif args.post_status == "Post Off":    
-        # if args.repeat_till and cint(args.project_end_date):
-        # 	frappe.throw(_("Cannot set both project end date and custom end date!"))
+        elif args.post_status == "Suspend Post":
+            # if args.suspend_to_date and cint(args.project_end_date):
+            # 	frappe.throw(_("Cannot set both project end date and custom end date!"))
 
-        # if not args.repeat_till and not cint(args.project_end_date):
-        # 	frappe.throw(_("Please set an end date!"))
+            # if not args.suspend_to_date and not cint(args.project_end_date):
+            # 	frappe.throw(_("Please set an end date!"))
 
-        # if args.repeat == "Does not repeat" and cint(args.project_end_date):
-        # 	frappe.throw(_("Cannot set both project end date and choose 'Does not repeat' option!"))
+            frappe.enqueue(suspend_post, posts=posts, args=args, is_async=True, queue='long')
 
-        frappe.enqueue(post_off, posts=posts, args=args, is_async=True, queue='long')
 
-    frappe.enqueue(update_roster, key="staff_view", is_async=True, queue='long')
+        elif args.post_status == "Post Off":    
+            # if args.repeat_till and cint(args.project_end_date):
+            # 	frappe.throw(_("Cannot set both project end date and custom end date!"))
+
+            # if not args.repeat_till and not cint(args.project_end_date):
+            # 	frappe.throw(_("Please set an end date!"))
+
+            # if args.repeat == "Does not repeat" and cint(args.project_end_date):
+            # 	frappe.throw(_("Cannot set both project end date and choose 'Does not repeat' option!"))
+
+            frappe.enqueue(post_off, posts=posts, args=args, is_async=True, queue='long')
+    except Exception as e:
+        response("Error", 500, None, _(frappe.get_traceback()))
 
 def plan_post(posts, args):
     """ This function sets the post status to planned provided a post, start date and an end date """
@@ -804,17 +805,18 @@ def plan_post(posts, args):
         if frappe.db.exists("Contracts", {'project': project}):
             contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
             if not end_date:
-                frappe.throw(_("No end date set for contract {contract}".format(contract=contract)))
+                response("Error", 400, None, _("No end date set for contract {contract}".format(contract=contract)))
         else:
-            frappe.throw(_("No contract linked with project {project}".format(project=project)))
+            response("Error", 400, None, _("No contract linked with project {project}".format(project=project)))
+
     # filter if plan_from_date
     if args.plan_from_date:
         plan_from_date = getdate(args.plan_from_date)
         posts = [post for post in posts if getdate(post['date'])>=plan_from_date]
     # filter if plan_end_date
-    if args.plan_end_date:
-        plan_end_date = getdate(args.plan_end_date)
-        posts = [post for post in posts if getdate(post['date'])<=plan_end_date]
+    if args.end_date:
+        end_date = getdate(end_date)
+        posts = [post for post in posts if getdate(post['date'])<=end_date]
 
     for post in posts:
         if frappe.db.exists("Post Schedule", {"date": post['date'], "post": post["post"]}):
@@ -826,6 +828,7 @@ def plan_post(posts, args):
         doc.post_status = "Planned"
         doc.save()
     frappe.db.commit()
+    return response("Success", 201, {"msg":"Post Schedule created."}))
 
 def cancel_post(posts, args):
 	end_date = None
