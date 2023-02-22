@@ -1075,7 +1075,7 @@ def renew_contracts_by_termination_date():
             contract_doc.end_date = add_days(contract_doc.end_date, duration+1)
             contract_doc.save()    
             frappe.db.commit()
-            print('CREATING SCHEDULES')
+            
             frappe.enqueue(prepare_employee_schedules,project=each.project,old_start=old_start_date,\
                 old_end=old_end_date,new_start=contract_doc.start_date,new_end=contract_doc.end_date,\
                 duration=int(duration)+1,queue='long',timeout=6000,job_name=f"Creating Employee Schedules for {each.project}")
@@ -1108,15 +1108,21 @@ def prepare_employee_schedules(project,old_start,old_end,new_start,new_end,durat
     previous_schedules = frappe.db.sql("""SELECT employee,employee_availability,employee_name,department,date\
         ,operations_role,post_abbrv,shift,shift_type,site,roster_type from `tabEmployee Schedule` where project = '{}' and date BETWEEN '{}' and '{}'""".format(project,old_start,old_end),as_dict=1)
     if previous_schedules:
+        
         for each in previous_schedules:
-            if not frappe.db.exists("Employee Schedule",{'employee':each.employee,'date':each.date}):
-                if add_days(each.date,duration)>=new_start and add_days(each.date,duration) <=new_end:
+            old_schedule_date = each.date
+            new_date = add_days(old_schedule_date,duration)
+            if not frappe.db.exists("Employee Schedule",{'employee':each.employee,'date':new_date}):
+                if add_days(each.date,duration)>=getdate(new_start) and add_days(each.date,duration) <=getdate(new_end):
+                    
                     each.doctype = "Employee Schedule"
-                    old_schedule_date = each.date
                     each.date = add_days(old_schedule_date,duration)
                     new_doc = frappe.get_doc(each)
                     new_doc.insert()
                     frappe.db.commit()
                 else:
                     continue
+            else:
+                print(frappe.db.exists("Employee Schedule",{'employee':each.employee,'date':new_date}))
+            
         
