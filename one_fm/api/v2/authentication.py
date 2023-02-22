@@ -3,6 +3,7 @@ import pyotp
 from frappe.utils import getdate
 from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token,get_email_subject_for_2fa,get_email_body_for_2fa
 from frappe.integrations.oauth2 import get_token
+from frappe.core.doctype.user.user import generate_keys
 from frappe.utils.background_jobs import enqueue
 from frappe.core.doctype.sms_settings.sms_settings import send_sms
 from frappe.frappeclient import FrappeClient
@@ -467,3 +468,27 @@ def set_password(employee_user_id, new_password):
 			'message': _('Password Updated!')
 		}
 	return response("Success", 200, message)
+
+
+
+@frappe.whitelist(allow_guest=True)
+def email_login(usr, pwd):
+    try:
+        auth = frappe.auth.LoginManager().authenticate(user=usr, pwd=pwd).post_login()
+        msg={
+			'status_code':200,
+			'text':frappe.local.response.message,
+			'user': frappe.session.user
+        }
+        user = frappe.get_doc('User', frappe.session.user)
+        if(user.api_key and user.api_secret):
+            msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
+        else:
+            generate_keys(user.name)
+            user.reload()
+            msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
+        response("success", 200, msg)
+    except frappe.exceptions.AuthenticationError:
+        return {'status_code':401, 'text':frappe.local.response.message}
+    except Exception as e:
+        response("error", 500, None, str(e))
