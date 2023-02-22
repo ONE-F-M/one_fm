@@ -1083,7 +1083,7 @@ def prepare_employee_schedules(project,old_start,old_end,new_start,new_end,durat
         ,operations_role,post_abbrv,shift,shift_type,site,roster_type from `tabEmployee Schedule` where project = '{}' and date BETWEEN '{}' and '{}'""".format(project,old_start,old_end),as_dict=1)
     if previous_schedules:
         for each in previous_schedules:
-            if not frappe.db.exits("Employee Schedule",{'employee':each.employee,'date':each.date}):
+            if not frappe.db.exists("Employee Schedule",{'employee':each.employee,'date':each.date}):
                 if add_days(each.date,duration)>=new_start and add_days(each.date,duration) <=new_end:
                     each.doctype = "Employee Schedule"
                     old_schedule_date = each.date
