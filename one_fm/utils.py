@@ -1503,7 +1503,7 @@ def validate_mandatory_childs(doc):
 
     if doc.one_fm_designation_skill:
         for skill in doc.one_fm_designation_skill:
-            if not skill.one_fm_proficiency or int(skill.one_fm_proficiency) < 1:
+            if not skill.one_fm_proficiency or float(skill.one_fm_proficiency) <= 0.0:
                 frappe.throw(_("Basic Skills - Row {0}: Should Rate Proficiency for Skill {1}".format(skill.idx, skill.skill)))
 
 def set_childs_for_application_web_form(doc, method):
@@ -1940,7 +1940,7 @@ def create_roster_post_actions():
             if ps.operations_role:
                 operations_roles_not_filled_set.add(ps.operations_role)
                 list_of_dict_of_operations_roles_not_filled.append(ps)
-    
+
 
     # Convert set to tuple for passing it in the sql query as a parameter
     operations_roles_not_filled = tuple(operations_roles_not_filled_set)
@@ -1955,7 +1955,7 @@ def create_roster_post_actions():
             join `tabEmployee` sv on sh.supervisor=sv.employee
             where ps.operations_role in {operations_roles}
             group by sv.employee""".format(operations_roles=operations_roles_not_filled))
-    
+
 
     # For each supervisor, create post actions to fill post type specifying the post types not filled
     for res in result:
@@ -2875,7 +2875,7 @@ def query_db_list(query_list, commit=False):
                 for i in query_list:
                     cursor.execute(i)
             if commit:connection.commit()
-        
+
         return frappe._dict({'error':False, 'data':result})
     except Exception as e:
         return frappe._dict({'error':True, 'msg':str(e), 'data':result})
@@ -2888,7 +2888,7 @@ def get_holiday_today(curr_date):
 
 	holidays = frappe.db.sql(f"""
 		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
-		JOIN `tabHoliday List` hl ON hl.name=h.parent 
+		JOIN `tabHoliday List` hl ON hl.name=h.parent
 		WHERE hl.from_date='{start_date}' AND hl.to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
 
 	holiday_dict = {}
@@ -2897,7 +2897,7 @@ def get_holiday_today(curr_date):
 			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{str(i.holiday_date):i.description}}
 		else:
 			holiday_dict[i.holiday] = {str(i.holiday_date):i.description}
-	
+
 	return holiday_dict
 
 def get_domain():
@@ -2915,4 +2915,3 @@ def check_employee_attendance_dependents(employee):
         shift permission, attendance request, leave application, day off
         or holiday
     """
-
