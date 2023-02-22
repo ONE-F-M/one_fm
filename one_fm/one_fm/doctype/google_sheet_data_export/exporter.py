@@ -483,8 +483,9 @@ class DataExporter:
 						}
 					)
 
-		request = service.spreadsheets().batchUpdate(spreadsheetId=self.google_sheet_id, body=batch_update_spreadsheet_request_body).execute()
-		return request
+				request = service.spreadsheets().batchUpdate(spreadsheetId=self.google_sheet_id, body=batch_update_spreadsheet_request_body).execute()
+				return request
+		return
 
 @frappe.whitelist()
 def build_connection_with_sheet(doc):
