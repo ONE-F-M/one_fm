@@ -489,6 +489,6 @@ def email_login(usr, pwd):
             msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
         response("success", 200, msg)
     except frappe.exceptions.AuthenticationError:
-        return {'status_code':401, 'text':frappe.local.response.message}
+        response("error", 401, None, frappe.local.response.message)
     except Exception as e:
         response("error", 500, None, str(e))
