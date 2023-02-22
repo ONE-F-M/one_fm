@@ -40,7 +40,7 @@ def validate_poc_list(doc, method):
         frappe.throw('POC list is mandatory for project type <b>External</b>')
 
 def validate_project(doc, method):
-	if doc.status != 'Open':
+	if doc.status != 'Open' or doc.is_active == "No":
 		set_operation_site_inactive(doc)
 
 def set_operation_site_inactive(doc):

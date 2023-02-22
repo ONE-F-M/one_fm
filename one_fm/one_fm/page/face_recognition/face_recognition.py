@@ -281,6 +281,9 @@ def check_existing():
 	"""
 	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
 
+	# define logs
+	logs = []
+	
 	# get current and previous day date.
 	today = nowdate()
 	prev_date = ((datetime.datetime.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).split(" ")[0]

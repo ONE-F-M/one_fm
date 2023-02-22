@@ -2,6 +2,9 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Shift Permission', {
+	onload: function(frm) {
+		set_employee_from_the_session_user(frm);
+	},
 	refresh: function(frm) {
 		set_options_for_permission_type(frm);
 	},
@@ -18,6 +21,22 @@ frappe.ui.form.on('Shift Permission', {
 		get_shift_assignment(frm);
 	},
 });
+
+function set_employee_from_the_session_user(frm) {
+	if(frappe.session.user != 'Administrator'){
+		frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
+			if(r && r.name){
+				frm.set_value('employee', r.name);
+			}
+			else{
+				frappe.show_alert({
+					message: __('Not find employee record for the user <b>{0}</b>', [frappe.session.user]),
+					indicator: 'yellow'
+				});
+			}
+		});
+	}
+};
 
 function set_options_for_permission_type(frm) {
 	if(frm.doc.log_type){

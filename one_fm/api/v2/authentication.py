@@ -3,6 +3,7 @@ import pyotp
 from frappe.utils import getdate
 from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token,get_email_subject_for_2fa,get_email_body_for_2fa
 from frappe.integrations.oauth2 import get_token
+from frappe.core.doctype.user.user import generate_keys
 from frappe.utils.background_jobs import enqueue
 from frappe.core.doctype.sms_settings.sms_settings import send_sms
 from frappe.frappeclient import FrappeClient
@@ -11,7 +12,7 @@ from frappe import _
 import requests, json
 from frappe.utils.password import update_password as _update_password
 from twilio.rest import Client as TwilioClient
-from one_fm.api.v1.utils import response
+from one_fm.api.v2.utils import response
 from one_fm.processor import sendemail, send_whatsapp
 
 @frappe.whitelist(allow_guest=True)
@@ -95,7 +96,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 		if auth_api_response.status_code == 200:
 			
 			frappe_client = FrappeClient(site[:-1], username=username, password=password)
-			user, user_roles, user_employee =  frappe_client.get_api("one_fm.api.v1.utils.get_current_user_details")
+			user, user_roles, user_employee =  frappe_client.get_api("one_fm.api.v2.utils.get_current_user_details")
 			result = auth_api_response.json()
 			result.update(user_employee)
 			result.update({"roles": user_roles})
@@ -467,3 +468,27 @@ def set_password(employee_user_id, new_password):
 			'message': _('Password Updated!')
 		}
 	return response("Success", 200, message)
+
+
+
+@frappe.whitelist(allow_guest=True)
+def email_login(usr, pwd):
+	try:
+		auth = frappe.auth.LoginManager()
+		auth.authenticate(user=usr, pwd=pwd)
+		auth.post_login()
+		msg={'status_code':200, 'text':frappe.local.response.message, 'user': frappe.session.user}
+		user = frappe.get_doc('User', frappe.session.user)
+		if(user.api_key and user.api_secret):
+			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
+		else:
+			generate_keys(user.name)
+			user.reload()
+			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
+		response("success", 200, msg)
+	except frappe.exceptions.AuthenticationError:
+		print('auth eror')
+		response("error", 401, None, frappe.local.response.message)
+	except Exception as e:
+		print(frappe.get_traceback())
+		response("error", 500, None, str(e))

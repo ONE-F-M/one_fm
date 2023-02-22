@@ -386,6 +386,9 @@ doc_events = {
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
+	"Wiki Page":{
+		"before_save": "one_fm.api.doc_events.wiki_page_before_save"
+	}
 }
 
 standard_portal_menu_items = [
@@ -480,7 +483,8 @@ scheduler_events = {
 		'one_fm.tasks.execute.daily',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
   		"one_fm.api.v2.zenquotes.set_cached_quote",
-		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders"
+		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",
+		"one_fm.operations.doctype.contracts.contracts.renew_contracts_by_termination_date"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",

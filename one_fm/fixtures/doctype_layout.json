@@ -140,7 +140,7 @@
    },
    {
     "fieldname": "employee_id",
-    "label": "Employee id",
+    "label": "Employee Id",
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
@@ -148,20 +148,6 @@
    {
     "fieldname": "date_of_joining",
     "label": "Date of Joining",
-    "parent": "Employee",
-    "parentfield": "fields",
-    "parenttype": "DocType Layout"
-   },
-   {
-    "fieldname": "image",
-    "label": "Image",
-    "parent": "Employee",
-    "parentfield": "fields",
-    "parenttype": "DocType Layout"
-   },
-   {
-    "fieldname": "signature",
-    "label": "Signature",
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
@@ -176,6 +162,27 @@
    {
     "fieldname": "status",
     "label": "Status",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
+    "fieldname": "is_in_ows",
+    "label": "Is in OWS",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
+    "fieldname": "image",
+    "label": "Image",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
+    "fieldname": "signature",
+    "label": "Signature",
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
@@ -440,13 +447,6 @@
     "parenttype": "DocType Layout"
    },
    {
-    "fieldname": "column_break_18",
-    "label": null,
-    "parent": "Employee",
-    "parentfield": "fields",
-    "parenttype": "DocType Layout"
-   },
-   {
     "fieldname": "branch",
     "label": "Branch",
     "parent": "Employee",
@@ -456,6 +456,14 @@
    {
     "fieldname": "column_break_ar1",
     "label": "",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
+
+    "fieldname": "column_break_18",
+    "label": null,
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
@@ -1434,7 +1442,7 @@
     "parenttype": "DocType Layout"
    }
   ],
-  "modified": "2023-02-16 15:02:19.737269",
+  "modified": "2023-02-19 15:14:53.439492",
   "name": "Employee",
   "route": "app/employee/"
  }

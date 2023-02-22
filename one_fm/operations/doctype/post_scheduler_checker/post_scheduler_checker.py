@@ -72,26 +72,22 @@ class PostSchedulerChecker(Document):
 				elif len(operations_post)<item.count:
 					message += f"""Less operations post created, expected: {item.count}, created: {len(operations_post)} for roles {roles}\n\n"""
 
-				# get the days off
-				no_of_days_off = 0
+				# create final records
 				if item.rate_type == 'Monthly':
+					expected = 0
+					no_of_days_off = 0
 					if item.rate_type_off == 'Full Month':
-						expected = datediff
+						expected = getdate(get_last_day(getdate())).day
 						no_of_days_off = 0
 					elif item.rate_type_off == 'Days Off':
 						if item.days_off_category == 'Monthly':
-							expected = datediff - item.no_of_days_off
+							expected = getdate(get_last_day(current_date)).day - item.no_of_days_off
 							no_of_days_off = item.no_of_days_off
 						elif item.days_off_category == 'Weekly':
-							# first_day = getdate(week_range.start)
-							# last_day = getdate(week_range.end)
+							first_day = week_range.start
+							last_day = week_range.end
 							expected = 7 - item.no_of_days_off
 							no_of_days_off = item.no_of_days_off
-				else:
-					pass
-				
-				# create final records
-				if item.rate_type == 'Monthly':
 					for post in operations_post:
 						post_schedules = get_post_schedules(project=contract.project, post=post, first_day=first_day, last_day=last_day)
 						if not post_schedules:
@@ -108,7 +104,8 @@ class PostSchedulerChecker(Document):
 							'to_date': last_day,
 							'rate_type': item.rate_type,
 							'rate_type_off': item.rate_type_off,
-							'no_off_days_off': no_of_days_off,
+							'no_of_days_off': item.no_of_days_off,
+							'days_off_category': item.days_off_category,
 							'comment': message
 						})
 				else:
@@ -118,9 +115,11 @@ class PostSchedulerChecker(Document):
 							'to_date': last_day,
 							'rate_type': item.rate_type,
 							'rate_type_off': '',
-							'no_off_days_off': 0,
-							'comment': "Hourl rate_type."
+							'no_of_days_off': 0,
+							'comment': "Hourly rate_type."
 						})
+			last_day = getdate(get_last_day(current_date))
+			first_day = getdate(get_first_day(current_date))
 
 def schedule_roster_checker():
 	for row in frappe.db.get_list("Contracts"):
