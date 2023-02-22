@@ -14,9 +14,6 @@ import pandas as pd
 from one_fm.api.notification import create_notification_log
 class PIFSSMonthlyDeductionTool(Document):
 
-	def on_submit(self):
-		self.check_flag_for_additional_salary()
-
 	def validate(self):
 		self.compare_employee_in_months()
 		self.set_grd_user()

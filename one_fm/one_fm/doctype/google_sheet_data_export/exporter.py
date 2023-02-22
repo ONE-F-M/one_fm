@@ -22,6 +22,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient import discovery
+import gspread
 
 from google.oauth2 import service_account
 
@@ -114,6 +115,7 @@ class DataExporter:
 		self.link = link
 		self.sheet_name = sheet_name
 		self.owner = owner
+		self.cell_colour = []
 
 		self.prepare_args()
 
@@ -167,6 +169,7 @@ class DataExporter:
 		
 
 		self.update_sheet(values)
+		self.batch_update()
 		# print(self.data)
 		if self.with_data and not values:
 			frappe.respond_as_web_page(
@@ -182,14 +185,14 @@ class DataExporter:
 		# build list of valid docfields
 		tablecolumns = []
 		table_name = "tab" + dt
-		for f in frappe.db.get_table_columns_description(table_name):
-			field = meta.get_field(f.name)
-			if field and (
-				(self.select_columns and f.name in self.select_columns[dt]) or not self.select_columns
-			):
+
+		fields = [ sub['name'] for sub in frappe.db.get_table_columns_description(table_name) ]
+		for f in self.select_columns[dt]:
+			field = meta.get_field(f)
+			if field:
 				tablecolumns.append(field)
 
-		tablecolumns.sort(key=lambda a: int(a.idx))
+		# tablecolumns.sort(key=lambda a: int(a.idx))
 
 		_column_start_end = frappe._dict(start=0)
 
@@ -209,8 +212,7 @@ class DataExporter:
 							"reqd": 1,
 							"info": _("Parent is the name of the document to which the data will get added to."),
 						}
-					),
-					True,
+					)
 				)
 
 			_column_start_end = frappe._dict(start=0)
@@ -220,24 +222,16 @@ class DataExporter:
 			if self.with_data:
 				self._append_name_column(dt)
 
-		for docfield in tablecolumns:
-			self.append_field_column(docfield, True)
 
-		# all non mandatory fields
 		for docfield in tablecolumns:
-			self.append_field_column(docfield, False)
-
+			self.append_field_column(docfield)
 
 		_column_start_end.end = len(self.columns) + 1
 
 		self.column_start_end[(dt, parentfield)] = _column_start_end
 
-	def append_field_column(self, docfield, for_mandatory):
+	def append_field_column(self, docfield):
 		if not docfield:
-			return
-		if for_mandatory and not docfield.reqd:
-			return
-		if not for_mandatory and docfield.reqd:
 			return
 		if docfield.fieldname in ("parenttype", "trash_reason"):
 			return
@@ -275,13 +269,22 @@ class DataExporter:
 		)
 			# add main table
 		rows = [self.fieldrow]
-		for doc in self.data:
+		cell_colour = []
+		row_index = 1
+		for doc in self.data:		
 			row = []
+			column_index = 0
+			row_index += 1
 			for field in self.fieldrow:
 				value = str(doc[field])
-				row.append(value)
+				if len(value) >= 50000:
+					cell_colour.append({'column':column_index, 'row':row_index})
+					row.append("ERROR - Description Length is more than 50,000 so can not import Data")
+				else:
+					row.append(value)
+				column_index += 1
 			rows.append(row)
-
+		self.cell_colour = cell_colour
 		return rows
 
 		
@@ -295,8 +298,7 @@ class DataExporter:
 					"fieldtype": "Data",
 					"reqd": 1,
 				}
-			),
-			True,
+			)
 		)
 
 	def create(self):
@@ -410,6 +412,79 @@ class DataExporter:
 			return result
 		except HttpError as err:
 			frappe.log_error(err)
+
+	def batch_update(self):
+		'''
+			This method is to update the cell that have errors in displaying the value.
+		'''
+		# get spreadsheet details
+		client = gspread.authorize(credentials)
+		spreadsheet = client.open_by_key(self.google_sheet_id)
+
+		# get list of worksheets
+		sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id, ranges=[], includeGridData=False).execute()
+		sheets= sheet['sheets']
+		
+		# define sheetId of the give sheet name
+		sheetId = None
+		for sheet in sheets:
+			properties = sheet['properties']
+			if properties['title'] == self.sheet_name:
+				sheetId = properties['sheetId']
+		
+		if sheetId:
+			
+			# clear sheet design
+			spreadsheet.batch_update({
+				"requests": [
+					{
+						"updateCells": {
+							"range": {
+								"sheetId": sheetId
+							},
+							"fields": "userEnteredFormat"
+						}
+					}
+				]
+			}
+			)
+			
+			# Add font colour to cell
+			if self.cell_colour:
+				batch_update_spreadsheet_request_body = {
+					"requests": []
+				}
+				for e in self.cell_colour:
+					batch_update_spreadsheet_request_body["requests"].append(
+						{
+							"repeatCell":
+							{
+								"range": {
+									"sheetId": sheetId,
+									"startRowIndex": e["row"]-1,
+									"endRowIndex": e["row"],
+									"startColumnIndex":e["column"],
+									"endColumnIndex": e["column"]+1
+								},
+								"cell": {
+									"userEnteredFormat": {
+										"textFormat": {
+											"foregroundColor": {
+												"red": 1,
+												"green": 0,
+												"blue":0
+											},
+											"bold": True
+											}
+									}
+								},
+								"fields": "userEnteredFormat(textFormat)"
+							}
+						}
+					)
+
+		request = service.spreadsheets().batchUpdate(spreadsheetId=self.google_sheet_id, body=batch_update_spreadsheet_request_body).execute()
+		return request
 
 @frappe.whitelist()
 def build_connection_with_sheet(doc):

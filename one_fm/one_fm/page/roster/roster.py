@@ -624,7 +624,7 @@ def edit_post(posts, values):
 
 	if "Operations Manager" not in user_roles and "Projects Manager" not in user_roles:
 		frappe.throw(_("Insufficient permissions to Edit Post."))
-
+	
 	args = frappe._dict(json.loads(values))
 
 	if args.post_status == "Plan Post":

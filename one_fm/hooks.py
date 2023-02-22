@@ -103,6 +103,7 @@ doctype_list_js = {
 	"Job Offer": "public/js/doctype_js/job_offer_list.js",
 	"Issue": "public/js/doctype_list_js/issue_list.js",
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
+	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
 }
 doctype_tree_js = {
@@ -193,7 +194,8 @@ doc_events = {
 			"one_fm.utils.validate_hajj_leave",
 			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
 		],
-		"on_cancel": "one_fm.utils.leave_appillication_on_cancel"
+		"on_cancel": "one_fm.utils.leave_appillication_on_cancel",
+		
 	},
 	"Leave Type": {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
@@ -203,7 +205,7 @@ doc_events = {
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"before_insert": "one_fm.hiring.utils.employee_before_insert",
 		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
-		"before_save": "one_fm.events.employee.before_save",
+		"on_update": "one_fm.events.employee.on_update",
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -264,7 +266,10 @@ doc_events = {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
 	},
 	"Project": {
-		"validate": "one_fm.one_fm.project_custom.validate_poc_list",
+		"validate": [
+			"one_fm.one_fm.project_custom.validate_poc_list",
+			"one_fm.one_fm.project_custom.validate_project"
+		],
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
 		"on_update": "one_fm.one_fm.utils.switch_shift_site_post_to_inactive"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
@@ -474,7 +479,9 @@ scheduler_events = {
 		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
-  		"one_fm.api.v2.zenquotes.set_cached_quote"
+  		"one_fm.api.v2.zenquotes.set_cached_quote",
+		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",
+		"one_fm.operations.doctype.contracts.contracts.renew_contracts_by_termination_date"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -697,7 +704,16 @@ fixtures = [
 	},
 	{
 		"dt": "Email Template"
-	}
+	},
+	{
+		"doctype": "DocType Layout",
+		"filters": {
+			"name": ("in", (
+					"Employee",
+				)
+			)
+		}
+	},
 ]
 
 # before_tests = "one_fm.install.before_tests"

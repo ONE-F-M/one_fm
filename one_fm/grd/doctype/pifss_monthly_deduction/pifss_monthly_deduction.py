@@ -76,11 +76,10 @@ class PIFSSMonthlyDeduction(Document):
 			self.notify_grd_supervisor()# Notify supervisor to check the document before sending it finance.
 
 		if self.workflow_state == "Pending By Finance":
-			pass
 			# field_list = [{'Total Payment Required':'total_payment_required'}]
 			# self.set_mandatory_fields(field_list)
 			# create_payment_request(self.total_payment_required,self.name, self.attach_manual_report)
-			# self.notify_finance()# Notify finance with the created payment request.
+			self.notify_finance()# Notify finance with the created payment request.
 
 		if self.workflow_state == "Completed":
 			field_list = [{'Attach Invoice':'attach_invoice'}]
@@ -293,6 +292,7 @@ def import_deduction_data(doc_name):
 	if file_url_1:
 		url_1 = frappe.get_site_path() + file_url_1
 		table_data = []
+		missing_salary_structure_list = []
 		civil_id = ""
 		employee = ""
 		pifss_id_no = ""
@@ -304,6 +304,8 @@ def import_deduction_data(doc_name):
 				pifss_id_no = employee_detail[0]
 				civil_id = employee_detail[1]
 				employee_pk = employee_detail[2]
+				if not frappe.db.exists("Salary Structure Assignment", {"employee": employee_pk}):
+					missing_salary_structure_list.append(employee_pk)
 				table_data.append({
 				'employee': employee_pk, 'pifss_id_no': pifss_id_no, 'civil_id':civil_id, 'employee_name_in_arabic': row[1],
 				'actual_salary': flt(row[2]), 'social_security_salary':flt(row[3]), 'employee_contribution':flt(row[4]),
@@ -317,6 +319,11 @@ def import_deduction_data(doc_name):
 				'actual_salary': flt(row[2]), 'social_security_salary':flt(row[3]), 'employee_contribution':flt(row[4]),
 				'company_contribution':flt(row[5]),'total_contribution':flt(row[6]),
 				})
+		
+		if missing_salary_structure_list:
+			frappe.throw(_("There is no Salary Structure assigned to the following employees:") + '<br><br>'
+				+ '<br>'.join(['<ul><li>{0}</li></ul>'.format(d) for d in missing_salary_structure_list]))
+
 		return table_data,len(table_data)
 
 			# employee_amount = flt(row[1] * (47.730/ 100))
