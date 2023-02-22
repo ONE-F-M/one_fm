@@ -674,7 +674,7 @@ def fetch_non_shift(date, s_type):
 	if s_type == "AM":
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,
 				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0
+				WHERE E.shift_working = 0 AND E.status='Active'
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time >= '01:00:00'
