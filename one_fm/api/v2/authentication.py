@@ -473,22 +473,18 @@ def set_password(employee_user_id, new_password):
 
 @frappe.whitelist(allow_guest=True)
 def email_login(usr, pwd):
-    try:
-        auth = frappe.auth.LoginManager().authenticate(user=usr, pwd=pwd).post_login()
-        msg={
-			'status_code':200,
-			'text':frappe.local.response.message,
-			'user': frappe.session.user
-        }
-        user = frappe.get_doc('User', frappe.session.user)
-        if(user.api_key and user.api_secret):
-            msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
-        else:
-            generate_keys(user.name)
-            user.reload()
-            msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
-        response("success", 200, msg)
-    except frappe.exceptions.AuthenticationError:
-        response("error", 401, None, frappe.local.response.message)
-    except Exception as e:
-        response("error", 500, None, str(e))
+	try:
+		auth = frappe.auth.LoginManager().authenticate(user=usr, pwd=pwd).post_login()
+		msg={'status_code':200, 'text':frappe.local.response.message, 'user': frappe.session.user}
+		user = frappe.get_doc('User', frappe.session.user)
+		if(user.api_key and user.api_secret):
+			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
+		else:
+			generate_keys(user.name)
+			user.reload()
+			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
+		response("success", 200, msg)
+	except frappe.exceptions.AuthenticationError:
+		response("error", 401, None, frappe.local.response.message)
+	except Exception as e:
+		response("error", 500, None, str(e))
