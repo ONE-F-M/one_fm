@@ -12,7 +12,7 @@ from frappe import _
 import requests, json
 from frappe.utils.password import update_password as _update_password
 from twilio.rest import Client as TwilioClient
-from one_fm.api.v1.utils import response
+from one_fm.api.v2.utils import response
 from one_fm.processor import sendemail, send_whatsapp
 
 @frappe.whitelist(allow_guest=True)
