@@ -23,6 +23,7 @@
    "fieldname": "project",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Project",
    "options": "Project",
    "read_only": 1,
@@ -32,6 +33,7 @@
    "fetch_from": "contract.client",
    "fieldname": "client",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Client",
    "options": "Customer",
    "read_only": 1
@@ -39,6 +41,7 @@
   {
    "fieldname": "check_date",
    "fieldtype": "Date",
+   "in_standard_filter": 1,
    "label": "Check Date",
    "read_only": 1
   },
@@ -74,13 +77,15 @@
    "fetch_from": "supervisor.employee_name",
    "fieldname": "supervisor_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Supervisor Name",
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-11-21 15:13:50.453671",
+ "modified": "2023-02-19 20:07:09.304365",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Scheduler Checker",

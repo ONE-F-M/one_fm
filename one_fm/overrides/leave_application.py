@@ -7,6 +7,7 @@ from frappe.desk.form.assign_to import add
 from one_fm.api.notification import create_notification_log
 from frappe.utils import getdate
 import pandas as pd
+from one_fm.api.api import push_notification_rest_api_for_leave_application
 
 
 
@@ -23,7 +24,7 @@ def close_leaves(all_leaves,user=None):
     frappe.db.commit()
     if user:
         message = "Please note that all open sick leaves have been approved"
-        create_notification_log('Leaves Closed!', 'Please', [user],leave_doc)
+        create_notification_log('Leaves Closed!', 'Please note that all sick leaves in draft have closed.', [user],leave_doc)
         
 
 @frappe.whitelist()
@@ -37,13 +38,57 @@ def fix_sick_leave():
             frappe.msgprint("Leaves are being closed in the background, <br> You will recieve a notification after the process.",alert = 1)
             
 
-
-    
+def is_app_user(emp):
+    #Returns true if an employee is an app user or has a valid email address
+    try:
+        is_app_user = False
+        user_details = frappe.get_all("Employee",{'name':emp},['user_id','employee_id'])
+        if user_details:
+            user_id = user_details[0].get("user_id")
+            emp_id = user_details[0].get("employee_id")
+            if user_id.split("@")[0].lower() == emp_id.lower():
+                is_app_user = True
+        return is_app_user     
+    except:
+        pass
 
 
 class LeaveApplicationOverride(LeaveApplication):
     def after_insert(self):
         self.assign_to_leave_approver()
+    
+    def notify_employee(self):
+        template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
+        if not template:
+            frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
+            return
+        parent_doc = frappe.get_doc("Leave Application", self.name)
+        args = parent_doc.as_dict()
+        email_template = frappe.get_doc("Email Template", template)
+        message = frappe.render_template(email_template.response, args)
+        if is_app_user(self.employee):
+            push_notification_rest_api_for_leave_application(self.employee,email_template.subject,message,self.name)
+            frappe.msgprint(_("Push notification sent to {0} via mobile application").format(self.employee),alert=True)
+        else:
+            employee = frappe.get_doc("Employee", self.employee)
+            if not employee.user_id:
+                return
+            self.notify(
+                {
+                    # for post in messages
+                    "message": message,
+                    "message_to": employee.user_id,
+                    # for email
+                    "subject": email_template.subject,
+                    "notify": "employee",
+                }
+            )
+            
+    
+    
+
+        
+        
         
     def validate(self):
         validate_active_employee(self.employee)

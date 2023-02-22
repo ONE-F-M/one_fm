@@ -167,6 +167,13 @@
     "parenttype": "DocType Layout"
    },
    {
+    "fieldname": "is_in_ows",
+    "label": "Is in OWS",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
     "fieldname": "image",
     "label": "Image",
     "parent": "Employee",
@@ -454,6 +461,7 @@
     "parenttype": "DocType Layout"
    },
    {
+
     "fieldname": "column_break_18",
     "label": null,
     "parent": "Employee",
@@ -1429,13 +1437,6 @@
    {
     "fieldname": "column_break_120",
     "label": null,
-    "parent": "Employee",
-    "parentfield": "fields",
-    "parenttype": "DocType Layout"
-   },
-   {
-    "fieldname": "is_in_ows",
-    "label": "Is in OWS",
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
