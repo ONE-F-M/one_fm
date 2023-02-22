@@ -387,7 +387,7 @@ doc_events = {
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
 	"Wiki Page":{
-		"before_save": "one_fm.api.doc_methods.wiki_page.before_save"
+		"before_save": "one_fm.api.doc_events.wiki_page_before_save"
 	}
 }
 
