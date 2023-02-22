@@ -267,7 +267,6 @@ def supervisor_reminder(shift, today_datetime, now_time):
 
 		if len(recipients) > 0:
 			for recipient in recipients:
-
 				action_user, Role = get_action_user(recipient.name,recipient.shift)
 				#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
 				subject = _('{employee} has not checked out yet.'.format(employee=recipient.employee_name))
@@ -838,8 +837,6 @@ def create_shift_assignment(roster, date, time):
 						query += """, '', '', ''),"""
 				else:
 					has_rostered.append(r.employee_name)
-
-
 			query = query[:-1]
 			query += f"""
 				ON DUPLICATE KEY UPDATE
@@ -875,7 +872,6 @@ def create_shift_assignment(roster, date, time):
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Shift Assignment Failed", delay=False)
-
 
 def validate_am_shift_assignment():
 	date = cstr(getdate())
@@ -915,7 +911,6 @@ def validate_am_shift_assignment():
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delay=False)
 		frappe.enqueue(create_shift_assignment, roster = roster, date = date, time='AM', is_async=True, queue='long')
 
@@ -947,16 +942,14 @@ def validate_pm_shift_assignment():
 				E.name = ES.employee
 				AND E.status = "Left")
 	""".format(date=cstr(date)), as_dict=1)
-
 	non_shift = fetch_non_shift(date, "PM")
 	if non_shift:
 		roster.extend(non_shift)
-
+    
 	if len(roster)>0:
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delay=False)
 		frappe.enqueue(create_shift_assignment, roster = roster, date = date, time='PM', is_async=True, queue='long')
 
@@ -1508,7 +1501,6 @@ def mark_daily_attendance(start_date, end_date):
 						INSERT INTO `tabEmployee Checkin`
 						(`name`, `attendance`)
 						VALUES
-
 					"""
 					for i in employee_checkin:
 						k = list(i.keys())[0]
@@ -1516,7 +1508,6 @@ def mark_daily_attendance(start_date, end_date):
 						query += f"""
 							("{v['in']}", "{k}"),
 							("{v['out']}", "{k}"),"""
-
 					query = query[:-1]
 					query += f"""
 						ON DUPLICATE KEY UPDATE
@@ -1730,7 +1721,6 @@ def fetch_employees_not_in_checkin():
 			'prefered_email', 'reports_to']
 		)
 
-
 		if log_type=='IN':
 			for i in employee_details:
 				if shift_assignments_employees_dict.get(i.name):
@@ -1768,7 +1758,6 @@ def fetch_employees_not_in_checkin():
 		# 'supervisor_reminder_minutes': supervisor_reminder_minutes,
 		'minute':minute, 'date':cur_date, 'total':len(return_data)
 	})
-
 
 def has_checkin_record(employee, log_type, date):
 	if frappe.db.exists('Employee Checkin', {
@@ -1895,6 +1884,7 @@ def initiate_checkin_notification(res):
 			notification_category, checkin_reminder_id_list
 		)
 
+
 	# # process supervisor checkin reminder
 	if supervisor_checkin_reminder:
 		title = "Checkin Report"
@@ -1959,6 +1949,7 @@ def initiate_checkin_notification(res):
 				<br/><br/>
 				Issue penalty for the employee
 				<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
+
 			""").format(recipient=recipient, shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
 			if action_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 				send_notification(title, subject, action_message, category, [action_user])
@@ -1966,12 +1957,14 @@ def initiate_checkin_notification(res):
 			notify_message = _("""Note that {employee} from Shift {shift} has Not Checked out yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
 			if Role:
 				notify_user = get_notification_user(recipient.employee,recipient.operations_shift, Role)
+
 				if notify_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 					send_notification(title, subject, notify_message, category, notify_user)
 
 
 def run_checkin_reminder():
 	# execute first checkin reminder
+
 	try:
 		res = fetch_employees_not_in_checkin()
 		if res:
