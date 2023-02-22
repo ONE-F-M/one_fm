@@ -485,7 +485,6 @@ def email_login(usr, pwd):
 			generate_keys(user.name)
 			user.reload()
 			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
-		print(msg)
 		response("success", 200, msg)
 	except frappe.exceptions.AuthenticationError:
 		print('auth eror')
