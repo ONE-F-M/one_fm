@@ -96,7 +96,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 		if auth_api_response.status_code == 200:
 			
 			frappe_client = FrappeClient(site[:-1], username=username, password=password)
-			user, user_roles, user_employee =  frappe_client.get_api("one_fm.api.v1.utils.get_current_user_details")
+			user, user_roles, user_employee =  frappe_client.get_api("one_fm.api.v2.utils.get_current_user_details")
 			result = auth_api_response.json()
 			result.update(user_employee)
 			result.update({"roles": user_roles})
