@@ -35,6 +35,7 @@
   "type_of_travel",
   "shift_working_html",
   "shift_working",
+  "operations_shift",
   "default_shift",
   "night_shift_html",
   "night_shift",
@@ -857,13 +858,13 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval:doc.shift_working==0",
+   "fetch_from": "operations_shift.shift_type",
    "fieldname": "default_shift",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "label": "Default Shift",
-   "mandatory_depends_on": "eval:doc.shift_working==0",
-   "options": "Shift Type"
+   "options": "Shift Type",
+   "read_only": 1
   },
   {
    "depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
@@ -872,11 +873,19 @@
    "label": "Interview Round",
    "mandatory_depends_on": "eval: doc.hiring_method == 'Bulk Recruitment' && doc.status == 'Draft'",
    "options": "Interview Round"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "operations_shift",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Operations Shift",
+   "options": "Operations Shift"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-01-03 15:13:10.638583",
+ "modified": "2023-02-20 21:05:38.144931",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

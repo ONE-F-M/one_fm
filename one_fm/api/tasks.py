@@ -8,7 +8,7 @@ import frappe, erpnext
 from frappe import _
 from frappe.model.workflow import apply_workflow
 from frappe.utils import (
-	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, 
+	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date,
 	datetime, today, add_days, now
 )
 from one_fm.api.doc_events import get_employee_user_id
@@ -155,18 +155,13 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 
 	checkin_message_body = """
 					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
-					<br>
-					Submit a Shift Permission if you are planing to arrive late
-					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-					<br>
-					Submit an Attendance Request if you forgot to checkin
-					<a class="btn btn-secondary" href="/app/attendance-request/new-attendance-request-1">Submit Attendance Request</a>&nbsp;
-					<br>
+					<br/>
+					Submit a Shift Permission if you are planing to arrive late or forgot to checkin
+					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1?log_type=IN&&permission_type=Arrive Late">Submit Shift Permission</a>&nbsp;
+					<br/>
 					Submit a Employee Checkin Issue if there are issues in checkin
 					<a class="btn btn-secondary" href="/app/employee-checkin-issue/new-employee-checkin-issue-1?log_type=IN">Submit Employee Checkin Issue</a>&nbsp;
-					<br>
-					Submit a Shift Request if you are trying to checkin from another site location
-					<a class="btn btn-info" href="/app/shift-request/new-shift-request-1">Submit Shift Request</a>&nbsp;
+					<br/>
 					<h3>{0}</h3>
 					"""
 	checkin_message = _(checkin_message_body.format("DON'T FORGET TO CHECKIN"))
@@ -176,9 +171,10 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 
 	checkout_message = _("""
 		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
-		Submit a Shift Permission if you are planing to leave early or is there any issue in checkout or forget to checkout
-		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
-		<br>
+		<br/>
+		Submit a Shift Permission if you are planing to leave early or forget to checkout
+		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1?log_type=OUT&&permission_type=Leave Early"">Submit Shift Permission</a>&nbsp;
+		<br/>
 		Submit a Employee Checkin Issue if there are issues in checkout
 		<a class="btn btn-secondary" href="/app/employee-checkin-issue/new-employee-checkin-issue-1?log_type=OUT">Submit Employee Checkin Issue</a>&nbsp;
 		""")
@@ -271,7 +267,7 @@ def supervisor_reminder(shift, today_datetime, now_time):
 
 		if len(recipients) > 0:
 			for recipient in recipients:
-				
+
 				action_user, Role = get_action_user(recipient.name,recipient.shift)
 				#for_user = get_employee_user_id(recipient.reports_to) if get_employee_user_id(recipient.reports_to) else get_notification_user(op_shift)
 				subject = _('{employee} has not checked out yet.'.format(employee=recipient.employee_name))
@@ -842,7 +838,7 @@ def create_shift_assignment(roster, date, time):
 						query += """, '', '', ''),"""
 				else:
 					has_rostered.append(r.employee_name)
-					
+
 
 			query = query[:-1]
 			query += f"""
@@ -879,7 +875,7 @@ def create_shift_assignment(roster, date, time):
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Shift Assignment Failed", delay=False)
-		
+
 
 def validate_am_shift_assignment():
 	date = cstr(getdate())
@@ -919,7 +915,7 @@ def validate_am_shift_assignment():
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-		     
+
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delay=False)
 		frappe.enqueue(create_shift_assignment, roster = roster, date = date, time='AM', is_async=True, queue='long')
 
@@ -951,16 +947,16 @@ def validate_pm_shift_assignment():
 				E.name = ES.employee
 				AND E.status = "Left")
 	""".format(date=cstr(date)), as_dict=1)
-	
+
 	non_shift = fetch_non_shift(date, "PM")
 	if non_shift:
 		roster.extend(non_shift)
-	
+
 	if len(roster)>0:
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-		     
+
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delay=False)
 		frappe.enqueue(create_shift_assignment, roster = roster, date = date, time='PM', is_async=True, queue='long')
 
@@ -1558,16 +1554,16 @@ def get_current_schedules(employee, log_type=None):
 			}
 		):
 		return False
-	
+
 	# check holiday
 	if get_holiday_today(start_date).get(employee_doc.holiday_list):
 		return False
-	
+
 	if curr_shift:
 		# check for leaves
 		if frappe.db.sql(f"""
-				SELECT name, employee FROM `tabLeave Application` 
-				WHERE employee='{employee}' AND status IN ('Open', 'Approved') 
+				SELECT name, employee FROM `tabLeave Application`
+				WHERE employee='{employee}' AND status IN ('Open', 'Approved')
 				AND '{start_date}' BETWEEN from_date AND to_date;
 			""", as_dict=1):
 			return False
@@ -1581,15 +1577,15 @@ def get_current_schedules(employee, log_type=None):
 
 		# check for shift request:
 		if frappe.db.sql(f"""
-				SELECT name, employee FROM `tabShift Request` 
-				WHERE employee='{employee}' AND docstatus=1 
+				SELECT name, employee FROM `tabShift Request`
+				WHERE employee='{employee}' AND docstatus=1
 				AND '{start_date}' BETWEEN from_date AND to_date;
 			""", as_dict=1):
 			return False
 		# check attendance request
 		if frappe.db.sql(f"""
-				SELECT name, employee FROM `tabAttendance Request` 
-				WHERE employee='{employee}' AND docstatus=1 
+				SELECT name, employee FROM `tabAttendance Request`
+				WHERE employee='{employee}' AND docstatus=1
 				AND '{start_date}' BETWEEN from_date AND to_date;
 			""", as_dict=1):
 			return False
@@ -1611,14 +1607,14 @@ def get_current_schedules(employee, log_type=None):
 def fetch_employees_not_in_checkin():
 	"""
 	This method fetch list of employees yet to checkin or have shift permission,
-	attendance request, shift request, leave application based on log_type and 
+	attendance request, shift request, leave application based on log_type and
 	if their shift start or end falls withing the current hour
 	"""
 	if not production_domain():
 		return
 	# if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
 	# 	return
-	
+
 	shift_start_time = f"{now_datetime().time().hour}:00:00"
 	minute = now_datetime().time().minute
 	hour = now_datetime().time().hour
@@ -1629,24 +1625,24 @@ def fetch_employees_not_in_checkin():
 		# capture current minute
 		if log_type=='IN':
 			reminder_minutes = [i.minute for i in frappe.db.sql("""
-				SELECT notification_reminder_after_shift_start as minute FROM `tabShift Type` 
-				WHERE notification_reminder_after_shift_start>0  
+				SELECT notification_reminder_after_shift_start as minute FROM `tabShift Type`
+				WHERE notification_reminder_after_shift_start>0
 				GROUP BY notification_reminder_after_shift_start;
 			""", as_dict=1)]
 			supervisor_reminder_minutes = [i.minute for i in frappe.db.sql("""
-				SELECT supervisor_reminder_shift_start as minute FROM `tabShift Type` 
-				WHERE supervisor_reminder_shift_start>0  
+				SELECT supervisor_reminder_shift_start as minute FROM `tabShift Type`
+				WHERE supervisor_reminder_shift_start>0
 				GROUP BY supervisor_reminder_shift_start;
 			""", as_dict=1)]
 		else:
 			reminder_minutes = [i.minute for i in frappe.db.sql("""
-				SELECT notification_reminder_after_shift_end as minute FROM `tabShift Type` 
-				WHERE notification_reminder_after_shift_end>0  
+				SELECT notification_reminder_after_shift_end as minute FROM `tabShift Type`
+				WHERE notification_reminder_after_shift_end>0
 				GROUP BY notification_reminder_after_shift_end;
 			""", as_dict=1)]
 			supervisor_reminder_minutes = [i.minute for i in frappe.db.sql("""
-				SELECT supervisor_reminder_start_ends as minute FROM `tabShift Type` 
-				WHERE supervisor_reminder_start_ends>0  
+				SELECT supervisor_reminder_start_ends as minute FROM `tabShift Type`
+				WHERE supervisor_reminder_start_ends>0
 				GROUP BY supervisor_reminder_start_ends;
 			""", as_dict=1)]
 
@@ -1656,7 +1652,7 @@ def fetch_employees_not_in_checkin():
 			SELECT DISTINCT sa.employee, sa.shift_type, sa.start_datetime, sa.end_datetime,
 			sa.shift as operations_shift, st.notification_reminder_after_shift_start,
 			st.notification_reminder_after_shift_end, st.supervisor_reminder_shift_start,
-			st.supervisor_reminder_start_ends, os.supervisor as shift_supervisor, 
+			st.supervisor_reminder_start_ends, os.supervisor as shift_supervisor,
 			osi.account_supervisor as site_supervisor
 
 			FROM `tabShift Assignment` sa RIGHT JOIN `tabShift Type` st ON sa.shift_type=st.name
@@ -1695,8 +1691,8 @@ def fetch_employees_not_in_checkin():
 		employees_yet_to_checkin = [i for i in employees_yet_to_checkin if not i in shift_permissions]
 		# attendance request
 		attendance_request = [i.employee for i in frappe.db.sql(f"""
-			SELECT employee FROM `tabAttendance Request` 
-			WHERE  docstatus=1 
+			SELECT employee FROM `tabAttendance Request`
+			WHERE  docstatus=1
 			AND '{cur_date}' BETWEEN from_date AND to_date
 			AND employee IN {shift_assignments_employees_tuple}
 			GROUP BY employee
@@ -1704,8 +1700,8 @@ def fetch_employees_not_in_checkin():
 		employees_yet_to_checkin = [i for i in employees_yet_to_checkin if not i in attendance_request]
 		# leave application
 		leave_application = [i.employee for i in frappe.db.sql(f"""
-			SELECT employee FROM `tabLeave Application` 
-			WHERE status IN ('Open', 'Approved') 
+			SELECT employee FROM `tabLeave Application`
+			WHERE status IN ('Open', 'Approved')
 			AND '{cur_date}' BETWEEN from_date AND to_date
 			AND employee IN {shift_assignments_employees_tuple}
 		""", as_dict=1)]
@@ -1713,7 +1709,7 @@ def fetch_employees_not_in_checkin():
 
 		# shift request
 		shift_request = [i.employee for i in frappe.db.sql(f"""
-			SELECT employee FROM `tabShift Request` 
+			SELECT employee FROM `tabShift Request`
 			WHERE  docstatus=1 AND '{cur_date}' BETWEEN from_date AND to_date
 			AND employee IN {shift_assignments_employees_tuple}
 		""", as_dict=1)]
@@ -1727,24 +1723,24 @@ def fetch_employees_not_in_checkin():
 			'holiday_list': ['IN', employees_yet_to_checkin]
 		})]
 		employees_yet_to_checkin = [i for i in employees_yet_to_checkin if not i in holiday_list_employees]
-		
+
 		employee_details = frappe.db.get_list("Employee", filters={
 			'name': ['IN', employees_yet_to_checkin]},
-			fields=['name', 'employee_id', 'employee_name', 'user_id', 'prefered_contact_email', 
+			fields=['name', 'employee_id', 'employee_name', 'user_id', 'prefered_contact_email',
 			'prefered_email', 'reports_to']
 		)
 
-		
+
 		if log_type=='IN':
 			for i in employee_details:
 				if shift_assignments_employees_dict.get(i.name):
 					i = {**i, **shift_assignments_employees_dict.get(i.name), **{'log_type':'IN'}}
 					del i['name']
 					# check if is_after_grace_period
-					if minute in reminder_minutes:i['is_after_grace_checkin'] = True				
+					if minute in reminder_minutes:i['is_after_grace_checkin'] = True
 					else:i['is_after_grace_checkin'] = False
 					# check if supervisor reminder
-					if minute in supervisor_reminder_minutes:i['is_supervisor_checkin_reminder'] = True				
+					if minute in supervisor_reminder_minutes:i['is_supervisor_checkin_reminder'] = True
 					else:i['is_supervisor_checkin_reminder'] = False
 					# check initial
 					if (minute==i['start_datetime'].minute and hour==i['start_datetime'].hour):i['initial_checkin_reminder']=True
@@ -1756,10 +1752,10 @@ def fetch_employees_not_in_checkin():
 					i = {**i, **shift_assignments_employees_dict.get(i.name), **{'log_type':'OUT'}}
 					del i['name']
 					# check if is_after_grace_period
-					if minute in reminder_minutes:i['is_after_grace_checkout'] = True				
+					if minute in reminder_minutes:i['is_after_grace_checkout'] = True
 					else:i['is_after_grace_checkout'] = False
 					# check if supervisor reminder
-					if minute in supervisor_reminder_minutes:i['is_supervisor_checkout_reminder'] = True				
+					if minute in supervisor_reminder_minutes:i['is_supervisor_checkout_reminder'] = True
 					else:i['is_supervisor_checkout_reminder'] = False
 					# check initial
 					if (minute==i['end_datetime'].minute and hour==i['end_datetime'].hour):i['initial_checkout_reminder']=True
@@ -1767,12 +1763,12 @@ def fetch_employees_not_in_checkin():
 					return_data.append(frappe._dict(i))
 
 	return frappe._dict({
-		'employees':return_data, 
+		'employees':return_data,
 		# 'reminder_minutes':reminder_minutes,
 		# 'supervisor_reminder_minutes': supervisor_reminder_minutes,
 		'minute':minute, 'date':cur_date, 'total':len(return_data)
 	})
-	
+
 
 def has_checkin_record(employee, log_type, date):
 	if frappe.db.exists('Employee Checkin', {
@@ -1863,11 +1859,11 @@ def initiate_checkin_notification(res):
 			user_roles = frappe.get_roles(recipient.user_id)
 			if "Head Office Employee" in user_roles:
 				push_notification_rest_api_for_checkin(
-					recipient.employee, notification_title, notification_subject, 
+					recipient.employee, notification_title, notification_subject,
 					checkin=True, arriveLate=True, checkout=False)
 			else:
 				push_notification_rest_api_for_checkin(
-					recipient.employee, notification_title, notification_subject, 
+					recipient.employee, notification_title, notification_subject,
 					checkin=True,arriveLate=False,checkout=False)
 		send_notification(
 			notification_title, notification_subject, checkin_message,
@@ -1888,17 +1884,17 @@ def initiate_checkin_notification(res):
 			user_roles = frappe.get_roles(recipient.user_id)
 			if "Head Office Employee" in user_roles:
 				push_notification_rest_api_for_checkin(
-					recipient.employee, notification_title, notification_subject, 
+					recipient.employee, notification_title, notification_subject,
 					checkin=True, arriveLate=True, checkout=False)
 			else:
 				push_notification_rest_api_for_checkin(
-					recipient.employee, notification_title, notification_subject, 
+					recipient.employee, notification_title, notification_subject,
 					checkin=True,arriveLate=False,checkout=False)
 		send_notification(
 			notification_title, notification_subject, checkin_message_after_grace,
 			notification_category, checkin_reminder_id_list
 		)
-	
+
 	# # process supervisor checkin reminder
 	if supervisor_checkin_reminder:
 		title = "Checkin Report"
@@ -1937,18 +1933,18 @@ def initiate_checkin_notification(res):
 			user_roles = frappe.get_roles(recipient.user_id)
 			if "Head Office Employee" in user_roles:
 				push_notification_rest_api_for_checkin(
-					recipient.employee, notification_title, notification_subject, 
+					recipient.employee, notification_title, notification_subject,
 					checkin=False, arriveLate=False, checkout=True)
 			else:
 				push_notification_rest_api_for_checkin(
-					recipient.employee, notification_title, notification_subject, 
+					recipient.employee, notification_title, notification_subject,
 					checkin=False,arriveLate=False,checkout=True)
 		send_notification(
 			notification_title, notification_subject, checkout_message,
 			notification_category, checkout_reminder_id_list
 		)
 
-	
+
 	# # process supervisor checkout reminder
 	if supervisor_checkout_reminder:
 		title = "Checkout Report"
