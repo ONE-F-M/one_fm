@@ -12,5 +12,5 @@ def execute():
         if check:
             route += f"-{str(uuid4()).split('-')[0]}"
         frappe.db.set_value("Wiki Page", obj[0], {
-            "route": route
+            "route": route.lower()
         })

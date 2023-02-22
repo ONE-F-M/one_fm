@@ -410,4 +410,4 @@ def wiki_page_before_save(doc, method):
     check = frappe.db.sql(f""" select name from `tabWiki Page` where route = '{route}' """, as_dict=1)
     if check:
         route += f"-{str(uuid4()).split('-')[0]}"
-    doc.route = route
+    doc.route = route.lower()
