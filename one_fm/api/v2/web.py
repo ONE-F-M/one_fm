@@ -115,7 +115,7 @@ def verify():
         if res.verification == "FAILED":
             msg = res.message
             data = res.data
-            response("Bad Request", 400, None, _("{msg}: {data}".format(msg=msg, data=data)))
+            #response("Bad Request", 400, None, _("{msg}: {data}".format(msg=msg, data=data)))
 
         response("Success", 200, check_in(log_type, skip_attendance, latitude, longitude))        
     except Exception as exc:
