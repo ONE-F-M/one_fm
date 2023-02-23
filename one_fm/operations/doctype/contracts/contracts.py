@@ -1049,7 +1049,7 @@ def renew_contracts_by_termination_date():
             contract_doc.end_date = add_days(contract_doc.end_date, duration+1)
             contract_doc.save()    
             frappe.db.commit()
-            print('CREATING SCHEDULES')
+            
             frappe.enqueue(prepare_employee_schedules,project=each.project,old_start=old_start_date,\
                 old_end=old_end_date,new_start=contract_doc.start_date,new_end=contract_doc.end_date,\
                 duration=int(duration)+1,queue='long',timeout=6000,job_name=f"Creating Employee Schedules for {each.project}")
