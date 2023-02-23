@@ -9,7 +9,7 @@ import json, multiprocessing, os, time, itertools, frappe
 from multiprocessing.pool import ThreadPool as Pool
 from itertools import product
 from one_fm.api.notification import create_notification_log
-from one_fm.api.v1.utils import response
+from one_fm.api.v2.utils import response
 from one_fm.utils import query_db_list
 
 
