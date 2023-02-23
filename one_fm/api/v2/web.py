@@ -117,10 +117,10 @@ def verify():
             data = res.data
             response("Bad Request", 400, None, _("{msg}: {data}".format(msg=msg, data=data)))
 
-        return response("Success", 200, check_in(log_type, skip_attendance, latitude, longitude))        
+        response("Success", 200, check_in(log_type, skip_attendance, latitude, longitude))        
     except Exception as exc:
         frappe.log_error(frappe.get_traceback())
-        raise exc
+        response("Error", 500, None, frappe.get_traceback())  
 
 @frappe.whitelist()
 def user_within_site_geofence(employee, log_type, user_latitude, user_longitude):
