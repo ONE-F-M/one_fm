@@ -1122,7 +1122,4 @@ def prepare_employee_schedules(project,old_start,old_end,new_start,new_end,durat
                     frappe.db.commit()
                 else:
                     continue
-            else:
-                print(frappe.db.exists("Employee Schedule",{'employee':each.employee,'date':new_date}))
             
-        
