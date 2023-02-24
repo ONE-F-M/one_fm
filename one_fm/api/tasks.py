@@ -14,7 +14,7 @@ from frappe.utils import (
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
-from one_fm.utils import mark_attendance, get_holiday_today, production_domain
+from one_fm.utils import (mark_attendance, get_holiday_today, production_domain, get_today_leaves)
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
@@ -674,7 +674,7 @@ def fetch_non_shift(date, s_type):
 	if s_type == "AM":
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,
 				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0
+				WHERE E.shift_working = 0 AND E.status='Active'
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time >= '01:00:00'
@@ -810,6 +810,9 @@ def create_shift_assignment(roster, date, time):
 		for i in sites_list:
 			sites_list_dict[i.name] = i.site_location
 
+		# remove employees with approved leaves
+		todays_leaves = get_today_leaves(str(date))
+		roster = [i for i in roster if not i.employee in todays_leaves]
 		if roster:
 			query = """
 				INSERT INTO `tabShift Assignment` (`name`, `company`, `docstatus`, `employee`, `employee_name`, `shift_type`, `site`, `project`, `status`,
@@ -911,6 +914,10 @@ def validate_am_shift_assignment():
 	if non_shift:
 		roster.extend(non_shift)
 
+	# remove approved leaves for today
+	todays_leaves = get_today_leaves(str(date))
+	roster = [i for i in roster if not i.employee in todays_leaves]
+
 	if len(roster)>0:
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
@@ -952,6 +959,10 @@ def validate_pm_shift_assignment():
 	if non_shift:
 		roster.extend(non_shift)
 
+	# remove approved leaves for today
+	todays_leaves = get_today_leaves(str(date))
+	roster = [i for i in roster if not i.employee in todays_leaves]
+	
 	if len(roster)>0:
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
