@@ -2915,3 +2915,10 @@ def check_employee_attendance_dependents(employee):
         shift permission, attendance request, leave application, day off
         or holiday
     """
+
+def get_today_leaves(cur_date):
+    return [i.employee for i in frappe.db.sql(f"""
+        SELECT name, employee FROM `tabLeave Application`
+        WHERE status='Approved'
+        AND '{cur_date}' BETWEEN from_date AND to_date;
+    """, as_dict=1)]
