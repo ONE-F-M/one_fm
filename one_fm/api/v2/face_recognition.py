@@ -298,7 +298,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
     try:
 
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee_doc = frappe.get_doc("Employee", {"employee_id": employee_id})
+        employee = employee_doc.name
         date = cstr(getdate())
         log = check_existing()
 
@@ -353,7 +354,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                 return response("Resource Not Found", 404, None, f"Dear {employee_name}, Today is your day off.  Happy Recharging!.")
             if employee.holiday_list:
                 holiday_today = get_holiday_today(str(getdate()))
-                if holiday_today.get(employee.holiday_list):
+                if holiday_today.get(employee_doc.holiday_list):
                     return response("Resource Not Found", 404, None, "Today is your holiday, have fun.")
             return response("Resource Not Found", 404, None, "User not assigned to a shift.")
 
