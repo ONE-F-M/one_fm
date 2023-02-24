@@ -256,9 +256,11 @@ def get_checkin_history(employee):
 	"""
 		RETRIEVE CHECKIN LOGS
 	"""
+	start = str(get_first_day(getdate()))
+	end = str(get_last_day(getdate()))
 	logs = frappe.db.sql(f"""
 		SELECT name, log_type, time FROM `tabEmployee Checkin`
-		WHERE employee="{employee}" AND date BETWEEN '{str(get_first_day(getdate()))}' AND '{str(get_last_day(getdate()))}'
+		WHERE employee="{employee}" AND date BETWEEN '{start}' AND '{end}'
 		ORDER BY time DESC
 	""", as_dict=1)
-	response ("success", 200, {'logs':logs})
+	response ("success", 200, {'logs':logs, 'start':start, 'end':end})
