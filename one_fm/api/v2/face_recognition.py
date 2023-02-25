@@ -369,10 +369,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             result['user_within_geofence_radius'] = False
 
         result['site_name'] = site
-
-        result = {**result, **{
-            'shift_assignment':shift,
-        }}
+        result['shift_assignment'] = shift
 
         # log to checkin radius log
         data = result.copy()
