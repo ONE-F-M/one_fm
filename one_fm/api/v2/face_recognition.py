@@ -371,7 +371,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         result['site_name'] = site
 
         result = {**result, **{
-            'shift_assignment':shift_assignment,
+            'shift_assignment':shift,
         }}
 
         # log to checkin radius log
