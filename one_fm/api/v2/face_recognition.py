@@ -382,7 +382,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if not result.user_within_geofence_radius:
             frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
                        **{'data':data})
-        return response("Success", 200, result)
+        return response("Success", 200, {**result, **{'shift_assignment':shift}})
 
     except Exception as error:
 
