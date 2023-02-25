@@ -157,19 +157,22 @@ def user_within_site_geofence(employee, log_type, user_latitude, user_longitude)
 	return False
 
 def check_in(log_type, skip_attendance, latitude, longitude):
-	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
-	checkin = frappe.new_doc("Employee Checkin")
-	checkin.employee = employee
-	checkin.log_type = log_type
-	checkin.device_id = cstr(latitude)+","+cstr(longitude)
-	checkin.skip_auto_attendance = cint(skip_attendance)
-	checkin.shift_assignment = get_current_shift(employee.name)
-	# checkin.time = now_datetime()
-	# checkin.actual_time = now_datetime()
-	checkin.save()
-	frappe.db.commit()
-	return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
-
+	try:
+		employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+		checkin = frappe.new_doc("Employee Checkin")
+		checkin.employee = employee
+		checkin.log_type = log_type
+		checkin.device_id = cstr(latitude)+","+cstr(longitude)
+		checkin.skip_auto_attendance = cint(skip_attendance)
+		checkin.shift_assignment = get_current_shift(employee.name)
+		# checkin.time = now_datetime()
+		# checkin.actual_time = now_datetime()
+		checkin.save()
+		frappe.db.commit()
+		return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
+	except:
+		frappe.log_error(frappe.get_traceback(), 'Mobile Web Checkin')
+		
 @frappe.whitelist()
 def forced_checkin(employee, log_type, time):
 	checkin = frappe.new_doc("Employee Checkin")
