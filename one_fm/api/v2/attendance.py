@@ -17,6 +17,7 @@ def get_attendance_list(employee, from_date=None, to_date=None, status=None):
         filters = {
             'employee':employee,
             'attendance_date': ["BETWEEN", [from_date, to_date]],
+            'status':'Present'
         }
         if status:
             filters['status'] = status

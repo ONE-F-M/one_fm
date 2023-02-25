@@ -16,6 +16,7 @@ import json
 from one_fm.api.doc_events import haversine
 from one_fm.api.v2.roster import get_current_shift
 from one_fm.api.v2.utils import response
+from one_fm.api.v2.face_recognition import create_checkin_log
 
 
 
@@ -118,7 +119,7 @@ def verify():
             msg = res.message
             data = res.data
             #response("Bad Request", 400, None, _("{msg}: {data}".format(msg=msg, data=data)))
-
+		# create_checkin_log()
         response("Success", 200, check_in(log_type, skip_attendance, latitude, longitude))        
     except Exception as exc:
         frappe.log_error(frappe.get_traceback())
