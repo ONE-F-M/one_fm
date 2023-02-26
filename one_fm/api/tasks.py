@@ -1555,7 +1555,7 @@ def mark_daily_attendance(start_date, end_date):
 						WHERE start_date='{start_date}')
 				""", as_dict=1)
 			if holidays:
-				absent_list += [i.name for i in holidays]
+				absent_list = [i.name for i in holidays]+absent_list
 
 		frappe.enqueue("one_fm.overrides.attendance.remark_absent_for_employees",
 			employees=absent_list, date=str(start_date), queue='long', timeout=6000)
