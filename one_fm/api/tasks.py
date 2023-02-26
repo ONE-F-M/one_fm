@@ -1541,8 +1541,22 @@ def mark_daily_attendance(start_date, end_date):
 		# check for error
 		if len(errors):
 			frappe.log_error(str(errors), "Mark Attendance")
+		#
+		# remark absent attendance and holiday list
+		if (start_date==end_date):
+			holiday_list_today = [k for k,v in get_holiday_today(start_date).items()]
+			holidays = []
+			for i in holiday_list_today:
+				holidays += frappe.db.sql(f"""
+					SELECT name FROM `tabEmployee`
+					WHERE status='Active' AND holiday_list="{i}"
+					AND name not in (
+						SELECT employee FROM `tabShift Assignment` 
+						WHERE start_date='{start_date}')
+				""", as_dict=1)
+			if holidays:
+				absent_list += [i.name for i in holidays]
 
-		# remark absent attendance
 		frappe.enqueue("one_fm.overrides.attendance.remark_absent_for_employees",
 			employees=absent_list, date=str(start_date), queue='long', timeout=6000)
 	except Exception as e:
