@@ -318,10 +318,7 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.status=status
     leave.leave_approver = leave_approver
     leave.save(ignore_permissions=True)
-    # if len(attachment_paths)>0:
-    #     for attachment_path in attachment_paths:
-    #         
-    #         leave.append("proof_documents",{"attachments": frappe.utils.get_url()+attachment_path})
+    
     frappe.db.commit()
     return leave.as_dict()
 
