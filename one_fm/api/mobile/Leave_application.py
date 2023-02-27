@@ -3,13 +3,16 @@ from frappe import _
 from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
 from datetime import date
 import datetime
+from one_fm.api.api import upload_file
 import collections
 import base64, json
-from frappe.utils import getdate, cstr
+from one_fm.api.v1.utils import response, validate_date
+from frappe.utils import cint, cstr, getdate
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import get_action_user
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.processor import sendemail
+from one_fm.utils import check_if_backdate_allowed
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -86,7 +89,7 @@ def leave_notify(docname,status):
 #This function is the api to create a new leave notification.
 #bench execute --kwargs "{'employee':'HR-EMP-00002','from_date':'2021-11-17','to_date':'2021-11-17','leave_type':'Annual Leave','reason':'fever'}"  one_fm.api.mobile.Leave_application.create_new_leave_application
 @frappe.whitelist()
-def create_new_leave_application(employee,from_date,to_date,leave_type,reason, proof_document = {}):
+def create_new_leave_application(employee_id,from_date,to_date,leave_type,reason, proof_document = {}):
     """[summary]
 
     Args:
@@ -177,23 +180,16 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason, p
                 content = base64.b64decode(attachment)
                 filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
 
-                # Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+                
                 Path(frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
-                # OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
+                
                 OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}/{filename}"
                 file_ = upload_file(doc, "attachments", filename, OUTPUT_FILE_PATH, content, is_private=True)
                 leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
                 leave_doc.append('proof_documents',{"attachments":file_.file_url})
                 leave_doc.save()
                 frappe.db.commit()
-                # with open(OUTPUT_FILE_PATH, "wb") as fh:
-                #     fh.write(content)
-
-                # attachment_paths.append(f"/private/files/leave-application/{employee_doc.user_id}/{filename}")
-        
-
-        # if attachment_paths:
-            # upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
+               
 
         return response("Success", 201, doc)
     
