@@ -37,7 +37,7 @@ def response_dict(message, status_code, data=None, error=None):
 def get_current_user_details():
 	user = frappe.session.user
 	user_roles = frappe.get_roles(user)
-	user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_id", "employee_name", "image", "enrolled", "designation"], as_dict=1)
+	user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_id", "employee_name", "image", "enrolled", "designation", "user_id"], as_dict=1)
 	return user, user_roles, user_employee
 
 def setup_directories():

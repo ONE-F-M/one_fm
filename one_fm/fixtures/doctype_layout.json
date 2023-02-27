@@ -461,6 +461,7 @@
     "parenttype": "DocType Layout"
    },
    {
+
     "fieldname": "column_break_18",
     "label": null,
     "parent": "Employee",

@@ -290,6 +290,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                 leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
                 leave_doc.append('proof_documents',{"attachments":file_.file_url})
                 leave_doc.save()
+                frappe.db.commit()
                 # with open(OUTPUT_FILE_PATH, "wb") as fh:
                 #     fh.write(content)
 
@@ -312,15 +313,12 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.leave_type=leave_type
     leave.from_date=from_date
     leave.to_date=to_date
+    leave.source = 'V1'
     leave.description=reason or "None"
     leave.follow_via_email=1
     leave.status=status
     leave.leave_approver = leave_approver
     leave.save(ignore_permissions=True)
-    # if len(attachment_paths)>0:
-    #     for attachment_path in attachment_paths:
-    #         
-    #         leave.append("proof_documents",{"attachments": frappe.utils.get_url()+attachment_path})
     frappe.db.commit()
     return leave.as_dict()
 

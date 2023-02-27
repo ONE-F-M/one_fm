@@ -3,13 +3,16 @@ from frappe import _
 from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
 from datetime import date
 import datetime
+from one_fm.api.api import upload_file
 import collections
 import base64, json
-from frappe.utils import getdate, cstr
+from one_fm.api.v1.utils import response, validate_date
+from frappe.utils import cint, cstr, getdate
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import get_action_user
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.processor import sendemail
+from one_fm.utils import check_if_backdate_allowed
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -86,41 +89,90 @@ def leave_notify(docname,status):
 #This function is the api to create a new leave notification.
 #bench execute --kwargs "{'employee':'HR-EMP-00002','from_date':'2021-11-17','to_date':'2021-11-17','leave_type':'Annual Leave','reason':'fever'}"  one_fm.api.mobile.Leave_application.create_new_leave_application
 @frappe.whitelist()
-def create_new_leave_application(employee,from_date,to_date,leave_type,reason, proof_document = {}):
+def create_new_leave_application(employee_id,from_date,to_date,leave_type,reason, proof_document = {}):
+    """[summary]
+
+    Args:
+        employee (str): Employee record name.
+        from_date (str): Start date => yyyy-mm-dd
+        to_date (str): End date => yyyy-mm-dd
+        leave_type (str): Type of leave
+        reason (str): Reason for leave
+
+    Returns:
+        dict: {
+            message (str): Brief message indicating the response,
+			status_code (int): Status code of response.
+            data (dict): Leave application that was created,
+            error (str): Any error handled.
+        }
     """
-    Params:
-        employee: erp id
-        from_date,to_date,half_day_date= date in YYYY-MM-DD format
-        leave_type=from leave policy
-        reason
-    Return:
-        Success, 201 : Success on Creation of Leave Application
-		Bad request, 400: When Leave already Exists or when employee doesn't have a leave approver.
-		server error, 500: Failed to create new leave application
-    """
-    from pathlib import Path
-    import hashlib
-    #get Leave Approver of the employee.
-    leave_approver = fetch_leave_approver(employee)
-    from_date = getdate(from_date)
-    to_date = getdate(to_date)
-    #check if leave exist and overlaps with the given date (StartDate1 <= EndDate2) and (StartDate2 <= EndDate1)
-    leave_exist = frappe.get_list("Leave Application", filters={"employee": employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}, ignore_permissions=True)
-    # Return response status 400, if the leave exists.
-    if leave_exist:
-        return response('You have already applied leave for this date.',[], 400)
+    if not employee_id:
+        return response("Bad Request", 400, None, "employee_id required.")
+
+    if not from_date:
+        return response("Bad Request", 400, None, "from_date required.")
+
+    if not to_date:
+        return response("Bad Request", 400, None, "to_date required.")
+
+    if not leave_type:
+        return response("Bad Request", 400, None, "leave_type required.")
+
+    if not reason:
+        return response("Bad Request", 400, None, "reason required.")
+
+    if not isinstance(employee_id, str):
+        return response("Bad Request", 400, None, "employee_id must be of type str")
+
+    if not isinstance(from_date, str):
+        return response("Bad Request", 400, None, "from_date must be of type str.")
+
+    if not validate_date(from_date):
+        return response("Bad Request", 400, None, "from_date must be of format yyyy-mm-dd.")
+
+    if not validate_date(to_date):
+        return response("Bad Request", 400, None, "to_date must be of format yyyy-mm-dd.")
+
+    if not isinstance(to_date, str):
+        return response("Bad Request", 400, None, "to_date must be of type str.")
+
+    if not isinstance(leave_type, str):
+        return response("Bad Request", 400, None, "leave_type must be of type str.")
+
+    if not isinstance(reason, str):
+        return response("Bad Request", 400, None, "reason must be of type str.")
 
     if proof_document_required_for_leave_type(leave_type) and not proof_document:
-        return response('Leave type requires a proof_document.', {}, 400)
+        return response("Bad Request", 400, None, "Leave type requires a proof_document.")
 
-    if leave_approver:
-        try:
-            attachment_path = None
-            if proof_document_required_for_leave_type(leave_type):
-                proof_doc_json = json.loads(proof_document)
-                attachment = proof_doc_json['attachment']
-                attachment_name = proof_doc_json['attachment_name']
+    if not check_if_backdate_allowed(leave_type, from_date):
+        return response("Bad Request", 400, None, "You are not allowed to apply for later or previous date.")
 
+    try:
+        from pathlib import Path
+        import hashlib
+        import base64, json
+
+        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        if not employee:
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+
+        employee_doc = frappe.get_doc("Employee", employee)
+        leave_approver = fetch_leave_approver(employee)
+
+        if not leave_approver:
+            return response("Resource Not Found", 404, None, "No leave approver found for {employee}.".format(employee=employee_id))
+
+        if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
+            return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
+        attachment_paths = []
+        doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_paths)
+        if proof_document_required_for_leave_type(leave_type):
+            proof_doc_json = json.loads(proof_document)
+            for proof_doc in proof_doc_json:
+                attachment = proof_doc['attachment']
+                attachment_name = proof_doc['attachment_name']
                 if not attachment or not attachment_name:
                     return response('proof_document key requires attachment and attachment_name', {}, 400)
 
@@ -128,20 +180,22 @@ def create_new_leave_application(employee,from_date,to_date,leave_type,reason, p
                 content = base64.b64decode(attachment)
                 filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
 
-                Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}").mkdir(parents=True, exist_ok=True)
-                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{frappe.session.user}/{filename}"
-                with open(OUTPUT_FILE_PATH, "wb") as fh:
-                    fh.write(content)
+                
+                Path(frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
+                
+                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}/{filename}"
+                file_ = upload_file(doc, "attachments", filename, OUTPUT_FILE_PATH, content, is_private=True)
+                leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
+                leave_doc.append('proof_documents',{"attachments":file_.file_url})
+                leave_doc.save()
+                frappe.db.commit()
+               
 
-                attachment_path = f"/files/leave-application/{frappe.session.user}/{filename}"
-
-            doc = new_leave_application(employee,from_date,to_date,leave_type,"Open",reason,leave_approver, attachment_path)
-            return response('Success',doc, 201)
-        except Exception as e:
-            frappe.log_error(frappe.get_traceback())
-            return response(e,[], 500)
-    else:
-        return response("You don't have a leave approver.",[], 400)
+        return response("Success", 201, doc)
+    
+    except Exception as error:
+        frappe.log_error(error, 'Leave API')
+        return response("Internal Server Error", 500, None, error)
 
 #create new leave application doctype
 def new_leave_application(employee,from_date,to_date,leave_type,status,reason,leave_approver, attachment_path = None):
@@ -150,16 +204,14 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,le
     leave.leave_type=leave_type
     leave.from_date=from_date
     leave.to_date=to_date
+    leave.source = 'Mobile'
     leave.description=reason or "None"
     leave.follow_via_email=1
     leave.status=status
     leave.leave_approver = leave_approver
-    if attachment_path:
-        leave.proof_document = attachment_path
-    leave.save()
+    leave.save(ignore_permissions=True)
     frappe.db.commit()
-    return leave
-
+    return leave.as_dict()
 # Function to create response to the API. It generates json with message, data object and the status code.
 def response(message, data, status_code):
     frappe.local.response["message"] = message
