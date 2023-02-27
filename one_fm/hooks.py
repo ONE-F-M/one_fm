@@ -386,6 +386,9 @@ doc_events = {
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
+	"Wiki Page":{
+		"before_save": "one_fm.api.doc_events.wiki_page_before_save"
+	}
 }
 
 standard_portal_menu_items = [

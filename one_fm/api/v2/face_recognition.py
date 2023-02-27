@@ -9,6 +9,7 @@ from one_fm.api.v2.zenquotes import fetch_quote
 from frappe.utils import cstr, getdate,get_datetime,now,get_date_str, now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
+from one_fm.utils import get_holiday_today
 
 
 
@@ -297,7 +298,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
     try:
 
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee_doc = frappe.get_doc("Employee", {"employee_id": employee_id})
+        employee = employee_doc.name
         date = cstr(getdate())
         log = check_existing()
 
@@ -350,6 +352,10 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             if has_day_off(employee,date):
                 employee_name = frappe.get_value("Employee",employee,'employee_name')
                 return response("Resource Not Found", 404, None, f"Dear {employee_name}, Today is your day off.  Happy Recharging!.")
+            if employee_doc.holiday_list:
+                holiday_today = get_holiday_today(str(getdate()))
+                if holiday_today.get(employee_doc.holiday_list):
+                    return response("Resource Not Found", 404, None, "Today is your holiday, have fun.")
             return response("Resource Not Found", 404, None, "User not assigned to a shift.")
 
         if not location and site:
@@ -363,10 +369,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             result['user_within_geofence_radius'] = False
 
         result['site_name'] = site
-
-        result = {**result, **{
-            'shift_assignment':shift_assignment,
-        }}
+        result['shift_assignment'] = shift
 
         # log to checkin radius log
         data = result.copy()
@@ -379,7 +382,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if not result.user_within_geofence_radius:
             frappe.enqueue('one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log',
                        **{'data':data})
-        return response("Success", 200, result)
+        return response("Success", 200, {**result, **{'shift_assignment':shift}})
 
     except Exception as error:
 
