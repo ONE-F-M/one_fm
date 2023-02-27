@@ -17,10 +17,11 @@ def get_attendance_list(employee, from_date=None, to_date=None, status=None):
         filters = {
             'employee':employee,
             'attendance_date': ["BETWEEN", [from_date, to_date]],
+            'status':'Present'
         }
-        if status:
-            filters['status'] = status
-        response('success', 200, frappe.db.get_list("Attendance", filters=filters, ignore_permissions=True))
+        # if status:
+        #     filters['status'] = status
+        response('success', 200, frappe.db.get_list("Attendance", filters=filters, ignore_permissions=True) or [])
     except Exception as e:
         response('error', 500, None, str(e))
     
