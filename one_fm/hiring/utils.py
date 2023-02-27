@@ -90,10 +90,9 @@ def validate_job_offer(doc, method):
 def validate_job_offer_mandatory_fields(job_offer):
     if job_offer.workflow_state == 'Submit for Candidate Response':
         mandatory_field_required = False
-        fields = ['Reports To', 'Project', 'Base', 'Salary Structure', 'Project']
+        fields = ['Reports To', 'Project', 'Base', 'Salary Structure', 'Project', 'Operations Shift']
         if job_offer.shift_working:
             fields.append('Operations Site')
-            fields.append('Operations Shift')
         msg = "Mandatory fields required to Submit Job Offer<br/><br/><ul>"
         for field in fields:
             if field == 'Salary Structure':
@@ -549,16 +548,16 @@ def update_onboarding_doc(doc, is_trash=False, cancel_oe=False):
 def job_offer_on_update_after_submit(doc, method):
     validate_job_offer_mandatory_fields(doc)
     if doc.workflow_state == 'Submit to Onboarding Officer':
-        if not doc.estimated_date_of_joining:
-            frappe.throw(_('Please Select Estimated Date of Joining to Accept Offer'))
-        if not doc.onboarding_officer:
-            frappe.throw(_("Please Select Onboarding Officer to Process Onboard"))
-        # Send Notification to Assined Officer to accept the Onboarding Task
-        notify_onboarding_officer(doc)
-    if doc.workflow_state == 'Onboarding Officer Rejected':
-        # Notify Recruiter
-        notify_recruiter(doc)
-    if doc.workflow_state == 'Accepted':
+        msg = "Please select {0} to Accept the Offer and Process Onboard"
+        if not doc.estimated_date_of_joining and not doc.onboarding_officer:
+            frappe.throw(_(msg.format("<b>Estimated Date of Joining</b> and <b>Onboarding Officer</b>")))
+        elif not doc.estimated_date_of_joining:
+            frappe.throw(_(msg.format("<b>Estimated Date of Joining</b>")))
+        elif not doc.onboarding_officer:
+            frappe.throw(_(msg.format("<b>Onboarding Officer</b>")))
+    # Send Notification to Assined Officer to accept the Onboarding Task
+    notify_onboarding_officer(doc)
+    if doc.workflow_state in ['Onboarding Officer Rejected', 'Accepted']:
         # Notify Recruiter
         notify_recruiter(doc)
 
@@ -595,7 +594,7 @@ def create_onboarding_from_job_offer(job_offer):
         elif not frappe.db.exists('Onboard Employee', {'job_offer': job_offer.name}):
             # Fields in the job offer
             fields = ['employee_grade', 'job_applicant', 'is_g2g_fees_needed', 'is_residency_fine_needed',
-                'g2g_fee_amount', 'is_residency_fine_needed']
+                'g2g_fee_amount', 'is_residency_fine_needed', 'shift_working']
             # Custom Fields in the Job Offer
             one_fm_fields = ['salary_structure', 'job_offer_total_salary', 'provide_salary_advance', 'salary_advance_amount',
                 'provide_accommodation_by_company', 'provide_transportation_by_company']

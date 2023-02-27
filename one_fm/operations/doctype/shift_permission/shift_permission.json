@@ -52,6 +52,7 @@
    "label": "Shift Details"
   },
   {
+   "default": "Today",
    "fieldname": "date",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -115,6 +116,7 @@
    "reqd": 1
   },
   {
+   "default": "Now",
    "depends_on": "eval:doc.permission_type == \"Arrive Late\"",
    "fieldname": "arrival_time",
    "fieldtype": "Time",
@@ -123,6 +125,7 @@
    "mandatory_depends_on": "eval:doc.permission_type == \"Arrive Late\""
   },
   {
+   "default": "Now",
    "depends_on": "eval:doc.permission_type== \"Leave Early\"",
    "fieldname": "leaving_time",
    "fieldtype": "Time",
@@ -203,7 +206,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-01-19 14:50:04.904720",
+ "modified": "2023-02-16 09:03:03.466801",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
