@@ -1064,7 +1064,8 @@ def renew_contracts_by_termination_date():
     if all_due_contracts:
         
         for each in all_due_contracts:
-            
+            old_start_date = each.start_date
+            old_end_date = each.end_date
             contract_doc = frappe.get_doc('Contracts', each.name)
             contract_date = contract_doc.append('contract_date')
             contract_date.contract_start_date = contract_doc.start_date
@@ -1074,6 +1075,10 @@ def renew_contracts_by_termination_date():
             contract_doc.end_date = add_days(contract_doc.end_date, duration+1)
             contract_doc.save()    
             frappe.db.commit()
+            
+            frappe.enqueue(prepare_employee_schedules,project=each.project,old_start=old_start_date,\
+                old_end=old_end_date,new_start=contract_doc.start_date,new_end=contract_doc.end_date,\
+                duration=int(duration)+1,queue='long',timeout=6000,job_name=f"Creating Employee Schedules for {each.project}")
         
         #Get all operations post that belong to a project and recreate the post schedule for that period
         
@@ -1083,11 +1088,36 @@ def renew_contracts_by_termination_date():
         
         if all_operations_post_:
             frappe.enqueue(create_post_schedules, operations_posts=all_operations_post_, queue="long",job_name = 'Create Post Schedules')
-            
+        
             
 
 def create_post_schedules(operations_posts):
     from one_fm.operations.doctype.operations_post.operations_post import create_post_schedule_for_operations_post
     list(map(create_post_schedule_for_operations_post,operations_posts))
     
-            
+    
+    
+    
+def prepare_employee_schedules(project,old_start,old_end,new_start,new_end,duration):
+    """
+    Create Employee schedules on contracts termination based on previously created schedules 
+
+    Args:
+        project: Valid Project
+    """
+    previous_schedules = frappe.db.sql("""SELECT ts.employee,ts.employee_availability,ts.employee_name,ts.department,ts.date\
+        ,ts.operations_role,ts.post_abbrv,ts.shift,ts.shift_type,ts.site,ts.roster_type from `tabEmployee Schedule`ts,
+        `tabEmployee`emp where ts.project = '{}' and emp.status = "Active" and ts.date BETWEEN '{}' and '{}'""".format(project,old_start,old_end),as_dict=1)
+    if previous_schedules:
+        for each in previous_schedules:
+            old_schedule_date = each.date
+            new_date = add_days(old_schedule_date,duration)
+            if not frappe.db.exists("Employee Schedule",{'employee':each.employee,'date':new_date}):
+                if add_days(each.date,duration)>=getdate(new_start) and add_days(each.date,duration) <=getdate(new_end):
+                    each.doctype = "Employee Schedule"
+                    each.date = add_days(old_schedule_date,duration)
+                    new_doc = frappe.get_doc(each)
+                    new_doc.insert()
+                    frappe.db.commit()
+                else:
+                    continue
