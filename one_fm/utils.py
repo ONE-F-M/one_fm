@@ -566,11 +566,12 @@ def leave_appillication_on_cancel(doc, method):
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_paid_sick_leave(doc, method):
-    if doc.leave_type and frappe.db.get_value("Leave Type", doc.leave_type, 'one_fm_is_paid_sick_leave') == 1:
-        create_additional_salary_for_paid_sick_leave(doc)
+	if doc.leave_type and frappe.db.get_value("Leave Type", doc.leave_type, 'one_fm_is_paid_sick_leave') == 1:
+		salary = get_salary_amount(doc.employee)
+		if salary:
+			create_additional_salary_for_paid_sick_leave(doc, salary)
 
-def create_additional_salary_for_paid_sick_leave(doc):
-    salary = get_salary(doc.employee)
+def create_additional_salary_for_paid_sick_leave(doc, salary):
     daily_rate = salary/30
     from hrms.hr.doctype.leave_application.leave_application import get_leave_details
     leave_details = get_leave_details(doc.employee, nowdate())
@@ -720,34 +721,22 @@ def validate_hajj_leave(doc, method):
         if frappe.db.get_value('Employee', doc.employee, 'went_to_hajj') == 1:
             frappe.throw(_("You can't apply for hajj leave twice"))
 
-def get_salary(employee):
-    salary_amount = 0
-
-    salary_slip_name = frappe.db.sql("select name from `tabSalary Slip` where employee='{0}' order by creation desc limit 1".format(employee))
-    if salary_slip_name:
-        doc = frappe.get_doc('Salary Slip', salary_slip_name[0][0])
-
-        for earning in doc.earnings:
-            if earning.salary_component =='Basic':
-                salary_amount = earning.amount
-
-    else:
-        doc = frappe.new_doc("Salary Slip")
-        doc.payroll_frequency= "Monthly"
-        doc.start_date=get_first_day(getdate(nowdate()))
-        doc.end_date=get_last_day(getdate(nowdate()))
-        doc.employee= str(employee)
-        doc.posting_date= nowdate()
-        doc.insert(ignore_permissions=True)
-
-        if doc.name:
-            for earning in doc.earnings:
-                if earning.salary_component =='Basic':
-                    salary_amount = earning.amount
-
-            doc.delete()
-
-    return salary_amount
+def get_salary_amount(employee):
+	salary_amount = 0
+	query = """
+		select
+			name, base
+		from
+			`tabSalary Structure Assignment`
+		where
+			employee='{0}' and docstatus=1
+		order by
+			from_date desc limit 1
+	"""
+	salary_structure_assignment = frappe.db.sql(query.format(employee), as_dict=True)
+	if salary_structure_assignment and len(salary_structure_assignment) > 0:
+		salary_amount = salary_structure_assignment[0].base
+	return salary_amount
 
 @frappe.whitelist()
 def hooked_leave_allocation_builder():
@@ -2922,3 +2911,4 @@ def get_today_leaves(cur_date):
         WHERE status='Approved'
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
+
