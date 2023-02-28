@@ -8,15 +8,14 @@ from one_fm.api.notification import create_notification_log
 from frappe.utils import getdate
 import pandas as pd
 from one_fm.api.api import push_notification_rest_api_for_leave_application
-
-
+from one_fm.processor import is_user_id_company_prefred_email_in_employee
 
 def close_leaves(all_leaves,user=None):
     for each in all_leaves:
         try:
             leave_doc = frappe.get_doc("Leave Application",each.name)
             leave_doc.status = "Approved"
-            leave_doc.flags.ignore_validate = True            
+            leave_doc.flags.ignore_validate = True
             leave_doc.submit()
         except:
             frappe.log_error("Error while closing {}".format(each.name))
@@ -25,7 +24,7 @@ def close_leaves(all_leaves,user=None):
     if user:
         message = "Please note that all open sick leaves have been approved"
         create_notification_log('Leaves Closed!', 'Please note that all sick leaves in draft have closed.', [user],leave_doc)
-        
+
 
 @frappe.whitelist()
 def fix_sick_leave():
@@ -36,7 +35,7 @@ def fix_sick_leave():
         else:
             frappe.enqueue(method=close_leaves,user=frappe.session.user,all_leaves = all_leaves, queue='long',timeout=1200,job_name='Closing Leaves')
             frappe.msgprint("Leaves are being closed in the background, <br> You will recieve a notification after the process.",alert = 1)
-            
+
 
 def is_app_user(emp):
     #Returns true if an employee is an app user or has a valid email address
@@ -48,7 +47,7 @@ def is_app_user(emp):
             emp_id = user_details[0].get("employee_id")
             if user_id.split("@")[0].lower() == emp_id.lower():
                 is_app_user = True
-        return is_app_user     
+        return is_app_user
     except:
         pass
 
@@ -56,7 +55,7 @@ def is_app_user(emp):
 class LeaveApplicationOverride(LeaveApplication):
     def after_insert(self):
         self.assign_to_leave_approver()
-    
+
     def notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
         if not template:
@@ -83,18 +82,11 @@ class LeaveApplicationOverride(LeaveApplication):
                     "notify": "employee",
                 }
             )
-            
-    
-    
 
-        
-        
-        
     def validate(self):
         validate_active_employee(self.employee)
         set_employee_name(self)
         self.validate_dates()
-        
         self.validate_balance_leaves()
         self.validate_leave_overlap()
         self.validate_max_days()
@@ -106,9 +98,7 @@ class LeaveApplicationOverride(LeaveApplication):
         if frappe.db.get_value("Leave Type", self.leave_type, "is_optional_leave"):
             self.validate_optional_leave()
         self.validate_applicable_after()
-    
-    
-    
+
     def after_insert(self):
         if self.proof_documents:
             for each in self.proof_documents:
@@ -116,7 +106,7 @@ class LeaveApplicationOverride(LeaveApplication):
                     all_files = frappe.get_all("File",{'file_url':each.attachments},['attached_to_name','name'])
                     if all_files and 'new' in all_files[0].attached_to_name:
                         frappe.db.set_value("File",all_files[0].name,'attached_to_name',self.name)
-                
+
     def validate_attendance(self):
         pass
 
@@ -136,7 +126,7 @@ class LeaveApplicationOverride(LeaveApplication):
                 except:
                     frappe.log_error(frappe.get_traceback(),"Error assigning to User")
                     frappe.throw("Error while assigning leave application")
-                    
+
     def validate_dates(self):
         if frappe.db.get_single_value("HR Settings", "restrict_backdated_leave_application"):
             if self.from_date and getdate(self.from_date) < getdate(self.posting_date):
@@ -163,16 +153,10 @@ class LeaveApplicationOverride(LeaveApplication):
         if self.from_date and self.to_date and (getdate(self.to_date) < getdate(self.from_date)):
             frappe.throw(_("To date cannot be before from date"))
 
-        if (
-                self.half_day
-                and self.half_day_date
-                and (
-                getdate(self.half_day_date) < getdate(self.from_date)
-                or getdate(self.half_day_date) > getdate(self.to_date)
-        )
-        ):
-
-            frappe.throw(_("Half Day Date should be between From Date and To Date"))
+        if self.half_day and self.half_day_date:
+            half_day_date = getdate(self.half_day_date)
+            if half_day_date < getdate(self.from_date) or half_day_date > getdate(self.to_date):
+                frappe.throw(_("Half Day Date should be between From Date and To Date"))
 
         if not is_lwp(self.leave_type):
             self.validate_dates_across_allocation()
@@ -191,17 +175,18 @@ class LeaveApplicationOverride(LeaveApplication):
             sender = dict()
             sender["email"] = frappe.get_doc("User", frappe.session.user).email
             sender["full_name"] = get_fullname(sender["email"])
+            if is_user_id_company_prefred_email_in_employee(contact):
+                try:
+                    sendemail(
+                        recipients=contact,
+                        sender=sender["email"],
+                        subject=args.subject,
+                        message=args.message,
+                    )
+                    frappe.msgprint(_("Email sent to {0}").format(contact))
+                except frappe.OutgoingEmailError:
+                    pass
 
-            try:
-                sendemail(
-                    recipients=contact,
-                    sender=sender["email"],
-                    subject=args.subject,
-                    message=args.message,
-                )
-                frappe.msgprint(_("Email sent to {0}").format(contact))
-            except frappe.OutgoingEmailError:
-                pass
     def on_update(self):
         if self.workflow_state=='Rejected':
             attendance_range = []
@@ -214,7 +199,7 @@ class LeaveApplicationOverride(LeaveApplication):
                         'attendance_date': str(i),
                         'docstatus':1
                         }):
-                        frappe.db.sql(f""" 
+                        frappe.db.sql(f"""
                             UPDATE `tabAttendance` SET status='Absent', comment="Leave Appication {self.name} Rejected"
                             WHERE attendance_date='{str(i)}' and employee='{self.employee}'
                         """)
@@ -228,11 +213,6 @@ class LeaveApplicationOverride(LeaveApplication):
                         }).submit()
 
                     frappe.db.commit()
-
-            
-        
-
-
 
 @frappe.whitelist()
 def get_leave_approver(employee):

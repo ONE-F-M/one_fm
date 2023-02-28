@@ -756,7 +756,6 @@ def edit_post(posts, values):
             response("Permission Error", 401, None, _("Insufficient permissions to Edit Post."))
         posts = json.loads(posts)
         args = frappe._dict(json.loads(values))
-        
         if args.post_status == "Plan Post":
             # frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
             plan_post(posts=posts, args=args)
@@ -790,7 +789,8 @@ def edit_post(posts, values):
 
         response("Success", 201, {"msg":"Post Schedule created."})
     except Exception as e:
-        response("Error", 500, None, _(frappe.get_traceback()))
+        frappe.log_error(frappe.get_traceback(), 'Edit Post')
+        response("Error", 500, None, _(str(e)))
 
 def plan_post(posts, args):
     """ This function sets the post status to planned provided a post, start date and an end date """
@@ -806,12 +806,13 @@ def plan_post(posts, args):
     # filter if plan_from_date
     if args.plan_from_date:
         plan_from_date = getdate(args.plan_from_date)
+        # print(posts)
         posts = [post for post in posts if getdate(post['date'])>=plan_from_date]
     # filter if plan_end_date
     if end_date:
         end_date = getdate(end_date)
         posts = [post for post in posts if getdate(post['date'])<=end_date]
-
+        posts = extend_edit_post(posts, str(end_date))
     for post in posts:
         if frappe.db.exists("Post Schedule", {"date": post['date'], "post": post["post"]}):
             doc = frappe.get_doc("Post Schedule", {"date": post['date'], "post": post["post"]})
@@ -839,6 +840,7 @@ def cancel_post(posts, args):
     if end_date:
         end_date = getdate(end_date)
         posts = [post for post in posts if getdate(post['date'])<=end_date]
+        posts = extend_edit_post(posts, str(end_date))
 
     for post in posts:
         if frappe.db.exists("Post Schedule", {"date": post['date'], "post": post["post"]}):
@@ -869,6 +871,7 @@ def suspend_post(posts, args):
     if end_date:
         end_date = getdate(end_date)
         posts = [post for post in posts if getdate(post['date'])<=end_date]
+        posts = extend_edit_post(posts, str(end_date))
 
     for post in posts:
         if frappe.db.exists("Post Schedule", {"date": post['date'], "post": post["post"]}):
@@ -903,6 +906,7 @@ def post_off(posts, args):
 
             if end_date:
                 posts = [post for post in posts if getdate(post['date'])<=end_date]
+                posts = extend_edit_post(posts, str(end_date))
 
             if args.repeat == "Daily":
                 for post in posts:
@@ -943,6 +947,27 @@ def set_post_off(post, date, post_off_paid, post_off_unpaid):
     doc.unpaid = post_off_unpaid
     doc.post_status = "Post Off"
     doc.save()
+
+def extend_edit_post(posts, end_date):
+    """
+        Add more entry ({post:'xxx', dated:''}) to post if end date
+        is greater than current entry
+    """
+    if len(posts):
+        _end_date = getdate(end_date)
+        posts = sorted(posts, key=lambda i: (i['date'], i['post']))
+        last_post = posts[-1]
+        if(_end_date) > getdate(last_post['date']):
+            # get post names
+            post_names = []
+            for i in posts:
+                if not i['post'] in post_names:
+                    post_names.append(i['post'])
+            # generate date range
+            for d in pd.date_range(last_post['date'], end_date):
+                for i in post_names:
+                    posts.append({'post':i, 'date':str(d).split(' ')[0]})
+    return posts
 
 
 

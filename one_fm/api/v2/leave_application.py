@@ -193,14 +193,12 @@ def get_leave_types(employee_id: str = None) -> dict:
 @frappe.whitelist()
 def create_new_leave_application(employee_id: str = None, from_date: str = None, to_date: str = None, leave_type: str = None, reason: str = None, proof_document = {}) -> dict:
     """[summary]
-
     Args:
         employee (str): Employee record name.
         from_date (str): Start date => yyyy-mm-dd
         to_date (str): End date => yyyy-mm-dd
         leave_type (str): Type of leave
         reason (str): Reason for leave
-
     Returns:
         dict: {
             message (str): Brief message indicating the response,
@@ -305,6 +303,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
     except Exception as error:
         frappe.log_error(error, 'Leave API')
         return response("Internal Server Error", 500, None, error)
+    
 
 def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachment_paths = []) -> dict:
 
