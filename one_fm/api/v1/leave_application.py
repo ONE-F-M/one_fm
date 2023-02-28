@@ -193,14 +193,12 @@ def get_leave_types(employee_id: str = None) -> dict:
 @frappe.whitelist()
 def create_new_leave_application(employee_id: str = None, from_date: str = None, to_date: str = None, leave_type: str = None, reason: str = None, proof_document = {}) -> dict:
     """[summary]
-
     Args:
         employee (str): Employee record name.
         from_date (str): Start date => yyyy-mm-dd
         to_date (str): End date => yyyy-mm-dd
         leave_type (str): Type of leave
         reason (str): Reason for leave
-
     Returns:
         dict: {
             message (str): Brief message indicating the response,
@@ -290,6 +288,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                 leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
                 leave_doc.append('proof_documents',{"attachments":file_.file_url})
                 leave_doc.save()
+                frappe.db.commit()
                 # with open(OUTPUT_FILE_PATH, "wb") as fh:
                 #     fh.write(content)
 
@@ -304,7 +303,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
     except Exception as error:
         frappe.log_error(error, 'Leave API')
         return response("Internal Server Error", 500, None, error)
-
+    
 def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachment_paths = []) -> dict:
 
     leave = frappe.new_doc("Leave Application")
@@ -312,15 +311,12 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.leave_type=leave_type
     leave.from_date=from_date
     leave.to_date=to_date
+    # leave.source = 'V1'
     leave.description=reason or "None"
     leave.follow_via_email=1
     leave.status=status
     leave.leave_approver = leave_approver
     leave.save(ignore_permissions=True)
-    # if len(attachment_paths)>0:
-    #     for attachment_path in attachment_paths:
-    #         
-    #         leave.append("proof_documents",{"attachments": frappe.utils.get_url()+attachment_path})
     frappe.db.commit()
     return leave.as_dict()
 
