@@ -2911,3 +2911,4 @@ def get_today_leaves(cur_date):
         WHERE status='Approved'
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
+

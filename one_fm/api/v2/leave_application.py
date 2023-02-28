@@ -314,7 +314,7 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.to_date=to_date
     leave.description=reason or "None"
     leave.follow_via_email=1
-    # leave.source = 'V2'
+    leave.source = 'V2'
     leave.status=status
     leave.leave_approver = leave_approver
     leave.save(ignore_permissions=True)

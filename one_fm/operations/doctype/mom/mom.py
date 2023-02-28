@@ -34,7 +34,7 @@ class MOM(Document):
 				op_task.description = issue.description
 				op_task.priority = issue.priority
 				op_task.project = self.project 
-				op_task.save()
+				op_task.save(ignore_permissions=True)
 			frappe.db.commit()
 
 @frappe.whitelist()

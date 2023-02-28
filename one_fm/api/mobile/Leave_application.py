@@ -97,6 +97,7 @@ def create_new_leave_application(employee_id,from_date,to_date,leave_type,reason
         to_date (str): End date => yyyy-mm-dd
         leave_type (str): Type of leave
         reason (str): Reason for leave
+
     Returns:
         dict: {
             message (str): Brief message indicating the response,
@@ -194,7 +195,7 @@ def create_new_leave_application(employee_id,from_date,to_date,leave_type,reason
     except Exception as error:
         frappe.log_error(error, 'Leave API')
         return response("Internal Server Error", 500, None, error)
-    
+        
 #create new leave application doctype
 def new_leave_application(employee,from_date,to_date,leave_type,status,reason,leave_approver, attachment_path = None):
     leave = frappe.new_doc("Leave Application")
@@ -202,7 +203,7 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,le
     leave.leave_type=leave_type
     leave.from_date=from_date
     leave.to_date=to_date
-    # leave.source = 'Mobile'
+    leave.source = 'Mobile'
     leave.description=reason or "None"
     leave.follow_via_email=1
     leave.status=status
@@ -210,7 +211,6 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,le
     leave.save(ignore_permissions=True)
     frappe.db.commit()
     return leave.as_dict()
-    
 
 # Function to create response to the API. It generates json with message, data object and the status code.
 def response(message, data, status_code):
