@@ -407,8 +407,8 @@ function load_js(page) {
 						$('#cover-spin').show(0);
 						console.log({ posts, values })
 						frappe.call({
-							method: 'one_fm.one_fm.page.roster.roster.edit_post',
-							// method: 'one_fm.api.v2.flutter.roster.edit_post',
+							// method: 'one_fm.one_fm.page.roster.roster.edit_post',
+							method: 'one_fm.api.v2.flutter.roster.edit_post',
 							args: { posts, values },
 							callback: function (r) {
 								console.log(r);

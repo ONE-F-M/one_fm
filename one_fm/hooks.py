@@ -97,6 +97,7 @@ doctype_js = {
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
+    "Wiki Page": "public/js/doctype_js/wiki_page.js", 
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -386,9 +387,6 @@ doc_events = {
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
-	"Wiki Page":{
-		"before_save": "one_fm.api.doc_events.wiki_page_before_save"
-	}
 }
 
 standard_portal_menu_items = [
