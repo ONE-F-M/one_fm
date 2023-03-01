@@ -23,7 +23,7 @@ frappe.ui.form.on('Shift Permission', {
 });
 
 function set_employee_from_the_session_user(frm) {
-	if(frappe.session.user != 'Administrator'){
+	if(frappe.session.user != 'Administrator' && frm.is_new()){
 		frappe.db.get_value('Employee', {'user_id': frappe.session.user} , 'name', function(r) {
 			if(r && r.name){
 				frm.set_value('employee', r.name);
