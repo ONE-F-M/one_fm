@@ -22,11 +22,12 @@ class ShiftDetailsMissing(frappe.ValidationError):
 
 class EmployeeCheckinIssue(Document):
 	def validate(self):
-		self.validate_attendance()
-		self.validate_employee_checkin()
 		self.check_shift_details_value()
 		self.validate_date()
 		self.validate_duplicate_record()
+		if self.workflow_state in ['Pending', 'Approved']:
+			self.validate_attendance()
+			self.validate_employee_checkin()
 
 	def validate_attendance(self):
 		attendance = frappe.db.exists('Attendance',{'attendance_date': self.date, 'employee': self.employee, 'docstatus': 1})

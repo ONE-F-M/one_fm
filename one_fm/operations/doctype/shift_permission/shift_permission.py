@@ -28,11 +28,12 @@ class ShiftDetailsMissing(frappe.ValidationError):
 class ShiftPermission(Document):
 	def validate(self):
 		self.validate_permission_type()
-		self.validate_attendance()
-		self.validate_employee_checkin()
 		self.check_shift_details_value()
 		self.validate_date()
 		self.validate_record()
+		if self.workflow_state in ['Pending', 'Approved']:
+			self.validate_attendance()
+			self.validate_employee_checkin()
 		if not self.title:
 			self.title = self.emp_name
 
