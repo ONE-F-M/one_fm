@@ -164,9 +164,35 @@ frappe.ui.form.on('Operations Shift', {
 				
 				}
 			).addClass('btn-primary');
-	
-		
-		
 		}	
 	},
+	onload: function(frm){
+		frm.set_query("supervisor", function() {
+			return {
+				"filters": {
+					"status": "Active",
+				}
+			};
+
+		});
+	},
+	supervisor: function(frm){
+		frm.trigger("get_employee_status")
+	},
+	get_employee_status: function(frm){
+		frappe.call({
+			method:"frappe.client.get_value",
+			args: {
+				doctype:"Employee",
+				filters: {
+					name:frm.doc.supervisor
+				},
+				fieldname:["status",]
+			}, 
+			callback: function(r) { 
+				frm.toggle_display(["supervisor_name"], r.message.status == "Active")
+
+			}
+		})
+	}
 });
