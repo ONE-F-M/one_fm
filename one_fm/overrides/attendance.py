@@ -26,7 +26,7 @@ class AttendanceOverride(Attendance):
             if self.working_hours <= 0:frappe.throw("Working hours must be greater than 0 if staus is Presnet ot Work From Home.")
 
     def before_save(self):
-        if not self.shift_assignment and self.status not in ['Absent', 'Day Off', 'Holiday', 'On Leave']:
+        if not self.shift_assignment and self.status=='Present':
             shift_assignment = frappe.db.get_value("Shift Assignment", {
                 'employee':self.employee,
                 'start_date':self.attendance_date,
@@ -43,6 +43,34 @@ class AttendanceOverride(Attendance):
             'Holiday', 'Day Off', 'Absent'    
             ]:
             self.working_hours = frappe.db.get_value("Shift Type", self.shift_type, 'duration')
+    
+    def on_submit(self):
+        self.update_shift_details_in_attendance()
+
+    def update_shift_details_in_attendance(doc):
+        # condition = ''
+        # if frappe.db.exists("Employee Schedule",
+        #     {"employee": doc.employee, "date": doc.attendance_date, "roster_type": "Over-Time", "day_off_ot": True}):
+        #     condition += ' day_off_ot="1"'
+        # shift_assignment = frappe.get_list("Shift Assignment",{"employee": doc.employee, "start_date": doc.attendance_date},["name", "site", "project", "shift", "shift_type", "operations_role", "start_datetime","end_datetime", "roster_type"])
+        # if shift_assignment and len(shift_assignment) > 0 :
+        #     shift_data = shift_assignment[0]
+        #     condition += """ shift_assignment="{shift_assignment[0].name}" """.format(shift_assignment=shift_assignment)
+
+        #     for key in shift_assignment[0]:
+        #         if shift_data[key] and key not in ["name","start_datetime","end_datetime", "shift", "shift_type"]:
+        #             condition += """, {key}="{value}" """.format(key= key,value=shift_data[key])
+        #         if key == "shift" and shift_data["shift"]:
+        #             condition += """, operations_shift="{shift}" """.format(shift=shift_data["shift"])
+        #         if key == "shift_type" and shift_data["shift_type"]:
+        #             condition += """, shift='{shift_type}' """.format(shift_type=shift_data["shift_type"])
+
+        #     if doc.attendance_request or frappe.db.exists("Shift Permission", {"employee": doc.employee, "date":doc.attendance_date,"workflow_state":"Approved"}):
+        #         condition += """, in_time='{start_datetime}', out_time='{end_datetime}' """.format(start_datetime=cstr(shift_data["start_datetime"]), end_datetime=cstr(shift_data["end_datetime"]))
+        # if condition:
+        #     query = """UPDATE `tabAttendance` SET {condition} WHERE name= "{name}" """.format(condition=condition, name = doc.name)
+        #     return frappe.db.sql(query)
+        return
 
 
 @frappe.whitelist()
@@ -171,52 +199,48 @@ def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
 
 
 def create_single_attendance_record(record):
-    doc = frappe._dict({})
-    doc.doctype = "Attendance"
-    doc.employee = record.employee.name
-    doc.employee_name = record.employee.employee_name
-    doc.status = record.status
-    doc.attendance_date = record.attendance_date
-    doc.company = record.employee.company
-    doc.department = record.employee.department
-    doc.working_hours = round(record.working_hours, 2) if record.working_hours else 0
-    if record.shift_assignment:
-        doc.shift_assignment = record.shift_assignment.name
-        doc.shift = record.shift_assignment.shift_type
-        doc.operations_shift = record.shift_assignment.shift
-        doc.site = record.shift_assignment.site
-    if record.checkin:
-        if record.checkin.late_entry:doc.late_entry=1
-    if record.checkout:
-        if record.checkout.early_exit:doc.early_exit=1
-    doc.roster_type = record.roster_type
-    if record.comment:
-        doc.comment = record.comment
-    
-    if frappe.db.exists("Attendance", {
-        'employee':doc.employee,
-        'attendance_date':doc.attendance_date,
-        'roster_type':record.roster_type
+    if not frappe.db.exists("Attendance", {
+        'employee':record.employee.name,
+        'attendance_date':record.attendance_date,
+        'roster_type':record.roster_type,
+        'status': ["IN", ["Present", "On Leave", "Holiday", "Day Off"]]
         }):
-        frappe.db.sql(f"""
-            DELETE FROM `tabAttendance` WHERE employee='{doc.employee}'
-            AND attendance_date='{record.attendance_date}'
-        """)
+        doc = frappe._dict({})
+        doc.doctype = "Attendance"
+        doc.employee = record.employee.name
+        doc.employee_name = record.employee.employee_name
+        doc.status = record.status
+        doc.attendance_date = record.attendance_date
+        doc.company = record.employee.company
+        doc.department = record.employee.department
+        doc.working_hours = round(record.working_hours, 2) if record.working_hours else 0
+        if record.shift_assignment:
+            doc.shift_assignment = record.shift_assignment.name
+            doc.shift = record.shift_assignment.shift_type
+            doc.operations_shift = record.shift_assignment.shift
+            doc.site = record.shift_assignment.site
+        if record.checkin:
+            if record.checkin.late_entry:doc.late_entry=1
+        if record.checkout:
+            if record.checkout.early_exit:doc.early_exit=1
+        doc.roster_type = record.roster_type
+        if record.comment:
+            doc.comment = record.comment
+        print(doc, '\n')
+        doc = frappe.get_doc(doc)
+        if doc.status in ['Work From Home', 'Day Off', 'Holiday']:
+            doc.flags.ignore_validate = True
+            doc.save()
+            doc.db_set('docstatus', 1)
+        else:
+            doc.submit()
+        print(doc.as_dict())
+        # updated checkins if exists
+        if record.checkin:
+            frappe.db.set_value("Employee Checkin", record.checkin.name, 'attendance', doc.name)
+        if record.checkout:
+            frappe.db.set_value("Employee Checkin", record.checkout.name, 'attendance', doc.name)
         frappe.db.commit()
-    
-    doc = frappe.get_doc(doc)
-    if doc.status in ['Work From Home', 'Day Off', 'Holiday']:
-        doc.flags.ignore_validate = True
-        doc.save()
-        doc.db_set('docstatus', 1)
-    else:
-        doc.submit()
-    # updated checkins if exists
-    if record.checkin:
-        frappe.db.set_value("Employee Checkin", record.checkin.name, 'attendance', doc.name)
-    if record.checkout:
-        frappe.db.set_value("Employee Checkin", record.checkout.name, 'attendance', doc.name)
-    frappe.db.commit()
 
 
 @frappe.whitelist()
