@@ -1,5 +1,6 @@
 import pandas as pd
 import frappe
+from frappe import _
 from frappe.utils import getdate, add_days
 from hrms.hr.doctype.attendance.attendance import *
 from hrms.hr.utils import  validate_active_employee
@@ -15,6 +16,8 @@ def get_duplicate_attendance_record(employee, attendance_date, shift, roster_typ
         'roster_type': roster_type,
         'docstatus': 1
     }, fields="*")
+
+    return overlapping_attendance
 
 
 def get_overlapping_shift_attendance(employee, attendance_date, shift, roster_type, name=None):
@@ -86,15 +89,16 @@ class AttendanceOverride(Attendance):
         
     def validate_duplicate_record(self):
         duplicate = get_duplicate_attendance_record(
-			self.employee, self.attendance_date, self.shift, self.name
+			self.employee, self.attendance_date, self.shift, self.roster_type, self.name
 		)
         
         if duplicate:
             frappe.throw(
-				_("Attendance for employee {0} is already marked for the date {1}: {2}").format(
+				_("Attendance for employee {0} is already marked for the date {1}: {2} : {3}").format(
 					frappe.bold(self.employee),
 					frappe.bold(self.attendance_date),
 					get_link_to_form("Attendance", duplicate[0].name),
+                    self.roster_type
 				),
 				title=_("Duplicate Attendance"),
 				exc=DuplicateAttendanceError,
