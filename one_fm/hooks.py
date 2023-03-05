@@ -277,7 +277,6 @@ doc_events = {
 	},
 	"Attendance": {
 		"on_submit": [
-			"one_fm.api.doc_events.create_additional_salary_for_overtime",
 			"one_fm.one_fm.utils.manage_attendance_on_holiday"
 		],
 		"on_cancel": "one_fm.one_fm.utils.manage_attendance_on_holiday"
