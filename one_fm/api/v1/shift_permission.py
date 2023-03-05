@@ -33,9 +33,6 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
 
-    if not log_type:
-        return response("Bad Request", 400, None, "log_type required.")
-
     if not permission_type:
         return response("Bad Request", 400, None, "permission_type required.")
 
@@ -45,13 +42,21 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
     if not reason:
         return response("Bad Request", 400, None, "reason required.")
 
+    if not log_type:
+        if permission_type in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
+            log_type='IN'
+        elif permission_type in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
+            log_type='OUT'
+        else:
+            return response("Bad Request", 400, None, "log_type required.")
+
     if log_type == "IN" and permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
         return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
-            "Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(permission_type))
+            "Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(permission_type)))
 
     if log_type == "OUT" and permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
         return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
-            "Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(permission_type))
+            "Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(permission_type)))
 
     if permission_type == "Arrive Late" and not arrival_time:
         return response("Bad Request", 400, None, "Arrival time required for late arrival shift permission.")

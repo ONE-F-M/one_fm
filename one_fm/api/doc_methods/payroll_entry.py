@@ -293,7 +293,7 @@ def create_monthly_payroll_entry(payroll_date, start_date, end_date, project_lis
 		payroll_entry.posting_date = getdate(payroll_date)
 		payroll_entry.payroll_frequency = "Monthly"
 		payroll_entry.exchange_rate = 0
-		payroll_entry.payroll_payable_account = frappe.get_value("Company", erpnext.get_default_company(), "default_payable_account")
+		payroll_entry.payroll_payable_account = frappe.get_value("Company", erpnext.get_default_company(), "default_payroll_payable_account")
 		payroll_entry.company = erpnext.get_default_company()
 		payroll_entry.start_date = start_date
 		payroll_entry.end_date = end_date
