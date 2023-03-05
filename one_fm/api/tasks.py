@@ -1526,6 +1526,8 @@ def mark_daily_attendance(start_date, end_date):
 
 		frappe.enqueue("one_fm.overrides.attendance.remark_absent_for_employees",
 			employees=absent_list, date=str(start_date), queue='long', timeout=6000)
+		frappe.enqueue("one_fm.overrides.attendance.mark_overtime_attendance", 
+			from_date=start_date, to_date=end_date, queue='long', timeout=6000)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 
