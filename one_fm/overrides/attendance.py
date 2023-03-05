@@ -1,10 +1,47 @@
 import pandas as pd
 import frappe
 from frappe.utils import getdate, add_days
-from hrms.hr.doctype.attendance.attendance import Attendance
+from hrms.hr.doctype.attendance.attendance import *
 from hrms.hr.utils import  validate_active_employee
 from one_fm.utils import get_holiday_today
 from one_fm.operations.doctype.shift_permission.shift_permission import create_checkin as approve_shift_permission
+
+
+def get_duplicate_attendance_record(employee, attendance_date, shift, roster_type, name=None):
+    overlapping_attendance = frappe.db.get_list("Attendance", filters={
+        'employee':employee,
+        'attendance_date':attendance_date,
+        'shift':shift,
+        'roster_type': roster_type,
+        'docstatus': 1
+    }, fields="*")
+
+
+def get_overlapping_shift_attendance(employee, attendance_date, shift, roster_type, name=None):
+	if not shift:
+		return {}
+
+	attendance = frappe.qb.DocType("Attendance")
+	query = (
+		frappe.qb.from_(attendance)
+		.select(attendance.name, attendance.shift)
+		.where(
+			(attendance.employee == employee)
+			& (attendance.docstatus < 2)
+			& (attendance.attendance_date == attendance_date)
+			& (attendance.shift != shift)
+            & (attendance.roster_type == roster_type)
+		)
+	)
+
+	if name:
+		query = query.where(attendance.name != name)
+
+	overlapping_attendance = query.run(as_dict=True)
+
+	if overlapping_attendance and has_overlapping_timings(shift, overlapping_attendance[0].shift):
+		return overlapping_attendance[0]
+	return {}
 
 
 class AttendanceOverride(Attendance):
@@ -46,6 +83,40 @@ class AttendanceOverride(Attendance):
     
     def on_submit(self):
         self.update_shift_details_in_attendance()
+        
+    def validate_duplicate_record(self):
+        duplicate = get_duplicate_attendance_record(
+			self.employee, self.attendance_date, self.shift, self.name
+		)
+        
+        if duplicate:
+            frappe.throw(
+				_("Attendance for employee {0} is already marked for the date {1}: {2}").format(
+					frappe.bold(self.employee),
+					frappe.bold(self.attendance_date),
+					get_link_to_form("Attendance", duplicate[0].name),
+				),
+				title=_("Duplicate Attendance"),
+				exc=DuplicateAttendanceError,
+			)
+                        
+    def validate_overlapping_shift_attendance(self):
+        attendance = get_overlapping_shift_attendance(
+			self.employee, self.attendance_date, self.shift, self.roster_type, self.name
+		)
+        
+        if attendance:
+            frappe.throw(
+				_("Attendance for employee {0} is already marked for an overlapping shift {1}: {2}").format(
+					frappe.bold(self.employee),
+					frappe.bold(attendance.shift),
+					get_link_to_form("Attendance", attendance.name),
+				),
+				title=_("Overlapping Shift Attendance"),
+				exc=OverlappingShiftAttendanceError,
+			)
+
+
 
     def update_shift_details_in_attendance(doc):
         # condition = ''
@@ -74,13 +145,14 @@ class AttendanceOverride(Attendance):
 
 
 @frappe.whitelist()
-def mark_single_attendance(emp, att_date):
+def mark_single_attendance(emp, att_date, roster_type="Basic"):
     # check if attendance exists
     #  get holiday, employee schedule, shift assignment, employee checkins
     if not frappe.db.exists("Attendance", {
         'employee': emp,
         'attendance_date':att_date,
         'status': ['!=', 'Absent'],
+        'roster_type': roster_type,
         'docstatus':1
         }):
         open_leaves = frappe.db.sql(f"""
@@ -205,6 +277,13 @@ def create_single_attendance_record(record):
         'roster_type':record.roster_type,
         'status': ["IN", ["Present", "On Leave", "Holiday", "Day Off"]]
         }):
+        # clear absent
+        frappe.db.sql(f"""
+            DELETE FROM `tabAttendance` WHERE employee="{record.employee.name}" AND 
+            attendance_date="{record.attendance_date}" AND roster_type="{record.roster_type}"
+            AND status="Absent"
+        """)
+        frappe.db.commit()
         doc = frappe._dict({})
         doc.doctype = "Attendance"
         doc.employee = record.employee.name
@@ -226,15 +305,16 @@ def create_single_attendance_record(record):
         doc.roster_type = record.roster_type
         if record.comment:
             doc.comment = record.comment
-        print(doc, '\n')
         doc = frappe.get_doc(doc)
+        if doc.working_hours < 4:
+            doc.status = 'Absent'
+            doc.comment = 'Late Checkin, 4hrs late.'
         if doc.status in ['Work From Home', 'Day Off', 'Holiday']:
             doc.flags.ignore_validate = True
             doc.save()
             doc.db_set('docstatus', 1)
         else:
             doc.submit()
-        print(doc.as_dict())
         # updated checkins if exists
         if record.checkin:
             frappe.db.set_value("Employee Checkin", record.checkin.name, 'attendance', doc.name)
