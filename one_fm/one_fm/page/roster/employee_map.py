@@ -142,6 +142,7 @@ class CreateMap():
         self.all_employees = employees
         self.str_filter = filters
         self.isOt = isOt
+        self.roster_type = "Over-Time" if isOt else "Basic"
         if self.isOt:
             self.str_filter+=' and es.roster_type = "Over-Time"'
 
@@ -155,13 +156,13 @@ class CreateMap():
             self.schedule_query  = f"""SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
             es.shift, es.roster_type, es.employee_availability, es.day_off_ot, es.project from `tabEmployee Schedule`es  where \
                 es.employee in  ('{employees[0].employee}') and {self.str_filter} order by es.employee """
-            self.attendance_query = f"SELECT at.status,at.leave_application, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in ('{employees[0].employee}')  and at.attendance_date between '{self.start}' and '{self.end}' and docstatus = 1 order by at.employee """
+            self.attendance_query = f"SELECT at.status,at.leave_application, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in ('{employees[0].employee}')  and at.attendance_date between '{self.start}' and '{self.end}' and docstatus = 1 AND roster_type='{self.roster_type}' order by at.employee """
             self.employee_query = f"SELECT name, employee_id, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in ('{employees[0].employee}') order by employee_name"
         else:
             self.schedule_query  = f"SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
                 es.shift, es.roster_type, es.employee_availability, es.day_off_ot, es.project from `tabEmployee Schedule`es  where \
                     es.employee in {self.employees} and {self.str_filter} order by es.employee "
-            self.attendance_query = f"SELECT at.status,at.leave_type,at.leave_application, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{self.end}' and docstatus = 1 order by at.employee """
+            self.attendance_query = f"SELECT at.status,at.leave_type,at.leave_application, at.attendance_date,at.employee,at.employee_name from `tabAttendance`at  where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{self.end}' and docstatus = 1 AND roster_type='{self.roster_type}' order by at.employee """
             self.employee_query = f"SELECT name,  employee_id, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
 
         
