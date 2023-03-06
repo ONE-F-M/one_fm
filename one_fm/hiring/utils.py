@@ -314,24 +314,25 @@ def generate_employee_id(doc):
 
 
 def create_leave_policy_assignment(doc):
-	'''
+    """
 		Method to create Leave Policy Assignment for an Employee, if employee have a Leave Policy
 		Create Leave Policy based on Joining Date
 		args:
 			doc: Employee Object
-	'''
-	if doc.leave_policy:
-		assignment = frappe.new_doc("Leave Policy Assignment")
-		assignment.employee = doc.name
-		assignment.assignment_based_on = 'Joining Date'
-		assignment.leave_policy = doc.leave_policy
-		assignment.effective_from = doc.date_of_joining
-		# effective_to is an year of addition to effective_from
-		assignment.effective_to = getdate(add_days(add_years(doc.date_of_joining, 1), -1))
-		assignment.carry_forward = True
-		assignment.leaves_allocated = False
-		assignment.save()
-		assignment.submit()
+    """
+    if doc.leave_policy:
+        assignment = frappe.new_doc("Leave Policy Assignment")
+        assignment.employee = doc.name
+        assignment.assignment_based_on = 'Joining Date'
+        assignment.leave_policy = doc.leave_policy
+        assignment.effective_from = doc.date_of_joining
+        # effective_to is an year of addition to effective_from
+        assignment.effective_to = getdate(add_days(add_years(doc.date_of_joining, 1), -1))
+        assignment.carry_forward = True
+        assignment.leaves_allocated = False
+        assignment.save()
+        assignment.submit()
+        grant_leave_alloc_for_employee(assignment)
 
 @frappe.whitelist()
 def grant_leave_alloc_for_employee(doc):
