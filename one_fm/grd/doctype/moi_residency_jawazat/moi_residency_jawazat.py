@@ -134,6 +134,9 @@ class MOIResidencyJawazat(Document):
         employee.residency_expiry_date = self.new_residency_expiry_date
         employee.save()
 
+    def get_passport_arabic(self, passport):
+        return {'Normal':'طبيعي','Diplomat':'دبلوماسي'}.get(passport)
+    
 #fetching the list of employee has Extend and renewal status from HR list.
 def set_employee_list_for_moi(preparation_name):
     # filter work permit records only take the non kuwaiti
