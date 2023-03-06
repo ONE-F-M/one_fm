@@ -280,6 +280,7 @@
    "read_only": 1
   },
   {
+   "default": "support@one-fm.com",
    "fieldname": "company_email_id",
    "fieldtype": "Data",
    "label": "Company Email ID",
@@ -294,8 +295,7 @@
   {
    "fieldname": "governorate",
    "fieldtype": "Data",
-   "label": "Governorate",
-   "read_only": 1
+   "label": "Governorate"
   },
   {
    "fieldname": "column_break_36",
@@ -528,7 +528,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-15 14:53:08.689518",
+ "modified": "2023-03-07 00:05:34.173681",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
