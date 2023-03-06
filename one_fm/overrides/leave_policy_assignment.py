@@ -10,7 +10,7 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 	@frappe.whitelist()
 	def grant_leave_alloc_for_employee(self):
 		leave_allocations = {}
-		if self.leaves_allocated:
+		if not self.leaves_allocated:
 			leave_type_details = get_leave_type_detail()
 
 			leave_policy = frappe.get_doc("Leave Policy", self.leave_policy)
