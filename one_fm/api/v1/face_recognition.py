@@ -1,4 +1,4 @@
-import frappe, ast, base64, time, grpc, json
+import frappe, ast, base64, time, grpc, json, random
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.api.v1.roster import get_current_shift
@@ -11,10 +11,17 @@ from one_fm.api.doc_events import haversine
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+channels = [
+    grpc.secure_channel(face_recognition_service_url[0], grpc.ssl_channel_credentials()),
+    grpc.secure_channel(face_recognition_service_url[1], grpc.ssl_channel_credentials()),
+]
+
 
 # setup stub for face recognition
-stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+stubs = [
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channels[0]),
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channels[1])
+]
 
 
 @frappe.whitelist()
@@ -159,7 +166,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             media_content = video
         )
         # Call service stub and get response
-        res = stub.FaceRecognition(req)
+        res = random.choice(stubs).FaceRecognition(req)
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
         if res.verification == "FAILED" and res.data == 'Invalid media content':
