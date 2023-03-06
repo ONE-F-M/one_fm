@@ -44,13 +44,11 @@ class RequestforPurchase(Document):
 		for user in users:
 			if has_permission(doctype=self.doctype, user=user):
 				filtered_users.append(user)
-			if filtered_users and len(filtered_users) > 0:
-				message = "Dear Purchase Manager, <br/> <p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
-				subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
-				send_email(self, filtered_users, message, subject)
-				create_notification_log(subject, message, [self.accepter], self)
-				notified = True
-		if notified:
+		if filtered_users and len(filtered_users) > 0:
+			message = "Dear Purchase Manager, <br/> <p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
+			subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
+			send_email(self, filtered_users, message, subject)
+			create_notification_log(subject, message, filtered_users, self)
 			frappe.msgprint(_("Notification sent to Purchase Manager"))
 		self.reload()
 
