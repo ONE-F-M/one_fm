@@ -315,23 +315,23 @@ def get_attendance(projects, employee_list):
 			""", as_dict=1)
 
 		for row in present_list:
-			if present_dict.get(row.employee):
-				present_dict[row.employee] += row.working_days
-			else:
-				present_dict[row.employee] = row.working_days
+			# if present_dict.get(row.employee):
+			# 	present_dict[row.employee] += row.working_days
+			# else:
+			present_dict[row.employee] = row.working_days
 
 		for row in attendance_list_ot:
-			if ot_dict.get(row.employee):
-				ot_dict[row.employee]['ot'] += row.ot
-				ot_dict[row.employee]['do_ot'] += row.do_ot
-			else:
-				ot_dict[row.employee] = {'ot':row.ot,'do_ot':row.do_ot}
+			# if ot_dict.get(row.employee):
+			# 	ot_dict[row.employee]['ot'] += row.ot
+			# 	ot_dict[row.employee]['do_ot'] += row.do_ot
+			# else:
+			ot_dict[row.employee] = {'ot':row.ot,'do_ot':row.do_ot}
 
 		for row in attendance_absent:
-			if absent_dict.get(row.employee):
-				absent_dict[row.employee] += row.absent
-			else:
-				absent_dict[row.employee] = row.absent
+			# if absent_dict.get(row.employee):
+			# 	absent_dict[row.employee] += row.absent
+			# else:
+			absent_dict[row.employee] = row.absent
 
 		for row in day_off_list:
 			day_off_dict[row.employee] = row.number_of_days_off
@@ -339,11 +339,11 @@ def get_attendance(projects, employee_list):
 		for row in attendance_leave_details:
 			if row.leave_type not in ['Sick Leave', 'Annual Leave']:
 				row.leave_type = "Other Leave"
-			if leave_dict.get(row.employee):
-				leave_dict[row.employee]["leave_type"] = row.leave_type
-				leave_dict[row.employee]["leave_count"] += row.leave_count
-			else:
-				leave_dict[row.employee] = {'leave_type' : row.leave_type, 'leave_count':row.leave_count}
+			# if leave_dict.get(row.employee):
+			# 	leave_dict[row.employee]["leave_type"] = row.leave_type
+			# 	leave_dict[row.employee]["leave_count"] += row.leave_count
+			# else:
+			leave_dict[row.employee] = {'leave_type' : row.leave_type, 'leave_count':row.leave_count}
 
 	for row in attendance_dict:
 		if present_dict.get(row):
