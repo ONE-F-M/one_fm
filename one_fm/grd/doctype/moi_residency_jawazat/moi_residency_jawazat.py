@@ -13,6 +13,9 @@ from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, n
 from one_fm.grd.doctype.paci import paci
 
 class MOIResidencyJawazat(Document):
+    company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
+            ['phone_no', 'email', 'company_name_arabic'], as_dict=1)
+    
     def validate(self):
         self.set_grd_values()
         self.set_new_expiry_date()
@@ -34,6 +37,7 @@ class MOIResidencyJawazat(Document):
         """
         This method sets the company address from MOCI document
         """
+
         missing_field = False
         fields = ['company_pam_file_number','company_location','company_block_number','company_street_name','company_building_name','company_contact_number']
         for field in fields:
@@ -46,6 +50,9 @@ class MOIResidencyJawazat(Document):
             self.company_street_name = moci.street
             self.company_building_name = moci.building
             self.company_pam_file_number = moci.company_civil_id
+        if not self.company_email_id:self.company_email_id=self.company.email
+        if not self.company_contact_number:self.company_contact_number=self.company.phone_no
+
 
     def set_company_unified_number(self):
         """
@@ -137,6 +144,7 @@ class MOIResidencyJawazat(Document):
     def get_passport_arabic(self, passport):
         return {'Normal':'طبيعي','Diplomat':'دبلوماسي'}.get(passport)
     
+
 #fetching the list of employee has Extend and renewal status from HR list.
 def set_employee_list_for_moi(preparation_name):
     # filter work permit records only take the non kuwaiti

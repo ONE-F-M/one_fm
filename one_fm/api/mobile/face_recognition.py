@@ -8,16 +8,15 @@ import grpc
 from one_fm.one_fm.page.face_recognition.face_recognition import user_within_site_geofence
 
 
+# setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channels = [
-    grpc.secure_channel(face_recognition_service_url[0], grpc.ssl_channel_credentials()),
-    grpc.secure_channel(face_recognition_service_url[1], grpc.ssl_channel_credentials()),
+    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
 ]
 
 # setup stub for face recognition
 stubs = [
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channels[0]),
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channels[1])
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
 ]
 
 
@@ -80,6 +79,9 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 		)
 		# Call service stub and get response
 		res = random.choice(stubs).FaceRecognition(req)
+		
+		if res.verification == "FAILED" and res.data == 'Invalid media content':
+			return check_in(log_type, skip_attendance, latitude, longitude)
 
 		if res.verification == "FAILED":
 			msg = res.message

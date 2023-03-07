@@ -86,8 +86,11 @@ class AttendanceOverride(Attendance):
     
     def on_submit(self):
         self.update_shift_details_in_attendance()
-        self.create_additional_salary_for_overtime()
-        
+        try:
+            self.create_additional_salary_for_overtime()
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), 'Over-Time Salary')
+
     def validate_duplicate_record(self):
         duplicate = get_duplicate_attendance_record(
 			self.employee, self.attendance_date, self.shift, self.roster_type, self.name
@@ -157,7 +160,7 @@ class AttendanceOverride(Attendance):
         # Check if attendance is for roster type: Over-Time
         if self.roster_type == roster_type_overtime:
 
-            payroll_date = cstr(getdate())
+            payroll_date = cstr(self.attendance_date)
 
             # Fetch payroll details from HR and Payroll Additional Settings
             overtime_component = frappe.db.get_single_value("HR and Payroll Additional Settings", 'overtime_additional_salary_component')
@@ -186,8 +189,14 @@ class AttendanceOverride(Attendance):
             # If no overtime rate is specified, follow labor law => (Basic Hourly Wage * number of worked hours * 1.5)
             else:
                 # Fetch assigned shift, basic salary  and holiday list for the given employee
-                assigned_shift, basic_salary, holiday_list = frappe.db.get_value("Employee", {'employee': self.employee}, ["shift", "one_fm_basic_salary", "holiday_list"])
-
+                assigned_shift, holiday_list = frappe.db.get_value("Employee", {'employee': self.employee}, ["shift", "holiday_list"])
+                basic_salary = sum(
+                    [i.amount for i in frappe.get_last_doc(
+                        'Salary Structure Assignment', 
+                        filters={"employee": self.employee, "docstatus":1}
+                        ).salary_structure_components if i.salary_component=='Basic Salary'
+                    ]
+                )
                 if assigned_shift:
                     # Fetch duration of the shift employee is assigned to
                     assigned_shift_duration = frappe.db.get_value("Operations Shift", assigned_shift, ["duration"])
