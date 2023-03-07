@@ -161,7 +161,7 @@ def get_data(filters):
 	if not filters:
 		return
 
-	report_date = str(filters.year) + "-" + str(filters.month) + "-1"
+	report_date = str(filters["year"]) + "-" + str(filters["month"]) + "-1"
 
 	first_day_of_month = str(get_first_day(report_date))
 	last_day_of_month = str(get_last_day(report_date))
