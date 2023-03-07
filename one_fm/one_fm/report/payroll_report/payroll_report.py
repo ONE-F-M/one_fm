@@ -257,11 +257,6 @@ def get_attendance(projects, employee_list):
 
 	all_project = tuple(all_project)
 
-	condition = ""
-	if key != "Other":
-		condition += f" AND e.project='{key}' "
-	else:
-		condition += f" AND e.project IN {all_project} "
 
 	for e in employee_list:
 		attendance_dict[e]={'working_days': 0,'number_of_days_off':0, 'ot': 0, 'sl':0, 'al':0, 'ab':0, 'ol':0, 'do_ot':0}
@@ -269,6 +264,12 @@ def get_attendance(projects, employee_list):
 	for key, value in projects.items():
 		start_date = projects[key]['start_date']
 		end_date = projects[key]['end_date']
+
+		condition = ""
+		if key != "Other":
+			condition += f" AND e.project='{key}' "
+		else:
+			condition += f" AND e.project IN {all_project} "
 
 		present_list = frappe.db.sql(f"""
 			SELECT at.employee, COUNT(*) as working_days FROM `tabAttendance` at JOIN `tabEmployee` e ON e.name=at.employee
