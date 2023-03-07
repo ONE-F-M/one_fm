@@ -332,7 +332,6 @@ def create_leave_policy_assignment(doc):
         assignment.leaves_allocated = False
         assignment.save()
         assignment.submit()
-        grant_leave_alloc_for_employee(assignment)
 
 @frappe.whitelist()
 def grant_leave_alloc_for_employee(doc):
