@@ -280,6 +280,11 @@ def get_attendance(projects, employee_list):
 			GROUP BY at.employee
 		""", as_dict=1)
 
+		print(start_date)
+		print(end_date)
+		print(condition)
+		print(present_list)
+
 		attendance_list_ot = frappe.db.sql(f"""
 			SELECT employee, COUNT(employee) as ot, count(day_off_ot) as do_ot FROM `tabAttendance`
 			WHERE attendance_date BETWEEN '{start_date}' AND '{end_date}'
