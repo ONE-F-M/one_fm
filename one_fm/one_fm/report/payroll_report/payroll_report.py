@@ -202,7 +202,7 @@ def get_data(filters):
 			i.ab = att_project['ab']
 			i.number_of_days_off = att_project['number_of_days_off']
 			i.total = i.working_days + i.sl + i.al + i.ol + i.ab
-			i.number_of_working_days = (i.end_date-i.start_date).days - i.number_of_days_off
+			i.number_of_working_days = ((i.end_date-i.start_date).days)+1 - i.number_of_days_off
 
 	if not query:
 		frappe.msgprint(("No Payroll Submitted or Salary Slip Created from the Payroll Entry this month!"), alert=True, indicator="Blue")
@@ -218,8 +218,8 @@ def get_employee_list(query):
 
 
 def get_payroll_cycle(filters):
-	settings = frappe.get_doc("HR and Payroll Additional Settings").project_payroll_cycle
-	default_date = frappe.get_doc("HR and Payroll Additional Settings").payroll_date
+	settings = frappe.get_doc("HR and Payroll Additional Settings")
+	default_date = settings.payroll_date
 
 	start_date = datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
 	payroll_cycle = {
@@ -229,7 +229,7 @@ def get_payroll_cycle(filters):
 			}
 		}
 
-	for row in settings:
+	for row in settings.project_payroll_cycle:
 		if row.payroll_start_day == 'Month Start':
 			row.payroll_start_day = 1
 		payroll_cycle[row.project] = {
@@ -264,19 +264,12 @@ def get_attendance(projects, employee_list):
 	for key, value in projects.items():
 		start_date = projects[key]['start_date']
 		end_date = projects[key]['end_date']
-		condition = ""
-
-		if key != "Other":
-			condition += f" AND project='{key}' "
-		else:
-			condition += f" AND project IN {all_project} "
 
 		present_list = frappe.db.sql(f"""
 			SELECT employee, COUNT(*) as working_days FROM `tabAttendance`
 			WHERE attendance_date BETWEEN '{start_date}' AND '{end_date}'
 			AND status IN ("Present", "Work From Home")
 			AND roster_type='Basic'
-			{condition}
 			GROUP BY employee
 		""", as_dict=1)
 
@@ -285,7 +278,6 @@ def get_attendance(projects, employee_list):
 			WHERE attendance_date BETWEEN '{start_date}' AND '{end_date}'
 			AND status IN ("Present", "Work From Home")
 			AND roster_type='Over-Time'
-			{condition}
 			GROUP BY employee
 		""", as_dict=1)
 
@@ -293,7 +285,6 @@ def get_attendance(projects, employee_list):
 			SELECT employee,leave_type, COUNT(leave_type) AS leave_count FROM `tabAttendance` at
 				WHERE at.status = "On Leave"
 				AND attendance_date BETWEEN '{start_date}' AND '{end_date}'
-				{condition}
 				Group by leave_type;
 
 			""", as_dict=1)
@@ -302,7 +293,6 @@ def get_attendance(projects, employee_list):
 			SELECT employee, COUNT(employee) as absent FROM `tabAttendance` at
 				WHERE at.status = "Absent"
 				AND attendance_date BETWEEN '{start_date}' AND '{end_date}'
-				{condition}
 				Group by employee;
 			""", as_dict=1)
 
@@ -310,28 +300,17 @@ def get_attendance(projects, employee_list):
 			SELECT employee, COUNT(employee) as number_of_days_off FROM `tabEmployee Schedule` es
 				WHERE es.employee_availability = "Day Off"
 				AND date BETWEEN '{start_date}' AND '{end_date}'
-				{condition}
 				Group by employee;
 			""", as_dict=1)
 
 		for row in present_list:
-			if present_dict.get(row.employee):
-				present_dict[row.employee] += row.working_days
-			else:
-				present_dict[row.employee] = row.working_days
+			present_dict[row.employee] = row.working_days
 
 		for row in attendance_list_ot:
-			if ot_dict.get(row.employee):
-				ot_dict[row.employee]['ot'] += row.ot
-				ot_dict[row.employee]['do_ot'] += row.do_ot
-			else:
-				ot_dict[row.employee] = {'ot':row.ot,'do_ot':row.do_ot}
+			ot_dict[row.employee] = {'ot':row.ot,'do_ot':row.do_ot}
 
 		for row in attendance_absent:
-			if absent_dict.get(row.employee):
-				absent_dict[row.employee] += row.absent
-			else:
-				absent_dict[row.employee] = row.absent
+			absent_dict[row.employee] = row.absent
 
 		for row in day_off_list:
 			day_off_dict[row.employee] = row.number_of_days_off
@@ -339,19 +318,15 @@ def get_attendance(projects, employee_list):
 		for row in attendance_leave_details:
 			if row.leave_type not in ['Sick Leave', 'Annual Leave']:
 				row.leave_type = "Other Leave"
-			if leave_dict.get(row.employee):
-				leave_dict[row.employee]["leave_type"] = row.leave_type
-				leave_dict[row.employee]["leave_count"] += row.leave_count
-			else:
-				leave_dict[row.employee] = {'leave_type' : row.leave_type, 'leave_count':row.leave_count}
+			leave_dict[row.employee] = {'leave_type' : row.leave_type, 'leave_count':row.leave_count}
 
 	for row in attendance_dict:
 		if present_dict.get(row):
-			attendance_dict[row]['working_days'] += present_dict.get(row)
+			attendance_dict[row]['working_days'] = present_dict.get(row)
 
 		if ot_dict.get(row):
-			attendance_dict[row]['ot'] += ot_dict.get(row)["ot"]
-			attendance_dict[row]['do_ot'] += ot_dict.get(row)["do_ot"]
+			attendance_dict[row]['ot'] = ot_dict.get(row)["ot"]
+			attendance_dict[row]['do_ot'] = ot_dict.get(row)["do_ot"]
 
 		if day_off_dict.get(row):
 			attendance_dict[row]['number_of_days_off'] = day_off_dict.get(row)
@@ -364,7 +339,7 @@ def get_attendance(projects, employee_list):
 			if leave_dict.get(row)["leave_type"] == "Other Leave":
 				attendance_dict[row]['ol'] = leave_dict.get(row)["leave_count"]
 		if absent_dict.get(row):
-			attendance_dict[row]['ab'] += absent_dict.get(row)
+			attendance_dict[row]['ab'] = absent_dict.get(row)
 	return attendance_dict
 
 @frappe.whitelist()
