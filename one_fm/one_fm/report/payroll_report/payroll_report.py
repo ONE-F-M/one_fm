@@ -158,8 +158,9 @@ def get_columns(filters):
 	]
 def get_data(filters):
 	data = []
-	if not filters:
-		return
+	filters = {'month': '08', 'year': '2022'}
+	# if not filters:
+	# 	return
 
 	report_date = str(filters["year"]) + "-" + str(filters["month"]) + "-1"
 
