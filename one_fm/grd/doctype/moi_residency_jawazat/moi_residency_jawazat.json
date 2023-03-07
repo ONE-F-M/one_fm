@@ -294,8 +294,7 @@
   {
    "fieldname": "governorate",
    "fieldtype": "Data",
-   "label": "Governorate",
-   "read_only": 1
+   "label": "Governorate"
   },
   {
    "fieldname": "column_break_36",
@@ -528,7 +527,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-15 14:53:08.689518",
+ "modified": "2023-03-07 10:15:12.819781",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
