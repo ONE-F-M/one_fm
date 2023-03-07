@@ -257,7 +257,6 @@ def get_attendance(projects, employee_list):
 
 	all_project = tuple(all_project)
 
-
 	for e in employee_list:
 		attendance_dict[e]={'working_days': 0,'number_of_days_off':0, 'ot': 0, 'sl':0, 'al':0, 'ab':0, 'ol':0, 'do_ot':0}
 
