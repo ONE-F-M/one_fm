@@ -12,17 +12,15 @@ from one_fm.api.doc_events import haversine
 from one_fm.utils import get_holiday_today
 
 
-
+# setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channels = [
-    grpc.secure_channel(face_recognition_service_url[0], grpc.ssl_channel_credentials()),
-    grpc.secure_channel(face_recognition_service_url[1], grpc.ssl_channel_credentials()),
+    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
 ]
 
 # setup stub for face recognition
 stubs = [
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channels[0]),
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channels[1])
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
 ]
 
 
