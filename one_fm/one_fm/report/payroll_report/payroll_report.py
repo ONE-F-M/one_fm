@@ -322,11 +322,11 @@ def get_attendance(projects, employee_list):
 
 	for row in attendance_dict:
 		if present_dict.get(row):
-			attendance_dict[row]['working_days'] += present_dict.get(row)
+			attendance_dict[row]['working_days'] = present_dict.get(row)
 
 		if ot_dict.get(row):
-			attendance_dict[row]['ot'] += ot_dict.get(row)["ot"]
-			attendance_dict[row]['do_ot'] += ot_dict.get(row)["do_ot"]
+			attendance_dict[row]['ot'] = ot_dict.get(row)["ot"]
+			attendance_dict[row]['do_ot'] = ot_dict.get(row)["do_ot"]
 
 		if day_off_dict.get(row):
 			attendance_dict[row]['number_of_days_off'] = day_off_dict.get(row)
@@ -339,7 +339,7 @@ def get_attendance(projects, employee_list):
 			if leave_dict.get(row)["leave_type"] == "Other Leave":
 				attendance_dict[row]['ol'] = leave_dict.get(row)["leave_count"]
 		if absent_dict.get(row):
-			attendance_dict[row]['ab'] += absent_dict.get(row)
+			attendance_dict[row]['ab'] = absent_dict.get(row)
 	return attendance_dict
 
 @frappe.whitelist()
