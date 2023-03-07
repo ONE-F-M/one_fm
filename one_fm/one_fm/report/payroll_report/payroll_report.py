@@ -266,11 +266,12 @@ def get_attendance(projects, employee_list):
 		end_date = projects[key]['end_date']
 
 		present_list = frappe.db.sql(f"""
-			SELECT employee, COUNT(*) as working_days FROM `tabAttendance`
-			WHERE attendance_date BETWEEN '{start_date}' AND '{end_date}'
-			AND status IN ("Present", "Work From Home")
-			AND roster_type='Basic'
-			GROUP BY employee
+			SELECT at.employee, COUNT(*) as working_days FROM `tabAttendance` at JOIN `tabEmployee` e at ON e.name=at.employee
+			WHERE at.attendance_date BETWEEN '{start_date}' AND '{end_date}'
+			AND at.status IN ("Present", "Work From Home")
+			AND at.roster_type='Basic'
+			AND e.project = {key}
+			GROUP BY at.employee
 		""", as_dict=1)
 
 		attendance_list_ot = frappe.db.sql(f"""
