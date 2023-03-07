@@ -158,9 +158,8 @@ def get_columns(filters):
 	]
 def get_data(filters):
 	data = []
-	filters = {'month': '08', 'year': '2022'}
-	# if not filters:
-	# 	return
+	if not filters:
+		return
 
 	report_date = str(filters["year"]) + "-" + str(filters["month"]) + "-1"
 
@@ -281,39 +280,37 @@ def get_attendance(projects, employee_list):
 			GROUP BY at.employee
 		""", as_dict=1)
 
-		print(start_date)
-		print(end_date)
-		print(condition)
-		print(present_list)
-
 		attendance_list_ot = frappe.db.sql(f"""
-			SELECT employee, COUNT(employee) as ot, count(day_off_ot) as do_ot FROM `tabAttendance`
+			SELECT employee, COUNT(at.employee) as ot, count(at.day_off_ot) as do_ot FROM `tabAttendance` at JOIN `tabEmployee` e ON e.name=at.employee
 			WHERE attendance_date BETWEEN '{start_date}' AND '{end_date}'
-			AND status IN ("Present", "Work From Home")
-			AND roster_type='Over-Time'
-			GROUP BY employee
+			AND at.status IN ("Present", "Work From Home")
+			AND at.roster_type='Over-Time'
+			{condition}
+			GROUP BY at.employee
 		""", as_dict=1)
 
 		attendance_leave_details = frappe.db.sql(f"""
-			SELECT employee,leave_type, COUNT(leave_type) AS leave_count FROM `tabAttendance` at
+			SELECT employee,leave_type, COUNT(leave_type) AS leave_count FROM `tabAttendance` at JOIN `tabEmployee` e ON e.name=at.employee
 				WHERE at.status = "On Leave"
-				AND attendance_date BETWEEN '{start_date}' AND '{end_date}'
-				Group by leave_type;
-
+				AND at.attendance_date BETWEEN '{start_date}' AND '{end_date}'
+				{condition}
+				Group by at.leave_type;
 			""", as_dict=1)
 
 		attendance_absent = frappe.db.sql(f"""
-			SELECT employee, COUNT(employee) as absent FROM `tabAttendance` at
+			SELECT employee, COUNT(employee) as absent FROM `tabAttendance` at JOIN `tabEmployee` e ON e.name=at.employee
 				WHERE at.status = "Absent"
 				AND attendance_date BETWEEN '{start_date}' AND '{end_date}'
-				Group by employee;
+				{condition}
+				Group by at.employee;
 			""", as_dict=1)
 
 		day_off_list = frappe.db.sql(f"""
-			SELECT employee, COUNT(employee) as number_of_days_off FROM `tabEmployee Schedule` es
+			SELECT es.employee, COUNT(es.employee) as number_of_days_off FROM `tabEmployee Schedule` es JOIN `tabEmployee` e ON e.name=at.employee
 				WHERE es.employee_availability = "Day Off"
-				AND date BETWEEN '{start_date}' AND '{end_date}'
-				Group by employee;
+				AND es.date BETWEEN '{start_date}' AND '{end_date}'
+				{condition}
+				Group by es.employee;
 			""", as_dict=1)
 
 		for row in present_list:
