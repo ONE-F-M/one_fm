@@ -257,6 +257,11 @@ def get_attendance(projects, employee_list):
 
 	all_project = tuple(all_project)
 
+	condition = ""
+	if key != "Other":
+		condition += f" AND e.project='{key}' "
+	else:
+		condition += f" AND e.project IN {all_project} "
 
 	for e in employee_list:
 		attendance_dict[e]={'working_days': 0,'number_of_days_off':0, 'ot': 0, 'sl':0, 'al':0, 'ab':0, 'ol':0, 'do_ot':0}
@@ -270,7 +275,7 @@ def get_attendance(projects, employee_list):
 			WHERE at.attendance_date BETWEEN '{start_date}' AND '{end_date}'
 			AND at.status IN ("Present", "Work From Home")
 			AND at.roster_type='Basic'
-			AND e.project = {key}
+			{condition}
 			GROUP BY at.employee
 		""", as_dict=1)
 
