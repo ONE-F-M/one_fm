@@ -280,7 +280,6 @@
    "read_only": 1
   },
   {
-   "default": "support@one-fm.com",
    "fieldname": "company_email_id",
    "fieldtype": "Data",
    "label": "Company Email ID",
@@ -528,7 +527,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-03-07 00:05:34.173681",
+ "modified": "2023-03-07 10:15:12.819781",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",
