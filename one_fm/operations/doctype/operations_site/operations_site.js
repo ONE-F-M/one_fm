@@ -47,6 +47,35 @@ frappe.ui.form.on('Operations Site', {
 			).addClass('btn-primary');
 		}
 	},
+	onload: function(frm){
+		frm.set_query("account_supervisor", function() {
+			return {
+				"filters": {
+					"status": "Active",
+				}
+			};
+
+		});
+	},
+	account_supervisor: function(frm){
+		frm.trigger("get_employee_status")
+	},
+	get_employee_status: function(frm){
+		frappe.call({
+			method:"frappe.client.get_value",
+			args: {
+				doctype:"Employee",
+				filters: {
+					name:frm.doc.account_supervisor
+				},
+				fieldname:["status",]
+			}, 
+			callback: function(r) { 
+				frm.toggle_display(["account_supervisor_name"], r.message.status == "Active")
+
+			}
+		})
+	}
 })
 
 function quick_entry_shifts_and_posts(frm){
