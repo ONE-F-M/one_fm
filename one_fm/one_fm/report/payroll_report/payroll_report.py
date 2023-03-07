@@ -218,8 +218,8 @@ def get_employee_list(query):
 
 
 def get_payroll_cycle(filters):
-	settings = frappe.get_doc("HR and Payroll Additional Settings").project_payroll_cycle
-	default_date = frappe.get_doc("HR and Payroll Additional Settings").payroll_date
+	settings = frappe.get_doc("HR and Payroll Additional Settings")
+	default_date = settings.payroll_date
 
 	start_date = datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
 	payroll_cycle = {
@@ -229,7 +229,7 @@ def get_payroll_cycle(filters):
 			}
 		}
 
-	for row in settings:
+	for row in settings.project_payroll_cycle:
 		if row.payroll_start_day == 'Month Start':
 			row.payroll_start_day = 1
 		payroll_cycle[row.project] = {
@@ -266,10 +266,10 @@ def get_attendance(projects, employee_list):
 		end_date = projects[key]['end_date']
 		condition = ""
 
-		if key != "Other":
-			condition += f" AND project='{key}' "
-		else:
-			condition += f" AND project IN {all_project} "
+		# if key != "Other":
+		# 	condition += f" AND project='{key}' "
+		# else:
+		# 	condition += f" AND project IN {all_project} "
 
 		present_list = frappe.db.sql(f"""
 			SELECT employee, COUNT(*) as working_days FROM `tabAttendance`
