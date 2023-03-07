@@ -14,7 +14,7 @@ from one_fm.grd.doctype.paci import paci
 
 class MOIResidencyJawazat(Document):
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
-            ['phone_no', 'email', 'company_name_arabic'])
+            ['phone_no', 'email', 'company_name_arabic'], as_dict=1)
     
     def validate(self):
         self.set_grd_values()

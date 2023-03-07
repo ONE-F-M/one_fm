@@ -12,15 +12,12 @@ from one_fm.api.doc_events import haversine
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channels = [
-    grpc.secure_channel(face_recognition_service_url[0], grpc.ssl_channel_credentials()),
-    grpc.secure_channel(face_recognition_service_url[1], grpc.ssl_channel_credentials()),
+    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
 ]
-
 
 # setup stub for face recognition
 stubs = [
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channels[0]),
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channels[1])
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
 ]
 
 
@@ -169,9 +166,11 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         res = random.choice(stubs).FaceRecognition(req)
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
+        
         if res.verification == "FAILED" and res.data == 'Invalid media content':
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
             return response("Success", 201, doc, None)
+        
         elif res.verification == "FAILED":
             msg = res.message
             if not res.verification == "OK":
