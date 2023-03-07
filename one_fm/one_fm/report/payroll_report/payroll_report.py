@@ -202,7 +202,7 @@ def get_data(filters):
 			i.ab = att_project['ab']
 			i.number_of_days_off = att_project['number_of_days_off']
 			i.total = i.working_days + i.sl + i.al + i.ol + i.ab
-			i.number_of_working_days = (i.end_date-i.start_date).days - i.number_of_days_off
+			i.number_of_working_days = ((i.end_date-i.start_date).days)+1 - i.number_of_days_off
 
 	if not query:
 		frappe.msgprint(("No Payroll Submitted or Salary Slip Created from the Payroll Entry this month!"), alert=True, indicator="Blue")
