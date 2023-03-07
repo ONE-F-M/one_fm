@@ -305,7 +305,7 @@ def get_attendance(projects, employee_list):
 			""", as_dict=1)
 
 		day_off_list = frappe.db.sql(f"""
-			SELECT es.employee, COUNT(es.employee) as number_of_days_off FROM `tabEmployee Schedule` es JOIN `tabEmployee` e ON e.name=at.employee
+			SELECT es.employee, COUNT(es.employee) as number_of_days_off FROM `tabEmployee Schedule` es JOIN `tabEmployee` e ON e.name=es.employee
 				WHERE es.employee_availability = "Day Off"
 				AND es.date BETWEEN '{start_date}' AND '{end_date}'
 				{condition}
