@@ -1906,11 +1906,11 @@ def initiate_checkin_notification(res):
 			if action_user is not None: #and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 				send_notification(title, subject, action_message, category, [action_user])
 
-			notify_message = _("""Note that {employee} from Shift {shift} has Not Checked in yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
-			if Role:
-				notify_user = get_notification_user(recipient.employee,recipient.operations_shift, Role)
-				if notify_user is not None: #and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
-					send_notification(title, subject, notify_message, category, notify_user)
+			# notify_message = _("""Note that {employee} from Shift {shift} has Not Checked in yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
+			# if Role:
+			# 	notify_user = get_notification_user(recipient.employee,recipient.operations_shift, Role)
+			# 	if notify_user is not None: #and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+			# 		send_notification(title, subject, notify_message, category, notify_user)
 
 	# # process initial checkout
 	if checkout_reminders:
@@ -1957,12 +1957,11 @@ def initiate_checkin_notification(res):
 			if action_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 				send_notification(title, subject, action_message, category, [action_user])
 
-			notify_message = _("""Note that {employee} from Shift {shift} has Not Checked out yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
-			if Role:
-				notify_user = get_notification_user(recipient.employee,recipient.operations_shift, Role)
-
-				if notify_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
-					send_notification(title, subject, notify_message, category, notify_user)
+			# notify_message = _("""Note that {employee} from Shift {shift} has Not Checked out yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
+			# if Role:
+			# 	notify_user = get_notification_user(recipient.employee,recipient.operations_shift, Role)
+			# 	if notify_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+			# 		send_notification(title, subject, notify_message, category, notify_user)
 
 
 def run_checkin_reminder():
