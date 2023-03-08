@@ -428,6 +428,13 @@ frappe.ui.form.on('Request for Material Item', { // The child table is defined i
 });
 
 var set_filters = function(frm) {
+	frm.set_query("erf", function() {
+		return {
+			filters: [
+				['status', 'not in', ['Declined', 'Cancelled']]
+			]
+		};
+	});
 	frm.set_query("project", function() {
 		return {
 			filters: [
