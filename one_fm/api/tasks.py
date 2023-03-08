@@ -956,7 +956,7 @@ def validate_pm_shift_assignment():
 	# remove approved leaves for today
 	todays_leaves = get_today_leaves(str(date))
 	roster = [i for i in roster if not i.employee in todays_leaves]
-	
+
 	if len(roster)>0:
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
@@ -1380,7 +1380,7 @@ def mark_daily_attendance(start_date, end_date):
 						'name':name, 'employee':v.employee, 'employee_name':emp.employee_name, 'working_hours':working_hours, 'status':'Present',
 						'shift':v.shift_type, 'in_time':in_time, 'out_time':shift_assignment.end_datetime, 'shift_assignment':v.shift_assignment, 'operations_shift':v.operations_shift,
 						'site':shift_assignment.site, 'project':shift_assignment.project, 'attendance_date': start_date, 'company':shift_assignment.company,
-						'department': emp.department, 'late_entry':v.late_entry, 'early_exit':check_out.early_exit, 'operations_role':shift_assignment.operations_role,
+						'department': emp.department, 'late_entry':v.late_entry, 'early_exit':0, 'operations_role':shift_assignment.operations_role,
 						'post_abbrv':shift_assignment.post_abbrv,
 						'roster_type':shift_assignment.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':"Checkin but no checkout record found"
 					})
@@ -1518,7 +1518,7 @@ def mark_daily_attendance(start_date, end_date):
 					SELECT name FROM `tabEmployee`
 					WHERE status='Active' AND holiday_list="{i}"
 					AND name not in (
-						SELECT employee FROM `tabShift Assignment` 
+						SELECT employee FROM `tabShift Assignment`
 						WHERE start_date='{start_date}')
 				""", as_dict=1)
 			if holidays:
@@ -1526,7 +1526,7 @@ def mark_daily_attendance(start_date, end_date):
 
 		frappe.enqueue("one_fm.overrides.attendance.remark_absent_for_employees",
 			employees=absent_list, date=str(start_date), queue='long', timeout=6000)
-		frappe.enqueue("one_fm.overrides.attendance.mark_overtime_attendance", 
+		frappe.enqueue("one_fm.overrides.attendance.mark_overtime_attendance",
 			from_date=start_date, to_date=end_date, queue='long', timeout=6000)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
