@@ -174,13 +174,17 @@ class RequestforMaterial(BuyingController):
 		# if not self.request_for_material_accepter:
 		# 	self.request_for_material_accepter = frappe.db.get_value('Purchase Settings', None, 'request_for_material_accepter')
 		if not self.request_for_material_approver:
-			reports_to = False
+			approver = False
 			if self.type == 'Project' and self.project:
-				reports_to = frappe.db.get_value('Project', self.project, 'account_manager')
-			elif self.employee:
-				reports_to = frappe.db.get_value('Employee', self.employee, 'reports_to')
-			if reports_to:
-				request_for_material_approver = get_employee_user_id(reports_to)
+				approver = frappe.db.get_value('Project', self.project, 'account_manager')
+			elif self.type == 'Individual' and self.employee:
+				approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
+			elif self.type == 'Onboarding':
+				employee = frappe.db.exists("Employee", {'user_id': self.owner})
+				if employee:
+					approver = frappe.db.get_value('Employee', employee, 'reports_to')
+			if approver:
+				request_for_material_approver = get_employee_user_id(approver)
 			else:
 				request_for_material_approver = frappe.db.get_value('Purchase Settings', None, 'request_for_material_approver')
 			if request_for_material_approver:
