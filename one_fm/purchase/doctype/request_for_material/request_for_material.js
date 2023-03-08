@@ -68,12 +68,16 @@ frappe.ui.form.on('Request for Material', {
 			}
 		}
 		if(frm.is_new()){
-			frappe.db.get_value('Stock Settings', '', 'default_warehouse', function(r) {
-				if(r && r.default_warehouse){
-					frm.set_value('t_warehouse', r.default_warehouse);
-				}
-				else{
-					frm.set_value('t_warehouse', '');
+			frappe.call({
+				doc: frm.doc,
+				method: 'get_default_warehouse',
+				callback: function(r) {
+					if(r && r.default_warehouse){
+						frm.set_value('t_warehouse', r.default_warehouse);
+					}
+					else{
+						frm.set_value('t_warehouse', '');
+					}
 				}
 			});
 		}

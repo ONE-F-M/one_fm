@@ -21,6 +21,10 @@ class RequestforMaterial(BuyingController):
 		self.notify_request_for_material_accepter()
 		self.notify_request_for_material_approver()
 
+	@frappe.whitelist()
+	def get_default_warehouse(self):
+		return frappe.db.get_single_value('Stock Settings', 'default_warehouse')
+
 	def notify_request_for_material_accepter(self):
 		if self.request_for_material_accepter:
 			page_link = get_url(self.get_url())
