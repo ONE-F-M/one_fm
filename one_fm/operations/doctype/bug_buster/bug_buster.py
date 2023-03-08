@@ -50,7 +50,7 @@ class BugBuster(Document):
 			recipients=frappe.db.get_value("Employee", self.employee, "user_id"),
 			subject="Bug Buster Assigned",
 			message=f"""
-				You have the assigned the role of a Bug Buster from {self.from_date} to {self.to_date}. 
+				You have been assigned the role of a Bug Buster from {self.from_date} to {self.to_date}. 
 				Weldone Solder!.
 			""",
 		)
