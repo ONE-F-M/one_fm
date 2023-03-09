@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "creation": "2023-03-07 16:49:25.008943",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "next_bug_buster",
+  "from_date",
+  "column_break_ibtvj",
+  "full_name",
+  "to_date",
+  "section_break_x5grl",
+  "employees"
+ ],
+ "fields": [
+  {
+   "fieldname": "employees",
+   "fieldtype": "Table",
+   "label": "Employees",
+   "options": "Bug Buster Employee Detail",
+   "reqd": 1
+  },
+  {
+   "fieldname": "next_bug_buster",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Next Bug Buster",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ibtvj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "next_bug_buster.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_x5grl",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date"
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2023-03-07 17:08:27.711904",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Bug Buster Employee",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
