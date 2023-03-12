@@ -1,7 +1,7 @@
 from pandas.core.indexes.datetimes import date_range
 from datetime import datetime
 from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
-from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now
+from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now,get_datetime
 import pandas as pd, numpy as np
 from frappe import _
 import json, multiprocessing, os, time, itertools, frappe
@@ -94,36 +94,43 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
             'date': ['between', (start_date, end_date)]
         }
         str_filters = f'es.date between "{start_date}" and "{end_date}"'
-
+        exited_employee_filters = f"status='Left' and relieving_date between '{start_date}' and '{end_date}'"
         if operations_role:
             filters.update({'operations_role': operations_role})
             str_filters +=' and es.operations_role = "{}"'.format(operations_role)
 
         if employee_search_id:
             employee_filters.update({'employee_id': employee_search_id})
-
+            exited_employee_filters += f" and employee_id = '{employee_search_id}'"
         if employee_search_name:
             employee_filters.update({'employee_name': ("like", "%" + employee_search_name + "%")})
-            
+            exited_employee_filters += f" and employee_name LIKE '%{employee_search_name}%' "
             asa_filters+=f'and asa.employee_name LIKE "%{employee_search_name}%"'
             
         if project:
             employee_filters.update({'project': project})
-            
+            exited_employee_filters += f" and project =  '{project}' "
             asa_filters+=f' and asa.project = "{project}"'
         if site:
             employee_filters.update({'site': site})
-           
+            exited_employee_filters +=f" and site = '{site}'"
             asa_filters += f' and asa.site = "{site}"'
         if shift:
             employee_filters.update({'shift': shift})
-            
+            exited_employee_filters += f" and shift = '{shift}'"
             asa_filters += f' and asa.shift = "{shift}"'
         if department:
             employee_filters.update({'department': department})
+            exited_employee_filters += f" and department = '{department}'"
 
 
         #--------------------- Fetch Employee list ----------------------------#
+        #get list of employees that left the company on that month.
+        
+        exited_employee_query = """SELECT employee,employee_name from `tabEmployee` where {}""".format(exited_employee_filters)
+        exited_employees = frappe.db.sql(exited_employee_query,as_dict=1)
+        # exited_employees = frappe.get_all("Employee",employee_filters,['employee','employee_name'])
+        
         if isOt:
             employee_filters.update({'employee_availability' : 'Working'})
             employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
@@ -136,10 +143,12 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
             if designation:
                 employee_filters.update({'designation' : designation})
             employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name", "day_off_category", "number_of_days_off"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
+            employees.extend(exited_employees)
+            employees = filter_redundant_employees(employees)
             
-            employees_asa_q = f"""SELECT distinct asa.employee as employee, asa.employee_name  as employee_name from `tabAdditional Shift Assignment` asa JOIN `tabEmployee`em on em.name =asa.employee where {asa_filters}"""
             #Conditional to ensure that the proceeding code block does not run unless Project,shift or site is queried
             if employee_search_name or shift or site or project:
+                employees_asa_q = f"""SELECT distinct asa.employee as employee, asa.employee_name  as employee_name from `tabAdditional Shift Assignment` asa JOIN `tabEmployee`em on em.name =asa.employee where {asa_filters}"""
                 employees_asa = frappe.db.sql(employees_asa_q,as_dict=1)
                 if len(employees_asa) > 0:
                     employees.extend(employees_asa)
