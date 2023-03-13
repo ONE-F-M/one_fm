@@ -42,7 +42,7 @@ class RequestforPurchase(Document):
 		return accepter, approver
 
 	def on_submit(self):
-		# Notify the Purchase Manger about the RFP to Do furthure action to create the Purchase Order
+		# Notify the Purchase Manger about the RFP to Do further action to create the Purchase Order
 		self.notify_purchase_manager()
 
 	def notify_purchase_manager(self):
@@ -57,7 +57,7 @@ class RequestforPurchase(Document):
 			message = """
 				Dear Purchase Manager, <br/>
 				<p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.
-				Do furthure action on the Request for Purchase to Create the Purchase Order</p>
+				Do further action on the Request for Purchase to Create the Purchase Order</p>
 			""".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
 			send_email(self, filtered_users, message, subject)
