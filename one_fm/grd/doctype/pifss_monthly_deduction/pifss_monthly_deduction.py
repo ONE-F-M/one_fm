@@ -144,9 +144,10 @@ class PIFSSMonthlyDeduction(Document):
 				email = finance_email
 				subject = _("PIFSS Monthly Deduction Payments for {0}").format(self.name)
 				message = _("Kindly, prepare Total Payment Required Amount and transfer it to GRD account.<br>Please transfer it within 2 days.")
-				payment_request = frappe.get_doc('Payment Request',{'reference_name':self.name},self.name)
+				payment_request_exists = frappe.db.exists('Payment Request',{'reference_name':self.name, 'reference_doctype': 'PIFSS Monthly Deduction'})
 				if not frappe.db.exists("Notification Log",{'subject':subject}):# This will restrict notification to be send once
-					create_notification_log(subject,message,email,payment_request)
+					reference_doc = frappe.get_doc('Payment Request', payment_request_exists) if payment_request_exists else self
+					create_notification_log(subject, message, email, reference_doc)
 
 
 	def on_submit(self):
@@ -319,7 +320,7 @@ def import_deduction_data(doc_name):
 				'actual_salary': flt(row[2]), 'social_security_salary':flt(row[3]), 'employee_contribution':flt(row[4]),
 				'company_contribution':flt(row[5]),'total_contribution':flt(row[6]),
 				})
-		
+
 		if missing_salary_structure_list:
 			frappe.throw(_("There is no Salary Structure assigned to the following employees:") + '<br><br>'
 				+ '<br>'.join(['<ul><li>{0}</li></ul>'.format(d) for d in missing_salary_structure_list]))
