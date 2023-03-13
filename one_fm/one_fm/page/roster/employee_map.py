@@ -251,7 +251,13 @@ class CreateMap():
 
     def create_schedule_map(self,row):
         #Update the employee data from the employee period details data structure
-        schedule = [one.update(self.employee_period_details[row[1]]) for  one in self.schedule_set if one.employee==row[0] ]
+        schedule = []
+        for one in self.schedule_set:
+            try:
+                if one.employee==row[0]:
+                    schedule.append(one.update(self.employee_period_details[row[1]]))
+            except:
+                pass
         return {row[1]:schedule}
 
 
