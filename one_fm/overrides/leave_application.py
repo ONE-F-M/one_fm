@@ -53,9 +53,7 @@ def is_app_user(emp):
 
 
 class LeaveApplicationOverride(LeaveApplication):
-    def after_insert(self):
-        self.assign_to_leave_approver()
-
+    
     def notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
         if not template:
@@ -87,6 +85,7 @@ class LeaveApplicationOverride(LeaveApplication):
         validate_active_employee(self.employee)
         set_employee_name(self)
         self.validate_dates()
+        self.update_attachment_name()
         self.validate_balance_leaves()
         self.validate_leave_overlap()
         self.validate_max_days()
@@ -100,6 +99,10 @@ class LeaveApplicationOverride(LeaveApplication):
         self.validate_applicable_after()
 
     def after_insert(self):
+        self.assign_to_leave_approver()
+        self.update_attachment_name()
+        
+    def update_attachment_name(self):
         if self.proof_documents:
             for each in self.proof_documents:
                 if each.attachments:
