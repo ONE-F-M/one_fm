@@ -146,7 +146,7 @@ class PIFSSMonthlyDeduction(Document):
 				message = _("Kindly, prepare Total Payment Required Amount and transfer it to GRD account.<br>Please transfer it within 2 days.")
 				payment_request_exists = frappe.db.exists('Payment Request',{'reference_name':self.name, 'reference_doctype': 'PIFSS Monthly Deduction'})
 				if not frappe.db.exists("Notification Log",{'subject':subject}):# This will restrict notification to be send once
-					reference_doc = frappe.get_doc('Payment Request', payment_request_exists.name) if payment_request_exists else self
+					reference_doc = frappe.get_doc('Payment Request', payment_request_exists) if payment_request_exists else self
 					create_notification_log(subject, message, email, reference_doc)
 
 
