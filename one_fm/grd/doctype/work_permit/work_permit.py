@@ -172,13 +172,20 @@ class WorkPermit(Document):
             tp.reload()
 
     def on_submit(self):
-        if self.work_permit_type != "Cancellation" and self.work_permit_type != "New Kuwaiti" and self.work_permit_type != "Local Transfer" and self.workflow_state != "Rejected":
-            if "Completed" in self.workflow_state and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
+        if self.work_permit_type not in ['Cancellation', 'New Kuwaiti', 'Local Transfer'] and self.workflow_state != "Rejected":
+            if self.workflow_state == "Completed" and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
                 self.db_set('work_permit_status', 'Completed')
                 # self.clean_old_wp_record_in_employee_doctype()
                 self.set_work_permit_attachment_in_employee_doctype(self.upload_work_permit,self.new_work_permit_expiry_date)
             else:
-                frappe.throw(_("Upload The Required Documents To Submit"))
+                msg = False
+                if not self.upload_work_permit or not self.attach_invoice:
+                    msg = "Upload the required documents(Work Permit and Invoice)"
+                if not self.new_work_permit_expiry_date:
+                    msg = ((msg+" and ") if msg else "") + "Set <i>Updated Work Permit Expiry Date</i>"
+                if msg:
+                    msg += " to submit"
+                    frappe.throw(_(msg))
 
         if self.work_permit_type == "Cancellation":
             self.db_set('work_permit_status', 'Completed')
@@ -273,6 +280,10 @@ class WorkPermit(Document):
                     Find = True
                     break
         if not Find:
+            if not frappe.db.exists("Recruitment Document Required", {'name': 'Work Permit'}):
+                document_name = frappe.new_doc("Recruitment Document Required")
+                document_name.recruitment_document = "Work Permit"
+                document_name.save(ignore_permissions=True)
             employee.append("one_fm_employee_documents", {
             "attach": work_permit_attachment,
             "document_name": "Work Permit",
