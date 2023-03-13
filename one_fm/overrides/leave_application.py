@@ -87,6 +87,7 @@ class LeaveApplicationOverride(LeaveApplication):
         validate_active_employee(self.employee)
         set_employee_name(self)
         self.validate_dates()
+        self.update_attachment_name()
         self.validate_balance_leaves()
         self.validate_leave_overlap()
         self.validate_max_days()
@@ -99,14 +100,20 @@ class LeaveApplicationOverride(LeaveApplication):
             self.validate_optional_leave()
         self.validate_applicable_after()
 
-    def after_insert(self):
-        self.assign_to_leave_approver()
+
+
+    def update_attachment_name(self):
         if self.proof_documents:
             for each in self.proof_documents:
                 if each.attachments:
                     all_files = frappe.get_all("File",{'file_url':each.attachments},['attached_to_name','name'])
                     if all_files and 'new' in all_files[0].attached_to_name:
                         frappe.db.set_value("File",all_files[0].name,'attached_to_name',self.name)
+        
+    def after_insert(self):
+        self.assign_to_leave_approver()
+        self.update_attachment_name()
+        
 
     def validate_attendance(self):
         pass
