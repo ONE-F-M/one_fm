@@ -232,7 +232,10 @@ class LeaveApplicationOverride(LeaveApplication):
                     pass
 
     def on_update(self):
-        self.notify_leave_approver()
+        if  self.docstatus < 1:
+			# notify leave approver about creation
+            if frappe.db.get_single_value("HR Settings", "send_leave_notification"):
+                self.notify_leave_approver()
         if self.workflow_state=='Rejected':
             attendance_range = []
             for i in pd.date_range(self.from_date, self.to_date):
