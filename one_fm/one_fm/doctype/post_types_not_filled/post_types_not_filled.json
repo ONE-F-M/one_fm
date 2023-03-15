@@ -15,6 +15,7 @@
   {
    "fieldname": "operations_role",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Operations Role",
    "options": "Operations Role",
@@ -28,6 +29,7 @@
   {
    "fieldname": "operations_shift",
    "fieldtype": "Data",
+   "ignore_user_permissions": 1,
    "label": "Operations Shift"
   },
   {
@@ -39,7 +41,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2022-12-19 11:15:32.094897",
+ "modified": "2023-03-16 01:20:33.493856",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Post Types Not Filled",
