@@ -72,6 +72,7 @@
    "fetch_from": "supervisor.employee_name",
    "fieldname": "supervisor_name",
    "fieldtype": "Data",
+   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Supervisor Name",
    "read_only": 1
@@ -79,7 +80,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-02-05 13:33:12.111623",
+ "modified": "2023-03-16 01:18:58.950452",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Employee Actions",

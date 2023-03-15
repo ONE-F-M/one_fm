@@ -26,6 +26,7 @@
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Supervisor",
    "options": "Employee",
@@ -70,6 +71,7 @@
    "fetch_from": "supervisor.employee_name",
    "fieldname": "supervisor_name",
    "fieldtype": "Data",
+   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Supervisor Name",
    "read_only": 1
@@ -77,7 +79,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-11-07 11:08:24.652142",
+ "modified": "2023-03-16 01:20:00.139929",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Post Actions",
@@ -146,5 +148,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
