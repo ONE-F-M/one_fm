@@ -89,7 +89,7 @@
   }
  ],
  "links": [],
- "modified": "2023-03-16 11:40:23.351765",
+ "modified": "2023-03-16 13:56:39.091558",
  "modified_by": "Administrator",
  "module": "Developer",
  "name": "Administrator Log",
@@ -98,7 +98,6 @@
  "permissions": [
   {
    "create": 1,
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
