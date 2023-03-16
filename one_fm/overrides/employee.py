@@ -5,7 +5,7 @@ from hrms.overrides.employee_master import *
 class EmployeeOverride(EmployeeMaster):
     def validate(self):
         from erpnext.controllers.status_updater import validate_status
-        validate_status(self.status, ["Active", "Court Case", "Absconding", "Left"])
+        validate_status(self.status, ["Active", "Court Case", "Absconding", "Left","Vacation"])
 
         self.employee = self.name
         self.set_employee_name()

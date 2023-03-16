@@ -21,10 +21,13 @@ from one_fm.overrides.wiki_page import get_context
 from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 from one_fm.api.notification import after_insert
 from one_fm.one_fm.payroll_utils import add_tax_components
+from hrms.overrides.employee_master import EmployeeMaster,validate_onboarding_process
+from one_fm.overrides.employee import EmployeeOverride
 
 __version__ = '14.0.0'
 
-
+EmployeeMaster.validate = EmployeeOverride.validate
+EmployeeMaster.validate_onboarding_process = validate_onboarding_process
 ShiftRequest.on_submit = shift_request_submit
 ShiftRequest.validate_approver = validate_approver
 ShiftRequest.on_cancel = shift_request_cancel
