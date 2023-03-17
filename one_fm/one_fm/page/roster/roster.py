@@ -133,6 +133,9 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
         
         if isOt:
             employee_filters.update({'employee_availability' : 'Working'})
+            all_active_employees = frappe.db.sql("SELECT name from `tabEmployee` where status = 'Active'",as_dict =1)
+            all_active_employee_ids = [i.name for i in all_active_employees]
+            employee_filters.update({'employee':['In',all_active_employee_ids]})
             employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
             master_data.update({'total' : len(employees)})
             employees.extend(exited_employees)
