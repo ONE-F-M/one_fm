@@ -142,6 +142,8 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
             employees = filter_redundant_employees(employees)
             employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
             employee_filters.pop('employee_availability')
+            employee_filters.pop('employee')
+            
         else:
             employee_filters.update({'status': 'Active'})
             employee_filters.update({'shift_working':'1'})
