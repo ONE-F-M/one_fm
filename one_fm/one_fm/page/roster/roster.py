@@ -94,34 +94,34 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
             'date': ['between', (start_date, end_date)]
         }
         str_filters = f'es.date between "{start_date}" and "{end_date}"'
-        exited_employee_filters = f"status='Left' and relieving_date between '{start_date}' and '{end_date}'"
+        exited_employee_filters = f"""status='Left' and relieving_date between '{start_date}' and '{end_date}'"""
         if operations_role:
             filters.update({'operations_role': operations_role})
             str_filters +=' and es.operations_role = "{}"'.format(operations_role)
 
         if employee_search_id:
             employee_filters.update({'employee_id': employee_search_id})
-            exited_employee_filters += f" and employee_id = '{employee_search_id}'"
+            exited_employee_filters += f""" and employee_id = "{employee_search_id}" """
         if employee_search_name:
             employee_filters.update({'employee_name': ("like", "%" + employee_search_name + "%")})
-            exited_employee_filters += f" and employee_name LIKE '%{employee_search_name}%' "
+            exited_employee_filters += f""" and employee_name LIKE "%{employee_search_name}%" """
             asa_filters+=f'and asa.employee_name LIKE "%{employee_search_name}%"'
             
         if project:
             employee_filters.update({'project': project})
-            exited_employee_filters += f" and project =  '{project}' "
+            exited_employee_filters += f""" and project =  "{project}" """
             asa_filters+=f' and asa.project = "{project}"'
         if site:
             employee_filters.update({'site': site})
-            exited_employee_filters +=f" and site = '{site}'"
+            exited_employee_filters +=f""" and site = "{site}" """
             asa_filters += f' and asa.site = "{site}"'
         if shift:
             employee_filters.update({'shift': shift})
-            exited_employee_filters += f" and shift = '{shift}'"
+            exited_employee_filters += f""" and shift = "{shift}" """
             asa_filters += f' and asa.shift = "{shift}"'
         if department:
             employee_filters.update({'department': department})
-            exited_employee_filters += f" and department = '{department}'"
+            exited_employee_filters += f""" and department = "{department}" """
 
 
         #--------------------- Fetch Employee list ----------------------------#
