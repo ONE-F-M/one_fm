@@ -1925,7 +1925,7 @@ def create_roster_post_actions():
 
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
-        if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
+        if not any(es.date == ps.date and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
             if ps.operations_role:
                 operations_roles_not_filled_set.add(ps.operations_role)
                 list_of_dict_of_operations_roles_not_filled.append(ps)
@@ -1957,36 +1957,33 @@ def create_roster_post_actions():
             if val["operations_role"] in operations_roles and val["shift"] in shift_dict[supervisor]:
                 check_list.append(val)
 
-
         for item in check_list:
             for second_item in second_check_list:
                 if (item["date"] == second_item["date"]) and (item["shift"] == second_item["shift"]) and (item["operations_role"] == second_item["operations_role"]):
                     second_item["quantity"] = second_item["quantity"] + 1
                     break
+            item.update({"quantity": 1})
+            second_check_list.append(item)
+            check_list.remove(item)
 
-            else:
-                item.update({"quantity": 1})
-                second_check_list.append(item)
-                check_list.remove(item)
+        if second_check_list and len(second_check_list) > 0:
+            roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
+            roster_post_actions_doc.start_date = start_date
+            roster_post_actions_doc.end_date = end_date
+            roster_post_actions_doc.status = "Pending"
+            roster_post_actions_doc.action_type = "Fill Post Type"
+            roster_post_actions_doc.supervisor = supervisor
 
+            for obj in second_check_list:
+                roster_post_actions_doc.append('operations_roles_not_filled', {
+                    'operations_role': obj.get("operations_role"),
+                    "operations_shift": obj.get("shift"),
+                    "date": obj.get("date"),
+                    "quantity": obj.get("quantity") if obj.get("quantity") else 1
+                })
 
-        roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
-        roster_post_actions_doc.start_date = start_date
-        roster_post_actions_doc.end_date = end_date
-        roster_post_actions_doc.status = "Pending"
-        roster_post_actions_doc.action_type = "Fill Post Type"
-        roster_post_actions_doc.supervisor = supervisor
-
-        for obj in second_check_list:
-            roster_post_actions_doc.append('operations_roles_not_filled', {
-                'operations_role': obj.get("operations_role"),
-                "operations_shift": obj.get("shift"),
-                "date": obj.get("date"),
-                "quantity": obj.get("quantity") if obj.get("quantity") else 1
-            })
-
-        roster_post_actions_doc.save()
-        frappe.db.commit()
+            roster_post_actions_doc.save()
+            frappe.db.commit()
         del check_list
 
 def send_roster_report():
@@ -2911,4 +2908,3 @@ def get_today_leaves(cur_date):
         WHERE status='Approved'
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
-
