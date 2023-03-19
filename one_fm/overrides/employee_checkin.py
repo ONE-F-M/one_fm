@@ -80,7 +80,8 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
 			frappe.enqueue(after_insert_background, self=self.name)
 		if self.log_type == "IN":
-			frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
+			# frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
+			notify_supervisor_about_late_entry(self)
 
 def after_insert_background(self):
 	self = frappe.get_doc("Employee Checkin", self)
@@ -232,30 +233,43 @@ def notify_supervisor_about_late_entry(checkin):
 	"""
 	This method notify the supervisor about the late entry of an employee
 	"""
-	last_shift_assignment = frappe.db.sql(f""" select name, shift_type from `tabShift Assignment` where employee = '{checkin.employee}' order by creation desc limit 1 ; """, as_dict=1)
 	shift_permission = frappe.db.sql(f""" select name from `tabShift Permission` where employee = '{checkin.employee}' and date = '{now_datetime().date()}' and log_type = 'IN' and permission_type = 'Arrive Late' and workflow_state = 'Approved' ;  """)
+	if checkin.shift_assignment:
+		last_shift_assignment = checkin.shift_assignment
+		shift_late_minutes = frappe.db.get_value("Shift Type", {"name": checkin.shift_type}, ['supervisor_reminder_shift_start', 'start_time'], as_dict=1)
+		the_roster_type = checkin.roster_type
+	else:
+		last_shift_assignment = get_shift_from_checkin(checkin)
+		if last_shift_assignment:
+			shift_late_minutes = frappe.db.get_value("Shift Type", {"name": last_shift_assignment["shift_type"]}, ['supervisor_reminder_shift_start', 'start_time'], as_dict=1)
+			check_roster = frappe.db.get_value("Shift Assignment", {"name": last_shift_assignment["name"]}, ["roster_type"], as_dict=1)
+			if check_roster:
+				the_roster_type = check_roster["roster_type"]
+	
 	if last_shift_assignment and not shift_permission:
-		shift_late_minutes = frappe.db.sql(f""" select supervisor_reminder_shift_start, start_time from `tabShift Type` where name = '{last_shift_assignment[0]["shift_type"]}'; """, as_dict=1)
-		if checkin.time.time() > datetime.strptime(str(shift_late_minutes[0]["start_time"] + timedelta(minutes=shift_late_minutes[0]['supervisor_reminder_shift_start'])), "%H:%M:%S").time():
-			get_reports_to = frappe.db.sql(f""" select reports_to from `tabEmployee` where name = '{checkin.employee}' ;  """, as_dict=1)
+		if checkin.time.time() > datetime.strptime(str(shift_late_minutes["start_time"] + timedelta(minutes=shift_late_minutes['supervisor_reminder_shift_start'])), "%H:%M:%S").time():
+			get_reports_to = frappe.db.get_value("Employee", {"name": checkin.employee}, ['reports_to'], as_dict=1)
 			if get_reports_to:
-				return send_push_notification_for_late_entry(get_reports_to[0]["reports_to"], checkin.employee_name)
-			get_site = frappe.db.sql(f""" select site from `tabEmployee` where name = '{checkin.employee}'; """, as_dict=1)
+				return send_push_notification_for_late_entry(get_reports_to["reports_to"], checkin.employee_name, roster_type=the_roster_type if the_roster_type else "Basic")
+			get_site = frappe.db.get_value("Employee", {"name": checkin.employee}, ['site'], as_dict=1)
 			if get_site:
-				get_site_supervisor = frappe.db.sql(f""" select account_supervisor from ``tabOperations Site where name = '{get_site[0]["site"]}'; """)
+				get_site_supervisor = frappe.db.get_value("Operations Site", {"name": get_site["site"]}, ['account_supervisor'], as_dict=1)
 				if get_site_supervisor:
-					return send_push_notification_for_late_entry(get_site_supervisor[0]["account_supervisor"], checkin.employee)
+					return send_push_notification_for_late_entry(get_site_supervisor["account_supervisor"], checkin.employee, roster_type=the_roster_type if the_roster_type else "Basic")
 
 
-def send_push_notification_for_late_entry(recipient, culprit_name):
+def send_push_notification_for_late_entry(recipient, culprit_name, roster_type="Basic"):
 	"""
 	This method sends a push notification and a mail to the supervisor
 	"""
 	title = f"Late Arrival Of {culprit_name}"
 	body =  f"Hello, {culprit_name} has arrived late for work today."
+	if roster_type != "Basic":
+		body = f"Hello, {culprit_name} has arrived late for overtime work today."
 	additional_message = f""" <br/><br/>You could issue a penalty for the employee
 				<a class='btn btn-primary btn-danger no-punch-in'  href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>"""
 	push_notification_rest_api_for_checkin(recipient, title, body, checkin=False, arriveLate=False, checkout=False)
-	user_id = frappe.db.sql(f""" select user_id from `tabEmployee` where name = '{recipient}'; """, as_dict=1)
-	sendemail(recipients=user_id[0]["user_id"], subject=title, message=body + additional_message)
+	get_user_id = frappe.db.get_value("Employee", {"name": recipient}, ["user_id"], as_dict=1)
+	user_id = get_user_id["user_id"] if get_user_id else ""
+	sendemail(recipients=user_id, subject=title, message=body + additional_message)
 	return "Messages Sent Successfully !!"
