@@ -158,9 +158,21 @@ class DataExporter:
 
 		self.build_field_columns(self.doctype)
 		
+		if self.all_doctypes:
+			for d in self.child_doctypes:
+				if (
+					self.select_columns and self.select_columns.get(d["doctype"], None)
+				) or not self.select_columns:
+					self.build_field_columns(d["doctype"], d["parentfield"])
+	
 		self.column = self.labelrow
 		values = self.add_data()
 
+		if self.with_data and not values:
+			frappe.msgprint(
+				_("No Data"), _("There is no data to be exported"), indicator_color="orange"
+			)
+		
 		if not self.link:
 			self.create()
 
@@ -243,9 +255,13 @@ class DataExporter:
 			and docfield.fieldname != "name"
 		):
 			return
+		if docfield.parent and docfield.parent != self.doctype:
+			self.labelrow.append(f"{_(docfield.label)}({_(docfield.parent)})")
+		else:
+			self.labelrow.append(_(docfield.label))
 
 		self.fieldrow.append(docfield.fieldname)
-		self.labelrow.append(_(docfield.label))
+		self.columns.append(docfield.fieldname)
 
 	def add_field_headings(self):
 		self.writer.writerow(self.labelrow)
@@ -253,11 +269,8 @@ class DataExporter:
 	def add_data(self):
 		from frappe.query_builder import DocType
 
-		if self.template and not self.with_data:
-			return
-
-		frappe.permissions.can_export(self.parent_doctype, raise_exception=True)
-
+		data = []
+		data.append(self.labelrow)
 		# sort nested set doctypes by `lft asc`
 		order_by = None
 		table_columns = frappe.db.get_table_columns(self.parent_doctype)
@@ -265,27 +278,57 @@ class DataExporter:
 			order_by = f"`tab{self.parent_doctype}`.`lft` asc"
 		# get permitted data only
 		self.data = frappe.get_list(
-			self.doctype, fields=self.fieldrow, filters=self.filters, limit_page_length=None, order_by=order_by
+			self.doctype, fields=["*"], filters=self.filters, limit_page_length=None, order_by=order_by
 		)
-			# add main table
-		rows = [self.fieldrow]
 		cell_colour = []
-		row_index = 1
-		for doc in self.data:		
-			row = []
-			column_index = 0
+		row_index = 0
+		for doc in self.data:
+			# add main table
+			rows = []
+			self.add_data_row(rows, self.doctype, None, doc, 0, cell_colour, row_index)
+
+			if self.all_doctypes:
+				# add child tables
+				for c in self.child_doctypes:
+					child_doctype_table = DocType(c["doctype"])
+					data_row = (
+						frappe.qb.from_(child_doctype_table)
+						.select("*")
+						.where(child_doctype_table.parent == doc.name)
+						.where(child_doctype_table.parentfield == c["parentfield"])
+						.orderby(child_doctype_table.idx)
+					)
+					for ci, child in enumerate(data_row.run(as_dict=True)):
+						self.add_data_row(rows, c["doctype"], c["parentfield"], child, ci, cell_colour, row_index)
+			
+			for row in rows:
+				data.append(row)
 			row_index += 1
-			for field in self.fieldrow:
-				value = str(doc[field])
-				if len(value) >= 50000:
-					cell_colour.append({'column':column_index, 'row':row_index})
-					row.append("ERROR - Description Length is more than 50,000 so can not import Data")
-				else:
-					row.append(value)
-				column_index += 1
-			rows.append(row)
 		self.cell_colour = cell_colour
-		return rows
+		return data
+
+	def add_data_row(self, rows, dt, parentfield, doc, rowidx, cell_colour, row_index):
+		d = doc.copy()
+		meta = frappe.get_meta(dt)
+		if self.all_doctypes:
+			d.name = f'"{d.name}"'
+
+		if len(rows) <= rowidx:
+			rows.append([""] * (len(self.columns)))
+		row = rows[rowidx]
+		
+		_column_start_end = self.column_start_end.get((dt, parentfield))
+		if _column_start_end:
+			for i, c in enumerate(self.columns[_column_start_end.start : _column_start_end.end]):
+				df = meta.get_field(c)
+				fieldtype = df.fieldtype if df else "Data"
+				value = str(d.get(c, ""))
+				# check if value size is greater than 50000
+				if len(value) >= 50000:
+					cell_colour.append({'column':_column_start_end.start + i, 'row':row_index})
+					row[_column_start_end.start + i] = f"ERROR - Description Length is more than 50,000 so can not import Data"
+				else:
+					row[_column_start_end.start + i] = value
 
 		
 	def _append_name_column(self, dt=None):
