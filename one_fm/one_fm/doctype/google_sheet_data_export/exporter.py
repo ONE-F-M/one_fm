@@ -147,7 +147,6 @@ class DataExporter:
 			self.sheet_name = 'sheet1'
 
 	def build_response(self):
-		print(SERVICE_ACCOUNT_FILE)
 		self.writer = UnicodeWriter()
 		self.name_field = "parent" if self.parent_doctype != self.doctype else "name"
 
@@ -486,7 +485,7 @@ class DataExporter:
 							"range": {
 								"sheetId": sheetId
 							},
-							"fields": "userEnteredFormat"
+							"fields": "userEnteredFormat(textFormat)"
 						}
 					}
 				]
