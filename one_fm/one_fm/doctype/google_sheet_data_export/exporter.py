@@ -27,7 +27,7 @@ import gspread
 from google.oauth2 import service_account
 
 #initialize Google Sheet Service
-SERVICE_ACCOUNT_FILE = cstr(frappe.local.site) + frappe.local.conf.google_sheet
+SERVICE_ACCOUNT_FILE = cstr(frappe.utils.get_site_path()) + frappe.local.conf.google_sheet
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
@@ -147,6 +147,7 @@ class DataExporter:
 			self.sheet_name = 'sheet1'
 
 	def build_response(self):
+		print(SERVICE_ACCOUNT_FILE)
 		self.writer = UnicodeWriter()
 		self.name_field = "parent" if self.parent_doctype != self.doctype else "name"
 
