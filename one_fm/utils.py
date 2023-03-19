@@ -2938,7 +2938,7 @@ def check_employee_permission_on_doc(doc):
     """
     try:
         session_employee = frappe.cache().get_value(frappe.session.user).employee
-        roles = ['HR Manager', 'HR User', 'Finance Manager', 'Finance User', "Payroll Officer"]
+        roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
         has_roles = any([item in roles for item in frappe.get_roles()])
         if not has_roles:
             if (session_employee and doc.employee):
