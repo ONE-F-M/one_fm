@@ -873,7 +873,7 @@
    "label": "Payment Details Section"
   },
   {
-   "depends_on": "eval:frappe.session.user == doc.grd_operator",
+   "depends_on": "eval: !doc.__islocal",
    "fieldname": "work_permit_information_section",
    "fieldtype": "Section Break",
    "label": "Work Permit Information"
@@ -885,7 +885,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-02-05 15:56:10.611873",
+ "modified": "2023-03-11 12:10:09.583298",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

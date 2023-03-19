@@ -171,15 +171,26 @@ frappe.ui.form.on('Request for Purchase', {
 });
 
 var set_intro_related_to_status = function(frm) {
+	if(frm.doc.docstatus == 0){
+		frm.set_intro("")
+		frm.set_intro(__("Submit the document to confirm and notify the Purchase Manager"), 'blue');
+	}
 	if (frm.doc.docstatus == 1){
 		if(frm.doc.status == 'Draft') {
 			frm.set_intro(__("Create Request for Quotation (Optional)."), 'yellow');
 			frm.set_intro(__("Compare Quotations if Quotaiton Available (Optional)."), 'yellow');
-			frm.set_intro(__("Fill Items to Order - Check Supplier and Item Code set Correctly."), 'yellow');
-			frm.set_intro(__("Requester can use Confirm button once items are filled and updated"), 'yellow');
-			frm.set_intro(__("Then you will be able to create a PO from the create dropdown button"), 'yellow');
-			// frm.set_intro(__("On Accept notify Approver"), 'yellow');
-			// frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
+			if((frm.doc.items_to_order && frm.doc.items_to_order.length == 0) || !frm.doc.items_to_order){
+				frm.set_intro(__("Fill Items to Order - Check Supplier and Item Code set Correctly."), 'yellow');
+			}
+			frm.set_intro(__("Click `Confirm Item Details and Send for Approval` Button"), 'yellow');
+			frm.set_intro(__("On Approval, Requester can create PO from the create dropdown button"), 'yellow');
+		}
+		if(frm.doc.status == "Draft Request"){
+			frm.set_intro(__("On Accept notify Approver"), 'yellow');
+			frm.set_intro(__("On Approval, Requester can create PO from the create dropdown button"), 'yellow');
+		}
+		if(frm.doc.status == "Accepted"){
+			frm.set_intro(__("On Approval, Requester can create PO from the create dropdown button"), 'yellow');
 		}
 		if(frm.doc.status == 'Approved'){
 			frappe.db.get_value("Purchase Order", {"one_fm_request_for_purchase": frm.doc.name}, "name", function(r) {
@@ -187,23 +198,6 @@ var set_intro_related_to_status = function(frm) {
 					frm.set_intro(__("Requester can create PO"), 'yellow');
 				}
 			})
-		}
-	}
-	if (frm.doc.docstatus == 1){
-		if(frm.doc.status == "Draft" && !frm.doc.items_to_order){
-			frm.set_intro(__("Fill Items to Order - Check Supplier and Item Code set Correctly."), 'yellow');
-			frm.set_intro(__("Requester Click Confirm Button to confirm"), 'yellow');
-			frm.set_intro(__("On Confirmation, Requester can create PO"), 'yellow');
-			// frm.set_intro(__("Requester Click Send Request Button to notify Accepter"), 'yellow');
-			// frm.set_intro(__("On Accept notify Approver"), 'yellow');
-			// frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
-		}
-		if(frm.doc.status == "Draft Request"){
-			frm.set_intro(__("On Accept notify Approver"), 'yellow');
-			frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
-		}
-		if(frm.doc.status == "Accepted"){
-			frm.set_intro(__("On Approval, Requester can create PO"), 'yellow');
 		}
 	}
 };

@@ -16,9 +16,16 @@ from one_fm.api.doc_events import get_employee_user_id
 
 class RequestforPurchase(Document):
 	def onload(self):
-		self.set_accepter_and_approver()
+		self.get_accepter_and_approver()
 
-	def set_accepter_and_approver(self):
+	def validate(self):
+		accepter, approver = self.get_accepter_and_approver()
+		if not self.approver:
+			self.approver = approver
+		if not self.accepter:
+			self.accepter = accepter
+
+	def get_accepter_and_approver(self):
 		accepter = frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_accepter')
 		approver = frappe.db.get_value('Purchase Settings', None, 'request_for_purchase_approver')
 		reports_to = False
@@ -32,8 +39,10 @@ class RequestforPurchase(Document):
 				accepter = approver
 		self.set_onload('accepter', accepter)
 		self.set_onload('approver', approver)
+		return accepter, approver
 
 	def on_submit(self):
+		# Notify the Purchase Manger about the RFP to Do further action to create the Purchase Order
 		self.notify_purchase_manager()
 
 	def notify_purchase_manager(self):
@@ -45,7 +54,11 @@ class RequestforPurchase(Document):
 			if has_permission(doctype=self.doctype, user=user):
 				filtered_users.append(user)
 		if filtered_users and len(filtered_users) > 0:
-			message = "Dear Purchase Manager, <br/> <p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
+			message = """
+				Dear Purchase Manager, <br/>
+				<p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.
+				Do further action on the Request for Purchase to Create the Purchase Order</p>
+			""".format(page_link, self.name, self.requested_by)
 			subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
 			send_email(self, filtered_users, message, subject)
 			create_notification_log(subject, message, filtered_users, self)

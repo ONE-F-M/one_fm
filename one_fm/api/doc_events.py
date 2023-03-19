@@ -1,6 +1,7 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 from uuid import uuid4
 import itertools
+from calendar import monthrange
 
 import frappe, erpnext
 from frappe import _
@@ -8,7 +9,6 @@ from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
-import datetime
 from frappe.permissions import remove_user_permission
 from hrms.hr.utils import get_holidays_for_employee
 
@@ -244,3 +244,67 @@ def update_training_event_data(doc, method):
 				'training': doc.event_name,
 			})
 			doc_esm.save()
+
+
+def after_insert_of_payroll_entry(doc, method):
+	if doc.employees:
+		frappe.enqueue(generate_site_allowance_after_payroll_insert, payroll_entry=doc)
+
+
+def on_cancel_of_payroll_entry(doc, method):
+	frappe.enqueue(cancel_all_or_delete_additional_salary_related_to_payroll_entry, payroll_entry=doc, action="Cancel")	
+
+
+def on_delete_of_payroll_entry(doc, method):
+	frappe.enqueue(cancel_all_or_delete_additional_salary_related_to_payroll_entry, payroll_entry=doc, action="Delete")
+
+
+def generate_site_allowance_after_payroll_insert(payroll_entry):
+	#get list of all site that includes Site Allowance.
+	operations_sites = frappe.get_all("Operations Site", {"include_site_allowance":"1"},["name","allowance_amount"])
+
+	#Gather the required Date details such as start date, and respective end date. Get current year and month to get the no. of days in the current month.
+	start_date = datetime.strptime(payroll_entry.start_date, '%Y-%m-%d')
+	end_date = datetime.strptime(payroll_entry.end_date, '%Y-%m-%d')
+	currentMonth = end_date.month
+	currentYear = start_date.year
+	no_of_days = monthrange(currentYear, currentMonth)[1]
+
+
+	tup_of_employee = tuple([obj.employee for obj in payroll_entry.employees])
+	if operations_sites:
+			for site in operations_sites:
+				employee_details = frappe.db.sql("""
+    							SELECT employee, COUNT(attendance_date) as count
+    							FROM `tabAttendance`
+    							WHERE site = %s AND attendance_date BETWEEN %s AND %s AND status = %s AND employee IN %s GROUP BY employee
+								""", (site.name, start_date, end_date, "Present", tup_of_employee), as_dict=True)
+
+				if employee_details:
+					for employee in employee_details:
+							#calculate Monthly_site_allowance with the rate of allowance per day.
+							Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee["count"])
+							create_additional_salary(employee["employee"], Monthly_site_allowance, "Site Allowance", end_date)
+
+
+#this function creates additional salary for a given component.
+def create_additional_salary(employee, amount, component, end_date):
+	additional_salary = frappe.new_doc("Additional Salary")
+	additional_salary.employee = employee
+	additional_salary.salary_component = component
+	additional_salary.amount = amount
+	additional_salary.payroll_date = end_date
+	additional_salary.company = erpnext.get_default_company()
+	additional_salary.overwrite_salary_structure_amount = 1
+	additional_salary.notes = "Site Allowance"
+	additional_salary.insert()
+	additional_salary.submit()
+
+
+def cancel_all_or_delete_additional_salary_related_to_payroll_entry(payroll_entry, action: str):
+	additional_salaries = tuple(frappe.db.get_all("Additional Salary", {"payroll_date": payroll_entry.end_date, "salary_component": "Site Allowance"}, pluck="name"))
+	if additional_salaries:
+		if action == "Cancel":
+			frappe.db.sql(f"""UPDATE `tabAdditional Salary` SET docstatus = 2 WHERE name IN {additional_salaries} """)
+		elif action == "Delete":
+			frappe.db.sql(f"""DELETE from `tabAdditional Salary` WHERE name IN {additional_salaries} """)

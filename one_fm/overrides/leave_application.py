@@ -54,8 +54,6 @@ def is_app_user(emp):
 
 class LeaveApplicationOverride(LeaveApplication):
     
-        
-
     def notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
         if not template:
@@ -144,8 +142,10 @@ class LeaveApplicationOverride(LeaveApplication):
             push_notication_message = self.employee_name+" has applied for "+self.leave_type+" "+date+". Kindly, take action."
             push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, self.name)
 
-
-
+    def after_insert(self):
+        self.assign_to_leave_approver()
+        self.update_attachment_name()
+        
     def update_attachment_name(self):
         if self.proof_documents:
             for each in self.proof_documents:
@@ -240,7 +240,10 @@ class LeaveApplicationOverride(LeaveApplication):
                     pass
 
     def on_update(self):
-        self.notify_leave_approver()
+        if  self.docstatus < 1:
+			# notify leave approver about creation
+            if frappe.db.get_single_value("HR Settings", "send_leave_notification"):
+                self.notify_leave_approver()
         if self.workflow_state=='Rejected':
             attendance_range = []
             for i in pd.date_range(self.from_date, self.to_date):
