@@ -2926,7 +2926,7 @@ def get_approver(employee):
     elif emp_data.site:
         operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
     elif emp_data.shift:
-        operations_shift = frappe.db.get_value('Operations Shift', emp_data.site, 'supervisor')
+        operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
 
     if operations_site:return operations_site
     if operations_shift:return operations_shift
