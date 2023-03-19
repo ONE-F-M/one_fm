@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>api.doc_events API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>api.doc_events</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from datetime import timedelta
+from uuid import uuid4
+import itertools
+
+import frappe, erpnext
+from frappe import _
+from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
+from frappe.core.doctype.version.version import get_diff
+from one_fm.api.v1.roster import get_current_shift
+from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
+import datetime
+from frappe.permissions import remove_user_permission
+from hrms.hr.utils import get_holidays_for_employee
+
+#Shift Type
+@frappe.whitelist()
+def naming_series(doc, method):
+                if frappe.db.exists(&#34;Shift Type&#34;, {&#39;name&#39;:doc.shift_type+&#34;|&#34;+doc.start_time+&#34;-&#34;+doc.end_time+&#34;|&#34;+cstr(doc.duration)+&#34; hours&#34;}):
+                        frappe.throw(doc.shift_type+&#34;|&#34;+doc.start_time+&#34;-&#34;+doc.end_time+&#34;|&#34;+cstr(doc.duration)+&#34; hours Already exists&#34;)
+                doc.name = doc.shift_type+&#34;|&#34;+doc.start_time+&#34;-&#34;+doc.end_time+&#34;|&#34;+cstr(doc.duration)+&#34; hours&#34;
+
+
+#Operations Shift
+def shift_after_insert(doc, method):
+        shift_type = frappe.get_doc(&#34;Shift Type&#34;, doc.shift_type)
+        start_time = get_datetime(doc.start_time) + timedelta(minutes=shift_type.notification_reminder_after_shift_start)
+        if doc.start_time &lt;= doc.end_time:
+                pass
+        elif doc.start_time &gt; doc.end_time:
+                pass
+
+
+def get_notification_user(doc, employee=None):
+        &#34;&#34;&#34;
+                Shift &gt; Site &gt; Project &gt; Reports to
+        &#34;&#34;&#34;
+        if not doc.operations_shift:
+                return
+        
+        operations_shift = frappe.get_doc(&#34;Operations Shift&#34;, doc.operations_shift)
+
+        if operations_shift.supervisor:
+                supervisor = get_employee_user_id(operations_shift.supervisor)
+                if supervisor != doc.owner:
+                        return supervisor
+
+        operations_site = frappe.get_doc(&#34;Operations Site&#34;, operations_shift.site)
+
+        if operations_site.account_supervisor:
+                account_supervisor = get_employee_user_id(operations_site.account_supervisor)
+                if account_supervisor != doc.owner:
+                        return account_supervisor
+
+        if operations_site.project:
+                project = frappe.get_doc(&#34;Project&#34;, operations_site.project)
+                print(project.account_manager, project.name)
+                if project.account_manager:
+                        account_manager = get_employee_user_id(project.account_manager)
+                        if account_manager != doc.owner:
+                                return account_manager
+        reporting_manager = frappe.get_value(&#34;Employee&#34;, {&#34;name&#34;: employee}, &#34;reports_to&#34;)
+        print(&#34;191&#34;, employee, doc.owner, reporting_manager)
+        return get_employee_user_id(reporting_manager)
+
+def validate_location(doc):
+        checkin_lat, checkin_lng = doc.device_id.split(&#34;,&#34;) if doc.device_id else (0, 0)
+        site_name = frappe.get_value(&#34;Operations Shift&#34;, doc.operations_shift, &#34;site&#34;)
+        site_location = frappe.get_value(&#34;Operations Site&#34;, site_name, &#34;site_location&#34;)
+        site_lat, site_lng, radius = frappe.get_value(&#34;Location&#34;, site_location, [&#34;latitude&#34;,&#34;longitude&#34;, &#34;geofence_radius&#34;] )
+        distance =  haversine(site_lat, site_lng, checkin_lat, checkin_lng)
+        return distance, radius
+
+
+# Project
+@frappe.whitelist()
+def project_on_update(doc, method):
+        doc_before_save = doc.get_doc_before_save()
+        notify_poc_changes(doc, doc_before_save)
+
+
+def notify_poc_changes(doc, doc_before_save):
+        changes = get_diff(doc_before_save, doc, for_child=True)
+        if not changes and changes.changed:
+                return
+
+        # Variables needed for notification
+        project = doc.name
+        modified_by = doc.modified_by
+        subject = &#34;{modified_by} made some changes to {project} POC.&#34;.format(project=project, modified_by=modified_by)
+        message = &#39;&#39;
+
+        if changes.row_changed:
+                for change in changes.row_changed:
+                        message = message + &#34;Details of {poc_name} modified.\n&#34;.format(poc_name=doc.poc[change[1]].poc)
+        if changes.added:
+                for change in changes.added:
+                        if(change[0] == &#34;poc&#34;):
+                                message = message + &#34;{poc_name} has been added as a POC.\n&#34;.format(poc_name=change[1].poc)
+        if changes.removed:
+                for change in changes.removed:
+                        if(change[0] == &#34;poc&#34;):
+                                message = message + &#34;{poc_name} has been removed as a POC.\n&#34;.format(poc_name=change[1].poc)
+
+        recipients = get_recipients(doc)
+        create_notification_log(_(subject), _(message), recipients, doc)
+
+def get_recipients(doc):
+                &#34;&#34;&#34;
+                        Get line managers. Site Supervisor, Project Manager, Operations Manager.
+                &#34;&#34;&#34;
+                project_manager_user = get_employee_user_id(doc.account_manager)
+                operations_manager = frappe.get_list(&#34;Employee&#34;, {&#34;designation&#34;: &#34;Operations Manager&#34;}, ignore_permissions=True)
+                recipient_list = []
+
+                for manager in operations_manager:
+                        manager_user = get_employee_user_id(manager.name)
+                        recipient_list.append(manager_user)
+                recipient_list.append(project_manager_user)
+                return recipient_list
+
+@frappe.whitelist()
+def get_employee_user_id(employee):
+        return frappe.get_value(&#34;Employee&#34;, {&#34;name&#34;: employee}, [&#34;user_id&#34;])
+
+def get_closest_location(time, location):
+        time = get_datetime(time).strftime(&#34;%Y-%m-%d %H:%M&#34;)
+        latitude, longitude = location.split(&#34;,&#34;)
+
+        #Get the closest site according to the checkin location
+        site = frappe.db.sql(&#34;&#34;&#34;
+                SELECT
+                        (((acos(
+                                sin(( {latitude} * pi() / 180))
+                                *
+                                sin(( loc.latitude * pi() / 180)) + cos(( {latitude} * pi() /180 ))
+                                *
+                                cos(( loc.latitude  * pi() / 180)) * cos((( {longitude} - loc.longitude) * pi()/180))
+                        ))
+                        * 180/pi()) * 60 * 1.1515 * 1.609344 * 1000
+                        )AS distance, os.name FROM `tabLocation` AS loc, `tabOperations Site` AS os
+                WHERE os.site_location = loc.name ORDER BY distance ASC &#34;&#34;&#34;.format(latitude=latitude, longitude=longitude), as_dict=1)
+
+        site_name = site[0].name
+        # Unused for now
+        distance = site[0].distance
+
+        #Check for active shift at the closest site.
+        active_shift = frappe.db.sql(&#34;&#34;&#34;
+                SELECT
+                        supervisor
+                FROM `tabOperations Shift`
+                WHERE
+                        site=&#34;{site_name}&#34; AND
+                        CAST(&#34;{current_time}&#34; as datetime)
+                        BETWEEN
+                                CAST(start_time as datetime)
+                        AND
+                                IF(end_time &lt; start_time, DATE_ADD(CAST(end_time as datetime), INTERVAL 1 DAY), CAST(end_time as datetime))
+
+        &#34;&#34;&#34;.format(current_time=time, site_name=site_name), as_dict=1)
+
+        if len(active_shift) &gt; 0:
+                # Return supervisor user and distance
+                return get_employee_user_id(active_shift[0].supervisor)
+        else:
+                return &#39;&#39;
+
+
+def haversine(ofc_lat, ofc_lng, emp_lat, emp_lng):
+        &#34;&#34;&#34;
+        Calculate the great circle distance between two points
+        on the earth (specified in decimal degrees)
+        &#34;&#34;&#34;
+        from math import radians, cos, sin, asin, sqrt
+        # convert decimal degrees to radians
+        try:
+                lon1, lat1, lon2, lat2 = map(
+                        radians, [float(ofc_lng), float(ofc_lat), float(emp_lng), float(emp_lat)])
+                # haversine formula
+                dlon = lon2 - lon1
+                dlat = lat2 - lat1
+                a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+                c = 2 * asin(sqrt(a))
+                r = 6371000  # Radius of earth in meters. Use 3956 for miles or 6371 for kilometres
+                return c * r
+        except Exception as e:
+                print(frappe.get_traceback())
+
+
+#Training Result
+@frappe.whitelist()
+def update_certification_data(doc, method):
+        &#34;&#34;&#34;
+        This function adds/updates the Training Program Certificate doctype
+        by checking the pass/fail criteria of the employees based on the Training Result.
+        Also adds the training event data to the Employee Skill Map.
+        &#34;&#34;&#34;
+        passed_employees = []
+
+        training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email, end_datetime = frappe.db.get_value(&#34;Training Event&#34;, {&#39;event_name&#39;: doc.training_event}, [&#34;training_program&#34;, &#34;has_certificate&#34;, &#34;minimum_score&#34;, &#34;validity&#34;, &#34;company&#34;, &#34;trainer_name&#34;, &#34;trainer_email&#34;, &#34;end_time&#34;])
+
+        if has_certificate:
+
+                expiry_date = None
+                issue_date = cstr(end_datetime).split(&#34; &#34;)[0]
+                if validity &gt; 0:
+                        expiry_date = add_to_date(issue_date, months=validity)
+
+                for employee in doc.employees:
+                        if employee.grade and min_score and cint(employee.grade) &gt;= min_score:
+                                passed_employees.append(employee.employee)
+
+                for passed_employee in passed_employees:
+                        if frappe.db.exists(&#34;Training Program Certificate&#34;, {&#39;training_program_name&#39;: training_program_name, &#39;employee&#39;: passed_employee}):
+                                update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date)
+                        else:
+                                create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date,company, trainer_name, trainer_email)
+
+def update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None):
+        doc = frappe.get_doc(&#34;Training Program Certificate&#34;, {&#39;training_program_name&#39;: training_program_name, &#39;employee&#39;: passed_employee})
+        doc.issue_date = issue_date
+        doc.expiry_date = expiry_date
+        doc.save()
+
+def create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None, company=None, trainer_name=None, trainer_email=None):
+        doc = frappe.new_doc(&#34;Training Program Certificate&#34;)
+        doc.training_program_name = training_program_name
+        doc.company = company
+        doc.trainer_name = trainer_name
+        doc.trainer_email = trainer_email
+        doc.employee = passed_employee
+        doc.issue_date = issue_date
+        doc.expiry_date = expiry_date
+        doc.save()
+
+
+#Training Event
+@frappe.whitelist()
+def update_training_event_data(doc, method):
+        for employee in doc.employees:
+                if frappe.db.exists(&#34;Employee Skill Map&#34;, employee.employee):
+                        doc_esm = frappe.get_doc(&#34;Employee Skill Map&#34;, employee.employee)
+                        doc_esm.append(&#34;trainings&#34;,{
+                                &#39;training&#39;: doc.event_name,
+                        })
+                        doc_esm.save()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="api.doc_events.create_training_program_certificate"><code class="name flex">
+<span>def <span class="ident">create_training_program_certificate</span></span>(<span>training_program_name, passed_employee, issue_date, expiry_date=None, company=None, trainer_name=None, trainer_email=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None, company=None, trainer_name=None, trainer_email=None):
+        doc = frappe.new_doc(&#34;Training Program Certificate&#34;)
+        doc.training_program_name = training_program_name
+        doc.company = company
+        doc.trainer_name = trainer_name
+        doc.trainer_email = trainer_email
+        doc.employee = passed_employee
+        doc.issue_date = issue_date
+        doc.expiry_date = expiry_date
+        doc.save()</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.get_closest_location"><code class="name flex">
+<span>def <span class="ident">get_closest_location</span></span>(<span>time, location)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_closest_location(time, location):
+        time = get_datetime(time).strftime(&#34;%Y-%m-%d %H:%M&#34;)
+        latitude, longitude = location.split(&#34;,&#34;)
+
+        #Get the closest site according to the checkin location
+        site = frappe.db.sql(&#34;&#34;&#34;
+                SELECT
+                        (((acos(
+                                sin(( {latitude} * pi() / 180))
+                                *
+                                sin(( loc.latitude * pi() / 180)) + cos(( {latitude} * pi() /180 ))
+                                *
+                                cos(( loc.latitude  * pi() / 180)) * cos((( {longitude} - loc.longitude) * pi()/180))
+                        ))
+                        * 180/pi()) * 60 * 1.1515 * 1.609344 * 1000
+                        )AS distance, os.name FROM `tabLocation` AS loc, `tabOperations Site` AS os
+                WHERE os.site_location = loc.name ORDER BY distance ASC &#34;&#34;&#34;.format(latitude=latitude, longitude=longitude), as_dict=1)
+
+        site_name = site[0].name
+        # Unused for now
+        distance = site[0].distance
+
+        #Check for active shift at the closest site.
+        active_shift = frappe.db.sql(&#34;&#34;&#34;
+                SELECT
+                        supervisor
+                FROM `tabOperations Shift`
+                WHERE
+                        site=&#34;{site_name}&#34; AND
+                        CAST(&#34;{current_time}&#34; as datetime)
+                        BETWEEN
+                                CAST(start_time as datetime)
+                        AND
+                                IF(end_time &lt; start_time, DATE_ADD(CAST(end_time as datetime), INTERVAL 1 DAY), CAST(end_time as datetime))
+
+        &#34;&#34;&#34;.format(current_time=time, site_name=site_name), as_dict=1)
+
+        if len(active_shift) &gt; 0:
+                # Return supervisor user and distance
+                return get_employee_user_id(active_shift[0].supervisor)
+        else:
+                return &#39;&#39;</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.get_employee_user_id"><code class="name flex">
+<span>def <span class="ident">get_employee_user_id</span></span>(<span>employee)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def get_employee_user_id(employee):
+        return frappe.get_value(&#34;Employee&#34;, {&#34;name&#34;: employee}, [&#34;user_id&#34;])</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.get_notification_user"><code class="name flex">
+<span>def <span class="ident">get_notification_user</span></span>(<span>doc, employee=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Shift &gt; Site &gt; Project &gt; Reports to</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_notification_user(doc, employee=None):
+        &#34;&#34;&#34;
+                Shift &gt; Site &gt; Project &gt; Reports to
+        &#34;&#34;&#34;
+        if not doc.operations_shift:
+                return
+        
+        operations_shift = frappe.get_doc(&#34;Operations Shift&#34;, doc.operations_shift)
+
+        if operations_shift.supervisor:
+                supervisor = get_employee_user_id(operations_shift.supervisor)
+                if supervisor != doc.owner:
+                        return supervisor
+
+        operations_site = frappe.get_doc(&#34;Operations Site&#34;, operations_shift.site)
+
+        if operations_site.account_supervisor:
+                account_supervisor = get_employee_user_id(operations_site.account_supervisor)
+                if account_supervisor != doc.owner:
+                        return account_supervisor
+
+        if operations_site.project:
+                project = frappe.get_doc(&#34;Project&#34;, operations_site.project)
+                print(project.account_manager, project.name)
+                if project.account_manager:
+                        account_manager = get_employee_user_id(project.account_manager)
+                        if account_manager != doc.owner:
+                                return account_manager
+        reporting_manager = frappe.get_value(&#34;Employee&#34;, {&#34;name&#34;: employee}, &#34;reports_to&#34;)
+        print(&#34;191&#34;, employee, doc.owner, reporting_manager)
+        return get_employee_user_id(reporting_manager)</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.get_recipients"><code class="name flex">
+<span>def <span class="ident">get_recipients</span></span>(<span>doc)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get line managers. Site Supervisor, Project Manager, Operations Manager.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_recipients(doc):
+                &#34;&#34;&#34;
+                        Get line managers. Site Supervisor, Project Manager, Operations Manager.
+                &#34;&#34;&#34;
+                project_manager_user = get_employee_user_id(doc.account_manager)
+                operations_manager = frappe.get_list(&#34;Employee&#34;, {&#34;designation&#34;: &#34;Operations Manager&#34;}, ignore_permissions=True)
+                recipient_list = []
+
+                for manager in operations_manager:
+                        manager_user = get_employee_user_id(manager.name)
+                        recipient_list.append(manager_user)
+                recipient_list.append(project_manager_user)
+                return recipient_list</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.haversine"><code class="name flex">
+<span>def <span class="ident">haversine</span></span>(<span>ofc_lat, ofc_lng, emp_lat, emp_lng)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate the great circle distance between two points
+on the earth (specified in decimal degrees)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def haversine(ofc_lat, ofc_lng, emp_lat, emp_lng):
+        &#34;&#34;&#34;
+        Calculate the great circle distance between two points
+        on the earth (specified in decimal degrees)
+        &#34;&#34;&#34;
+        from math import radians, cos, sin, asin, sqrt
+        # convert decimal degrees to radians
+        try:
+                lon1, lat1, lon2, lat2 = map(
+                        radians, [float(ofc_lng), float(ofc_lat), float(emp_lng), float(emp_lat)])
+                # haversine formula
+                dlon = lon2 - lon1
+                dlat = lat2 - lat1
+                a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+                c = 2 * asin(sqrt(a))
+                r = 6371000  # Radius of earth in meters. Use 3956 for miles or 6371 for kilometres
+                return c * r
+        except Exception as e:
+                print(frappe.get_traceback())</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.naming_series"><code class="name flex">
+<span>def <span class="ident">naming_series</span></span>(<span>doc, method)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def naming_series(doc, method):
+                if frappe.db.exists(&#34;Shift Type&#34;, {&#39;name&#39;:doc.shift_type+&#34;|&#34;+doc.start_time+&#34;-&#34;+doc.end_time+&#34;|&#34;+cstr(doc.duration)+&#34; hours&#34;}):
+                        frappe.throw(doc.shift_type+&#34;|&#34;+doc.start_time+&#34;-&#34;+doc.end_time+&#34;|&#34;+cstr(doc.duration)+&#34; hours Already exists&#34;)
+                doc.name = doc.shift_type+&#34;|&#34;+doc.start_time+&#34;-&#34;+doc.end_time+&#34;|&#34;+cstr(doc.duration)+&#34; hours&#34;</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.notify_poc_changes"><code class="name flex">
+<span>def <span class="ident">notify_poc_changes</span></span>(<span>doc, doc_before_save)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def notify_poc_changes(doc, doc_before_save):
+        changes = get_diff(doc_before_save, doc, for_child=True)
+        if not changes and changes.changed:
+                return
+
+        # Variables needed for notification
+        project = doc.name
+        modified_by = doc.modified_by
+        subject = &#34;{modified_by} made some changes to {project} POC.&#34;.format(project=project, modified_by=modified_by)
+        message = &#39;&#39;
+
+        if changes.row_changed:
+                for change in changes.row_changed:
+                        message = message + &#34;Details of {poc_name} modified.\n&#34;.format(poc_name=doc.poc[change[1]].poc)
+        if changes.added:
+                for change in changes.added:
+                        if(change[0] == &#34;poc&#34;):
+                                message = message + &#34;{poc_name} has been added as a POC.\n&#34;.format(poc_name=change[1].poc)
+        if changes.removed:
+                for change in changes.removed:
+                        if(change[0] == &#34;poc&#34;):
+                                message = message + &#34;{poc_name} has been removed as a POC.\n&#34;.format(poc_name=change[1].poc)
+
+        recipients = get_recipients(doc)
+        create_notification_log(_(subject), _(message), recipients, doc)</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.project_on_update"><code class="name flex">
+<span>def <span class="ident">project_on_update</span></span>(<span>doc, method)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def project_on_update(doc, method):
+        doc_before_save = doc.get_doc_before_save()
+        notify_poc_changes(doc, doc_before_save)</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.shift_after_insert"><code class="name flex">
+<span>def <span class="ident">shift_after_insert</span></span>(<span>doc, method)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def shift_after_insert(doc, method):
+        shift_type = frappe.get_doc(&#34;Shift Type&#34;, doc.shift_type)
+        start_time = get_datetime(doc.start_time) + timedelta(minutes=shift_type.notification_reminder_after_shift_start)
+        if doc.start_time &lt;= doc.end_time:
+                pass
+        elif doc.start_time &gt; doc.end_time:
+                pass</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.update_certification_data"><code class="name flex">
+<span>def <span class="ident">update_certification_data</span></span>(<span>doc, method)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This function adds/updates the Training Program Certificate doctype
+by checking the pass/fail criteria of the employees based on the Training Result.
+Also adds the training event data to the Employee Skill Map.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def update_certification_data(doc, method):
+        &#34;&#34;&#34;
+        This function adds/updates the Training Program Certificate doctype
+        by checking the pass/fail criteria of the employees based on the Training Result.
+        Also adds the training event data to the Employee Skill Map.
+        &#34;&#34;&#34;
+        passed_employees = []
+
+        training_program_name, has_certificate, min_score, validity, company, trainer_name, trainer_email, end_datetime = frappe.db.get_value(&#34;Training Event&#34;, {&#39;event_name&#39;: doc.training_event}, [&#34;training_program&#34;, &#34;has_certificate&#34;, &#34;minimum_score&#34;, &#34;validity&#34;, &#34;company&#34;, &#34;trainer_name&#34;, &#34;trainer_email&#34;, &#34;end_time&#34;])
+
+        if has_certificate:
+
+                expiry_date = None
+                issue_date = cstr(end_datetime).split(&#34; &#34;)[0]
+                if validity &gt; 0:
+                        expiry_date = add_to_date(issue_date, months=validity)
+
+                for employee in doc.employees:
+                        if employee.grade and min_score and cint(employee.grade) &gt;= min_score:
+                                passed_employees.append(employee.employee)
+
+                for passed_employee in passed_employees:
+                        if frappe.db.exists(&#34;Training Program Certificate&#34;, {&#39;training_program_name&#39;: training_program_name, &#39;employee&#39;: passed_employee}):
+                                update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date)
+                        else:
+                                create_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date,company, trainer_name, trainer_email)</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.update_training_event_data"><code class="name flex">
+<span>def <span class="ident">update_training_event_data</span></span>(<span>doc, method)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def update_training_event_data(doc, method):
+        for employee in doc.employees:
+                if frappe.db.exists(&#34;Employee Skill Map&#34;, employee.employee):
+                        doc_esm = frappe.get_doc(&#34;Employee Skill Map&#34;, employee.employee)
+                        doc_esm.append(&#34;trainings&#34;,{
+                                &#39;training&#39;: doc.event_name,
+                        })
+                        doc_esm.save()</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.update_training_program_certificate"><code class="name flex">
+<span>def <span class="ident">update_training_program_certificate</span></span>(<span>training_program_name, passed_employee, issue_date, expiry_date=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def update_training_program_certificate(training_program_name, passed_employee, issue_date, expiry_date=None):
+        doc = frappe.get_doc(&#34;Training Program Certificate&#34;, {&#39;training_program_name&#39;: training_program_name, &#39;employee&#39;: passed_employee})
+        doc.issue_date = issue_date
+        doc.expiry_date = expiry_date
+        doc.save()</code></pre>
+</details>
+</dd>
+<dt id="api.doc_events.validate_location"><code class="name flex">
+<span>def <span class="ident">validate_location</span></span>(<span>doc)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def validate_location(doc):
+        checkin_lat, checkin_lng = doc.device_id.split(&#34;,&#34;) if doc.device_id else (0, 0)
+        site_name = frappe.get_value(&#34;Operations Shift&#34;, doc.operations_shift, &#34;site&#34;)
+        site_location = frappe.get_value(&#34;Operations Site&#34;, site_name, &#34;site_location&#34;)
+        site_lat, site_lng, radius = frappe.get_value(&#34;Location&#34;, site_location, [&#34;latitude&#34;,&#34;longitude&#34;, &#34;geofence_radius&#34;] )
+        distance =  haversine(site_lat, site_lng, checkin_lat, checkin_lng)
+        return distance, radius</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="api" href="index.html">api</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="api.doc_events.create_training_program_certificate" href="#api.doc_events.create_training_program_certificate">create_training_program_certificate</a></code></li>
+<li><code><a title="api.doc_events.get_closest_location" href="#api.doc_events.get_closest_location">get_closest_location</a></code></li>
+<li><code><a title="api.doc_events.get_employee_user_id" href="#api.doc_events.get_employee_user_id">get_employee_user_id</a></code></li>
+<li><code><a title="api.doc_events.get_notification_user" href="#api.doc_events.get_notification_user">get_notification_user</a></code></li>
+<li><code><a title="api.doc_events.get_recipients" href="#api.doc_events.get_recipients">get_recipients</a></code></li>
+<li><code><a title="api.doc_events.haversine" href="#api.doc_events.haversine">haversine</a></code></li>
+<li><code><a title="api.doc_events.naming_series" href="#api.doc_events.naming_series">naming_series</a></code></li>
+<li><code><a title="api.doc_events.notify_poc_changes" href="#api.doc_events.notify_poc_changes">notify_poc_changes</a></code></li>
+<li><code><a title="api.doc_events.project_on_update" href="#api.doc_events.project_on_update">project_on_update</a></code></li>
+<li><code><a title="api.doc_events.shift_after_insert" href="#api.doc_events.shift_after_insert">shift_after_insert</a></code></li>
+<li><code><a title="api.doc_events.update_certification_data" href="#api.doc_events.update_certification_data">update_certification_data</a></code></li>
+<li><code><a title="api.doc_events.update_training_event_data" href="#api.doc_events.update_training_event_data">update_training_event_data</a></code></li>
+<li><code><a title="api.doc_events.update_training_program_certificate" href="#api.doc_events.update_training_program_certificate">update_training_program_certificate</a></code></li>
+<li><code><a title="api.doc_events.validate_location" href="#api.doc_events.validate_location">validate_location</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

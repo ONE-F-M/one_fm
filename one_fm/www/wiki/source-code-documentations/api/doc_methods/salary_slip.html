@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>api.doc_methods.salary_slip API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>api.doc_methods.salary_slip</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import frappe
+from frappe import _
+from one_fm.api.doc_methods.payroll_entry import get_basic_salary
+from one_fm.api.notification import create_notification_log
+from frappe.utils import cint, flt, date_diff, cstr, today, getdate, get_last_day, add_days
+
+def get_scheduled_day_off(employee, start_date, end_date):
+        schedule_list = frappe.db.sql_list(&#34;&#34;&#34;
+        select distinct date from `tabEmployee Schedule`
+        where
+                employee=%s and
+                date between %s and %s
+                and employee_availability in (&#34;Day Off&#34;, &#34;Sick Leave&#34;, &#34;Annual Leave&#34;, &#34;Emergency Leave&#34;) &#34;&#34;&#34;,
+        (employee, start_date, end_date))
+
+        schedules = [cstr(schedule) for schedule in schedule_list]
+
+        return schedules
+
+def get_working_days_details(
+        self, joining_date=None, relieving_date=None, lwp=None, for_preview=0
+):
+        payroll_based_on = frappe.db.get_value(&#34;Payroll Settings&#34;, None, &#34;payroll_based_on&#34;)
+        include_holidays_in_total_working_days = frappe.db.get_single_value(
+                &#34;Payroll Settings&#34;, &#34;include_holidays_in_total_working_days&#34;
+        )
+
+        include_day_off_in_total_working_days = frappe.db.get_single_value(
+                &#34;HR and Payroll Additional Settings&#34;, &#34;include_day_off_in_total_working_days&#34;
+        )
+
+        working_days = date_diff(self.end_date, self.start_date) + 1
+        if for_preview:
+                self.total_working_days = working_days
+                self.payment_days = working_days
+                return
+
+        holidays = self.get_holidays_for_employee(self.start_date, self.end_date)
+
+        if not cint(include_holidays_in_total_working_days):
+                working_days -= len(holidays)
+                if working_days &lt; 0:
+                        frappe.throw(_(&#34;There are more holidays than working days this month.&#34;))
+
+        day_off_dates = get_scheduled_day_off(self.employee, self.start_date, self.end_date)
+
+        # if not cint(include_day_off_in_total_working_days):
+        #       working_days -= len(day_off_dates)
+        #       if working_days &lt; 0:
+        #               frappe.throw(_(&#34;There are more day off/holidays than working days this month.&#34;))
+
+        if not payroll_based_on:
+                frappe.throw(_(&#34;Please set Payroll based on in Payroll settings&#34;))
+
+        if payroll_based_on == &#34;Attendance&#34;:
+                actual_lwp, absent = self.calculate_lwp_ppl_and_absent_days_based_on_attendance(holidays)
+                self.absent_days = absent
+        else:
+                actual_lwp = self.calculate_lwp_or_ppl_based_on_leave_application(holidays, working_days)
+
+        if not lwp:
+                lwp = actual_lwp
+        elif lwp != actual_lwp:
+                frappe.msgprint(
+                        _(&#34;Leave Without Pay does not match with approved {} records&#34;).format(payroll_based_on)
+                )
+
+        self.leave_without_pay = lwp
+        self.total_working_days = working_days
+
+        # Set Payment days by considerring include_holidays_in_total_working_days
+        payment_days = self.get_payment_days(
+                joining_date, relieving_date, include_holidays_in_total_working_days
+        )
+
+        # Payment days by considerring include_day_off_in_total_working_days
+        if not cint(include_day_off_in_total_working_days):
+                payment_days -= len(day_off_dates)
+
+        if flt(payment_days) &gt; flt(lwp):
+                self.payment_days = flt(payment_days) - flt(lwp)
+
+                if payroll_based_on == &#34;Attendance&#34;:
+                        self.payment_days -= flt(absent)
+
+                consider_unmarked_attendance_as = (
+                        frappe.db.get_value(&#34;Payroll Settings&#34;, None, &#34;consider_unmarked_attendance_as&#34;) or &#34;Present&#34;
+                )
+
+                if payroll_based_on == &#34;Attendance&#34; and consider_unmarked_attendance_as == &#34;Absent&#34;:
+                        unmarked_days = self.get_unmarked_days(include_holidays_in_total_working_days)
+                        self.absent_days += unmarked_days  # will be treated as absent
+                        self.payment_days -= unmarked_days
+        else:
+                self.payment_days = 0
+
+def get_unmarked_days(self, include_holidays_in_total_working_days):
+        unmarked_days = self.total_working_days
+        joining_date, relieving_date = frappe.get_cached_value(
+                &#34;Employee&#34;, self.employee, [&#34;date_of_joining&#34;, &#34;relieving_date&#34;]
+        )
+        start_date = self.start_date
+        end_date = self.end_date
+
+        if joining_date and (getdate(self.start_date) &lt; joining_date &lt;= getdate(self.end_date)):
+                start_date = joining_date
+                unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
+                        unmarked_days,
+                        include_holidays_in_total_working_days,
+                        self.start_date,
+                        add_days(joining_date, -1),
+                )
+
+        if relieving_date and (getdate(self.start_date) &lt;= relieving_date &lt; getdate(self.end_date)):
+                end_date = relieving_date
+                unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
+                        unmarked_days,
+                        include_holidays_in_total_working_days,
+                        add_days(relieving_date, 1),
+                        self.end_date,
+                )
+
+        # exclude days for which attendance has been marked
+        unmarked_days -= frappe.get_all(
+                &#34;Attendance&#34;,
+                filters={
+                        &#34;attendance_date&#34;: [&#34;between&#34;, [start_date, end_date]],
+                        &#34;employee&#34;: self.employee,
+                        &#34;docstatus&#34;: 1,
+                },
+                fields=[&#34;COUNT(*) as marked_days&#34;],
+        )[0].marked_days
+        return unmarked_days
+
+def get_unmarked_days_based_on_doj_or_relieving(
+                self, unmarked_days, include_holidays_in_total_working_days, start_date, end_date
+        ):
+        &#34;&#34;&#34;
+        Exclude days before DOJ or after
+        Relieving Date from unmarked days
+        &#34;&#34;&#34;
+        from erpnext.setup.doctype.employee.employee import is_holiday
+        include_day_off_in_total_working_days = frappe.db.get_single_value(
+                &#34;HR and Payroll Additional Settings&#34;, &#34;include_day_off_in_total_working_days&#34;
+        )
+        # if include_holidays_in_total_working_days and include_day_off_in_total_working_days:
+        #       unmarked_days = date_diff(end_date, start_date) + 1
+        # el
+        if include_holidays_in_total_working_days:
+                unmarked_days -= date_diff(end_date, start_date) + 1
+                # for days in range(date_diff(end_date, start_date) + 1):
+                #       date = add_days(end_date, -days)
+                #       # include if not day off
+                #       if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
+                #               unmarked_days -= 1
+        else:
+                for days in range(date_diff(end_date, start_date) + 1):
+                        date = add_days(end_date, -days)
+                        # exclude if not holidays
+                        if not is_holiday(self.employee, date):
+                                unmarked_days -= 1
+                        # exclude if not day off
+                        # if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
+                        #       unmarked_days -= 1
+        return unmarked_days
+
+def is_day_off(employee, date=None):
+        &#34;&#34;&#34;
+        Returns True if given Employee has an holiday on the given date
+        :param employee: Employee `name`
+        :param date: Date to check. Will check for today if None
+        &#34;&#34;&#34;
+
+        if not date:
+                date = today()
+
+        day_off_dates = get_scheduled_day_off(employee, date, date)
+
+        return len(day_off_dates) &gt; 0
+
+def calculate_lwp_ppl_and_absent_days(employee, start_date, end_date, holidays):
+        lwp = 0
+        absent = 0
+
+        daily_wages_fraction_for_half_day = (
+                flt(frappe.db.get_value(&#34;Payroll Settings&#34;, None, &#34;daily_wages_fraction_for_half_day&#34;)) or 0.5
+        )
+
+        leave_types = frappe.get_all(
+                &#34;Leave Type&#34;,
+                or_filters=[[&#34;is_ppl&#34;, &#34;=&#34;, 1], [&#34;is_lwp&#34;, &#34;=&#34;, 1]],
+                fields=[&#34;name&#34;, &#34;is_lwp&#34;, &#34;is_ppl&#34;, &#34;fraction_of_daily_salary_per_leave&#34;, &#34;include_holiday&#34;],
+        )
+
+        leave_type_map = {}
+        for leave_type in leave_types:
+                leave_type_map[leave_type.name] = leave_type
+
+        attendances = frappe.db.sql(
+                &#34;&#34;&#34;
+                SELECT attendance_date, status, leave_type
+                FROM `tabAttendance`
+                WHERE
+                        status in (&#34;Absent&#34;, &#34;Half Day&#34;, &#34;On leave&#34;)
+                        AND employee = %s
+                        AND docstatus = 1
+                        AND attendance_date between %s and %s
+        &#34;&#34;&#34;,
+                values=(employee, start_date, end_date),
+                as_dict=1,
+        )
+
+        for d in attendances:
+                if (
+                        d.status in (&#34;Half Day&#34;, &#34;On Leave&#34;)
+                        and d.leave_type
+                        and d.leave_type not in leave_type_map.keys()
+                ):
+                        continue
+
+                if formatdate(d.attendance_date, &#34;yyyy-mm-dd&#34;) in holidays:
+                        if d.status == &#34;Absent&#34; or (
+                                d.leave_type
+                                and d.leave_type in leave_type_map.keys()
+                                and not leave_type_map[d.leave_type][&#34;include_holiday&#34;]
+                        ):
+                                continue
+
+                if d.leave_type:
+                        fraction_of_daily_salary_per_leave = leave_type_map[d.leave_type][
+                                &#34;fraction_of_daily_salary_per_leave&#34;
+                        ]
+
+                if d.status == &#34;Half Day&#34;:
+                        equivalent_lwp = 1 - daily_wages_fraction_for_half_day
+
+                        if d.leave_type in leave_type_map.keys() and leave_type_map[d.leave_type][&#34;is_ppl&#34;]:
+                                equivalent_lwp *= (
+                                        fraction_of_daily_salary_per_leave if fraction_of_daily_salary_per_leave else 1
+                                )
+                        lwp += equivalent_lwp
+                elif d.status == &#34;On Leave&#34; and d.leave_type and d.leave_type in leave_type_map.keys():
+                        equivalent_lwp = 1
+                        if leave_type_map[d.leave_type][&#34;is_ppl&#34;]:
+                                equivalent_lwp *= (
+                                        fraction_of_daily_salary_per_leave if fraction_of_daily_salary_per_leave else 1
+                                )
+                        lwp += equivalent_lwp
+                elif d.status == &#34;Absent&#34;:
+                        absent += 1
+        return lwp, absent
+
+def salary_slip_before_submit(doc, method):
+        basic_salary = get_basic_salary(doc.employee)
+
+        # As per Kuwaiti law, 90% of WP salary has to be paid to an employee after factoring in deductions
+        minimum_payable_salary = 0.9 * basic_salary
+
+        if doc.net_pay &lt; minimum_payable_salary:
+                notify_payroll(doc)
+                frappe.throw(_(&#34;Total deduction amount exceeds the permissible limit in Salary Slip for {}&#34;.format(doc.employee+&#34;:&#34;+doc.employee_name)))
+
+
+def notify_payroll(doc):
+        email = frappe.get_value(&#34;HR Settings&#34;, &#34;HR Settings&#34;, &#34;payroll_notifications_email&#34;)
+        subject = _(&#34;Urgent Attention Needed: Issues with maximum deduction in Payroll&#34;)
+        message = _(&#34;Total deduction amount exceeds the permissible limit in Salary Slip for {}&#34;.format(doc.employee+&#34;:&#34;+doc.employee_name))
+        create_notification_log(subject,message,[email], doc)
+
+def set_earnings_and_deduction_with_respect_to_payroll_cycle(doc, method):
+        last_salary_slip = get_last_salary_slip(doc.employee)
+        if last_salary_slip and len(last_salary_slip) &gt; 0:
+                payroll_based_on = frappe.db.get_value(&#34;Payroll Settings&#34;, None, &#34;payroll_based_on&#34;)
+                last_salary_slip = last_salary_slip[0]
+                if getdate(doc.posting_date) &lt; getdate(doc.end_date):
+                        # if paid for last payroll end date to yesterday
+                        if getdate(last_salary_slip.start_date) &lt;= getdate(last_salary_slip.posting_date) and \
+                                getdate(last_salary_slip.posting_date) &lt;= getdate(last_salary_slip.end_date):
+                                # deduct salary for last payroll absent/lwp days =&gt; find absents and actual_lwp in last payroll end date to yesterday
+                                deduct_days = 0
+                                holidays = doc.get_holidays_for_employee(last_salary_slip.posting_date, last_salary_slip.end_date)
+                                actual_lwp, absent = calculate_lwp_ppl_and_absent_days(doc.employee, last_salary_slip.posting_date, last_salary_slip.end_date, holidays)
+                                if payroll_based_on == &#34;Attendance&#34;:
+                                        deduct_days += absent
+                                        deduct_days += actual_lwp
+                                deduct_from_salary(doc, last_salary_slip, deduct_days)
+                        else:
+                                # set earnings for last payroll payment days =&gt; find payment days in last payroll end date to yesterday
+                                payment_days = get_payment_days(doc, last_salary_slip.end_date, get_last_day(last_salary_slip.end_date))
+                                last_salary_slip_daily_wage = last_salary_slip.net_pay / last_salary_slip.total_working_days
+                                deduction = doc.append(&#34;earnings&#34;)
+                                deduction.salary_component = &#34;Not Included in Last Salary&#34;
+                                deduction.amount = last_salary_slip_daily_wage * payment_days
+                # if paid for last payroll end date to yesterday
+                if getdate(doc.posting_date) &gt; getdate(doc.end_date) and \
+                        is_last_salary_slip_overlap_with_current_salary_slip(last_salary_slip, doc.start_date, doc.end_date):
+                        deduct_from_salary(doc, last_salary_slip)
+                        # find payment days in last payroll end date to yesterday
+                        payment_days = get_payment_days(doc, last_salary_slip.end_date, get_last_day(last_salary_slip.end_date))
+                        # deduct salary for paid payment_days
+                        deduct_from_salary(doc, last_salary_slip, payment_days)
+
+def deduct_from_salary(doc, last_salary_slip, deduct_days):
+        last_salary_slip_daily_wage = last_salary_slip.net_pay / last_salary_slip.total_working_days
+        deduction = doc.append(&#34;deductions&#34;)
+        deduction.salary_component = &#34;Last Salary Deduct&#34;
+        deduction.amount = last_salary_slip_daily_wage * deduct_days
+
+def get_payment_days(doc, start_date, end_date):
+        payment_days = date_diff(end_date, start_date) + 1
+
+        include_holidays_in_total_working_days = frappe.db.get_single_value(
+                &#34;Payroll Settings&#34;, &#34;include_holidays_in_total_working_days&#34;
+        )
+
+        include_day_off_in_total_working_days = frappe.db.get_single_value(
+                &#34;HR and Payroll Additional Settings&#34;, &#34;include_day_off_in_total_working_days&#34;
+        )
+
+        holidays = doc.get_holidays_for_employee(start_date, end_date)
+        if not cint(include_holidays_in_total_working_days):
+                payment_days -= len(holidays)
+
+        if not cint(include_day_off_in_total_working_days):
+                day_off_dates = get_scheduled_day_off(doc.employee, start_date, end_date)
+                for holiday in holidays:
+                        if holiday in day_off_dates:
+                                day_off_dates.removes(holiday)
+                payment_days -= len(day_off_dates)
+
+        return payment_days
+
+def is_last_salary_slip_overlap_with_current_salary_slip(last_salary_slip, start_date, end_date):
+        if getdate(start_date) &lt;= getdate(last_salary_slip.end_date) and getdate(last_salary_slip.end_date) &lt;= getdate(end_date):
+                return True # Last salary overlap current salary
+        return False # Last salary not overlap current salary
+
+def get_last_salary_slip(employee):
+        last_salary_slip = frappe.get_list(
+                &#34;Salary Slip&#34;,
+                fields=[&#34;*&#34;],
+                filters={&#34;employee&#34;:employee, &#34;docstatus&#34;: 1},
+                order_by=&#39;start_date&#39;,
+                limit_page_length=1
+        )
+        if last_salary_slip and len(last_salary_slip) &gt; 0:
+                return last_salary_slip
+        return False
+
+@frappe.whitelist()
+def get_data_for_eval(doc):
+        &#34;&#34;&#34;Returns data for evaluating formula&#34;&#34;&#34;
+        data = frappe._dict()
+        employee = frappe.get_doc(&#34;Employee&#34;, doc.employee).as_dict()
+
+        start_date = getdate(doc.start_date)
+        date_to_validate = (
+                employee.date_of_joining if employee.date_of_joining &gt; start_date else start_date
+        )
+
+        salary_structure_assignment = frappe.get_value(
+                &#34;Salary Structure Assignment&#34;,
+                {
+                        &#34;employee&#34;: doc.employee,
+                        &#34;salary_structure&#34;: doc.salary_structure,
+                        &#34;docstatus&#34;: 1,
+                },
+                &#34;*&#34;,
+                order_by=&#34;from_date desc&#34;,
+                as_dict=True,
+        )
+
+        if not salary_structure_assignment:
+                frappe.throw(
+                        _(
+                                &#34;Please assign a Salary Structure for Employee {0} &#34; &#34;applicable from or before {1} first&#34;
+                        ).format(
+                                frappe.bold(doc.employee_name),
+                                frappe.bold(formatdate(date_to_validate)),
+                        )
+                )
+
+        data.update(salary_structure_assignment)
+        data.update(employee)
+        data.update(doc.as_dict())
+
+        # set values for components
+        salary_components = frappe.get_all(&#34;Salary Component&#34;, fields=[&#34;salary_component_abbr&#34;])
+        for sc in salary_components:
+                data.setdefault(sc.salary_component_abbr, 0)
+
+        # shallow copy of data to store default amounts (without payment days) for tax calculation
+        default_data = data.copy()
+
+        for key in (&#34;earnings&#34;, &#34;deductions&#34;):
+                for d in doc.get(key):
+                        default_data[d.abbr] = d.default_amount or 0
+                        data[d.abbr] = d.amount or 0
+
+        return data, default_data</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="api.doc_methods.salary_slip.calculate_lwp_ppl_and_absent_days"><code class="name flex">
+<span>def <span class="ident">calculate_lwp_ppl_and_absent_days</span></span>(<span>employee, start_date, end_date, holidays)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate_lwp_ppl_and_absent_days(employee, start_date, end_date, holidays):
+        lwp = 0
+        absent = 0
+
+        daily_wages_fraction_for_half_day = (
+                flt(frappe.db.get_value(&#34;Payroll Settings&#34;, None, &#34;daily_wages_fraction_for_half_day&#34;)) or 0.5
+        )
+
+        leave_types = frappe.get_all(
+                &#34;Leave Type&#34;,
+                or_filters=[[&#34;is_ppl&#34;, &#34;=&#34;, 1], [&#34;is_lwp&#34;, &#34;=&#34;, 1]],
+                fields=[&#34;name&#34;, &#34;is_lwp&#34;, &#34;is_ppl&#34;, &#34;fraction_of_daily_salary_per_leave&#34;, &#34;include_holiday&#34;],
+        )
+
+        leave_type_map = {}
+        for leave_type in leave_types:
+                leave_type_map[leave_type.name] = leave_type
+
+        attendances = frappe.db.sql(
+                &#34;&#34;&#34;
+                SELECT attendance_date, status, leave_type
+                FROM `tabAttendance`
+                WHERE
+                        status in (&#34;Absent&#34;, &#34;Half Day&#34;, &#34;On leave&#34;)
+                        AND employee = %s
+                        AND docstatus = 1
+                        AND attendance_date between %s and %s
+        &#34;&#34;&#34;,
+                values=(employee, start_date, end_date),
+                as_dict=1,
+        )
+
+        for d in attendances:
+                if (
+                        d.status in (&#34;Half Day&#34;, &#34;On Leave&#34;)
+                        and d.leave_type
+                        and d.leave_type not in leave_type_map.keys()
+                ):
+                        continue
+
+                if formatdate(d.attendance_date, &#34;yyyy-mm-dd&#34;) in holidays:
+                        if d.status == &#34;Absent&#34; or (
+                                d.leave_type
+                                and d.leave_type in leave_type_map.keys()
+                                and not leave_type_map[d.leave_type][&#34;include_holiday&#34;]
+                        ):
+                                continue
+
+                if d.leave_type:
+                        fraction_of_daily_salary_per_leave = leave_type_map[d.leave_type][
+                                &#34;fraction_of_daily_salary_per_leave&#34;
+                        ]
+
+                if d.status == &#34;Half Day&#34;:
+                        equivalent_lwp = 1 - daily_wages_fraction_for_half_day
+
+                        if d.leave_type in leave_type_map.keys() and leave_type_map[d.leave_type][&#34;is_ppl&#34;]:
+                                equivalent_lwp *= (
+                                        fraction_of_daily_salary_per_leave if fraction_of_daily_salary_per_leave else 1
+                                )
+                        lwp += equivalent_lwp
+                elif d.status == &#34;On Leave&#34; and d.leave_type and d.leave_type in leave_type_map.keys():
+                        equivalent_lwp = 1
+                        if leave_type_map[d.leave_type][&#34;is_ppl&#34;]:
+                                equivalent_lwp *= (
+                                        fraction_of_daily_salary_per_leave if fraction_of_daily_salary_per_leave else 1
+                                )
+                        lwp += equivalent_lwp
+                elif d.status == &#34;Absent&#34;:
+                        absent += 1
+        return lwp, absent</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.deduct_from_salary"><code class="name flex">
+<span>def <span class="ident">deduct_from_salary</span></span>(<span>doc, last_salary_slip, deduct_days)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def deduct_from_salary(doc, last_salary_slip, deduct_days):
+        last_salary_slip_daily_wage = last_salary_slip.net_pay / last_salary_slip.total_working_days
+        deduction = doc.append(&#34;deductions&#34;)
+        deduction.salary_component = &#34;Last Salary Deduct&#34;
+        deduction.amount = last_salary_slip_daily_wage * deduct_days</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.get_data_for_eval"><code class="name flex">
+<span>def <span class="ident">get_data_for_eval</span></span>(<span>doc)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns data for evaluating formula</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def get_data_for_eval(doc):
+        &#34;&#34;&#34;Returns data for evaluating formula&#34;&#34;&#34;
+        data = frappe._dict()
+        employee = frappe.get_doc(&#34;Employee&#34;, doc.employee).as_dict()
+
+        start_date = getdate(doc.start_date)
+        date_to_validate = (
+                employee.date_of_joining if employee.date_of_joining &gt; start_date else start_date
+        )
+
+        salary_structure_assignment = frappe.get_value(
+                &#34;Salary Structure Assignment&#34;,
+                {
+                        &#34;employee&#34;: doc.employee,
+                        &#34;salary_structure&#34;: doc.salary_structure,
+                        &#34;docstatus&#34;: 1,
+                },
+                &#34;*&#34;,
+                order_by=&#34;from_date desc&#34;,
+                as_dict=True,
+        )
+
+        if not salary_structure_assignment:
+                frappe.throw(
+                        _(
+                                &#34;Please assign a Salary Structure for Employee {0} &#34; &#34;applicable from or before {1} first&#34;
+                        ).format(
+                                frappe.bold(doc.employee_name),
+                                frappe.bold(formatdate(date_to_validate)),
+                        )
+                )
+
+        data.update(salary_structure_assignment)
+        data.update(employee)
+        data.update(doc.as_dict())
+
+        # set values for components
+        salary_components = frappe.get_all(&#34;Salary Component&#34;, fields=[&#34;salary_component_abbr&#34;])
+        for sc in salary_components:
+                data.setdefault(sc.salary_component_abbr, 0)
+
+        # shallow copy of data to store default amounts (without payment days) for tax calculation
+        default_data = data.copy()
+
+        for key in (&#34;earnings&#34;, &#34;deductions&#34;):
+                for d in doc.get(key):
+                        default_data[d.abbr] = d.default_amount or 0
+                        data[d.abbr] = d.amount or 0
+
+        return data, default_data</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.get_last_salary_slip"><code class="name flex">
+<span>def <span class="ident">get_last_salary_slip</span></span>(<span>employee)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_last_salary_slip(employee):
+        last_salary_slip = frappe.get_list(
+                &#34;Salary Slip&#34;,
+                fields=[&#34;*&#34;],
+                filters={&#34;employee&#34;:employee, &#34;docstatus&#34;: 1},
+                order_by=&#39;start_date&#39;,
+                limit_page_length=1
+        )
+        if last_salary_slip and len(last_salary_slip) &gt; 0:
+                return last_salary_slip
+        return False</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.get_payment_days"><code class="name flex">
+<span>def <span class="ident">get_payment_days</span></span>(<span>doc, start_date, end_date)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_payment_days(doc, start_date, end_date):
+        payment_days = date_diff(end_date, start_date) + 1
+
+        include_holidays_in_total_working_days = frappe.db.get_single_value(
+                &#34;Payroll Settings&#34;, &#34;include_holidays_in_total_working_days&#34;
+        )
+
+        include_day_off_in_total_working_days = frappe.db.get_single_value(
+                &#34;HR and Payroll Additional Settings&#34;, &#34;include_day_off_in_total_working_days&#34;
+        )
+
+        holidays = doc.get_holidays_for_employee(start_date, end_date)
+        if not cint(include_holidays_in_total_working_days):
+                payment_days -= len(holidays)
+
+        if not cint(include_day_off_in_total_working_days):
+                day_off_dates = get_scheduled_day_off(doc.employee, start_date, end_date)
+                for holiday in holidays:
+                        if holiday in day_off_dates:
+                                day_off_dates.removes(holiday)
+                payment_days -= len(day_off_dates)
+
+        return payment_days</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.get_scheduled_day_off"><code class="name flex">
+<span>def <span class="ident">get_scheduled_day_off</span></span>(<span>employee, start_date, end_date)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_scheduled_day_off(employee, start_date, end_date):
+        schedule_list = frappe.db.sql_list(&#34;&#34;&#34;
+        select distinct date from `tabEmployee Schedule`
+        where
+                employee=%s and
+                date between %s and %s
+                and employee_availability in (&#34;Day Off&#34;, &#34;Sick Leave&#34;, &#34;Annual Leave&#34;, &#34;Emergency Leave&#34;) &#34;&#34;&#34;,
+        (employee, start_date, end_date))
+
+        schedules = [cstr(schedule) for schedule in schedule_list]
+
+        return schedules</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.get_unmarked_days"><code class="name flex">
+<span>def <span class="ident">get_unmarked_days</span></span>(<span>self, include_holidays_in_total_working_days)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_unmarked_days(self, include_holidays_in_total_working_days):
+        unmarked_days = self.total_working_days
+        joining_date, relieving_date = frappe.get_cached_value(
+                &#34;Employee&#34;, self.employee, [&#34;date_of_joining&#34;, &#34;relieving_date&#34;]
+        )
+        start_date = self.start_date
+        end_date = self.end_date
+
+        if joining_date and (getdate(self.start_date) &lt; joining_date &lt;= getdate(self.end_date)):
+                start_date = joining_date
+                unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
+                        unmarked_days,
+                        include_holidays_in_total_working_days,
+                        self.start_date,
+                        add_days(joining_date, -1),
+                )
+
+        if relieving_date and (getdate(self.start_date) &lt;= relieving_date &lt; getdate(self.end_date)):
+                end_date = relieving_date
+                unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
+                        unmarked_days,
+                        include_holidays_in_total_working_days,
+                        add_days(relieving_date, 1),
+                        self.end_date,
+                )
+
+        # exclude days for which attendance has been marked
+        unmarked_days -= frappe.get_all(
+                &#34;Attendance&#34;,
+                filters={
+                        &#34;attendance_date&#34;: [&#34;between&#34;, [start_date, end_date]],
+                        &#34;employee&#34;: self.employee,
+                        &#34;docstatus&#34;: 1,
+                },
+                fields=[&#34;COUNT(*) as marked_days&#34;],
+        )[0].marked_days
+        return unmarked_days</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.get_unmarked_days_based_on_doj_or_relieving"><code class="name flex">
+<span>def <span class="ident">get_unmarked_days_based_on_doj_or_relieving</span></span>(<span>self, unmarked_days, include_holidays_in_total_working_days, start_date, end_date)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Exclude days before DOJ or after
+Relieving Date from unmarked days</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_unmarked_days_based_on_doj_or_relieving(
+                self, unmarked_days, include_holidays_in_total_working_days, start_date, end_date
+        ):
+        &#34;&#34;&#34;
+        Exclude days before DOJ or after
+        Relieving Date from unmarked days
+        &#34;&#34;&#34;
+        from erpnext.setup.doctype.employee.employee import is_holiday
+        include_day_off_in_total_working_days = frappe.db.get_single_value(
+                &#34;HR and Payroll Additional Settings&#34;, &#34;include_day_off_in_total_working_days&#34;
+        )
+        # if include_holidays_in_total_working_days and include_day_off_in_total_working_days:
+        #       unmarked_days = date_diff(end_date, start_date) + 1
+        # el
+        if include_holidays_in_total_working_days:
+                unmarked_days -= date_diff(end_date, start_date) + 1
+                # for days in range(date_diff(end_date, start_date) + 1):
+                #       date = add_days(end_date, -days)
+                #       # include if not day off
+                #       if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
+                #               unmarked_days -= 1
+        else:
+                for days in range(date_diff(end_date, start_date) + 1):
+                        date = add_days(end_date, -days)
+                        # exclude if not holidays
+                        if not is_holiday(self.employee, date):
+                                unmarked_days -= 1
+                        # exclude if not day off
+                        # if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
+                        #       unmarked_days -= 1
+        return unmarked_days</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.get_working_days_details"><code class="name flex">
+<span>def <span class="ident">get_working_days_details</span></span>(<span>self, joining_date=None, relieving_date=None, lwp=None, for_preview=0)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_working_days_details(
+        self, joining_date=None, relieving_date=None, lwp=None, for_preview=0
+):
+        payroll_based_on = frappe.db.get_value(&#34;Payroll Settings&#34;, None, &#34;payroll_based_on&#34;)
+        include_holidays_in_total_working_days = frappe.db.get_single_value(
+                &#34;Payroll Settings&#34;, &#34;include_holidays_in_total_working_days&#34;
+        )
+
+        include_day_off_in_total_working_days = frappe.db.get_single_value(
+                &#34;HR and Payroll Additional Settings&#34;, &#34;include_day_off_in_total_working_days&#34;
+        )
+
+        working_days = date_diff(self.end_date, self.start_date) + 1
+        if for_preview:
+                self.total_working_days = working_days
+                self.payment_days = working_days
+                return
+
+        holidays = self.get_holidays_for_employee(self.start_date, self.end_date)
+
+        if not cint(include_holidays_in_total_working_days):
+                working_days -= len(holidays)
+                if working_days &lt; 0:
+                        frappe.throw(_(&#34;There are more holidays than working days this month.&#34;))
+
+        day_off_dates = get_scheduled_day_off(self.employee, self.start_date, self.end_date)
+
+        # if not cint(include_day_off_in_total_working_days):
+        #       working_days -= len(day_off_dates)
+        #       if working_days &lt; 0:
+        #               frappe.throw(_(&#34;There are more day off/holidays than working days this month.&#34;))
+
+        if not payroll_based_on:
+                frappe.throw(_(&#34;Please set Payroll based on in Payroll settings&#34;))
+
+        if payroll_based_on == &#34;Attendance&#34;:
+                actual_lwp, absent = self.calculate_lwp_ppl_and_absent_days_based_on_attendance(holidays)
+                self.absent_days = absent
+        else:
+                actual_lwp = self.calculate_lwp_or_ppl_based_on_leave_application(holidays, working_days)
+
+        if not lwp:
+                lwp = actual_lwp
+        elif lwp != actual_lwp:
+                frappe.msgprint(
+                        _(&#34;Leave Without Pay does not match with approved {} records&#34;).format(payroll_based_on)
+                )
+
+        self.leave_without_pay = lwp
+        self.total_working_days = working_days
+
+        # Set Payment days by considerring include_holidays_in_total_working_days
+        payment_days = self.get_payment_days(
+                joining_date, relieving_date, include_holidays_in_total_working_days
+        )
+
+        # Payment days by considerring include_day_off_in_total_working_days
+        if not cint(include_day_off_in_total_working_days):
+                payment_days -= len(day_off_dates)
+
+        if flt(payment_days) &gt; flt(lwp):
+                self.payment_days = flt(payment_days) - flt(lwp)
+
+                if payroll_based_on == &#34;Attendance&#34;:
+                        self.payment_days -= flt(absent)
+
+                consider_unmarked_attendance_as = (
+                        frappe.db.get_value(&#34;Payroll Settings&#34;, None, &#34;consider_unmarked_attendance_as&#34;) or &#34;Present&#34;
+                )
+
+                if payroll_based_on == &#34;Attendance&#34; and consider_unmarked_attendance_as == &#34;Absent&#34;:
+                        unmarked_days = self.get_unmarked_days(include_holidays_in_total_working_days)
+                        self.absent_days += unmarked_days  # will be treated as absent
+                        self.payment_days -= unmarked_days
+        else:
+                self.payment_days = 0</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.is_day_off"><code class="name flex">
+<span>def <span class="ident">is_day_off</span></span>(<span>employee, date=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns True if given Employee has an holiday on the given date
+:param employee: Employee <code>name</code>
+:param date: Date to check. Will check for today if None</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_day_off(employee, date=None):
+        &#34;&#34;&#34;
+        Returns True if given Employee has an holiday on the given date
+        :param employee: Employee `name`
+        :param date: Date to check. Will check for today if None
+        &#34;&#34;&#34;
+
+        if not date:
+                date = today()
+
+        day_off_dates = get_scheduled_day_off(employee, date, date)
+
+        return len(day_off_dates) &gt; 0</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.is_last_salary_slip_overlap_with_current_salary_slip"><code class="name flex">
+<span>def <span class="ident">is_last_salary_slip_overlap_with_current_salary_slip</span></span>(<span>last_salary_slip, start_date, end_date)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_last_salary_slip_overlap_with_current_salary_slip(last_salary_slip, start_date, end_date):
+        if getdate(start_date) &lt;= getdate(last_salary_slip.end_date) and getdate(last_salary_slip.end_date) &lt;= getdate(end_date):
+                return True # Last salary overlap current salary
+        return False # Last salary not overlap current salary</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.notify_payroll"><code class="name flex">
+<span>def <span class="ident">notify_payroll</span></span>(<span>doc)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def notify_payroll(doc):
+        email = frappe.get_value(&#34;HR Settings&#34;, &#34;HR Settings&#34;, &#34;payroll_notifications_email&#34;)
+        subject = _(&#34;Urgent Attention Needed: Issues with maximum deduction in Payroll&#34;)
+        message = _(&#34;Total deduction amount exceeds the permissible limit in Salary Slip for {}&#34;.format(doc.employee+&#34;:&#34;+doc.employee_name))
+        create_notification_log(subject,message,[email], doc)</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.salary_slip_before_submit"><code class="name flex">
+<span>def <span class="ident">salary_slip_before_submit</span></span>(<span>doc, method)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def salary_slip_before_submit(doc, method):
+        basic_salary = get_basic_salary(doc.employee)
+
+        # As per Kuwaiti law, 90% of WP salary has to be paid to an employee after factoring in deductions
+        minimum_payable_salary = 0.9 * basic_salary
+
+        if doc.net_pay &lt; minimum_payable_salary:
+                notify_payroll(doc)
+                frappe.throw(_(&#34;Total deduction amount exceeds the permissible limit in Salary Slip for {}&#34;.format(doc.employee+&#34;:&#34;+doc.employee_name)))</code></pre>
+</details>
+</dd>
+<dt id="api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"><code class="name flex">
+<span>def <span class="ident">set_earnings_and_deduction_with_respect_to_payroll_cycle</span></span>(<span>doc, method)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_earnings_and_deduction_with_respect_to_payroll_cycle(doc, method):
+        last_salary_slip = get_last_salary_slip(doc.employee)
+        if last_salary_slip and len(last_salary_slip) &gt; 0:
+                payroll_based_on = frappe.db.get_value(&#34;Payroll Settings&#34;, None, &#34;payroll_based_on&#34;)
+                last_salary_slip = last_salary_slip[0]
+                if getdate(doc.posting_date) &lt; getdate(doc.end_date):
+                        # if paid for last payroll end date to yesterday
+                        if getdate(last_salary_slip.start_date) &lt;= getdate(last_salary_slip.posting_date) and \
+                                getdate(last_salary_slip.posting_date) &lt;= getdate(last_salary_slip.end_date):
+                                # deduct salary for last payroll absent/lwp days =&gt; find absents and actual_lwp in last payroll end date to yesterday
+                                deduct_days = 0
+                                holidays = doc.get_holidays_for_employee(last_salary_slip.posting_date, last_salary_slip.end_date)
+                                actual_lwp, absent = calculate_lwp_ppl_and_absent_days(doc.employee, last_salary_slip.posting_date, last_salary_slip.end_date, holidays)
+                                if payroll_based_on == &#34;Attendance&#34;:
+                                        deduct_days += absent
+                                        deduct_days += actual_lwp
+                                deduct_from_salary(doc, last_salary_slip, deduct_days)
+                        else:
+                                # set earnings for last payroll payment days =&gt; find payment days in last payroll end date to yesterday
+                                payment_days = get_payment_days(doc, last_salary_slip.end_date, get_last_day(last_salary_slip.end_date))
+                                last_salary_slip_daily_wage = last_salary_slip.net_pay / last_salary_slip.total_working_days
+                                deduction = doc.append(&#34;earnings&#34;)
+                                deduction.salary_component = &#34;Not Included in Last Salary&#34;
+                                deduction.amount = last_salary_slip_daily_wage * payment_days
+                # if paid for last payroll end date to yesterday
+                if getdate(doc.posting_date) &gt; getdate(doc.end_date) and \
+                        is_last_salary_slip_overlap_with_current_salary_slip(last_salary_slip, doc.start_date, doc.end_date):
+                        deduct_from_salary(doc, last_salary_slip)
+                        # find payment days in last payroll end date to yesterday
+                        payment_days = get_payment_days(doc, last_salary_slip.end_date, get_last_day(last_salary_slip.end_date))
+                        # deduct salary for paid payment_days
+                        deduct_from_salary(doc, last_salary_slip, payment_days)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="api.doc_methods" href="index.html">api.doc_methods</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="api.doc_methods.salary_slip.calculate_lwp_ppl_and_absent_days" href="#api.doc_methods.salary_slip.calculate_lwp_ppl_and_absent_days">calculate_lwp_ppl_and_absent_days</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.deduct_from_salary" href="#api.doc_methods.salary_slip.deduct_from_salary">deduct_from_salary</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.get_data_for_eval" href="#api.doc_methods.salary_slip.get_data_for_eval">get_data_for_eval</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.get_last_salary_slip" href="#api.doc_methods.salary_slip.get_last_salary_slip">get_last_salary_slip</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.get_payment_days" href="#api.doc_methods.salary_slip.get_payment_days">get_payment_days</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.get_scheduled_day_off" href="#api.doc_methods.salary_slip.get_scheduled_day_off">get_scheduled_day_off</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.get_unmarked_days" href="#api.doc_methods.salary_slip.get_unmarked_days">get_unmarked_days</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.get_unmarked_days_based_on_doj_or_relieving" href="#api.doc_methods.salary_slip.get_unmarked_days_based_on_doj_or_relieving">get_unmarked_days_based_on_doj_or_relieving</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.get_working_days_details" href="#api.doc_methods.salary_slip.get_working_days_details">get_working_days_details</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.is_day_off" href="#api.doc_methods.salary_slip.is_day_off">is_day_off</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.is_last_salary_slip_overlap_with_current_salary_slip" href="#api.doc_methods.salary_slip.is_last_salary_slip_overlap_with_current_salary_slip">is_last_salary_slip_overlap_with_current_salary_slip</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.notify_payroll" href="#api.doc_methods.salary_slip.notify_payroll">notify_payroll</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.salary_slip_before_submit" href="#api.doc_methods.salary_slip.salary_slip_before_submit">salary_slip_before_submit</a></code></li>
+<li><code><a title="api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle" href="#api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle">set_earnings_and_deduction_with_respect_to_payroll_cycle</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

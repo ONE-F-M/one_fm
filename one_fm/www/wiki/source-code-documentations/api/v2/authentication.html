@@ -1,0 +1,1283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>api.v2.authentication API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>api.v2.authentication</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import frappe
+import pyotp
+from frappe.utils import getdate
+from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token,get_email_subject_for_2fa,get_email_body_for_2fa
+from frappe.integrations.oauth2 import get_token
+from frappe.core.doctype.user.user import generate_keys
+from frappe.utils.background_jobs import enqueue
+from frappe.core.doctype.sms_settings.sms_settings import send_sms
+from frappe.frappeclient import FrappeClient
+from six import iteritems
+from frappe import _
+import requests, json
+from frappe.utils.password import update_password as _update_password
+from twilio.rest import Client as TwilioClient
+from one_fm.api.v2.utils import response
+from one_fm.processor import sendemail, send_whatsapp
+
+@frappe.whitelist(allow_guest=True)
+def login(client_id: str = None, grant_type: str = None, employee_id: str = None, password: str = None) -&gt; dict:
+        &#34;&#34;&#34; This method logs in the user provided appropriate paramaters.
+
+        Args:
+                client_id (str): Can be found in Social Login Key doctype.
+                grant_type (str): password
+                employee_id (str): Employee Id of user
+                password (str): Erpnext Password
+
+        Returns:
+                response (dict): {
+                        message (str): Brief message indicating the response.
+                        data (dict): { 
+                                access_token (str), 
+                                expires_in (int), 
+                                token_type (str) -&gt; &#34;Bearer&#34;, 
+                                scope (str), 
+                                refresh_token (str), 
+                                name (str), 
+                                employee_id (str), 
+                                employee_name (str), 
+                                image (str), 
+                                enrolled (int) -&gt; 0/1, 
+                                designation (str), 
+                                roles (List[str]), 
+                                supervisor (int) -&gt; 0/1
+                        }
+                        error (str)[Optional]: Any error response provided by server. 
+                }
+        &#34;&#34;&#34;
+        if not client_id:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;client_id is required!.&#34;)
+        
+        if not grant_type:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;grant_type is required!&#34;)
+        
+        if not employee_id:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Employee ID is required!&#34;)
+        
+        if not password:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Password is required!&#34;)
+
+        if not isinstance(client_id, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;client_id must be of type str!&#34;)
+        
+        if not isinstance(grant_type, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;grant_type must be of type str!&#34;)
+        
+        if not isinstance(employee_id, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id must be of type str!&#34;)
+
+        if not isinstance(password, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;password must be of type str!&#34;)
+
+        
+        try:
+                site = frappe.utils.cstr(frappe.local.conf.app_url)
+                username =  frappe.db.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;: employee_id}, &#39;user_id&#39;)
+
+                if not username:
+                        return response(&#34;Unauthorized&#34;, 401, None, &#34;Invalid employee ID&#34;)
+                
+                args = {
+            &#39;client_id&#39;: client_id,
+            &#39;grant_type&#39;: grant_type,
+            &#39;username&#39;: username,
+            &#39;password&#39;: password
+        }
+                headers = {&#39;Accept&#39;: &#39;application/json&#39;}
+                session = requests.Session()
+                auth_api = site + &#34;api/method/frappe.integrations.oauth2.get_token&#34;
+                
+                auth_api_response = session.post(
+            auth_api,
+            data=args, headers=headers
+        )
+
+                if auth_api_response.status_code == 200:
+                        
+                        frappe_client = FrappeClient(site[:-1], username=username, password=password)
+                        user, user_roles, user_employee =  frappe_client.get_api(&#34;one_fm.api.v2.utils.get_current_user_details&#34;)
+                        result = auth_api_response.json()
+                        result.update(user_employee)
+                        result.update({&#34;roles&#34;: user_roles})
+                        if &#34;Operations Manager&#34; in user_roles or &#34;Projects Manager&#34; in user_roles or &#34;Site Supervisor&#34; in user_roles:
+                                result.update({&#34;supervisor&#34;: 1})
+                        else:
+                                result.update({&#34;supervisor&#34;: 0})
+
+                        return response(&#34;Success&#34;, 200, result)
+                
+                else:
+                        raw_error = json.loads(auth_api_response.content)
+                        if &#34;message&#34; in list(raw_error.keys()):
+                                return response(&#34;Bad Request&#34;, auth_api_response.status_code, None, raw_error[&#39;message&#39;])
+                        
+                        return response(&#34;Bad Request&#34;, auth_api_response.status_code, None, json.loads(auth_api_response.content))
+
+        except Exception as error:
+                return response(&#34;Internal Server Error&#34;, 500, None, error)
+
+@frappe.whitelist(allow_guest=True)
+def forgot_password(employee_id: str = None, otp_source: str = None) -&gt; dict:
+        &#34;&#34;&#34;Sends an OTP to mobile number assosciated with user. 
+
+        Args:
+                employee_id (str, optional): Employee ID of the user.
+                otp_source (str, optional): OTP method to be used =&gt; sms/email/whatsapp.
+
+        Returns:
+                response (dict): {
+                        message (str): Brief message indicating the response.
+                        data (str): Password reset instructions sent via the otp source.
+                        error (str)[Optional]: Any error response provided by server. 
+                }
+        &#34;&#34;&#34;
+
+        if not employee_id:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Employee ID required.&#34;)
+
+        if not otp_source:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;OTP source required.&#34;)
+
+        if not isinstance(employee_id, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Employee ID must be of type str.&#34;)
+
+        if not isinstance(otp_source, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;OTP source must be of type str.&#34;)
+
+        if otp_source.lower() not in [&#34;sms&#34;, &#34;email&#34;, &#34;whatsapp&#34;]:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Invalid OTP source. OTP source must be either &#39;sms&#39;, &#39;email&#39; or &#39;whatsapp&#39;.&#34;)
+        
+        try:
+                employee_user_id =  frappe.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;: employee_id}, &#39;user_id&#39;)
+                
+                if not employee_user_id:
+                        return response(&#34;Bad Request&#34;, 404, None, &#34;No user ID found for employee ID {employee_id}.&#34;.format(employee_id=employee_id))
+                
+                otp_secret = get_otpsecret_for_(employee_user_id)
+                token = int(pyotp.TOTP(otp_secret).now())
+                tmp_id = frappe.generate_hash(length=8)
+                cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
+                
+                if otp_source.lower() == &#34;sms&#34;:
+                        verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+                        
+                elif otp_source.lower() == &#34;email&#34;:
+                        verification_obj = process_2fa_for_email(employee_user_id, token, otp_secret)
+                        
+                elif otp_source.lower() == &#34;whatsapp&#34;:
+                        verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
+                
+                result = {
+                        &#34;message&#34;: &#34;Password reset instructions sent via {otp_source}&#34;.format(otp_source=otp_source),
+                        &#34;temp_id&#34;: tmp_id
+                }
+
+                return response(&#34;Success&#34;, 201, result)
+        
+        except Exception as error:
+                return response(&#34;Internal Server Error&#34;, 500, None, error)
+
+@frappe.whitelist(allow_guest=True)
+def update_password(otp, id, employee_id, new_password):
+        &#34;&#34;&#34;
+        Params: 
+        otp: OTP received via SMS
+        id: Temp Id returned in forgot_password call response
+        employee_id 
+        new_password : new password to update
+        &#34;&#34;&#34;
+        try:
+                login_manager = frappe.local.login_manager
+                if confirm_otp_token(login_manager, otp, id):
+                        user_id = frappe.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;:employee_id}, [&#34;user_id&#34;])
+                        _update_password(user_id, new_password)
+                return {
+                        &#39;message&#39;: _(&#39;Password Updated!&#39;)
+                }
+        except Exception as e:
+                return frappe.utils.response.report_error(e.http_status_code)
+
+                
+def cache_2fa_data(user, token, otp_secret, tmp_id):
+        &#39;&#39;&#39;Cache and set expiry for data.&#39;&#39;&#39;
+        # Temp password
+        pwd = &#39;12345&#39;
+        
+        expiry_time = 1800
+        
+        frappe.cache().set(tmp_id + &#39;_token&#39;, token)
+        frappe.cache().expire(tmp_id + &#39;_token&#39;, expiry_time)
+        for k, v in iteritems({&#39;_usr&#39;: user, &#39;_pwd&#39;: pwd, &#39;_otp_secret&#39;: otp_secret}):
+                frappe.cache().set(&#34;{0}{1}&#34;.format(tmp_id, k), v)
+                frappe.cache().expire(&#34;{0}{1}&#34;.format(tmp_id, k), expiry_time)
+
+def process_2fa_for_whatsapp(user, token, otp_secret):
+    &#39;&#39;&#39;Process sms method for 2fa.&#39;&#39;&#39;
+    phone = frappe.db.get_value(&#39;User&#39;, user, [&#39;phone&#39;, &#39;mobile_no&#39;], as_dict=1)
+    phone = phone.mobile_no or phone.phone
+    status = send_token_via_whatsapp(otp_secret, token=token, phone_no=phone)
+    verification_obj = {
+        &#39;token_delivery&#39;: status,
+        &#39;prompt&#39;: status and &#39;Enter verification code sent to {}&#39;.format(phone[:4] + &#39;******&#39; + phone[-3:]),
+        &#39;method&#39;: &#39;SMS&#39;,
+        &#39;setup&#39;: status
+    }
+    return verification_obj
+
+
+def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
+  
+    hotp = pyotp.HOTP(otpsecret)
+    body= &#39;Your verification code {}.&#39;.format(hotp.at(int(token)))
+    
+    message = send_whatsapp(sender_id=phone_no,body=body)
+
+    return True
+
+def process_2fa_for_email(user, token, otp_secret, method=&#39;Email&#39;):
+        otp_issuer = frappe.db.get_value(&#39;System Settings&#39;, &#39;System Settings&#39;, &#39;otp_issuer_name&#39;)
+        &#39;&#39;&#39;Process Email method for 2fa.&#39;&#39;&#39;
+        subject = None
+        message = None
+        status = True
+        prompt = &#39;&#39;
+        &#39;&#39;&#39;Sending email verification&#39;&#39;&#39;
+        prompt = _(&#39;Verification code has been sent to your registered email address.&#39;)
+        status = send_token_via_email(user, token, otp_secret, otp_issuer, subject=subject, message=message)
+        verification_obj = {
+                &#39;token_delivery&#39;: status,
+                &#39;prompt&#39;: status and prompt,
+                &#39;method&#39;: &#39;Email&#39;,
+                &#39;setup&#39;: status
+        }
+        return verification_obj
+
+def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, message=None):
+        &#39;&#39;&#39;Send token to user as email.&#39;&#39;&#39;
+        user_email = frappe.db.get_value(&#39;Employee&#39;, {&#34;user_id&#34;:user}, &#39;personal_email&#39;)
+        if not user_email:
+                return False
+        hotp = pyotp.HOTP(otp_secret)
+        otp = hotp.at(int(token))
+        template_args = {&#39;otp&#39;: otp, &#39;otp_issuer&#39;: otp_issuer}
+        if not subject:
+                subject = get_email_subject_for_2fa(template_args)
+        if not message:
+                message = get_email_body_for_2fa(template_args)
+
+        email_args = {
+                &#39;recipients&#39;: user_email,
+                &#39;sender&#39;: None,
+                &#39;subject&#39;: subject,
+                &#39;message&#39;: message,
+                &#39;header&#39;: [_(&#39;Verfication Code&#39;), &#39;blue&#39;],
+                &#39;delayed&#39;: False,
+                &#39;retry&#39;:3
+        }
+
+        enqueue(method=sendemail, queue=&#39;short&#39;, timeout=300, event=None,
+                is_async=True, job_name=None, now=False, **email_args)
+        return True
+
+
+@frappe.whitelist(allow_guest=True)
+def validate_employee_id(employee_id=None):
+        &#34;&#34;&#34;
+        params
+        employee_id -  the id of the employee, e.g 2107042EG187
+
+        returns
+        name_in_arabic
+        name_in_english
+        the registration status of the employee
+        client_id
+        &#34;&#34;&#34;
+        if employee_id is None:
+                return response(&#34;Employee ID cannot be None&#34;, 401, None, &#34;Employee ID is required !&#34;)
+        doc = frappe.get_doc(&#34;Employee&#34;,{ &#34;employee_id&#34;: employee_id})
+        if not doc:
+                return response(&#34;Employee Not Found&#34;, 404, None, &#34;Employee ID of an active Employee is required&#34;)
+        registration_status = frappe.db.get_value(&#34;User&#34;, doc.user_id, &#34;last_password_reset_date&#34;)
+        client_id = frappe.db.get_value(&#34;OAuth Client&#34;, {&#34;app_name&#34;: &#34;OneFM&#34; }, &#34;client_id&#34;)
+        data = {
+                &#34;name in arabic&#34;: doc.employee_name_in_arabic,
+                &#34;name in english&#34;: doc.employee_name,
+                &#34;is_registered&#34;: True if registration_status else False,
+                &#34;client_id&#34;: client_id,
+                &#34;is_enrolled&#34;: True if doc.enrolled else False
+        }
+        return response(&#34;Success&#34;, 200, data)
+
+@frappe.whitelist()
+def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_number=1):
+        &#34;&#34;&#34;&#34;
+        returns an array of check in objects which belongs to the logged in employee
+
+        Params
+        from_date - begining date
+        to_date - ending date
+        limit - paginated by how many objects
+        page_number - page to jump to
+
+
+        returns
+        no_of_pages - Total number of pages based on the limit
+        current_page
+        data - array of paginated check in objects
+        number_of_check_in - total number of check in objects
+        
+        &#34;&#34;&#34;
+        user_id = frappe.session.user
+        if user_id is None:
+                return response(&#34;Invalid authentication Credentials&#34;, 400, None, &#34;Valid Authentication credentials is Required !&#34;)
+        employee = frappe.get_doc(&#34;Employee&#34;, {&#34;user_id&#34;: user_id})
+        if employee is None:
+                return response(&#34;The user_Id doesnt belong to an employee&#34;, 400)
+        if not isinstance(page_number, int):
+                return response(&#34;Invalid page number&#34;, 400, None, &#34;Page Number must be an Integer !&#34;)
+        if not isinstance(limit, int):
+                return response(&#34;Invalid Data Type ! &#34;, 400, None, &#34;Enter an integer! &#34;)
+        if from_date is not None and to_date is None:
+                to_date = from_date 
+        if from_date is not None:
+                try:
+                        from_date = getdate(from_date)
+                except:
+                        from_date = None
+        if to_date is not None:
+                try:
+                        to_date = getdate(to_date)
+                except:
+                        to_date = None
+        if from_date and to_date:
+                if from_date &gt; to_date:
+                        return response(&#34;Bad request&#34;, 400, None, &#34;From_date cannot be greater than to date&#34;)
+        check_list = frappe.db.get_list(&#34;Employee Checkin&#34;, filters={&#34;employee&#34;: employee.name, &#34;time&#34;: [&#34;between&#34;, (from_date, to_date)]}, fields=[&#34;name&#34;, &#34;time&#34;, &#34;log_type&#34;])
+        if len(check_list) &lt; 1:
+                return response(&#34;No check in for this employee in this time range !&#34;, 200)
+        no_of_pages = len(check_list) // limit if len(check_list) % limit == 0 and len(check_list) // limit &gt; 0 else (len(check_list) // limit) + 1
+        if page_number &gt; no_of_pages or page_number &lt; 1:
+                return response(&#34;Page not found !&#34;, 404, None, f&#34;Enter a page number within 1 - {no_of_pages}&#34;)
+        end = page_number * limit
+        check_in = check_list[(end - limit): end]
+        data = {
+                &#34;no_of_pages&#34;: no_of_pages,
+                &#34;current_page&#34;: page_number,
+                &#34;data&#34;: check_in,
+                &#34;number of checkin&#34;: len(check_list)
+        }
+        return response(&#34;Successfully Retrieved !&#34;, 200, data)
+
+@frappe.whitelist(allow_guest=True)
+def new_forgot_password(employee_id=None):
+        &#34;&#34;&#34;
+        validates the employee_id and returns the employee_user_id, which will be used to generate OTP
+
+        Params
+        employee_id
+
+        returns
+        employee_user_id
+        
+        &#34;&#34;&#34;
+        if not employee_id:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Employee ID required.&#34;)
+
+        employee_user_id =  frappe.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;: employee_id}, &#39;user_id&#39;)
+        
+        if not employee_user_id:
+                return response(&#34;Bad Request&#34;, 404, None, &#34;No user ID found for employee ID {employee_id}.&#34;.format(employee_id=employee_id))
+
+        return response(&#34;success&#34;, 200, {&#34;employee_user_id&#34;: employee_user_id})
+
+@frappe.whitelist(allow_guest=True)
+def get_otp(employee_user_id: str=None, otp_source: str=None):
+        &#34;&#34;&#34;
+        sends OTP to the employee 
+
+        params
+        emaployee_user_id
+        otp_source - where you want the OTP to be sent to sms, whatsapp, mail
+
+
+        returns
+        success message
+        temp_id - which would be used to verify the authenticity of the OTP
+        
+        &#34;&#34;&#34;
+        otp_secret = get_otpsecret_for_(employee_user_id)
+        token = int(pyotp.TOTP(otp_secret).now())
+        tmp_id = frappe.generate_hash(length=8)
+        cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
+
+        if otp_source.lower() == &#34;sms&#34;:
+                verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+                        
+        elif otp_source.lower() == &#34;email&#34;:
+                verification_obj = process_2fa_for_email(employee_user_id, token, otp_secret)
+                
+        elif otp_source.lower() == &#34;whatsapp&#34;:
+                verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
+
+        result = {
+                        &#34;message&#34;: &#34;Password reset instructions sent via {otp_source}&#34;.format(otp_source=otp_source),
+                        &#34;temp_id&#34;: tmp_id,
+                
+                }
+
+        return response(&#34;Success&#34;, 201, result)
+
+
+@frappe.whitelist(allow_guest=True)
+def verify_otp(otp, temp_id):
+        &#34;&#34;&#34;
+        verifies the OTP entered by the employee
+
+        params
+        otp
+        temp_id
+
+
+        returns
+        status of the OTP entered 
+        
+        &#34;&#34;&#34;
+        login_manager = frappe.local.login_manager
+        check_otp = confirm_otp_token(login_manager, otp, temp_id)
+
+        if check_otp:
+                return(&#34;success&#34;, 200, &#34;OTP verified Successfully !&#34;)
+        return(&#34;Error&#34;, 400, &#34;invalid OTP&#34;)
+
+@frappe.whitelist(allow_guest=True)
+def set_password(employee_user_id, new_password):
+        &#34;&#34;&#34;
+        used to set the new password
+
+        params
+        new_password
+        employee_user_id
+
+        returns
+        success message
+        
+        &#34;&#34;&#34;
+        _update_password(employee_user_id, new_password)
+        message =  {
+                        &#39;message&#39;: _(&#39;Password Updated!&#39;)
+                }
+        return response(&#34;Success&#34;, 200, message)
+
+
+
+@frappe.whitelist(allow_guest=True)
+def email_login(usr, pwd):
+        try:
+                auth = frappe.auth.LoginManager()
+                auth.authenticate(user=usr, pwd=pwd)
+                auth.post_login()
+                msg={&#39;status_code&#39;:200, &#39;text&#39;:frappe.local.response.message, &#39;user&#39;: frappe.session.user}
+                user = frappe.get_doc(&#39;User&#39;, frappe.session.user)
+                if(user.api_key and user.api_secret):
+                        msg[&#39;token&#39;] = f&#34;{user.api_key}:{user.get_password(&#39;api_secret&#39;)}&#34;
+                else:
+                        generate_keys(user.name)
+                        user.reload()
+                        msg[&#39;token&#39;] = f&#34;{user.api_key}:{user.get_password(&#39;api_secret&#39;)}&#34;
+                response(&#34;success&#34;, 200, msg)
+        except frappe.exceptions.AuthenticationError:
+                print(&#39;auth eror&#39;)
+                response(&#34;error&#34;, 401, None, frappe.local.response.message)
+        except Exception as e:
+                print(frappe.get_traceback())
+                response(&#34;error&#34;, 500, None, str(e))</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="api.v2.authentication.cache_2fa_data"><code class="name flex">
+<span>def <span class="ident">cache_2fa_data</span></span>(<span>user, token, otp_secret, tmp_id)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Cache and set expiry for data.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cache_2fa_data(user, token, otp_secret, tmp_id):
+        &#39;&#39;&#39;Cache and set expiry for data.&#39;&#39;&#39;
+        # Temp password
+        pwd = &#39;12345&#39;
+        
+        expiry_time = 1800
+        
+        frappe.cache().set(tmp_id + &#39;_token&#39;, token)
+        frappe.cache().expire(tmp_id + &#39;_token&#39;, expiry_time)
+        for k, v in iteritems({&#39;_usr&#39;: user, &#39;_pwd&#39;: pwd, &#39;_otp_secret&#39;: otp_secret}):
+                frappe.cache().set(&#34;{0}{1}&#34;.format(tmp_id, k), v)
+                frappe.cache().expire(&#34;{0}{1}&#34;.format(tmp_id, k), expiry_time)</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.email_login"><code class="name flex">
+<span>def <span class="ident">email_login</span></span>(<span>usr, pwd)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist(allow_guest=True)
+def email_login(usr, pwd):
+        try:
+                auth = frappe.auth.LoginManager()
+                auth.authenticate(user=usr, pwd=pwd)
+                auth.post_login()
+                msg={&#39;status_code&#39;:200, &#39;text&#39;:frappe.local.response.message, &#39;user&#39;: frappe.session.user}
+                user = frappe.get_doc(&#39;User&#39;, frappe.session.user)
+                if(user.api_key and user.api_secret):
+                        msg[&#39;token&#39;] = f&#34;{user.api_key}:{user.get_password(&#39;api_secret&#39;)}&#34;
+                else:
+                        generate_keys(user.name)
+                        user.reload()
+                        msg[&#39;token&#39;] = f&#34;{user.api_key}:{user.get_password(&#39;api_secret&#39;)}&#34;
+                response(&#34;success&#34;, 200, msg)
+        except frappe.exceptions.AuthenticationError:
+                print(&#39;auth eror&#39;)
+                response(&#34;error&#34;, 401, None, frappe.local.response.message)
+        except Exception as e:
+                print(frappe.get_traceback())
+                response(&#34;error&#34;, 500, None, str(e))</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.fetch_employee_checkin_list"><code class="name flex">
+<span>def <span class="ident">fetch_employee_checkin_list</span></span>(<span>from_date=None, to_date=None, limit=20, page_number=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>"
+returns an array of check in objects which belongs to the logged in employee</p>
+<p>Params
+from_date - begining date
+to_date - ending date
+limit - paginated by how many objects
+page_number - page to jump to</p>
+<p>returns
+no_of_pages - Total number of pages based on the limit
+current_page
+data - array of paginated check in objects
+number_of_check_in - total number of check in objects</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_number=1):
+        &#34;&#34;&#34;&#34;
+        returns an array of check in objects which belongs to the logged in employee
+
+        Params
+        from_date - begining date
+        to_date - ending date
+        limit - paginated by how many objects
+        page_number - page to jump to
+
+
+        returns
+        no_of_pages - Total number of pages based on the limit
+        current_page
+        data - array of paginated check in objects
+        number_of_check_in - total number of check in objects
+        
+        &#34;&#34;&#34;
+        user_id = frappe.session.user
+        if user_id is None:
+                return response(&#34;Invalid authentication Credentials&#34;, 400, None, &#34;Valid Authentication credentials is Required !&#34;)
+        employee = frappe.get_doc(&#34;Employee&#34;, {&#34;user_id&#34;: user_id})
+        if employee is None:
+                return response(&#34;The user_Id doesnt belong to an employee&#34;, 400)
+        if not isinstance(page_number, int):
+                return response(&#34;Invalid page number&#34;, 400, None, &#34;Page Number must be an Integer !&#34;)
+        if not isinstance(limit, int):
+                return response(&#34;Invalid Data Type ! &#34;, 400, None, &#34;Enter an integer! &#34;)
+        if from_date is not None and to_date is None:
+                to_date = from_date 
+        if from_date is not None:
+                try:
+                        from_date = getdate(from_date)
+                except:
+                        from_date = None
+        if to_date is not None:
+                try:
+                        to_date = getdate(to_date)
+                except:
+                        to_date = None
+        if from_date and to_date:
+                if from_date &gt; to_date:
+                        return response(&#34;Bad request&#34;, 400, None, &#34;From_date cannot be greater than to date&#34;)
+        check_list = frappe.db.get_list(&#34;Employee Checkin&#34;, filters={&#34;employee&#34;: employee.name, &#34;time&#34;: [&#34;between&#34;, (from_date, to_date)]}, fields=[&#34;name&#34;, &#34;time&#34;, &#34;log_type&#34;])
+        if len(check_list) &lt; 1:
+                return response(&#34;No check in for this employee in this time range !&#34;, 200)
+        no_of_pages = len(check_list) // limit if len(check_list) % limit == 0 and len(check_list) // limit &gt; 0 else (len(check_list) // limit) + 1
+        if page_number &gt; no_of_pages or page_number &lt; 1:
+                return response(&#34;Page not found !&#34;, 404, None, f&#34;Enter a page number within 1 - {no_of_pages}&#34;)
+        end = page_number * limit
+        check_in = check_list[(end - limit): end]
+        data = {
+                &#34;no_of_pages&#34;: no_of_pages,
+                &#34;current_page&#34;: page_number,
+                &#34;data&#34;: check_in,
+                &#34;number of checkin&#34;: len(check_list)
+        }
+        return response(&#34;Successfully Retrieved !&#34;, 200, data)</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.forgot_password"><code class="name flex">
+<span>def <span class="ident">forgot_password</span></span>(<span>employee_id: str = None, otp_source: str = None) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sends an OTP to mobile number assosciated with user.
+</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>employee_id</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Employee ID of the user.</dd>
+<dt><strong><code>otp_source</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>OTP method to be used =&gt; sms/email/whatsapp.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>response (dict): {
+message (str): Brief message indicating the response.
+data (str): Password reset instructions sent via the otp source.
+error (str)[Optional]: Any error response provided by server.
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist(allow_guest=True)
+def forgot_password(employee_id: str = None, otp_source: str = None) -&gt; dict:
+        &#34;&#34;&#34;Sends an OTP to mobile number assosciated with user. 
+
+        Args:
+                employee_id (str, optional): Employee ID of the user.
+                otp_source (str, optional): OTP method to be used =&gt; sms/email/whatsapp.
+
+        Returns:
+                response (dict): {
+                        message (str): Brief message indicating the response.
+                        data (str): Password reset instructions sent via the otp source.
+                        error (str)[Optional]: Any error response provided by server. 
+                }
+        &#34;&#34;&#34;
+
+        if not employee_id:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Employee ID required.&#34;)
+
+        if not otp_source:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;OTP source required.&#34;)
+
+        if not isinstance(employee_id, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Employee ID must be of type str.&#34;)
+
+        if not isinstance(otp_source, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;OTP source must be of type str.&#34;)
+
+        if otp_source.lower() not in [&#34;sms&#34;, &#34;email&#34;, &#34;whatsapp&#34;]:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Invalid OTP source. OTP source must be either &#39;sms&#39;, &#39;email&#39; or &#39;whatsapp&#39;.&#34;)
+        
+        try:
+                employee_user_id =  frappe.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;: employee_id}, &#39;user_id&#39;)
+                
+                if not employee_user_id:
+                        return response(&#34;Bad Request&#34;, 404, None, &#34;No user ID found for employee ID {employee_id}.&#34;.format(employee_id=employee_id))
+                
+                otp_secret = get_otpsecret_for_(employee_user_id)
+                token = int(pyotp.TOTP(otp_secret).now())
+                tmp_id = frappe.generate_hash(length=8)
+                cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
+                
+                if otp_source.lower() == &#34;sms&#34;:
+                        verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+                        
+                elif otp_source.lower() == &#34;email&#34;:
+                        verification_obj = process_2fa_for_email(employee_user_id, token, otp_secret)
+                        
+                elif otp_source.lower() == &#34;whatsapp&#34;:
+                        verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
+                
+                result = {
+                        &#34;message&#34;: &#34;Password reset instructions sent via {otp_source}&#34;.format(otp_source=otp_source),
+                        &#34;temp_id&#34;: tmp_id
+                }
+
+                return response(&#34;Success&#34;, 201, result)
+        
+        except Exception as error:
+                return response(&#34;Internal Server Error&#34;, 500, None, error)</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.get_otp"><code class="name flex">
+<span>def <span class="ident">get_otp</span></span>(<span>employee_user_id: str = None, otp_source: str = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>sends OTP to the employee </p>
+<p>params
+emaployee_user_id
+otp_source - where you want the OTP to be sent to sms, whatsapp, mail</p>
+<p>returns
+success message
+temp_id - which would be used to verify the authenticity of the OTP</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist(allow_guest=True)
+def get_otp(employee_user_id: str=None, otp_source: str=None):
+        &#34;&#34;&#34;
+        sends OTP to the employee 
+
+        params
+        emaployee_user_id
+        otp_source - where you want the OTP to be sent to sms, whatsapp, mail
+
+
+        returns
+        success message
+        temp_id - which would be used to verify the authenticity of the OTP
+        
+        &#34;&#34;&#34;
+        otp_secret = get_otpsecret_for_(employee_user_id)
+        token = int(pyotp.TOTP(otp_secret).now())
+        tmp_id = frappe.generate_hash(length=8)
+        cache_2fa_data(employee_user_id, token, otp_secret, tmp_id)
+
+        if otp_source.lower() == &#34;sms&#34;:
+                verification_obj = process_2fa_for_sms(employee_user_id, token, otp_secret)
+                        
+        elif otp_source.lower() == &#34;email&#34;:
+                verification_obj = process_2fa_for_email(employee_user_id, token, otp_secret)
+                
+        elif otp_source.lower() == &#34;whatsapp&#34;:
+                verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
+
+        result = {
+                        &#34;message&#34;: &#34;Password reset instructions sent via {otp_source}&#34;.format(otp_source=otp_source),
+                        &#34;temp_id&#34;: tmp_id,
+                
+                }
+
+        return response(&#34;Success&#34;, 201, result)</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.login"><code class="name flex">
+<span>def <span class="ident">login</span></span>(<span>client_id: str = None, grant_type: str = None, employee_id: str = None, password: str = None) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method logs in the user provided appropriate paramaters.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>client_id</code></strong> :&ensp;<code>str</code></dt>
+<dd>Can be found in Social Login Key doctype.</dd>
+<dt><strong><code>grant_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>password</dd>
+<dt><strong><code>employee_id</code></strong> :&ensp;<code>str</code></dt>
+<dd>Employee Id of user</dd>
+<dt><strong><code>password</code></strong> :&ensp;<code>str</code></dt>
+<dd>Erpnext Password</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>response (dict): {
+message (str): Brief message indicating the response.
+data (dict): {
+access_token (str),
+expires_in (int),
+token_type (str) -&gt; "Bearer",
+scope (str),
+refresh_token (str),
+name (str),
+employee_id (str),
+employee_name (str),
+image (str),
+enrolled (int) -&gt; 0/1,
+designation (str),
+roles (List[str]),
+supervisor (int) -&gt; 0/1
+}
+error (str)[Optional]: Any error response provided by server.
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist(allow_guest=True)
+def login(client_id: str = None, grant_type: str = None, employee_id: str = None, password: str = None) -&gt; dict:
+        &#34;&#34;&#34; This method logs in the user provided appropriate paramaters.
+
+        Args:
+                client_id (str): Can be found in Social Login Key doctype.
+                grant_type (str): password
+                employee_id (str): Employee Id of user
+                password (str): Erpnext Password
+
+        Returns:
+                response (dict): {
+                        message (str): Brief message indicating the response.
+                        data (dict): { 
+                                access_token (str), 
+                                expires_in (int), 
+                                token_type (str) -&gt; &#34;Bearer&#34;, 
+                                scope (str), 
+                                refresh_token (str), 
+                                name (str), 
+                                employee_id (str), 
+                                employee_name (str), 
+                                image (str), 
+                                enrolled (int) -&gt; 0/1, 
+                                designation (str), 
+                                roles (List[str]), 
+                                supervisor (int) -&gt; 0/1
+                        }
+                        error (str)[Optional]: Any error response provided by server. 
+                }
+        &#34;&#34;&#34;
+        if not client_id:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;client_id is required!.&#34;)
+        
+        if not grant_type:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;grant_type is required!&#34;)
+        
+        if not employee_id:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Employee ID is required!&#34;)
+        
+        if not password:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Password is required!&#34;)
+
+        if not isinstance(client_id, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;client_id must be of type str!&#34;)
+        
+        if not isinstance(grant_type, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;grant_type must be of type str!&#34;)
+        
+        if not isinstance(employee_id, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id must be of type str!&#34;)
+
+        if not isinstance(password, str):
+                return response(&#34;Bad Request&#34;, 400, None, &#34;password must be of type str!&#34;)
+
+        
+        try:
+                site = frappe.utils.cstr(frappe.local.conf.app_url)
+                username =  frappe.db.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;: employee_id}, &#39;user_id&#39;)
+
+                if not username:
+                        return response(&#34;Unauthorized&#34;, 401, None, &#34;Invalid employee ID&#34;)
+                
+                args = {
+            &#39;client_id&#39;: client_id,
+            &#39;grant_type&#39;: grant_type,
+            &#39;username&#39;: username,
+            &#39;password&#39;: password
+        }
+                headers = {&#39;Accept&#39;: &#39;application/json&#39;}
+                session = requests.Session()
+                auth_api = site + &#34;api/method/frappe.integrations.oauth2.get_token&#34;
+                
+                auth_api_response = session.post(
+            auth_api,
+            data=args, headers=headers
+        )
+
+                if auth_api_response.status_code == 200:
+                        
+                        frappe_client = FrappeClient(site[:-1], username=username, password=password)
+                        user, user_roles, user_employee =  frappe_client.get_api(&#34;one_fm.api.v2.utils.get_current_user_details&#34;)
+                        result = auth_api_response.json()
+                        result.update(user_employee)
+                        result.update({&#34;roles&#34;: user_roles})
+                        if &#34;Operations Manager&#34; in user_roles or &#34;Projects Manager&#34; in user_roles or &#34;Site Supervisor&#34; in user_roles:
+                                result.update({&#34;supervisor&#34;: 1})
+                        else:
+                                result.update({&#34;supervisor&#34;: 0})
+
+                        return response(&#34;Success&#34;, 200, result)
+                
+                else:
+                        raw_error = json.loads(auth_api_response.content)
+                        if &#34;message&#34; in list(raw_error.keys()):
+                                return response(&#34;Bad Request&#34;, auth_api_response.status_code, None, raw_error[&#39;message&#39;])
+                        
+                        return response(&#34;Bad Request&#34;, auth_api_response.status_code, None, json.loads(auth_api_response.content))
+
+        except Exception as error:
+                return response(&#34;Internal Server Error&#34;, 500, None, error)</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.new_forgot_password"><code class="name flex">
+<span>def <span class="ident">new_forgot_password</span></span>(<span>employee_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>validates the employee_id and returns the employee_user_id, which will be used to generate OTP</p>
+<p>Params
+employee_id</p>
+<p>returns
+employee_user_id</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist(allow_guest=True)
+def new_forgot_password(employee_id=None):
+        &#34;&#34;&#34;
+        validates the employee_id and returns the employee_user_id, which will be used to generate OTP
+
+        Params
+        employee_id
+
+        returns
+        employee_user_id
+        
+        &#34;&#34;&#34;
+        if not employee_id:
+                return response(&#34;Bad Request&#34;, 400, None, &#34;Employee ID required.&#34;)
+
+        employee_user_id =  frappe.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;: employee_id}, &#39;user_id&#39;)
+        
+        if not employee_user_id:
+                return response(&#34;Bad Request&#34;, 404, None, &#34;No user ID found for employee ID {employee_id}.&#34;.format(employee_id=employee_id))
+
+        return response(&#34;success&#34;, 200, {&#34;employee_user_id&#34;: employee_user_id})</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.process_2fa_for_email"><code class="name flex">
+<span>def <span class="ident">process_2fa_for_email</span></span>(<span>user, token, otp_secret, method='Email')</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def process_2fa_for_email(user, token, otp_secret, method=&#39;Email&#39;):
+        otp_issuer = frappe.db.get_value(&#39;System Settings&#39;, &#39;System Settings&#39;, &#39;otp_issuer_name&#39;)
+        &#39;&#39;&#39;Process Email method for 2fa.&#39;&#39;&#39;
+        subject = None
+        message = None
+        status = True
+        prompt = &#39;&#39;
+        &#39;&#39;&#39;Sending email verification&#39;&#39;&#39;
+        prompt = _(&#39;Verification code has been sent to your registered email address.&#39;)
+        status = send_token_via_email(user, token, otp_secret, otp_issuer, subject=subject, message=message)
+        verification_obj = {
+                &#39;token_delivery&#39;: status,
+                &#39;prompt&#39;: status and prompt,
+                &#39;method&#39;: &#39;Email&#39;,
+                &#39;setup&#39;: status
+        }
+        return verification_obj</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.process_2fa_for_whatsapp"><code class="name flex">
+<span>def <span class="ident">process_2fa_for_whatsapp</span></span>(<span>user, token, otp_secret)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Process sms method for 2fa.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def process_2fa_for_whatsapp(user, token, otp_secret):
+    &#39;&#39;&#39;Process sms method for 2fa.&#39;&#39;&#39;
+    phone = frappe.db.get_value(&#39;User&#39;, user, [&#39;phone&#39;, &#39;mobile_no&#39;], as_dict=1)
+    phone = phone.mobile_no or phone.phone
+    status = send_token_via_whatsapp(otp_secret, token=token, phone_no=phone)
+    verification_obj = {
+        &#39;token_delivery&#39;: status,
+        &#39;prompt&#39;: status and &#39;Enter verification code sent to {}&#39;.format(phone[:4] + &#39;******&#39; + phone[-3:]),
+        &#39;method&#39;: &#39;SMS&#39;,
+        &#39;setup&#39;: status
+    }
+    return verification_obj</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.send_token_via_email"><code class="name flex">
+<span>def <span class="ident">send_token_via_email</span></span>(<span>user, token, otp_secret, otp_issuer, subject=None, message=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Send token to user as email.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, message=None):
+        &#39;&#39;&#39;Send token to user as email.&#39;&#39;&#39;
+        user_email = frappe.db.get_value(&#39;Employee&#39;, {&#34;user_id&#34;:user}, &#39;personal_email&#39;)
+        if not user_email:
+                return False
+        hotp = pyotp.HOTP(otp_secret)
+        otp = hotp.at(int(token))
+        template_args = {&#39;otp&#39;: otp, &#39;otp_issuer&#39;: otp_issuer}
+        if not subject:
+                subject = get_email_subject_for_2fa(template_args)
+        if not message:
+                message = get_email_body_for_2fa(template_args)
+
+        email_args = {
+                &#39;recipients&#39;: user_email,
+                &#39;sender&#39;: None,
+                &#39;subject&#39;: subject,
+                &#39;message&#39;: message,
+                &#39;header&#39;: [_(&#39;Verfication Code&#39;), &#39;blue&#39;],
+                &#39;delayed&#39;: False,
+                &#39;retry&#39;:3
+        }
+
+        enqueue(method=sendemail, queue=&#39;short&#39;, timeout=300, event=None,
+                is_async=True, job_name=None, now=False, **email_args)
+        return True</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.send_token_via_whatsapp"><code class="name flex">
+<span>def <span class="ident">send_token_via_whatsapp</span></span>(<span>otpsecret, token=None, phone_no=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
+  
+    hotp = pyotp.HOTP(otpsecret)
+    body= &#39;Your verification code {}.&#39;.format(hotp.at(int(token)))
+    
+    message = send_whatsapp(sender_id=phone_no,body=body)
+
+    return True</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.set_password"><code class="name flex">
+<span>def <span class="ident">set_password</span></span>(<span>employee_user_id, new_password)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>used to set the new password</p>
+<p>params
+new_password
+employee_user_id</p>
+<p>returns
+success message</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist(allow_guest=True)
+def set_password(employee_user_id, new_password):
+        &#34;&#34;&#34;
+        used to set the new password
+
+        params
+        new_password
+        employee_user_id
+
+        returns
+        success message
+        
+        &#34;&#34;&#34;
+        _update_password(employee_user_id, new_password)
+        message =  {
+                        &#39;message&#39;: _(&#39;Password Updated!&#39;)
+                }
+        return response(&#34;Success&#34;, 200, message)</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.update_password"><code class="name flex">
+<span>def <span class="ident">update_password</span></span>(<span>otp, id, employee_id, new_password)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Params:
+otp: OTP received via SMS
+id: Temp Id returned in forgot_password call response
+employee_id
+new_password : new password to update</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist(allow_guest=True)
+def update_password(otp, id, employee_id, new_password):
+        &#34;&#34;&#34;
+        Params: 
+        otp: OTP received via SMS
+        id: Temp Id returned in forgot_password call response
+        employee_id 
+        new_password : new password to update
+        &#34;&#34;&#34;
+        try:
+                login_manager = frappe.local.login_manager
+                if confirm_otp_token(login_manager, otp, id):
+                        user_id = frappe.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;:employee_id}, [&#34;user_id&#34;])
+                        _update_password(user_id, new_password)
+                return {
+                        &#39;message&#39;: _(&#39;Password Updated!&#39;)
+                }
+        except Exception as e:
+                return frappe.utils.response.report_error(e.http_status_code)</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.validate_employee_id"><code class="name flex">
+<span>def <span class="ident">validate_employee_id</span></span>(<span>employee_id=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>params
+employee_id -
+the id of the employee, e.g 2107042EG187</p>
+<p>returns
+name_in_arabic
+name_in_english
+the registration status of the employee
+client_id</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist(allow_guest=True)
+def validate_employee_id(employee_id=None):
+        &#34;&#34;&#34;
+        params
+        employee_id -  the id of the employee, e.g 2107042EG187
+
+        returns
+        name_in_arabic
+        name_in_english
+        the registration status of the employee
+        client_id
+        &#34;&#34;&#34;
+        if employee_id is None:
+                return response(&#34;Employee ID cannot be None&#34;, 401, None, &#34;Employee ID is required !&#34;)
+        doc = frappe.get_doc(&#34;Employee&#34;,{ &#34;employee_id&#34;: employee_id})
+        if not doc:
+                return response(&#34;Employee Not Found&#34;, 404, None, &#34;Employee ID of an active Employee is required&#34;)
+        registration_status = frappe.db.get_value(&#34;User&#34;, doc.user_id, &#34;last_password_reset_date&#34;)
+        client_id = frappe.db.get_value(&#34;OAuth Client&#34;, {&#34;app_name&#34;: &#34;OneFM&#34; }, &#34;client_id&#34;)
+        data = {
+                &#34;name in arabic&#34;: doc.employee_name_in_arabic,
+                &#34;name in english&#34;: doc.employee_name,
+                &#34;is_registered&#34;: True if registration_status else False,
+                &#34;client_id&#34;: client_id,
+                &#34;is_enrolled&#34;: True if doc.enrolled else False
+        }
+        return response(&#34;Success&#34;, 200, data)</code></pre>
+</details>
+</dd>
+<dt id="api.v2.authentication.verify_otp"><code class="name flex">
+<span>def <span class="ident">verify_otp</span></span>(<span>otp, temp_id)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>verifies the OTP entered by the employee</p>
+<p>params
+otp
+temp_id</p>
+<p>returns
+status of the OTP entered</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist(allow_guest=True)
+def verify_otp(otp, temp_id):
+        &#34;&#34;&#34;
+        verifies the OTP entered by the employee
+
+        params
+        otp
+        temp_id
+
+
+        returns
+        status of the OTP entered 
+        
+        &#34;&#34;&#34;
+        login_manager = frappe.local.login_manager
+        check_otp = confirm_otp_token(login_manager, otp, temp_id)
+
+        if check_otp:
+                return(&#34;success&#34;, 200, &#34;OTP verified Successfully !&#34;)
+        return(&#34;Error&#34;, 400, &#34;invalid OTP&#34;)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="api.v2" href="index.html">api.v2</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="api.v2.authentication.cache_2fa_data" href="#api.v2.authentication.cache_2fa_data">cache_2fa_data</a></code></li>
+<li><code><a title="api.v2.authentication.email_login" href="#api.v2.authentication.email_login">email_login</a></code></li>
+<li><code><a title="api.v2.authentication.fetch_employee_checkin_list" href="#api.v2.authentication.fetch_employee_checkin_list">fetch_employee_checkin_list</a></code></li>
+<li><code><a title="api.v2.authentication.forgot_password" href="#api.v2.authentication.forgot_password">forgot_password</a></code></li>
+<li><code><a title="api.v2.authentication.get_otp" href="#api.v2.authentication.get_otp">get_otp</a></code></li>
+<li><code><a title="api.v2.authentication.login" href="#api.v2.authentication.login">login</a></code></li>
+<li><code><a title="api.v2.authentication.new_forgot_password" href="#api.v2.authentication.new_forgot_password">new_forgot_password</a></code></li>
+<li><code><a title="api.v2.authentication.process_2fa_for_email" href="#api.v2.authentication.process_2fa_for_email">process_2fa_for_email</a></code></li>
+<li><code><a title="api.v2.authentication.process_2fa_for_whatsapp" href="#api.v2.authentication.process_2fa_for_whatsapp">process_2fa_for_whatsapp</a></code></li>
+<li><code><a title="api.v2.authentication.send_token_via_email" href="#api.v2.authentication.send_token_via_email">send_token_via_email</a></code></li>
+<li><code><a title="api.v2.authentication.send_token_via_whatsapp" href="#api.v2.authentication.send_token_via_whatsapp">send_token_via_whatsapp</a></code></li>
+<li><code><a title="api.v2.authentication.set_password" href="#api.v2.authentication.set_password">set_password</a></code></li>
+<li><code><a title="api.v2.authentication.update_password" href="#api.v2.authentication.update_password">update_password</a></code></li>
+<li><code><a title="api.v2.authentication.validate_employee_id" href="#api.v2.authentication.validate_employee_id">validate_employee_id</a></code></li>
+<li><code><a title="api.v2.authentication.verify_otp" href="#api.v2.authentication.verify_otp">verify_otp</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

@@ -170,7 +170,7 @@ permission_query_conditions = {
 has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
-	"Issue": "one_fm.utils.has_permission_to_issue"
+	"Issue": "one_fm.utils.has_permission_to_issue",
 }
 
 standard_queries = {
@@ -724,7 +724,9 @@ fixtures = [
 override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
 	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
-	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview"
+	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview",
+    "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
+    "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 }
 #ShiftType.process_auto_attendance = process_auto_attendance
 
@@ -745,3 +747,4 @@ after_migrate = "one_fm.after_migrate.execute.comment_timesheet_in_hrms"
 
 # add more info to session on boot
 on_session_creation = "one_fm.session_hooks.on_session_creation"
+auth_hooks = "one_fm.session_hooks.auth_hooks"

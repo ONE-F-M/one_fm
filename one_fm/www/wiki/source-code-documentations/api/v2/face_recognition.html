@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>api.v2.face_recognition API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>api.v2.face_recognition</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from datetime import timedelta, datetime
+import frappe, ast, base64, time, grpc, json, random
+from frappe import _
+from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
+from one_fm.api.v1.roster import get_current_shift
+from one_fm.api.v1.utils import response
+from one_fm.api.v2.zenquotes import fetch_quote
+
+from frappe.utils import cstr, getdate,get_datetime,now,get_date_str, now_datetime
+from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
+from one_fm.api.doc_events import haversine
+from one_fm.utils import get_holiday_today
+
+
+# setup channel for face recognition
+face_recognition_service_url = [] #frappe.local.conf.face_recognition_service_url
+channels = [
+    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+]
+
+# setup stub for face recognition
+stubs = [
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+]
+
+
+@frappe.whitelist()
+def enroll(employee_id: str = None, video: str = None) -&gt; dict:
+    &#34;&#34;&#34;This method enrolls the user face into the system for future face recognition use cases.
+
+    Args:
+        employee_id (str): employee_id of user
+        video (str): Base64 encoded string of the video captured of user&#39;s face.
+
+    Returns:
+        response (dict): {
+            message (str): Brief message indicating the response,
+                        status_code (int): Status code of response.
+            data (dict): Enrollment status,
+            error (str): Any error handled.
+        }
+    &#34;&#34;&#34;
+    if not employee_id:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id required.&#34;)
+
+    if not video:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;Base64 encoded video content required.&#34;)
+
+    if not isinstance(video, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;video type must be str.&#34;)
+
+    try:
+        doc = frappe.get_doc(&#34;Employee&#34;, {&#34;user_id&#34;: frappe.session.user})
+        # Setup channel
+        face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
+        channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
+        # setup stub
+        stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
+        # request body
+        req = enroll_pb2.EnrollRequest(
+            username = frappe.session.user,
+            user_encoded_video = video,
+        )
+
+        res = stub.FaceRecognitionEnroll(req)
+        data = {&#39;employee&#39;:doc.name, &#39;log_type&#39;:&#39;Enrollment&#39;, &#39;verification&#39;:res.enrollment,
+                &#39;message&#39;:res.message, &#39;data&#39;:res.data, &#39;source&#39;: &#39;Enroll&#39;}
+        #frappe.enqueue(&#39;one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log&#39;,**{&#39;data&#39;:data})
+        if res.enrollment == &#34;FAILED&#34;:
+            return response(res.message, 400, None, res.data)
+
+        doc.enrolled = 1
+        doc.save(ignore_permissions=True)
+        update_onboarding_employee(doc)
+        frappe.db.commit()
+
+        return response(&#34;Success&#34;, 201, &#34;User enrolled successfully.&#34;)
+
+    except Exception as error:
+        return response(&#34;Internal Server Error&#34;, 500, None, error)
+
+
+@frappe.whitelist()
+def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None, 
+    shift_assignment: str = None, skip_attendance: str = None, latitude: str = None, longitude: str = None):
+    &#34;&#34;&#34;This method verifies user checking in/checking out.
+
+    Args:
+        employee_id (srt): employee_id of user
+        video (str, optional): base64 encoded video of user checking in/checking out.
+        log_type (str, optional): IN/OUT
+        skip_attendance (int, optional): 0/1.
+        latitude (float, optional): Latitude od user.
+        longitude (float, optional): Longitude od user.
+
+    Returns:
+        dict: {
+            message (str): Brief message indicating the response,
+                        status_code (int): Status code of response.
+            data (dict): checkin log created.
+            error (str): Any error handled.
+        }
+    &#34;&#34;&#34;
+    # ensure skip attendance is correctly formated
+    try:
+        skip_attendance = int(skip_attendance) if skip_attendance else 0
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;skip_attendance must be an integer, latitude and longitude must be float.&#34;)
+
+    if not employee_id:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id required.&#34;)
+
+    if not video:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;video required.&#34;)
+
+    if not log_type:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;log_type required.&#34;)
+
+    if not skip_attendance:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;skip_attendance required.&#34;)
+
+    if not latitude:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;latitdue required.&#34;)
+
+    if not longitude:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;longitude required.&#34;)
+
+    if not isinstance(video, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;video must be of type str.&#34;)
+
+    if not isinstance(log_type, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;log_type must be of type str.&#34;)
+
+    if log_type not in [&#34;IN&#34;, &#34;OUT&#34;]:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;Invalid log_type. log_type must be IN/OUT.&#34;)
+
+    if not isinstance(skip_attendance, int):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;skip_attendance must be of type int.&#34;)
+
+    if skip_attendance not in [0, 1]:
+        return response(&#34;Bad Request&#34;, 400, &#34;Invalid skip_attendance. skip_attendance must be 0 or 1.&#34;)
+
+    if not isinstance(latitude, float):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;latitude must be of type float.&#34;)
+
+    if not isinstance(longitude, float):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;longitude must be of type float.&#34;)
+
+    try:
+        employee = frappe.db.get_value(&#34;Employee&#34;, {&#34;employee_id&#34;: employee_id})
+
+        if not employee:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No employee found with {employee_id}&#34;.format(employee_id=employee_id))
+
+        right_now = now_datetime() 
+
+        if log_type == &#34;IN&#34;:
+            shift_type = frappe.db.sql(f&#34;&#34;&#34; select shift_type from `tabShift Assignment` where employee = &#39;{employee}&#39; order by creation desc limit 1 &#34;&#34;&#34;, as_dict=1)[0]
+            val_in_shift_type = frappe.db.sql(f&#34;&#34;&#34; select begin_check_in_before_shift_start_time, start_time, late_entry_grace_period, working_hours_threshold_for_absent from `tabShift Type` where name = &#39;{shift_type[&#34;shift_type&#34;]}&#39; &#34;&#34;&#34;, as_dict=1)[0]
+            time_threshold = datetime.strptime(str(val_in_shift_type[&#34;start_time&#34;] - timedelta(minutes=val_in_shift_type[&#34;begin_check_in_before_shift_start_time&#34;])), &#34;%H:%M:%S&#34;).time()
+
+            if right_now.time() &lt; time_threshold:
+                return response(&#34;Bad Request&#34;, 400, None, f&#34; Oops! You can&#39;t check in right now. Your check-in time is {val_in_shift_type[&#39;begin_check_in_before_shift_start_time&#39;]} minutes before you start your shift.&#34; + &#34;\U0001F612&#34;)
+
+            existing_perm = frappe.db.sql(f&#34;&#34;&#34; select name from `tabShift Permission` where date = &#39;{right_now.date()}&#39; and employee = &#39;{employee}&#39; and permission_type = &#39;{log_type}&#39; and workflow_state = &#39;Approved&#39; &#34;&#34;&#34;, as_dict=1)
+            if not existing_perm and (right_now.time() &gt;  datetime.strptime(str(val_in_shift_type[&#34;start_time&#34;] + + timedelta(hours=int(val_in_shift_type[&#39;working_hours_threshold_for_absent&#39;]))), &#34;%H:%M:%S&#34;).time()):
+                return response(&#34;Bad Request&#34;, 400, None, f&#34;Oops! You are late beyond the  {int(val_in_shift_type[&#39;working_hours_threshold_for_absent&#39;])} - hour time mark and you are marked absent !&#34; + &#34;\U0001F612&#34;)       
+                
+        # setup channel
+        # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+        # channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+        # setup stub
+        # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+        # request body
+        req = facial_recognition_pb2.FaceRecognitionRequest(
+            username = frappe.session.user,
+            media_type = &#34;video&#34;,
+            media_content = video
+        )
+        # Call service stub and get response
+        
+        res = random.choice(stubs).FaceRecognition(req)
+
+        if res.verification == &#34;FAILED&#34; and res.data == &#39;Invalid media content&#39;:
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            if log_type == &#34;IN&#34;:
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({&#34;message&#34;: &#34;You Checked in, but you were late, try to checkin early next time !&#34; +  &#34;\U0001F612&#34;})
+                    return response(&#34;Success&#34;, 201, doc, None)
+            return response(&#34;Success&#34;, 201, doc, None)
+        elif res.verification == &#34;FAILED&#34;:
+            msg = res.message
+            data = res.data
+            frappe.enqueue(&#39;one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log&#39;,
+            **{&#39;data&#39;:{&#39;employee&#39;:employee, &#39;log_type&#39;:log_type, &#39;verification&#39;:res.verification,
+                &#39;message&#39;:res.message, &#39;data&#39;:res.data, &#39;source&#39;: &#39;Checkin&#39;}})
+            return response(msg, 400, None, data)
+        elif res.verification == &#34;OK&#34;:
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            if log_type == &#34;IN&#34;:
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({&#34;message&#34;: &#34;You Checked in, but you were late, try to checkin early next time !&#34; +  &#34;\U0001F612&#34;})
+                    return response(&#34;Success&#34;, 201, doc, None)
+            quote = fetch_quote(direct_response=True)
+            return response(&#34;Success&#34;, 201, {&#39;doc&#39;:doc,&#39;quote&#39;:quote}, None)
+
+        else:
+            return response(&#34;Success&#34;, 400, None, &#34;No response from face recognition server&#34;)
+    except Exception as error:
+        return response(&#34;Internal Server Error&#34;, 500, None, error)
+
+
+def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float, shift_assignment: str) -&gt; dict:
+    checkin = frappe.new_doc(&#34;Employee Checkin&#34;)
+    checkin.employee = employee
+    checkin.log_type = log_type
+    checkin.device_id = frappe.utils.cstr(latitude)+&#34;,&#34;+frappe.utils.cstr(longitude)
+    checkin.skip_auto_attendance = 0 #skip_attendance
+    checkin.shift_assignment = shift_assignment
+    checkin.save()
+    frappe.db.commit()
+    return checkin.as_dict()
+
+def check_employee_non_shift(employee):
+    shift_working, employement_type = frappe.get_value(&#34;Employee&#34;, employee, [&#34;shift_working&#34;,&#34;employment_type&#34;])
+    if shift_working==0 and employement_type!=&#34;Contract&#34;:
+        return True
+    return False
+
+def has_day_off(employee,date):
+    &#34;&#34;&#34;
+        Confirm if the employee schedule for that day and employee is set to day off
+    &#34;&#34;&#34;
+    is_day_off = False
+    existing_schedule = frappe.get_value(&#34;Employee Schedule&#34;,{&#39;employee&#39;:employee,&#39;date&#39;:date},[&#39;employee_availability&#39;])
+    if existing_schedule:
+        if existing_schedule == &#39;Day Off&#39;:
+            is_day_off = True
+    return is_day_off
+
+def has_attendance(employee, date):
+    &#39;&#39;&#39;
+    This method is to check if employee has an attendance marked for the day.
+    &#39;&#39;&#39;
+    attendance_marked = False
+    attendance = frappe.db.exists(&#34;Attendance&#34;, {&#34;employee&#34;:employee, &#34;attendance_date&#34;:date})
+    if attendance:
+        attendance_marked = True
+    return attendance_marked
+
+def has_checkout_record(employee, shift_type):
+    &#39;&#39;&#39;
+    This method is to check if employee has an check out record for the day.
+    &#39;&#39;&#39;
+    checkout_record = False
+
+    start_time = get_datetime(cstr(getdate()) + &#34; 00:00:00&#34;)
+    end_time = get_datetime(cstr(getdate()) + &#34; 23:59:59&#34;)
+
+    log_exist = frappe.db.exists(&#34;Employee Checkin&#34;, {&#34;employee&#34;: employee, &#34;log_type&#34;: &#34;OUT&#34;, &#34;time&#34;: [ &#34;between&#34;, (start_time, end_time)], &#34;skip_auto_attendance&#34;: 0 ,&#34;shift_type&#34;: shift_type})
+
+    if log_exist:
+        checkout_record = True
+    return checkout_record
+
+def has_shift_permission(employee, log_type, date):
+    &#34;&#34;&#34;
+        Confirm if the employee has shift p[ermission at current time.
+    &#34;&#34;&#34;
+    has_shift_permission = False
+    
+    current_time = datetime.strptime(now_datetime().strftime(&#34;%H:%M:%S&#34;), &#34;%H:%M:%S&#34;) - datetime(1900, 1, 1)
+
+    permission_type = &#34;Arrive Late&#34; if log_type==&#34;IN&#34; else &#34;Leave Early&#34;
+    shift_permission = frappe.get_list(&#34;Shift Permission&#34;,{&#39;employee&#39;:employee,&#39;date&#39;:date, &#34;permission_type&#34;: permission_type},[&#39;*&#39;])
+    if shift_permission:
+        if permission_type == &#34;Arrive Late&#34; and current_time &lt; shift_permission[0].arrival_time:
+            has_shift_permission = True
+        if permission_type == &#34;Leave Early&#34; and current_time &gt; shift_permission[0].leaving_time:
+            has_shift_permission = True
+    return has_shift_permission
+
+@frappe.whitelist()
+def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -&gt; dict:
+# &#34;{&#39;employee_id&#39;: &#39;2105002IN196&#39;, &#39;latitude&#39;: 29.3660164, &#39;longitude&#39;:47.9658118}&#34;
+    if not employee_id:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id required.&#34;)
+
+    if not latitude:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;latitude required.&#34;)
+
+    if not longitude:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;longitude required.&#34;)
+
+    if not isinstance(employee_id, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee must be of type str.&#34;)
+
+    try:
+
+        employee_doc = frappe.get_doc(&#34;Employee&#34;, {&#34;employee_id&#34;: employee_id})
+        employee = employee_doc.name
+        date = cstr(getdate())
+        log = check_existing()
+
+        if log == False:
+            log_type = &#34;IN&#34;
+        else:
+            log_type = &#34;OUT&#34;
+
+        if not employee:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No employee found with {employee_id}&#34;.format(employee_id=employee_id))
+
+        if has_attendance(employee, date):
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;Your attendance has been marked For the Day&#34;)
+
+        shift = get_current_shift(employee)
+
+        site, location, shift_assignment = None, None, None
+        if shift:
+            if shift.shift_type and has_checkout_record(employee, shift.shift_type):
+                return response(&#34;Resource Not Found&#34;, 404, None, &#34;You have already Checked Out of the your current shift&#34;)
+            
+            if has_shift_permission(employee, log_type, date):
+                return response(&#34;Resource Not Found&#34;, 404, None, &#34;You have currently applied for Shift Permission&#34;)
+
+
+            if frappe.db.exists(&#34;Shift Request&#34;, {&#34;employee&#34;:employee, &#39;from_date&#39;:[&#39;&lt;=&#39;,date],&#39;to_date&#39;:[&#39;&gt;=&#39;,date]}):
+                check_in_site, check_out_site = frappe.get_value(&#34;Shift Request&#34;, {&#34;employee&#34;:employee, &#39;from_date&#39;:[&#39;&lt;=&#39;,date],&#39;to_date&#39;:[&#39;&gt;=&#39;,date]},[&#34;check_in_site&#34;,&#34;check_out_site&#34;])
+                if log_type == &#34;IN&#34;:
+                    site = check_in_site
+                    location = frappe.get_list(&#34;Location&#34;, {&#39;name&#39;:check_in_site}, [&#34;latitude&#34;,&#34;longitude&#34;, &#34;geofence_radius&#34;])
+                else:
+                    site = check_out_site
+                    location = frappe.get_list(&#34;Location&#34;, {&#39;name&#39;:check_out_site}, [&#34;latitude&#34;,&#34;longitude&#34;, &#34;geofence_radius&#34;])
+
+            else:
+                if shift.site_location:
+                    site = shift.site_location
+                    location = frappe.get_list(&#34;Location&#34;, {&#39;name&#39;:shift.site_location}, [&#34;latitude&#34;,&#34;longitude&#34;, &#34;geofence_radius&#34;])
+                elif shift.shift:
+                    site = frappe.get_value(&#34;Operations Shift&#34;, shift.shift, &#34;site&#34;)
+                    location= frappe.db.sql(&#34;&#34;&#34;
+                        SELECT loc.latitude, loc.longitude, loc.geofence_radius
+                        FROM `tabLocation` as loc
+                        WHERE
+                        loc.name IN (SELECT site_location FROM `tabOperations Site` where name=&#34;{site}&#34;)
+                        &#34;&#34;&#34;.format(site=site), as_dict=1)
+
+
+        if not site:
+            if has_day_off(employee,date):
+                employee_name = frappe.get_value(&#34;Employee&#34;,employee,&#39;employee_name&#39;)
+                return response(&#34;Resource Not Found&#34;, 404, None, f&#34;Dear {employee_name}, Today is your day off.  Happy Recharging!.&#34;)
+            if employee_doc.holiday_list:
+                holiday_today = get_holiday_today(str(getdate()))
+                if holiday_today.get(employee_doc.holiday_list):
+                    return response(&#34;Resource Not Found&#34;, 404, None, &#34;Today is your holiday, have fun.&#34;)
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;User not assigned to a shift.&#34;)
+
+        if not location and site:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No site location set for {site}&#34;.format(site=site))
+
+        result=location[0]
+        result[&#39;user_within_geofence_radius&#39;] = True
+
+        distance = float(haversine(result.latitude, result.longitude, latitude, longitude))
+        if distance &gt; float(result.geofence_radius):
+            result[&#39;user_within_geofence_radius&#39;] = False
+
+        result[&#39;site_name&#39;] = site
+        result[&#39;shift_assignment&#39;] = shift
+
+        # log to checkin radius log
+        data = result.copy()
+        result = frappe._dict(result)
+        data = {
+            **data,
+            **{&#39;employee&#39;:employee_id, &#39;user_latitude&#39;:latitude, &#39;user_longitude&#39;:longitude, &#39;user_distance&#39;:distance, &#39;diff&#39;:distance-result.geofence_radius}
+        }
+        
+        if not result.user_within_geofence_radius:
+            frappe.enqueue(&#39;one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log&#39;,
+                       **{&#39;data&#39;:data})
+        return response(&#34;Success&#34;, 200, {**result, **{&#39;shift_assignment&#39;:shift}})
+
+    except Exception as error:
+
+        return response(&#34;Internal Server Error&#34;, 500, None, frappe.get_traceback())
+
+
+def late_checkin_checker(doc, val_in_shift_type, existing_perm=None):
+    if doc.time.time() &gt; datetime.strptime(str(val_in_shift_type[&#34;start_time&#34;] + timedelta(minutes=val_in_shift_type[&#34;late_entry_grace_period&#34;])), &#34;%H:%M:%S&#34;).time():
+        if not existing_perm:
+            return True</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="api.v2.face_recognition.check_employee_non_shift"><code class="name flex">
+<span>def <span class="ident">check_employee_non_shift</span></span>(<span>employee)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_employee_non_shift(employee):
+    shift_working, employement_type = frappe.get_value(&#34;Employee&#34;, employee, [&#34;shift_working&#34;,&#34;employment_type&#34;])
+    if shift_working==0 and employement_type!=&#34;Contract&#34;:
+        return True
+    return False</code></pre>
+</details>
+</dd>
+<dt id="api.v2.face_recognition.create_checkin_log"><code class="name flex">
+<span>def <span class="ident">create_checkin_log</span></span>(<span>employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float, shift_assignment: str) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float, shift_assignment: str) -&gt; dict:
+    checkin = frappe.new_doc(&#34;Employee Checkin&#34;)
+    checkin.employee = employee
+    checkin.log_type = log_type
+    checkin.device_id = frappe.utils.cstr(latitude)+&#34;,&#34;+frappe.utils.cstr(longitude)
+    checkin.skip_auto_attendance = 0 #skip_attendance
+    checkin.shift_assignment = shift_assignment
+    checkin.save()
+    frappe.db.commit()
+    return checkin.as_dict()</code></pre>
+</details>
+</dd>
+<dt id="api.v2.face_recognition.enroll"><code class="name flex">
+<span>def <span class="ident">enroll</span></span>(<span>employee_id: str = None, video: str = None) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method enrolls the user face into the system for future face recognition use cases.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>employee_id</code></strong> :&ensp;<code>str</code></dt>
+<dd>employee_id of user</dd>
+<dt><strong><code>video</code></strong> :&ensp;<code>str</code></dt>
+<dd>Base64 encoded string of the video captured of user's face.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>response (dict): {
+message (str): Brief message indicating the response,
+status_code (int): Status code of response.
+data (dict): Enrollment status,
+error (str): Any error handled.
+}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def enroll(employee_id: str = None, video: str = None) -&gt; dict:
+    &#34;&#34;&#34;This method enrolls the user face into the system for future face recognition use cases.
+
+    Args:
+        employee_id (str): employee_id of user
+        video (str): Base64 encoded string of the video captured of user&#39;s face.
+
+    Returns:
+        response (dict): {
+            message (str): Brief message indicating the response,
+                        status_code (int): Status code of response.
+            data (dict): Enrollment status,
+            error (str): Any error handled.
+        }
+    &#34;&#34;&#34;
+    if not employee_id:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id required.&#34;)
+
+    if not video:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;Base64 encoded video content required.&#34;)
+
+    if not isinstance(video, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;video type must be str.&#34;)
+
+    try:
+        doc = frappe.get_doc(&#34;Employee&#34;, {&#34;user_id&#34;: frappe.session.user})
+        # Setup channel
+        face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
+        channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
+        # setup stub
+        stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
+        # request body
+        req = enroll_pb2.EnrollRequest(
+            username = frappe.session.user,
+            user_encoded_video = video,
+        )
+
+        res = stub.FaceRecognitionEnroll(req)
+        data = {&#39;employee&#39;:doc.name, &#39;log_type&#39;:&#39;Enrollment&#39;, &#39;verification&#39;:res.enrollment,
+                &#39;message&#39;:res.message, &#39;data&#39;:res.data, &#39;source&#39;: &#39;Enroll&#39;}
+        #frappe.enqueue(&#39;one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log&#39;,**{&#39;data&#39;:data})
+        if res.enrollment == &#34;FAILED&#34;:
+            return response(res.message, 400, None, res.data)
+
+        doc.enrolled = 1
+        doc.save(ignore_permissions=True)
+        update_onboarding_employee(doc)
+        frappe.db.commit()
+
+        return response(&#34;Success&#34;, 201, &#34;User enrolled successfully.&#34;)
+
+    except Exception as error:
+        return response(&#34;Internal Server Error&#34;, 500, None, error)</code></pre>
+</details>
+</dd>
+<dt id="api.v2.face_recognition.get_site_location"><code class="name flex">
+<span>def <span class="ident">get_site_location</span></span>(<span>employee_id: str = None, latitude: float = None, longitude: float = None) ‑> dict</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -&gt; dict:
+# &#34;{&#39;employee_id&#39;: &#39;2105002IN196&#39;, &#39;latitude&#39;: 29.3660164, &#39;longitude&#39;:47.9658118}&#34;
+    if not employee_id:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id required.&#34;)
+
+    if not latitude:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;latitude required.&#34;)
+
+    if not longitude:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;longitude required.&#34;)
+
+    if not isinstance(employee_id, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee must be of type str.&#34;)
+
+    try:
+
+        employee_doc = frappe.get_doc(&#34;Employee&#34;, {&#34;employee_id&#34;: employee_id})
+        employee = employee_doc.name
+        date = cstr(getdate())
+        log = check_existing()
+
+        if log == False:
+            log_type = &#34;IN&#34;
+        else:
+            log_type = &#34;OUT&#34;
+
+        if not employee:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No employee found with {employee_id}&#34;.format(employee_id=employee_id))
+
+        if has_attendance(employee, date):
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;Your attendance has been marked For the Day&#34;)
+
+        shift = get_current_shift(employee)
+
+        site, location, shift_assignment = None, None, None
+        if shift:
+            if shift.shift_type and has_checkout_record(employee, shift.shift_type):
+                return response(&#34;Resource Not Found&#34;, 404, None, &#34;You have already Checked Out of the your current shift&#34;)
+            
+            if has_shift_permission(employee, log_type, date):
+                return response(&#34;Resource Not Found&#34;, 404, None, &#34;You have currently applied for Shift Permission&#34;)
+
+
+            if frappe.db.exists(&#34;Shift Request&#34;, {&#34;employee&#34;:employee, &#39;from_date&#39;:[&#39;&lt;=&#39;,date],&#39;to_date&#39;:[&#39;&gt;=&#39;,date]}):
+                check_in_site, check_out_site = frappe.get_value(&#34;Shift Request&#34;, {&#34;employee&#34;:employee, &#39;from_date&#39;:[&#39;&lt;=&#39;,date],&#39;to_date&#39;:[&#39;&gt;=&#39;,date]},[&#34;check_in_site&#34;,&#34;check_out_site&#34;])
+                if log_type == &#34;IN&#34;:
+                    site = check_in_site
+                    location = frappe.get_list(&#34;Location&#34;, {&#39;name&#39;:check_in_site}, [&#34;latitude&#34;,&#34;longitude&#34;, &#34;geofence_radius&#34;])
+                else:
+                    site = check_out_site
+                    location = frappe.get_list(&#34;Location&#34;, {&#39;name&#39;:check_out_site}, [&#34;latitude&#34;,&#34;longitude&#34;, &#34;geofence_radius&#34;])
+
+            else:
+                if shift.site_location:
+                    site = shift.site_location
+                    location = frappe.get_list(&#34;Location&#34;, {&#39;name&#39;:shift.site_location}, [&#34;latitude&#34;,&#34;longitude&#34;, &#34;geofence_radius&#34;])
+                elif shift.shift:
+                    site = frappe.get_value(&#34;Operations Shift&#34;, shift.shift, &#34;site&#34;)
+                    location= frappe.db.sql(&#34;&#34;&#34;
+                        SELECT loc.latitude, loc.longitude, loc.geofence_radius
+                        FROM `tabLocation` as loc
+                        WHERE
+                        loc.name IN (SELECT site_location FROM `tabOperations Site` where name=&#34;{site}&#34;)
+                        &#34;&#34;&#34;.format(site=site), as_dict=1)
+
+
+        if not site:
+            if has_day_off(employee,date):
+                employee_name = frappe.get_value(&#34;Employee&#34;,employee,&#39;employee_name&#39;)
+                return response(&#34;Resource Not Found&#34;, 404, None, f&#34;Dear {employee_name}, Today is your day off.  Happy Recharging!.&#34;)
+            if employee_doc.holiday_list:
+                holiday_today = get_holiday_today(str(getdate()))
+                if holiday_today.get(employee_doc.holiday_list):
+                    return response(&#34;Resource Not Found&#34;, 404, None, &#34;Today is your holiday, have fun.&#34;)
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;User not assigned to a shift.&#34;)
+
+        if not location and site:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No site location set for {site}&#34;.format(site=site))
+
+        result=location[0]
+        result[&#39;user_within_geofence_radius&#39;] = True
+
+        distance = float(haversine(result.latitude, result.longitude, latitude, longitude))
+        if distance &gt; float(result.geofence_radius):
+            result[&#39;user_within_geofence_radius&#39;] = False
+
+        result[&#39;site_name&#39;] = site
+        result[&#39;shift_assignment&#39;] = shift
+
+        # log to checkin radius log
+        data = result.copy()
+        result = frappe._dict(result)
+        data = {
+            **data,
+            **{&#39;employee&#39;:employee_id, &#39;user_latitude&#39;:latitude, &#39;user_longitude&#39;:longitude, &#39;user_distance&#39;:distance, &#39;diff&#39;:distance-result.geofence_radius}
+        }
+        
+        if not result.user_within_geofence_radius:
+            frappe.enqueue(&#39;one_fm.operations.doctype.checkin_radius_log.checkin_radius_log.create_checkin_radius_log&#39;,
+                       **{&#39;data&#39;:data})
+        return response(&#34;Success&#34;, 200, {**result, **{&#39;shift_assignment&#39;:shift}})
+
+    except Exception as error:
+
+        return response(&#34;Internal Server Error&#34;, 500, None, frappe.get_traceback())</code></pre>
+</details>
+</dd>
+<dt id="api.v2.face_recognition.has_attendance"><code class="name flex">
+<span>def <span class="ident">has_attendance</span></span>(<span>employee, date)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method is to check if employee has an attendance marked for the day.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def has_attendance(employee, date):
+    &#39;&#39;&#39;
+    This method is to check if employee has an attendance marked for the day.
+    &#39;&#39;&#39;
+    attendance_marked = False
+    attendance = frappe.db.exists(&#34;Attendance&#34;, {&#34;employee&#34;:employee, &#34;attendance_date&#34;:date})
+    if attendance:
+        attendance_marked = True
+    return attendance_marked</code></pre>
+</details>
+</dd>
+<dt id="api.v2.face_recognition.has_checkout_record"><code class="name flex">
+<span>def <span class="ident">has_checkout_record</span></span>(<span>employee, shift_type)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method is to check if employee has an check out record for the day.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def has_checkout_record(employee, shift_type):
+    &#39;&#39;&#39;
+    This method is to check if employee has an check out record for the day.
+    &#39;&#39;&#39;
+    checkout_record = False
+
+    start_time = get_datetime(cstr(getdate()) + &#34; 00:00:00&#34;)
+    end_time = get_datetime(cstr(getdate()) + &#34; 23:59:59&#34;)
+
+    log_exist = frappe.db.exists(&#34;Employee Checkin&#34;, {&#34;employee&#34;: employee, &#34;log_type&#34;: &#34;OUT&#34;, &#34;time&#34;: [ &#34;between&#34;, (start_time, end_time)], &#34;skip_auto_attendance&#34;: 0 ,&#34;shift_type&#34;: shift_type})
+
+    if log_exist:
+        checkout_record = True
+    return checkout_record</code></pre>
+</details>
+</dd>
+<dt id="api.v2.face_recognition.has_day_off"><code class="name flex">
+<span>def <span class="ident">has_day_off</span></span>(<span>employee, date)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Confirm if the employee schedule for that day and employee is set to day off</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def has_day_off(employee,date):
+    &#34;&#34;&#34;
+        Confirm if the employee schedule for that day and employee is set to day off
+    &#34;&#34;&#34;
+    is_day_off = False
+    existing_schedule = frappe.get_value(&#34;Employee Schedule&#34;,{&#39;employee&#39;:employee,&#39;date&#39;:date},[&#39;employee_availability&#39;])
+    if existing_schedule:
+        if existing_schedule == &#39;Day Off&#39;:
+            is_day_off = True
+    return is_day_off</code></pre>
+</details>
+</dd>
+<dt id="api.v2.face_recognition.has_shift_permission"><code class="name flex">
+<span>def <span class="ident">has_shift_permission</span></span>(<span>employee, log_type, date)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Confirm if the employee has shift p[ermission at current time.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def has_shift_permission(employee, log_type, date):
+    &#34;&#34;&#34;
+        Confirm if the employee has shift p[ermission at current time.
+    &#34;&#34;&#34;
+    has_shift_permission = False
+    
+    current_time = datetime.strptime(now_datetime().strftime(&#34;%H:%M:%S&#34;), &#34;%H:%M:%S&#34;) - datetime(1900, 1, 1)
+
+    permission_type = &#34;Arrive Late&#34; if log_type==&#34;IN&#34; else &#34;Leave Early&#34;
+    shift_permission = frappe.get_list(&#34;Shift Permission&#34;,{&#39;employee&#39;:employee,&#39;date&#39;:date, &#34;permission_type&#34;: permission_type},[&#39;*&#39;])
+    if shift_permission:
+        if permission_type == &#34;Arrive Late&#34; and current_time &lt; shift_permission[0].arrival_time:
+            has_shift_permission = True
+        if permission_type == &#34;Leave Early&#34; and current_time &gt; shift_permission[0].leaving_time:
+            has_shift_permission = True
+    return has_shift_permission</code></pre>
+</details>
+</dd>
+<dt id="api.v2.face_recognition.late_checkin_checker"><code class="name flex">
+<span>def <span class="ident">late_checkin_checker</span></span>(<span>doc, val_in_shift_type, existing_perm=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def late_checkin_checker(doc, val_in_shift_type, existing_perm=None):
+    if doc.time.time() &gt; datetime.strptime(str(val_in_shift_type[&#34;start_time&#34;] + timedelta(minutes=val_in_shift_type[&#34;late_entry_grace_period&#34;])), &#34;%H:%M:%S&#34;).time():
+        if not existing_perm:
+            return True</code></pre>
+</details>
+</dd>
+<dt id="api.v2.face_recognition.verify_checkin_checkout"><code class="name flex">
+<span>def <span class="ident">verify_checkin_checkout</span></span>(<span>employee_id: str = None, video: str = None, log_type: str = None, shift_assignment: str = None, skip_attendance: str = None, latitude: str = None, longitude: str = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This method verifies user checking in/checking out.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>employee_id</code></strong> :&ensp;<code>srt</code></dt>
+<dd>employee_id of user</dd>
+<dt><strong><code>video</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>base64 encoded video of user checking in/checking out.</dd>
+<dt><strong><code>log_type</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>IN/OUT</dd>
+<dt><strong><code>skip_attendance</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>0/1.</dd>
+<dt><strong><code>latitude</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>Latitude od user.</dd>
+<dt><strong><code>longitude</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>Longitude od user.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>{
+message (str): Brief message indicating the response,
+status_code (int): Status code of response.
+data (dict): checkin log created.
+error (str): Any error handled.</dd>
+</dl>
+<p>}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None, 
+    shift_assignment: str = None, skip_attendance: str = None, latitude: str = None, longitude: str = None):
+    &#34;&#34;&#34;This method verifies user checking in/checking out.
+
+    Args:
+        employee_id (srt): employee_id of user
+        video (str, optional): base64 encoded video of user checking in/checking out.
+        log_type (str, optional): IN/OUT
+        skip_attendance (int, optional): 0/1.
+        latitude (float, optional): Latitude od user.
+        longitude (float, optional): Longitude od user.
+
+    Returns:
+        dict: {
+            message (str): Brief message indicating the response,
+                        status_code (int): Status code of response.
+            data (dict): checkin log created.
+            error (str): Any error handled.
+        }
+    &#34;&#34;&#34;
+    # ensure skip attendance is correctly formated
+    try:
+        skip_attendance = int(skip_attendance) if skip_attendance else 0
+        latitude = float(latitude)
+        longitude = float(longitude)
+    except:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;skip_attendance must be an integer, latitude and longitude must be float.&#34;)
+
+    if not employee_id:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id required.&#34;)
+
+    if not video:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;video required.&#34;)
+
+    if not log_type:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;log_type required.&#34;)
+
+    if not skip_attendance:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;skip_attendance required.&#34;)
+
+    if not latitude:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;latitdue required.&#34;)
+
+    if not longitude:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;longitude required.&#34;)
+
+    if not isinstance(video, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;video must be of type str.&#34;)
+
+    if not isinstance(log_type, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;log_type must be of type str.&#34;)
+
+    if log_type not in [&#34;IN&#34;, &#34;OUT&#34;]:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;Invalid log_type. log_type must be IN/OUT.&#34;)
+
+    if not isinstance(skip_attendance, int):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;skip_attendance must be of type int.&#34;)
+
+    if skip_attendance not in [0, 1]:
+        return response(&#34;Bad Request&#34;, 400, &#34;Invalid skip_attendance. skip_attendance must be 0 or 1.&#34;)
+
+    if not isinstance(latitude, float):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;latitude must be of type float.&#34;)
+
+    if not isinstance(longitude, float):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;longitude must be of type float.&#34;)
+
+    try:
+        employee = frappe.db.get_value(&#34;Employee&#34;, {&#34;employee_id&#34;: employee_id})
+
+        if not employee:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No employee found with {employee_id}&#34;.format(employee_id=employee_id))
+
+        right_now = now_datetime() 
+
+        if log_type == &#34;IN&#34;:
+            shift_type = frappe.db.sql(f&#34;&#34;&#34; select shift_type from `tabShift Assignment` where employee = &#39;{employee}&#39; order by creation desc limit 1 &#34;&#34;&#34;, as_dict=1)[0]
+            val_in_shift_type = frappe.db.sql(f&#34;&#34;&#34; select begin_check_in_before_shift_start_time, start_time, late_entry_grace_period, working_hours_threshold_for_absent from `tabShift Type` where name = &#39;{shift_type[&#34;shift_type&#34;]}&#39; &#34;&#34;&#34;, as_dict=1)[0]
+            time_threshold = datetime.strptime(str(val_in_shift_type[&#34;start_time&#34;] - timedelta(minutes=val_in_shift_type[&#34;begin_check_in_before_shift_start_time&#34;])), &#34;%H:%M:%S&#34;).time()
+
+            if right_now.time() &lt; time_threshold:
+                return response(&#34;Bad Request&#34;, 400, None, f&#34; Oops! You can&#39;t check in right now. Your check-in time is {val_in_shift_type[&#39;begin_check_in_before_shift_start_time&#39;]} minutes before you start your shift.&#34; + &#34;\U0001F612&#34;)
+
+            existing_perm = frappe.db.sql(f&#34;&#34;&#34; select name from `tabShift Permission` where date = &#39;{right_now.date()}&#39; and employee = &#39;{employee}&#39; and permission_type = &#39;{log_type}&#39; and workflow_state = &#39;Approved&#39; &#34;&#34;&#34;, as_dict=1)
+            if not existing_perm and (right_now.time() &gt;  datetime.strptime(str(val_in_shift_type[&#34;start_time&#34;] + + timedelta(hours=int(val_in_shift_type[&#39;working_hours_threshold_for_absent&#39;]))), &#34;%H:%M:%S&#34;).time()):
+                return response(&#34;Bad Request&#34;, 400, None, f&#34;Oops! You are late beyond the  {int(val_in_shift_type[&#39;working_hours_threshold_for_absent&#39;])} - hour time mark and you are marked absent !&#34; + &#34;\U0001F612&#34;)       
+                
+        # setup channel
+        # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+        # channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+        # setup stub
+        # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+        # request body
+        req = facial_recognition_pb2.FaceRecognitionRequest(
+            username = frappe.session.user,
+            media_type = &#34;video&#34;,
+            media_content = video
+        )
+        # Call service stub and get response
+        
+        res = random.choice(stubs).FaceRecognition(req)
+
+        if res.verification == &#34;FAILED&#34; and res.data == &#39;Invalid media content&#39;:
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            if log_type == &#34;IN&#34;:
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({&#34;message&#34;: &#34;You Checked in, but you were late, try to checkin early next time !&#34; +  &#34;\U0001F612&#34;})
+                    return response(&#34;Success&#34;, 201, doc, None)
+            return response(&#34;Success&#34;, 201, doc, None)
+        elif res.verification == &#34;FAILED&#34;:
+            msg = res.message
+            data = res.data
+            frappe.enqueue(&#39;one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log&#39;,
+            **{&#39;data&#39;:{&#39;employee&#39;:employee, &#39;log_type&#39;:log_type, &#39;verification&#39;:res.verification,
+                &#39;message&#39;:res.message, &#39;data&#39;:res.data, &#39;source&#39;: &#39;Checkin&#39;}})
+            return response(msg, 400, None, data)
+        elif res.verification == &#34;OK&#34;:
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            if log_type == &#34;IN&#34;:
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({&#34;message&#34;: &#34;You Checked in, but you were late, try to checkin early next time !&#34; +  &#34;\U0001F612&#34;})
+                    return response(&#34;Success&#34;, 201, doc, None)
+            quote = fetch_quote(direct_response=True)
+            return response(&#34;Success&#34;, 201, {&#39;doc&#39;:doc,&#39;quote&#39;:quote}, None)
+
+        else:
+            return response(&#34;Success&#34;, 400, None, &#34;No response from face recognition server&#34;)
+    except Exception as error:
+        return response(&#34;Internal Server Error&#34;, 500, None, error)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="api.v2" href="index.html">api.v2</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="api.v2.face_recognition.check_employee_non_shift" href="#api.v2.face_recognition.check_employee_non_shift">check_employee_non_shift</a></code></li>
+<li><code><a title="api.v2.face_recognition.create_checkin_log" href="#api.v2.face_recognition.create_checkin_log">create_checkin_log</a></code></li>
+<li><code><a title="api.v2.face_recognition.enroll" href="#api.v2.face_recognition.enroll">enroll</a></code></li>
+<li><code><a title="api.v2.face_recognition.get_site_location" href="#api.v2.face_recognition.get_site_location">get_site_location</a></code></li>
+<li><code><a title="api.v2.face_recognition.has_attendance" href="#api.v2.face_recognition.has_attendance">has_attendance</a></code></li>
+<li><code><a title="api.v2.face_recognition.has_checkout_record" href="#api.v2.face_recognition.has_checkout_record">has_checkout_record</a></code></li>
+<li><code><a title="api.v2.face_recognition.has_day_off" href="#api.v2.face_recognition.has_day_off">has_day_off</a></code></li>
+<li><code><a title="api.v2.face_recognition.has_shift_permission" href="#api.v2.face_recognition.has_shift_permission">has_shift_permission</a></code></li>
+<li><code><a title="api.v2.face_recognition.late_checkin_checker" href="#api.v2.face_recognition.late_checkin_checker">late_checkin_checker</a></code></li>
+<li><code><a title="api.v2.face_recognition.verify_checkin_checkout" href="#api.v2.face_recognition.verify_checkin_checkout">verify_checkin_checkout</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

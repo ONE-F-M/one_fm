@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>api.mobile.Leave_application API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>api.mobile.Leave_application</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import frappe
+from frappe import _
+from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
+from datetime import date
+import datetime
+from one_fm.api.api import upload_file
+import collections
+import base64, json
+from one_fm.api.v1.utils import response, validate_date
+from frappe.utils import cint, cstr, getdate
+from one_fm.api.v1.roster import get_current_shift
+from one_fm.api.tasks import get_action_user
+from one_fm.api.api import push_notification_rest_api_for_leave_application
+from one_fm.processor import sendemail
+from one_fm.utils import check_if_backdate_allowed
+
+@frappe.whitelist()
+def get_leave_detail(employee_id):
+    try:
+        employee=frappe.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;:employee_id})
+        leaves = frappe.get_all(&#34;Leave Application&#34;, filters={&#39;employee&#39;:employee}, fields=[&#34;name&#34;,&#34;leave_type&#34;, &#34;status&#34;,&#34;from_date&#34;, &#34;total_leave_days&#34;] )
+        return leaves
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)
+
+@frappe.whitelist()
+def leave_detail(leave_id):
+    try:
+        Leave_details = frappe.get_value(&#34;Leave Application&#34;, leave_id, &#39;*&#39; )
+        return Leave_details
+        print(Leave_details)
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)
+
+@frappe.whitelist()
+def get_leave_balance(employee, leave_type):
+    today=date.today()
+    try:
+        allocation_records = get_leave_details(employee, today)
+        Leave_balance = allocation_records[&#39;leave_allocation&#39;][leave_type]
+
+        if Leave_balance:
+            return Leave_balance
+        else:
+            frappe.throw(_(&#39;You Are Not currently Allocated with a leave policy&#39;))
+            return (&#39;No Leave Allocated.&#39;)
+
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)
+
+@frappe.whitelist()
+def leave_type_list(employee):
+    try:
+        leave_policy_list = frappe.get_list(&#34;Leave Allocation&#34;, {&#34;employee&#34;:employee}, &#39;leave_type&#39;)
+        #return leave_policy_list
+        leave_policy=[]
+        if leave_policy_list:
+            for types in leave_policy_list:
+                leave_policy.append(types.leave_type)
+            return leave_policy
+        else:
+            frappe.throw(_(&#39;You Are Not currently Allocated with a leave policy&#39;))
+            return {&#39;message&#39;: _(&#39;You Are Not currently Allocated with a leave policy.&#39;)}
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)
+
+@frappe.whitelist()
+def leave_notify(docname,status):
+    try:
+        doc = frappe.get_doc(&#34;Leave Application&#34;,{&#34;name&#34;:docname})
+        doc.status=status
+        doc.save()
+        doc.submit()
+        frappe.db.commit()
+        frappe.respond_as_web_page(_(&#34;Success&#34;), _(&#34;Leave Application &#34;+docname+&#34; was &#34;+status), http_status_code=201)
+        #return response(&#39;Leave Application was&#39;+status,doc, 201)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback())
+        frappe.respond_as_web_page(_(&#34;Error&#34;), e , http_status_code=417)
+
+#This function is the api to create a new leave notification.
+#bench execute --kwargs &#34;{&#39;employee&#39;:&#39;HR-EMP-00002&#39;,&#39;from_date&#39;:&#39;2021-11-17&#39;,&#39;to_date&#39;:&#39;2021-11-17&#39;,&#39;leave_type&#39;:&#39;Annual Leave&#39;,&#39;reason&#39;:&#39;fever&#39;}&#34;  one_fm.api.mobile.Leave_application.create_new_leave_application
+@frappe.whitelist()
+def create_new_leave_application(employee_id,from_date,to_date,leave_type,reason, proof_document = {}):
+    &#34;&#34;&#34;[summary]
+    Args:
+        employee (str): Employee record name.
+        from_date (str): Start date =&gt; yyyy-mm-dd
+        to_date (str): End date =&gt; yyyy-mm-dd
+        leave_type (str): Type of leave
+        reason (str): Reason for leave
+
+    Returns:
+        dict: {
+            message (str): Brief message indicating the response,
+                        status_code (int): Status code of response.
+            data (dict): Leave application that was created,
+            error (str): Any error handled.
+        }
+    &#34;&#34;&#34;
+    if not employee_id:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id required.&#34;)
+
+    if not from_date:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;from_date required.&#34;)
+
+    if not to_date:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;to_date required.&#34;)
+
+    if not leave_type:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;leave_type required.&#34;)
+
+    if not reason:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;reason required.&#34;)
+
+    if not isinstance(employee_id, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id must be of type str&#34;)
+
+    if not isinstance(from_date, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;from_date must be of type str.&#34;)
+
+    if not validate_date(from_date):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;from_date must be of format yyyy-mm-dd.&#34;)
+
+    if not validate_date(to_date):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;to_date must be of format yyyy-mm-dd.&#34;)
+
+    if not isinstance(to_date, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;to_date must be of type str.&#34;)
+
+    if not isinstance(leave_type, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;leave_type must be of type str.&#34;)
+
+    if not isinstance(reason, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;reason must be of type str.&#34;)
+
+    if proof_document_required_for_leave_type(leave_type) and not proof_document:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;Leave type requires a proof_document.&#34;)
+
+    if not check_if_backdate_allowed(leave_type, from_date):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;You are not allowed to apply for later or previous date.&#34;)
+
+    try:
+        from pathlib import Path
+        import hashlib
+        import base64, json
+
+        employee = frappe.db.get_value(&#34;Employee&#34;, {&#34;employee_id&#34;: employee_id})
+        if not employee:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No employee found with {employee_id}&#34;.format(employee_id=employee_id))
+
+        employee_doc = frappe.get_doc(&#34;Employee&#34;, employee)
+        leave_approver = fetch_leave_approver(employee)
+
+        if not leave_approver:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No leave approver found for {employee}.&#34;.format(employee=employee_id))
+
+        if frappe.db.exists(&#34;Leave Application&#34;, {&#39;employee&#39;: employee,&#39;from_date&#39;: [&#39;&gt;=&#39;, to_date],&#39;to_date&#39; : [&#39;&gt;=&#39;, from_date]}):
+            return response(&#34;Duplicate&#34;, 422, None, &#34;Leave application already created for {employee}&#34;.format(employee=employee_id))
+        attachment_paths = []
+        doc = new_leave_application(employee, from_date, to_date, leave_type, &#34;Open&#34;, reason, leave_approver, attachment_paths)
+        if proof_document_required_for_leave_type(leave_type):
+            proof_doc_json = json.loads(proof_document)
+            for proof_doc in proof_doc_json:
+                attachment = proof_doc[&#39;attachment&#39;]
+                attachment_name = proof_doc[&#39;attachment_name&#39;]
+                if not attachment or not attachment_name:
+                    return response(&#39;proof_document key requires attachment and attachment_name&#39;, {}, 400)
+
+                file_ext = &#34;.&#34; + attachment_name.split(&#34;.&#34;)[-1]
+                content = base64.b64decode(attachment)
+                filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode(&#39;utf-8&#39;)).hexdigest() + file_ext
+
+                
+                Path(frappe.utils.cstr(frappe.local.site)+f&#34;/private/files/leave-application/{employee_doc.user_id}&#34;).mkdir(parents=True, exist_ok=True)
+                
+                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f&#34;/private/files/leave-application/{employee_doc.user_id}/{filename}&#34;
+                file_ = upload_file(doc, &#34;attachments&#34;, filename, OUTPUT_FILE_PATH, content, is_private=True)
+                leave_doc = frappe.get_doc(&#34;Leave Application&#34;,doc.get(&#39;name&#39;))
+                leave_doc.append(&#39;proof_documents&#39;,{&#34;attachments&#34;:file_.file_url})
+                leave_doc.save()
+                frappe.db.commit()
+               
+
+        return response(&#34;Success&#34;, 201, doc)
+    
+    except Exception as error:
+        frappe.log_error(error, &#39;Leave API&#39;)
+        return response(&#34;Internal Server Error&#34;, 500, None, error)
+        
+#create new leave application doctype
+def new_leave_application(employee,from_date,to_date,leave_type,status,reason,leave_approver, attachment_path = None):
+    leave = frappe.new_doc(&#34;Leave Application&#34;)
+    leave.employee=employee
+    leave.leave_type=leave_type
+    leave.from_date=from_date
+    leave.to_date=to_date
+    leave.source = &#39;Mobile&#39;
+    leave.description=reason or &#34;None&#34;
+    leave.follow_via_email=1
+    leave.status=status
+    leave.leave_approver = leave_approver
+    leave.save(ignore_permissions=True)
+    frappe.db.commit()
+    return leave.as_dict()
+
+# Function to create response to the API. It generates json with message, data object and the status code.
+def response(message, data, status_code):
+    frappe.local.response[&#34;message&#34;] = message
+    frappe.local.response[&#34;data_obj&#34;] = data
+    frappe.local.response[&#34;http_status_code&#34;] = status_code
+    return
+
+@frappe.whitelist()
+def fetch_leave_approver(employee):
+    &#34;&#34;&#34;
+    This function fetches the leave approver for a given employee.
+    The leave approver is fetched  either Report_to or Leave Approver.
+    But, if both don&#39;t exist, Operation manager is the Leave Approver.
+
+    Params: ERP Employee ID
+
+    Return: User ID of Leave Approver
+
+    &#34;&#34;&#34;
+    approver = frappe.db.get_value(&#39;Employee&#39;, employee, &#39;leave_approver&#39;)
+    if not approver:
+        department = frappe.db.get_value(&#39;Employee&#39;, employee, &#39;department&#39;)
+        leave_approver = frappe.db.sql(&#34;&#34;&#34;
+            SELECT approver from `tabDepartment Approver` 
+            WHERE parent=&#39;{parent}&#39; AND parentfield=&#39;leave_approvers&#39; AND parenttype=&#39;Department&#39;
+        &#34;&#34;&#34;.format(parent=department), as_dict=1)
+        if leave_approver:
+            approver = leave_approver[0].approver
+    elif not approver:
+        frappe.db.get_value(&#39;Employee&#39;, employee, &#39;reports_to&#39;)
+    elif not approver:
+        project = frappe.db.get_value(&#39;Employee&#39;, employee, &#39;project&#39;)
+        if project:
+            project_manager = frappe.db.get_value(&#39;Project&#39;, project, &#39;account_manager&#39;)
+            if project_manager:
+                approver = frappe.db.get_value(&#39;Employee&#39;, project_manager, &#39;leave_approver&#39;)
+
+    elif not approver:
+        frappe.throw(_(&#39;{employee} has not approver, please set an approver.&#39;.format(employee=employee)))
+
+    return approver
+
+@frappe.whitelist()
+def notify_leave_approver(doc):
+    &#34;&#34;&#34;
+    This function is to notify the leave approver and request his action.
+    The Message sent through mail consist of 2 action: Approve and Reject.(It is sent only when the not sick leave.)
+
+    Param: doc -&gt; Leave Application Doc (which needs approval)
+
+    It&#39;s a action that takes place on update of Leave Application.
+    &#34;&#34;&#34;
+    #If Leave Approver Exist
+    if doc.leave_approver:
+        parent_doc = frappe.get_doc(&#39;Leave Application&#39;, doc.name)
+        args = parent_doc.as_dict() #fetch fields from the doc.
+
+        #Fetch Email Template for Leave Approval. The email template is in HTML format.
+        template = frappe.db.get_single_value(&#39;HR Settings&#39;, &#39;leave_approval_notification_template&#39;)
+        if not template:
+            frappe.msgprint(_(&#34;Please set default template for Leave Approval Notification in HR Settings.&#34;))
+            return
+        email_template = frappe.get_doc(&#34;Email Template&#34;, template)
+        message = frappe.render_template(email_template.response_html, args)
+        if doc.proof_documents:
+            proof_doc = doc.proof_documents
+            for p in proof_doc:
+                message+=f&#34;&lt;hr&gt;&lt;img src=&#39;{p.attachments}&#39; height=&#39;400&#39;/&gt;&#34;
+
+        # attachments = get_attachment(doc) // when attachment needed
+
+        #send notification
+        sendemail(recipients= [doc.leave_approver], subject=&#34;Leave Application&#34;, message=message,
+                  reference_doctype=doc.doctype, reference_name=doc.name, attachments = [])
+
+        employee_id = frappe.get_value(&#34;Employee&#34;, {&#34;user_id&#34;:doc.leave_approver}, [&#34;name&#34;])
+
+        if doc.total_leave_days == 1:
+            date = &#34;for &#34;+cstr(doc.from_date)
+        else:
+            date = &#34;from &#34;+cstr(doc.from_date)+&#34; to &#34;+cstr(doc.to_date)
+
+        push_notication_message = doc.employee_name+&#34; has applied for &#34;+doc.leave_type+&#34; &#34;+date+&#34;. Kindly, take action.&#34;
+        push_notification_rest_api_for_leave_application(employee_id,&#34;Leave Application&#34;, push_notication_message, doc.name)
+
+
+def proof_document_required_for_leave_type(leave_type):
+    if int(frappe.db.get_value(&#34;Leave Type&#34;, {&#39;name&#39;: leave_type}, &#34;is_proof_document_required&#34;)):
+        return True
+
+    return False
+
+def get_attachment(doc):
+    attachments = []
+    pass
+    # if doc.proof_document:
+    #     name, file_name = frappe.db.get_value(&#34;File&#34;, {&#34;file_url&#34;:doc.proof_document, &#34;attached_to_doctype&#34;:&#34;Leave Application&#34;, &#34;attached_to_field&#34;:&#34;proof_document&#34;}, [&#34;name&#34;, &#34;file_name&#34;])
+    #     content = frappe.get_doc(&#34;File&#34;, name).get_content()
+    #     attachments = [{
+    #           &#39;fname&#39;: file_name,
+    #           &#39;fcontent&#39;: content
+    #       }]
+    if attachments:
+        return attachments</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="api.mobile.Leave_application.create_new_leave_application"><code class="name flex">
+<span>def <span class="ident">create_new_leave_application</span></span>(<span>employee_id, from_date, to_date, leave_type, reason, proof_document={})</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>employee</code></strong> :&ensp;<code>str</code></dt>
+<dd>Employee record name.</dd>
+<dt><strong><code>from_date</code></strong> :&ensp;<code>str</code></dt>
+<dd>Start date =&gt; yyyy-mm-dd</dd>
+<dt><strong><code>to_date</code></strong> :&ensp;<code>str</code></dt>
+<dd>End date =&gt; yyyy-mm-dd</dd>
+<dt><strong><code>leave_type</code></strong> :&ensp;<code>str</code></dt>
+<dd>Type of leave</dd>
+<dt><strong><code>reason</code></strong> :&ensp;<code>str</code></dt>
+<dd>Reason for leave</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>dict</code></dt>
+<dd>{
+message (str): Brief message indicating the response,
+status_code (int): Status code of response.
+data (dict): Leave application that was created,
+error (str): Any error handled.</dd>
+</dl>
+<p>}</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def create_new_leave_application(employee_id,from_date,to_date,leave_type,reason, proof_document = {}):
+    &#34;&#34;&#34;[summary]
+    Args:
+        employee (str): Employee record name.
+        from_date (str): Start date =&gt; yyyy-mm-dd
+        to_date (str): End date =&gt; yyyy-mm-dd
+        leave_type (str): Type of leave
+        reason (str): Reason for leave
+
+    Returns:
+        dict: {
+            message (str): Brief message indicating the response,
+                        status_code (int): Status code of response.
+            data (dict): Leave application that was created,
+            error (str): Any error handled.
+        }
+    &#34;&#34;&#34;
+    if not employee_id:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id required.&#34;)
+
+    if not from_date:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;from_date required.&#34;)
+
+    if not to_date:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;to_date required.&#34;)
+
+    if not leave_type:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;leave_type required.&#34;)
+
+    if not reason:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;reason required.&#34;)
+
+    if not isinstance(employee_id, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;employee_id must be of type str&#34;)
+
+    if not isinstance(from_date, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;from_date must be of type str.&#34;)
+
+    if not validate_date(from_date):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;from_date must be of format yyyy-mm-dd.&#34;)
+
+    if not validate_date(to_date):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;to_date must be of format yyyy-mm-dd.&#34;)
+
+    if not isinstance(to_date, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;to_date must be of type str.&#34;)
+
+    if not isinstance(leave_type, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;leave_type must be of type str.&#34;)
+
+    if not isinstance(reason, str):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;reason must be of type str.&#34;)
+
+    if proof_document_required_for_leave_type(leave_type) and not proof_document:
+        return response(&#34;Bad Request&#34;, 400, None, &#34;Leave type requires a proof_document.&#34;)
+
+    if not check_if_backdate_allowed(leave_type, from_date):
+        return response(&#34;Bad Request&#34;, 400, None, &#34;You are not allowed to apply for later or previous date.&#34;)
+
+    try:
+        from pathlib import Path
+        import hashlib
+        import base64, json
+
+        employee = frappe.db.get_value(&#34;Employee&#34;, {&#34;employee_id&#34;: employee_id})
+        if not employee:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No employee found with {employee_id}&#34;.format(employee_id=employee_id))
+
+        employee_doc = frappe.get_doc(&#34;Employee&#34;, employee)
+        leave_approver = fetch_leave_approver(employee)
+
+        if not leave_approver:
+            return response(&#34;Resource Not Found&#34;, 404, None, &#34;No leave approver found for {employee}.&#34;.format(employee=employee_id))
+
+        if frappe.db.exists(&#34;Leave Application&#34;, {&#39;employee&#39;: employee,&#39;from_date&#39;: [&#39;&gt;=&#39;, to_date],&#39;to_date&#39; : [&#39;&gt;=&#39;, from_date]}):
+            return response(&#34;Duplicate&#34;, 422, None, &#34;Leave application already created for {employee}&#34;.format(employee=employee_id))
+        attachment_paths = []
+        doc = new_leave_application(employee, from_date, to_date, leave_type, &#34;Open&#34;, reason, leave_approver, attachment_paths)
+        if proof_document_required_for_leave_type(leave_type):
+            proof_doc_json = json.loads(proof_document)
+            for proof_doc in proof_doc_json:
+                attachment = proof_doc[&#39;attachment&#39;]
+                attachment_name = proof_doc[&#39;attachment_name&#39;]
+                if not attachment or not attachment_name:
+                    return response(&#39;proof_document key requires attachment and attachment_name&#39;, {}, 400)
+
+                file_ext = &#34;.&#34; + attachment_name.split(&#34;.&#34;)[-1]
+                content = base64.b64decode(attachment)
+                filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode(&#39;utf-8&#39;)).hexdigest() + file_ext
+
+                
+                Path(frappe.utils.cstr(frappe.local.site)+f&#34;/private/files/leave-application/{employee_doc.user_id}&#34;).mkdir(parents=True, exist_ok=True)
+                
+                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f&#34;/private/files/leave-application/{employee_doc.user_id}/{filename}&#34;
+                file_ = upload_file(doc, &#34;attachments&#34;, filename, OUTPUT_FILE_PATH, content, is_private=True)
+                leave_doc = frappe.get_doc(&#34;Leave Application&#34;,doc.get(&#39;name&#39;))
+                leave_doc.append(&#39;proof_documents&#39;,{&#34;attachments&#34;:file_.file_url})
+                leave_doc.save()
+                frappe.db.commit()
+               
+
+        return response(&#34;Success&#34;, 201, doc)
+    
+    except Exception as error:
+        frappe.log_error(error, &#39;Leave API&#39;)
+        return response(&#34;Internal Server Error&#34;, 500, None, error)</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.fetch_leave_approver"><code class="name flex">
+<span>def <span class="ident">fetch_leave_approver</span></span>(<span>employee)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This function fetches the leave approver for a given employee.
+The leave approver is fetched
+either Report_to or Leave Approver.
+But, if both don't exist, Operation manager is the Leave Approver.</p>
+<p>Params: ERP Employee ID</p>
+<p>Return: User ID of Leave Approver</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def fetch_leave_approver(employee):
+    &#34;&#34;&#34;
+    This function fetches the leave approver for a given employee.
+    The leave approver is fetched  either Report_to or Leave Approver.
+    But, if both don&#39;t exist, Operation manager is the Leave Approver.
+
+    Params: ERP Employee ID
+
+    Return: User ID of Leave Approver
+
+    &#34;&#34;&#34;
+    approver = frappe.db.get_value(&#39;Employee&#39;, employee, &#39;leave_approver&#39;)
+    if not approver:
+        department = frappe.db.get_value(&#39;Employee&#39;, employee, &#39;department&#39;)
+        leave_approver = frappe.db.sql(&#34;&#34;&#34;
+            SELECT approver from `tabDepartment Approver` 
+            WHERE parent=&#39;{parent}&#39; AND parentfield=&#39;leave_approvers&#39; AND parenttype=&#39;Department&#39;
+        &#34;&#34;&#34;.format(parent=department), as_dict=1)
+        if leave_approver:
+            approver = leave_approver[0].approver
+    elif not approver:
+        frappe.db.get_value(&#39;Employee&#39;, employee, &#39;reports_to&#39;)
+    elif not approver:
+        project = frappe.db.get_value(&#39;Employee&#39;, employee, &#39;project&#39;)
+        if project:
+            project_manager = frappe.db.get_value(&#39;Project&#39;, project, &#39;account_manager&#39;)
+            if project_manager:
+                approver = frappe.db.get_value(&#39;Employee&#39;, project_manager, &#39;leave_approver&#39;)
+
+    elif not approver:
+        frappe.throw(_(&#39;{employee} has not approver, please set an approver.&#39;.format(employee=employee)))
+
+    return approver</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.get_attachment"><code class="name flex">
+<span>def <span class="ident">get_attachment</span></span>(<span>doc)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_attachment(doc):
+    attachments = []
+    pass
+    # if doc.proof_document:
+    #     name, file_name = frappe.db.get_value(&#34;File&#34;, {&#34;file_url&#34;:doc.proof_document, &#34;attached_to_doctype&#34;:&#34;Leave Application&#34;, &#34;attached_to_field&#34;:&#34;proof_document&#34;}, [&#34;name&#34;, &#34;file_name&#34;])
+    #     content = frappe.get_doc(&#34;File&#34;, name).get_content()
+    #     attachments = [{
+    #           &#39;fname&#39;: file_name,
+    #           &#39;fcontent&#39;: content
+    #       }]
+    if attachments:
+        return attachments</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.get_leave_balance"><code class="name flex">
+<span>def <span class="ident">get_leave_balance</span></span>(<span>employee, leave_type)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def get_leave_balance(employee, leave_type):
+    today=date.today()
+    try:
+        allocation_records = get_leave_details(employee, today)
+        Leave_balance = allocation_records[&#39;leave_allocation&#39;][leave_type]
+
+        if Leave_balance:
+            return Leave_balance
+        else:
+            frappe.throw(_(&#39;You Are Not currently Allocated with a leave policy&#39;))
+            return (&#39;No Leave Allocated.&#39;)
+
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.get_leave_detail"><code class="name flex">
+<span>def <span class="ident">get_leave_detail</span></span>(<span>employee_id)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def get_leave_detail(employee_id):
+    try:
+        employee=frappe.get_value(&#34;Employee&#34;, {&#39;employee_id&#39;:employee_id})
+        leaves = frappe.get_all(&#34;Leave Application&#34;, filters={&#39;employee&#39;:employee}, fields=[&#34;name&#34;,&#34;leave_type&#34;, &#34;status&#34;,&#34;from_date&#34;, &#34;total_leave_days&#34;] )
+        return leaves
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.leave_detail"><code class="name flex">
+<span>def <span class="ident">leave_detail</span></span>(<span>leave_id)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def leave_detail(leave_id):
+    try:
+        Leave_details = frappe.get_value(&#34;Leave Application&#34;, leave_id, &#39;*&#39; )
+        return Leave_details
+        print(Leave_details)
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.leave_notify"><code class="name flex">
+<span>def <span class="ident">leave_notify</span></span>(<span>docname, status)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def leave_notify(docname,status):
+    try:
+        doc = frappe.get_doc(&#34;Leave Application&#34;,{&#34;name&#34;:docname})
+        doc.status=status
+        doc.save()
+        doc.submit()
+        frappe.db.commit()
+        frappe.respond_as_web_page(_(&#34;Success&#34;), _(&#34;Leave Application &#34;+docname+&#34; was &#34;+status), http_status_code=201)
+        #return response(&#39;Leave Application was&#39;+status,doc, 201)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback())
+        frappe.respond_as_web_page(_(&#34;Error&#34;), e , http_status_code=417)</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.leave_type_list"><code class="name flex">
+<span>def <span class="ident">leave_type_list</span></span>(<span>employee)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def leave_type_list(employee):
+    try:
+        leave_policy_list = frappe.get_list(&#34;Leave Allocation&#34;, {&#34;employee&#34;:employee}, &#39;leave_type&#39;)
+        #return leave_policy_list
+        leave_policy=[]
+        if leave_policy_list:
+            for types in leave_policy_list:
+                leave_policy.append(types.leave_type)
+            return leave_policy
+        else:
+            frappe.throw(_(&#39;You Are Not currently Allocated with a leave policy&#39;))
+            return {&#39;message&#39;: _(&#39;You Are Not currently Allocated with a leave policy.&#39;)}
+    except Exception as e:
+        print(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback())
+        return frappe.utils.response.report_error(e)</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.new_leave_application"><code class="name flex">
+<span>def <span class="ident">new_leave_application</span></span>(<span>employee, from_date, to_date, leave_type, status, reason, leave_approver, attachment_path=None)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def new_leave_application(employee,from_date,to_date,leave_type,status,reason,leave_approver, attachment_path = None):
+    leave = frappe.new_doc(&#34;Leave Application&#34;)
+    leave.employee=employee
+    leave.leave_type=leave_type
+    leave.from_date=from_date
+    leave.to_date=to_date
+    leave.source = &#39;Mobile&#39;
+    leave.description=reason or &#34;None&#34;
+    leave.follow_via_email=1
+    leave.status=status
+    leave.leave_approver = leave_approver
+    leave.save(ignore_permissions=True)
+    frappe.db.commit()
+    return leave.as_dict()</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.notify_leave_approver"><code class="name flex">
+<span>def <span class="ident">notify_leave_approver</span></span>(<span>doc)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>This function is to notify the leave approver and request his action.
+The Message sent through mail consist of 2 action: Approve and Reject.(It is sent only when the not sick leave.)</p>
+<p>Param: doc -&gt; Leave Application Doc (which needs approval)</p>
+<p>It's a action that takes place on update of Leave Application.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@frappe.whitelist()
+def notify_leave_approver(doc):
+    &#34;&#34;&#34;
+    This function is to notify the leave approver and request his action.
+    The Message sent through mail consist of 2 action: Approve and Reject.(It is sent only when the not sick leave.)
+
+    Param: doc -&gt; Leave Application Doc (which needs approval)
+
+    It&#39;s a action that takes place on update of Leave Application.
+    &#34;&#34;&#34;
+    #If Leave Approver Exist
+    if doc.leave_approver:
+        parent_doc = frappe.get_doc(&#39;Leave Application&#39;, doc.name)
+        args = parent_doc.as_dict() #fetch fields from the doc.
+
+        #Fetch Email Template for Leave Approval. The email template is in HTML format.
+        template = frappe.db.get_single_value(&#39;HR Settings&#39;, &#39;leave_approval_notification_template&#39;)
+        if not template:
+            frappe.msgprint(_(&#34;Please set default template for Leave Approval Notification in HR Settings.&#34;))
+            return
+        email_template = frappe.get_doc(&#34;Email Template&#34;, template)
+        message = frappe.render_template(email_template.response_html, args)
+        if doc.proof_documents:
+            proof_doc = doc.proof_documents
+            for p in proof_doc:
+                message+=f&#34;&lt;hr&gt;&lt;img src=&#39;{p.attachments}&#39; height=&#39;400&#39;/&gt;&#34;
+
+        # attachments = get_attachment(doc) // when attachment needed
+
+        #send notification
+        sendemail(recipients= [doc.leave_approver], subject=&#34;Leave Application&#34;, message=message,
+                  reference_doctype=doc.doctype, reference_name=doc.name, attachments = [])
+
+        employee_id = frappe.get_value(&#34;Employee&#34;, {&#34;user_id&#34;:doc.leave_approver}, [&#34;name&#34;])
+
+        if doc.total_leave_days == 1:
+            date = &#34;for &#34;+cstr(doc.from_date)
+        else:
+            date = &#34;from &#34;+cstr(doc.from_date)+&#34; to &#34;+cstr(doc.to_date)
+
+        push_notication_message = doc.employee_name+&#34; has applied for &#34;+doc.leave_type+&#34; &#34;+date+&#34;. Kindly, take action.&#34;
+        push_notification_rest_api_for_leave_application(employee_id,&#34;Leave Application&#34;, push_notication_message, doc.name)</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.proof_document_required_for_leave_type"><code class="name flex">
+<span>def <span class="ident">proof_document_required_for_leave_type</span></span>(<span>leave_type)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def proof_document_required_for_leave_type(leave_type):
+    if int(frappe.db.get_value(&#34;Leave Type&#34;, {&#39;name&#39;: leave_type}, &#34;is_proof_document_required&#34;)):
+        return True
+
+    return False</code></pre>
+</details>
+</dd>
+<dt id="api.mobile.Leave_application.response"><code class="name flex">
+<span>def <span class="ident">response</span></span>(<span>message, data, status_code)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def response(message, data, status_code):
+    frappe.local.response[&#34;message&#34;] = message
+    frappe.local.response[&#34;data_obj&#34;] = data
+    frappe.local.response[&#34;http_status_code&#34;] = status_code
+    return</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="api.mobile" href="index.html">api.mobile</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="api.mobile.Leave_application.create_new_leave_application" href="#api.mobile.Leave_application.create_new_leave_application">create_new_leave_application</a></code></li>
+<li><code><a title="api.mobile.Leave_application.fetch_leave_approver" href="#api.mobile.Leave_application.fetch_leave_approver">fetch_leave_approver</a></code></li>
+<li><code><a title="api.mobile.Leave_application.get_attachment" href="#api.mobile.Leave_application.get_attachment">get_attachment</a></code></li>
+<li><code><a title="api.mobile.Leave_application.get_leave_balance" href="#api.mobile.Leave_application.get_leave_balance">get_leave_balance</a></code></li>
+<li><code><a title="api.mobile.Leave_application.get_leave_detail" href="#api.mobile.Leave_application.get_leave_detail">get_leave_detail</a></code></li>
+<li><code><a title="api.mobile.Leave_application.leave_detail" href="#api.mobile.Leave_application.leave_detail">leave_detail</a></code></li>
+<li><code><a title="api.mobile.Leave_application.leave_notify" href="#api.mobile.Leave_application.leave_notify">leave_notify</a></code></li>
+<li><code><a title="api.mobile.Leave_application.leave_type_list" href="#api.mobile.Leave_application.leave_type_list">leave_type_list</a></code></li>
+<li><code><a title="api.mobile.Leave_application.new_leave_application" href="#api.mobile.Leave_application.new_leave_application">new_leave_application</a></code></li>
+<li><code><a title="api.mobile.Leave_application.notify_leave_approver" href="#api.mobile.Leave_application.notify_leave_approver">notify_leave_approver</a></code></li>
+<li><code><a title="api.mobile.Leave_application.proof_document_required_for_leave_type" href="#api.mobile.Leave_application.proof_document_required_for_leave_type">proof_document_required_for_leave_type</a></code></li>
+<li><code><a title="api.mobile.Leave_application.response" href="#api.mobile.Leave_application.response">response</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
