@@ -190,6 +190,20 @@ def get_leave_types(employee_id: str = None) -> dict:
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
+
+def validate_sick_leave_attachment(doc):
+    """
+       Ensure that all sick leaves have an attachment
+
+    Returns:
+        (Bool) : True if attachment is present, False if attachment is not present.
+    """
+    leave_attachments = frappe.get_all("File",{'attached_to_doctype':"Leave Application",'attached_to_name':doc.name},['name'])
+    if not leave_attachments:
+        return False
+    return True
+
+
 @frappe.whitelist()
 def create_new_leave_application(employee_id: str = None, from_date: str = None, to_date: str = None, leave_type: str = None, reason: str = None, proof_document = {}) -> dict:
     """[summary]
@@ -288,6 +302,8 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                 leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
                 leave_doc.append('proof_documents',{"attachments":file_.file_url})
                 leave_doc.save()
+                if not validate_sick_leave_attachment(leave_doc):
+                    return response("Internal Server Error", 500, None, "Error while attaching document to form")
                 frappe.db.commit()
                 # with open(OUTPUT_FILE_PATH, "wb") as fh:
                 #     fh.write(content)
@@ -317,7 +333,6 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.status=status
     leave.leave_approver = leave_approver
     leave.save(ignore_permissions=True)
-    frappe.db.commit()
     return leave.as_dict()
 
 @frappe.whitelist()

@@ -187,6 +187,8 @@ def create_new_leave_application(employee_id,from_date,to_date,leave_type,reason
                 leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
                 leave_doc.append('proof_documents',{"attachments":file_.file_url})
                 leave_doc.save()
+                if not validate_sick_leave_attachment(leave_doc):
+                    return response("Internal Server Error", 500, None, "Error while attaching document to form")
                 frappe.db.commit()
                
 
@@ -209,7 +211,7 @@ def new_leave_application(employee,from_date,to_date,leave_type,status,reason,le
     leave.status=status
     leave.leave_approver = leave_approver
     leave.save(ignore_permissions=True)
-    frappe.db.commit()
+    
     return leave.as_dict()
 
 # Function to create response to the API. It generates json with message, data object and the status code.
@@ -296,6 +298,20 @@ def notify_leave_approver(doc):
 
         push_notication_message = doc.employee_name+" has applied for "+doc.leave_type+" "+date+". Kindly, take action."
         push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, doc.name)
+
+
+def validate_sick_leave_attachment(doc):
+    """
+       Ensure that all sick leaves have an attachment
+
+    Returns:
+        (Bool) : True if attachment is present, False if attachment is not present.
+    """
+    leave_attachments = frappe.get_all("File",{'attached_to_doctype':"Leave Application",'attached_to_name':doc.name},['name'])
+    if not leave_attachments:
+        return False
+    return True
+
 
 
 def proof_document_required_for_leave_type(leave_type):
