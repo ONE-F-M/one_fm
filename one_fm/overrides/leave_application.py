@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import get_fullname
+from frappe.utils import get_fullname,nowdate
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
 from frappe.desk.form.assign_to import add
@@ -54,6 +54,21 @@ def is_app_user(emp):
 
 class LeaveApplicationOverride(LeaveApplication):
     
+    def close_todo(self):
+        """Close the Todo document linked with a leave application
+        """
+        try:
+            leave_todo = frappe.get_all("ToDo",{'reference_name':self.name},['name'])
+            if leave_todo:
+                for each in leave_todo:
+                    frappe.db.set_value("ToDo",each.get("name"),'status','Closed')
+                frappe.db.commit()
+        except:
+            frappe.log_error(frappe.get_traceback(),"Error Closing ToDos")
+    
+    def on_submit(self):
+        self.close_todo()
+        return super().on_submit()
     def notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
         if not template:
@@ -163,13 +178,19 @@ class LeaveApplicationOverride(LeaveApplication):
                     if self.name and self.leave_type =="Sick Leave":
                         existing_assignment = frappe.get_all("ToDo",{'allocated_to':self.leave_approver,'reference_name':self.name})
                         if not existing_assignment:
-                            args = {
-                                'assign_to':[self.leave_approver],
-                                'doctype':"Leave Application",
-                                'name':self.name,
-                                'description':f'Please note that leave application {self.name} is awaiting your approval',
-                            }
-                            add(args)
+                            frappe.get_doc(
+                                {
+                                    "doctype": "ToDo",
+                                    "allocated_to": self.leave_approver,
+                                    "reference_type": "Leave Application",
+                                    "reference_name": self.name,
+                                    "description": f'Please note that leave application {self.name} is awaiting your approval',
+                                    "priority": "Medium",
+                                    "status": "Open",
+                                    "date": nowdate(),
+                                    "assigned_by": frappe.session.user,
+                                }
+                            ).insert(ignore_permissions=True)
                 except:
                     frappe.log_error(frappe.get_traceback(),"Error assigning to User")
                     frappe.throw("Error while assigning leave application")
