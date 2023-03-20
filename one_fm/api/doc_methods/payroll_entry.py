@@ -9,6 +9,7 @@ from frappe.utils.pdf import get_pdf
 import openpyxl as xl
 import time
 import datetime
+import calendar
 from datetime import datetime, timedelta
 from copy import copy
 from pathlib import Path
@@ -43,7 +44,7 @@ def get_count_holidays_of_employee(self, employee):
 	return holidays
 
 @frappe.whitelist()
-def fill_employee_details(self, project_list=False):
+def fill_employee_details(self):
 	"""
 	Method Override fill_employee_details in Payroll Entry
 	This Function fetches the employee details and updates the 'Employee Details' child table.
@@ -53,7 +54,30 @@ def fill_employee_details(self, project_list=False):
 		and for which salary structure exists.
 	"""
 	self.set('employees', [])
-	# Custom method to get employee list for one fm
+	# Find projects comes under the same payroll cycle
+	if str(get_start_date(self.start_date)) == str(frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')):
+		query = '''
+			select
+				project
+			from
+				`tabProject Payroll Cycle`
+		'''
+		projects = frappe.db.sql(query, as_dict=True)
+		default_projects = get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(', '.join(['"{}"'.format(project.project) for project in projects]))
+		project_list = ', '.join(['"{}"'.format(project.project) for project in default_projects])
+	else:
+		query = '''
+			select
+				project
+			from
+				`tabProject Payroll Cycle`
+			where
+				payroll_start_day = '{0}'
+		'''
+		start_day = get_start_date(self.start_date)
+		projects = frappe.db.sql(query.format(start_day), as_dict=True)
+		project_list = ', '.join(['"{}"'.format(project.project) for project in projects])
+
 	employees = get_emp_list(self, project_list)
 
 	# Custom method to fetch Bank Details and update employee list
@@ -236,6 +260,13 @@ def auto_create_payroll_entry(payroll_date=None):
 	"""
 		Create Payroll Entry record with payroll cycle configured in HR and Payroll Additional Settings.
 	"""
+	
+	if not payroll_date:
+		payroll_date_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
+		# Calculate payroll date
+		payroll_date = (datetime(getdate().year, getdate().month, cint(payroll_date_day))).strftime("%Y-%m-%d")
+
+	
 	# Get Payroll cycle list from HR and Payroll Settings and itrate for payroll cycle
 	query = '''
 		select
@@ -245,49 +276,21 @@ def auto_create_payroll_entry(payroll_date=None):
 	'''
 	payroll_start_day_list = frappe.db.sql(query, as_dict=True)
 
-	payroll_configured_projects = []
-
-	if not payroll_date:
-		payroll_date_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
-		# Calculate payroll date
-		payroll_date = (datetime(getdate().year, getdate().month, cint(payroll_date_day))).strftime("%Y-%m-%d")
 
 	for payroll_start_day in payroll_start_day_list:
 		# Find from date and end date for payroll
 		start_date, end_date = get_payroll_start_end_date_by_start_day(payroll_date, payroll_start_day.payroll_start_day)
 
-		# Find projects comes under the same payroll cycle
-		query = '''
-			select
-				project
-			from
-				`tabProject Payroll Cycle`
-			where
-				payroll_start_day = '{0}'
-		'''
-		projects = frappe.db.sql(query.format(payroll_start_day.payroll_start_day), as_dict=True)
-		project_list = ', '.join(['"{}"'.format(project.project) for project in projects])
-		payroll_configured_projects += projects
 		# Create Payroll Entry
-		create_monthly_payroll_entry(payroll_date, start_date, end_date, project_list)
+		create_monthly_payroll_entry(payroll_date, start_date, end_date)
 
-	# Find default from date and end date for payroll
+	# # Find default from date and end date for payroll
 	default_payroll_start_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')
 	default_start_date, default_end_date = get_payroll_start_end_date_by_start_day(payroll_date, default_payroll_start_day)
 
-	# Fetch employee having project link but project not added in payroll configuration, then take default payroll cycle
-	payroll_configured_project_list = ', '.join(['"{}"'.format(project.project) for project in payroll_configured_projects])
-	projects_not_configured_in_payroll_cycle = get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(payroll_configured_project_list)
-	if projects_not_configured_in_payroll_cycle:
-		project_list_not_configured_in_payroll_cycle = ', '.join(['"{}"'.format(project.project) for project in projects_not_configured_in_payroll_cycle])
-		# Create Payroll Entry
-		create_monthly_payroll_entry(payroll_date, default_start_date, default_end_date, project_list_not_configured_in_payroll_cycle)
+	create_monthly_payroll_entry(payroll_date, default_start_date, default_end_date)
 
-	# TODO:
-	# Fetch employee not having project link and set the payroll cycle as default
-	# Create Payroll entry for the employees
-
-def create_monthly_payroll_entry(payroll_date, start_date, end_date, project_list):
+def create_monthly_payroll_entry(payroll_date, start_date, end_date):
 	try:
 		payroll_entry = frappe.new_doc("Payroll Entry")
 		payroll_entry.posting_date = getdate(payroll_date)
@@ -300,7 +303,7 @@ def create_monthly_payroll_entry(payroll_date, start_date, end_date, project_lis
 		payroll_entry.cost_center = frappe.get_value("Company", erpnext.get_default_company(), "cost_center")
 		payroll_entry.save()
 		# Fetch employees with the project filter
-		payroll_entry.fill_employee_details(project_list)
+		payroll_entry.fill_employee_details()
 		payroll_entry.save()
 		payroll_entry.submit()
 		frappe.db.commit()
@@ -322,6 +325,18 @@ def get_payroll_start_end_date_by_start_day(payroll_date, start_day):
 		start_date = getdate(date)
 		end_date = add_to_date(date, days=-1, months=1)
 	return start_date, end_date
+
+def get_start_date(date):
+	if isinstance(date, str):
+		date = datetime.strptime(date, '%Y-%m-%d')
+
+	last_date_of_month = calendar.monthrange(date.year, date.month)[1]
+	if date.day == 1:
+		return 'Month Start'
+	elif date.day == last_date_of_month:
+		return 'Month End'
+	else:
+		return date.day
 
 def get_basic_salary(employee):
 	filters = {
