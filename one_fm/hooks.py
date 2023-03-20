@@ -165,7 +165,8 @@ before_install = "one_fm.install.before_install.execute"
 permission_query_conditions = {
 	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
-	"Issue": "one_fm.utils.get_issue_permission_query_conditions"
+	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
+    "Leave Application": "one_fm.permissions.leave_application_list",
 }
 has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",

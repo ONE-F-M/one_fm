@@ -11,7 +11,9 @@ from frappe.model.utils import is_virtual_doctype
 from frappe.model.utils.user_settings import get_user_settings
 from frappe.permissions import get_doc_permissions
 from frappe.utils.data import cstr
-from one_fm.utils import check_employee_permission_on_doc
+from one_fm.utils import (
+    check_employee_permission_on_doc, get_approver_for_many_employees,
+)
 
 @frappe.whitelist()
 def getdoc(doctype, name, user=None):
@@ -505,3 +507,18 @@ def get_user_info_for_viewers(users):
 		frappe.utils.add_user_info(user, user_info)
 
 	return user_info
+
+
+def leave_application_list(user):
+	"""
+		Filter leave application list based on permision
+	"""
+	if frappe.session.user in ["Administrator", "abdullah@one-fm.com"]:
+		return
+	if not user: user = frappe.seesion.user
+	supervisor = frappe.cache().get_value(frappe.session.user).employee
+	roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+	has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', supervisor, 'user_id'))])
+	if has_roles:
+		return
+	return "(employee = '{supervisor}')".format(supervisor=supervisor)

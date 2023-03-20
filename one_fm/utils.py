@@ -2918,7 +2918,6 @@ def get_approver(employee):
     operations_site, operations_shift = '', ''
     if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
     emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site'], as_dict=1)
-    print(emp_data)
     if emp_data.reports_to:
         return emp_data.reports_to
     elif emp_data.shift:
@@ -2931,20 +2930,44 @@ def get_approver(employee):
     if not (operations_shift and operations_site and operations_shift):
         frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
 
+
+def get_approver_for_many_employees(supervisor=None):
+    """
+        Get document approver for employee by 
+        reports_to, shift_approver, site_approver
+    """
+    if not supervisor:
+        supervisor = frappe.cache().get_value(frappe.session.user).employee
+    roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+    has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', supervisor, 'user_id'))])
+    if has_roles:
+        return [i.name for i in frappe.db.get_list("Employee", ignore_permissions=True)]
+    employees = [i.name for i in frappe.db.get_list('Employee', {'reports_to':supervisor}, "name", ignore_permissions=True)]
+    operations_site = [i.name for i in frappe.db.get_list('Operations Site', {'account_supervisor':supervisor}, "name", ignore_permissions=True)]
+    if operations_site:
+        employees += [i.name for i in frappe.db.get_list('Employee', {'site':['IN', operations_site]}, "name", ignore_permissions=True) if not i.name in employees]
+    operations_shift = [i.name for i in frappe.db.get_list('Operations Shift', {'supervisor':supervisor}, "name", ignore_permissions=True)]
+    if operations_shift:    
+        employees += [i.name for i in frappe.db.get_list('Employee', {'shift':['IN', operations_shift]}, "name", ignore_permissions=True) if not i.name in employees]    
+    employees.append(supervisor)
+    return employees
+
+
 def check_employee_permission_on_doc(doc):
     """
         Before loading document form, check if session user has access to view the doc data
         based on employee field.
     """
     try:
-        session_employee = frappe.cache().get_value(frappe.session.user).employee
-        roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
-        has_roles = any([item in roles for item in frappe.get_roles()])
-        if not has_roles:
-            if (session_employee and doc.employee):
-                approver = get_approver(doc.employee)
-                if approver != session_employee:
-                    frappe.throw("You do not have permissions to access this document.")
+        if frappe.session.user not in ["Administrator", 'administrator', 'abdullah@one-fm.com']:
+            session_employee = frappe.cache().get_value(frappe.session.user).employee
+            roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+            has_roles = any([item in roles for item in frappe.get_roles()])
+            if not has_roles and (session_employee!=doc.employee):
+                if (session_employee and doc.employee):
+                    approver = get_approver(doc.employee)
+                    if approver != session_employee:
+                        frappe.throw("You do not have permissions to access this document.")
     except Exception as e:
         pass
 
