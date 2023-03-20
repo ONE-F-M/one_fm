@@ -30,6 +30,8 @@
   "col_br_1",
   "day_off_overtime_rate",
   "public_holiday_overtime_rate",
+  "site_allowance_additional_salary_settings_section",
+  "site_allowance_additional_salary_component",
   "hr_notification_settings_section",
   "remind_employee_checkin_checkout",
   "column_break_17",
@@ -253,12 +255,25 @@
    "fieldname": "enable_export",
    "fieldtype": "Check",
    "label": "Enable Export"
+  },
+  {
+   "fieldname": "site_allowance_additional_salary_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Site Allowance Additional Salary Settings"
+  },
+  {
+   "fieldname": "site_allowance_additional_salary_component",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Site Allowance Additional Salary Component",
+   "options": "Salary Component",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-01-05 16:12:17.217621",
+ "modified": "2023-03-20 18:18:57.559006",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
