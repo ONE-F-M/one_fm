@@ -4,7 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe.utils import getdate, add_days
-from one_fm.api.v2.zenquotes import fetch_qoute
+from one_fm.api.v2.zenquotes import fetch_quote
 
 class BugBuster(Document):
 	def validate(self):
