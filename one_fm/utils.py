@@ -2912,3 +2912,24 @@ def get_today_leaves(cur_date):
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
 
+
+def get_approver(employee):
+    """
+        Get document approver for employee by 
+        reports_to, shift_approver, site_approver
+    """
+    operations_site, operations_shift = '', ''
+    if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
+    emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site'], as_dict=1)
+    if emp_data.reports_to:
+        return emp_data.reports_to
+    elif emp_data.site:
+        operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
+    elif emp_data.shift:
+        operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
+
+    if operations_site:return operations_site
+    if operations_shift:return operations_shift
+    if not (operations_shift or operations_site):
+        frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
+    
