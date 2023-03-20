@@ -1188,6 +1188,7 @@ def create_penalty_deduction(start_date, end_date, employee, total_penalty_amoun
 	penalty_deduction.submit()
 	frappe.db.commit()
 
+
 #this function is to generate Site Allowance as Earing Component in Salary Slip. It is monthly calculated based on employees attendance
 def generate_site_allowance():
 	#get list of all site that includes Site Allowance.
@@ -1222,6 +1223,7 @@ def generate_site_allowance():
 						#calculate Monthly_site_allowance with the rate of allowance per day.
 						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee[1])
 						create_additional_salary(employee[0], Monthly_site_allowance, component_name, end_date, site.name)
+
 
 #this function creates additional salary for a given component.
 def create_additional_salary(employee, amount, component, end_date, site):

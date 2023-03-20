@@ -563,13 +563,29 @@ def notify_employee(doc, method):
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_cancel(doc, method):
     update_employee_hajj_status(doc, method)
+    leave_appillication_paid_sick_leave(doc, method)
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_paid_sick_leave(doc, method):
 	if doc.leave_type and frappe.db.get_value("Leave Type", doc.leave_type, 'one_fm_is_paid_sick_leave') == 1:
-		salary = get_salary_amount(doc.employee)
-		if salary:
-			create_additional_salary_for_paid_sick_leave(doc, salary)
+		if method == 'on_submit':
+			salary = get_salary_amount(doc.employee)
+			if salary:
+				create_additional_salary_for_paid_sick_leave(doc, salary)
+		elif method == 'on_cancel':
+			cancel_additional_salary_for_paid_sick_leave(doc.name)
+
+def cancel_additional_salary_for_paid_sick_leave(leave_application):
+	additional_salary_exists = frappe.db.exists('Additional Salary', {
+		'ref_doctype': 'Leave Application',
+		'ref_docname': leave_application
+	})
+	if additional_salary_exists:
+		additional_salary = frappe.get_doc('Additional Salary', additional_salary_exists)
+		if additional_salary.docstatus == 1:
+			additional_salary.cancel()
+		else:
+			additional_salary.delete()
 
 def create_additional_salary_for_paid_sick_leave(doc, salary):
     daily_rate = salary/30
@@ -621,7 +637,9 @@ def create_additional_salary(salary, daily_rate, payment_days, leave_application
             "payroll_date": leave_application.from_date,
             "leave_application": leave_application.name,
             "notes": deduction_notes,
-            "amount": payment_days*daily_rate*deduction_percentage
+            "amount": payment_days*daily_rate*deduction_percentage,
+			"ref_doctype": leave_application.doctype,
+			"ref_docname": leave_application.name
         }).insert(ignore_permissions=True)
         additional_salary.submit()
 
@@ -1925,7 +1943,7 @@ def create_roster_post_actions():
 
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
-        if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
+        if not any(es.date == ps.date and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
             if ps.operations_role:
                 operations_roles_not_filled_set.add(ps.operations_role)
                 list_of_dict_of_operations_roles_not_filled.append(ps)
@@ -1957,36 +1975,33 @@ def create_roster_post_actions():
             if val["operations_role"] in operations_roles and val["shift"] in shift_dict[supervisor]:
                 check_list.append(val)
 
-
         for item in check_list:
             for second_item in second_check_list:
                 if (item["date"] == second_item["date"]) and (item["shift"] == second_item["shift"]) and (item["operations_role"] == second_item["operations_role"]):
                     second_item["quantity"] = second_item["quantity"] + 1
                     break
+            item.update({"quantity": 1})
+            second_check_list.append(item)
+            check_list.remove(item)
 
-            else:
-                item.update({"quantity": 1})
-                second_check_list.append(item)
-                check_list.remove(item)
+        if second_check_list and len(second_check_list) > 0:
+            roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
+            roster_post_actions_doc.start_date = start_date
+            roster_post_actions_doc.end_date = end_date
+            roster_post_actions_doc.status = "Pending"
+            roster_post_actions_doc.action_type = "Fill Post Type"
+            roster_post_actions_doc.supervisor = supervisor
 
+            for obj in second_check_list:
+                roster_post_actions_doc.append('operations_roles_not_filled', {
+                    'operations_role': obj.get("operations_role"),
+                    "operations_shift": obj.get("shift"),
+                    "date": obj.get("date"),
+                    "quantity": obj.get("quantity") if obj.get("quantity") else 1
+                })
 
-        roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
-        roster_post_actions_doc.start_date = start_date
-        roster_post_actions_doc.end_date = end_date
-        roster_post_actions_doc.status = "Pending"
-        roster_post_actions_doc.action_type = "Fill Post Type"
-        roster_post_actions_doc.supervisor = supervisor
-
-        for obj in second_check_list:
-            roster_post_actions_doc.append('operations_roles_not_filled', {
-                'operations_role': obj.get("operations_role"),
-                "operations_shift": obj.get("shift"),
-                "date": obj.get("date"),
-                "quantity": obj.get("quantity") if obj.get("quantity") else 1
-            })
-
-        roster_post_actions_doc.save()
-        frappe.db.commit()
+            roster_post_actions_doc.save()
+            frappe.db.commit()
         del check_list
 
 def send_roster_report():
@@ -2911,6 +2926,7 @@ def get_today_leaves(cur_date):
         WHERE status='Approved'
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
+
 
 
 def get_approver(employee):

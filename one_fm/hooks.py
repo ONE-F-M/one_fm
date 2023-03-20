@@ -97,7 +97,8 @@ doctype_js = {
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
-    "Wiki Page": "public/js/doctype_js/wiki_page.js", 
+    "Wiki Page": "public/js/doctype_js/wiki_page.js",
+    "Wiki Sidebar": "public/js/doctype_js/wiki_sidebar.js", 
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -318,6 +319,9 @@ doc_events = {
 	},
 	"Payroll Entry": {
 		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
+        "after_insert": "one_fm.api.doc_events.after_insert_of_payroll_entry",
+        "on_cancel": "one_fm.api.doc_events.on_cancel_of_payroll_entry",
+        "after_delete": "one_fm.api.doc_events.on_delete_of_payroll_entry"
 	},
 	"Expense Claim": {
 		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
@@ -600,9 +604,9 @@ scheduler_events = {
 		"08 00 24 * *": [ #“At 00:08 on day-of-month 24.”
 			'one_fm.api.tasks.generate_penalties'
 		],
-		"00 01 24 * *": [
-			'one_fm.api.tasks.generate_site_allowance'
-		],
+		# "00 01 24 * *": [
+		# 	'one_fm.api.tasks.generate_site_allowance'
+		# ],
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
 		],

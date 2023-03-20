@@ -9,3 +9,5 @@ def on_session_creation(login_manager):
         frappe.local.boot.user.employee = frappe.session.employee
     except Exception as e:
         frappe.session['employee'] = ''
+        
+#
