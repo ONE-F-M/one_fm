@@ -724,7 +724,9 @@ fixtures = [
 override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
 	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
-	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview"
+	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview",
+	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
+	
 }
 #ShiftType.process_auto_attendance = process_auto_attendance
 
