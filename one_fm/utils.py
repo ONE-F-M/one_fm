@@ -563,13 +563,29 @@ def notify_employee(doc, method):
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_cancel(doc, method):
     update_employee_hajj_status(doc, method)
+    leave_appillication_paid_sick_leave(doc, method)
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_paid_sick_leave(doc, method):
 	if doc.leave_type and frappe.db.get_value("Leave Type", doc.leave_type, 'one_fm_is_paid_sick_leave') == 1:
-		salary = get_salary_amount(doc.employee)
-		if salary:
-			create_additional_salary_for_paid_sick_leave(doc, salary)
+		if method == 'on_submit':
+			salary = get_salary_amount(doc.employee)
+			if salary:
+				create_additional_salary_for_paid_sick_leave(doc, salary)
+		elif method == 'on_cancel':
+			cancel_additional_salary_for_paid_sick_leave(doc.name)
+
+def cancel_additional_salary_for_paid_sick_leave(leave_application):
+	additional_salary_exists = frappe.db.exists('Additional Salary', {
+		'ref_doctype': 'Leave Application',
+		'ref_docname': leave_application
+	})
+	if additional_salary_exists:
+		additional_salary = frappe.get_doc('Additional Salary', additional_salary_exists)
+		if additional_salary.docstatus == 1:
+			additional_salary.cancel()
+		else:
+			additional_salary.delete()
 
 def create_additional_salary_for_paid_sick_leave(doc, salary):
     daily_rate = salary/30
@@ -621,7 +637,9 @@ def create_additional_salary(salary, daily_rate, payment_days, leave_application
             "payroll_date": leave_application.from_date,
             "leave_application": leave_application.name,
             "notes": deduction_notes,
-            "amount": payment_days*daily_rate*deduction_percentage
+            "amount": payment_days*daily_rate*deduction_percentage,
+			"ref_doctype": leave_application.doctype,
+			"ref_docname": leave_application.name
         }).insert(ignore_permissions=True)
         additional_salary.submit()
 
