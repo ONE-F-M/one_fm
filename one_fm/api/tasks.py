@@ -1229,7 +1229,7 @@ def create_additional_salary(employee, amount, component, end_date, site):
 	if check_add_sal_exists:
 		additional_salary = frappe.get_doc("Additional Salary", check_add_sal_exists)
 		additional_salary.amount += amount
-		additional_salary.note += f" , {site}"
+		additional_salary.notes += f" , {site}"
 		additional_salary.flags.ignore_validate_update_after_submit = True
 		additional_salary.save(ignore_permissions=1)
 	else:	
@@ -1243,6 +1243,7 @@ def create_additional_salary(employee, amount, component, end_date, site):
 		additional_salary.notes = f"Site Allowance for {site}"
 		additional_salary.insert()
 		additional_salary.submit()
+	frappe.db.commit()
 
 
 def mark_day_attendance():
