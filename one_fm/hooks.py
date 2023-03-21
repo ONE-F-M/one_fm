@@ -630,6 +630,12 @@ scheduler_events = {
 		],
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
+		],
+		"00 08 23 * *": [ #notify leave approver to approve all the open application
+		'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
+		],
+		"45 23 23 * *": [ #approve all the open leave application
+		'one_fm.api.doc_methods.payroll_entry.close_all_leave_application '
 		]
 	}
 }
