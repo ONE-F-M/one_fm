@@ -765,3 +765,9 @@ def notify_for_open_leave_application():
 		message += "</ul>"
 
 		sendemail(recipients= recipient , subject="Leave Application need approval", message=message)
+
+def close_all_leave_application():
+	leave_list = frappe.get_list("Leave Application", {"workflow_state":"Open"}, ['*'])
+	for leave in leave_list:
+		frappe.db.set_value('Leave Application', leave.name, 'workflow_state', 'Approved')
+		frappe.db.commit
