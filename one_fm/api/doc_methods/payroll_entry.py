@@ -174,7 +174,8 @@ def set_bank_details(self, employee_details):
 	employee_list = ', '.join(['"{}"'.format(employee.employee) for employee in employee_details])
 	missing_ssa = frappe.db.sql(""" 
 		SELECT employee from `tabEmployee` E
-		WHERE E.status = "Active"
+		WHERE E.status = 'Active'
+		AND E.employment_type != 'Subcontractor'
 		AND E.name IN ({0})
 		""".format(employee_list), as_dict=True)
 
