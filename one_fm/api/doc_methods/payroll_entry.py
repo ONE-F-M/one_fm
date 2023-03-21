@@ -16,6 +16,9 @@ from hrms.payroll.doctype.payroll_entry.payroll_entry import (
 	get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_sal_struct
 )
 from one_fm.one_fm.doctype.hr_and_payroll_additional_settings.hr_and_payroll_additional_settings import get_projects_not_configured_in_payroll_cycle_but_linked_in_employee
+from itertools import groupby
+from operator import itemgetter
+from one_fm.processor import sendemail
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
@@ -741,6 +744,24 @@ def seperate_salary_slip(employees, start_date, end_date):
 		
 	return parm
 
-				
+def notify_for_open_leave_application():
+	open_leave_application = {}
+	leave_list = frappe.get_all("Leave Application", {"workflow_state":"Open"}, ['*'])
+	# sort INFO data by 'leave_approver' key.
+	leave_list = sorted(leave_list, key=itemgetter('leave_approver'))
 
-				
+	#group leave application by leave approver 
+	for key, value in groupby(leave_list, itemgetter('leave_approver')):
+		open_leave_application[key] = []
+		for k in value:
+			open_leave_application[key].append(k.name)
+
+	for ola in open_leave_application:
+		recipient = [ola]
+		message = "<p>The Following Leave Application needs to be approved. Kindly, take action before midnight. </p><ul>" 
+		for leave_id in open_leave_application[ola]:
+			doc_url = frappe.utils.get_link_to_form("Leave Application", leave_id)
+			message += "<li>"+doc_url+"</li>"
+		message += "</ul>"
+
+		sendemail(recipients= recipient , subject="Leave Application need approval", message=message)
