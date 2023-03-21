@@ -45,12 +45,11 @@
    "read_only": 1
   }
  ],
- "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-03-07 17:42:17.306784",
+ "modified": "2023-03-20 17:30:43.964812",
  "modified_by": "Administrator",
- "module": "Operations",
+ "module": "Developer",
  "name": "Bug Buster Employee Detail",
  "owner": "Administrator",
  "permissions": [],

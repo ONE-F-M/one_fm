@@ -4,6 +4,7 @@
 import frappe
 from frappe.model.document import Document
 from frappe.utils import getdate, add_days
+from one_fm.api.v2.zenquotes import fetch_quote
 
 class BugBuster(Document):
 	def validate(self):
@@ -46,12 +47,15 @@ class BugBuster(Document):
 			pass
 
 	def send_email(self):
+		quote = fetch_quote(direct_response = True)
+		if quote:quote = quote['html']
 		frappe.sendmail(
 			recipients=frappe.db.get_value("Employee", self.employee, "user_id"),
 			subject="Bug Buster Assigned",
 			message=f"""
 				You have been assigned the role of a Bug Buster from {self.from_date} to {self.to_date}. 
-				Weldone Solder!.
+				Weldone Soldier!.
+				{quote}
 			""",
 		)
 
