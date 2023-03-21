@@ -171,13 +171,17 @@ def set_bank_details(self, employee_details):
 		employee_details ([dict): Sets the bank account IBAN code and Bank Code.
 	"""
 	employee_missing_detail = []
+	missing_ssa = []
 	employee_list = ', '.join(['"{}"'.format(employee.employee) for employee in employee_details])
-	missing_ssa = frappe.db.sql(""" 
-		SELECT employee from `tabEmployee` E
-		WHERE E.status = 'Active'
-		AND E.employment_type != 'Subcontractor'
-		AND E.name IN ({0})
-		""".format(employee_list), as_dict=True)
+	if employee_list:
+		missing_ssa = frappe.db.sql(""" 
+			SELECT employee from `tabEmployee` E
+			WHERE E.status = 'Active'
+			AND E.employment_type != 'Subcontractor'
+			AND E.name NOT IN (
+				SELECT employee from `tabSalary Structure Assignment` SE
+			)
+			""".format(employee_list), as_dict=True)
 
 	for employee in employee_details:
 		try:
