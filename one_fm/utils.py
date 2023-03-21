@@ -547,7 +547,7 @@ def leave_appillication_on_submit(doc, method):
     if doc.status == "Approved":
         leave_appillication_paid_sick_leave(doc, method)
         update_employee_hajj_status(doc, method)
-        notify_employee(doc, method)
+        
 
 @frappe.whitelist()
 def notify_employee(doc, method):
