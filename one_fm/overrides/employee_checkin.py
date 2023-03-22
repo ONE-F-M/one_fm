@@ -80,8 +80,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
 			frappe.enqueue(after_insert_background, self=self.name)
 		if self.log_type == "IN":
-			# frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
-			notify_supervisor_about_late_entry(self)
+			frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
 
 def after_insert_background(self):
 	self = frappe.get_doc("Employee Checkin", self)
