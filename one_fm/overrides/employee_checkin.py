@@ -189,7 +189,8 @@ def after_insert_background(self):
 						for_users = [supervisor]
 						create_notification_log(subject, message, for_users, self)
 	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
+		pass
+		#frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
 
 
 
