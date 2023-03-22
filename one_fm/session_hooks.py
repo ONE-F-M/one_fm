@@ -1,3 +1,4 @@
+from werkzeug.wrappers import Request, Response
 import frappe
 
 def on_session_creation(login_manager):
@@ -20,3 +21,26 @@ def auth_hooks():
                 frappe.cache().set_value(frappe.session.user, frappe._dict({'employee':employee}))
         except:
             frappe.cache().set_value(frappe.session.user, frappe._dict({}))
+
+def on_login(login_manager):
+    """
+        Process some actions when user logins in.
+        Created log when admin logs in.
+    """
+    if frappe.session.user == 'Administrator':
+        session = frappe.session.data
+        environ = frappe._dict(frappe.local.request.environ)
+        frappe.get_doc(
+            {
+            'doctype':'Administrator Auto Log',
+            'ip': session.session_ip, 
+            'datetime': session.last_updated, 
+            'session_expiry': session.session_expiry,
+            'device': session.desktop, 
+            'session_country': session.session_country,
+            'http_sec_ch_ua':environ.HTTP_SEC_CH_UA,
+            'user_agent':environ.HTTP_USER_AGENT,
+            'platform':environ.HTTP_SEC_CH_UA_PLATFORM,
+            }
+        ).insert()
+

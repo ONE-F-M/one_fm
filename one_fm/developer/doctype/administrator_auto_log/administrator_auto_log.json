@@ -1,0 +1,96 @@
+{
+ "actions": [],
+ "autoname": "format: AAL-{YYYY}-{MM}-{DD}-{#}",
+ "creation": "2023-03-22 12:40:02.782599",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "datetime",
+  "ip",
+  "session_expiry",
+  "device",
+  "session_country",
+  "http_sec_ch_ua",
+  "user_agent",
+  "platform"
+ ],
+ "fields": [
+  {
+   "fieldname": "datetime",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Datetime",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "ip",
+   "fieldtype": "Data",
+   "label": "IP",
+   "read_only": 1
+  },
+  {
+   "fieldname": "session_expiry",
+   "fieldtype": "Data",
+   "label": "Session Expiry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "device",
+   "fieldtype": "Data",
+   "label": "Device",
+   "read_only": 1
+  },
+  {
+   "fieldname": "session_country",
+   "fieldtype": "Data",
+   "label": "Session Country",
+   "read_only": 1
+  },
+  {
+   "fieldname": "http_sec_ch_ua",
+   "fieldtype": "Data",
+   "label": "HTTP SEC CH UA",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_agent",
+   "fieldtype": "Data",
+   "label": "User Agent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "platform",
+   "fieldtype": "Data",
+   "label": "Platform",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2023-03-22 13:00:38.988724",
+ "modified_by": "Administrator",
+ "module": "Developer",
+ "name": "Administrator Auto Log",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
