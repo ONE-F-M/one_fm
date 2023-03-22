@@ -178,6 +178,9 @@ def set_bank_details(self, employee_details):
 			SELECT employee from `tabEmployee` E
 			WHERE E.status = 'Active'
 			AND E.employment_type != 'Subcontractor'
+			AND E.name IN (
+				{0}
+			)
 			AND E.name NOT IN (
 				SELECT employee from `tabSalary Structure Assignment` SE
 			)
@@ -675,7 +678,7 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 		salary_slips_exist_for = get_existing_salary_slips(employees, args)
 		count = 0
 		start_date = args.start_date
-		end_date = args.start_date
+		end_date = args.end_date
 
 		args.pop('start_date')
 		args.pop('end_date')
