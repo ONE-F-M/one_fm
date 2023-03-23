@@ -1222,6 +1222,7 @@ def generate_site_allowance():
 
 				if employee_det:
 					for employee in employee_det:
+						the_att_date = tuple(employee["attendance_dates"].split(','))
 						#calculate Monthly_site_allowance with the rate of allowance per day.
 						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee["count"])
 						notes = f"Project: {site.project} \nSite: {site.name} \nNumber of days worked: {employee['count']} \n\n"
