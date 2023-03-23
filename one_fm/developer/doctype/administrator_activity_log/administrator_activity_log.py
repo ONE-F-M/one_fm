@@ -7,7 +7,7 @@ from frappe.model.document import Document
 from frappe.utils import today
 from one_fm.utils import get_approver
 
-class AdministratorLog(Document):
+class AdministratorActivityLog(Document):
 	
 	def before_insert(self):
 		self.approver = get_approver(self.employee)

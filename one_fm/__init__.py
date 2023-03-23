@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import frappe
 from hrms.hr.doctype.shift_request.shift_request import ShiftRequest
 from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
 from hrms.payroll.doctype.salary_slip.salary_slip import SalarySlip
@@ -21,10 +22,12 @@ from one_fm.overrides.wiki_page import get_context
 from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 from one_fm.api.notification import after_insert
 from one_fm.one_fm.payroll_utils import add_tax_components
+from one_fm.utils import post_login
 
 __version__ = '14.0.0'
 
 
+frappe.auth.LoginManager.post_login = post_login
 ShiftRequest.on_submit = shift_request_submit
 ShiftRequest.validate_approver = validate_approver
 ShiftRequest.on_cancel = shift_request_cancel
