@@ -7,7 +7,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "datetime",
+  "login_time",
   "ip",
   "session_expiry",
   "device",
@@ -17,14 +17,6 @@
   "platform"
  ],
  "fields": [
-  {
-   "fieldname": "datetime",
-   "fieldtype": "Datetime",
-   "in_list_view": 1,
-   "label": "Datetime",
-   "read_only": 1,
-   "reqd": 1
-  },
   {
    "fieldname": "ip",
    "fieldtype": "Data",
@@ -66,11 +58,19 @@
    "fieldtype": "Data",
    "label": "Platform",
    "read_only": 1
+  },
+  {
+   "fieldname": "login_time",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Login Time",
+   "read_only": 1,
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-03-22 13:00:38.988724",
+ "modified": "2023-03-23 11:22:02.005126",
  "modified_by": "Administrator",
  "module": "Developer",
  "name": "Administrator Auto Log",
