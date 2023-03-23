@@ -11,10 +11,11 @@
   "ip",
   "session_expiry",
   "device",
-  "session_country",
   "http_sec_ch_ua",
   "user_agent",
-  "platform"
+  "column_break_9vhi9",
+  "platform",
+  "session_country"
  ],
  "fields": [
   {
@@ -37,7 +38,7 @@
   },
   {
    "fieldname": "session_country",
-   "fieldtype": "Data",
+   "fieldtype": "Small Text",
    "label": "Session Country",
    "read_only": 1
   },
@@ -66,11 +67,15 @@
    "label": "Login Time",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_9vhi9",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-03-23 11:22:02.005126",
+ "modified": "2023-03-23 12:54:45.765613",
  "modified_by": "Administrator",
  "module": "Developer",
  "name": "Administrator Auto Log",
