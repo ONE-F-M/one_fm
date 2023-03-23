@@ -259,7 +259,7 @@ def notify_supervisor_about_late_entry(checkin):
 					if get_site_supervisor:
 						return send_push_notification_for_late_entry(get_site_supervisor["account_supervisor"], checkin.employee, roster_type=the_roster_type if the_roster_type else "Basic")
 	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
+		pass
 
 def send_push_notification_for_late_entry(recipient, culprit_name, roster_type="Basic"):
 	"""
