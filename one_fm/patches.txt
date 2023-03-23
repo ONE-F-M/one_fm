@@ -30,3 +30,4 @@ one_fm.patches.v14_0.allocate_leave_allocation
 one_fm.patches.v14_0.reassign_reshare_leaves
 one_fm.patches.v14_0.set_leave_ref_fields_in_paid_sick_leave_additional_salary
 one_fm.patches.v14_0.remove_leave_application_field_from_additional_salary
+one_fm.patches.v14_0.fix_leave_application_attachments
