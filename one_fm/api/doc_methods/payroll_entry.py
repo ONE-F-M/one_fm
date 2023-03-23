@@ -760,8 +760,8 @@ def seperate_salary_slip(employees, start_date, end_date):
 		if len(salary_structure_assignment) > 0:
 			mid_date = ""
 			for ssa in salary_structure_assignment:
-				start_date = datetime.strptime(start_date, '%Y-%m-%d').date() if isinstance(start_date, 'str') else start_date
-				end_date = datetime.strptime(end_date, '%Y-%m-%d').date() if isinstance(end_date, 'str') else end_date
+				start_date = frappe.utils.get_datetime(start_date).date()
+				end_date = frappe.utils.get_datetime(end_date).date()
 
 				if ssa.from_date > start_date and ssa.from_date < end_date:
 					mid_date = ssa.from_date
