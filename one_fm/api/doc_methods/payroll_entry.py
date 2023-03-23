@@ -9,6 +9,7 @@ from frappe.utils.pdf import get_pdf
 import openpyxl as xl
 import time
 import datetime
+import calendar
 from datetime import datetime, timedelta
 from copy import copy
 from pathlib import Path
@@ -16,6 +17,9 @@ from hrms.payroll.doctype.payroll_entry.payroll_entry import (
 	get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_sal_struct
 )
 from one_fm.one_fm.doctype.hr_and_payroll_additional_settings.hr_and_payroll_additional_settings import get_projects_not_configured_in_payroll_cycle_but_linked_in_employee
+from itertools import groupby
+from operator import itemgetter
+from one_fm.processor import sendemail
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
@@ -43,7 +47,7 @@ def get_count_holidays_of_employee(self, employee):
 	return holidays
 
 @frappe.whitelist()
-def fill_employee_details(self, project_list=False):
+def fill_employee_details(self):
 	"""
 	Method Override fill_employee_details in Payroll Entry
 	This Function fetches the employee details and updates the 'Employee Details' child table.
@@ -53,7 +57,30 @@ def fill_employee_details(self, project_list=False):
 		and for which salary structure exists.
 	"""
 	self.set('employees', [])
-	# Custom method to get employee list for one fm
+	# Find projects comes under the same payroll cycle
+	if str(get_start_date(self.start_date)) == str(frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')):
+		query = '''
+			select
+				project
+			from
+				`tabProject Payroll Cycle`
+		'''
+		projects = frappe.db.sql(query, as_dict=True)
+		default_projects = get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(', '.join(['"{}"'.format(project.project) for project in projects]))
+		project_list = ', '.join(['"{}"'.format(project.project) for project in default_projects])
+	else:
+		query = '''
+			select
+				project
+			from
+				`tabProject Payroll Cycle`
+			where
+				payroll_start_day = '{0}'
+		'''
+		start_day = get_start_date(self.start_date)
+		projects = frappe.db.sql(query.format(start_day), as_dict=True)
+		project_list = ', '.join(['"{}"'.format(project.project) for project in projects])
+
 	employees = get_emp_list(self, project_list)
 
 	# Custom method to fetch Bank Details and update employee list
@@ -144,6 +171,21 @@ def set_bank_details(self, employee_details):
 		employee_details ([dict): Sets the bank account IBAN code and Bank Code.
 	"""
 	employee_missing_detail = []
+	missing_ssa = []
+	employee_list = ', '.join(['"{}"'.format(employee.employee) for employee in employee_details])
+	if employee_list:
+		missing_ssa = frappe.db.sql(""" 
+			SELECT employee from `tabEmployee` E
+			WHERE E.status = 'Active'
+			AND E.employment_type != 'Subcontractor'
+			AND E.name IN (
+				{0}
+			)
+			AND E.name NOT IN (
+				SELECT employee from `tabSalary Structure Assignment` SE
+			)
+			""".format(employee_list), as_dict=True)
+
 	for employee in employee_details:
 		try:
 			bank_account = frappe.db.get_value("Bank Account",{"party":employee.employee},["iban","bank", "bank_account_no"])
@@ -155,13 +197,13 @@ def set_bank_details(self, employee_details):
 
 			if not salary_mode:
 				employee_missing_detail.append(frappe._dict(
-				{'employee':employee, 'salary_mode':'', 'issue':'No salary mode'}))
+				{'employee':employee.employee, 'salary_mode':'', 'issue':'No salary mode'}))
 			elif(salary_mode=='Bank' and bank is None):
 				employee_missing_detail.append(frappe._dict(
-					{'employee':employee, 'salary_mode':salary_mode, 'issue':'No bank account'}))
+					{'employee':employee.employee, 'salary_mode':salary_mode, 'issue':'No bank account'}))
 			elif(salary_mode=="Bank" and bank_account_no is None):
 				employee_missing_detail.append(frappe._dict(
-					{'employee':employee, 'salary_mode':salary_mode, 'issue':'No account no.'}))
+					{'employee':employee.employee, 'salary_mode':salary_mode, 'issue':'No account no.'}))
 			employee.salary_mode = salary_mode
 			employee.iban_number = iban or bank_account_no
 			bank_code = frappe.db.get_value("Bank", {'name': bank}, ["bank_code"])
@@ -169,21 +211,23 @@ def set_bank_details(self, employee_details):
 		except Exception as e:
 			frappe.log_error(str(e), 'Payroll Entry')
 			frappe.throw(str(e))
-
+	
+	if len(missing_ssa) > 0:
+		for e in missing_ssa:
+			employee_missing_detail.append(frappe._dict(
+				{'employee':e.employee, 'salary_mode':'', 'issue':'No Salary Structure Assignment'}))
+	
 	# check for missing details, log and report
 	if(len(employee_missing_detail)):
-		missing_detail = [
-			{
-				'employee':i.employee.employee,
+		missing_detail = []
+		for i in employee_missing_detail:
+			missing_detail.append({
+				'employee':i.employee,
 				'salary_mode':i.salary_mode,
 				'issue': i.issue
-			}
-			for i in employee_missing_detail]
+			})
 
-		if(frappe.db.exists({
-			'doctype':"Missing Payroll Information",
-			'payroll_entry': self.name
-			})):
+		if frappe.db.exists("Missing Payroll Information",{'payroll_entry': self.name}):
 			fetch_mpi = frappe.db.sql(f"""
 				SELECT name FROM `tabMissing Payroll Information`
 				WHERE payroll_entry="{self.name}"
@@ -236,6 +280,13 @@ def auto_create_payroll_entry(payroll_date=None):
 	"""
 		Create Payroll Entry record with payroll cycle configured in HR and Payroll Additional Settings.
 	"""
+	
+	if not payroll_date:
+		payroll_date_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
+		# Calculate payroll date
+		payroll_date = (datetime(getdate().year, getdate().month, cint(payroll_date_day))).strftime("%Y-%m-%d")
+
+	
 	# Get Payroll cycle list from HR and Payroll Settings and itrate for payroll cycle
 	query = '''
 		select
@@ -245,49 +296,21 @@ def auto_create_payroll_entry(payroll_date=None):
 	'''
 	payroll_start_day_list = frappe.db.sql(query, as_dict=True)
 
-	payroll_configured_projects = []
-
-	if not payroll_date:
-		payroll_date_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
-		# Calculate payroll date
-		payroll_date = (datetime(getdate().year, getdate().month, cint(payroll_date_day))).strftime("%Y-%m-%d")
 
 	for payroll_start_day in payroll_start_day_list:
 		# Find from date and end date for payroll
 		start_date, end_date = get_payroll_start_end_date_by_start_day(payroll_date, payroll_start_day.payroll_start_day)
 
-		# Find projects comes under the same payroll cycle
-		query = '''
-			select
-				project
-			from
-				`tabProject Payroll Cycle`
-			where
-				payroll_start_day = '{0}'
-		'''
-		projects = frappe.db.sql(query.format(payroll_start_day.payroll_start_day), as_dict=True)
-		project_list = ', '.join(['"{}"'.format(project.project) for project in projects])
-		payroll_configured_projects += projects
 		# Create Payroll Entry
-		create_monthly_payroll_entry(payroll_date, start_date, end_date, project_list)
+		create_monthly_payroll_entry(payroll_date, start_date, end_date)
 
-	# Find default from date and end date for payroll
+	# # Find default from date and end date for payroll
 	default_payroll_start_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')
 	default_start_date, default_end_date = get_payroll_start_end_date_by_start_day(payroll_date, default_payroll_start_day)
 
-	# Fetch employee having project link but project not added in payroll configuration, then take default payroll cycle
-	payroll_configured_project_list = ', '.join(['"{}"'.format(project.project) for project in payroll_configured_projects])
-	projects_not_configured_in_payroll_cycle = get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(payroll_configured_project_list)
-	if projects_not_configured_in_payroll_cycle:
-		project_list_not_configured_in_payroll_cycle = ', '.join(['"{}"'.format(project.project) for project in projects_not_configured_in_payroll_cycle])
-		# Create Payroll Entry
-		create_monthly_payroll_entry(payroll_date, default_start_date, default_end_date, project_list_not_configured_in_payroll_cycle)
+	create_monthly_payroll_entry(payroll_date, default_start_date, default_end_date)
 
-	# TODO:
-	# Fetch employee not having project link and set the payroll cycle as default
-	# Create Payroll entry for the employees
-
-def create_monthly_payroll_entry(payroll_date, start_date, end_date, project_list):
+def create_monthly_payroll_entry(payroll_date, start_date, end_date):
 	try:
 		payroll_entry = frappe.new_doc("Payroll Entry")
 		payroll_entry.posting_date = getdate(payroll_date)
@@ -300,7 +323,7 @@ def create_monthly_payroll_entry(payroll_date, start_date, end_date, project_lis
 		payroll_entry.cost_center = frappe.get_value("Company", erpnext.get_default_company(), "cost_center")
 		payroll_entry.save()
 		# Fetch employees with the project filter
-		payroll_entry.fill_employee_details(project_list)
+		payroll_entry.fill_employee_details()
 		payroll_entry.save()
 		payroll_entry.submit()
 		frappe.db.commit()
@@ -322,6 +345,18 @@ def get_payroll_start_end_date_by_start_day(payroll_date, start_day):
 		start_date = getdate(date)
 		end_date = add_to_date(date, days=-1, months=1)
 	return start_date, end_date
+
+def get_start_date(date):
+	if isinstance(date, str):
+		date = datetime.strptime(date, '%Y-%m-%d')
+
+	last_date_of_month = calendar.monthrange(date.year, date.month)[1]
+	if date.day == 1:
+		return 'Month Start'
+	elif date.day == last_date_of_month:
+		return 'Month End'
+	else:
+		return date.day
 
 def get_basic_salary(employee):
 	filters = {
@@ -643,7 +678,7 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 		salary_slips_exist_for = get_existing_salary_slips(employees, args)
 		count = 0
 		start_date = args.start_date
-		end_date = args.start_date
+		end_date = args.end_date
 
 		args.pop('start_date')
 		args.pop('end_date')
@@ -741,6 +776,30 @@ def seperate_salary_slip(employees, start_date, end_date):
 		
 	return parm
 
-				
+def notify_for_open_leave_application():
+	open_leave_application = {}
+	leave_list = frappe.get_all("Leave Application", {"workflow_state":"Open"}, ['*'])
+	# sort INFO data by 'leave_approver' key.
+	leave_list = sorted(leave_list, key=itemgetter('leave_approver'))
 
-				
+	#group leave application by leave approver 
+	for key, value in groupby(leave_list, itemgetter('leave_approver')):
+		open_leave_application[key] = []
+		for k in value:
+			open_leave_application[key].append(k.name)
+
+	for ola in open_leave_application:
+		recipient = [ola]
+		message = "<p>The Following Leave Application needs to be approved. Kindly, take action before midnight. </p><ul>" 
+		for leave_id in open_leave_application[ola]:
+			doc_url = frappe.utils.get_link_to_form("Leave Application", leave_id)
+			message += "<li>"+doc_url+"</li>"
+		message += "</ul>"
+
+		sendemail(recipients= recipient , subject="Leave Application need approval", message=message)
+
+def close_all_leave_application():
+	leave_list = frappe.get_list("Leave Application", {"workflow_state":"Open"}, ['*'])
+	for leave in leave_list:
+		frappe.db.set_value('Leave Application', leave.name, 'workflow_state', 'Approved')
+		frappe.db.commit

@@ -221,7 +221,8 @@ job_application = Class.extend({
         file_data[$(this).attr("id")] = $('#'+$(this).attr("id")).prop('filedata');
       });
       // POST Job Application if all the conditions are satisfied
-      if ($(".applicant_name").val() && $(".country_list").val() && $(".contact_email").val() && $(".contact_number").val() && file_data){
+      
+      if ($(".applicant_name").val() && $(".country_list").val() && $(".contact_email").val() && $(".contact_number").val() && file_data.cv){
         frappe.freeze();
         frappe.call({
           type: "POST",

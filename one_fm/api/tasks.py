@@ -1193,6 +1193,11 @@ def generate_site_allowance():
 	#get list of all site that includes Site Allowance.
 	operations_site = frappe.get_all("Operations Site", {"include_site_allowance":"1"},["name","allowance_amount"])
 
+	component_name = frappe.db.get_single_value('HR and Payroll Additional Settings', 'site_allowance_additional_salary_component')
+	if not component_name:
+		component_name = "Site Allowance"
+
+
 	#Gather the required Date details such as start date, and respective end date. Get current year and month to get the no. of days in the current month.
 	start_date = add_to_date(getdate(), months=-1)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
@@ -1216,21 +1221,29 @@ def generate_site_allowance():
 					for employee in employee_det:
 						#calculate Monthly_site_allowance with the rate of allowance per day.
 						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee[1])
-						create_additional_salary(employee[0], Monthly_site_allowance, "Site Allowance", end_date)
+						create_additional_salary(employee[0], Monthly_site_allowance, component_name, end_date, site.name)
 
 #this function creates additional salary for a given component.
-def create_additional_salary(employee, amount, component, end_date):
-	additional_salary = frappe.new_doc("Additional Salary")
-	additional_salary.employee = employee
-	additional_salary.salary_component = component
-	additional_salary.amount = amount
-	additional_salary.payroll_date = end_date
-	additional_salary.company = erpnext.get_default_company()
-	additional_salary.overwrite_salary_structure_amount = 1
-	additional_salary.notes = "Site Allowance"
-	additional_salary.insert()
-	additional_salary.submit()
-
+def create_additional_salary(employee, amount, component, end_date, site):
+	check_add_sal_exists = frappe.db.get_value("Additional Salary", {"employee": employee, "payroll_date": end_date, "salary_component": component}, "name")
+	if check_add_sal_exists:
+		additional_salary = frappe.get_doc("Additional Salary", check_add_sal_exists)
+		additional_salary.amount += amount
+		additional_salary.notes += f" , {site}"
+		additional_salary.flags.ignore_validate_update_after_submit = True
+		additional_salary.save(ignore_permissions=1)
+	else:	
+		additional_salary = frappe.new_doc("Additional Salary")
+		additional_salary.employee = employee
+		additional_salary.salary_component = component
+		additional_salary.amount = amount
+		additional_salary.payroll_date = end_date
+		additional_salary.company = erpnext.get_default_company()
+		additional_salary.overwrite_salary_structure_amount = 1
+		additional_salary.notes = f"Site Allowance for {site}"
+		additional_salary.insert()
+		additional_salary.submit()
+	frappe.db.commit()
 
 
 def mark_day_attendance():

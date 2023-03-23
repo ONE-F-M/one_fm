@@ -563,13 +563,29 @@ def notify_employee(doc, method):
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_cancel(doc, method):
     update_employee_hajj_status(doc, method)
+    leave_appillication_paid_sick_leave(doc, method)
 
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_paid_sick_leave(doc, method):
 	if doc.leave_type and frappe.db.get_value("Leave Type", doc.leave_type, 'one_fm_is_paid_sick_leave') == 1:
-		salary = get_salary_amount(doc.employee)
-		if salary:
-			create_additional_salary_for_paid_sick_leave(doc, salary)
+		if method == 'on_submit':
+			salary = get_salary_amount(doc.employee)
+			if salary:
+				create_additional_salary_for_paid_sick_leave(doc, salary)
+		elif method == 'on_cancel':
+			cancel_additional_salary_for_paid_sick_leave(doc.name)
+
+def cancel_additional_salary_for_paid_sick_leave(leave_application):
+	additional_salary_exists = frappe.db.exists('Additional Salary', {
+		'ref_doctype': 'Leave Application',
+		'ref_docname': leave_application
+	})
+	if additional_salary_exists:
+		additional_salary = frappe.get_doc('Additional Salary', additional_salary_exists)
+		if additional_salary.docstatus == 1:
+			additional_salary.cancel()
+		else:
+			additional_salary.delete()
 
 def create_additional_salary_for_paid_sick_leave(doc, salary):
     daily_rate = salary/30
@@ -621,7 +637,9 @@ def create_additional_salary(salary, daily_rate, payment_days, leave_application
             "payroll_date": leave_application.from_date,
             "leave_application": leave_application.name,
             "notes": deduction_notes,
-            "amount": payment_days*daily_rate*deduction_percentage
+            "amount": payment_days*daily_rate*deduction_percentage,
+			"ref_doctype": leave_application.doctype,
+			"ref_docname": leave_application.name
         }).insert(ignore_permissions=True)
         additional_salary.submit()
 
@@ -1925,7 +1943,7 @@ def create_roster_post_actions():
 
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
-        if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
+        if not any(es.date == ps.date and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
             if ps.operations_role:
                 operations_roles_not_filled_set.add(ps.operations_role)
                 list_of_dict_of_operations_roles_not_filled.append(ps)
@@ -1957,36 +1975,33 @@ def create_roster_post_actions():
             if val["operations_role"] in operations_roles and val["shift"] in shift_dict[supervisor]:
                 check_list.append(val)
 
-
         for item in check_list:
             for second_item in second_check_list:
                 if (item["date"] == second_item["date"]) and (item["shift"] == second_item["shift"]) and (item["operations_role"] == second_item["operations_role"]):
                     second_item["quantity"] = second_item["quantity"] + 1
                     break
+            item.update({"quantity": 1})
+            second_check_list.append(item)
+            check_list.remove(item)
 
-            else:
-                item.update({"quantity": 1})
-                second_check_list.append(item)
-                check_list.remove(item)
+        if second_check_list and len(second_check_list) > 0:
+            roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
+            roster_post_actions_doc.start_date = start_date
+            roster_post_actions_doc.end_date = end_date
+            roster_post_actions_doc.status = "Pending"
+            roster_post_actions_doc.action_type = "Fill Post Type"
+            roster_post_actions_doc.supervisor = supervisor
 
+            for obj in second_check_list:
+                roster_post_actions_doc.append('operations_roles_not_filled', {
+                    'operations_role': obj.get("operations_role"),
+                    "operations_shift": obj.get("shift"),
+                    "date": obj.get("date"),
+                    "quantity": obj.get("quantity") if obj.get("quantity") else 1
+                })
 
-        roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
-        roster_post_actions_doc.start_date = start_date
-        roster_post_actions_doc.end_date = end_date
-        roster_post_actions_doc.status = "Pending"
-        roster_post_actions_doc.action_type = "Fill Post Type"
-        roster_post_actions_doc.supervisor = supervisor
-
-        for obj in second_check_list:
-            roster_post_actions_doc.append('operations_roles_not_filled', {
-                'operations_role': obj.get("operations_role"),
-                "operations_shift": obj.get("shift"),
-                "date": obj.get("date"),
-                "quantity": obj.get("quantity") if obj.get("quantity") else 1
-            })
-
-        roster_post_actions_doc.save()
-        frappe.db.commit()
+            roster_post_actions_doc.save()
+            frappe.db.commit()
         del check_list
 
 def send_roster_report():
@@ -2923,13 +2938,53 @@ def get_approver(employee):
     emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site'], as_dict=1)
     if emp_data.reports_to:
         return emp_data.reports_to
-    elif emp_data.site:
-        operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
     elif emp_data.shift:
         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
+    elif emp_data.site:
+        operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
 
     if operations_site:return operations_site
     if operations_shift:return operations_shift
-    if not (operations_shift or operations_site):
+    if not (operations_shift and operations_site and operations_shift):
         frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
-    
+
+
+def get_approver_for_many_employees(supervisor=None):
+    """
+        Get document approver for employee by 
+        reports_to, shift_approver, site_approver
+    """
+    if not supervisor:
+        supervisor = frappe.cache().get_value(frappe.session.user).employee
+    roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+    has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', supervisor, 'user_id'))])
+    if has_roles:
+        return [i.name for i in frappe.db.get_list("Employee", ignore_permissions=True)]
+    employees = [i.name for i in frappe.db.get_list('Employee', {'reports_to':supervisor}, "name", ignore_permissions=True)]
+    operations_site = [i.name for i in frappe.db.get_list('Operations Site', {'account_supervisor':supervisor}, "name", ignore_permissions=True)]
+    if operations_site:
+        employees += [i.name for i in frappe.db.get_list('Employee', {'site':['IN', operations_site]}, "name", ignore_permissions=True) if not i.name in employees]
+    operations_shift = [i.name for i in frappe.db.get_list('Operations Shift', {'supervisor':supervisor}, "name", ignore_permissions=True)]
+    if operations_shift:    
+        employees += [i.name for i in frappe.db.get_list('Employee', {'shift':['IN', operations_shift]}, "name", ignore_permissions=True) if not i.name in employees]    
+    employees.append(supervisor)
+    return employees
+
+
+def check_employee_permission_on_doc(doc):
+    """
+        Before loading document form, check if session user has access to view the doc data
+        based on employee field.
+    """
+    try:
+        if frappe.session.user not in ["Administrator", 'administrator', 'abdullah@one-fm.com']:
+            session_employee = frappe.cache().get_value(frappe.session.user).employee
+            roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+            has_roles = any([item in roles for item in frappe.get_roles()])
+            if not has_roles and (session_employee!=doc.employee):
+                if (session_employee and doc.employee):
+                    approver = get_approver(doc.employee)
+                    if approver != session_employee:
+                        frappe.throw("You do not have permissions to access this document.")
+    except Exception as e:
+        pass

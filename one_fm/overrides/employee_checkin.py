@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 import frappe
 from frappe import _
-from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days
+from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days, now
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
@@ -9,6 +9,8 @@ from one_fm.operations.doctype.operations_site.operations_site import create_not
 from one_fm.api.doc_events import (
 	get_notification_user, validate_location, get_employee_user_id,
 )
+from one_fm.api.api import push_notification_rest_api_for_checkin
+from one_fm.processor import sendemail
 
 
 perm_map = {
@@ -77,6 +79,8 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		self.reload()
 		if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
 			frappe.enqueue(after_insert_background, self=self.name)
+		if self.log_type == "IN":
+			frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
 
 def after_insert_background(self):
 	self = frappe.get_doc("Employee Checkin", self)
@@ -115,76 +119,78 @@ def after_insert_background(self):
 	# send notification
 	# continue to notification
 	# These are returned according to dates. Time is not taken into account
-	
-	start_time = get_datetime(cstr(getdate()) + " 00:00:00")
-	end_time = get_datetime(cstr(getdate()) + " 23:59:59")
+	try:
+		start_time = get_datetime(cstr(getdate()) + " 00:00:00")
+		end_time = get_datetime(cstr(getdate()) + " 23:59:59")
 
-	log_exist = frappe.db.exists("Employee Checkin", {"log_type": self.log_type, "time": [ "between", (start_time, end_time)], "skip_auto_attendance": 0 ,"shift_type": self.shift_type, "name": ["!=", self.name]})
+		log_exist = frappe.db.exists("Employee Checkin", {"log_type": self.log_type, "time": [ "between", (start_time, end_time)], "skip_auto_attendance": 0 ,"shift_type": self.shift_type, "name": ["!=", self.name]})
 
-	if not log_exist:
-		# In case of back to back shift
-		if self.shift_type:
-			shift_type = frappe.get_doc("Shift Type", self.shift_type)
-			curr_shift = frappe._dict({
-				'actual_start': self.shift_actual_start,
-				'actual_end': self.shift_actual_end,
-				'end_datetime': self.shift_end,
-				'start_datetime': self.shift_start,
-				'shift_type': shift_type
-			})
-			if curr_shift:
-				supervisor_user = get_notification_user(self, self.employee)
-				distance, radius = validate_location(self)
-				message_suffix = _("Location logged is inside the site.") if distance <= radius else _("Location logged is {location}m outside the site location.").format(location=cstr(cint(distance)- radius))
+		if not log_exist:
+			# In case of back to back shift
+			if self.shift_type:
+				shift_type = frappe.get_doc("Shift Type", self.shift_type)
+				curr_shift = frappe._dict({
+					'actual_start': self.shift_actual_start,
+					'actual_end': self.shift_actual_end,
+					'end_datetime': self.shift_end,
+					'start_datetime': self.shift_start,
+					'shift_type': shift_type
+				})
+				if curr_shift:
+					supervisor_user = get_notification_user(self, self.employee)
+					distance, radius = validate_location(self)
+					message_suffix = _("Location logged is inside the site.") if distance <= radius else _("Location logged is {location}m outside the site location.").format(location=cstr(cint(distance)- radius))
 
-				if self.log_type == "IN" and self.skip_auto_attendance == 0:
-					# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
-					if shift_type.enable_entry_grace_period == 1 and get_datetime(self.time) > (get_datetime(self.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
-						time_diff = get_datetime(self.time) - get_datetime(self.shift_start)
-						hrs, mins, secs = cstr(time_diff).split(":")
-						delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
-						subject = _("{employee} has checked in late by {delay}. {location}".format(employee=self.employee_name, delay=delay, location=message_suffix))
-						message = _("{employee_name} has checked in late by {delay}. {location} <br><br><div class='btn btn-primary btn-danger late-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=self.employee_name,shift=self.operations_shift, date=cstr(self.time), employee=self.employee, delay=delay, location=message_suffix))
+					if self.log_type == "IN" and self.skip_auto_attendance == 0:
+						# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
+						if shift_type.enable_entry_grace_period == 1 and get_datetime(self.time) > (get_datetime(self.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
+							time_diff = get_datetime(self.time) - get_datetime(self.shift_start)
+							hrs, mins, secs = cstr(time_diff).split(":")
+							delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
+							subject = _("{employee} has checked in late by {delay}. {location}".format(employee=self.employee_name, delay=delay, location=message_suffix))
+							message = _("{employee_name} has checked in late by {delay}. {location} <br><br><div class='btn btn-primary btn-danger late-punch-in' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=self.employee_name,shift=self.operations_shift, date=cstr(self.time), employee=self.employee, delay=delay, location=message_suffix))
+							for_users = [supervisor_user]
+							create_notification_log(subject, message, for_users, self)
+
+					elif self.log_type == "IN" and self.skip_auto_attendance == 1:
+						subject = _("Hourly Report: {employee} checked in at {time}. {location}".format(employee=self.employee_name, time=self.time, location=message_suffix))
+						message = _("Hourly Report: {employee} checked in at {time}. {location}".format(employee=self.employee_name, time=self.time, location=message_suffix))
 						for_users = [supervisor_user]
 						create_notification_log(subject, message, for_users, self)
 
-				elif self.log_type == "IN" and self.skip_auto_attendance == 1:
-					subject = _("Hourly Report: {employee} checked in at {time}. {location}".format(employee=self.employee_name, time=self.time, location=message_suffix))
-					message = _("Hourly Report: {employee} checked in at {time}. {location}".format(employee=self.employee_name, time=self.time, location=message_suffix))
-					for_users = [supervisor_user]
-					create_notification_log(subject, message, for_users, self)
+					elif self.log_type == "OUT":
+						# Automatic checkout
+						if not self.device_id:
+							title = "Checkin Report"
+							category = "Attendance"
+							subject = _("Automated Checkout: {employee} forgot to checkout.".format(employee=self.employee_name))
+							message = _('<a class="btn btn-primary" href="/app/employee-checkin/{name}">Review check out</a>&nbsp;'.format(name=self.name))
+							for_users = [supervisor_user]
+							send_notification(title, subject, message, category, for_users)
+						#EARLY: Checkout time is before [Shift End - Early grace exit time]
+						elif shift_type.enable_exit_grace_period == 1 and self.device_id and get_datetime(self.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
+							time_diff = get_datetime(curr_shift.end_datetime) - get_datetime(self.time)
+							hrs, mins, secs = cstr(time_diff).split(":")
+							early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
+							subject = _("{employee} has checked out early by {early}. {location}".format(employee=self.employee_name, early=early, location=message_suffix))
+							message = _("{employee_name} has checked out early by {early}. {location} <br><br><div class='btn btn-primary btn-danger early-punch-out' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=self.employee_name, shift=self.operations_shift, date=cstr(self.time), employee=self.employee_name, early=early, location=message_suffix))
+							for_users = [supervisor_user]
+							create_notification_log(subject, message, for_users, self)
 
-				elif self.log_type == "OUT":
-					# Automatic checkout
-					if not self.device_id:
-						title = "Checkin Report"
-						category = "Attendance"
-						subject = _("Automated Checkout: {employee} forgot to checkout.".format(employee=self.employee_name))
-						message = _('<a class="btn btn-primary" href="/app/employee-checkin/{name}">Review check out</a>&nbsp;'.format(name=self.name))
-						for_users = [supervisor_user]
-						send_notification(title, subject, message, category, for_users)
-					#EARLY: Checkout time is before [Shift End - Early grace exit time]
-					elif shift_type.enable_exit_grace_period == 1 and self.device_id and get_datetime(self.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
-						time_diff = get_datetime(curr_shift.end_datetime) - get_datetime(self.time)
-						hrs, mins, secs = cstr(time_diff).split(":")
-						early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
-						subject = _("{employee} has checked out early by {early}. {location}".format(employee=self.employee_name, early=early, location=message_suffix))
-						message = _("{employee_name} has checked out early by {early}. {location} <br><br><div class='btn btn-primary btn-danger early-punch-out' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=self.employee_name, shift=self.operations_shift, date=cstr(self.time), employee=self.employee_name, early=early, location=message_suffix))
-						for_users = [supervisor_user]
+				else:
+					# When no shift assigned, supervisor of active shift of the nearest site is sent a notification about unassigned checkin.
+					location = self.device_id
+					# supervisor = get_closest_location(self.time, location)
+					reporting_manager = frappe.get_value("Employee", {"user_id": self.owner}, "reports_to")
+					supervisor = get_employee_user_id(reporting_manager)
+					if supervisor:
+						subject = _("{employee} has checked in on an unassigned shift".format(employee=self.employee_name))
+						message = _("{employee} has checked in on an unassigned shift".format(employee=self.employee_name))
+						for_users = [supervisor]
 						create_notification_log(subject, message, for_users, self)
-
-			else:
-				# When no shift assigned, supervisor of active shift of the nearest site is sent a notification about unassigned checkin.
-				location = self.device_id
-				# supervisor = get_closest_location(self.time, location)
-				reporting_manager = frappe.get_value("Employee", {"user_id": self.owner}, "reports_to")
-				supervisor = get_employee_user_id(reporting_manager)
-				if supervisor:
-					subject = _("{employee} has checked in on an unassigned shift".format(employee=self.employee_name))
-					message = _("{employee} has checked in on an unassigned shift".format(employee=self.employee_name))
-					for_users = [supervisor]
-					create_notification_log(subject, message, for_users, self)
-
+	except Exception as e:
+		pass
+		#frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
 
 
 
@@ -222,3 +228,51 @@ def get_shift_from_checkin(checkin):
 		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.time <= (s.end_datetime + timedelta(minutes=60))):
 			return s
 	return False
+
+
+def notify_supervisor_about_late_entry(checkin):
+	"""
+	This method notify the supervisor about the late entry of an employee
+	"""
+	try:
+		shift_permission = frappe.db.sql(f""" select name from `tabShift Permission` where employee = '{checkin.employee}' and date = '{now_datetime().date()}' and log_type = 'IN' and permission_type = 'Arrive Late' and workflow_state = 'Approved' ;  """)
+		if checkin.shift_assignment:
+			last_shift_assignment = checkin.shift_assignment
+			shift_late_minutes = frappe.db.get_value("Shift Type", {"name": checkin.shift_type}, ['supervisor_reminder_shift_start', 'start_time'], as_dict=1)
+			the_roster_type = checkin.roster_type
+		else:
+			last_shift_assignment = get_shift_from_checkin(checkin)
+			if last_shift_assignment:
+				shift_late_minutes = frappe.db.get_value("Shift Type", {"name": last_shift_assignment["shift_type"]}, ['supervisor_reminder_shift_start', 'start_time'], as_dict=1)
+				check_roster = frappe.db.get_value("Shift Assignment", {"name": last_shift_assignment["name"]}, ["roster_type"], as_dict=1)
+				if check_roster:
+					the_roster_type = check_roster["roster_type"]
+		
+		if last_shift_assignment and not shift_permission:
+			if checkin.time.time() > datetime.strptime(str(shift_late_minutes["start_time"] + timedelta(minutes=shift_late_minutes['supervisor_reminder_shift_start'])), "%H:%M:%S").time():
+				get_reports_to = frappe.db.get_value("Employee", {"name": checkin.employee}, ['reports_to'], as_dict=1)
+				if get_reports_to:
+					return send_push_notification_for_late_entry(get_reports_to["reports_to"], checkin.employee_name, roster_type=the_roster_type if the_roster_type else "Basic")
+				get_site = frappe.db.get_value("Employee", {"name": checkin.employee}, ['site'], as_dict=1)
+				if get_site:
+					get_site_supervisor = frappe.db.get_value("Operations Site", {"name": get_site["site"]}, ['account_supervisor'], as_dict=1)
+					if get_site_supervisor:
+						return send_push_notification_for_late_entry(get_site_supervisor["account_supervisor"], checkin.employee, roster_type=the_roster_type if the_roster_type else "Basic")
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
+
+def send_push_notification_for_late_entry(recipient, culprit_name, roster_type="Basic"):
+	"""
+	This method sends a push notification and a mail to the supervisor
+	"""
+	title = f"Late Arrival Of {culprit_name}"
+	body =  f"Hello, {culprit_name} has arrived late for work today."
+	if roster_type != "Basic":
+		body = f"Hello, {culprit_name} has arrived late for overtime work today."
+	additional_message = f""" <br/><br/>You could issue a penalty for the employee
+				<a class='btn btn-primary btn-danger no-punch-in'  href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>"""
+	push_notification_rest_api_for_checkin(recipient, title, body, checkin=False, arriveLate=False, checkout=False)
+	get_user_id = frappe.db.get_value("Employee", {"name": recipient}, ["user_id"], as_dict=1)
+	user_id = get_user_id["user_id"] if get_user_id else ""
+	sendemail(recipients=user_id, subject=title, message=body + additional_message)
+	return "Messages Sent Successfully !!"
