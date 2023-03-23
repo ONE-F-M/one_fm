@@ -75,7 +75,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-03-23 16:37:25.743709",
+ "modified": "2023-03-23 16:40:08.268948",
  "modified_by": "Administrator",
  "module": "Developer",
  "name": "Administrator Auto Log",
@@ -96,5 +96,8 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
 }
