@@ -18,7 +18,7 @@ class AdministratorActivityLog(Document):
 		# send email to approver
 
 		message=f"""
-			Administrator Log has been registered for {self.employee} - {self.employee_name}
+			Administrator Activity has been registered for {self.employee} - {self.employee_name}
 			on {self.date}.
 		"""
 		frappe.sendmail(
@@ -31,3 +31,6 @@ class AdministratorActivityLog(Document):
 			),
 			attachments=[frappe.attach_print(self.doctype, self.name, file_name=self.name)]
 		)
+	
+	def on_trash(self):
+		frappe.throw("This document cannot be deleted.")
