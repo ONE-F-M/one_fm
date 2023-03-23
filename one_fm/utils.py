@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 from __future__ import unicode_literals
-import itertools
-import pymysql
 from frappe.auth import validate_ip_address
 from one_fm.api.notification import create_notification_log
 from frappe import _
-import frappe, os, erpnext, json, math
+import frappe, os, erpnext, json, math, itertools, pymysql
 from frappe.model.document import Document
 from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
@@ -3011,7 +3009,7 @@ def post_login(self):
             'login_time': session.last_updated, 
             'session_expiry': session.session_expiry,
             'device': session.device,
-            'session_country': session.session_country,
+            'session_country': json.dumps(session.session_country),
             'http_sec_ch_ua':environ.HTTP_SEC_CH_UA,
             'user_agent':environ.HTTP_USER_AGENT,
             'platform':environ.HTTP_SEC_CH_UA_PLATFORM,
