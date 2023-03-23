@@ -628,7 +628,6 @@ frappe.ui.form.on('Job Applicant', {
 			fieldname: 'applicant_answer',
 			label: __('Applicant Answer'),
 			in_list_view: 1,
-			reqd: 1,
 		}, {
 			fieldtype: 'Float',
 			fieldname: 'score',
