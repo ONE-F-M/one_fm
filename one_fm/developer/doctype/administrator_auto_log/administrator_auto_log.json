@@ -86,12 +86,13 @@
   {
    "fieldname": "ip_detail",
    "fieldtype": "Small Text",
-   "label": "Ip Detail"
+   "label": "Ip Detail",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-03-25 12:35:26.702855",
+ "modified": "2023-03-25 20:19:08.265695",
  "modified_by": "Administrator",
  "module": "Developer",
  "name": "Administrator Auto Log",
