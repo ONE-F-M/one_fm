@@ -1,0 +1,57 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, td {
+      border: 1px solid #ddd;
+      text-align: left;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #ddd;
+    }
+  </style>
+
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Employee Name</th>
+        <th>Shift</th>
+        <th>Site</th>
+        <th>Roster Type</th>
+        <th>Arrival Lateness</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ employee}}</td>
+
+        <td>{{ shift.shift_classification }}-{{ shift.shift_number }}</td>
+
+        {% if shift.site_location %}
+            <td>{{ shift.site_location }}</td>
+        {% else %}
+            <td>{{ shift.site }}</td>
+        {% endif %}
+
+        <td>{{ roster_type }}</td>
+
+        <td>{{ time_diff }}</td>
+
+      </tr>
+    </tbody>
+  </table>
