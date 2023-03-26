@@ -755,5 +755,6 @@ jenv = {
 after_migrate = "one_fm.after_migrate.execute.comment_timesheet_in_hrms"
 
 # add more info to session on boot
-on_session_creation = "one_fm.session_hooks.on_session_creation"
-auth_hooks = "one_fm.session_hooks.auth_hooks"
+# on_session_creation = "one_fm.session_hooks.on_session_creation"
+# auth_hooks = "one_fm.session_hooks.auth_hooks"
+# on_login = "one_fm.session_hooks.on_login"

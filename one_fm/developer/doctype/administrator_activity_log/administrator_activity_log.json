@@ -89,10 +89,10 @@
   }
  ],
  "links": [],
- "modified": "2023-03-16 13:56:39.091558",
+ "modified": "2023-03-23 16:40:17.895200",
  "modified_by": "Administrator",
  "module": "Developer",
- "name": "Administrator Log",
+ "name": "Administrator Activity Log",
  "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
@@ -110,5 +110,8 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
 }
