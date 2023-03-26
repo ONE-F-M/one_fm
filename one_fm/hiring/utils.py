@@ -38,6 +38,7 @@ def get_performance_profile_guid():
 def validate_job_offer(doc, method):
     job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
     validate_mandatory_fields(job_applicant)
+    job_offer_validate_attendance_by_timesheet(doc)
     validate_job_offer_mandatory_fields(doc)
     # Validate day off
     if not doc.number_of_days_off:
@@ -87,12 +88,21 @@ def validate_job_offer(doc, method):
     if frappe.db.exists('Letter Head', 'ONE FM - Job Offer') and not doc.letter_head:
         doc.letter_head = 'ONE FM - Job Offer'
 
+def job_offer_validate_attendance_by_timesheet(doc):
+	if doc.attendance_by_timesheet:
+		doc.shift_working = False
+		doc.operations_shift = ''
+		doc.default_shift = ''
+		doc.operation_site = ''
+
 def validate_job_offer_mandatory_fields(job_offer):
     if job_offer.workflow_state == 'Submit for Candidate Response':
         mandatory_field_required = False
-        fields = ['Reports To', 'Project', 'Base', 'Salary Structure', 'Project', 'Operations Shift']
-        if job_offer.shift_working:
-            fields.append('Operations Site')
+        fields = ['Reports To', 'Project', 'Base', 'Salary Structure', 'Project']
+        if not job_offer.attendance_by_timesheet:
+            fields.append('Operations Shift')
+            if job_offer.shift_working:
+                fields.append('Operations Site')
         msg = "Mandatory fields required to Submit Job Offer<br/><br/><ul>"
         for field in fields:
             if field == 'Salary Structure':
