@@ -11,11 +11,14 @@
   "ip",
   "session_expiry",
   "device",
+  "column_break_zvneg",
+  "platform",
   "http_sec_ch_ua",
   "user_agent",
-  "column_break_9vhi9",
-  "platform",
-  "session_country"
+  "section_break_192nh",
+  "session_country",
+  "column_break_whakj",
+  "ip_detail"
  ],
  "fields": [
   {
@@ -69,13 +72,27 @@
    "reqd": 1
   },
   {
-   "fieldname": "column_break_9vhi9",
+   "fieldname": "column_break_zvneg",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_192nh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_whakj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ip_detail",
+   "fieldtype": "Small Text",
+   "label": "Ip Detail",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-03-23 16:40:08.268948",
+ "modified": "2023-03-25 20:19:08.265695",
  "modified_by": "Administrator",
  "module": "Developer",
  "name": "Administrator Auto Log",

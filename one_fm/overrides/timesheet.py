@@ -1,7 +1,7 @@
 import frappe
 import itertools
 from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
-from calendar import monthrange  
+from calendar import monthrange
 from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
 
@@ -31,10 +31,13 @@ class TimesheetOveride(Timesheet):
         self.create_attendance()
 
     def create_attendance(self):
+        attendance_by_timesheet = frappe.db.get_value('Employee', self.employee, 'attendance_by_timesheet')
+        if not attendance_by_timesheet:
+            return
         employee_shift = frappe.get_value("Employee", self.employee,["default_shift"])
         if not employee_shift:
             frappe.throw(f"{self.employee} have no default shift assigned, please set a default shift in employee record.")
-            
+
         expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
         if expected_working_duration and expected_working_duration < self.total_hours:
             frappe.msgprint("Kindly, note that {employee} has overtimed the expected working hour".format(employee=self.employee))
@@ -70,7 +73,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
         'project': project,
 		'status': 'Present'
 	}
-    logs = frappe.db.get_list('Attendance', fields="employee,working_hours,attendance_date,site,project,operations_role,operations_shift", filters=filters, order_by="employee,attendance_date")   
+    logs = frappe.db.get_list('Attendance', fields="employee,working_hours,attendance_date,site,project,operations_role,operations_shift", filters=filters, order_by="employee,attendance_date")
     for key, group in itertools.groupby(logs, key=lambda x: (x['employee'])):
         attendances = list(group)
         timesheet = frappe.new_doc("Timesheet")
@@ -79,7 +82,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             billing_hours, billing_rate, billable, public_holiday_rate_multiplier = 0, 0, 0, 0
             date = cstr(attendance.attendance_date)
             holiday_list = frappe.db.get_value('Contracts', {'project': attendance.project}, 'holiday_list')
-            post = get_post(key, attendance.operations_shift, date)          
+            post = get_post(key, attendance.operations_shift, date)
             public_holiday = frappe.db.get_value('Holiday', {'parent': holiday_list, 'holiday_date': date}, ['description'])
             if public_holiday:
                 public_holiday_rate_multiplier = frappe.db.get_value('Contracts', {'project': attendance.project}, 'public_holiday_rate')
@@ -102,7 +105,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
                     if public_holiday_rate_multiplier > 0:
                         billing_rate = public_holiday_rate_multiplier * billing_rate
                 if contract_item_detail[0].uom == 'Hours':
-                    billing_rate = contract_item_detail[0].rate                   
+                    billing_rate = contract_item_detail[0].rate
                     if public_holiday_rate_multiplier > 0:
                         billing_rate = public_holiday_rate_multiplier * contract_item_detail[0].rate
             timesheet = add_time_log(timesheet, attendance, start, end, post, billable, billing_hours, billing_rate)
@@ -123,39 +126,39 @@ def calculate_hourly_rate(project = None,item_code = None,monthly_rate = None,sh
         last_day = first_day.replace(day = monthrange(first_day.year, first_day.month)[1])
     #pass shift hours, gender, uom, days_off
     days_off_week = frappe.db.sql("""
-            SELECT 
-                days_off 
-            FROM `tabContract Item` ci, `tabContracts` c 
-            WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
+            SELECT
+                days_off
+            FROM `tabContract Item` ci, `tabContracts` c
+            WHERE c.name = ci.parent and ci.parenttype = 'Contracts'
                 and c.project = %s and ci.item_code = %s
     """, (project, item_code), as_dict=0)[0][0]
     total_days = days_of_month(first_day, last_day)
     days_off_month = flt(days_off_week) * 4
     total_working_day = len(total_days) - days_off_month
     rate_per_day = monthly_rate / flt(total_working_day)
-    hourly_rate = flt(rate_per_day / shift_hour)   
+    hourly_rate = flt(rate_per_day / shift_hour)
     return hourly_rate
 
 def get_post(employee, operations_shift, date):
     return frappe.db.sql("""
-            SELECT 
+            SELECT
                 e.post
-            FROM `tabPost Allocation Plan` p,`tabPost Allocation Employee Assignment` e 
-            WHERE p.name = e.parent and e.parenttype = 'Post Allocation Plan' 
-                and e.employee = %s and p.operations_shift = %s 
+            FROM `tabPost Allocation Plan` p,`tabPost Allocation Employee Assignment` e
+            WHERE p.name = e.parent and e.parenttype = 'Post Allocation Plan'
+                and e.employee = %s and p.operations_shift = %s
                 and p.date = %s
             """, (employee, operations_shift, date), as_dict=1)[0].post
 
 #pass shift_hours, gender, uom, day_offs if needed
 def get_contrat_item_detail(project, item, gender, shift_hours):
     return frappe.db.sql("""
-            SELECT 
+            SELECT
                 ci.name, ci.item_code, ci.head_count as qty,
                 ci.shift_hours, ci.uom, ci.rate,
-                ci.gender, ci.unit_rate, ci.type, 
+                ci.gender, ci.unit_rate, ci.type,
                 ci.monthly_rate
-            FROM `tabContract Item` ci, `tabContracts` c 
-            WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
+            FROM `tabContract Item` ci, `tabContracts` c
+            WHERE c.name = ci.parent and ci.parenttype = 'Contracts'
                 and c.project = %s and ci.item_code = %s
                 and ci.gender = %s and ci.shift_hours = %s
             """, (project, item, gender, shift_hours), as_dict = 1)
@@ -166,7 +169,7 @@ def set_billing_hours(project, from_time, to_time, shift_hour):
         billing_hours = time_diff_in_hours(to_time, from_time)
     else:
         billing_hours = shift_hour
-    return billing_hours 
+    return billing_hours
 
 def add_time_log(timesheet, attendance, start, end, post, billable, billing_hours, billing_rate):
     timesheet.append("time_logs", {

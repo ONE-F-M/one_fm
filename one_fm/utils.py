@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from frappe.auth import validate_ip_address
 from one_fm.api.notification import create_notification_log
 from frappe import _
-import frappe, os, erpnext, json, math, itertools, pymysql
+import frappe, os, erpnext, json, math, itertools, pymysql, requests
 from frappe.model.document import Document
 from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
@@ -3013,6 +3013,7 @@ def post_login(self):
             'http_sec_ch_ua':environ.HTTP_SEC_CH_UA,
             'user_agent':environ.HTTP_USER_AGENT,
             'platform':environ.HTTP_SEC_CH_UA_PLATFORM,
+            'ip_detail': json.dumps(requests.get(f'https://ipapi.co/{session.session_ip}/json/').json())
             }
         ).insert()
         frappe.db.commit()
