@@ -95,6 +95,13 @@ def job_offer_validate_attendance_by_timesheet(doc):
 		doc.default_shift = ''
 		doc.operation_site = ''
 
+def employee_validate_attendance_by_timesheet(doc, method):
+	if doc.attendance_by_timesheet:
+		doc.shift_working = False
+		doc.shift = ''
+		doc.default_shift = ''
+		doc.site = ''
+
 def validate_job_offer_mandatory_fields(job_offer):
     if job_offer.workflow_state == 'Submit for Candidate Response':
         mandatory_field_required = False
