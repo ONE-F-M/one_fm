@@ -160,6 +160,8 @@ class OnboardEmployee(Document):
 						employee.date_of_joining = getdate(date_of_joining)
 						self.date_of_joining = getdate(date_of_joining)
 					employee.company_email = self.company_email
+					employee.employment_type = self.employment_type
+					employee.attendance_by_timesheet = self.attendance_by_timesheet
 					employee.save(ignore_permissions=True)
 					self.employee = employee.name
 				user_id = frappe.db.get_value("Employee", self.employee, "user_id")

@@ -18,6 +18,8 @@
   "date_of_joining",
   "boarding_status",
   "erf",
+  "employment_type",
+  "attendance_by_timesheet",
   "shift_working_html",
   "shift_working",
   "default_shift",
@@ -1479,12 +1481,28 @@
    "label": "Default Shift",
    "mandatory_depends_on": "eval:doc.shift_working==0",
    "options": "Shift Type"
+  },
+  {
+   "fetch_from": "job_offer.employment_type",
+   "fetch_if_empty": 1,
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type"
+  },
+  {
+   "default": "0",
+   "fetch_from": "employment_type.attendance_by_timesheet",
+   "fieldname": "attendance_by_timesheet",
+   "fieldtype": "Check",
+   "label": "Attendance by Timesheet",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-03 07:24:56.922865",
+ "modified": "2023-03-21 11:16:38.512927",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
