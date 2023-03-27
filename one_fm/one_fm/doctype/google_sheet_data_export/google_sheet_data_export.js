@@ -89,7 +89,6 @@ const can_export = (frm) => {
 
 const export_data = (frm) => {
 	var select_columns, filters;
-	var client_id = frm.doc.client_id
 
 	if(frm.doc.field_cache == null && frm.doc.filter_cache == null){
 		filters = frm.filter_list.get_filters().map((filter) => filter.slice(1, 4))
@@ -106,63 +105,37 @@ const export_data = (frm) => {
 		select_columns = frm.doc.field_cache;
 	}
 	
-		frappe.call({
-			method: "one_fm.one_fm.doctype.google_sheet_data_export.exporter.build_connection_with_sheet",
-			args: {
-				doc:frm.doc
-			},
-			callback: function(r) {
-				if(r.message){
-					frappe.call({
-						method: "one_fm.one_fm.doctype.google_sheet_data_export.exporter.export_data",
-						args: {
-							doctype: frm.doc.reference_doctype,
-							select_columns: select_columns,
-							filters: filters,
-							file_type: frm.doc.file_type,
-							template: true,
-							with_data: 1,
-							link: frm.doc.link,
-							google_sheet_id: frm.doc.google_sheet_id,
-							sheet_name: frm.doc.sheet_name,
-							have_existing_sheet: frm.doc.have_existing_sheet,
-							owner:frm.doc.owner
-						},
-						freeze: true,
-						freeze_message: __("Exporting Data to the Sheet"),
-						callback: function(r) {
-							if(r.message) {
-								frm.set_value('link', r.message['link'])
-								frm.set_value('google_sheet_id', r.message['google_sheet_id'])
-								frm.set_value('sheet_name', r.message['sheet_name'])
-								frappe.msgprint({
-									message: __("The Data has been submitted successfully"),
-									title: __("Success"),
-									indicator: "green"
-								  });
-								}
-							}
-						});
-				}
-				else{
-					if(frm.doc.link != null && frm.doc.have_existing_sheet == 1){
-						frappe.msgprint({
-							title: __('Warning'),
-							message: __(`We do not have access to this sheet. Kindly, share your sheet with the following:<br><br> <b>${client_id}</b>`),
-							indicator: 'orange',
-							primary_action:{
-								action() {
-									frappe.utils.copy_to_clipboard(client_id);
-								}
-							},
-							primary_action_label:`<i class="fa fa-copy"></i>`,
-						});
-					}
-										
+	frappe.call({
+		method: "one_fm.one_fm.doctype.google_sheet_data_export.exporter.export_data",
+		args: {
+			doctype: frm.doc.reference_doctype,
+			select_columns: select_columns,
+			filters: filters,
+			file_type: frm.doc.file_type,
+			template: true,
+			with_data: 1,
+			link: frm.doc.link,
+			google_sheet_id: frm.doc.google_sheet_id,
+			sheet_name: frm.doc.sheet_name,
+			have_existing_sheet: frm.doc.have_existing_sheet,
+			owner:frm.doc.owner,
+			client_id: frm.doc.client_id
+		},
+		freeze: true,
+		freeze_message: __("Exporting Data to the Sheet"),
+		callback: function(r) {
+			if(r.message) {
+				frm.set_value('link', r.message['link'])
+				frm.set_value('google_sheet_id', r.message['google_sheet_id'])
+				frm.set_value('sheet_name', r.message['sheet_name'])
+				frappe.msgprint({
+					message: __("The Data has been submitted successfully"),
+					title: __("Success"),
+					indicator: "green"
+					});
 				}
 			}
 		});
-	
 	
 	
 	
