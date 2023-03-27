@@ -1453,7 +1453,10 @@ def mark_daily_attendance(start_date, end_date):
 
 		# Get attendance by timesheet employees timesheet
 		timesheet_list = frappe.get_list("Timesheet",
-			filters={"start_date":start_date, "end_date": end_date, "docstatus": 1, "attendance_by_timesheet": 1},
+			filters={
+				"start_date":start_date, "end_date": end_date, "docstatus": 1, "attendance_by_timesheet": 1,
+				'workflow_state': 'Approved'
+			},
 			fields=['name', 'employee']
 		)
 		timesheet_dict = {}
