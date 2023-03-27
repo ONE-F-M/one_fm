@@ -673,7 +673,7 @@ def fetch_non_shift(date, s_type):
 	if s_type == "AM":
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,
 				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0 AND E.status='Active'
+				WHERE E.shift_working = 0 AND E.status='Active' AND E.attendance_by_timesheet != 1
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time >= '01:00:00'
@@ -685,7 +685,7 @@ def fetch_non_shift(date, s_type):
 		""".format(date=cstr(date)), as_dict=1)
 	else:
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0
+				WHERE E.shift_working = 0 AND E.attendance_by_timesheet != 1
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
@@ -1232,7 +1232,7 @@ def create_additional_salary(employee, amount, component, end_date, site):
 		additional_salary.notes += f" , {site}"
 		additional_salary.flags.ignore_validate_update_after_submit = True
 		additional_salary.save(ignore_permissions=1)
-	else:	
+	else:
 		additional_salary = frappe.new_doc("Additional Salary")
 		additional_salary.employee = employee
 		additional_salary.salary_component = component
