@@ -1157,3 +1157,61 @@ def get_employee_detail(employee_pk):
     if employee_pk:
         pk, employee_id, employee_name, enrolled, cell_number = frappe.db.get_value("Employee", employee_pk, ["name", "employee_id", "employee_name", "enrolled", "cell_number"])
         return {'pk':pk, 'employee_id': employee_id, 'employee_name': employee_name, 'enrolled': enrolled, "cell_number": cell_number}
+
+
+@frappe.whitelist()
+def roster_search_bar(project=None, site=None, shift=None, employee=None):
+    """
+        This API method filters projects, sites, shifts and employee based on input.
+        Dependency moves from Project -> Site -> Shift -> Employee
+    """
+    if not (project or site or shift or employee):
+          frappe.throw("Search must incluse Project, Site or Shift.")
+    projects, sites, shifts, employees = [], [], [], {}
+    employees_data, shifts_data = [], []
+    if project:
+        shifts_data = frappe.db.get_list("Operations Shift",
+            filters={'project':project}, 
+            fields=["project", "site", "name"], 
+            ignore_permissions=True
+        )
+        employees_data = frappe.db.get_values("Employee", {'project':project}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+    elif site:
+        shifts_data = frappe.db.get_list("Operations Shift",
+            filters={'site':site}, 
+            fields=["project", "site", "name"], 
+            ignore_permissions=True
+        )
+        employees_data = frappe.db.get_values("Employee", {'site':site}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+    elif shift:
+        shifts_data = frappe.db.get_list("Operations Shift",
+            filters={'name':shift}, 
+            fields=["project", "site", "name"], 
+            ignore_permissions=True
+        )
+        employees_data = frappe.db.get_values("Employee", {'shift':shift}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+    elif employee:
+        employee_data = frappe.db.get_value("Employee", {'name':employee}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+        if not (employee_data.project in projects):projects.append(employee_data.project)
+        if not (employee_data.site in sites):sites.append(employee_data.site)
+        if not (employee_data.shift in shifts):shifts.append(employee_data.shift)
+        employees[employee_data.name] = employee_data
+
+    for i in employees_data:
+        if not employees.get(i.name):
+            employees[i.name] = i
+    # sort data
+    for i in shifts_data:
+        if not i.project in projects:projects.append(i.project)
+        if not i.site in sites:sites.append(i.site)
+        if not i.name in shifts:shifts.append(i.name)
+
+    data = {
+        'projects':projects,
+        'sites':sites,
+        'shifts':shifts,
+        'employees':employees
+    }
+    return data
+
+
