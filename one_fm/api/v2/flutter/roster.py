@@ -1172,7 +1172,7 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
     employees_data, shifts_data = [], []
     if project and shift:
         shifts_data = frappe.db.get_list("Operations Shift",
-            filters={'project':project, 'shift':shift},
+            filters={'project':project, 'name':shift},
             fields=["project", "site", "name"], 
             ignore_permissions=True
         )
