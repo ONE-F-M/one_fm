@@ -89,12 +89,12 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
         master_data, formatted_employee_data, post_count_data, employee_filters= {}, {}, {}, {}
         operations_roles_list = []
         employees = []
-        asa_filters = "em.status = 'Active' "
+        asa_filters = "em.status = 'Active'  and em.attendance_by_timesheet = '0' "
         filters = {
             'date': ['between', (start_date, end_date)]
         }
         str_filters = f'es.date between "{start_date}" and "{end_date}"'
-        exited_employee_filters = f"""status='Left' and relieving_date between '{start_date}' and '{end_date}'"""
+        exited_employee_filters = f"""status='Left' and attendance_by_timesheet = '0' and relieving_date between '{start_date}' and '{end_date}'"""
         if operations_role:
             filters.update({'operations_role': operations_role})
             str_filters +=' and es.operations_role = "{}"'.format(operations_role)
@@ -133,7 +133,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
         
         if isOt:
             employee_filters.update({'employee_availability' : 'Working'})
-            all_active_employees = frappe.db.sql("SELECT name from `tabEmployee` where status = 'Active'",as_dict =1)
+            all_active_employees = frappe.db.sql("SELECT name from `tabEmployee` where status = 'Active' and attendance_by_timesheet = '0' ",as_dict =1)
             all_active_employee_ids = [i.name for i in all_active_employees]
             employee_filters.update({'employee':['In',all_active_employee_ids]})
             employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
@@ -143,10 +143,12 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
             employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
             employee_filters.pop('employee_availability')
             employee_filters.pop('employee')
+            employee_filters.pop('attendance_by_timesheet', None)
             
         else:
             employee_filters.update({'status': 'Active'})
             employee_filters.update({'shift_working':'1'})
+            employee_filters.update({'attendance_by_timesheet':'0'})
             if designation:
                 employee_filters.update({'designation' : designation})
             employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name", "day_off_category", "number_of_days_off"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
@@ -163,6 +165,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
             master_data.update({'total': len(employees)})
             employee_filters.pop('status', None)
             employee_filters.pop('shift_working', None)
+            employee_filters.pop('attendance_by_timesheet', None)
             employee_filters.update({'date': ['between', (start_date, end_date)], 'post_status': 'Planned'})
 
         if employee_search_name:
