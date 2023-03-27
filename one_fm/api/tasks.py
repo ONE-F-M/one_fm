@@ -673,7 +673,7 @@ def fetch_non_shift(date, s_type):
 	if s_type == "AM":
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,
 				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0 AND E.status='Active'
+				WHERE E.shift_working = 0 AND E.status='Active' AND E.attendance_by_timesheet != 1
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time >= '01:00:00'
@@ -685,7 +685,7 @@ def fetch_non_shift(date, s_type):
 		""".format(date=cstr(date)), as_dict=1)
 	else:
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0
+				WHERE E.shift_working = 0 AND E.attendance_by_timesheet != 1
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
@@ -1234,7 +1234,7 @@ def create_additional_salary(employee, amount, component, end_date, site, projec
 		additional_salary.notes += f"Number of days worked -- {number_of_days_worked} \n\n"
 		additional_salary.flags.ignore_validate_update_after_submit = True
 		additional_salary.save(ignore_permissions=1)
-	else:	
+	else:
 		additional_salary = frappe.new_doc("Additional Salary")
 		additional_salary.employee = employee
 		additional_salary.salary_component = component
@@ -1284,13 +1284,13 @@ def mark_daily_attendance(start_date, end_date):
 		for i in shift_types:
 			shift_types_dict[i.name] = i
 
-		# get employee schedule
+		# get Day off employee schedule
 		employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':start_date, 'employee_availability':'Day Off'}, fields="*")
 		employee_schedule_dict = {}
 		for i in employee_schedules:
 			employee_schedule_dict[i.employee] = i
 
-		employees = frappe.get_list("Employee", fields="*")
+		employees = frappe.get_list("Employee", filters={'status': 'Active', 'attendance_by_timesheet': ['!=', 1]}, fields="*")
 		employees_data = {}
 		for i in employees:
 			employees_data[i.name] = i
@@ -1449,6 +1449,38 @@ def mark_daily_attendance(start_date, end_date):
 			except Exception as e:
 				errors.append(str(frappe.get_traceback()))
 
+		# Get attendance by timesheet employees
+		timesheet_employees = frappe.get_list("Employee", filters={'status': 'Active', 'attendance_by_timesheet': 1}, fields="*")
+		timesheet_employees_data = {}
+		for i in timesheet_employees:
+			timesheet_employees_data[i.name] = i
+
+		# Get attendance by timesheet employees timesheet
+		timesheet_list = frappe.get_list("Timesheet",
+			filters={
+				"start_date":start_date, "end_date": end_date, "docstatus": 1, "attendance_by_timesheet": 1,
+				'workflow_state': 'Approved'
+			},
+			fields=['name', 'employee']
+		)
+		timesheet_dict = {}
+		for i in timesheet_list:
+			timesheet_dict[i.employee] = i
+
+		for i in timesheet_employees_data:
+			try:
+				if not timesheet_dict.get(i.employee):
+					emp = employees_data.get(i.employee)
+					employee_attendance[i.employee] = frappe._dict({
+						'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name,
+						'working_hours':0, 'status':'Absent', 'shift':'', 'in_time':'00:00:00', 'out_time':'00:00:00',
+						'shift_assignment':'', 'operations_shift':'', 'site':'', 'project':i.project,
+						'attendance_date': start_date, 'company':emp.company, 'department': emp.department, 'late_entry':0,
+						'early_exit':0, 'operations_role':'', 'post_abbrv':'', 'roster_type':'', 'docstatus':1, 'owner':owner,
+						'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':f"No Timesheet found"
+					})
+			except Exception as e:
+				errors.append(str(frappe.get_traceback()))
 
 		# create attendance with sql injection
 		if employee_attendance:

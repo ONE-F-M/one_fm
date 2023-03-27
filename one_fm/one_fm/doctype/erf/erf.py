@@ -26,6 +26,7 @@ class ERF(Document):
 			self.erf_requested_by = frappe.session.user
 		if not self.erf_requested_by_name and self.erf_requested_by:
 			self.erf_requested_by_name = get_user_fullname(self.erf_requested_by)
+		self.validate_attendance_by_timesheet()
 		self.manage_assigned_recruiter()
 		self.validate_date()
 		self.validate_languages()
@@ -38,6 +39,12 @@ class ERF(Document):
 		# self.calculate_benefit_cost_to_company()
 		# self.calculate_total_cost_to_company()
 		self.validate_type_of_travel()
+
+	def validate_attendance_by_timesheet(self):
+		if self.attendance_by_timesheet:
+			self.shift_working = False
+			slef.operations_shift = ''
+			self.default_shift = ''
 
 	@frappe.whitelist()
 	def draft_erf_to_hrm_for_submit(self):
