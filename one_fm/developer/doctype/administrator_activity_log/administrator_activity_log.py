@@ -7,7 +7,7 @@ from frappe.model.document import Document
 from frappe.utils import today
 from one_fm.utils import get_approver
 
-class AdministratorLog(Document):
+class AdministratorActivityLog(Document):
 	
 	def before_insert(self):
 		self.approver = get_approver(self.employee)
@@ -18,7 +18,7 @@ class AdministratorLog(Document):
 		# send email to approver
 
 		message=f"""
-			Administrator Log has been registered for {self.employee} - {self.employee_name}
+			Administrator Activity has been registered for {self.employee} - {self.employee_name}
 			on {self.date}.
 		"""
 		frappe.sendmail(
@@ -31,3 +31,6 @@ class AdministratorLog(Document):
 			),
 			attachments=[frappe.attach_print(self.doctype, self.name, file_name=self.name)]
 		)
+	
+	def on_trash(self):
+		frappe.throw("This document cannot be deleted.")

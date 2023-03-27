@@ -11,7 +11,9 @@
   "mark_atttendance_per_employee",
   "section_break_2",
   "zenquote_keyword_category",
-  "zenquotes_api_key"
+  "zenquotes_api_key",
+  "section_break_nsc7h",
+  "document_access_roles"
  ],
  "fields": [
   {
@@ -45,12 +47,22 @@
    "fieldname": "mark_atttendance_per_employee",
    "fieldtype": "Check",
    "label": "Mark Atttendance Per Employee"
+  },
+  {
+   "fieldname": "section_break_nsc7h",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Roles that have access to documents regardless of employee field restriction.",
+   "fieldname": "document_access_roles",
+   "fieldtype": "Table",
+   "label": "Document Access Roles",
+   "options": "ONEFM Document Access Roles Detail"
   }
  ],
- "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-02-06 11:22:02.538497",
+ "modified": "2023-03-19 16:22:26.495893",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

@@ -1,7 +1,7 @@
 // Copyright (c) 2023, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Administrator Log', {
+frappe.ui.form.on('Administrator Activity Log', {
 	refresh: function(frm) {
 		frm.trigger('set_defaults');
 	},

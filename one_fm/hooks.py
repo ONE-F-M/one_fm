@@ -165,12 +165,13 @@ before_install = "one_fm.install.before_install.execute"
 permission_query_conditions = {
 	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
-	"Issue": "one_fm.utils.get_issue_permission_query_conditions"
+	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
+    "Leave Application": "one_fm.permissions.leave_application_list",
 }
 has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
-	"Issue": "one_fm.utils.has_permission_to_issue"
+	"Issue": "one_fm.utils.has_permission_to_issue",
 }
 
 standard_queries = {
@@ -630,6 +631,12 @@ scheduler_events = {
 		],
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
+		],
+		"00 08 23 * *": [ #notify leave approver to approve all the open application
+		'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
+		],
+		"45 23 23 * *": [ #approve all the open leave application
+		'one_fm.api.doc_methods.payroll_entry.close_all_leave_application '
 		]
 	}
 }
@@ -724,7 +731,11 @@ fixtures = [
 override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
 	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
-	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview"
+	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview",
+    "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
+    "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
+	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
+	
 }
 #ShiftType.process_auto_attendance = process_auto_attendance
 
@@ -744,4 +755,6 @@ jenv = {
 after_migrate = "one_fm.after_migrate.execute.comment_timesheet_in_hrms"
 
 # add more info to session on boot
-on_session_creation = "one_fm.session_hooks.on_session_creation"
+# on_session_creation = "one_fm.session_hooks.on_session_creation"
+# auth_hooks = "one_fm.session_hooks.auth_hooks"
+# on_login = "one_fm.session_hooks.on_login"
