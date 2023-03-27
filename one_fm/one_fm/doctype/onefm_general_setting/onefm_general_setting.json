@@ -13,7 +13,8 @@
   "zenquote_keyword_category",
   "zenquotes_api_key",
   "section_break_nsc7h",
-  "document_access_roles"
+  "document_access_roles",
+  "wiki_page_access"
  ],
  "fields": [
   {
@@ -49,6 +50,7 @@
    "label": "Mark Atttendance Per Employee"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_nsc7h",
    "fieldtype": "Section Break"
   },
@@ -58,11 +60,18 @@
    "fieldtype": "Table",
    "label": "Document Access Roles",
    "options": "ONEFM Document Access Roles Detail"
+  },
+  {
+   "description": "Table of roles allowed to edit  and create new wiki pages",
+   "fieldname": "wiki_page_access",
+   "fieldtype": "Table",
+   "label": "Wiki Page Access",
+   "options": "ONEFM Document Access Roles Detail"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-03-19 16:22:26.495893",
+ "modified": "2023-03-24 19:05:35.222451",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
