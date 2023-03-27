@@ -1,4 +1,4 @@
-import frappe
+import frappe,json
 from frappe import _
 from frappe.utils import get_fullname
 from hrms.hr.doctype.leave_application.leave_application import *
@@ -13,7 +13,7 @@ from one_fm.processor import is_user_id_company_prefred_email_in_employee
 def close_leaves(all_leaves,user=None):
     for each in all_leaves:
         try:
-            leave_doc = frappe.get_doc("Leave Application",each.name)
+            leave_doc = frappe.get_doc("Leave Application",each)
             leave_doc.status = "Approved"
             leave_doc.flags.ignore_validate = True
             leave_doc.submit()
@@ -22,21 +22,28 @@ def close_leaves(all_leaves,user=None):
             continue
     frappe.db.commit()
     if user:
-        message = "Please note that all open sick leaves have been approved"
-        create_notification_log('Leaves Closed!', 'Please note that all sick leaves in draft have closed.', [user],leave_doc)
+        message = "Please note that the selected open sick leaves have been approved"
+        create_notification_log('Leaves Closed!', message, [user],leave_doc)
 
 
 @frappe.whitelist()
-def fix_sick_leave():
-    all_leaves = frappe.get_all("Leave Application",{'leave_type':"Sick Leave","docstatus":0})
-    if all_leaves:
-        if len(all_leaves)<=5:
-            close_leaves(all_leaves)
+def fix_sick_leave(names):
+    names_ = json.loads(names)
+    if names_:
+        if len(names_) <= 5:
+            for each in names_:
+                try:
+                    leave_doc = frappe.get_doc("Leave Application",each)
+                    leave_doc.status = "Approved"
+                    leave_doc.flags.ignore_validate = True
+                    leave_doc.submit()
+                except:
+                    frappe.log_error("Error while closing {}".format(each))
         else:
-            frappe.enqueue(method=close_leaves,user=frappe.session.user,all_leaves = all_leaves, queue='long',timeout=1200,job_name='Closing Leaves')
-            frappe.msgprint("Leaves are being closed in the background, <br> You will recieve a notification after the process.",alert = 1)
-
-
+            frappe.enqueue(method=close_leaves,user=frappe.session.user,all_leaves = names_, queue='long',timeout=1200,job_name='Closing Leaves')
+    else:
+        frappe.throw("Please select atleast 1 row")
+           
 def is_app_user(emp):
     #Returns true if an employee is an app user or has a valid email address
     try:
