@@ -1166,7 +1166,8 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
         Dependency moves from Project -> Site -> Shift -> Employee
     """
     if not (project or site or shift or employee):
-          frappe.throw("Search must incluse Project, Site or Shift.")
+        response("Bad Request", 400, None, 'Search must incluse Project, Site, Shift or employee.')
+
     projects, sites, shifts, employees = [], [], [], {}
     employees_data, shifts_data = [], []
     if project:
@@ -1212,6 +1213,4 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
         'shifts':shifts,
         'employees':employees
     }
-    return data
-
-
+    return response("success", 200, data)
