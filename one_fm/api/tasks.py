@@ -1191,7 +1191,7 @@ def create_penalty_deduction(start_date, end_date, employee, total_penalty_amoun
 #this function is to generate Site Allowance as Earing Component in Salary Slip. It is monthly calculated based on employees attendance
 def generate_site_allowance():
 	#get list of all site that includes Site Allowance.
-	operations_site = frappe.get_all("Operations Site", {"include_site_allowance":"1"},["name","allowance_amount"])
+	operations_site = frappe.get_all("Operations Site", {"include_site_allowance":"1"},["name","allowance_amount", "project"])
 
 	component_name = frappe.db.get_single_value('HR and Payroll Additional Settings', 'site_allowance_additional_salary_component')
 	if not component_name:
@@ -1209,27 +1209,29 @@ def generate_site_allowance():
 	if operations_site:
 			for site in operations_site:
 				employee_det = frappe.db.sql("""
-							SELECT employee,count(attendance_date) FROM `tabAttendance`
+							SELECT employee, employee_name, count(attendance_date) as count FROM `tabAttendance`
 							WHERE
 								site = '{site}'
 							AND attendance_date between '{start_date}' and '{end_date}'
 							And status = "Present"
 							GROUP BY employee
-						""".format(site=site.name,start_date = cstr(start_date), end_date = cstr(end_date)), as_list=1)
+						""".format(site=site.name,start_date = cstr(start_date), end_date = cstr(end_date)), as_dict=1)
 
 				if employee_det:
 					for employee in employee_det:
 						#calculate Monthly_site_allowance with the rate of allowance per day.
-						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee[1])
-						create_additional_salary(employee[0], Monthly_site_allowance, component_name, end_date, site.name)
+						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee["count"])
+						create_additional_salary(employee["employee"], Monthly_site_allowance, component_name, end_date, site.name,project=site.project, number_of_days_worked=employee["count"], employee_name=employee["employee_name"])
 
 #this function creates additional salary for a given component.
-def create_additional_salary(employee, amount, component, end_date, site):
+def create_additional_salary(employee, amount, component, end_date, site, project, number_of_days_worked, employee_name):
 	check_add_sal_exists = frappe.db.get_value("Additional Salary", {"employee": employee, "payroll_date": end_date, "salary_component": component}, "name")
 	if check_add_sal_exists:
 		additional_salary = frappe.get_doc("Additional Salary", check_add_sal_exists)
 		additional_salary.amount += amount
-		additional_salary.notes += f" , {site}"
+		additional_salary.notes += f"Project -- {project} \n"
+		additional_salary.notes += f"Site -- {site} \n"
+		additional_salary.notes += f"Number of days worked -- {number_of_days_worked} \n\n"
 		additional_salary.flags.ignore_validate_update_after_submit = True
 		additional_salary.save(ignore_permissions=1)
 	else:	
@@ -1240,7 +1242,9 @@ def create_additional_salary(employee, amount, component, end_date, site):
 		additional_salary.payroll_date = end_date
 		additional_salary.company = erpnext.get_default_company()
 		additional_salary.overwrite_salary_structure_amount = 1
-		additional_salary.notes = f"Site Allowance for {site}"
+		additional_salary.notes = f"Project -- {project} \n"
+		additional_salary.notes += f"Site -- {site} \n"
+		additional_salary.notes += f"Number of days worked -- {number_of_days_worked} \n\n"
 		additional_salary.insert()
 		additional_salary.submit()
 	frappe.db.commit()
