@@ -675,7 +675,7 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 		salary_slips_exist_for = get_existing_salary_slips(employees, args)
 		count = 0
 		start_date = args.start_date
-		end_date = args.start_date
+		end_date = args.end_date
 
 		args.pop('start_date')
 		args.pop('end_date')
@@ -760,8 +760,8 @@ def seperate_salary_slip(employees, start_date, end_date):
 		if len(salary_structure_assignment) > 0:
 			mid_date = ""
 			for ssa in salary_structure_assignment:
-				start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-				end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+				start_date = frappe.utils.get_datetime(start_date).date()
+				end_date = frappe.utils.get_datetime(end_date).date()
 
 				if ssa.from_date > start_date and ssa.from_date < end_date:
 					mid_date = ssa.from_date

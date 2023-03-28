@@ -357,7 +357,7 @@ def update_roster(key):
 def extreme_schedule(employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, day_off_ot, 
     request_employee_schedule, employee_list):
     if not employees:
-        frappe.msgprint("Please select employees before rostering")
+        frappe.throw("Please select employees before rostering")
         return
     creation = now()
     owner = frappe.session.user
@@ -396,11 +396,12 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                     days_off_dict[i.employee] = [str(i.date)]
             # remove records from employees
             new_employees = []
-            for i in employees:
-                if not (i['date'] in days_off_dict.get(i['employee'])):
-                    new_employees.append(i)
-            if new_employees:
-                employees = new_employees.copy()
+            if employees:
+                for i in employees:
+                    if not (i['date'] in days_off_dict.get(i['employee'])):
+                        new_employees.append(i)
+                if new_employees:
+                    employees = new_employees.copy()
     
     # # get and structure employee dictionary for easy hashing
     employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employee_list]}, fields=['name', 'employee_name', 'department'], ignore_permissions=True)

@@ -19,6 +19,13 @@ frappe.ui.form.on('ERF', {
 				}
 			};
 		});
+		frm.set_query('interview_round', function () {
+			return {
+				filters: {
+					'designation': frm.doc.designation
+				}
+			};
+		});
 
         filterDefaultShift(frm);
 		set_shift_working_btn(frm);
