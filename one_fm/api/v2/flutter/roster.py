@@ -1174,10 +1174,11 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
         shifts_data = frappe.db.get_list("Operations Shift",
             filters={'project':project, 'site':site, 'name':shift}, 
             fields=["project", "site", "name"], 
+            ignore_permissions=True,
             ignore_permissions=True
         )
         employees_data = frappe.db.get_values("Employee", {'project':project, 'site':site, 'shift':shift}, 
-            ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+            ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1, ignore_permissions=True)
     elif project and site and employee:
         employee_data = frappe.db.get_value("Employee", {'name':employee, 'project':project, 'site':site}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
         if not (employee_data.project in projects):projects.append(employee_data.project)
@@ -1188,18 +1189,19 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
         shifts_data = frappe.db.get_list("Operations Shift",
             filters={'project':project, 'site':site}, 
             fields=["project", "site", "name"], 
+            ignore_permissions=True,
             ignore_permissions=True
         )
         employees_data = frappe.db.get_values("Employee", {'project':project, 'site':site}, 
-            ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+            ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1, ignore_permissions=True)
     elif project and shift:
         shifts_data = frappe.db.get_list("Operations Shift",
             filters={'project':project, 'name':shift}, 
             fields=["project", "site", "name"], 
-            ignore_permissions=True
+            ignore_permissions=True, ignore_permissions=True
         )
         employees_data = frappe.db.get_values("Employee", {'project':project, 'shift':shift}, 
-            ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+            ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1, ignore_permissions=True)
     elif project and employee:
         employee_data = frappe.db.get_value("Employee", {'name':employee, 'project':project}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
         if not (employee_data.project in projects):projects.append(employee_data.project)
@@ -1210,23 +1212,23 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
         shifts_data = frappe.db.get_list("Operations Shift",
             filters={'project':project}, 
             fields=["project", "site", "name"], 
-            ignore_permissions=True
+            ignore_permissions=True, ignore_permissions=True
         )
-        employees_data = frappe.db.get_values("Employee", {'project':project}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+        employees_data = frappe.db.get_values("Employee", {'project':project}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1, ignore_permissions=True)
     elif site:
         shifts_data = frappe.db.get_list("Operations Shift",
             filters={'site':site}, 
             fields=["project", "site", "name"], 
-            ignore_permissions=True
+            ignore_permissions=True, ignore_permissions=True
         )
-        employees_data = frappe.db.get_values("Employee", {'site':site}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+        employees_data = frappe.db.get_values("Employee", {'site':site}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1, ignore_permissions=True)
     elif shift:
         shifts_data = frappe.db.get_list("Operations Shift",
             filters={'name':shift}, 
             fields=["project", "site", "name"], 
-            ignore_permissions=True
+            ignore_permissions=True, ignore_permissions=True
         )
-        employees_data = frappe.db.get_values("Employee", {'shift':shift}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
+        employees_data = frappe.db.get_values("Employee", {'shift':shift}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1, ignore_permissions=True)
     elif employee:
         employee_data = frappe.db.get_value("Employee", {'name':employee}, ["name", "project", "site", "shift", "employee_id", "employee_name"], as_dict=1)
         if not (employee_data.project in projects):projects.append(employee_data.project)
