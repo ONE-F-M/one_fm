@@ -92,16 +92,7 @@ class LeaveApplicationOverride(LeaveApplication):
             sendemail(recipients= [employee.user_id], subject="Leave Application", message=message,
                     reference_doctype=self.doctype, reference_name=self.name, attachments = [])
             frappe.msgprint("Email Sent to Employee {}".format(employee.employee_name))
-            # self.notify(
-            #     {
-            #         # for post in messages
-            #         "message": message,
-            #         "message_to": employee.user_id,
-            #         # for email
-            #         "subject": email_template.subject,
-            #         "notify": "employee",
-            #     }
-            # )
+            
 
     def validate(self):
         validate_active_employee(self.employee)
