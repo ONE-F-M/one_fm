@@ -72,6 +72,13 @@ frappe.ui.form.on('ERF', {
 
 		}
 	},
+	attendance_by_timesheet: function(frm) {
+		if(frm.doc.attendance_by_timesheet){
+			frm.set_value('shift_working', false);
+			frm.set_value('operations_shift');
+			frm.set_value('default_shift');
+		}
+	},
 	decline_erf: function(frm, status) {
 		var d = new frappe.ui.Dialog({
 			title : __("Decline ERF"),

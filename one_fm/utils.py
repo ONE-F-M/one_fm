@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 from __future__ import unicode_literals
-import itertools
-import pymysql
+from frappe.auth import validate_ip_address
 from one_fm.api.notification import create_notification_log
 from frappe import _
-import frappe, os, erpnext, json, math
+import frappe, os, erpnext, json, math, itertools, pymysql, requests
 from frappe.model.document import Document
 from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
@@ -547,7 +546,7 @@ def leave_appillication_on_submit(doc, method):
     if doc.status == "Approved":
         leave_appillication_paid_sick_leave(doc, method)
         update_employee_hajj_status(doc, method)
-        notify_employee(doc, method)
+        
 
 @frappe.whitelist()
 def notify_employee(doc, method):
@@ -2988,3 +2987,43 @@ def check_employee_permission_on_doc(doc):
                         frappe.throw("You do not have permissions to access this document.")
     except Exception as e:
         pass
+
+
+def post_login(self):
+    self.run_trigger("on_login")
+    validate_ip_address(self.user)
+    self.validate_hour()
+    self.get_user_info()
+    self.make_session()
+    self.setup_boot_cache()
+    self.set_user_info()
+
+    # log administrator
+    if frappe.session.user == 'Administrator':
+        session = frappe.session.data
+        environ = frappe._dict(frappe.local.request.environ)
+        doc = frappe.get_doc(
+            {
+            'doctype':'Administrator Auto Log',
+            'ip': session.session_ip,
+            'login_time': session.last_updated, 
+            'session_expiry': session.session_expiry,
+            'device': session.device,
+            'session_country': json.dumps(session.session_country),
+            'http_sec_ch_ua':environ.HTTP_SEC_CH_UA,
+            'user_agent':environ.HTTP_USER_AGENT,
+            'platform':environ.HTTP_SEC_CH_UA_PLATFORM,
+            'ip_detail': json.dumps(requests.get(f'https://ipapi.co/{session.session_ip}/json/').json())
+            }
+        ).insert()
+        frappe.db.commit()
+    else:
+        if not frappe.cache().get_value(frappe.session.user):
+            try:
+                if not frappe.session.user:
+                    frappe.cache().set_value(frappe.session.user, frappe._dict({}))
+                else:
+                    employee = frappe.db.get_value('Employee', {'user_id':frappe.session.user }, 'name')
+                    frappe.cache().set_value(frappe.session.user, frappe._dict({'employee':employee}))
+            except:
+                frappe.cache().set_value(frappe.session.user, frappe._dict({}))

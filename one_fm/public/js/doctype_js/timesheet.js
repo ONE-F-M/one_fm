@@ -1,11 +1,14 @@
 frappe.ui.form.on('Timesheet', {
     employee: function(frm) {
-		set_approver(frm)
-	},
+        set_approver(frm)
+    },
+    attendance_by_timesheet: function(frm) {
+        set_approver(frm)
+    }
 })
 
 function set_approver(frm){
-    if(frm.doc.employee){
+    if(frm.doc.employee && frm.doc.attendance_by_timesheet){
         frappe.call({
             method: 'one_fm.overrides.timesheet.fetch_approver',
             args:{

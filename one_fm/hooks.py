@@ -97,7 +97,7 @@ doctype_js = {
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
-    "Wiki Page": "public/js/doctype_js/wiki_page.js", 
+    "Wiki Page": "public/js/doctype_js/wiki_page.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -197,13 +197,16 @@ doc_events = {
 			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
 		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel",
-		
+
 	},
 	"Leave Type": {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
 	"Employee": {
-		"validate":"one_fm.hiring.utils.set_employee_name",
+		"validate":[
+			"one_fm.hiring.utils.set_employee_name",
+			"one_fm.hiring.utils.employee_validate_attendance_by_timesheet"
+		],
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"before_insert": "one_fm.hiring.utils.employee_before_insert",
 		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
@@ -735,7 +738,7 @@ override_whitelisted_methods = {
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
-	
+
 }
 #ShiftType.process_auto_attendance = process_auto_attendance
 
@@ -755,5 +758,6 @@ jenv = {
 after_migrate = "one_fm.after_migrate.execute.comment_timesheet_in_hrms"
 
 # add more info to session on boot
-on_session_creation = "one_fm.session_hooks.on_session_creation"
-auth_hooks = "one_fm.session_hooks.auth_hooks"
+# on_session_creation = "one_fm.session_hooks.on_session_creation"
+# auth_hooks = "one_fm.session_hooks.auth_hooks"
+# on_login = "one_fm.session_hooks.on_login"
