@@ -304,6 +304,12 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
                 contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
                 if not end_date:
                     validation_logs.append("Please set contract end date for contract: {contract}".format(contract=contract))
+                employee_set = {obj["employee"] for obj in employees}
+                employees = []
+                list_of_date = date_range(start_date, end_date)
+                for obj in employee_set:
+                    for day in list_of_date:
+                        employees.append({"employee": obj, "date": str(day.date())})
             else:
                 validation_logs.append("No contract linked with project {project}".format(project=project))
 
