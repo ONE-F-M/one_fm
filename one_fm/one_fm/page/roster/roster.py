@@ -284,10 +284,14 @@ def get_current_user_details():
 
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None):
+    print("\n\n\n\n\n\n\n\n\n\n\n")
+    print(employees,3333333333333333333333333)
+    print("\n\n\n\n\n\n\n\n\n\n\n")
     try:
         _start_date = getdate(start_date)
         validation_logs = []
         user, user_roles, user_employee = get_current_user_details()
+
         employees = json.loads(employees)
         if not employees:
             frappe.throw("Employees must be selected.")

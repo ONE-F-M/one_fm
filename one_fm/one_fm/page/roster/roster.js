@@ -2983,6 +2983,7 @@ function schedule_change_post(page) {
 	let employees = [];
 	let selected = [... new Set(classgrt)];
 	let otRoster = false;
+	console.log(selected, 34534343)
 	if (selected.length > 0) {
 		selected.forEach(function (i) {
 			let [employee, date] = i.split("|");
