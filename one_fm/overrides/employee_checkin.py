@@ -87,32 +87,33 @@ def after_insert_background(self):
 	try:
 		# update shift if not exists
 		curr_shift = get_shift_from_checkin(self)
-		shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
-		# calculate entry
-		early_exit = 0
-		late_entry = 0
-		actual_time = str(self.time)
-		if not '.' in actual_time:
-			actual_time += '.000000'
+		if curr_shift:
+			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
+			# calculate entry
+			early_exit = 0
+			late_entry = 0
+			actual_time = str(self.time)
+			if not '.' in actual_time:
+				actual_time += '.000000'
 
-		if self.log_type=='IN':
-			if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') - timedelta(minutes=shift_type.late_entry_grace_period)) > curr_shift.start_datetime:
-				late_entry = 1
-		if self.log_type=='OUT':
-			if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=shift_type.early_exit_grace_period)) < curr_shift.end_datetime:
-				early_exit = 1
+			if self.log_type=='IN':
+				if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') - timedelta(minutes=shift_type.late_entry_grace_period)) > curr_shift.start_datetime:
+					late_entry = 1
+			if self.log_type=='OUT':
+				if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=shift_type.early_exit_grace_period)) < curr_shift.end_datetime:
+					early_exit = 1
 
-		query = f"""
-			UPDATE `tabEmployee Checkin` SET
-			shift_assignment="{curr_shift.name}", operations_shift="{curr_shift.shift}", shift_type='{curr_shift.shift_type}',
-			shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
-			shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
-			late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}', 
-			roster_type='{curr_shift.roster_type}'
-			WHERE name="{self.name}"
-		"""
-		frappe.db.sql(query, values=[], as_dict=1)
-		frappe.db.commit()
+			query = f"""
+				UPDATE `tabEmployee Checkin` SET
+				shift_assignment="{curr_shift.name}", operations_shift="{curr_shift.shift}", shift_type='{curr_shift.shift_type}',
+				shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
+				shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
+				late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}', 
+				roster_type='{curr_shift.roster_type}'
+				WHERE name="{self.name}"
+			"""
+			frappe.db.sql(query, values=[], as_dict=1)
+			frappe.db.commit()
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
 	
@@ -225,7 +226,6 @@ def get_shift_from_checkin(checkin):
 	for s in shifts:
 		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.time <= (s.end_datetime + timedelta(minutes=60))):
 			return s
-	return False
 
 
 def notify_supervisor_about_late_entry(checkin):
