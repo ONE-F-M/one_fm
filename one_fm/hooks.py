@@ -606,7 +606,8 @@ scheduler_events = {
 		],
 		"00 01 24 * *": [
 			'one_fm.api.tasks.generate_site_allowance',
-			'one_fm.api.tasks.generate_ot_additional_salary'
+			'one_fm.api.tasks.generate_ot_additional_salary',
+			'one_fm.api.tasks.generate_sick_leave_deduction'
 		],
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'

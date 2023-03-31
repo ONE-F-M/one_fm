@@ -14,7 +14,10 @@ from frappe.utils import (
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
-from one_fm.utils import (mark_attendance, get_holiday_today, production_domain, get_today_leaves)
+from one_fm.utils import (
+	mark_attendance, get_holiday_today, production_domain, get_today_leaves, get_salary_amount,
+	get_leave_payment_breakdown
+)
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
@@ -1397,6 +1400,91 @@ def process_attendance_for_ot_additional_salary(attendance_doc, overtime_compone
 			else:
 				error_msg = _("Shift not set for employee: {employee} in the employee record.".format(employee=attendance_doc.employee))
 				frappe.log_error(error_msg, 'OT Additional Salary - Attendance {0}'.format(attendance_doc.name))
+
+def generate_sick_leave_deduction():
+	# Gather the required Date details such as start date, and respective end date.
+	start_date = add_to_date(getdate(), months=-1)
+	end_date = get_end_date(start_date, 'monthly')['end_date']
+	# Get the OverTime Attendance for the date range
+	leave_list = frappe.db.sql("""
+		select
+			*
+		from
+			`tabLeave Application` la, `tabLeave Type` lt
+		where
+			(
+				la.start_date between '{start_date}' and '{end_date}'
+				or
+				la.end_date between '{start_date}' and '{end_date}'
+				or
+				(
+					la.start_date < '{start_date}' and la.end_date > '{end_date}'
+				)
+			)
+			and
+				lt.one_fm_is_paid_sick_leave = 1
+			and
+				lt.name = la.leave_type
+			and
+				la.status = 'Approved'
+ 		group by
+			employee, start_date
+	""".format(start_date = cstr(start_date), end_date = cstr(end_date)), as_dict=1)
+
+	if leave_list and len(leave_list) > 0:
+		for leave in leave_list:
+			deduct_for_paid_sick_leave(leave, end_date)
+
+def deduct_for_paid_sick_leave(doc, end_date):
+	salary = get_salary_amount(doc.employee)
+	daily_rate = salary/30
+	from hrms.hr.doctype.leave_application.leave_application import get_leave_details
+	leave_details = get_leave_details(doc.employee, end_date)
+	curr_year_applied_days = 0
+	if doc.leave_type in leave_details['leave_allocation'] and leave_details['leave_allocation'][doc.leave_type]:
+		curr_year_applied_days = leave_details['leave_allocation'][doc.leave_type]['leaves_taken']
+	if curr_year_applied_days == 0:
+		curr_year_applied_days = doc.total_leave_days
+
+	leave_payment_breakdown = get_leave_payment_breakdown(doc.leave_type)
+
+	total_payment_days = 0
+	if leave_payment_breakdown:
+		threshold_days = 0
+		for payment_breakdown in leave_payment_breakdown:
+			payment_days = 0
+			threshold_days += payment_breakdown.threshold_days
+			if total_payment_days < doc.total_leave_days:
+				if curr_year_applied_days >= threshold_days and (curr_year_applied_days - doc.total_leave_days) < threshold_days:
+					payment_days = threshold_days - (curr_year_applied_days-doc.total_leave_days) - total_payment_days
+				elif curr_year_applied_days <= threshold_days: # Gives true this also doc.total_leave_days <= threshold_days:
+					payment_days = doc.total_leave_days - total_payment_days
+				if payment_days > 0:
+					create_additional_salary_for_paid_sick_leave(doc, daily_rate, salary, payment_days, end_date, payment_breakdown)
+				total_payment_days += payment_days
+
+		if total_payment_days < doc.total_leave_days and doc.total_leave_days-total_payment_days > 0:
+			payment_days = doc.total_leave_days-total_payment_days
+			if payment_days > 0:
+				create_additional_salary_for_paid_sick_leave(doc, daily_rate, salary, payment_days, end_date)
+
+def create_additional_salary_for_paid_sick_leave(doc, daily_rate, salary, payment_days, end_date, payment_breakdown=False):
+	deduction_percentage = 1
+	salary_component = doc.one_fm_paid_sick_leave_deduction_salary_component
+	if payment_breakdown:
+		deduction_percentage = payment_breakdown.salary_deduction_percentage/100
+		salary_component = payment_breakdown.salary_component
+	amount = payment_days*daily_rate*deduction_percentage
+	if amount > 0:
+		deduction_notes = """
+			Leave Application: <b>{0}</b><br>
+			Employee Salary: <b>{1}</b><br>
+			Daily Rate: <b>{2}</b><br>
+			Deduction Days Number: <b>{3}</b><br>
+			Deduction Percent: <b>{4}%</b><br/>
+			Deduct Amount: <b>{5}</b><br>
+		""".format(salary, daily_rate, payment_days, deduction_percentage*100, doc.name, amount)
+		create_additional_salary(doc.employee, amount, salary_component, end_date, deduction_notes)
 
 def mark_day_attendance():
 	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
