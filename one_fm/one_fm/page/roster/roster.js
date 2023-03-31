@@ -2984,7 +2984,6 @@ function schedule_change_post(page) {
 	// let employees = window.employees_list;
 	let employees = [];
 	let selected = [... new Set(classgrt)];
-	console.log(selected,434343535353)
 	let otRoster = false;
 	if (selected.length > 0) {
 		selected.forEach(function (i) {
