@@ -291,12 +291,6 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
         employees = json.loads(employees)
         if not employees:
             frappe.throw("Employees must be selected.")
-        
-        # employees = [i for i in employees if getdate(i['date']) >= _start_date]
-        # employee_list = []
-        # for i in employees:
-        #     if not i['employee'] in employee_list:
-        #         employee_list.append(i['employee'])
 
         employee_list = list({obj["employee"] for obj in employees})
         
