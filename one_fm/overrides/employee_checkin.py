@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+from dateutil.parser import parse
 import frappe
 from frappe import _
 from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days, now
@@ -250,7 +251,7 @@ def notify_supervisor_about_late_entry(checkin):
 		if last_shift_assignment and not shift_permission:
 			if checkin.time.time() > datetime.strptime(str(shift_late_minutes["start_time"] + timedelta(minutes=shift_late_minutes['supervisor_reminder_shift_start'])), "%H:%M:%S").time():
 				time_diff = calculate_time_diffrence_for_checkin(shift_late_minutes["start_time"], checkin.time)
-				time_of_arrival = datetime.strptime(str(checkin.time), '%Y-%m-%d %H:%M:%S' ).time()
+				time_of_arrival = parse(str(checkin.time)).time()
 				get_reports_to = frappe.db.get_value("Employee", {"name": checkin.employee}, ['reports_to'], as_dict=1)
 				if get_reports_to:
 					return send_push_notification_for_late_entry(get_reports_to["reports_to"], checkin.employee_name, roster_type=the_roster_type if the_roster_type else "Basic", time_difference=time_diff, shift=op_shift, time_of_arrival=time_of_arrival)
@@ -287,5 +288,5 @@ def calculate_time_diffrence_for_checkin(shift_time, checkin_time):
 	time_diff_in_minutes = (checkin_time - datetime_shift).seconds // 60
 	the_diff = divmod(time_diff_in_minutes, 60) 
 	if the_diff[0] < 1:
-		return list(the_diff[1])
+		return [the_diff[1]]
 	return list(the_diff)

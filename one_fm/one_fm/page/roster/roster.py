@@ -1,7 +1,7 @@
 from pandas.core.indexes.datetimes import date_range
 from datetime import datetime
 from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
-from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now,get_datetime
+from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, get_datetime
 import pandas as pd, numpy as np
 from frappe import _
 import json, multiprocessing, os, time, itertools, frappe
@@ -286,8 +286,10 @@ def get_current_user_details():
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None):
     try:
         _start_date = getdate(start_date)
+        
         validation_logs = []
         user, user_roles, user_employee = get_current_user_details()
+
         employees = json.loads(employees)
         if not employees:
             frappe.throw("Employees must be selected.")
