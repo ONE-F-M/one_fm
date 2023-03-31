@@ -898,9 +898,11 @@ function bind_events(page) {
 			if ($(this).is(":checked")) {
 				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
 					let [employee, date] = $(v).attr('data-selectid').split('|');
+					classgrt.push($(v).attr('data-selectid'));
 					if (moment(date).isAfter(moment())) {
 						$(v).addClass("selectclass");
 					}
+					
 				});
 				$(".filterhideshow").removeClass("d-none");
 			}
@@ -2982,8 +2984,8 @@ function schedule_change_post(page) {
 	// let employees = window.employees_list;
 	let employees = [];
 	let selected = [... new Set(classgrt)];
+	console.log(selected,434343535353)
 	let otRoster = false;
-	console.log(selected, 34534343)
 	if (selected.length > 0) {
 		selected.forEach(function (i) {
 			let [employee, date] = i.split("|");
