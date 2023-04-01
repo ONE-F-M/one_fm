@@ -33,6 +33,8 @@ class TimesheetOveride(Timesheet):
     def on_update(self):
         if self.workflow_state == 'Open':
             send_workflow_action_email(self, [self.approver])
+            message = "The timesheet {0} of {1}, Open for your Approval".format(self.name, self.employee_name)
+            create_notification_log("Pending - Workflow Action on Timesheet", message, [self.approver], self)
 
     def on_submit(self):
         self.validate_mandatory_fields()
@@ -47,13 +49,15 @@ class TimesheetOveride(Timesheet):
         message = "The Timesheet {0}, is {1} by {2}".format(timesheet_url, self.workflow_state, frappe.get_value('User', frappe.session.user, 'full_name'))
         user = frappe.get_value('Employee', self.employee, 'user_id')
         if user:
+            subject = 'Your timesheet {0} is {1}'.format(timesheet_url, self.workflow_state)
             sendemail(
-                recipients= [user],
-                subject='Your timesheet {0} is {1}'.format(timesheet_url, self.workflow_state),
+                recipients=[user],
+                subject=subject,
                 message=message,
                 reference_doctype=self.doctype,
                 reference_name=self.name
             )
+            create_notification_log(subject, message, [user], self)
 
     def on_cancel(self):
         self.cancel_the_attendance()
@@ -230,3 +234,16 @@ def validate_date(doc, method):
     if allowed_role not in frappe.get_roles(frappe.session.user):
         if doc.start_date != current_date or doc.end_date != current_date:
             frappe.throw("Not allowed to submit doc for previous date")
+
+def create_notification_log(subject, message, for_users, reference_doc):
+	for user in for_users:
+		doc = frappe.new_doc('Notification Log')
+		doc.subject = subject
+		doc.email_content = message
+		doc.for_user = user
+		doc.document_type = reference_doc.doctype
+		doc.document_name = reference_doc.name
+		doc.from_user = reference_doc.modified_by
+		# If notification log type is Alert then it will not send email for the log
+		doc.type = 'Alert'
+		doc.insert(ignore_permissions=True)
