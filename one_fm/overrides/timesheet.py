@@ -1,15 +1,12 @@
 import frappe
 import itertools
-from frappe.utils import (
-    cstr, flt, add_days, time_diff_in_hours, getdate, get_url_to_form
-)
+from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
 from calendar import monthrange
 from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
 from one_fm.processor import sendemail
-from frappe.workflow.doctype.workflow_action.workflow_action import (
-    get_common_email_args, get_workflow_action_url
-)
+from one_fm.utils import send_workflow_action_email
+
 
 class TimesheetOveride(Timesheet):
     def validate(self):
@@ -34,43 +31,8 @@ class TimesheetOveride(Timesheet):
                 frappe.throw("Not allowed to submit doc for previous date")
 
     def on_update(self):
-        if self.workflow_state == 'Open' and self.approver:
-            self.send_approval_workflow_action()
-
-    def send_approval_workflow_action(self):
-        next_possible_transitions = ['Approve', 'Reject']
-        common_args = get_common_email_args(self)
-        message = common_args.pop("message", None)
-        pdf_link = get_url_to_form(self.doctype, self.name)
-
-        user_data_map = {}
-        user_data_map[self.approver] = frappe._dict(
-            {
-                "possible_actions": [],
-                "email": frappe.db.get_value("User", self.approver, "email"),
-            }
-        )
-
-        for transition in next_possible_transitions:
-            user_data_map[self.approver].get("possible_actions").append(
-                frappe._dict(
-                    {
-                        "action_name": transition,
-                        "action_link": get_workflow_action_url(transition, self, self.approver),
-                    }
-                )
-            )
-
-        for d in [i for i in list(user_data_map.values()) if i.get('email') in [self.approver]]:
-            email_args = {
-                "recipients": [self.approver],
-                "args": {"actions": list(d.get("possible_actions")), "message": message, "pdf_link": pdf_link, "doc_link": frappe.utils.get_url(self.get_url())},
-                "reference_name": self.name,
-                "reference_doctype": self.doctype,
-            }
-            email_args.update(common_args)
-            frappe.enqueue(method=sendemail, queue="short", **email_args)
-            create_notification_log(email_args.get('subject'), message, [self.approver], self)
+        if self.workflow_state == 'Open':
+            send_workflow_action_email(self, [self.approver])
 
     def on_submit(self):
         self.validate_mandatory_fields()
@@ -85,15 +47,13 @@ class TimesheetOveride(Timesheet):
         message = "The Timesheet {0}, is {1} by {2}".format(timesheet_url, self.workflow_state, frappe.get_value('User', frappe.session.user, 'full_name'))
         user = frappe.get_value('Employee', self.employee, 'user_id')
         if user:
-            subject = 'Your timesheet {0} is {1}'.format(timesheet_url, self.workflow_state)
             sendemail(
                 recipients= [user],
-                subject=subject,
+                subject='Your timesheet {0} is {1}'.format(timesheet_url, self.workflow_state),
                 message=message,
                 reference_doctype=self.doctype,
                 reference_name=self.name
             )
-            create_notification_log(subject, message, [user], self)
 
     def on_cancel(self):
         self.cancel_the_attendance()
@@ -270,16 +230,3 @@ def validate_date(doc, method):
     if allowed_role not in frappe.get_roles(frappe.session.user):
         if doc.start_date != current_date or doc.end_date != current_date:
             frappe.throw("Not allowed to submit doc for previous date")
-
-def create_notification_log(subject, message, for_users, reference_doc):
-	for user in for_users:
-		doc = frappe.new_doc('Notification Log')
-		doc.subject = subject
-		doc.email_content = message
-		doc.for_user = user
-		doc.document_type = reference_doc.doctype
-		doc.document_name = reference_doc.name
-		doc.from_user = reference_doc.modified_by
-		# If notification log type is Alert then it will not send email for the log
-		doc.type = 'Alert'
-		doc.insert(ignore_permissions=True)
