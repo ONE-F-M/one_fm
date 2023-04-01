@@ -1,7 +1,7 @@
 from pandas.core.indexes.datetimes import date_range
 from datetime import datetime
 from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
-from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now,get_datetime
+from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, get_datetime
 import pandas as pd, numpy as np
 from frappe import _
 import json, multiprocessing, os, time, itertools, frappe
@@ -286,17 +286,15 @@ def get_current_user_details():
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None):
     try:
         _start_date = getdate(start_date)
+        
         validation_logs = []
         user, user_roles, user_employee = get_current_user_details()
+
         employees = json.loads(employees)
         if not employees:
             frappe.throw("Employees must be selected.")
-        
-        employees = [i for i in employees if getdate(i['date']) >= _start_date]
-        employee_list = []
-        for i in employees:
-            if not i['employee'] in employee_list:
-                employee_list.append(i['employee'])
+
+        employee_list = list({obj["employee"] for obj in employees})
         
         if cint(project_end_date) and not end_date:
             project = frappe.db.get_value("Operations Shift", shift, ["project"])
@@ -304,11 +302,23 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
                 contract, end_date = frappe.db.get_value("Contracts", {'project': project}, ["name", "end_date"])
                 if not end_date:
                     validation_logs.append("Please set contract end date for contract: {contract}".format(contract=contract))
+                else:
+                    employees = []
+                    list_of_date = date_range(start_date, end_date)
+                    for obj in employee_list:
+                        for day in list_of_date:
+                            employees.append({"employee": obj, "date": str(day.date())})
+
             else:
                 validation_logs.append("No contract linked with project {project}".format(project=project))
 
         elif end_date and not cint(project_end_date):
-            end_date = end_date
+            end_date = getdate(end_date)
+            employees = []
+            list_of_date = date_range(start_date, end_date)
+            for obj in employee_list:
+                for day in list_of_date:
+                    employees.append({"employee": obj, "date": str(day.date())})
 
         elif not cint(project_end_date) and not end_date:
             validation_logs.append("Please set an end date for scheduling the staff.")

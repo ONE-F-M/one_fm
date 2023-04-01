@@ -898,9 +898,11 @@ function bind_events(page) {
 			if ($(this).is(":checked")) {
 				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
 					let [employee, date] = $(v).attr('data-selectid').split('|');
+					classgrt.push($(v).attr('data-selectid'));
 					if (moment(date).isAfter(moment())) {
 						$(v).addClass("selectclass");
 					}
+					
 				});
 				$(".filterhideshow").removeClass("d-none");
 			}
