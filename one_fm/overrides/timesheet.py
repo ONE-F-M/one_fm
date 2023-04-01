@@ -5,7 +5,7 @@ from calendar import monthrange
 from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
 from one_fm.processor import sendemail
-from one_fm.utils import send_workflow_action_email
+from one_fm.utils import queue_send_workflow_action_email
 
 
 class TimesheetOveride(Timesheet):
@@ -32,7 +32,8 @@ class TimesheetOveride(Timesheet):
 
     def on_update(self):
         if self.workflow_state == 'Open':
-            send_workflow_action_email(self, [self.approver])
+            print()
+            queue_send_workflow_action_email(self, [self.approver])
 
     def on_submit(self):
         self.validate_mandatory_fields()

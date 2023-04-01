@@ -40,7 +40,7 @@ from frappe.desk.doctype.notification_log.notification_log import get_title, get
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_common_email_args, deduplicate_actions, get_next_possible_transitions,
-    get_doc_workflow_state, get_workflow_name, get_users_next_action_data
+    get_doc_workflow_state, get_workflow_name, get_workflow_action_url
 )
 from six import string_types
 from frappe.core.doctype.doctype.doctype import validate_series
@@ -2678,31 +2678,56 @@ def create_path(path):
     os.mkdir(path)
 
 
+def get_users_next_action_data(transitions, doc, recipients):
+	user_data_map = {}
+	for transition in transitions:
+		for user in recipients:
+			if not user_data_map.get(user):
+				user_data_map[user] = frappe._dict(
+					{
+						"possible_actions": [],
+						"email": user,
+					}
+				)
+
+			user_data_map[user].get("possible_actions").append(
+				frappe._dict(
+					{
+						"action_name": transition.action,
+						"action_link": get_workflow_action_url(transition.action, doc, user),
+					}
+				)
+			)
+	return user_data_map
+
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
     frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
+
 
 def queue_send_workflow_action_email(doc, recipients):
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
         workflow, get_doc_workflow_state(doc), doc
     )
-    user_data_map = get_users_next_action_data(next_possible_transitions, doc)
+    user_data_map = get_users_next_action_data(next_possible_transitions, doc, recipients)
 
     common_args = get_common_email_args(doc)
     message = common_args.pop("message", None)
+    subject = f"Pending - Workflow Action on {_(doc.doctype)} - {doc.workflow_state}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
-    if not list(user_data_map[0].values()):
+    if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,
             "args": {"message": message, "doc_link": frappe.utils.get_url(doc.get_url())},
             "reference_name": doc.name,
-            "reference_doctype": doc.doctype,
+            "reference_doctype": doc.doctype
         }
         email_args.update(common_args)
-        frappe.enqueue(method=sendemail, queue="short", **email_args)
+        email_args['subject'] = subject
+        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
     else:
-        for d in [i for i in list(user_data_map[0].values()) if i.get('email') in recipients]:
+        for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
             email_args = {
                 "recipients": recipients,
                 "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message, "pdf_link": pdf_link, "doc_link": frappe.utils.get_url(doc.get_url())},
@@ -2710,7 +2735,8 @@ def queue_send_workflow_action_email(doc, recipients):
                 "reference_doctype": doc.doctype,
             }
             email_args.update(common_args)
-            frappe.enqueue(method=sendemail, queue="short", **email_args)
+            email_args['subject'] = subject
+            frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
 
 
 def workflow_approve_reject(doc, recipients=None):
