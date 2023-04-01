@@ -32,6 +32,7 @@ def load_versions(change_log_folder,folder,app,args):
                             "modified":datetime.datetime.fromtimestamp(os.path.getmtime(file_path)),
                             "modified_by":"Administrator",
                             "docstatus":0,
+                            "_comment_count":0,
                             "release_notes":content,
                             "version_id":version_str,
                             "application":app
@@ -48,6 +49,7 @@ def load_versions(change_log_folder,folder,app,args):
                 "modified":datetime.datetime.fromtimestamp(os.path.getmtime(file_path)),
                 "modified_by":"Administrator",
                 "docstatus":0,
+                "_comment_count":0,
                 "release_notes":content,
                 "version_id":version_str,
                 "application":app
