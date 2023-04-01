@@ -1408,17 +1408,17 @@ def generate_sick_leave_deduction():
 	# Get the OverTime Attendance for the date range
 	leave_list = frappe.db.sql("""
 		select
-			*
+			la.name, la.employee, la.leave_type, la.total_leave_days, lt.one_fm_paid_sick_leave_deduction_salary_component
 		from
 			`tabLeave Application` la, `tabLeave Type` lt
 		where
 			(
-				la.start_date between '{start_date}' and '{end_date}'
+				la.from_date between '{start_date}' and '{end_date}'
 				or
-				la.end_date between '{start_date}' and '{end_date}'
+				la.to_date between '{start_date}' and '{end_date}'
 				or
 				(
-					la.start_date < '{start_date}' and la.end_date > '{end_date}'
+					la.from_date < '{start_date}' and la.to_date > '{end_date}'
 				)
 			)
 			and
@@ -1428,7 +1428,7 @@ def generate_sick_leave_deduction():
 			and
 				la.status = 'Approved'
  		group by
-			employee, start_date
+			employee, from_date
 	""".format(start_date = cstr(start_date), end_date = cstr(end_date)), as_dict=1)
 
 	if leave_list and len(leave_list) > 0:
@@ -1482,8 +1482,8 @@ def create_additional_salary_for_paid_sick_leave(doc, daily_rate, salary, paymen
 			Daily Rate: <b>{2}</b><br>
 			Deduction Days Number: <b>{3}</b><br>
 			Deduction Percent: <b>{4}%</b><br/>
-			Deduct Amount: <b>{5}</b><br>
-		""".format(salary, daily_rate, payment_days, deduction_percentage*100, doc.name, amount)
+			Deduct Amount: <b>{5}</b><br/><br/>
+		""".format(doc.name, salary, daily_rate, payment_days, deduction_percentage*100, amount)
 		create_additional_salary(doc.employee, amount, salary_component, end_date, deduction_notes)
 
 def mark_day_attendance():
