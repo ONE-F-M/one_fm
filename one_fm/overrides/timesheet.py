@@ -32,7 +32,6 @@ class TimesheetOveride(Timesheet):
 
     def on_update(self):
         if self.workflow_state == 'Open':
-            print()
             send_workflow_action_email(self, [self.approver])
 
     def on_submit(self):
