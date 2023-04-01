@@ -19,6 +19,7 @@ from one_fm.api.v1.roster import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import approve_open_employee_checkin_issue
+from hrms.hr.utils import get_holidays_for_employee
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -1226,7 +1227,9 @@ def generate_site_allowance():
 #this function creates additional salary for a given component.
 def create_additional_salary(employee, amount, component, end_date, notes):
 	try:
-		check_add_sal_exists = frappe.db.exists("Additional Salary", {"employee": employee, "payroll_date": end_date, "salary_component": component})
+		check_add_sal_exists = frappe.db.exists("Additional Salary",
+			{"employee": employee, "payroll_date": end_date, "salary_component": component, "docstatus": 1}
+		)
 		if check_add_sal_exists:
 			additional_salary = frappe.get_doc("Additional Salary", check_add_sal_exists)
 			additional_salary.amount += amount
@@ -1270,7 +1273,7 @@ def generate_ot_additional_salary():
 			`tabAttendance`
 		WHERE
 			attendance_date between '{start_date}' and '{end_date}'
-			And status = "Present" AND roster_type = "Over-Time"
+			AND status = "Present" AND roster_type = "Over-Time" AND docstatus = 1
 		GROUP BY
 			employee, attendance_date
 	""".format(start_date = cstr(start_date), end_date = cstr(end_date)), as_dict=1)
@@ -1297,7 +1300,6 @@ def process_attendance_for_ot_additional_salary(attendance_doc, overtime_compone
 		doc: The attendance document
 
 	"""
-	roster_type_basic = "Basic"
 	roster_type_overtime = "Over-Time"
 
 	days_of_week = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
@@ -1307,15 +1309,18 @@ def process_attendance_for_ot_additional_salary(attendance_doc, overtime_compone
 
 		payroll_date = cstr(attendance_doc.attendance_date)
 
-		# Fetch project and duration of the shift employee worked in operations shift
-		project, overtime_duration = frappe.db.get_value("Operations Shift", attendance_doc.operations_shift, ["project", "duration"])
+		overtime_duration = attendance_doc.working_hours
+		project_has_overtime_rate = False
+		project_overtime_rate = 0
 
-		# Fetch overtime details from project
-		project_has_overtime_rate, project_overtime_rate = frappe.db.get_value("Project", {'name': project}, ["has_overtime_rate", "overtime_rate"])
+		if attendance_doc.operations_shift:
+			# Fetch project and duration of the shift employee worked in operations shift
+			project, overtime_duration = frappe.db.get_value("Operations Shift", attendance_doc.operations_shift, ["project", "duration"])
+			# Fetch overtime details from project
+			project_has_overtime_rate, project_overtime_rate = frappe.db.get_value("Project", {'name': project}, ["has_overtime_rate", "overtime_rate"])
 
 		# If project has a specified overtime rate, calculate amount based on overtime rate and create additional salary
 		if project_has_overtime_rate:
-
 			if project_overtime_rate > 0:
 				amount = round(project_overtime_rate * overtime_duration, 3)
 				notes = f"Attendance: {attendance_doc.name} \nProject: {project} \nCalculated based on ot rate set for the project\nProject ot rate: {project_overtime_rate} \n\n"
@@ -1324,18 +1329,11 @@ def process_attendance_for_ot_additional_salary(attendance_doc, overtime_compone
 				error_msg = _("Overtime rate must be greater than zero for project: {project}".format(project=project))
 				frappe.log_error(error_msg, 'OT Additional Salary - Attendance {0}'.format(attendance_doc.name))
 
-
 		# If no overtime rate is specified, follow labor law => (Basic Hourly Wage * number of worked hours * 1.5)
 		else:
 			# Fetch assigned shift, basic salary  and holiday list for the given employee
 			assigned_shift, holiday_list = frappe.db.get_value("Employee", {'employee': attendance_doc.employee}, ["shift", "holiday_list"])
-			basic_salary = sum(
-				[i.amount for i in frappe.get_last_doc(
-					'Salary Structure Assignment',
-					filters={"employee": attendance_doc.employee, "docstatus":1}
-					).salary_structure_components if i.salary_component=='Basic Salary'
-				]
-			)
+			basic_salary = get_salary_amount(attendance_doc.employee)
 			if assigned_shift:
 				# Fetch duration of the shift employee is assigned to
 				assigned_shift_duration = frappe.db.get_value("Operations Shift", assigned_shift, ["duration"])
@@ -1345,14 +1343,14 @@ def process_attendance_for_ot_additional_salary(attendance_doc, overtime_compone
 					daily_wage = round(basic_salary/30, 3)
 					hourly_wage = round(daily_wage/assigned_shift_duration, 3)
 
-					# Check if a basic schedule exists for the employee and the attendance date
-					if frappe.db.exists("Employee Schedule", {'employee': attendance_doc.employee, 'date': attendance_doc.attendance_date, 'employee_availability': "Working", 'roster_type': roster_type_basic}):
+					# Check if a OverTime schedule exists for the employee in the attendance date
+					if frappe.db.exists("Employee Schedule", {'employee': attendance_doc.employee, 'date': attendance_doc.attendance_date, 'employee_availability': "Working", 'roster_type': roster_type_overtime}):
 
 						if working_day_overtime_rate > 0:
 
 							# Compute amount as per working day rate
 							amount = round(hourly_wage * overtime_duration * working_day_overtime_rate, 3)
-							notes = f"Attendance: {attendance_doc.name} \nCalculated based on working day rate => (Basic hourly wage) * (Duration of worked hours) * {working_day_overtime_rate}(Working day overtime rate) \n\n"
+							notes = f"Attendance: {attendance_doc.name} \nCalculated based on working day rate => Basic hourly wage*Duration of worked hours*Working day overtime rate => {hourly_wage}*{overtime_duration}*{working_day_overtime_rate} = {amount} \n\n"
 							create_additional_salary(attendance_doc.employee, amount, overtime_component, end_date, notes)
 						else:
 							error_msg = _("No Wroking Day overtime rate set in HR and Payroll Additional Settings.")
@@ -1373,7 +1371,7 @@ def process_attendance_for_ot_additional_salary(attendance_doc, overtime_compone
 							if day_off_overtime_rate > 0:
 								# Compute amount as per day off rate
 								amount = round(hourly_wage * overtime_duration * day_off_overtime_rate, 3)
-								notes = f"Attendance: {attendance_doc.name} \nCalculated based on day off rate => (Basic hourly wage) * (Duration of worked hours) * {day_off_overtime_rate}(Day off overtime rate) \n\n"
+								notes = f"Attendance: {attendance_doc.name} \nCalculated based on day off rate => Basic hourly wage*Duration of worked hours*Day off overtime rate => {hourly_wage}*{overtime_duration}*{day_off_overtime_rate} = {amount} \n\n"
 								create_additional_salary(attendance_doc.employee, amount, overtime_component, end_date, notes)
 							else:
 								error_msg = _("No Day Off overtime rate set in HR and Payroll Additional Settings.")
@@ -1385,7 +1383,7 @@ def process_attendance_for_ot_additional_salary(attendance_doc, overtime_compone
 							if public_holiday_overtime_rate > 0:
 								# Compute amount as per public holiday rate
 								amount = round(hourly_wage * overtime_duration * public_holiday_overtime_rate, 3)
-								notes = f"Attendance: {attendance_doc.name} \nCalculated based on day off rate => (Basic hourly wage) * (Duration of worked hours) * {public_holiday_overtime_rate}(Public holiday overtime rate) \n\n"
+								notes = f"Attendance: {attendance_doc.name} \nCalculated based on day off rate => Basic hourly wage*Duration of worked hours*Public holiday overtime rate => ({hourly_wage}*{overtime_duration}*{public_holiday_overtime_rate}={amount})\n\n"
 								create_additional_salary(attendance_doc.employee, amount, overtime_component, end_date, notes)
 							else:
 								error_msg = _("No Public Holiday overtime rate set in HR and Payroll Additional Settings.")
