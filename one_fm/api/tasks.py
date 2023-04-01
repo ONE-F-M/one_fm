@@ -1470,7 +1470,7 @@ def mark_daily_attendance(start_date, end_date):
 		for i in timesheet_employees_data:
 			try:
 				if not timesheet_dict.get(i.employee):
-					emp = employees_data.get(i.employee)
+					emp = timesheet_employees_data.get(i.employee)
 					employee_attendance[i.employee] = frappe._dict({
 						'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name,
 						'working_hours':0, 'status':'Absent', 'shift':'', 'in_time':'00:00:00', 'out_time':'00:00:00',
