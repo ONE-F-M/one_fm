@@ -339,10 +339,10 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
                 GROUP BY es.shift
             """.format(start_date=start_date, end_date=end_date, emp_tuple=emp_tuple), as_dict=1)
 
-            for i in all_employee_shift_query:
-                if user_employee.name != i.supervisor:
-                    validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
-                    break
+            # for i in all_employee_shift_query:
+            #     if user_employee.name != i.supervisor:
+            #         validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
+            #         break
 
         if len(validation_logs) > 0:
             frappe.log_error(str(validation_logs), 'Roster Schedule')
@@ -406,7 +406,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                     days_off_dict[i.employee] = [str(i.date)]
             # remove records from employees
             new_employees = []
-            if employees:
+            if employees and len(days_off_dict):
                 for i in employees:
                     if not (i['date'] in days_off_dict.get(i['employee'])):
                         new_employees.append(i)
