@@ -406,7 +406,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                     days_off_dict[i.employee] = [str(i.date)]
             # remove records from employees
             new_employees = []
-            if employees:
+            if employees and len(days_off_dict):
                 for i in employees:
                     if not (i['date'] in days_off_dict.get(i['employee'])):
                         new_employees.append(i)
