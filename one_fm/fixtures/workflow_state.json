@@ -826,5 +826,14 @@
   "name": "Submitted",
   "style": "Primary",
   "workflow_state_name": "Submitted"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-04-02 20:40:20.010164",
+  "name": "Pending Approval from Operations Manager",
+  "style": "",
+  "workflow_state_name": "Pending Approval from Operations Manager"
  }
 ]
