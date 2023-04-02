@@ -253,7 +253,7 @@ doc_events = {
 	},
 	"Supplier Group": {
 		"on_update": "one_fm.utils.supplier_group_on_update",
-	},
+},
 	"Bank Account": {
 		"after_insert": "one_fm.api.doc_methods.bank_account.after_insert",
 		"on_update": "one_fm.utils.bank_account_on_update",
@@ -276,7 +276,7 @@ doc_events = {
 			"one_fm.one_fm.project_custom.validate_project"
 		],
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
-		"on_update": "one_fm.one_fm.utils.switch_shift_site_post_to_inactive"
+		"on_update": "one_fm.api.doc_events.on_project_update_switch_shift_site_post_to_inactive"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
