@@ -39,7 +39,6 @@ frappe.ui.form.on('Sales Invoice', {
         }
     },
 	refresh(frm) {
-        frm.set_df_property('contracts', 'read_only', 1);
         // frm.cscript.delivery_note_btn = function() {
         //     var me = this;
         //     this.$delivery_note_btn = this.frm.add_custom_button(__('Delivery Note'),
@@ -117,6 +116,16 @@ frappe.ui.form.on('Sales Invoice', {
             frm.set_value("selling_price_list",null);
             frm.refresh_field("selling_price_list");
         }
+        // filter contracts
+        frm.set_query('contracts', () => {
+            frm.set_value('contracts', '');
+            return {
+                filters: {
+                    client: frm.doc.customer,
+                    workflow_state: 'Active'
+                }
+            }
+        })
     },
     project: function(frm){
         //clear timesheet detalis and total billing amount
