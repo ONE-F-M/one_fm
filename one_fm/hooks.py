@@ -640,6 +640,9 @@ scheduler_events = {
 		],
 		"45 23 23 * *": [ #approve all the open leave application
 		'one_fm.api.doc_methods.payroll_entry.close_all_leave_application '
+		],
+        "1/1 * * * *": [
+			'one_fm.api.v2.zenquotes.run_quotes'
 		]
 	}
 }
