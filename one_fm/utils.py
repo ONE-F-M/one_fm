@@ -2736,7 +2736,7 @@ def queue_send_workflow_action_email(doc, recipients):
             }
             email_args.update(common_args)
             email_args['subject'] = subject
-            frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
 
 
 def workflow_approve_reject(doc, recipients=None):
