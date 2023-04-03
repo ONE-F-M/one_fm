@@ -605,7 +605,8 @@ scheduler_events = {
 			'one_fm.api.tasks.generate_penalties'
 		],
 		"00 01 24 * *": [
-			'one_fm.api.tasks.generate_site_allowance'
+			'one_fm.api.tasks.generate_site_allowance',
+			'one_fm.api.tasks.generate_ot_additional_salary'
 		],
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
