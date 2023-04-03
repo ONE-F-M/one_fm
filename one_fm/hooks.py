@@ -24,7 +24,8 @@ app_license = "MIT"
 app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
 		"/assets/one_fm/js/maps.js",
-		"/assets/one_fm/js/desk.js"
+		"/assets/one_fm/js/desk.js",
+        "/assets/one_fm/js/showdown.min.js",
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"

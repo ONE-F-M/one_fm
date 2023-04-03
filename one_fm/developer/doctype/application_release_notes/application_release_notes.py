@@ -1,7 +1,7 @@
 # Copyright (c) 2023, omar jaber and contributors
 # For license information, please see license.txt
 
-import frappe,os,json
+import frappe, os, json
 from frappe.utils import get_datetime
 from frappe.model.document import Document
 from semantic_version import Version
@@ -25,11 +25,13 @@ def load_versions(change_log_folder,folder,app,args):
             for each in args.filters:
                 if each[1] in ['application','version_id','name']:
                     if file_data.get(each[1]) in each[3]:
+                        creation_datetime = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
                         append_to_iter(frappe._dict({
                             "name":" ".join([app,version_str]),
                             "owner":"Administrator",
-                            "creation":datetime.datetime.fromtimestamp(os.path.getctime(file_path)),
-                            "modified":datetime.datetime.fromtimestamp(os.path.getmtime(file_path)),
+                            "date_time":creation_datetime, 
+                            "creation":creation_datetime,
+                            "modified":creation_datetime,
                             "modified_by":"Administrator",
                             "docstatus":0,
                             "_comment_count":0,
@@ -42,11 +44,13 @@ def load_versions(change_log_folder,folder,app,args):
                 else:
                     frappe.throw("Invalid Filter Selected")
         else:
+            creation_datetime = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
             append_to_iter(frappe._dict({
                 "name":" ".join([app,version_str]),
                 "owner":"Administrator",
-                "creation":datetime.datetime.fromtimestamp(os.path.getctime(file_path)),
-                "modified":datetime.datetime.fromtimestamp(os.path.getmtime(file_path)),
+                "date_time":creation_datetime,
+                "creation":creation_datetime,
+                "modified":creation_datetime,
                 "modified_by":"Administrator",
                 "docstatus":0,
                 "_comment_count":0,

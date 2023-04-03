@@ -99,4 +99,7 @@ def fetch_keyword():
     
 @frappe.whitelist()
 def run_quotes():
-    return fetch_quote(direct_response=True).get('html')
+    try:
+        return fetch_quote(direct_response=True).get('html')
+    except:
+        False

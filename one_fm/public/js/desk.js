@@ -33,11 +33,13 @@ const show_quotes = () => {
     method: "one_fm.api.v2.zenquotes.run_quotes", //dotted path to server method
     callback: function(r) {
         //show_alert with indicator
-        frappe.show_alert({
-          message:__(r.message),
-          indicator:'green'
-        }, 20);
-        frappe.msgprint(r.message)
+        if (r.message) {
+          frappe.show_alert({
+            message:__(r.message),
+            indicator:'green'
+          }, 20);
+          frappe.msgprint(r.message)
+        } 
     }
   });
 }
