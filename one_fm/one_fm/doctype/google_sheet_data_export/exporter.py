@@ -330,6 +330,7 @@ class DataExporter:
 				df = meta.get_field(c)
 				fieldtype = df.fieldtype if df else "Data"
 				value = str(d.get(c, ""))
+				value = remove_quotes(value)
 				# check if value size is greater than 50000
 				if len(value) >= 50000:
 					cell_colour.append({'column':_column_start_end.start + i, 'row':row_index})
@@ -583,3 +584,12 @@ def get_client_id():
 	f = open(SERVICE_ACCOUNT_FILE)
 	cred = json.load(f)
 	return cred['client_email']
+
+@frappe.whitelist()
+def remove_quotes(value):
+	if value.startswith('"'):
+		value = value[1:]
+	if value.endswith('"'):
+		value = value[:-1]
+	return value
+	
