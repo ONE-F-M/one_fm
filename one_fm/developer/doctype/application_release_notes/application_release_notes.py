@@ -37,7 +37,7 @@ def load_versions(change_log_folder,folder,app,args):
                             "_comment_count":0,
                             "release_notes":content,
                             "version_id":version_str,
-                            "application":app
+                            "application":app.title().replace('_', ' ')
                             }))
                     else:
                         continue
@@ -56,7 +56,7 @@ def load_versions(change_log_folder,folder,app,args):
                 "_comment_count":0,
                 "release_notes":content,
                 "version_id":version_str,
-                "application":app
+                "application":app.title().replace('_', ' ')
                 }))
     return version_data
 

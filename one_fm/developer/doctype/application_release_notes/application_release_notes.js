@@ -10,5 +10,6 @@ frappe.ui.form.on('Application Release Notes', {
 		// Initialise showdown to convert markdown to html
 		var converter = new showdown.Converter();
 		frm.set_value('release_notes', converter.makeHtml(frm.doc.release_notes));
+		// frm.set_value('')
 	}
 });
