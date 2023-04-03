@@ -189,6 +189,7 @@ frappe.ui.form.on('Sales Invoice', {
 
     contracts: function(frm){
         if(frm.doc.contracts){
+            
             frm.clear_table("items");
             frm.refresh_field("items");
             //get contracts service items
@@ -329,7 +330,7 @@ var get_contracts_asset_items = function(frm){
     })
 };
 var get_contracts_items = function(frm){
-    console.log('get_contracts_items');
+    
     frappe.call({
         method: "one_fm.operations.doctype.contracts.contracts.get_contracts_items",
         args:{
@@ -338,16 +339,25 @@ var get_contracts_items = function(frm){
         callback:function(s){
             if(!s.exc){
                 if(s.message != undefined){
-                    console.log(s.message);
-                    for (var i=0; i<s.message.length; i++){
-                        var item = s.message[i];
-                        frappe.model.set_value(d.doctype, d.name, "item_code", item.item_code);
-                        frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
-                        frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
-                        //frappe.model.set_value(d.doctype, d.name, "uom", item.uom);
-                        frm.refresh_field("items");
-                        
-                    }
+                    
+                    frm.set_query("item_code", "items", function(frm, cdt, cdn) {
+                        var d = locals[cdt][cdn];
+                        console.log(frm)
+                        return {
+                            query: "one_fm.operations.doctype.contracts.contracts.get_si_contracts_items",
+                            filters: {
+                                contracts: frm.contracts
+                            }
+                        }
+                    });
+                    $.each(s.message, function(i, d) {
+                        var row = frappe.model.add_child(frm.doc, "Sales Invoice Item", "items");
+                        frappe.model.set_value(row.doctype, row.name, "item_code", d.item_code)
+                        frappe.model.set_value(row.doctype, row.name, "qty", d.qty)
+                        frappe.model.set_value(row.doctype, row.name, "rate", d.price_list_rate)
+                        frappe.model.set_value(row.doctype, row.name, "uom", d.uom)
+                    });
+                    
                 }                      
             }
         }
