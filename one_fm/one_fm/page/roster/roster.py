@@ -620,8 +620,12 @@ def schedule_leave(employees, leave_type, start_date, end_date):
         return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist(allow_guest=True)
-def unschedule_staff(employees, start_date, end_date=None, never_end=0):
+def unschedule_staff(employees, otRoster,start_date, end_date=None, never_end=0):
     try:
+        if otRoster == 'true':
+            roster_type = "Over-Time"
+        else:
+            roster_type = "Basic"
         _start_date = getdate(start_date)
         if end_date:
             stop_date = getdate(end_date)
@@ -644,12 +648,12 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
             # delete all schedules greater than start date
             employees_to_delete=str(tuple(employees_to_delete)).replace(',)', ')')
             frappe.db.sql(f"""
-                DELETE FROM `tabEmployee Schedule` WHERE employee IN {employees_to_delete} and date>='{start_date}'
+                DELETE FROM `tabEmployee Schedule` WHERE employee IN {employees_to_delete} and date>='{start_date}' and roster_type ='{roster_type}'
             """)
         else:
             for i in employees:
                 frappe.db.sql(f"""
-                    DELETE FROM `tabEmployee Schedule` WHERE employee='{i['employee']}' and date='{i['date']}'
+                    DELETE FROM `tabEmployee Schedule` WHERE employee='{i['employee']}' and date='{i['date']}' and roster_type ='{roster_type}'
                 """)
         response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
     except Exception as e:
