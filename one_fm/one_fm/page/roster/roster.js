@@ -477,9 +477,11 @@ function load_js(page) {
 			$(".selectclass").map(function () {
 				if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
 					if (isMonth == 1) {
+						
 						classgrt.push($(this).attr("data-selectid"));
 					}
 					else {
+						
 						classgrtw.push($(this).attr("data-selectid"));
 					}
 				}
@@ -696,6 +698,7 @@ function setup_topbar_events(page) {
 	});
 
 	$('.assignchangemodal').on('click', function () {
+		
 		unschedule_staff(page);
 	});
 	$('.dayoff').on('click', function () {
@@ -719,6 +722,7 @@ function bind_events(page) {
 		$postMonth.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it
+			
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 			if (classgrt.join(",") === "") {
@@ -732,6 +736,7 @@ function bind_events(page) {
 		$postWeek.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it
+			
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 			if (classgrt.join(",") === "") {
@@ -756,7 +761,7 @@ function bind_events(page) {
 
 			// If the id is not already in the array, add it. If it is, remove it
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-
+			
 			if (classgrt.join(",") === "") {
 				$(".filterhideshow").addClass("d-none");
 			}
@@ -774,7 +779,7 @@ function bind_events(page) {
 
 			// If the id is not already in the array, add it. If it is, remove it
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-
+			
 			if (classgrt.join(",") === "") {
 				$(".filterhideshow").addClass("d-none");
 			}
@@ -819,6 +824,7 @@ function bind_events(page) {
 				$(".Postfilterhideshow").addClass("d-none");
 			}
 			$(".selectclass").map(function () {
+				
 				classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
 
@@ -845,6 +851,7 @@ function bind_events(page) {
 				$(".Postfilterhideshow").addClass("d-none");
 			}
 			$(".selectclass").map(function () {
+				
 			    classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
 			});
@@ -897,6 +904,7 @@ function bind_events(page) {
 
 			if ($(this).is(":checked")) {
 				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
+					
 					let [employee, date] = $(v).attr('data-selectid').split('|');
 					classgrt.push($(v).attr('data-selectid'));
 					if (moment(date).isAfter(moment())) {
@@ -914,6 +922,7 @@ function bind_events(page) {
 				$(".filterhideshow").addClass("d-none");
 			}
 			$(".selectclass").map(function () {
+				
 				classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
 				// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
@@ -935,6 +944,7 @@ function bind_events(page) {
 			$(".scheduleleave").hide();
 			if ($(this).is(":checked")) {
 				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
+					
 					let [employee, date] = $(v).attr('data-selectid').split('|');
 					if (moment(date).isAfter(moment())) {
 						$(v).addClass("selectclass");
@@ -943,6 +953,7 @@ function bind_events(page) {
 				$(".filterhideshow").removeClass("d-none");
 			}
 			else {
+				
 				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
 					classgrt.splice(classgrt.indexOf($(v).attr('data-selectid')), 1);
 				});
@@ -950,7 +961,9 @@ function bind_events(page) {
 				$(".filterhideshow").addClass("d-none");
 			}
 			$(".selectclass").map(function () {
+				
 				classgrt.push($(this).attr("data-selectid"));
+				
 				classgrt = [... new Set(classgrt)];
 			});
 		});
@@ -972,6 +985,7 @@ function bind_events(page) {
 				$('.Postfilterhideshow').addClass('d-none');
 			}
 			$('.selectclass').map(function () {
+				
 				classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 			});
 			if ($(this).parent().parent().parent().children('td').children().hasClass('redboxcolor')) {
@@ -2831,6 +2845,7 @@ function displayWeekCalendar(weekCalendarSettings, page) {
 function unschedule_staff(page) {
 	// let employees = window.employees_list;
 	let employees = [];
+	let otRoster = false
 	let selected = [... new Set(classgrt)];
 	selected.forEach(function (i) {
 		let [employee, date] = i.split("|");
@@ -2883,10 +2898,17 @@ function unschedule_staff(page) {
 		primary_action: function () {
 			$('#cover-spin').show(0);
 			let { start_date, end_date, never_end } = d.get_values();
+			let element = get_wrapper_element();
+			if (element == ".rosterOtMonth") {
+				otRoster = true;
+			} else if (element == ".rosterMonth") {
+				otRoster = false;
+			}
+			
 			frappe.call({
 				method: "one_fm.one_fm.page.roster.roster.unschedule_staff",
 				type: "POST",
-				args: { employees, start_date, end_date, never_end },
+				args: { employees,otRoster, start_date, end_date, never_end },
 				callback: function(res) {
 					// code snippet
 					d.hide();
