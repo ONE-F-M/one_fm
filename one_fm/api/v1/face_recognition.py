@@ -168,8 +168,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
         
         if res.verification == "FAILED" and res.data == 'Invalid media content':
-            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
-            return response("Success", 201, doc, None)
+            return response("Failed", 400, {}, "We could not recognize your face, please ensure your face is well lightened.")
         
         if res.verification == "FAILED":
             msg = res.message

@@ -252,14 +252,14 @@ def notify_supervisor_about_late_entry(checkin):
 			if checkin.time.time() > datetime.strptime(str(shift_late_minutes["start_time"] + timedelta(minutes=shift_late_minutes['supervisor_reminder_shift_start'])), "%H:%M:%S").time():
 				time_diff = calculate_time_diffrence_for_checkin(shift_late_minutes["start_time"], checkin.time)
 				time_of_arrival = parse(str(checkin.time)).time()
-				get_reports_to = frappe.db.get_value("Employee", {"name": checkin.employee}, ['reports_to'], as_dict=1)
+				get_reports_to = frappe.db.get_value("Employee", {"name": checkin.employee}, ['reports_to'])
 				if get_reports_to:
-					return send_push_notification_for_late_entry(get_reports_to["reports_to"], checkin.employee_name, roster_type=the_roster_type if the_roster_type else "Basic", time_difference=time_diff, shift=op_shift, time_of_arrival=time_of_arrival)
-				get_site = frappe.db.get_value("Employee", {"name": checkin.employee}, ['site'], as_dict=1)
+					return send_push_notification_for_late_entry(get_reports_to, checkin.employee_name, roster_type=the_roster_type if the_roster_type else "Basic", time_difference=time_diff, shift=op_shift, time_of_arrival=time_of_arrival)
+				get_site = frappe.db.get_value("Employee", {"name": checkin.employee}, ['site'])
 				if get_site:
-					get_site_supervisor = frappe.db.get_value("Operations Site", {"name": get_site["site"]}, ['account_supervisor'], as_dict=1)
+					get_site_supervisor = frappe.db.get_value("Operations Site", {"name": get_site}, ['account_supervisor'])
 					if get_site_supervisor:
-						return send_push_notification_for_late_entry(get_site_supervisor["account_supervisor"], checkin.employee, roster_type=the_roster_type if the_roster_type else "Basic", time_difference=time_diff, shift=op_shift, time_of_arrival=time_of_arrival)
+						return send_push_notification_for_late_entry(get_site_supervisor, checkin.employee, roster_type=the_roster_type if the_roster_type else "Basic", time_difference=time_diff, shift=op_shift, time_of_arrival=time_of_arrival)
 	except Exception as e:
 		frappe.log_error(e)
 		pass
