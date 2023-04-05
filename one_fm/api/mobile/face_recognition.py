@@ -81,8 +81,8 @@ def verify(video, log_type, skip_attendance, latitude, longitude):
 		res = random.choice(stubs).FaceRecognition(req)
 		
 		if res.verification == "FAILED" and res.data == 'Invalid media content':
-			return check_in(log_type, skip_attendance, latitude, longitude)
-
+			return ("{msg}. {data}".format(msg="We could not recognize your face, please ensure your face is well lightened.", data={}))
+		
 		if res.verification == "FAILED":
 			msg = res.message
 			data = res.data
