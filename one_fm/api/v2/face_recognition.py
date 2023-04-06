@@ -184,7 +184,13 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         res = random.choice(stubs).FaceRecognition(req)
 
         if res.verification == "FAILED" and res.data == 'Invalid media content':
-            return response("Failed", 400, {}, "We could not recognize your face, please ensure your face is well lightened.")
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            if log_type == "IN":
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" +  "\U0001F612"})
+                    return response("Success", 201, doc, None)
+            return response("Success", 201, doc, None)
         elif res.verification == "FAILED":
             msg = res.message
             data = res.data
