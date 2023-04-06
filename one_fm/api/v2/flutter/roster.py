@@ -558,19 +558,19 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			query = query[:-1]
 
 			query += f"""
-				ON DUPLICATE KEY UPDATE
-				modified_by = VALUES(modified_by),
-				modified = "{creation}",
-				operations_role = VALUES(operations_role),
-				post_abbrv = VALUES(post_abbrv),
-				roster_type = VALUES(roster_type),
-				shift = VALUES(shift),
-				project = VALUES(project),
-				site = VALUES(site),
-				shift_type = VALUES(shift_type),
-				day_off_ot = VALUES(day_off_ot),
-				employee_availability = VALUES(employee_availability)
-			"""
+                ON DUPLICATE KEY UPDATE
+                modified_by = VALUES(modified_by),
+                modified = "{creation}",
+                operations_role = VALUES(operations_role),
+                post_abbrv = VALUES(post_abbrv),
+                roster_type = VALUES(roster_type),
+                shift = VALUES(shift),
+                project = VALUES(project),
+                site = VALUES(site),
+                shift_type = VALUES(shift_type),
+                day_off_ot = VALUES(day_off_ot),
+                employee_availability = "Working"
+            """
 			frappe.db.sql(query, values=[], as_dict=1)
 			frappe.db.commit()
 	else:
