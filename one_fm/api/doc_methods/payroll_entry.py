@@ -707,14 +707,14 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 					salary_slip_chunk.append(frappe.get_doc(args))
 					chunk_counter += 1
 					if len(salary_slip_chunk) >= 30:
-						frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk.copy())
+						frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk.copy(), queue="long")
 						salary_slip_chunk = []
 						chunk_counter=0
 
 					# frappe.get_doc(args).insert()
 		
 			if salary_slip_chunk:
-				frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk)
+				frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk, queue="long")
 		
 		
 		payroll_entry.db_set({"status": "Submitted", "salary_slips_created": 1, "error_message": ""})
@@ -739,6 +739,7 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 def create_salary_slip_chunk(slips):
 	for slip in slips:
 		slip.insert()
+		slip.save()
 
 def get_existing_salary_slips(employees, args):
 	return frappe.db.sql_list(
@@ -757,7 +758,7 @@ def seperate_salary_slip(employees, start_date, end_date):
 	for emp in employees:
 		salary_structure_assignment = frappe.get_all("Salary Structure Assignment", {"employee":emp, "from_date":["between",(start_date, end_date)]},["*"])
 
-		if len(salary_structure_assignment) > 0:
+		if len(salary_structure_assignment) > 1:
 			mid_date = ""
 			for ssa in salary_structure_assignment:
 				start_date = frappe.utils.get_datetime(start_date).date()
