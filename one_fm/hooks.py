@@ -435,8 +435,7 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
-	{"from_route": "/<path:wiki_page>/edit-wiki", "to_route": "wiki/edit"},
-	{"from_route": "/<path:wiki_page>/new-wiki", "to_route": "wiki/new"},
+	
 ]
 
 # doc_events = {
@@ -737,7 +736,7 @@ fixtures = [
 override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
 	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
-	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview",
+	
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
