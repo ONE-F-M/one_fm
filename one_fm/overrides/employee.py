@@ -2,7 +2,7 @@ import frappe
 from frappe.permissions import remove_user_permission
 from hrms.overrides.employee_master import *
 
-class EmployeeOverride(EmployeeMaster):
+class EmployeeOverride(Employee):
     def validate(self):
         from erpnext.controllers.status_updater import validate_status
         validate_status(self.status, ["Active", "Court Case", "Absconding", "Left"])
@@ -12,7 +12,7 @@ class EmployeeOverride(EmployeeMaster):
         self.validate_date()
         self.validate_email()
         self.validate_status()
-        self.validate_reports_to()
+        # self.validate_reports_to()
         self.validate_preferred_email()
         if self.job_applicant:
             self.validate_onboarding_process()
@@ -27,3 +27,7 @@ class EmployeeOverride(EmployeeMaster):
 
     def validate_onboarding_process(self):
         validate_onboarding_process(self)
+
+    def validate_reports_to(self):
+         if self.reports_to == self.name and self.designation != "General Manager":
+             frappe.throw(frappe._("Employee cannot report to himself."))
