@@ -426,7 +426,6 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
 def update_roster(key):
 	frappe.publish_realtime(key, "Success")
 
-
 def extreme_schedule(employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, 
 	day_off_ot, request_employee_schedule, employee_list, repeat_days, day_off):
 	if not employees:
@@ -455,13 +454,13 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 	# check keep days_off
 	if keep_days_off:
 		days_off_list = frappe.db.get_list("Employee Schedule", filters={
-			'employee':['IN', [i['employee'] for i in employees]],
-			'date': ['IN', [i['date'] for i in employees]],
-			'employee_availability': 'Day Off'
-		}, fields=['name', 'employee', 'date'])
+            'employee':['IN', [i['employee'] for i in employees]],
+            'date': ['IN', [i['date'] for i in employees]],
+            'employee_availability': 'Day Off'
+        }, fields=['name', 'employee', 'date'])
 		days_off_dict = {}
 		if days_off_list:
-			# build a dict in the form {'hr-emp-0002:['2023-01-01,]} 
+			# build a dict in the form {'hr-emp-0002:['2023-01-01,]}
 			for i in days_off_list:
 				if days_off_dict.get(i.employee):
 					days_off_dict[i.employee].append(str(i.date))
@@ -469,18 +468,18 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 					days_off_dict[i.employee] = [str(i.date)]
 			# remove records from employees
 			new_employees = []
-			for i in employees:
-				if not (i['date'] in days_off_dict.get(i['employee'])):
-					new_employees.append(i)
-			if new_employees:
-				employees = new_employees.copy()
-	
+			if employees and len(days_off_dict):
+				for i in employees:
+					if not (i['date'] in days_off_dict.get(i['employee'])):
+						new_employees.append(i)
+				if new_employees:
+					employees = new_employees.copy()
 	# # get and structure employee dictionary for easy hashing
 	employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employee_list]}, fields=['name', 'employee_name', 'department'], ignore_permissions=True)
 	employees_dict = {}
 	for i in employees_list:
 		employees_dict[i.name] = i
-	
+
 	if not cint(request_employee_schedule):
 	# 	"""
 	# 		USE DIRECT SQL TO CREATE ROSTER SCHEDULE.
@@ -559,19 +558,19 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			query = query[:-1]
 
 			query += f"""
-				ON DUPLICATE KEY UPDATE
-				modified_by = VALUES(modified_by),
-				modified = "{creation}",
-				operations_role = VALUES(operations_role),
-				post_abbrv = VALUES(post_abbrv),
-				roster_type = VALUES(roster_type),
-				shift = VALUES(shift),
-				project = VALUES(project),
-				site = VALUES(site),
-				shift_type = VALUES(shift_type),
-				day_off_ot = VALUES(day_off_ot),
-				employee_availability = VALUES(employee_availability)
-			"""
+                ON DUPLICATE KEY UPDATE
+                modified_by = VALUES(modified_by),
+                modified = "{creation}",
+                operations_role = VALUES(operations_role),
+                post_abbrv = VALUES(post_abbrv),
+                roster_type = VALUES(roster_type),
+                shift = VALUES(shift),
+                project = VALUES(project),
+                site = VALUES(site),
+                shift_type = VALUES(shift_type),
+                day_off_ot = VALUES(day_off_ot),
+                employee_availability = "Working"
+            """
 			frappe.db.sql(query, values=[], as_dict=1)
 			frappe.db.commit()
 	else:
@@ -617,6 +616,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
 	# update employee additional records
 	frappe.enqueue(update_employee_shift, employees=employees, shift=shift, owner=owner, creation=creation)
+
 
 
 def update_employee_shift(employees, shift, owner, creation):
