@@ -17,14 +17,14 @@ from hrms.hr.doctype.leave_application.leave_application import LeaveApplication
 from one_fm.api.mobile.Leave_application import notify_leave_approver
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 from one_fm.operations.doctype.contracts.contracts import calculate_item_values
-from wiki.wiki.doctype.wiki_page.wiki_page import WikiPage
-from one_fm.overrides.wiki_page import get_context
+
+
 from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 from one_fm.api.notification import after_insert
 from one_fm.one_fm.payroll_utils import add_tax_components
 from one_fm.utils import post_login
 
-__version__ = '14.0.0'
+__version__ = '14.1.0'
 
 
 frappe.auth.LoginManager.post_login = post_login
@@ -46,5 +46,5 @@ ItemPrice.validate = validate
 ItemPrice.check_duplicates = check_duplicates
 LeaveApplication.notify_leave_approver = notify_leave_approver
 calculate_taxes_and_totals.calculate_item_values = calculate_item_values
-WikiPage.get_context = get_context
+
 NotificationLog.after_insert = after_insert

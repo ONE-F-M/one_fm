@@ -26,7 +26,8 @@ jobs:
           cd /home/frappe/frappe-bench/apps/one_fm # we move into our app's folder
           git pull upstream staging # we pull any changes from git
           cd /home/frappe/frappe-bench
-          bench setup requirements
+          bench restart ${{secrets.PASSKEY}}
+          # bench setup requirements
           bench migrate # sync database
-          bench restart # we remove any unused dependencies
+          # we remove any unused dependencies
           bench doctor

@@ -390,6 +390,12 @@ class Contracts(Document):
             frappe.throw(f"No contracts site for {self.project} between {posting_date.replace(day=1)} AND {posting_date.replace(day=last_day)}")
 
 
+@frappe.whitelist()
+def get_si_contracts_items(doctype, txt, searchfield, start, page_len, filters):
+    result_set = frappe.db.sql("Select distinct item_code from `tabContract Item` where parent = '{}' ".format(filters.get('contracts')))
+    return result_set
+
+
 
 @frappe.whitelist()
 def get_contracts_asset_items(contracts):

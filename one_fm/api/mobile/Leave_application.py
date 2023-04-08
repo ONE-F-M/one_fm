@@ -13,6 +13,7 @@ from one_fm.api.tasks import get_action_user
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.processor import sendemail
 from one_fm.utils import check_if_backdate_allowed
+from one_fm.api.utils import validate_sick_leave_attachment
 
 @frappe.whitelist()
 def get_leave_detail(employee_id):
@@ -299,18 +300,6 @@ def notify_leave_approver(doc):
         push_notication_message = doc.employee_name+" has applied for "+doc.leave_type+" "+date+". Kindly, take action."
         push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, doc.name)
 
-
-def validate_sick_leave_attachment(doc):
-    """
-       Ensure that all sick leaves have an attachment
-
-    Returns:
-        (Bool) : True if attachment is present, False if attachment is not present.
-    """
-    leave_attachments = frappe.get_all("File",{'attached_to_doctype':"Leave Application",'attached_to_name':doc.name},['name'])
-    if not leave_attachments:
-        return False
-    return True
 
 
 

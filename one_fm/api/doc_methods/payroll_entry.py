@@ -178,9 +178,6 @@ def set_bank_details(self, employee_details):
 			SELECT employee from `tabEmployee` E
 			WHERE E.status = 'Active'
 			AND E.employment_type != 'Subcontractor'
-			AND E.name IN (
-				{0}
-			)
 			AND E.name NOT IN (
 				SELECT employee from `tabSalary Structure Assignment` SE
 			)
@@ -763,8 +760,8 @@ def seperate_salary_slip(employees, start_date, end_date):
 		if len(salary_structure_assignment) > 0:
 			mid_date = ""
 			for ssa in salary_structure_assignment:
-				start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-				end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+				start_date = frappe.utils.get_datetime(start_date).date()
+				end_date = frappe.utils.get_datetime(end_date).date()
 
 				if ssa.from_date > start_date and ssa.from_date < end_date:
 					mid_date = ssa.from_date

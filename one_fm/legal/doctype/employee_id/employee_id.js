@@ -14,18 +14,20 @@ var create_qr_code = function(frm) {
 			'Date of Joining', 'CIVIL ID']
 		var qr_details = ""
 		fields.forEach((field, i) => {
-			if(field == 'Date of Joining'){
-				qr_details += field+": "+frappe.datetime.global_date_format(frm.doc.date_of_joining)+"\n";
+			var field_name = field.toLowerCase().replaceAll(' ', '_')
+			var field_value = frm.doc[field_name]
+			if(field_value){
+				if(field == 'Date of Joining'){
+					qr_details += field+": "+frappe.datetime.global_date_format(frm.doc.date_of_joining)+"\n";
+				}
+				else if(field == 'Date of Birth'){
+					qr_details += field+": "+frappe.datetime.global_date_format(frm.doc.date_of_birth)+"\n";
+				}
+				else{
+					qr_details += field+": "+field_value+"\n";
+				}
 			}
-			else if(field == 'Date of Birth'){
-				qr_details += field+": "+frappe.datetime.global_date_format(frm.doc.date_of_birth)+"\n";
-			}
-			else if(field == 'Employee Name in Arabic'){
-				qr_details += field+": "+frm.doc.employee_name_in_arabic+"\n";
-			}
-			else{
-				qr_details += field+": "+frm.doc[field.toLowerCase().replace(' ', '_')]+"\n";
-			}
+
 		});
 		var chart_url = chart+encodeURI(qr_details);
 		frm.set_value("qr_code_image_link", chart_url);

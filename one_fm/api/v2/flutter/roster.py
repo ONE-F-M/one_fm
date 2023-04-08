@@ -1157,3 +1157,120 @@ def get_employee_detail(employee_pk):
     if employee_pk:
         pk, employee_id, employee_name, enrolled, cell_number = frappe.db.get_value("Employee", employee_pk, ["name", "employee_id", "employee_name", "enrolled", "cell_number"])
         return {'pk':pk, 'employee_id': employee_id, 'employee_name': employee_name, 'enrolled': enrolled, "cell_number": cell_number}
+
+
+@frappe.whitelist()
+def roster_search_bar(project=None, site=None, shift=None, employee=None):
+    """
+        This API method filters projects, sites, shifts and employee based on input.
+        Dependency moves from Project -> Site -> Shift -> Employee
+    """
+    try:
+        projects, sites, shifts, employees = [], [], [], {}
+        shifts_data = []
+        if project and site and shift:
+            shifts_data = frappe.db.get_list("Operations Shift",
+                filters={'project':project, 'site':site, 'name':shift}, 
+                fields=["project", "site", "name"], 
+                ignore_permissions=True
+            )
+            employees = frappe.db.get_list("Employee", filters={'project':project, 'site':site, 'shift':shift}, 
+                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                ignore_permissions=True)
+        elif project and site and employee:
+            employee_data = frappe.db.get_list("Employee", filters={'name':employee, 'project':project, 'site':site}, 
+                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                ignore_permissions=True)
+            if employee_data:
+                employee_data = employee_data[0]
+                if not (employee_data.project in projects):projects.append(employee_data.project)
+                if not (employee_data.site in sites):sites.append(employee_data.site)
+                if not (employee_data.shift in shifts):shifts.append(employee_data.shift)
+                employees = employee_data
+        elif project and site:
+            shifts_data = frappe.db.get_list("Operations Shift",
+                filters={'project':project, 'site':site}, 
+                fields=["project", "site", "name"], 
+                ignore_permissions=True
+            )
+            employees = frappe.db.get_list("Employee", filters={'project':project, 'site':site, 'status':'Active', 'shift_working':1}, 
+                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                ignore_permissions=True)
+        elif project and shift:
+            shifts_data = frappe.db.get_list("Operations Shift",
+                filters={'project':project, 'name':shift}, 
+                fields=["project", "site", "name"], 
+                ignore_permissions=True
+            )
+            employees = frappe.db.get_list("Employee", filters={'project':project, 'shift':shift, 'status':'Active', 'shift_working':1}, 
+                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                ignore_permissions=True)
+        elif project and employee:
+            employee_data = frappe.db.get_list("Employee", filters={'name':employee, 'project':project, 'status':'Active', 'shift_working':1}, 
+                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                ignore_permissions=True)
+            if employee_data:
+                employee_data = employee_data[0]
+                if not (employee_data.project in projects):projects.append(employee_data.project)
+                if not (employee_data.site in sites):sites.append(employee_data.site)
+                if not (employee_data.shift in shifts):shifts.append(employee_data.shift)
+                employees = employee_data
+        elif project:
+            shifts_data = frappe.db.get_list("Operations Shift",
+                filters={'project':project}, 
+                fields=["project", "site", "name"], 
+                ignore_permissions=True
+            )
+            employees = frappe.db.get_list("Employee", filters={'project':project, 'status':'Active', 'shift_working':1}, 
+                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                ignore_permissions=True)
+        elif site:
+            shifts_data = frappe.db.get_list("Operations Shift",
+                filters={'site':site}, 
+                fields=["project", "site", "name"], 
+                ignore_permissions=True
+            )
+            employees = frappe.db.get_list("Employee", filters={'site':site, 'status':'Active', 'shift_working':1}, 
+            fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+            ignore_permissions=True)
+        elif shift:
+            shifts_data = frappe.db.get_list("Operations Shift",
+                filters={'name':shift}, 
+                fields=["project", "site", "name"], 
+                ignore_permissions=True
+            )
+            employees = frappe.db.get_list("Employee", filters={'shift':shift, 'status':'Active', 'shift_working':1}, 
+                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                ignore_permissions=True)
+        elif employee:
+            employee_data = frappe.db.get_list("Employee", filters={'name':employee,'status':'Active', 'shift_working':1}, 
+                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                ignore_permissions=True)
+            if employee_data:
+                employee_data = employee_data[0]
+                if not (employee_data.project in projects):projects.append(employee_data.project)
+                if not (employee_data.site in sites):sites.append(employee_data.site)
+                if not (employee_data.shift in shifts):shifts.append(employee_data.shift)
+                employees = employee_data
+        else:
+            projects = [i.name for i in frappe.db.get_list("Project", ignore_permissions=True)]
+            sites = [i.name for i in frappe.db.get_list("Operations Site", ignore_permissions=True)]
+            shifts = [i.name for i in frappe.db.get_list("Operations Shift", ignore_permissions=True)]
+            employees = frappe.db.get_list("Employee", filters={'status':'Active', 'shift_working':1}, 
+                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                ignore_permissions=True)
+        # sort data
+        for i in shifts_data:
+            if not i.project in projects:projects.append(i.project)
+            if not i.site in sites:sites.append(i.site)
+            if not i.name in shifts:shifts.append(i.name)
+
+        data = {
+            'projects':projects,
+            'sites':sites,
+            'shifts':shifts,
+            'employees':employees
+        }
+        return response("success", 200, data)
+    except Exception as e:
+        response("Bad Request", 500, None, str(e))

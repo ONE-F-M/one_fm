@@ -10,6 +10,7 @@ from one_fm.api.v1.utils import response, validate_date
 from one_fm.api.v1.roster import get_current_shift
 from frappe.utils import cint, cstr, getdate
 from one_fm.utils import check_if_backdate_allowed
+from one_fm.api.utils import validate_sick_leave_attachment
 
 @frappe.whitelist()
 def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
@@ -191,17 +192,6 @@ def get_leave_types(employee_id: str = None) -> dict:
         return response("Internal Server Error", 500, None, error)
 
 
-def validate_sick_leave_attachment(doc):
-    """
-       Ensure that all sick leaves have an attachment
-
-    Returns:
-        (Bool) : True if attachment is present, False if attachment is not present.
-    """
-    leave_attachments = frappe.get_all("File",{'attached_to_doctype':"Leave Application",'attached_to_name':doc.name},['name'])
-    if not leave_attachments:
-        return False
-    return True
 
 
 @frappe.whitelist()

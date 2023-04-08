@@ -40,7 +40,7 @@ from frappe.desk.doctype.notification_log.notification_log import get_title, get
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_common_email_args, deduplicate_actions, get_next_possible_transitions,
-    get_doc_workflow_state, get_workflow_name, get_users_next_action_data
+    get_doc_workflow_state, get_workflow_name, get_workflow_action_url
 )
 from six import string_types
 from frappe.core.doctype.doctype.doctype import validate_series
@@ -544,7 +544,6 @@ def create_gp_letter_request():
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_submit(doc, method):
     if doc.status == "Approved":
-        leave_appillication_paid_sick_leave(doc, method)
         update_employee_hajj_status(doc, method)
         
 
@@ -559,88 +558,9 @@ def notify_employee(doc, method):
         message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
         push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, doc.name)
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def leave_appillication_on_cancel(doc, method):
     update_employee_hajj_status(doc, method)
-    leave_appillication_paid_sick_leave(doc, method)
-
-@frappe.whitelist(allow_guest=True)
-def leave_appillication_paid_sick_leave(doc, method):
-	if doc.leave_type and frappe.db.get_value("Leave Type", doc.leave_type, 'one_fm_is_paid_sick_leave') == 1:
-		if method == 'on_submit':
-			salary = get_salary_amount(doc.employee)
-			if salary:
-				create_additional_salary_for_paid_sick_leave(doc, salary)
-		elif method == 'on_cancel':
-			cancel_additional_salary_for_paid_sick_leave(doc.name)
-
-def cancel_additional_salary_for_paid_sick_leave(leave_application):
-	additional_salary_exists = frappe.db.exists('Additional Salary', {
-		'ref_doctype': 'Leave Application',
-		'ref_docname': leave_application
-	})
-	if additional_salary_exists:
-		additional_salary = frappe.get_doc('Additional Salary', additional_salary_exists)
-		if additional_salary.docstatus == 1:
-			additional_salary.cancel()
-		else:
-			additional_salary.delete()
-
-def create_additional_salary_for_paid_sick_leave(doc, salary):
-    daily_rate = salary/30
-    from hrms.hr.doctype.leave_application.leave_application import get_leave_details
-    leave_details = get_leave_details(doc.employee, nowdate())
-    curr_year_applied_days = 0
-    if doc.leave_type in leave_details['leave_allocation'] and leave_details['leave_allocation'][doc.leave_type]:
-        curr_year_applied_days = leave_details['leave_allocation'][doc.leave_type]['leaves_taken']
-    if curr_year_applied_days == 0:
-        curr_year_applied_days = doc.total_leave_days
-
-    leave_payment_breakdown = get_leave_payment_breakdown(doc.leave_type)
-
-    total_payment_days = 0
-    if leave_payment_breakdown:
-        threshold_days = 0
-        for payment_breakdown in leave_payment_breakdown:
-            payment_days = 0
-            threshold_days += payment_breakdown.threshold_days
-            if total_payment_days < doc.total_leave_days:
-                if curr_year_applied_days >= threshold_days and (curr_year_applied_days - doc.total_leave_days) < threshold_days:
-                    payment_days = threshold_days - (curr_year_applied_days-doc.total_leave_days) - total_payment_days
-                elif curr_year_applied_days <= threshold_days: # Gives true this also doc.total_leave_days <= threshold_days:
-                    payment_days = doc.total_leave_days - total_payment_days
-                create_additional_salary(salary, daily_rate, payment_days, doc, payment_breakdown)
-                total_payment_days += payment_days
-
-    if total_payment_days < doc.total_leave_days and doc.total_leave_days-total_payment_days > 0:
-        create_additional_salary(salary, daily_rate, doc.total_leave_days-total_payment_days, doc)
-
-def create_additional_salary(salary, daily_rate, payment_days, leave_application, payment_breakdown=False):
-    if payment_days > 0:
-        deduction_percentage = 1
-        salary_component = frappe.db.get_value("Leave Type", leave_application.leave_type, "one_fm_paid_sick_leave_deduction_salary_component")
-        if payment_breakdown:
-            deduction_percentage = payment_breakdown.salary_deduction_percentage/100
-            salary_component = payment_breakdown.salary_component
-        deduction_notes = """
-            Employee Salary: <b>{0}</b><br>
-            Daily Rate: <b>{1}</b><br>
-            Deduction Days Number: <b>{2}</b><br>
-            Deduction Percent: <b>{3}%</b>
-        """.format(salary, daily_rate, payment_days, deduction_percentage*100)
-
-        additional_salary = frappe.get_doc({
-            "doctype":"Additional Salary",
-            "employee": leave_application.employee,
-            "salary_component": salary_component,
-            "payroll_date": leave_application.from_date,
-            "leave_application": leave_application.name,
-            "notes": deduction_notes,
-            "amount": payment_days*daily_rate*deduction_percentage,
-			"ref_doctype": leave_application.doctype,
-			"ref_docname": leave_application.name
-        }).insert(ignore_permissions=True)
-        additional_salary.submit()
 
 def get_leave_payment_breakdown(leave_type):
     leave_type_doc = frappe.get_doc("Leave Type", leave_type)
@@ -2678,31 +2598,56 @@ def create_path(path):
     os.mkdir(path)
 
 
+def get_users_next_action_data(transitions, doc, recipients):
+	user_data_map = {}
+	for transition in transitions:
+		for user in recipients:
+			if not user_data_map.get(user):
+				user_data_map[user] = frappe._dict(
+					{
+						"possible_actions": [],
+						"email": user,
+					}
+				)
+
+			user_data_map[user].get("possible_actions").append(
+				frappe._dict(
+					{
+						"action_name": transition.action,
+						"action_link": get_workflow_action_url(transition.action, doc, user),
+					}
+				)
+			)
+	return user_data_map
+
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
     frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
+
 
 def queue_send_workflow_action_email(doc, recipients):
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
         workflow, get_doc_workflow_state(doc), doc
     )
-    user_data_map = get_users_next_action_data(next_possible_transitions, doc)
+    user_data_map = get_users_next_action_data(next_possible_transitions, doc, recipients)
 
     common_args = get_common_email_args(doc)
     message = common_args.pop("message", None)
+    subject = f"Pending - Workflow Action on {_(doc.doctype)} - {doc.workflow_state}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
-    if not list(user_data_map[0].values()):
+    if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,
             "args": {"message": message, "doc_link": frappe.utils.get_url(doc.get_url())},
             "reference_name": doc.name,
-            "reference_doctype": doc.doctype,
+            "reference_doctype": doc.doctype
         }
         email_args.update(common_args)
-        frappe.enqueue(method=sendemail, queue="short", **email_args)
+        email_args['subject'] = subject
+        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
     else:
-        for d in [i for i in list(user_data_map[0].values()) if i.get('email') in recipients]:
+        for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
             email_args = {
                 "recipients": recipients,
                 "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message, "pdf_link": pdf_link, "doc_link": frappe.utils.get_url(doc.get_url())},
@@ -2710,7 +2655,8 @@ def queue_send_workflow_action_email(doc, recipients):
                 "reference_doctype": doc.doctype,
             }
             email_args.update(common_args)
-            frappe.enqueue(method=sendemail, queue="short", **email_args)
+            email_args['subject'] = subject
+        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
 
 
 def workflow_approve_reject(doc, recipients=None):
@@ -2929,7 +2875,7 @@ def get_today_leaves(cur_date):
 
 def get_approver(employee):
     """
-        Get document approver for employee by 
+        Get document approver for employee by
         reports_to, shift_approver, site_approver
     """
     operations_site, operations_shift = '', ''
@@ -2950,7 +2896,7 @@ def get_approver(employee):
 
 def get_approver_for_many_employees(supervisor=None):
     """
-        Get document approver for employee by 
+        Get document approver for employee by
         reports_to, shift_approver, site_approver
     """
     if not supervisor:
@@ -2964,8 +2910,8 @@ def get_approver_for_many_employees(supervisor=None):
     if operations_site:
         employees += [i.name for i in frappe.db.get_list('Employee', {'site':['IN', operations_site]}, "name", ignore_permissions=True) if not i.name in employees]
     operations_shift = [i.name for i in frappe.db.get_list('Operations Shift', {'supervisor':supervisor}, "name", ignore_permissions=True)]
-    if operations_shift:    
-        employees += [i.name for i in frappe.db.get_list('Employee', {'shift':['IN', operations_shift]}, "name", ignore_permissions=True) if not i.name in employees]    
+    if operations_shift:
+        employees += [i.name for i in frappe.db.get_list('Employee', {'shift':['IN', operations_shift]}, "name", ignore_permissions=True) if not i.name in employees]
     employees.append(supervisor)
     return employees
 
@@ -3006,7 +2952,7 @@ def post_login(self):
             {
             'doctype':'Administrator Auto Log',
             'ip': session.session_ip,
-            'login_time': session.last_updated, 
+            'login_time': session.last_updated,
             'session_expiry': session.session_expiry,
             'device': session.device,
             'session_country': json.dumps(session.session_country),

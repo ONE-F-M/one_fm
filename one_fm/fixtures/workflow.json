@@ -3757,7 +3757,7 @@
   "doctype": "Workflow",
   "document_type": "Sales Invoice",
   "is_active": 1,
-  "modified": "2020-11-02 10:41:25.535595",
+  "modified": "2023-04-02 20:44:28.208513",
   "name": "Sales Invoice",
   "override_status": 0,
   "send_email_alert": 0,
@@ -3777,20 +3777,20 @@
    },
    {
     "allow_edit": "Accounts User",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
     "parent": "Sales Invoice",
     "parentfield": "states",
     "parenttype": "Workflow",
-    "state": "Pending Approval",
+    "state": "Pending Approval from Operations Manager",
     "update_field": null,
     "update_value": null
    },
    {
     "allow_edit": "Operations Manager",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -3803,7 +3803,7 @@
    },
    {
     "allow_edit": "Accounts User",
-    "doc_status": "2",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -3829,7 +3829,7 @@
    },
    {
     "allow_edit": "Accounts User",
-    "doc_status": "2",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -3847,7 +3847,7 @@
     "allow_self_approval": 1,
     "allowed": "Accounts User",
     "condition": null,
-    "next_state": "Pending Approval",
+    "next_state": "Pending Approval from Operations Manager",
     "parent": "Sales Invoice",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -3862,7 +3862,7 @@
     "parent": "Sales Invoice",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Pending Approval"
+    "state": "Pending Approval from Operations Manager"
    },
    {
     "action": "Reject",
@@ -3873,7 +3873,7 @@
     "parent": "Sales Invoice",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Pending Approval"
+    "state": "Pending Approval from Operations Manager"
    },
    {
     "action": "Approve",
@@ -5351,8 +5351,8 @@
   "docstatus": 0,
   "doctype": "Workflow",
   "document_type": "Timesheet",
-  "is_active": 0,
-  "modified": "2022-10-25 01:16:52.488227",
+  "is_active": 1,
+  "modified": "2023-03-27 14:53:55.057106",
   "name": "Timesheet",
   "override_status": 0,
   "send_email_alert": 0,
@@ -5372,6 +5372,19 @@
    },
    {
     "allow_edit": "Employee",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Timesheet",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Open",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Employee",
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5379,12 +5392,12 @@
     "parent": "Timesheet",
     "parentfield": "states",
     "parenttype": "Workflow",
-    "state": "Submit",
+    "state": "Submitted",
     "update_field": "",
     "update_value": ""
    },
    {
-    "allow_edit": "Shift Supervisor",
+    "allow_edit": "Employee",
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5397,7 +5410,7 @@
     "update_value": ""
    },
    {
-    "allow_edit": "Shift Supervisor",
+    "allow_edit": "Employee",
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5410,7 +5423,7 @@
     "update_value": ""
    },
    {
-    "allow_edit": "Shift Supervisor",
+    "allow_edit": "Employee",
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -5425,11 +5438,22 @@
   ],
   "transitions": [
    {
+    "action": "Open Request",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "condition": "doc.attendance_by_timesheet == 1",
+    "next_state": "Open",
+    "parent": "Timesheet",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Draft"
+   },
+   {
     "action": "Submit",
     "allow_self_approval": 1,
     "allowed": "Employee",
-    "condition": null,
-    "next_state": "Submit",
+    "condition": "doc.attendance_by_timesheet == 0",
+    "next_state": "Submitted",
     "parent": "Timesheet",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -5438,35 +5462,57 @@
    {
     "action": "Approve",
     "allow_self_approval": 1,
-    "allowed": "Shift Supervisor",
-    "condition": "frappe.session.user == doc.approver",
+    "allowed": "Employee",
+    "condition": "frappe.session.user == doc.approver and doc.attendance_by_timesheet == 1",
     "next_state": "Approved",
     "parent": "Timesheet",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Submit"
+    "state": "Open"
    },
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Shift Supervisor",
-    "condition": "frappe.session.user == doc.approver",
+    "allowed": "Employee",
+    "condition": "frappe.session.user == doc.approver and doc.attendance_by_timesheet == 1",
     "next_state": "Rejected",
     "parent": "Timesheet",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Submit"
+    "state": "Open"
    },
    {
     "action": "Cancel",
     "allow_self_approval": 1,
-    "allowed": "Shift Supervisor",
-    "condition": "frappe.session.user == doc.leave_approver",
+    "allowed": "Employee",
+    "condition": "frappe.session.user == doc.approver and doc.attendance_by_timesheet == 1",
     "next_state": "Cancelled",
     "parent": "Timesheet",
     "parentfield": "transitions",
     "parenttype": "Workflow",
     "state": "Approved"
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "condition": "frappe.session.user == doc.approver and doc.attendance_by_timesheet == 1",
+    "next_state": "Cancelled",
+    "parent": "Timesheet",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Rejected"
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "condition": "doc.attendance_by_timesheet == 0",
+    "next_state": "Cancelled",
+    "parent": "Timesheet",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Submitted"
    }
   ],
   "workflow_name": "Timesheet",
