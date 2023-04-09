@@ -807,6 +807,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 day_off_ot = VALUES(day_off_ot),
                 employee_availability = "Working"
             """
+            frappe.log_error(query, 'ROSTER QUERY')
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
         else:
@@ -834,9 +835,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
             query = query[:-1]
 
-
-            query = query[:-1]
-
             query += f"""
                 ON DUPLICATE KEY UPDATE
                 modified_by = VALUES(modified_by),
@@ -851,6 +849,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 day_off_ot = VALUES(day_off_ot),
                 employee_availability = "Working"
             """
+            frappe.log_error(query, 'ROSTER QUERY')
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
     else:
