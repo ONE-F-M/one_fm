@@ -1011,7 +1011,7 @@ def schedule_leave(employees, leave_type, start_date, end_date):
         return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist(allow_guest=True)
-def unschedule_staff(employees, start_date, end_date=None, never_end=0):
+def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
     try:
         if end_date:
             stop_date = getdate(end_date)
@@ -1022,6 +1022,8 @@ def unschedule_staff(employees, start_date, end_date=None, never_end=0):
             response("Error", 400, None, {'message':'Employees must be selected.'})
         delete_dict = {}
         new_employees = []
+        if not start_date:
+            start_date = employees[0]['date']
         if end_date:
             for i in employees:
                 if not getdate(i['date']) >= stop_date:
