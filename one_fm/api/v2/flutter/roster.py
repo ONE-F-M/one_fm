@@ -771,23 +771,32 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 employee_doc = employees_dict.get(employee['employee'])
                 name = f"{employee['date']}_{employee['employee']}_{roster_type}"
                 id_list.append(name)
-                weekday_check = getdate(employee['date']).weekday()
-                if weekday_check in repeat_days:
+                if not (repeat_days and day_off):
                     query += f"""
-					(
-						"{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
-						"{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
-						"{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
-						{day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
-					),"""
-                elif weekday_check in day_off:
-                    query += f"""
-						(
-							"{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "", 
-							"", "", '', "Day Off", 
-							"", "", "{roster_type}", 
-							{day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
-						),"""
+                    (
+                        "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
+                        "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
+                        "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+                        {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
+                    ),"""
+                else:
+                    weekday_check = getdate(employee['date']).weekday()
+                    if weekday_check in repeat_days:
+                        query += f"""
+                        (
+                            "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
+                            "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
+                            "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+                            {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
+                        ),"""
+                    elif weekday_check in day_off:
+                        query += f"""
+                            (
+                                "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "", 
+                                "", "", '', "Day Off", 
+                                "", "", "{roster_type}", 
+                                {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
+                            ),"""
 
             query = query[:-1]
 
@@ -814,23 +823,32 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 employee_doc = employees_dict.get(employee['employee'])
                 name = f"{employee['date']}_{employee['employee']}_{roster_type}"
                 id_list.append(name)
-                weekday_check = getdate(employee['date']).weekday()
-                if weekday_check in repeat_days:
+                if not (repeat_days and day_off):
                     query += f"""
-					(
-						"{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
-						"{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
-						"{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
-						{day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
-					),"""
-                elif weekday_check in day_off:
-                    query += f"""
-						(
-							"{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "", 
-							"", "", '', "Day Off", 
-							"", "", "{roster_type}", 
-							{day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
-						),"""
+                    (
+                        "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
+                        "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
+                        "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+                        {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
+                    ),"""
+                else:
+                    weekday_check = getdate(employee['date']).weekday()
+                    if weekday_check in repeat_days:
+                        query += f"""
+                        (
+                            "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
+                            "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
+                            "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+                            {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
+                        ),"""
+                    elif weekday_check in day_off:
+                        query += f"""
+                            (
+                                "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "", 
+                                "", "", '', "Day Off", 
+                                "", "", "{roster_type}", 
+                                {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
+                            ),"""
 
             query = query[:-1]
 
