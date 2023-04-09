@@ -320,15 +320,14 @@ class DataExporter:
 		if self.all_doctypes:
 			d.name = f'"{d.name}"'
 
-		if len(rows) <= rowidx:
-			rows.append([""] * (len(self.columns)))
-		row = rows[rowidx]
-		
+
 		_column_start_end = self.column_start_end.get((dt, parentfield))
 		if _column_start_end:
+			if len(rows) < rowidx + 1:
+				rows.append([""] * (len(self.columns) + 1))
+			row = rows[rowidx]
 			for i, c in enumerate(self.columns[_column_start_end.start : _column_start_end.end]):
 				df = meta.get_field(c)
-				fieldtype = df.fieldtype if df else "Data"
 				value = str(d.get(c, ""))
 				value = remove_quotes(value)
 				# check if value size is greater than 50000
