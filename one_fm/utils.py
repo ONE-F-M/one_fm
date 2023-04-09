@@ -2,6 +2,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 from frappe.auth import validate_ip_address
+from frappe.utils.nestedset import validate_loop
 from one_fm.api.notification import create_notification_log
 from frappe import _
 import frappe, os, erpnext, json, math, itertools, pymysql, requests
@@ -2973,3 +2974,18 @@ def post_login(self):
                     frappe.cache().set_value(frappe.session.user, frappe._dict({'employee':employee}))
             except:
                 frappe.cache().set_value(frappe.session.user, frappe._dict({}))
+
+
+def validate_reports_to(self):
+    if self.reports_to == self.name and self.designation != "General Manager":
+        frappe.throw(frappe._("Employee cannot report to himself."))
+
+
+def custom_validate_nestedset_loop(doctype, name, lft, rgt):
+    if doctype == "Employee":
+        designation = frappe.db.get_value(doctype, name, ["designation"])
+        if designation:
+            if designation == "General Manager":
+                return
+    validate_loop(doctype, name, lft, rgt)
+    

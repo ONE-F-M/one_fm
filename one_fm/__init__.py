@@ -5,6 +5,7 @@ from hrms.hr.doctype.shift_request.shift_request import ShiftRequest
 from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
 from hrms.payroll.doctype.salary_slip.salary_slip import SalarySlip
 from erpnext.stock.doctype.item_price.item_price import ItemPrice
+from erpnext.setup.doctype.employee.employee import Employee
 from one_fm.api.doc_methods.shift_request import shift_request_submit, validate_approver, shift_request_cancel, validate_default_shift
 from one_fm.api.doc_methods.payroll_entry import (
 	validate_employee_attendance, get_count_holidays_of_employee, get_count_employee_attendance, fill_employee_details, create_salary_slips
@@ -22,7 +23,7 @@ from one_fm.overrides.wiki_page import get_context
 from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 from one_fm.api.notification import after_insert
 from one_fm.one_fm.payroll_utils import add_tax_components
-from one_fm.utils import post_login
+from one_fm.utils import post_login, validate_reports_to, custom_validate_nestedset_loop
 
 __version__ = '14.1.0'
 
@@ -48,3 +49,5 @@ LeaveApplication.notify_leave_approver = notify_leave_approver
 calculate_taxes_and_totals.calculate_item_values = calculate_item_values
 WikiPage.get_context = get_context
 NotificationLog.after_insert = after_insert
+Employee.validate_reports_to = validate_reports_to
+frappe.utils.nestedset.validate_loop = custom_validate_nestedset_loop

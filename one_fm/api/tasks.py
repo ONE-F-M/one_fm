@@ -1212,11 +1212,7 @@ def generate_site_allowance():
 	if operations_site:
 			for site in operations_site:
 				employee_det = frappe.db.sql("""
-<<<<<<< HEAD
 							SELECT employee, employee_name, count(attendance_date) as count FROM `tabAttendance`
-=======
-							SELECT employee, count(attendance_date) as count, GROUP_CONCAT(attendance_date) as attendance_dates FROM `tabAttendance`
->>>>>>> 58a9ab19 (added white spaces and the attendance dates)
 							WHERE
 								site = '{site}'
 							AND attendance_date between '{start_date}' and '{end_date}'
