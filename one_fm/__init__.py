@@ -24,7 +24,8 @@ from one_fm.api.notification import after_insert
 from one_fm.one_fm.payroll_utils import add_tax_components
 from one_fm.utils import post_login
 
-__version__ = '14.0.0'
+__version__ = '14.1.0'
+
 
 
 frappe.auth.LoginManager.post_login = post_login

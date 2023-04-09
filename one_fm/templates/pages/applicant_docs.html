@@ -290,7 +290,12 @@
                                     </div>
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Birth_Place">Place of Birth *</label>
-                                        <input class="form-control input2" type="text" id="Birth_Place" name="birth_place" size="50" {% if job_applicant.one_fm_place_of_birth != None %} value="{{ job_applicant.one_fm_place_of_birth }}" {% endif %}>
+                                        <select class="form-control input2" id="Birth_Place" name="birth_place" aria-placeholder="Select Your Birth Place">
+																					<option value="select" selected disabled>Select Your Birth Place</option>
+																					{% if job_applicant.one_fm_nationality != None %}
+																							<option value="{{ job_applicant.one_fm_place_of_birth }}" selected>{{ job_applicant.one_fm_place_of_birth }}</option>
+																					{% endif %}>
+                                        </select>
                                     </div>
 
                                 </div>

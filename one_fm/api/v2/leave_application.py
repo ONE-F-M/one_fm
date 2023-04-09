@@ -10,6 +10,7 @@ from one_fm.api.v1.utils import response, validate_date
 from one_fm.api.v1.roster import get_current_shift
 from frappe.utils import cint, cstr, getdate
 from one_fm.utils import check_if_backdate_allowed
+from one_fm.api.utils import validate_sick_leave_attachment
 
 @frappe.whitelist()
 def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
@@ -288,6 +289,8 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                 leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
                 leave_doc.append('proof_documents',{"attachments":file_.file_url})
                 leave_doc.save()
+                if not validate_sick_leave_attachment(leave_doc):
+                    return response("Internal Server Error", 500, None, "Error while attaching document to form")
                 frappe.db.commit()
                 # with open(OUTPUT_FILE_PATH, "wb") as fh:
                 #     fh.write(content)
@@ -318,9 +321,11 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.status=status
     leave.leave_approver = leave_approver
     leave.save(ignore_permissions=True)
-    
-    frappe.db.commit()
     return leave.as_dict()
+
+
+
+
 
 @frappe.whitelist()
 def fetch_leave_approver(employee: str) -> str:

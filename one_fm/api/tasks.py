@@ -14,11 +14,15 @@ from frappe.utils import (
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
-from one_fm.utils import (mark_attendance, get_holiday_today, production_domain, get_today_leaves)
+from one_fm.utils import (
+	mark_attendance, get_holiday_today, production_domain, get_today_leaves, get_salary_amount,
+	get_leave_payment_breakdown
+)
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import approve_open_employee_checkin_issue
+from hrms.hr.utils import get_holidays_for_employee
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -663,7 +667,6 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 		"exact_notes": penalty
 	})
 	penalty_issuance.issuing_employee = issuing_employee
-	# penalty_issuance.employee_name = self.lead_name
 	penalty_issuance.flags.ignore_permissions = True
 	penalty_issuance.insert()
 	penalty_issuance.submit()
@@ -673,7 +676,7 @@ def fetch_non_shift(date, s_type):
 	if s_type == "AM":
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,
 				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0 AND E.status='Active'
+				WHERE E.shift_working = 0 AND E.status='Active' AND E.attendance_by_timesheet != 1
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time >= '01:00:00'
@@ -685,7 +688,7 @@ def fetch_non_shift(date, s_type):
 		""".format(date=cstr(date)), as_dict=1)
 	else:
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0
+				WHERE E.shift_working = 0 AND E.attendance_by_timesheet != 1
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
@@ -1191,7 +1194,7 @@ def create_penalty_deduction(start_date, end_date, employee, total_penalty_amoun
 #this function is to generate Site Allowance as Earing Component in Salary Slip. It is monthly calculated based on employees attendance
 def generate_site_allowance():
 	#get list of all site that includes Site Allowance.
-	operations_site = frappe.get_all("Operations Site", {"include_site_allowance":"1"},["name","allowance_amount"])
+	operations_site = frappe.get_all("Operations Site", {"include_site_allowance":"1"},["name","allowance_amount", "project"])
 
 	component_name = frappe.db.get_single_value('HR and Payroll Additional Settings', 'site_allowance_additional_salary_component')
 	if not component_name:
@@ -1209,42 +1212,279 @@ def generate_site_allowance():
 	if operations_site:
 			for site in operations_site:
 				employee_det = frappe.db.sql("""
-							SELECT employee,count(attendance_date) FROM `tabAttendance`
+							SELECT employee, employee_name, count(attendance_date) as count FROM `tabAttendance`
 							WHERE
 								site = '{site}'
 							AND attendance_date between '{start_date}' and '{end_date}'
 							And status = "Present"
 							GROUP BY employee
-						""".format(site=site.name,start_date = cstr(start_date), end_date = cstr(end_date)), as_list=1)
+						""".format(site=site.name,start_date = cstr(start_date), end_date = cstr(end_date)), as_dict=1)
 
 				if employee_det:
 					for employee in employee_det:
 						#calculate Monthly_site_allowance with the rate of allowance per day.
-						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee[1])
-						create_additional_salary(employee[0], Monthly_site_allowance, component_name, end_date, site.name)
+						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee["count"])
+						notes = f"Project: {site.project} \nSite: {site.name} \nNumber of days worked: {employee['count']} \n\n"
+						create_additional_salary(employee["employee"], Monthly_site_allowance, component_name, end_date, notes)
 
 #this function creates additional salary for a given component.
-def create_additional_salary(employee, amount, component, end_date, site):
-	check_add_sal_exists = frappe.db.get_value("Additional Salary", {"employee": employee, "payroll_date": end_date, "salary_component": component}, "name")
-	if check_add_sal_exists:
-		additional_salary = frappe.get_doc("Additional Salary", check_add_sal_exists)
-		additional_salary.amount += amount
-		additional_salary.notes += f" , {site}"
-		additional_salary.flags.ignore_validate_update_after_submit = True
-		additional_salary.save(ignore_permissions=1)
-	else:	
-		additional_salary = frappe.new_doc("Additional Salary")
-		additional_salary.employee = employee
-		additional_salary.salary_component = component
-		additional_salary.amount = amount
-		additional_salary.payroll_date = end_date
-		additional_salary.company = erpnext.get_default_company()
-		additional_salary.overwrite_salary_structure_amount = 1
-		additional_salary.notes = f"Site Allowance for {site}"
-		additional_salary.insert()
-		additional_salary.submit()
-	frappe.db.commit()
+def create_additional_salary(employee, amount, component, end_date, notes):
+	try:
+		check_add_sal_exists = frappe.db.exists("Additional Salary",
+			{"employee": employee, "payroll_date": end_date, "salary_component": component, "docstatus": 1}
+		)
+		if check_add_sal_exists:
+			additional_salary = frappe.get_doc("Additional Salary", check_add_sal_exists)
+			additional_salary.amount += amount
+			if additional_salary.notes:
+				additional_salary.notes += notes
+			else:
+				additional_salary.notes = notes
+			additional_salary.flags.ignore_validate_update_after_submit = True
+			additional_salary.save(ignore_permissions=1)
+		else:
+			additional_salary = frappe.new_doc("Additional Salary")
+			additional_salary.employee = employee
+			additional_salary.salary_component = component
+			additional_salary.amount = amount
+			additional_salary.payroll_date = end_date
+			additional_salary.company = erpnext.get_default_company()
+			additional_salary.overwrite_salary_structure_amount = 1
+			additional_salary.notes = notes
+			additional_salary.insert()
+			additional_salary.submit()
+		frappe.db.commit()
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Additional Salary - {0}'.format(component))
 
+def generate_ot_additional_salary():
+	# Gather the required Date details such as start date, and respective end date.
+	start_date = add_to_date(getdate(), months=-1)
+	end_date = get_end_date(start_date, 'monthly')['end_date']
+
+	# Fetch payroll details from HR and Payroll Additional Settings
+	overtime_component = frappe.db.get_single_value("HR and Payroll Additional Settings", 'overtime_additional_salary_component')
+	working_day_overtime_rate = frappe.db.get_single_value("HR and Payroll Additional Settings", 'working_day_overtime_rate')
+	day_off_overtime_rate = frappe.db.get_single_value("HR and Payroll Additional Settings", 'day_off_overtime_rate')
+	public_holiday_overtime_rate = frappe.db.get_single_value("HR and Payroll Additional Settings", 'public_holiday_overtime_rate')
+
+	# Get the OverTime Attendance for the date range
+	attendance_list = frappe.db.sql("""
+		SELECT
+			*
+		FROM
+			`tabAttendance`
+		WHERE
+			attendance_date between '{start_date}' and '{end_date}'
+			AND status = "Present" AND roster_type = "Over-Time" AND docstatus = 1
+		GROUP BY
+			employee, attendance_date
+	""".format(start_date = cstr(start_date), end_date = cstr(end_date)), as_dict=1)
+
+	if attendance_list and len(attendance_list) > 0:
+		for attendance_doc in attendance_list:
+			process_attendance_for_ot_additional_salary(attendance_doc, overtime_component, working_day_overtime_rate, day_off_overtime_rate, public_holiday_overtime_rate, end_date)
+
+def process_attendance_for_ot_additional_salary(attendance_doc, overtime_component, working_day_overtime_rate, day_off_overtime_rate, public_holiday_overtime_rate, end_date):
+	"""
+	This function creates an additional salary document for a given by specifying the salary component for overtime set in the HR and Payroll Additional Settings,
+	by obtaining the details from Attendance where the roster type is set to Over-Time.
+
+	The over time rate is fetched from the project which is linked with the shift the employee was working in.
+	The over time rate is calculated by multiplying the number of hours of the shift with the over time rate for the project.
+
+	In case of no overtime rate is set for the project, overtime rates are fetched from HR and Payroll Additional Settings.
+	Amount is calucated and additional salary is created as:
+	1. If employee has an existing basic schedule on the same day - working day rate is applied
+	2. Working on a holiday of type "weekly off: - day off rate is applied.
+	3. Working on a holiday of type non "weekly off" - public/additional holiday.
+
+	Args:
+		doc: The attendance document
+
+	"""
+	roster_type_overtime = "Over-Time"
+
+	days_of_week = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+	# Check if attendance is for roster type: Over-Time
+	if attendance_doc.roster_type == roster_type_overtime:
+
+		payroll_date = cstr(attendance_doc.attendance_date)
+
+		overtime_duration = attendance_doc.working_hours
+		project_has_overtime_rate = False
+		project_overtime_rate = 0
+
+		if attendance_doc.operations_shift:
+			# Fetch project and duration of the shift employee worked in operations shift
+			project, overtime_duration = frappe.db.get_value("Operations Shift", attendance_doc.operations_shift, ["project", "duration"])
+			# Fetch overtime details from project
+			project_has_overtime_rate, project_overtime_rate = frappe.db.get_value("Project", {'name': project}, ["has_overtime_rate", "overtime_rate"])
+
+		# If project has a specified overtime rate, calculate amount based on overtime rate and create additional salary
+		if project_has_overtime_rate:
+			if project_overtime_rate > 0:
+				amount = round(project_overtime_rate * overtime_duration, 3)
+				notes = f"Attendance: {attendance_doc.name} \nProject: {project} \nCalculated based on ot rate set for the project\nProject ot rate: {project_overtime_rate} \n\n"
+				create_additional_salary(attendance_doc.employee, amount, overtime_component, end_date, notes)
+			else:
+				error_msg = _("Overtime rate must be greater than zero for project: {project}".format(project=project))
+				frappe.log_error(error_msg, 'OT Additional Salary - Attendance {0}'.format(attendance_doc.name))
+
+		# If no overtime rate is specified, follow labor law => (Basic Hourly Wage * number of worked hours * 1.5)
+		else:
+			# Fetch assigned shift, basic salary  and holiday list for the given employee
+			assigned_shift, holiday_list = frappe.db.get_value("Employee", {'employee': attendance_doc.employee}, ["shift", "holiday_list"])
+			basic_salary = get_salary_amount(attendance_doc.employee)
+			if assigned_shift:
+				# Fetch duration of the shift employee is assigned to
+				assigned_shift_duration = frappe.db.get_value("Operations Shift", assigned_shift, ["duration"])
+
+				if basic_salary and basic_salary > 0:
+					# Compute hourly wage
+					daily_wage = round(basic_salary/30, 3)
+					hourly_wage = round(daily_wage/assigned_shift_duration, 3)
+
+					# Check if a OverTime schedule exists for the employee in the attendance date
+					if frappe.db.exists("Employee Schedule", {'employee': attendance_doc.employee, 'date': attendance_doc.attendance_date, 'employee_availability': "Working", 'roster_type': roster_type_overtime}):
+
+						if working_day_overtime_rate > 0:
+
+							# Compute amount as per working day rate
+							amount = round(hourly_wage * overtime_duration * working_day_overtime_rate, 3)
+							notes = f"Attendance: {attendance_doc.name} \nCalculated based on working day rate => Basic hourly wage*Duration of worked hours*Working day overtime rate => {hourly_wage}*{overtime_duration}*{working_day_overtime_rate} = {amount} \n\n"
+							create_additional_salary(attendance_doc.employee, amount, overtime_component, end_date, notes)
+						else:
+							error_msg = _("No Wroking Day overtime rate set in HR and Payroll Additional Settings.")
+							frappe.log_error(error_msg, 'OT Additional Salary - Attendance {0}'.format(attendance_doc.name))
+
+					# Check if attendance date falls in a holiday list
+					elif holiday_list:
+
+						# Pass last parameter as "False" to get weekly off days
+						holidays_weekly_off = get_holidays_for_employee(attendance_doc.employee, attendance_doc.attendance_date, attendance_doc.attendance_date, False, False)
+
+						# Pass last paramter as "True" to get non weekly off days, ie, public/additional holidays
+						holidays_public_holiday = get_holidays_for_employee(attendance_doc.employee, attendance_doc.attendance_date, attendance_doc.attendance_date, False, True)
+
+						# Check for weekly off days length and if description of day off is set as one of the weekdays. (By default, description is set to a weekday name)
+						if len(holidays_weekly_off) > 0 and holidays_weekly_off[0].description in days_of_week:
+
+							if day_off_overtime_rate > 0:
+								# Compute amount as per day off rate
+								amount = round(hourly_wage * overtime_duration * day_off_overtime_rate, 3)
+								notes = f"Attendance: {attendance_doc.name} \nCalculated based on day off rate => Basic hourly wage*Duration of worked hours*Day off overtime rate => {hourly_wage}*{overtime_duration}*{day_off_overtime_rate} = {amount} \n\n"
+								create_additional_salary(attendance_doc.employee, amount, overtime_component, end_date, notes)
+							else:
+								error_msg = _("No Day Off overtime rate set in HR and Payroll Additional Settings.")
+								frappe.log_error(error_msg, 'OT Additional Salary - Attendance {0}'.format(attendance_doc.name))
+
+						# Check for weekly off days set to "False", ie, Public/additional holidays in holiday list
+						elif len(holidays_public_holiday) > 0:
+
+							if public_holiday_overtime_rate > 0:
+								# Compute amount as per public holiday rate
+								amount = round(hourly_wage * overtime_duration * public_holiday_overtime_rate, 3)
+								notes = f"Attendance: {attendance_doc.name} \nCalculated based on day off rate => Basic hourly wage*Duration of worked hours*Public holiday overtime rate => ({hourly_wage}*{overtime_duration}*{public_holiday_overtime_rate}={amount})\n\n"
+								create_additional_salary(attendance_doc.employee, amount, overtime_component, end_date, notes)
+							else:
+								error_msg = _("No Public Holiday overtime rate set in HR and Payroll Additional Settings.")
+								frappe.log_error(error_msg, 'OT Additional Salary - Attendance {0}'.format(attendance_doc.name))
+					else:
+						error_msg = _("No basic Employee Schedule or Holiday List found for employee: {employee}".format(employee=attendance_doc.employee))
+						frappe.log_error(error_msg, 'OT Additional Salary - Attendance {0}'.format(attendance_doc.name))
+				else:
+					error_msg = _("Basic Salary not set for employee: {employee} in the employee record.".format(employee=attendance_doc.employee))
+					frappe.log_error(error_msg, 'OT Additional Salary - Attendance {0}'.format(attendance_doc.name))
+			else:
+				error_msg = _("Shift not set for employee: {employee} in the employee record.".format(employee=attendance_doc.employee))
+				frappe.log_error(error_msg, 'OT Additional Salary - Attendance {0}'.format(attendance_doc.name))
+
+def generate_sick_leave_deduction():
+	# Gather the required Date details such as start date, and respective end date.
+	start_date = add_to_date(getdate(), months=-1)
+	end_date = get_end_date(start_date, 'monthly')['end_date']
+	# Get the OverTime Attendance for the date range
+	leave_list = frappe.db.sql("""
+		select
+			la.name, la.employee, la.leave_type, la.total_leave_days, lt.one_fm_paid_sick_leave_deduction_salary_component
+		from
+			`tabLeave Application` la, `tabLeave Type` lt
+		where
+			(
+				la.from_date between '{start_date}' and '{end_date}'
+				or
+				la.to_date between '{start_date}' and '{end_date}'
+				or
+				(
+					la.from_date < '{start_date}' and la.to_date > '{end_date}'
+				)
+			)
+			and
+				lt.one_fm_is_paid_sick_leave = 1
+			and
+				lt.name = la.leave_type
+			and
+				la.status = 'Approved'
+ 		group by
+			employee, from_date
+	""".format(start_date = cstr(start_date), end_date = cstr(end_date)), as_dict=1)
+
+	if leave_list and len(leave_list) > 0:
+		for leave in leave_list:
+			deduct_for_paid_sick_leave(leave, end_date)
+
+def deduct_for_paid_sick_leave(doc, end_date):
+	salary = get_salary_amount(doc.employee)
+	daily_rate = salary/30
+	from hrms.hr.doctype.leave_application.leave_application import get_leave_details
+	leave_details = get_leave_details(doc.employee, end_date)
+	curr_year_applied_days = 0
+	if doc.leave_type in leave_details['leave_allocation'] and leave_details['leave_allocation'][doc.leave_type]:
+		curr_year_applied_days = leave_details['leave_allocation'][doc.leave_type]['leaves_taken']
+	if curr_year_applied_days == 0:
+		curr_year_applied_days = doc.total_leave_days
+
+	leave_payment_breakdown = get_leave_payment_breakdown(doc.leave_type)
+
+	total_payment_days = 0
+	if leave_payment_breakdown:
+		threshold_days = 0
+		for payment_breakdown in leave_payment_breakdown:
+			payment_days = 0
+			threshold_days += payment_breakdown.threshold_days
+			if total_payment_days < doc.total_leave_days:
+				if curr_year_applied_days >= threshold_days and (curr_year_applied_days - doc.total_leave_days) < threshold_days:
+					payment_days = threshold_days - (curr_year_applied_days-doc.total_leave_days) - total_payment_days
+				elif curr_year_applied_days <= threshold_days: # Gives true this also doc.total_leave_days <= threshold_days:
+					payment_days = doc.total_leave_days - total_payment_days
+				if payment_days > 0:
+					create_additional_salary_for_paid_sick_leave(doc, daily_rate, salary, payment_days, end_date, payment_breakdown)
+				total_payment_days += payment_days
+
+		if total_payment_days < doc.total_leave_days and doc.total_leave_days-total_payment_days > 0:
+			payment_days = doc.total_leave_days-total_payment_days
+			if payment_days > 0:
+				create_additional_salary_for_paid_sick_leave(doc, daily_rate, salary, payment_days, end_date)
+
+def create_additional_salary_for_paid_sick_leave(doc, daily_rate, salary, payment_days, end_date, payment_breakdown=False):
+	deduction_percentage = 1
+	salary_component = doc.one_fm_paid_sick_leave_deduction_salary_component
+	if payment_breakdown:
+		deduction_percentage = payment_breakdown.salary_deduction_percentage/100
+		salary_component = payment_breakdown.salary_component
+	amount = payment_days*daily_rate*deduction_percentage
+	if amount > 0:
+		deduction_notes = """
+			Leave Application: <b>{0}</b><br>
+			Employee Salary: <b>{1}</b><br>
+			Daily Rate: <b>{2}</b><br>
+			Deduction Days Number: <b>{3}</b><br>
+			Deduction Percent: <b>{4}%</b><br/>
+			Deduct Amount: <b>{5}</b><br/><br/>
+		""".format(doc.name, salary, daily_rate, payment_days, deduction_percentage*100, amount)
+		create_additional_salary(doc.employee, amount, salary_component, end_date, deduction_notes)
 
 def mark_day_attendance():
 	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
@@ -1280,13 +1520,13 @@ def mark_daily_attendance(start_date, end_date):
 		for i in shift_types:
 			shift_types_dict[i.name] = i
 
-		# get employee schedule
+		# get Day off employee schedule
 		employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':start_date, 'employee_availability':'Day Off'}, fields="*")
 		employee_schedule_dict = {}
 		for i in employee_schedules:
 			employee_schedule_dict[i.employee] = i
 
-		employees = frappe.get_list("Employee", fields="*")
+		employees = frappe.get_list("Employee", filters={'status': 'Active', 'attendance_by_timesheet': ['!=', 1]}, fields="*")
 		employees_data = {}
 		for i in employees:
 			employees_data[i.name] = i
@@ -1445,6 +1685,38 @@ def mark_daily_attendance(start_date, end_date):
 			except Exception as e:
 				errors.append(str(frappe.get_traceback()))
 
+		# Get attendance by timesheet employees
+		timesheet_employees = frappe.get_list("Employee", filters={'status': 'Active', 'attendance_by_timesheet': 1}, fields="*")
+		timesheet_employees_data = {}
+		for i in timesheet_employees:
+			timesheet_employees_data[i.name] = i
+
+		# Get attendance by timesheet employees timesheet
+		timesheet_list = frappe.get_list("Timesheet",
+			filters={
+				"start_date":start_date, "end_date": end_date, "docstatus": 1, "attendance_by_timesheet": 1,
+				'workflow_state': 'Approved'
+			},
+			fields=['name', 'employee']
+		)
+		timesheet_dict = {}
+		for i in timesheet_list:
+			timesheet_dict[i.employee] = i
+
+		for i in timesheet_employees_data:
+			try:
+				if not timesheet_dict.get(i.employee):
+					emp = timesheet_employees_data.get(i.employee)
+					employee_attendance[i.employee] = frappe._dict({
+						'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name,
+						'working_hours':0, 'status':'Absent', 'shift':'', 'in_time':'00:00:00', 'out_time':'00:00:00',
+						'shift_assignment':'', 'operations_shift':'', 'site':'', 'project':i.project,
+						'attendance_date': start_date, 'company':emp.company, 'department': emp.department, 'late_entry':0,
+						'early_exit':0, 'operations_role':'', 'post_abbrv':'', 'roster_type':'', 'docstatus':1, 'owner':owner,
+						'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':f"No Timesheet found"
+					})
+			except Exception as e:
+				errors.append(str(frappe.get_traceback()))
 
 		# create attendance with sql injection
 		if employee_attendance:

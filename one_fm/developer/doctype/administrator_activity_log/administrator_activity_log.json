@@ -34,6 +34,7 @@
    "fetch_if_empty": 1,
    "fieldname": "employee_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Employee Name",
    "read_only": 1
   },
@@ -89,7 +90,7 @@
   }
  ],
  "links": [],
- "modified": "2023-03-23 16:40:17.895200",
+ "modified": "2023-04-03 14:08:02.849701",
  "modified_by": "Administrator",
  "module": "Developer",
  "name": "Administrator Activity Log",
@@ -111,6 +112,7 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "employee_name",
  "track_changes": 1,
  "track_seen": 1,
  "track_views": 1

@@ -38,6 +38,7 @@ def get_performance_profile_guid():
 def validate_job_offer(doc, method):
     job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
     validate_mandatory_fields(job_applicant)
+    job_offer_validate_attendance_by_timesheet(doc)
     validate_job_offer_mandatory_fields(doc)
     # Validate day off
     if not doc.number_of_days_off:
@@ -87,12 +88,28 @@ def validate_job_offer(doc, method):
     if frappe.db.exists('Letter Head', 'ONE FM - Job Offer') and not doc.letter_head:
         doc.letter_head = 'ONE FM - Job Offer'
 
+def job_offer_validate_attendance_by_timesheet(doc):
+	if doc.attendance_by_timesheet:
+		doc.shift_working = False
+		doc.operations_shift = ''
+		doc.default_shift = ''
+		doc.operation_site = ''
+
+def employee_validate_attendance_by_timesheet(doc, method):
+	if doc.attendance_by_timesheet:
+		doc.shift_working = False
+		doc.shift = ''
+		doc.default_shift = ''
+		doc.site = ''
+
 def validate_job_offer_mandatory_fields(job_offer):
     if job_offer.workflow_state == 'Submit for Candidate Response':
         mandatory_field_required = False
-        fields = ['Reports To', 'Project', 'Base', 'Salary Structure', 'Project', 'Operations Shift']
-        if job_offer.shift_working:
-            fields.append('Operations Site')
+        fields = ['Reports To', 'Project', 'Base', 'Salary Structure', 'Project']
+        if not job_offer.attendance_by_timesheet:
+            fields.append('Operations Shift')
+            if job_offer.shift_working:
+                fields.append('Operations Site')
         msg = "Mandatory fields required to Submit Job Offer<br/><br/><ul>"
         for field in fields:
             if field == 'Salary Structure':
@@ -936,10 +953,15 @@ def get_employee_record_exists_for_job_offer_or_job_applicant(job_offer=False, j
 def change_applicant_erf(job_applicant, old_erf, new_erf):
 	job_applicant_obj = frappe.get_doc("Job Applicant", job_applicant)
 	if job_applicant_obj.one_fm_erf == old_erf and frappe.db.exists("ERF", new_erf):
+		new_erf_obj = frappe.get_doc("ERF", new_erf)
 		job_applicant_obj.one_fm_erf = new_erf
 		job_applicant_obj.job_title = frappe.db.get_value("Job Opening", {'one_fm_erf': new_erf})
+		job_applicant_obj.designation = frappe.db.get_value("Job Opening", job_applicant_obj.job_title, "designation")
+		job_applicant_obj.department = new_erf_obj.department
+		job_applicant_obj.project = new_erf_obj.project
+		job_applicant_obj.one_fm_hiring_method = new_erf_obj.hiring_method
+		job_applicant_obj.interview_round = new_erf_obj.interview_round
 		job_applicant_obj.save(ignore_permissions=True)
-
 
 @frappe.whitelist()
 def send_magic_link_to_applicant_based_on_link_for(name, link_for):

@@ -461,7 +461,6 @@
     "parenttype": "DocType Layout"
    },
    {
-
     "fieldname": "column_break_18",
     "label": null,
     "parent": "Employee",
@@ -758,6 +757,13 @@
    {
     "fieldname": "column_break_44",
     "label": null,
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
+    "fieldname": "attendance_by_timesheet",
+    "label": "Attendance by Timesheet",
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
@@ -1442,7 +1448,7 @@
     "parenttype": "DocType Layout"
    }
   ],
-  "modified": "2023-02-19 15:14:53.439492",
+  "modified": "2023-03-21 10:36:26.733046",
   "name": "Employee",
   "route": "app/employee/"
  }

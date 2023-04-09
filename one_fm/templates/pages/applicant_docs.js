@@ -138,10 +138,13 @@ function populate_country(){
     method: "one_fm.templates.pages.applicant_docs.populate_country",
     callback: function(r) {
       langArray = r.message;
+
       if(langArray){
         var place_of_issue = document.getElementById("Passport_Place_of_Issue");
+        var place_of_birth = document.getElementById("Birth_Place");
         for (let i=0; i<=langArray.length;i++) {
           place_of_issue.options[place_of_issue.options.length] = new Option(langArray[i], langArray[i]);
+          place_of_birth.options[place_of_birth.options.length] = new Option(langArray[i], langArray[i]);
         }
       }
     }

@@ -1,9 +1,11 @@
 import frappe
 import itertools
 from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
-from calendar import monthrange  
+from calendar import monthrange
 from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
+from one_fm.processor import sendemail
+from one_fm.utils import send_workflow_action_email
 
 
 class TimesheetOveride(Timesheet):
@@ -15,7 +17,11 @@ class TimesheetOveride(Timesheet):
         self.calculate_total_amounts()
         self.calculate_percentage_billed()
         self.set_dates()
+        self.set_approver()
 
+    def set_approver(self):
+        if self.attendance_by_timesheet:
+            self.approver = fetch_approver(self.employee)
 
     def before_submit(self):
         current_date = getdate()
@@ -24,45 +30,66 @@ class TimesheetOveride(Timesheet):
             if self.start_date != current_date or self.end_date != current_date:
                 frappe.throw("Not allowed to submit doc for previous date")
 
+    def on_update(self):
+        if self.workflow_state == 'Open':
+            send_workflow_action_email(self, [self.approver])
+            message = "The timesheet {0} of {1}, Open for your Approval".format(self.name, self.employee_name)
+            create_notification_log("Pending - Workflow Action on Timesheet", message, [self.approver], self)
 
     def on_submit(self):
         self.validate_mandatory_fields()
         self.update_task_and_project()
-        self.create_attendance()
+        if self.workflow_state == "Approved":
+            self.create_attendance()
+        elif self.workflow_state == "Rejected":
+            self.notify_the_employee()
+
+    def notify_the_employee(self):
+        timesheet_url = '<a href="{0}">{1}</a>'.format(frappe.utils.get_link_to_form("Timesheet", self.name), self.name)
+        message = "The Timesheet {0}, is {1} by {2}".format(timesheet_url, self.workflow_state, frappe.get_value('User', frappe.session.user, 'full_name'))
+        user = frappe.get_value('Employee', self.employee, 'user_id')
+        if user:
+            subject = 'Your timesheet {0} is {1}'.format(timesheet_url, self.workflow_state)
+            sendemail(
+                recipients=[user],
+                subject=subject,
+                message=message,
+                reference_doctype=self.doctype,
+                reference_name=self.name
+            )
+            create_notification_log(subject, message, [user], self)
+
+    def on_cancel(self):
+        self.cancel_the_attendance()
+
+    def cancel_the_attendance(self):
+        attendance = frappe.db.exists('Attendance', {'timesheet': self.name, 'docstatus': ['<', 2]})
+        if attendance:
+            frappe.get_doc("Attendance", attendance).cancel()
 
     def create_attendance(self):
-        employee_shift = frappe.get_value("Employee", self.employee,["default_shift"])
-        if not employee_shift:
-            frappe.throw(f"{self.employee} have no default shift assigned, please set a default shift in employee record.")
-            
-        expected_working_duration = frappe.get_value("Shift Type", employee_shift,["duration"])
-        if expected_working_duration and expected_working_duration < self.total_hours:
-            frappe.msgprint("Kindly, note that {employee} has overtimed the expected working hour".format(employee=self.employee))
+        attendance_by_timesheet = frappe.db.get_value('Employee', self.employee, 'attendance_by_timesheet')
+        if not attendance_by_timesheet:
+            return
+        attendance_exists = frappe.db.exists('Attendance',
+            {'attendance_date': self.start_date, 'employee': self.employee, 'docstatus': ['<', 2]})
+        if attendance_exists:
+            att = frappe.get_doc("Attendance", attendance_exists)
+            if att.status == 'Absent':
+                att.db_set("status", "Present")
+                att.db_set("timesheet", self.name)
+                att.db_set("working_hours", self.total_hours, notify=True)
         else:
-            if frappe.db.exists({'doctype':'Attendance', 'attendance_date': self.start_date, 'employee': self.employee,}):
-                att = frappe.get_doc("Attendance", {'attendance_date': self.start_date, 'employee': self.employee,})
-                if att.status == 'Absent':
-                    att.db_set("status", "Present")
-                    att.db_set("shift", employee_shift)
-                    att.db_set("timesheet", self.name)
-                    att.db_set("working_hours", self.total_hours, notify=True)
-            else:
-                att = frappe.new_doc("Attendance")
-                att.employee = self.employee
-                att.employee_name = self.employee_name
-                att.attendance_date = self.start_date
-                att.company = self.company
-                att.timesheet = self.name
-                att.status = "Present"
-                att.shift = employee_shift
-                att.working_hours = self.total_hours
-                att.insert(ignore_permissions=True)
-                att.submit()
-
-
-
-
-
+            att = frappe.new_doc("Attendance")
+            att.employee = self.employee
+            att.employee_name = self.employee_name
+            att.attendance_date = self.start_date
+            att.company = self.company
+            att.timesheet = self.name
+            att.status = "Present"
+            att.working_hours = self.total_hours
+            att.insert(ignore_permissions=True)
+            att.submit()
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
     filters = {
@@ -70,7 +97,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
         'project': project,
 		'status': 'Present'
 	}
-    logs = frappe.db.get_list('Attendance', fields="employee,working_hours,attendance_date,site,project,operations_role,operations_shift", filters=filters, order_by="employee,attendance_date")   
+    logs = frappe.db.get_list('Attendance', fields="employee,working_hours,attendance_date,site,project,operations_role,operations_shift", filters=filters, order_by="employee,attendance_date")
     for key, group in itertools.groupby(logs, key=lambda x: (x['employee'])):
         attendances = list(group)
         timesheet = frappe.new_doc("Timesheet")
@@ -79,7 +106,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
             billing_hours, billing_rate, billable, public_holiday_rate_multiplier = 0, 0, 0, 0
             date = cstr(attendance.attendance_date)
             holiday_list = frappe.db.get_value('Contracts', {'project': attendance.project}, 'holiday_list')
-            post = get_post(key, attendance.operations_shift, date)          
+            post = get_post(key, attendance.operations_shift, date)
             public_holiday = frappe.db.get_value('Holiday', {'parent': holiday_list, 'holiday_date': date}, ['description'])
             if public_holiday:
                 public_holiday_rate_multiplier = frappe.db.get_value('Contracts', {'project': attendance.project}, 'public_holiday_rate')
@@ -102,7 +129,7 @@ def timesheet_automation(start_date=None,end_date=None,project=None):
                     if public_holiday_rate_multiplier > 0:
                         billing_rate = public_holiday_rate_multiplier * billing_rate
                 if contract_item_detail[0].uom == 'Hours':
-                    billing_rate = contract_item_detail[0].rate                   
+                    billing_rate = contract_item_detail[0].rate
                     if public_holiday_rate_multiplier > 0:
                         billing_rate = public_holiday_rate_multiplier * contract_item_detail[0].rate
             timesheet = add_time_log(timesheet, attendance, start, end, post, billable, billing_hours, billing_rate)
@@ -123,39 +150,39 @@ def calculate_hourly_rate(project = None,item_code = None,monthly_rate = None,sh
         last_day = first_day.replace(day = monthrange(first_day.year, first_day.month)[1])
     #pass shift hours, gender, uom, days_off
     days_off_week = frappe.db.sql("""
-            SELECT 
-                days_off 
-            FROM `tabContract Item` ci, `tabContracts` c 
-            WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
+            SELECT
+                days_off
+            FROM `tabContract Item` ci, `tabContracts` c
+            WHERE c.name = ci.parent and ci.parenttype = 'Contracts'
                 and c.project = %s and ci.item_code = %s
     """, (project, item_code), as_dict=0)[0][0]
     total_days = days_of_month(first_day, last_day)
     days_off_month = flt(days_off_week) * 4
     total_working_day = len(total_days) - days_off_month
     rate_per_day = monthly_rate / flt(total_working_day)
-    hourly_rate = flt(rate_per_day / shift_hour)   
+    hourly_rate = flt(rate_per_day / shift_hour)
     return hourly_rate
 
 def get_post(employee, operations_shift, date):
     return frappe.db.sql("""
-            SELECT 
+            SELECT
                 e.post
-            FROM `tabPost Allocation Plan` p,`tabPost Allocation Employee Assignment` e 
-            WHERE p.name = e.parent and e.parenttype = 'Post Allocation Plan' 
-                and e.employee = %s and p.operations_shift = %s 
+            FROM `tabPost Allocation Plan` p,`tabPost Allocation Employee Assignment` e
+            WHERE p.name = e.parent and e.parenttype = 'Post Allocation Plan'
+                and e.employee = %s and p.operations_shift = %s
                 and p.date = %s
             """, (employee, operations_shift, date), as_dict=1)[0].post
 
 #pass shift_hours, gender, uom, day_offs if needed
 def get_contrat_item_detail(project, item, gender, shift_hours):
     return frappe.db.sql("""
-            SELECT 
+            SELECT
                 ci.name, ci.item_code, ci.head_count as qty,
                 ci.shift_hours, ci.uom, ci.rate,
-                ci.gender, ci.unit_rate, ci.type, 
+                ci.gender, ci.unit_rate, ci.type,
                 ci.monthly_rate
-            FROM `tabContract Item` ci, `tabContracts` c 
-            WHERE c.name = ci.parent and ci.parenttype = 'Contracts' 
+            FROM `tabContract Item` ci, `tabContracts` c
+            WHERE c.name = ci.parent and ci.parenttype = 'Contracts'
                 and c.project = %s and ci.item_code = %s
                 and ci.gender = %s and ci.shift_hours = %s
             """, (project, item, gender, shift_hours), as_dict = 1)
@@ -166,7 +193,7 @@ def set_billing_hours(project, from_time, to_time, shift_hour):
         billing_hours = time_diff_in_hours(to_time, from_time)
     else:
         billing_hours = shift_hour
-    return billing_hours 
+    return billing_hours
 
 def add_time_log(timesheet, attendance, start, end, post, billable, billing_hours, billing_rate):
     timesheet.append("time_logs", {
@@ -188,12 +215,10 @@ def add_time_log(timesheet, attendance, start, end, post, billable, billing_hour
 def fetch_approver(employee):
     if employee:
         approver = get_reports_to_employee_name(employee)
-
         if approver:
             return frappe.get_value("Employee", approver, ["user_id"])
         else:
             frappe.throw("No approver found for {employee}".format(employee=employee))
-
 
 def validate_timesheet_count(doc, event):
     if doc.workflow_state == "Approved":
@@ -209,3 +234,16 @@ def validate_date(doc, method):
     if allowed_role not in frappe.get_roles(frappe.session.user):
         if doc.start_date != current_date or doc.end_date != current_date:
             frappe.throw("Not allowed to submit doc for previous date")
+
+def create_notification_log(subject, message, for_users, reference_doc):
+	for user in for_users:
+		doc = frappe.new_doc('Notification Log')
+		doc.subject = subject
+		doc.email_content = message
+		doc.for_user = user
+		doc.document_type = reference_doc.doctype
+		doc.document_name = reference_doc.name
+		doc.from_user = reference_doc.modified_by
+		# If notification log type is Alert then it will not send email for the log
+		doc.type = 'Alert'
+		doc.insert(ignore_permissions=True)
