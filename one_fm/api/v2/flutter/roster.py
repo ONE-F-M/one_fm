@@ -712,12 +712,12 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
     operations_shift = frappe.get_doc("Operations Shift", shift, ignore_permissions=True)
     operations_role = frappe.get_doc("Operations Role", operations_role, ignore_permissions=True)
     day_off_ot = cint(day_off_ot)
-    if otRoster == 'false':
+    if otRoster == 0:
         roster_type = 'Basic'
-    elif otRoster == 'true' or day_off_ot == 1:
+    elif otRoster == 1 or day_off_ot == 1:
         roster_type = 'Over-Time'
 
-    # check for end date
+    # check for start and enddate
     if end_date:
         end_date = getdate(end_date)
         new_employees = []
