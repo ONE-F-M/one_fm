@@ -256,13 +256,13 @@ const add_doctype_field_multicheck_control = (frm, doctype, parent_wrapper) => {
 			if(key == df.parent && c.includes(df.fieldname)){
 				check = 1 
 			}
-			return {
-				label: df.label,
-				value: df.fieldname,
-				danger: df.reqd,
-				checked: check,
-			};
 		}
+		return {
+			label: df.label,
+			value: df.fieldname,
+			danger: df.reqd,
+			checked: check,
+		};
 	});
 
 	const multicheck_control = frappe.ui.form.make_control({
