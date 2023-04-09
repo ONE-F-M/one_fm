@@ -1222,36 +1222,40 @@ def generate_site_allowance():
 
 				if employee_det:
 					for employee in employee_det:
-						the_att_date = tuple(employee["attendance_dates"].split(','))
 						#calculate Monthly_site_allowance with the rate of allowance per day.
 						Monthly_site_allowance =  round(int(site.allowance_amount)/no_of_days, 3)*int(employee["count"])
-						create_additional_salary(employee["employee"], Monthly_site_allowance, component_name, end_date, site.name, the_att_date)
+						notes = f"Project: {site.project} \nSite: {site.name} \nNumber of days worked: {employee['count']} \n\n"
+						create_additional_salary(employee["employee"], Monthly_site_allowance, component_name, end_date, notes)
 
 #this function creates additional salary for a given component.
-def create_additional_salary(employee, amount, component, end_date, site, attendance_date_iterable=[]):
-	check_add_sal_exists = frappe.db.get_value("Additional Salary", {"employee": employee, "payroll_date": end_date, "salary_component": component}, "name")
-	if check_add_sal_exists:
-		additional_salary = frappe.get_doc("Additional Salary", check_add_sal_exists)
-		additional_salary.amount += amount
-		additional_salary.notes += f"\n \n {site} on"
-		for obj in attendance_date_iterable:
-			additional_salary.notes +=  f", {obj}"
-		additional_salary.flags.ignore_validate_update_after_submit = True
-		additional_salary.save(ignore_permissions=1)
-	else:	
-		additional_salary = frappe.new_doc("Additional Salary")
-		additional_salary.employee = employee
-		additional_salary.salary_component = component
-		additional_salary.amount = amount
-		additional_salary.payroll_date = end_date
-		additional_salary.company = erpnext.get_default_company()
-		additional_salary.overwrite_salary_structure_amount = 1
-		additional_salary.notes = f"Site Allowance for {site} on "
-		for obj in attendance_date_iterable:
-			additional_salary.notes +=  f", {obj}"
-		additional_salary.insert()
-		additional_salary.submit()
-	frappe.db.commit()
+def create_additional_salary(employee, amount, component, end_date, notes):
+	try:
+		check_add_sal_exists = frappe.db.exists("Additional Salary",
+			{"employee": employee, "payroll_date": end_date, "salary_component": component, "docstatus": 1}
+		)
+		if check_add_sal_exists:
+			additional_salary = frappe.get_doc("Additional Salary", check_add_sal_exists)
+			additional_salary.amount += amount
+			if additional_salary.notes:
+				additional_salary.notes += notes
+			else:
+				additional_salary.notes = notes
+			additional_salary.flags.ignore_validate_update_after_submit = True
+			additional_salary.save(ignore_permissions=1)
+		else:
+			additional_salary = frappe.new_doc("Additional Salary")
+			additional_salary.employee = employee
+			additional_salary.salary_component = component
+			additional_salary.amount = amount
+			additional_salary.payroll_date = end_date
+			additional_salary.company = erpnext.get_default_company()
+			additional_salary.overwrite_salary_structure_amount = 1
+			additional_salary.notes = notes
+			additional_salary.insert()
+			additional_salary.submit()
+		frappe.db.commit()
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Additional Salary - {0}'.format(component))
 
 def generate_ot_additional_salary():
 	# Gather the required Date details such as start date, and respective end date.
