@@ -656,8 +656,8 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
                 for day in list_of_date:
                     employees.append({"employee": obj, "date": str(day.date())})
 
-        elif not cint(project_end_date) and not end_date:
-            validation_logs.append("Please set an end date for scheduling the staff.")
+        # elif not cint(project_end_date) and not end_date:
+        #     validation_logs.append("Please set an end date for scheduling the staff.")
 
         elif cint(project_end_date) and end_date:
             validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")
