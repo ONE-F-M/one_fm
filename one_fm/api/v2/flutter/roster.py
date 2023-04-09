@@ -627,8 +627,6 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
         
         validation_logs = []
         user, user_roles, user_employee = get_current_user_details()
-
-        employees = json.loads(employees)
         if not employees:
             frappe.throw("Employees must be selected.")
 
@@ -696,7 +694,7 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
             response("success", 200, {'message':'Successfully rostered employees'})
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Schedule Roster")
-        response("error", 200, None, str(e))
+        response("error", 500, None, str(e))
 
 def update_roster(key):
     frappe.publish_realtime(key, "Success")
@@ -816,6 +814,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 employee_doc = employees_dict.get(employee['employee'])
                 name = f"{employee['date']}_{employee['employee']}_{roster_type}"
                 id_list.append(name)
+                weekday_check = getdate(employee['date']).weekday()
                 if weekday_check in repeat_days:
                     query += f"""
 					(
