@@ -685,13 +685,17 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
             frappe.throw(str(validation_logs))
         else:
             # extreme schedule
-            extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
+            resp = extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
                 operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
                 request_employee_schedule=request_employee_schedule, employee_list=employee_list, repeat_days=repeat_days, day_off=day_off
             )
             # employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
             update_roster(key="roster_view")
-            response("success", 200, {'message':'Successfully rostered employees'})
+            print(resp)
+            if type(resp) == dict:
+                resp = frappe._dict(resp)
+                response("success", 200, {'message':'Successfully rostered employees'})
+            response(resp.status, resp.code, resp.data)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Schedule Roster")
         response("error", 500, None, str(e))
@@ -765,24 +769,26 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             `operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `owner`, `modified_by`, `creation`, `modified`)
             VALUES 
         """
+        query_body = """"""
         if not cint(keep_days_off):
             id_list = [] #store for schedules list
             for employee in employees:
                 employee_doc = employees_dict.get(employee['employee'])
                 name = f"{employee['date']}_{employee['employee']}_{roster_type}"
                 id_list.append(name)
-                if not (repeat_days and day_off):
-                    query += f"""
+                if not repeat_days and not day_off:
+                    query_body += f"""
                     (
                         "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
                         "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
                         "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
                         {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
                     ),"""
+                    query_exists = True
                 else:
                     weekday_check = getdate(employee['date']).weekday()
                     if weekday_check in repeat_days:
-                        query += f"""
+                        query_body += f"""
                         (
                             "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
                             "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
@@ -790,16 +796,19 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                             {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
                         ),"""
                     elif weekday_check in day_off:
-                        query += f"""
+                        query_body += f"""
                             (
                                 "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "", 
                                 "", "", '', "Day Off", 
                                 "", "", "{roster_type}", 
                                 {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
                             ),"""
-
-            query = query[:-1]
-
+            if query_body:
+                query_body = query_body[:-1]
+                query = query + query_body
+            else:
+                return {'status':"success", 'code':200, 'data':{'message':'No schedule created because selected dates is not in repeat_days or day_off'}}
+            
             query += f"""
                 ON DUPLICATE KEY UPDATE
                 modified_by = VALUES(modified_by),
@@ -823,8 +832,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 employee_doc = employees_dict.get(employee['employee'])
                 name = f"{employee['date']}_{employee['employee']}_{roster_type}"
                 id_list.append(name)
-                if not (repeat_days and day_off):
-                    query += f"""
+                if not repeat_days and not day_off:
+                    query_body += f"""
                     (
                         "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
                         "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
@@ -834,7 +843,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 else:
                     weekday_check = getdate(employee['date']).weekday()
                     if weekday_check in repeat_days:
-                        query += f"""
+                        query_body += f"""
                         (
                             "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
                             "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
@@ -842,7 +851,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                             {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
                         ),"""
                     elif weekday_check in day_off:
-                        query += f"""
+                        query_body += f"""
                             (
                                 "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "", 
                                 "", "", '', "Day Off", 
@@ -850,8 +859,13 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                                 {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
                             ),"""
 
-            query = query[:-1]
-
+            if query_body:
+                query_body = query_body[:-1]
+                query = query + query_body
+            else:
+                return {'status':"success", 'code':200, 'data':{'message':'No schedule created because selected dates is not in repeat_days or day_off'}}
+                
+            
             query += f"""
                 ON DUPLICATE KEY UPDATE
                 modified_by = VALUES(modified_by),
@@ -912,7 +926,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
     # update employee additional records
     frappe.enqueue(update_employee_shift, employees=employees, shift=shift, owner=owner, creation=creation)
-
+    return {'status':"success", 'code':200, 'data':{'message':'Roster scheduled successfully.'}}
 
 def update_employee_shift(employees, shift, owner, creation):
     """Update employee assignment"""
