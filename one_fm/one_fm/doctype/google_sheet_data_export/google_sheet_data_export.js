@@ -246,20 +246,16 @@ const add_doctype_field_multicheck_control = (frm, doctype, parent_wrapper) => {
 	const fields = get_fields(doctype);
 
 	var selected_fields = []
-	var column;
 	if(frm.doc.field_cache !== undefined){
-		column = JSON.parse(frm.doc.field_cache)
-		let c =[]
-		selected_fields = Object.values(column)
-		for (let i = 1; i < selected_fields.length; i++) {
-			selected_fields[0] = c.concat(selected_fields[0],selected_fields[i])
-		}
-		selected_fields = selected_fields[0]
+		selected_fields = JSON.parse(frm.doc.field_cache)
 	}
 	const options = fields.map((df) => {
-		let check = 1
-		if(!selected_fields.includes(df.fieldname)){
-			check = 0
+		let check = 0
+		for (const [key, value] of Object.entries(selected_fields)) {
+			let c = selected_fields[key]
+			if(key == df.parent && c.includes(df.fieldname)){
+				check = 1 
+			}
 		}
 		return {
 			label: df.label,
@@ -267,7 +263,6 @@ const add_doctype_field_multicheck_control = (frm, doctype, parent_wrapper) => {
 			danger: df.reqd,
 			checked: check,
 		};
-		
 	});
 
 	const multicheck_control = frappe.ui.form.make_control({
