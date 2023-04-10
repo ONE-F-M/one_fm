@@ -221,10 +221,10 @@ def get_payroll_cycle(filters):
 	settings = frappe.get_doc("HR and Payroll Additional Settings")
 	default_date = settings.payroll_date
 
-	start_date = datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
+	start_date = datetime.date(int(filters["year"]), int(filters["month"])-1, int(default_date))
 	payroll_cycle = {
 		'Other': {
-			'start_date': datetime.date(int(filters["year"]), int(filters["month"]), int(default_date)),
+			'start_date': datetime.date(int(filters["year"]), int(filters["month"])-1, int(default_date)),
 			'end_date': add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(default_date)), 1), -1)
 			}
 		}
@@ -233,7 +233,7 @@ def get_payroll_cycle(filters):
 		if row.payroll_start_day == 'Month Start':
 			row.payroll_start_day = 1
 		payroll_cycle[row.project] = {
-			'start_date':datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)),
+			'start_date':datetime.date(int(filters["year"]), int(filters["month"])-1, int(row.payroll_start_day)),
 			'end_date':add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)), 1), -1)
 		}
 
