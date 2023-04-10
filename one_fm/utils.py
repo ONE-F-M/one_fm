@@ -2983,9 +2983,6 @@ def validate_reports_to(self):
 
 def custom_validate_nestedset_loop(doctype, name, lft, rgt):
     if doctype == "Employee":
-        designation = frappe.db.get_value(doctype, name, ["designation"])
-        if designation:
-            if designation == "General Manager":
-                return
+        return
     validate_loop(doctype, name, lft, rgt)
     
