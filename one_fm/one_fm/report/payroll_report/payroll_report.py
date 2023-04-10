@@ -81,20 +81,44 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
+			"label": ("Holiday List"),
+			"fieldname": "holiday_list",
+			"fieldtype": "Data",
+			"width": 120,
+		},
+		{
+			"label": ("Shift/Non-Shift Worker"),
+			"fieldname": "shift_work_type",
+			"fieldtype": "Data",
+			"width": 120,
+		},
+		{
 			"label": ("Day off Type"),
 			"fieldname": "day_off_category",
 			"fieldtype": "Data",
 			"width": 120,
 		},
 		{
-			"label": ("No. of Days Off"),
+			"label": ("Days Off(Employee Docs)"),
 			"fieldname": "number_of_days_off",
+			"fieldtype": "Data",
+			"width": 120,
+		},
+		{
+			"label": ("Theoretical Days Off"),
+			"fieldname": "theoretical_days_off",
 			"fieldtype": "Int",
 			"width": 120,
 		},
 		{
 			"label": ("No. of Working Days"),
 			"fieldname": "number_of_working_days",
+			"fieldtype": "Int",
+			"width": 120,
+		},
+		{
+			"label": ("Theoretical Working Days"),
+			"fieldname": "Theoretical_working_days",
 			"fieldtype": "Int",
 			"width": 120,
 		},
@@ -149,6 +173,12 @@ def get_columns(filters):
 			"width": 180,
 		},
 		{
+			"label": ("Public Holidays"),
+			"fieldname": "public_holidays",
+			"fieldtype": "Int",
+			"width": 120,
+		},
+		{
 			"label": ("Total"),
 			"fieldname": "total",
 			"fieldtype": "Int",
@@ -166,10 +196,9 @@ def get_data(filters):
 
 	first_day_of_month = str(get_first_day(report_date))
 	last_day_of_month = str(get_last_day(report_date))
-
 	query = frappe.db.sql(f"""
 		SELECT DISTINCT e.name as employee_id, e.employee_name, e.project, e.work_permit_salary, e.one_fm_civil_id, e.bank_ac_no,
-		e.day_off_category, e.pam_file_number as shoon_file, ssa.base, pe.start_date, pe.end_date,
+		e.day_off_category, e.shift_working as shift_work_type, e.holiday_list, e.number_of_days_off, e.pam_file_number as shoon_file, ssa.base, pe.start_date, pe.end_date,
 		COUNT(at.employee) as working_days
 		FROM `tabEmployee` e JOIN `tabSalary Structure Assignment` ssa ON e.name=ssa.employee
 			JOIN `tabPayroll Employee Detail` ped ON e.name=ped.employee
@@ -199,7 +228,7 @@ def get_data(filters):
 			i.al = att_project['al']
 			i.ol = att_project['ol']
 			i.ab = att_project['ab']
-			i.number_of_days_off = att_project['number_of_days_off']
+			# i.number_of_days_off = att_project['number_of_days_off']
 			i.total = i.working_days + i.sl + i.al + i.ol + i.ab
 			i.number_of_working_days = ((i.end_date-i.start_date).days)+1 - i.number_of_days_off
 
