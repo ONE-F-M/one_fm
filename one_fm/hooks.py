@@ -435,8 +435,7 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
-	{"from_route": "/<path:wiki_page>/edit-wiki", "to_route": "wiki/edit"},
-	{"from_route": "/<path:wiki_page>/new-wiki", "to_route": "wiki/new"},
+	
 ]
 
 # doc_events = {
