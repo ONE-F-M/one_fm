@@ -19,3 +19,12 @@ def comment_timesheet_in_hrms():
         f.write(newdata)
         f.close()
 
+    # delete restaurant menu
+    custom_fields = [
+		{"dt": "Sales Invoice", "fieldname": "restaurant"},
+		{"dt": "Sales Invoice", "fieldname": "restaurant_table"},
+		{"dt": "Price List", "fieldname": "restaurant_menu"},
+	]
+    for field in custom_fields:
+        custom_field = frappe.db.get_value("Custom Field", field)
+        frappe.delete_doc("Custom Field", custom_field, ignore_missing=True)
