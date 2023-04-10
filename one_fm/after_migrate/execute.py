@@ -26,5 +26,9 @@ def comment_timesheet_in_hrms():
 		{"dt": "Price List", "fieldname": "restaurant_menu"},
 	]
     for field in custom_fields:
-        custom_field = frappe.db.get_value("Custom Field", field)
-        frappe.delete_doc("Custom Field", custom_field, ignore_missing=True)
+        try:
+            print("Removing ", field, " from custom field")
+            custom_field = frappe.db.get_value("Custom Field", field)
+            frappe.delete_doc("Custom Field", custom_field, ignore_missing=True)
+        except:
+            print(field, "Does not exist in custom field")
