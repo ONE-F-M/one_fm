@@ -7,9 +7,9 @@ import frappe, json
 from frappe.model.document import Document
 from frappe import _
 from frappe.model.rename_doc import rename_doc
-from frappe.utils import cstr, get_datetime
+from frappe.utils import cstr, get_datetime, today, formatdate
 import schedule, time
-
+from one_fm.utils import is_assignment_exist_for_the_shift
 from datetime import timedelta
 
 class OperationsShift(Document):
@@ -38,6 +38,12 @@ class OperationsShift(Document):
 		if self.status != 'Active':
 			self.set_operation_role_inactive()
 		self.validate_operations_site_status()
+		self.validate_assignments_exist()
+
+	def validate_assignments_exist(self):
+		if self.status != 'Active' and self.shift_type:
+			if is_assignment_exist_for_the_shift('shift', 'Shift Assignment', self.name, 'start_date'):
+				frappe.throw(_("Shift Assignments exist on or after {0}".format(formatdate(today()))))
 
 	def validate_operations_site_status(self):
 		if self.status == "Active" and self.site \

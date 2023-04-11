@@ -1,4 +1,7 @@
 frappe.ui.form.on('Shift Type', {
+	refresh: function(frm) {
+		set_time_read_only(frm);
+	},
     start_time: function(frm){
         fill_spilt_shift_time(frm)
         calculate_duration(frm);
@@ -19,14 +22,29 @@ frappe.ui.form.on('Shift Type', {
     },
     second_shift_start_time:function(frm){
         calculate_duration(frm);
-    }
+    },
+		edit_start_time_and_end_time: function(frm) {
+			set_time_read_only(frm);
+		}
 });
+
+function set_time_read_only(frm) {
+	if(frm.doc.edit_start_time_and_end_time || frm.is_new()){
+		frm.set_df_property('start_time', 'read_only', false);
+		frm.set_df_property('end_time', 'read_only', false);
+	}
+	else {
+		frm.set_df_property('start_time', 'read_only', true);
+		frm.set_df_property('end_time', 'read_only', true);
+	}
+};
+
 function fill_spilt_shift_time(frm){
     if(frm.doc.start_time){
-        frappe.model.set_value(frm.doctype, frm.doc.name, "first_shift_start_time", frm.doc.start_time);    
+        frappe.model.set_value(frm.doctype, frm.doc.name, "first_shift_start_time", frm.doc.start_time);
     }
     if(frm.doc.end_time){
-        frappe.model.set_value(frm.doctype, frm.doc.name, "second_shift_end_time", frm.doc.end_time);    
+        frappe.model.set_value(frm.doctype, frm.doc.name, "second_shift_end_time", frm.doc.end_time);
     }
 }
 function calculate_duration(frm){
@@ -40,9 +58,9 @@ function calculate_duration(frm){
     else if(start_time !== undefined && end_time !== undefined){
         hours = time_duration(moment(start_time, 'HH:mm:ss'),moment(end_time, 'HH:mm:ss'))
     }
-            
-    frappe.model.set_value(frm.doctype, frm.doc.name, "duration", hours);    
-     
+
+    frappe.model.set_value(frm.doctype, frm.doc.name, "duration", hours);
+
 }
 
 function time_duration(start, end){
