@@ -26,7 +26,16 @@ frappe.ui.form.on('Employee', {
 				}
 			};
 		});
-	}
+	},
+	onload: function(frm) {
+        var designation = frm.doc.designation;
+        if (designation == "General Manager") {
+            frm.set_df_property("reports_to", "reqd", 0);
+        } else {
+            frm.set_df_property("reports_to", "reqd", 1);
+        }
+    }
+
 });
 
 

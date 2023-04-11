@@ -97,4 +97,9 @@ def fetch_keyword():
     #randomly return a choice based on the approved keywords
     return random.choice(keywords).keyword
     
-    
+@frappe.whitelist()
+def run_quotes():
+    try:
+        return fetch_quote(direct_response=True).get('html')
+    except:
+        False

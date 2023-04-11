@@ -2,6 +2,14 @@ frappe.ui.form.on('Employee Advance', {
 	refresh: function(frm) {
 		// set field and toggle
 		set_toggle_fields(frm);
+		if(cur_frm.doc.docstatus==1 && cur_frm.doc.status=="Paid"){
+			cur_frm.add_custom_button(__('Purchase Invoice'), function() {
+				let inv_doc = frappe.model.make_new_doc_and_get_name("Purchase Invoice");
+				locals["Purchase Invoice"][inv_doc].employee_advance = frm.doc.name;
+				frappe.set_route('Form', 'Purchase Invoice', inv_doc,{'company':frm.doc.company,'employee_advance':frm.doc.name});
+			}, __('Create'));
+		}
+
 	}
 });
 
@@ -10,7 +18,7 @@ let set_toggle_fields  = frm => {
 	if(frm.is_new()){
 		// toggle accounting section
 		frm.toggle_reqd('advance_account', 0);
-		frm.set_value('advance_account', 'Employee Advances - ONEFM');
+		
 		toggle_accounting_display(frm, 0);
 	} else {
 		let roles = ['HR Manager', 'Expense Approver', 'HR User',
@@ -33,11 +41,12 @@ let set_toggle_fields  = frm => {
 
 let toggle_accounting_display = (frm, state) => {
 	// hide/unhide accounting and dimension
+	;
 	if(state==1){
-		frm.toggle_display('advance_account', 1);
+		
 		frm.toggle_display('mode_of_payment', 1);
 	} else {
-		frm.toggle_display('advance_account', 0);
+		
 		frm.toggle_display('mode_of_payment', 0);
 	}
 }

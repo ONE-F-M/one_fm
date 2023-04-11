@@ -24,7 +24,8 @@ app_license = "MIT"
 app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
 		"/assets/one_fm/js/maps.js",
-		"/assets/one_fm/js/desk.js"
+		"/assets/one_fm/js/desk.js",
+        "/assets/one_fm/js/showdown.min.js",
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -230,7 +231,8 @@ doc_events = {
 		"onload": "one_fm.hiring.utils.job_offer_onload"
 	},
 	"Shift Type": {
-		"autoname": "one_fm.api.doc_events.naming_series"
+		"autoname": "one_fm.api.doc_events.naming_series",
+		"validate": "one_fm.overrides.shift_type.validate_shift_type"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -434,8 +436,7 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
-	{"from_route": "/<path:wiki_page>/edit-wiki", "to_route": "wiki/edit"},
-	{"from_route": "/<path:wiki_page>/new-wiki", "to_route": "wiki/new"},
+
 ]
 
 # doc_events = {
@@ -605,7 +606,9 @@ scheduler_events = {
 			'one_fm.api.tasks.generate_penalties'
 		],
 		"00 01 24 * *": [
-			'one_fm.api.tasks.generate_site_allowance'
+			'one_fm.api.tasks.generate_site_allowance',
+			'one_fm.api.tasks.generate_ot_additional_salary',
+			'one_fm.api.tasks.generate_sick_leave_deduction'
 		],
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
@@ -733,8 +736,7 @@ fixtures = [
 #
 override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
-	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview",
+	"erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry":'one_fm.one_fm.hr_utils.create_invoice_payment_entry',
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"

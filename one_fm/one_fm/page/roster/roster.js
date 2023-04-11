@@ -1114,6 +1114,7 @@ function get_roster_data(page, isOt) {
 			},
 			callback: function(res) {
 				// code snippet
+				console.log(res);
 				error_handler(res);
 				render_roster(res.data, page, isOt);
 			}

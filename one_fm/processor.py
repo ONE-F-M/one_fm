@@ -76,9 +76,10 @@ def is_user_id_company_prefred_email_in_employee(user_id):
 	user_id_company_prefred_in_employee = False
 	employee = frappe.db.exists('Employee', {'user_id': user_id})
 	if employee:
-		prefered_email, company_email, prefered_contact_email = frappe.db.get_value("Employee", employee, ["prefered_email", "company_email", "prefered_contact_email"])
-		if prefered_contact_email == 'Company Email' and prefered_email == company_email and prefered_email == user_id:
-			user_id_company_prefred_in_employee = True
+		employee_details = frappe.db.get_value("Employee", employee, ["prefered_email", "company_email", "prefered_contact_email", "status"], as_dict=1)
+		if employee_details:
+			if all((employee_details.get("prefered_contact_email", "") == 'Company Email', employee_details.get("prefered_email", "") == employee_details.get("company_email", ""), employee_details.get("prefered_email", "") == user_id, employee_details.get("status", "") == "Active")):
+				user_id_company_prefred_in_employee = True
 	return user_id_company_prefred_in_employee
 
 @frappe.whitelist()
