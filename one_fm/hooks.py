@@ -231,7 +231,8 @@ doc_events = {
 		"onload": "one_fm.hiring.utils.job_offer_onload"
 	},
 	"Shift Type": {
-		"autoname": "one_fm.api.doc_events.naming_series"
+		"autoname": "one_fm.api.doc_events.naming_series",
+		"validate": "one_fm.overrides.shift_type.validate_shift_type"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -435,7 +436,7 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
-	
+
 ]
 
 # doc_events = {
