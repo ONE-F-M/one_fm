@@ -9,7 +9,6 @@ from frappe import _
 from frappe.model.rename_doc import rename_doc
 from frappe.utils import cstr, get_datetime, today, formatdate
 import schedule, time
-from one_fm.utils import is_assignment_exist_for_the_shift
 from datetime import timedelta
 
 class OperationsShift(Document):
@@ -38,12 +37,25 @@ class OperationsShift(Document):
 		if self.status != 'Active':
 			self.set_operation_role_inactive()
 		self.validate_operations_site_status()
-		self.validate_assignments_exist()
+		self.validate_operations_shift_link_to_employees()
 
-	def validate_assignments_exist(self):
+	def validate_operations_shift_link_to_employees(self):
 		if self.status != 'Active' and self.shift_type:
-			if is_assignment_exist_for_the_shift('shift', 'Shift Assignment', self.name, 'start_date'):
-				frappe.throw(_("Shift Assignments exist on or after {0}".format(formatdate(today()))))
+			query = """
+				select
+					name, employee_name
+				from
+					`tabEmployee`
+				where
+					status = 'Active' and shift = '{0}'
+			"""
+			employees = frappe.db.sql(query.format(self.name), as_dict=True)
+			if employees and len(employees) > 0:
+				msg = "The shift `{0}` is linked with {1} employee(s):<br/>".format(self.name, len(employees))
+				for employee in employees:
+					msg += "<br/>"+employee.name+":"+employee.employee_name
+				msg += '</br></br><a href="{0}/app/employee?shift={1}">click here to view the list</a>'.format(frappe.utils.get_url(), self.name)
+				frappe.throw(_("{0}".format(msg)))
 
 	def validate_operations_site_status(self):
 		if self.status == "Active" and self.site \
