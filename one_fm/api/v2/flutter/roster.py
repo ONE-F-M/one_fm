@@ -1013,36 +1013,49 @@ def schedule_leave(employees, leave_type, start_date, end_date):
 @frappe.whitelist(allow_guest=True)
 def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
     try:
-        if end_date:
-            stop_date = getdate(end_date)
-        else: stop_date = None
-        delete_list = []
-        employees = json.loads(employees)
-        if not employees:
-            response("Error", 400, None, {'message':'Employees must be selected.'})
-        delete_dict = {}
-        new_employees = []
-        if not start_date:
-            start_date = employees[0]['date']
-        if end_date:
-            for i in employees:
-                if not getdate(i['date']) >= stop_date:
-                    new_employees.append(i)
-            employees = new_employees
-        for i in employees:
-            if cint(never_end) == 1:
-                _end_date = f'>="{start_date}"'
+        #If start date and end date are provided
+        if all([start_date,end_date]):
+            if getdate(start_date) > getdate(end_date):
+                frappe.throw("Start date cannot be after End date")
+                response("Error", 500, None, "Start date cannot be after End date")
             else:
-                _end_date = '="'+str(i['date'])+'"'
-            _line = f"""DELETE FROM `tabEmployee Schedule` WHERE employee="{i['employee']}" AND date{_end_date};"""
-            if not _line in delete_list:
-                delete_list.append(_line)
+                all_employees=tuple([i['employee'] for i in json.loads(employees)])
+                sql_query_list = [f"""DELETE FROM `tabEmployee Schedule` WHERE employee in {all_employees} AND date BETWEEN '{start_date}' and '{end_date}';"""]
+                res =  query_db_list(sql_query_list, commit=True)
+                if res.error:
+                    response("Error", 500, None, res.msg)
+                response("Success", 200, {'message':f'Staff(s) unscheduled between {start_date} and {end_date} successfully'})
+        else:
+            if end_date:
+                stop_date = getdate(end_date)
+            else: stop_date = None
+            delete_list = []
+            employees = json.loads(employees)
+            if not employees:
+                response("Error", 400, None, {'message':'Employees must be selected.'})
+            delete_dict = {}
+            new_employees = []
+            if not start_date:
+                start_date = employees[0]['date']
+            if end_date:
+                for i in employees:
+                    if not getdate(i['date']) >= stop_date:
+                        new_employees.append(i)
+                employees = new_employees
+            for i in employees:
+                if cint(never_end) == 1:
+                    _end_date = f'>="{start_date}"'
+                else:
+                    _end_date = '="'+str(i['date'])+'"'
+                _line = f"""DELETE FROM `tabEmployee Schedule` WHERE employee="{i['employee']}" AND date{_end_date};"""
+                if not _line in delete_list:
+                    delete_list.append(_line)
 
-        if delete_list:
-            res = query_db_list(delete_list, commit=True)
-            if res.error:
-                response("Error", 500, None, res.msg)
-        response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
+            if delete_list:
+                res = query_db_list(delete_list, commit=True)
+                if res.error:
+                    response("Error", 500, None, res.msg)
+            response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
     except Exception as e:
         frappe.throw(str(e))
         response("Error", 500, None, str(e))
