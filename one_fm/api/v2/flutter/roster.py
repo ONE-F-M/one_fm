@@ -1013,6 +1013,10 @@ def schedule_leave(employees, leave_type, start_date, end_date):
 @frappe.whitelist(allow_guest=True)
 def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
     try:
+        if all([start_date,end_date]):
+            if getdate(start_date) > getdate(end_date):
+                frappe.throw("Start Date cannot be after End Date")
+                response("Error", 500, None, "Start Date cannot be after End Date")
         if end_date:
             stop_date = getdate(end_date)
         else: stop_date = None
@@ -1021,12 +1025,18 @@ def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
         if not employees:
             response("Error", 400, None, {'message':'Employees must be selected.'})
         delete_dict = {}
-        new_employees = []
+        new_employees,_employees = [],[]
         if not start_date:
             start_date = employees[0]['date']
+        else:
+            for i in employees:
+                #remove the dates that fall before the start date
+                if  getdate(i['date']) >= getdate(start_date):
+                    _employees.append(i)
+            employees = _employees
         if end_date:
             for i in employees:
-                if not getdate(i['date']) >= stop_date:
+                if not getdate(i['date']) > stop_date:
                     new_employees.append(i)
             employees = new_employees
         for i in employees:
@@ -1037,7 +1047,6 @@ def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
             _line = f"""DELETE FROM `tabEmployee Schedule` WHERE employee="{i['employee']}" AND date{_end_date};"""
             if not _line in delete_list:
                 delete_list.append(_line)
-
         if delete_list:
             res = query_db_list(delete_list, commit=True)
             if res.error:
