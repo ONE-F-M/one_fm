@@ -1,6 +1,6 @@
-import frappe
+import frappe,json
 from frappe import _
-from frappe.utils import get_fullname
+from frappe.utils import get_fullname,nowdate
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
 from frappe.desk.form.assign_to import add
@@ -13,7 +13,7 @@ from one_fm.processor import is_user_id_company_prefred_email_in_employee
 def close_leaves(all_leaves,user=None):
     for each in all_leaves:
         try:
-            leave_doc = frappe.get_doc("Leave Application",each.name)
+            leave_doc = frappe.get_doc("Leave Application",each)
             leave_doc.status = "Approved"
             leave_doc.flags.ignore_validate = True
             leave_doc.submit()
@@ -22,21 +22,28 @@ def close_leaves(all_leaves,user=None):
             continue
     frappe.db.commit()
     if user:
-        message = "Please note that all open sick leaves have been approved"
-        create_notification_log('Leaves Closed!', 'Please note that all sick leaves in draft have closed.', [user],leave_doc)
+        message = "Please note that the selected open sick leaves have been approved"
+        create_notification_log('Leaves Closed!', message, [user],leave_doc)
 
 
 @frappe.whitelist()
-def fix_sick_leave():
-    all_leaves = frappe.get_all("Leave Application",{'leave_type':"Sick Leave","docstatus":0})
-    if all_leaves:
-        if len(all_leaves)<=5:
-            close_leaves(all_leaves)
+def fix_sick_leave(names):
+    names_ = json.loads(names)
+    if names_:
+        if len(names_) <= 5:
+            for each in names_:
+                try:
+                    leave_doc = frappe.get_doc("Leave Application",each)
+                    leave_doc.status = "Approved"
+                    leave_doc.flags.ignore_validate = True
+                    leave_doc.submit()
+                except:
+                    frappe.log_error("Error while closing {}".format(each))
         else:
-            frappe.enqueue(method=close_leaves,user=frappe.session.user,all_leaves = all_leaves, queue='long',timeout=1200,job_name='Closing Leaves')
-            frappe.msgprint("Leaves are being closed in the background, <br> You will recieve a notification after the process.",alert = 1)
-
-
+            frappe.enqueue(method=close_leaves,user=frappe.session.user,all_leaves = names_, queue='long',timeout=1200,job_name='Closing Leaves')
+    else:
+        frappe.throw("Please select atleast 1 row")
+           
 def is_app_user(emp):
     #Returns true if an employee is an app user or has a valid email address
     try:
@@ -54,6 +61,25 @@ def is_app_user(emp):
 
 class LeaveApplicationOverride(LeaveApplication):
     
+    def close_todo(self):
+        """Close the Todo document linked with a leave application
+        """
+        try:
+            leave_todo = frappe.get_all("ToDo",{'reference_name':self.name},['name'])
+            if leave_todo:
+                for each in leave_todo:
+                    frappe.db.set_value("ToDo",each.get("name"),'status','Closed')
+                frappe.db.commit()
+        except:
+            frappe.log_error(frappe.get_traceback(),"Error Closing ToDos")
+    
+    def on_submit(self):
+        self.close_todo()
+        if self.docstatus == 1:
+            self.notify_employee()
+            
+        return super().on_submit()
+    
     def notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
         if not template:
@@ -70,16 +96,10 @@ class LeaveApplicationOverride(LeaveApplication):
             employee = frappe.get_doc("Employee", self.employee)
             if not employee.user_id:
                 return
-            self.notify(
-                {
-                    # for post in messages
-                    "message": message,
-                    "message_to": employee.user_id,
-                    # for email
-                    "subject": email_template.subject,
-                    "notify": "employee",
-                }
-            )
+            sendemail(recipients= [employee.user_id], subject="Leave Application", message=message,
+                    reference_doctype=self.doctype, reference_name=self.name, attachments = [])
+            frappe.msgprint("Email Sent to Employee {}".format(employee.employee_name))
+            
 
     def validate(self):
         validate_active_employee(self.employee)
@@ -145,6 +165,7 @@ class LeaveApplicationOverride(LeaveApplication):
     def after_insert(self):
         self.assign_to_leave_approver()
         self.update_attachment_name()
+        self.notify_leave_approver()
         
     def update_attachment_name(self):
         if self.proof_documents:
@@ -163,13 +184,19 @@ class LeaveApplicationOverride(LeaveApplication):
                     if self.name and self.leave_type =="Sick Leave":
                         existing_assignment = frappe.get_all("ToDo",{'allocated_to':self.leave_approver,'reference_name':self.name})
                         if not existing_assignment:
-                            args = {
-                                'assign_to':[self.leave_approver],
-                                'doctype':"Leave Application",
-                                'name':self.name,
-                                'description':f'Please note that leave application {self.name} is awaiting your approval',
-                            }
-                            add(args)
+                            frappe.get_doc(
+                                {
+                                    "doctype": "ToDo",
+                                    "allocated_to": self.leave_approver,
+                                    "reference_type": "Leave Application",
+                                    "reference_name": self.name,
+                                    "description": f'Please note that leave application {self.name} is awaiting your approval',
+                                    "priority": "Medium",
+                                    "status": "Open",
+                                    "date": nowdate(),
+                                    "assigned_by": frappe.session.user,
+                                }
+                            ).insert(ignore_permissions=True)
                 except:
                     frappe.log_error(frappe.get_traceback(),"Error assigning to User")
                     frappe.throw("Error while assigning leave application")
@@ -222,24 +249,30 @@ class LeaveApplicationOverride(LeaveApplication):
             sender = dict()
             sender["email"] = frappe.get_doc("User", frappe.session.user).email
             sender["full_name"] = get_fullname(sender["email"])
-            if is_user_id_company_prefred_email_in_employee(contact):
-                try:
-                    sendemail(
-                        recipients=contact,
-                        sender=sender["email"],
-                        subject=args.subject,
-                        message=args.message,
-                    )
-                    frappe.msgprint(_("Email sent to {0}").format(contact))
-                except frappe.OutgoingEmailError:
-                    pass
+            # if is_user_id_company_prefred_email_in_employee(contact):
+            try:
+                sendemail(
+                    recipients=[contact],
+                    sender=sender["email"],
+                    subject=args.subject,
+                    message=args.message,
+                )
+                
+                frappe.msgprint(_("Email sent to {0}").format(contact))
+            except frappe.OutgoingEmailError:
+                pass
+            except:
+                frappe.log_error(frappe.get_traceback(),"Error Sending Notification")
+                
+    def on_cancel(self):
+        self.create_leave_ledger_entry(submit=False)
+		# notify leave applier about cancellation
+        self.cancel_attendance()
+
 
     def on_update(self):
-        if  self.docstatus < 1:
-			# notify leave approver about creation
-            if frappe.db.get_single_value("HR Settings", "send_leave_notification"):
-                self.notify_leave_approver()
-        if self.workflow_state=='Rejected':
+        if self.status=='Rejected':
+            self.notify_employee()
             attendance_range = []
             for i in pd.date_range(self.from_date, self.to_date):
                 attendance_range.append(getdate(i))

@@ -1,0 +1,119 @@
+{
+ "actions": [],
+ "autoname": "format:ADML-{YYYY}-{MM}-{DD}-{#}",
+ "creation": "2023-03-16 10:45:04.600376",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "column_break_bwczy",
+  "date",
+  "approver",
+  "approver_name",
+  "section_break_cjsgz",
+  "reason",
+  "actions",
+  "activity"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "activity",
+   "fieldtype": "Markdown Editor",
+   "label": "Activity"
+  },
+  {
+   "fieldname": "actions",
+   "fieldtype": "Table",
+   "label": "Actions",
+   "options": "Administrator Log Action"
+  },
+  {
+   "fieldname": "column_break_bwczy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_cjsgz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "approver",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Approver",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "approver.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "approver_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Approver Name",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2023-04-03 14:08:02.849701",
+ "modified_by": "Administrator",
+ "module": "Developer",
+ "name": "Administrator Activity Log",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "employee_name",
+ "track_changes": 1,
+ "track_seen": 1,
+ "track_views": 1
+}

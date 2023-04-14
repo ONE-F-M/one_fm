@@ -16,24 +16,24 @@ frappe.ui.form.on('Job Offer', {
               frm.add_custom_button(__('Go to Transfer Paper'),
               function(){
                 frappe.set_route("Form", "Transfer Paper", r.name)
-                }).addClass('btn-primary');
+              }).addClass('btn-primary');
             }
             else{
               frm.add_custom_button(__('Create New Transfer Paper'),
-              function () {
-                frappe.model.open_mapped_doc({
-                  method: "one_fm.hiring.utils.make_transfer_paper_from_job_offer",
-                  frm: frm,
-                  freeze: true,
-                  freeze_message: __("Creating Transfer Paper ...")
-                });
-              }
-            ).addClass('btn-primary');
-          }
+                function () {
+                  frappe.model.open_mapped_doc({
+                    method: "one_fm.hiring.utils.make_transfer_paper_from_job_offer",
+                    frm: frm,
+                    freeze: true,
+                    freeze_message: __("Creating Transfer Paper ...")
+                  });
+                }
+              ).addClass('btn-primary');
+            }
+          });
+        }
       });
     }
-  });
-}
     if (frm.doc.workflow_state == 'Accepted' && frm.doc.docstatus === 1){
       if (!frm.doc.__onload || !frm.doc.__onload.onboard_employee){
         frm.add_custom_button(__('Start Onboard Employee'),
@@ -59,6 +59,14 @@ frappe.ui.form.on('Job Offer', {
       }
     }
     set_filters(frm);
+  },
+  attendance_by_timesheet: function(frm) {
+    if(frm.doc.attendance_by_timesheet){
+      frm.set_value('shift_working', false);
+      frm.set_value('operations_shift');
+      frm.set_value('operations_site');
+      frm.set_value('default_shift');
+    }
   },
   validate: function(frm) {
     // check_and_info_offer_terms(frm);

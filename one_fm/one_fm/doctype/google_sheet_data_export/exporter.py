@@ -23,30 +23,11 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient import discovery
 import gspread
+from frappe.utils import get_site_name
 
 from google.oauth2 import service_account
+import os
 
-#initialize Google Sheet Service
-SERVICE_ACCOUNT_FILE = cstr(frappe.local.site) + frappe.local.conf.google_sheet
-
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-
-credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-service = discovery.build('sheets', 'v4', credentials=credentials)
-drive_api = build('drive', 'v3', credentials=credentials)
-
-def get_data_keys():
-	return frappe._dict(
-		{
-			"data_separator": _("Start entering data below this line"),
-			"main_table": _("Table") + ":",
-			"parent_table": _("Parent Table") + ":",
-			"columns": _("Column Name") + ":",
-			"doctype": _("DocType") + ":",
-		}
-	)
-	
 @frappe.whitelist()
 def export_data(
 	doctype=None,
@@ -59,7 +40,8 @@ def export_data(
 	link=None,
 	google_sheet_id=None,
 	sheet_name=None,
-	owner=None
+	owner=None,
+	client_id = None
 ):
 	_doctype = doctype
 	if isinstance(_doctype, list):
@@ -81,7 +63,8 @@ def export_data(
 		link=link,
 		google_sheet_id=google_sheet_id,
 		sheet_name=sheet_name,
-		owner=owner
+		owner=owner,
+		client_id = client_id
 	)
 	result = exporter.build_response()
 
@@ -101,7 +84,8 @@ class DataExporter:
 		link=None,
 		google_sheet_id=None,
 		sheet_name=None,
-		owner=None
+		owner=None,
+		client_id = None
 	):
 		self.doctype = doctype
 		self.parent_doctype = parent_doctype
@@ -110,14 +94,33 @@ class DataExporter:
 		self.select_columns = select_columns
 		self.template = template
 		self.filters = filters
-		self.data_keys = get_data_keys()
 		self.google_sheet_id = google_sheet_id
 		self.link = link
 		self.sheet_name = sheet_name
 		self.owner = owner
 		self.cell_colour = []
+		self.client_id = client_id
 
+		api = self.initialize_service()
+		self.service = api["service"]
+		self.drive_api = api["drive_api"]
+		self.credentials = api["credentials"]
+		
 		self.prepare_args()
+	
+	def initialize_service(self):
+		#initialize Google Sheet Service
+
+		SERVICE_ACCOUNT_FILE = os.getcwd()+"/"+cstr(frappe.local.site) + frappe.local.conf.google_sheet
+
+		SCOPES = ["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+
+		credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+		service = discovery.build('sheets', 'v4', credentials=credentials)
+		drive_api = build('drive', 'v3', credentials=credentials)
+		
+		return {"credentials":credentials, "service": service, "drive_api": drive_api}
 
 	def prepare_args(self):
 		if self.select_columns:
@@ -158,19 +161,35 @@ class DataExporter:
 
 		self.build_field_columns(self.doctype)
 		
+		if self.all_doctypes:
+			for d in self.child_doctypes:
+				if (
+					self.select_columns and self.select_columns.get(d["doctype"], None)
+				) or not self.select_columns:
+					self.build_field_columns(d["doctype"], d["parentfield"])
+	
 		self.column = self.labelrow
 		values = self.add_data()
 
+		if self.with_data and not values:
+			frappe.msgprint(
+				_("No Data"), _("There is no data to be exported"), indicator_color="orange"
+			)
+		
 		if not self.link:
 			self.create()
 
-		if not self.check_if_sheet_exist():
-			self.add_sheet()
-		
+		if self.build_connection_with_sheet() == False:
+			frappe.msgprint(frappe._("We do not have access to this sheet. Kindly, share your sheet with the following:<br><br> <b>{0}</b>").format(str(self.client_id)), 
+					indicator="red", 
+					title = "Warning")
+		else:
+			if not self.check_if_sheet_exist():
+				self.add_sheet()
 
-		self.update_sheet(values)
-		self.batch_update()
-		# print(self.data)
+			self.update_sheet(values)
+			self.batch_update()
+
 		if self.with_data and not values:
 			frappe.respond_as_web_page(
 				_("No Data"), _("There is no data to be exported"), indicator_color="orange"
@@ -243,9 +262,13 @@ class DataExporter:
 			and docfield.fieldname != "name"
 		):
 			return
+		if docfield.parent and docfield.parent != self.doctype:
+			self.labelrow.append(f"{_(docfield.label)}({_(docfield.parent)})")
+		else:
+			self.labelrow.append(_(docfield.label))
 
 		self.fieldrow.append(docfield.fieldname)
-		self.labelrow.append(_(docfield.label))
+		self.columns.append(docfield.fieldname)
 
 	def add_field_headings(self):
 		self.writer.writerow(self.labelrow)
@@ -253,11 +276,8 @@ class DataExporter:
 	def add_data(self):
 		from frappe.query_builder import DocType
 
-		if self.template and not self.with_data:
-			return
-
-		frappe.permissions.can_export(self.parent_doctype, raise_exception=True)
-
+		data = []
+		data.append(self.labelrow)
 		# sort nested set doctypes by `lft asc`
 		order_by = None
 		table_columns = frappe.db.get_table_columns(self.parent_doctype)
@@ -265,27 +285,57 @@ class DataExporter:
 			order_by = f"`tab{self.parent_doctype}`.`lft` asc"
 		# get permitted data only
 		self.data = frappe.get_list(
-			self.doctype, fields=self.fieldrow, filters=self.filters, limit_page_length=None, order_by=order_by
+			self.doctype, fields=["*"], filters=self.filters, limit_page_length=None, order_by=order_by
 		)
-			# add main table
-		rows = [self.fieldrow]
 		cell_colour = []
-		row_index = 1
-		for doc in self.data:		
-			row = []
-			column_index = 0
+		row_index = 0
+		for doc in self.data:
+			# add main table
+			rows = []
+			self.add_data_row(rows, self.doctype, None, doc, 0, cell_colour, row_index)
+
+			if self.all_doctypes:
+				# add child tables
+				for c in self.child_doctypes:
+					child_doctype_table = DocType(c["doctype"])
+					data_row = (
+						frappe.qb.from_(child_doctype_table)
+						.select("*")
+						.where(child_doctype_table.parent == doc.name)
+						.where(child_doctype_table.parentfield == c["parentfield"])
+						.orderby(child_doctype_table.idx)
+					)
+					for ci, child in enumerate(data_row.run(as_dict=True)):
+						self.add_data_row(rows, c["doctype"], c["parentfield"], child, ci, cell_colour, row_index)
+			
+			for row in rows:
+				data.append(row)
 			row_index += 1
-			for field in self.fieldrow:
-				value = str(doc[field])
-				if len(value) >= 50000:
-					cell_colour.append({'column':column_index, 'row':row_index})
-					row.append("ERROR - Description Length is more than 50,000 so can not import Data")
-				else:
-					row.append(value)
-				column_index += 1
-			rows.append(row)
 		self.cell_colour = cell_colour
-		return rows
+		return data
+
+	def add_data_row(self, rows, dt, parentfield, doc, rowidx, cell_colour, row_index):
+		d = doc.copy()
+		meta = frappe.get_meta(dt)
+		if self.all_doctypes:
+			d.name = f'"{d.name}"'
+
+
+		_column_start_end = self.column_start_end.get((dt, parentfield))
+		if _column_start_end:
+			if len(rows) < rowidx + 1:
+				rows.append([""] * (len(self.columns) + 1))
+			row = rows[rowidx]
+			for i, c in enumerate(self.columns[_column_start_end.start : _column_start_end.end]):
+				df = meta.get_field(c)
+				value = str(d.get(c, ""))
+				value = remove_quotes(value)
+				# check if value size is greater than 50000
+				if len(value) >= 50000:
+					cell_colour.append({'column':_column_start_end.start + i, 'row':row_index})
+					row[_column_start_end.start + i] = f"ERROR - Description Length is more than 50,000 so can not import Data"
+				else:
+					row[_column_start_end.start + i] = value
 
 		
 	def _append_name_column(self, dt=None):
@@ -301,6 +351,18 @@ class DataExporter:
 			)
 		)
 
+	def build_connection_with_sheet(self):
+		api = self.initialize_service()
+		service = api["service"]
+		try:
+			if self.google_sheet_id:
+				service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
+				return True
+			if not self.google_sheet_id:
+				return True
+		except HttpError as err:
+			return False
+
 	def create(self):
 		"""
 		BEFORE RUNNING:
@@ -313,6 +375,8 @@ class DataExporter:
 		"""
 		from pprint import pprint
 
+		service = self.service
+		drive_api = self.drive_api
 
 		# TODO: Change placeholder below to generate authentication credentials. See
 		# https://developers.google.com/sheets/quickstart/python#step_3_set_up_the_sample
@@ -351,6 +415,7 @@ class DataExporter:
 		self.link = request["spreadsheetUrl"]
 
 	def check_if_sheet_exist(self):
+		service = self.service
 		try:
 			sheet_metadata = service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
 			
@@ -366,6 +431,7 @@ class DataExporter:
 			frappe.throw(_("This sheet is not linked"))
 
 	def add_sheet(self):
+		service = self.service
 		try:
 			request_body = {
 				'requests': [{
@@ -391,6 +457,7 @@ class DataExporter:
 		"""Shows basic usage of the Sheets API.
 		Prints values from a sample spreadsheet.
 		"""
+		service = self.service
 		try:
 			no_of_row = len(values)
 			no_of_col = len(self.column)
@@ -418,8 +485,9 @@ class DataExporter:
 			This method is to update the cell that have errors in displaying the value.
 		'''
 		# get spreadsheet details
-		client = gspread.authorize(credentials)
-		spreadsheet = client.open_by_key(self.google_sheet_id)
+		service = self.service
+		client = gspread.authorize(self.credentials)
+		spreadsheet = client.open_by_key(self.google_sheet_id)	
 
 		# get list of worksheets
 		sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id, ranges=[], includeGridData=False).execute()
@@ -442,7 +510,7 @@ class DataExporter:
 							"range": {
 								"sheetId": sheetId
 							},
-							"fields": "userEnteredFormat"
+							"fields": "userEnteredFormat(textFormat)"
 						}
 					}
 				]
@@ -487,20 +555,10 @@ class DataExporter:
 				return request
 		return
 
-@frappe.whitelist()
-def build_connection_with_sheet(doc):
-	doc = parse_json(doc)
-	try:
-		if doc.google_sheet_id:
-			service.spreadsheets().get(spreadsheetId=doc.google_sheet_id).execute()
-			return True
-		if not doc.google_sheet_id:
-			return True
-	except HttpError as err:
-		return False
 
 @frappe.whitelist()
 def update_google_sheet_daily():
+	frappe.log_error(os.getcwd()+"/"+cstr(frappe.local.site)+frappe.local.conf.google_sheet)
 	list_of_export = frappe.get_list("Google Sheet Data Export",{"enable_auto_update":1}, ['name'])
 
 	for e in list_of_export:
@@ -521,6 +579,16 @@ def update_google_sheet_daily():
 
 @frappe.whitelist()
 def get_client_id():
+	SERVICE_ACCOUNT_FILE = os.getcwd()+"/"+cstr(frappe.local.site) + frappe.local.conf.google_sheet
 	f = open(SERVICE_ACCOUNT_FILE)
 	cred = json.load(f)
 	return cred['client_email']
+
+@frappe.whitelist()
+def remove_quotes(value):
+	if value.startswith('"'):
+		value = value[1:]
+	if value.endswith('"'):
+		value = value[:-1]
+	return value
+	

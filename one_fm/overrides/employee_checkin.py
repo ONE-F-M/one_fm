@@ -1,7 +1,8 @@
 from datetime import timedelta, datetime
+from dateutil.parser import parse
 import frappe
 from frappe import _
-from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days
+from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days, now
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
@@ -9,6 +10,8 @@ from one_fm.operations.doctype.operations_site.operations_site import create_not
 from one_fm.api.doc_events import (
 	get_notification_user, validate_location, get_employee_user_id,
 )
+from one_fm.api.api import push_notification_rest_api_for_checkin
+from one_fm.processor import sendemail
 
 
 perm_map = {
@@ -77,38 +80,41 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		self.reload()
 		if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
 			frappe.enqueue(after_insert_background, self=self.name)
+		if self.log_type == "IN":
+			frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
 
 def after_insert_background(self):
 	self = frappe.get_doc("Employee Checkin", self)
 	try:
 		# update shift if not exists
 		curr_shift = get_shift_from_checkin(self)
-		shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
-		# calculate entry
-		early_exit = 0
-		late_entry = 0
-		actual_time = str(self.time)
-		if not '.' in actual_time:
-			actual_time += '.000000'
+		if curr_shift:
+			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
+			# calculate entry
+			early_exit = 0
+			late_entry = 0
+			actual_time = str(self.time)
+			if not '.' in actual_time:
+				actual_time += '.000000'
 
-		if self.log_type=='IN':
-			if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') - timedelta(minutes=shift_type.late_entry_grace_period)) > curr_shift.start_datetime:
-				late_entry = 1
-		if self.log_type=='OUT':
-			if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=shift_type.early_exit_grace_period)) < curr_shift.end_datetime:
-				early_exit = 1
+			if self.log_type=='IN':
+				if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') - timedelta(minutes=shift_type.late_entry_grace_period)) > curr_shift.start_datetime:
+					late_entry = 1
+			if self.log_type=='OUT':
+				if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') + timedelta(minutes=shift_type.early_exit_grace_period)) < curr_shift.end_datetime:
+					early_exit = 1
 
-		query = f"""
-			UPDATE `tabEmployee Checkin` SET
-			shift_assignment="{curr_shift.name}", operations_shift="{curr_shift.shift}", shift_type='{curr_shift.shift_type}',
-			shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
-			shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
-			late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}', 
-			roster_type='{curr_shift.roster_type}'
-			WHERE name="{self.name}"
-		"""
-		frappe.db.sql(query, values=[], as_dict=1)
-		frappe.db.commit()
+			query = f"""
+				UPDATE `tabEmployee Checkin` SET
+				shift_assignment="{curr_shift.name}", operations_shift="{curr_shift.shift}", shift_type='{curr_shift.shift_type}',
+				shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
+				shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
+				late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}', 
+				roster_type='{curr_shift.roster_type}'
+				WHERE name="{self.name}"
+			"""
+			frappe.db.sql(query, values=[], as_dict=1)
+			frappe.db.commit()
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
 	
@@ -221,4 +227,66 @@ def get_shift_from_checkin(checkin):
 	for s in shifts:
 		if ((s.start_datetime + timedelta(minutes=-70)) <= checkin.time <= (s.end_datetime + timedelta(minutes=60))):
 			return s
-	return False
+
+
+def notify_supervisor_about_late_entry(checkin):
+	"""
+	This method notify the supervisor about the late entry of an employee
+	"""
+	try:
+		shift_permission = frappe.db.sql(f""" select name from `tabShift Permission` where employee = '{checkin.employee}' and date = '{now_datetime().date()}' and log_type = 'IN' and permission_type = 'Arrive Late' and workflow_state = 'Approved' ;  """)
+		if checkin.shift_assignment:
+			last_shift_assignment = checkin.shift_assignment
+			shift_late_minutes = frappe.db.get_value("Shift Type", {"name": checkin.shift_type}, ['supervisor_reminder_shift_start', 'start_time'], as_dict=1)
+			the_roster_type = checkin.roster_type
+			op_shift = frappe.get_doc("Operations Shift", checkin.operations_shift)
+
+		else:
+			last_shift_assignment = get_shift_from_checkin(checkin)
+			if last_shift_assignment:
+				shift_late_minutes = frappe.db.get_value("Shift Type", {"name": last_shift_assignment["shift_type"]}, ['supervisor_reminder_shift_start', 'start_time'], as_dict=1)
+				the_roster_type = last_shift_assignment.roster_type
+				op_shift = frappe.get_doc("Operations Shift", last_shift_assignment.shift)
+
+		if last_shift_assignment and not shift_permission:
+			if checkin.time.time() > datetime.strptime(str(shift_late_minutes["start_time"] + timedelta(minutes=shift_late_minutes['supervisor_reminder_shift_start'])), "%H:%M:%S").time():
+				time_diff = calculate_time_diffrence_for_checkin(shift_late_minutes["start_time"], checkin.time)
+				time_of_arrival = parse(str(checkin.time)).time()
+				get_reports_to = frappe.db.get_value("Employee", {"name": checkin.employee}, ['reports_to'])
+				if get_reports_to:
+					return send_push_notification_for_late_entry(get_reports_to, checkin.employee_name, roster_type=the_roster_type if the_roster_type else "Basic", time_difference=time_diff, shift=op_shift, time_of_arrival=time_of_arrival)
+				get_site = frappe.db.get_value("Employee", {"name": checkin.employee}, ['site'])
+				if get_site:
+					get_site_supervisor = frappe.db.get_value("Operations Site", {"name": get_site}, ['account_supervisor'])
+					if get_site_supervisor:
+						return send_push_notification_for_late_entry(get_site_supervisor, checkin.employee, roster_type=the_roster_type if the_roster_type else "Basic", time_difference=time_diff, shift=op_shift, time_of_arrival=time_of_arrival)
+	except Exception as e:
+		frappe.log_error(e)
+		pass
+
+
+def send_push_notification_for_late_entry(recipient, culprit_name, shift, time_of_arrival,  time_difference=(0, 0), roster_type="Basic"):
+	"""
+	This method sends a push notification and a mail to the supervisor
+	"""
+	title = f"Late Arrival Of {culprit_name}"
+	body =  f"Hello, {culprit_name} has arrived late for work today."
+	if roster_type != "Basic":
+		body = f"Hello, {culprit_name} has arrived late for overtime work today."
+
+	late_arrival_time_diffrence = f"{time_difference[0]} minutes late" if len(time_difference) == 1 else f"{time_difference[0]} hour, {time_difference[1]} minutes late"
+	push_notification_rest_api_for_checkin(recipient, title, body, checkin=False, arriveLate=False, checkout=False)
+	get_user_id = frappe.db.get_value("Employee", {"name": recipient}, ["user_id"], as_dict=1)
+	user_id = get_user_id["user_id"] if get_user_id else ""
+	msg = frappe.render_template('one_fm/templates/emails/late_arrival_notification.html', context={"time_diffrence": time_difference, "shift": shift, "roster_type": roster_type, "time_diff": late_arrival_time_diffrence, "employee": culprit_name, "time_of_arrival": time_of_arrival})
+	sendemail(recipients=user_id, subject=title, content=msg)
+	return "Messages Sent Successfully !!"
+
+
+def calculate_time_diffrence_for_checkin(shift_time, checkin_time):
+	datetime_shift = datetime.strptime(str(now_datetime().date()) + " " + str(shift_time), '%Y-%m-%d %H:%M:%S')
+	time_diff_in_minutes = (checkin_time - datetime_shift).seconds // 60
+	the_diff = divmod(time_diff_in_minutes, 60) 
+	if the_diff[0] < 1:
+		return [the_diff[1]]
+	return list(the_diff)

@@ -29,6 +29,8 @@
   "vacation_days",
   "governorate",
   "location_of_work",
+  "employment_type",
+  "attendance_by_timesheet",
   "column_break_14",
   "travel_required_html",
   "travel_required",
@@ -514,6 +516,7 @@
    "label": "Travel Required Html"
   },
   {
+   "depends_on": "eval:!doc.attendance_by_timesheet",
    "fieldname": "shift_working_html",
    "fieldtype": "HTML",
    "label": "Shift Working Html"
@@ -858,6 +861,7 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:!doc.attendance_by_timesheet",
    "fetch_from": "operations_shift.shift_type",
    "fieldname": "default_shift",
    "fieldtype": "Link",
@@ -876,16 +880,31 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:!doc.attendance_by_timesheet",
    "fieldname": "operations_shift",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
-   "label": "Operations Shift",
+   "label": "Shift Allocation",
    "options": "Operations Shift"
+  },
+  {
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type"
+  },
+  {
+   "default": "0",
+   "fetch_from": "employment_type.attendance_by_timesheet",
+   "fieldname": "attendance_by_timesheet",
+   "fieldtype": "Check",
+   "label": "Attendance by Timesheet",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-02-20 21:05:38.144931",
+ "modified": "2023-04-11 21:23:41.243901",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

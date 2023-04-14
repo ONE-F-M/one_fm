@@ -489,32 +489,3 @@ def attach_abbreviation_to_roles():
 
 
 
-def switch_shift_site_post_to_inactive(doc, method):
-    if doc.is_active == "No" and  doc.project_type == "External":
-        list_of_shift = frappe.db.sql(f""" select name from `tabOperations Shift` where project = "{doc.name}" """)
-        if list_of_shift:
-            for shift in list_of_shift[0]:
-                frappe.db.set_value("Operations Shift", shift, {
-                    "status": "Not Active"
-                })
-
-        list_of_role = frappe.db.sql(f""" select name from `tabOperations Role` where project = "{doc.name}" """)
-        if list_of_role:
-            for role in list_of_role[0]:
-                frappe.db.set_value("Operations Role", role, {
-                    "is_active": False
-                })
-
-        list_of_post = frappe.db.sql(f""" select name from `tabOperations Post` where project = "{doc.name}" """)
-        if list_of_post:
-            for post in list_of_post[0]:
-                frappe.db.set_value("Operations Post", post, {
-                    "status": "Inactive"
-                })
-
-        list_of_sites = frappe.db.sql(f""" select name from `tabOperations Site` where project = "{doc.name}" """)
-        if list_of_sites:
-            for site in list_of_sites[0]:
-                frappe.db.set_value("Operations Site", site, {
-                    "status": "Inactive"
-                })

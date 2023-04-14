@@ -17,10 +17,18 @@ frappe.ui.form.on('Onboard Employee', {
 			frm.scroll_to_field('company_email');
 		}
 	},
-    shift_working: function(frm) {
-        set_shift_working_btn(frm);
-        filterDefaultShift(frm);
-    },
+	shift_working: function(frm) {
+		set_shift_working_btn(frm);
+		filterDefaultShift(frm);
+	},
+	attendance_by_timesheet: function(frm) {
+		if(frm.doc.attendance_by_timesheet){
+			frm.set_value('shift_working', false);
+			frm.set_value('operations_shift');
+			frm.set_value('operations_site');
+			frm.set_value('default_shift');
+		}
+	},
 	is_g2g_fees_needed: function(frm) {
 		if(!frm.doc.is_g2g_fees_needed){
 			frm.set_value('g2g_fee_amount', 0);

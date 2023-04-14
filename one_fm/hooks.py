@@ -24,7 +24,8 @@ app_license = "MIT"
 app_include_css = "/assets/one_fm/css/one_fm.css"
 app_include_js = [
 		"/assets/one_fm/js/maps.js",
-		"/assets/one_fm/js/desk.js"
+		"/assets/one_fm/js/desk.js",
+        "/assets/one_fm/js/showdown.min.js",
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -97,7 +98,7 @@ doctype_js = {
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
-    "Wiki Page": "public/js/doctype_js/wiki_page.js", 
+    "Wiki Page": "public/js/doctype_js/wiki_page.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -165,12 +166,13 @@ before_install = "one_fm.install.before_install.execute"
 permission_query_conditions = {
 	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
-	"Issue": "one_fm.utils.get_issue_permission_query_conditions"
+	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
+    "Leave Application": "one_fm.permissions.leave_application_list",
 }
 has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
-	"Issue": "one_fm.utils.has_permission_to_issue"
+	"Issue": "one_fm.utils.has_permission_to_issue",
 }
 
 standard_queries = {
@@ -196,13 +198,16 @@ doc_events = {
 			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
 		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel",
-		
+
 	},
 	"Leave Type": {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
 	"Employee": {
-		"validate":"one_fm.hiring.utils.set_employee_name",
+		"validate":[
+			"one_fm.hiring.utils.set_employee_name",
+			"one_fm.hiring.utils.employee_validate_attendance_by_timesheet"
+		],
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"before_insert": "one_fm.hiring.utils.employee_before_insert",
 		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
@@ -226,7 +231,8 @@ doc_events = {
 		"onload": "one_fm.hiring.utils.job_offer_onload"
 	},
 	"Shift Type": {
-		"autoname": "one_fm.api.doc_events.naming_series"
+		"autoname": "one_fm.api.doc_events.naming_series",
+		"validate": "one_fm.overrides.shift_type.validate_shift_type"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -249,7 +255,7 @@ doc_events = {
 	},
 	"Supplier Group": {
 		"on_update": "one_fm.utils.supplier_group_on_update",
-	},
+},
 	"Bank Account": {
 		"after_insert": "one_fm.api.doc_methods.bank_account.after_insert",
 		"on_update": "one_fm.utils.bank_account_on_update",
@@ -272,7 +278,7 @@ doc_events = {
 			"one_fm.one_fm.project_custom.validate_project"
 		],
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
-		"on_update": "one_fm.one_fm.utils.switch_shift_site_post_to_inactive"
+		"on_update": "one_fm.api.doc_events.on_project_update_switch_shift_site_post_to_inactive"
 	# 	"on_update": "one_fm.api.doc_events.project_on_update"
 	},
 	"Attendance": {
@@ -430,8 +436,7 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
-	{"from_route": "/<path:wiki_page>/edit-wiki", "to_route": "wiki/edit"},
-	{"from_route": "/<path:wiki_page>/new-wiki", "to_route": "wiki/new"},
+
 ]
 
 # doc_events = {
@@ -481,7 +486,7 @@ scheduler_events = {
   		"one_fm.api.v2.zenquotes.set_cached_quote",
 		"one_fm.operations.doctype.contracts.contracts.send_contract_reminders",
 		"one_fm.operations.doctype.contracts.contracts.renew_contracts_by_termination_date",
-        "one_fm.operations.doctype.bug_buster.bug_buster.roster_bug_buster"
+        "one_fm.developer.doctype.bug_buster.bug_buster.roster_bug_buster"
 	],
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
@@ -601,7 +606,9 @@ scheduler_events = {
 			'one_fm.api.tasks.generate_penalties'
 		],
 		"00 01 24 * *": [
-			'one_fm.api.tasks.generate_site_allowance'
+			'one_fm.api.tasks.generate_site_allowance',
+			'one_fm.api.tasks.generate_ot_additional_salary',
+			'one_fm.api.tasks.generate_sick_leave_deduction'
 		],
 		"00 02 24 * *": [
 			'one_fm.api.tasks.generate_payroll'
@@ -630,6 +637,12 @@ scheduler_events = {
 		],
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
+		],
+		"00 08 23 * *": [ #notify leave approver to approve all the open application
+		'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
+		],
+		"45 23 23 * *": [ #approve all the open leave application
+		'one_fm.api.doc_methods.payroll_entry.close_all_leave_application '
 		]
 	}
 }
@@ -723,8 +736,11 @@ fixtures = [
 #
 override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-	# "frappe.desk.doctype.event.event.get_events": "one_fm.event.get_events"
-	"wiki.wiki.doctype.wiki_page.wiki_page.preview":"one_fm.overrides.wiki_page.preview"
+	"erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry":'one_fm.one_fm.hr_utils.create_invoice_payment_entry',
+    "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
+    "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
+	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
+
 }
 #ShiftType.process_auto_attendance = process_auto_attendance
 
@@ -744,4 +760,6 @@ jenv = {
 after_migrate = "one_fm.after_migrate.execute.comment_timesheet_in_hrms"
 
 # add more info to session on boot
-on_session_creation = "one_fm.session_hooks.on_session_creation"
+# on_session_creation = "one_fm.session_hooks.on_session_creation"
+# auth_hooks = "one_fm.session_hooks.auth_hooks"
+# on_login = "one_fm.session_hooks.on_login"

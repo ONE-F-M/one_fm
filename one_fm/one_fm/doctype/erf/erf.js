@@ -19,6 +19,13 @@ frappe.ui.form.on('ERF', {
 				}
 			};
 		});
+		frm.set_query('interview_round', function () {
+			return {
+				filters: {
+					'designation': frm.doc.designation
+				}
+			};
+		});
 
         filterDefaultShift(frm);
 		set_shift_working_btn(frm);
@@ -63,6 +70,13 @@ frappe.ui.form.on('ERF', {
 		if (!frm.is_new() && frm.doc.docstatus == 0 && !frm.doc.draft_erf_to_hrm){
 			frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
 
+		}
+	},
+	attendance_by_timesheet: function(frm) {
+		if(frm.doc.attendance_by_timesheet){
+			frm.set_value('shift_working', false);
+			frm.set_value('operations_shift');
+			frm.set_value('default_shift');
 		}
 	},
 	decline_erf: function(frm, status) {

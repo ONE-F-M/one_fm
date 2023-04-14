@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import frappe
 from hrms.hr.doctype.shift_request.shift_request import ShiftRequest
 from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
 from hrms.payroll.doctype.salary_slip.salary_slip import SalarySlip
 from erpnext.stock.doctype.item_price.item_price import ItemPrice
+from erpnext.setup.doctype.employee.employee import Employee
 from one_fm.api.doc_methods.shift_request import shift_request_submit, validate_approver, shift_request_cancel, validate_default_shift
 from one_fm.api.doc_methods.payroll_entry import (
 	validate_employee_attendance, get_count_holidays_of_employee, get_count_employee_attendance, fill_employee_details, create_salary_slips
@@ -16,18 +18,21 @@ from hrms.hr.doctype.leave_application.leave_application import LeaveApplication
 from one_fm.api.mobile.Leave_application import notify_leave_approver
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 from one_fm.operations.doctype.contracts.contracts import calculate_item_values
-from wiki.wiki.doctype.wiki_page.wiki_page import WikiPage
-from one_fm.overrides.wiki_page import get_context
+
+
 from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 from one_fm.api.notification import after_insert
 from one_fm.one_fm.payroll_utils import add_tax_components
+from one_fm.utils import post_login, validate_reports_to, custom_validate_nestedset_loop
+
+__version__ = '14.1.1'
 from hrms.overrides.employee_master import EmployeeMaster,validate_onboarding_process
 from one_fm.overrides.employee import EmployeeOverride
 
-__version__ = '14.0.0'
 
 EmployeeMaster.validate = EmployeeOverride.validate
 EmployeeMaster.validate_onboarding_process = validate_onboarding_process
+frappe.auth.LoginManager.post_login = post_login
 ShiftRequest.on_submit = shift_request_submit
 ShiftRequest.validate_approver = validate_approver
 ShiftRequest.on_cancel = shift_request_cancel
@@ -46,5 +51,7 @@ ItemPrice.validate = validate
 ItemPrice.check_duplicates = check_duplicates
 LeaveApplication.notify_leave_approver = notify_leave_approver
 calculate_taxes_and_totals.calculate_item_values = calculate_item_values
-WikiPage.get_context = get_context
+
 NotificationLog.after_insert = after_insert
+Employee.validate_reports_to = validate_reports_to
+frappe.utils.nestedset.validate_loop = custom_validate_nestedset_loop

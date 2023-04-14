@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 from __future__ import unicode_literals
-import itertools
-import pymysql
+from frappe.auth import validate_ip_address
+from frappe.utils.nestedset import validate_loop
 from one_fm.api.notification import create_notification_log
 from frappe import _
-import frappe, os, erpnext, json, math
+import frappe, os, erpnext, json, math, itertools, pymysql, requests
 from frappe.model.document import Document
 from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.data import flt, nowdate, getdate, cint
@@ -41,7 +41,7 @@ from frappe.desk.doctype.notification_log.notification_log import get_title, get
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_common_email_args, deduplicate_actions, get_next_possible_transitions,
-    get_doc_workflow_state, get_workflow_name, get_users_next_action_data
+    get_doc_workflow_state, get_workflow_name, get_workflow_action_url
 )
 from six import string_types
 from frappe.core.doctype.doctype.doctype import validate_series
@@ -545,9 +545,8 @@ def create_gp_letter_request():
 @frappe.whitelist(allow_guest=True)
 def leave_appillication_on_submit(doc, method):
     if doc.status == "Approved":
-        leave_appillication_paid_sick_leave(doc, method)
         update_employee_hajj_status(doc, method)
-        notify_employee(doc, method)
+
 
 @frappe.whitelist()
 def notify_employee(doc, method):
@@ -560,70 +559,9 @@ def notify_employee(doc, method):
         message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
         push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, doc.name)
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def leave_appillication_on_cancel(doc, method):
     update_employee_hajj_status(doc, method)
-
-@frappe.whitelist(allow_guest=True)
-def leave_appillication_paid_sick_leave(doc, method):
-	if doc.leave_type and frappe.db.get_value("Leave Type", doc.leave_type, 'one_fm_is_paid_sick_leave') == 1:
-		salary = get_salary_amount(doc.employee)
-		if salary:
-			create_additional_salary_for_paid_sick_leave(doc, salary)
-
-def create_additional_salary_for_paid_sick_leave(doc, salary):
-    daily_rate = salary/30
-    from hrms.hr.doctype.leave_application.leave_application import get_leave_details
-    leave_details = get_leave_details(doc.employee, nowdate())
-    curr_year_applied_days = 0
-    if doc.leave_type in leave_details['leave_allocation'] and leave_details['leave_allocation'][doc.leave_type]:
-        curr_year_applied_days = leave_details['leave_allocation'][doc.leave_type]['leaves_taken']
-    if curr_year_applied_days == 0:
-        curr_year_applied_days = doc.total_leave_days
-
-    leave_payment_breakdown = get_leave_payment_breakdown(doc.leave_type)
-
-    total_payment_days = 0
-    if leave_payment_breakdown:
-        threshold_days = 0
-        for payment_breakdown in leave_payment_breakdown:
-            payment_days = 0
-            threshold_days += payment_breakdown.threshold_days
-            if total_payment_days < doc.total_leave_days:
-                if curr_year_applied_days >= threshold_days and (curr_year_applied_days - doc.total_leave_days) < threshold_days:
-                    payment_days = threshold_days - (curr_year_applied_days-doc.total_leave_days) - total_payment_days
-                elif curr_year_applied_days <= threshold_days: # Gives true this also doc.total_leave_days <= threshold_days:
-                    payment_days = doc.total_leave_days - total_payment_days
-                create_additional_salary(salary, daily_rate, payment_days, doc, payment_breakdown)
-                total_payment_days += payment_days
-
-    if total_payment_days < doc.total_leave_days and doc.total_leave_days-total_payment_days > 0:
-        create_additional_salary(salary, daily_rate, doc.total_leave_days-total_payment_days, doc)
-
-def create_additional_salary(salary, daily_rate, payment_days, leave_application, payment_breakdown=False):
-    if payment_days > 0:
-        deduction_percentage = 1
-        salary_component = frappe.db.get_value("Leave Type", leave_application.leave_type, "one_fm_paid_sick_leave_deduction_salary_component")
-        if payment_breakdown:
-            deduction_percentage = payment_breakdown.salary_deduction_percentage/100
-            salary_component = payment_breakdown.salary_component
-        deduction_notes = """
-            Employee Salary: <b>{0}</b><br>
-            Daily Rate: <b>{1}</b><br>
-            Deduction Days Number: <b>{2}</b><br>
-            Deduction Percent: <b>{3}%</b>
-        """.format(salary, daily_rate, payment_days, deduction_percentage*100)
-
-        additional_salary = frappe.get_doc({
-            "doctype":"Additional Salary",
-            "employee": leave_application.employee,
-            "salary_component": salary_component,
-            "payroll_date": leave_application.from_date,
-            "leave_application": leave_application.name,
-            "notes": deduction_notes,
-            "amount": payment_days*daily_rate*deduction_percentage
-        }).insert(ignore_permissions=True)
-        additional_salary.submit()
 
 def get_leave_payment_breakdown(leave_type):
     leave_type_doc = frappe.get_doc("Leave Type", leave_type)
@@ -1925,7 +1863,7 @@ def create_roster_post_actions():
 
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
-        if not any(cstr(es.date).split(" ")[0] == cstr(ps.date).split(" ")[0] and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
+        if not any(es.date == ps.date and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
             if ps.operations_role:
                 operations_roles_not_filled_set.add(ps.operations_role)
                 list_of_dict_of_operations_roles_not_filled.append(ps)
@@ -1957,36 +1895,33 @@ def create_roster_post_actions():
             if val["operations_role"] in operations_roles and val["shift"] in shift_dict[supervisor]:
                 check_list.append(val)
 
-
         for item in check_list:
             for second_item in second_check_list:
                 if (item["date"] == second_item["date"]) and (item["shift"] == second_item["shift"]) and (item["operations_role"] == second_item["operations_role"]):
                     second_item["quantity"] = second_item["quantity"] + 1
                     break
+            item.update({"quantity": 1})
+            second_check_list.append(item)
+            check_list.remove(item)
 
-            else:
-                item.update({"quantity": 1})
-                second_check_list.append(item)
-                check_list.remove(item)
+        if second_check_list and len(second_check_list) > 0:
+            roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
+            roster_post_actions_doc.start_date = start_date
+            roster_post_actions_doc.end_date = end_date
+            roster_post_actions_doc.status = "Pending"
+            roster_post_actions_doc.action_type = "Fill Post Type"
+            roster_post_actions_doc.supervisor = supervisor
 
+            for obj in second_check_list:
+                roster_post_actions_doc.append('operations_roles_not_filled', {
+                    'operations_role': obj.get("operations_role"),
+                    "operations_shift": obj.get("shift"),
+                    "date": obj.get("date"),
+                    "quantity": obj.get("quantity") if obj.get("quantity") else 1
+                })
 
-        roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
-        roster_post_actions_doc.start_date = start_date
-        roster_post_actions_doc.end_date = end_date
-        roster_post_actions_doc.status = "Pending"
-        roster_post_actions_doc.action_type = "Fill Post Type"
-        roster_post_actions_doc.supervisor = supervisor
-
-        for obj in second_check_list:
-            roster_post_actions_doc.append('operations_roles_not_filled', {
-                'operations_role': obj.get("operations_role"),
-                "operations_shift": obj.get("shift"),
-                "date": obj.get("date"),
-                "quantity": obj.get("quantity") if obj.get("quantity") else 1
-            })
-
-        roster_post_actions_doc.save()
-        frappe.db.commit()
+            roster_post_actions_doc.save()
+            frappe.db.commit()
         del check_list
 
 def send_roster_report():
@@ -2664,31 +2599,56 @@ def create_path(path):
     os.mkdir(path)
 
 
+def get_users_next_action_data(transitions, doc, recipients):
+	user_data_map = {}
+	for transition in transitions:
+		for user in recipients:
+			if not user_data_map.get(user):
+				user_data_map[user] = frappe._dict(
+					{
+						"possible_actions": [],
+						"email": user,
+					}
+				)
+
+			user_data_map[user].get("possible_actions").append(
+				frappe._dict(
+					{
+						"action_name": transition.action,
+						"action_link": get_workflow_action_url(transition.action, doc, user),
+					}
+				)
+			)
+	return user_data_map
+
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
     frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
+
 
 def queue_send_workflow_action_email(doc, recipients):
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
         workflow, get_doc_workflow_state(doc), doc
     )
-    user_data_map = get_users_next_action_data(next_possible_transitions, doc)
+    user_data_map = get_users_next_action_data(next_possible_transitions, doc, recipients)
 
     common_args = get_common_email_args(doc)
     message = common_args.pop("message", None)
+    subject = f"Pending - Workflow Action on {_(doc.doctype)} - {doc.workflow_state}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
-    if not list(user_data_map[0].values()):
+    if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,
             "args": {"message": message, "doc_link": frappe.utils.get_url(doc.get_url())},
             "reference_name": doc.name,
-            "reference_doctype": doc.doctype,
+            "reference_doctype": doc.doctype
         }
         email_args.update(common_args)
-        frappe.enqueue(method=sendemail, queue="short", **email_args)
+        email_args['subject'] = subject
+        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
     else:
-        for d in [i for i in list(user_data_map[0].values()) if i.get('email') in recipients]:
+        for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
             email_args = {
                 "recipients": recipients,
                 "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message, "pdf_link": pdf_link, "doc_link": frappe.utils.get_url(doc.get_url())},
@@ -2696,7 +2656,8 @@ def queue_send_workflow_action_email(doc, recipients):
                 "reference_doctype": doc.doctype,
             }
             email_args.update(common_args)
-            frappe.enqueue(method=sendemail, queue="short", **email_args)
+            email_args['subject'] = subject
+        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
 
 
 def workflow_approve_reject(doc, recipients=None):
@@ -2912,3 +2873,138 @@ def get_today_leaves(cur_date):
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
 
+
+def get_approver(employee):
+    """
+        Get document approver for employee by
+        reports_to, shift_approver, site_approver
+    """
+    operations_site, operations_shift = '', ''
+    if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
+    emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site'], as_dict=1)
+    if emp_data.reports_to:
+        return emp_data.reports_to
+    elif emp_data.shift:
+        operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
+    elif emp_data.site:
+        operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
+
+    if operations_site:return operations_site
+    if operations_shift:return operations_shift
+    if not (operations_shift and operations_site and operations_shift):
+        frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
+
+
+def get_approver_for_many_employees(supervisor=None):
+    """
+        Get document approver for employee by
+        reports_to, shift_approver, site_approver
+    """
+    if not supervisor:
+        supervisor = frappe.cache().get_value(frappe.session.user).employee
+    roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+    has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', supervisor, 'user_id'))])
+    if has_roles:
+        return [i.name for i in frappe.db.get_list("Employee", ignore_permissions=True)]
+    employees = [i.name for i in frappe.db.get_list('Employee', {'reports_to':supervisor}, "name", ignore_permissions=True)]
+    operations_site = [i.name for i in frappe.db.get_list('Operations Site', {'account_supervisor':supervisor}, "name", ignore_permissions=True)]
+    if operations_site:
+        employees += [i.name for i in frappe.db.get_list('Employee', {'site':['IN', operations_site]}, "name", ignore_permissions=True) if not i.name in employees]
+    operations_shift = [i.name for i in frappe.db.get_list('Operations Shift', {'supervisor':supervisor}, "name", ignore_permissions=True)]
+    if operations_shift:
+        employees += [i.name for i in frappe.db.get_list('Employee', {'shift':['IN', operations_shift]}, "name", ignore_permissions=True) if not i.name in employees]
+    employees.append(supervisor)
+    return employees
+
+
+def check_employee_permission_on_doc(doc):
+    """
+        Before loading document form, check if session user has access to view the doc data
+        based on employee field.
+    """
+    try:
+        if frappe.session.user not in ["Administrator", 'administrator', 'abdullah@one-fm.com']:
+            session_employee = frappe.cache().get_value(frappe.session.user).employee
+            roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+            has_roles = any([item in roles for item in frappe.get_roles()])
+            if not has_roles and (session_employee!=doc.employee):
+                if (session_employee and doc.employee):
+                    approver = get_approver(doc.employee)
+                    if approver != session_employee:
+                        frappe.throw("You do not have permissions to access this document.")
+    except Exception as e:
+        pass
+
+
+def post_login(self):
+    self.run_trigger("on_login")
+    validate_ip_address(self.user)
+    self.validate_hour()
+    self.get_user_info()
+    self.make_session()
+    self.setup_boot_cache()
+    self.set_user_info()
+
+    # log administrator
+    if frappe.session.user == 'Administrator':
+        session = frappe.session.data
+        environ = frappe._dict(frappe.local.request.environ)
+        doc = frappe.get_doc(
+            {
+            'doctype':'Administrator Auto Log',
+            'ip': session.session_ip,
+            'login_time': session.last_updated,
+            'session_expiry': session.session_expiry,
+            'device': session.device,
+            'session_country': json.dumps(session.session_country),
+            'http_sec_ch_ua':environ.HTTP_SEC_CH_UA,
+            'user_agent':environ.HTTP_USER_AGENT,
+            'platform':environ.HTTP_SEC_CH_UA_PLATFORM,
+            'ip_detail': json.dumps(requests.get(f'https://ipapi.co/{session.session_ip}/json/').json())
+            }
+        ).insert()
+        frappe.db.commit()
+    else:
+        if not frappe.cache().get_value(frappe.session.user):
+            try:
+                if not frappe.session.user:
+                    frappe.cache().set_value(frappe.session.user, frappe._dict({}))
+                else:
+                    employee = frappe.db.get_value('Employee', {'user_id':frappe.session.user }, 'name')
+                    frappe.cache().set_value(frappe.session.user, frappe._dict({'employee':employee}))
+            except:
+                frappe.cache().set_value(frappe.session.user, frappe._dict({}))
+
+
+def validate_reports_to(self):
+    if self.reports_to == self.name and self.designation != "General Manager":
+        frappe.throw(frappe._("Employee cannot report to himself."))
+
+
+def custom_validate_nestedset_loop(doctype, name, lft, rgt):
+    if doctype == "Employee":
+        return
+    validate_loop(doctype, name, lft, rgt)
+
+def is_assignment_exist_for_the_shift(shift_field, assignment_doctype, shift_name, date_field, assignment_after_date=None):
+	'''
+		Method to check assignment exists on or after a date for shift
+		args:
+			assignment_doctype is Employee Schedule/Shift Assignment
+			shift_field is shift(Operations Shift)
+			shift_name is self.name
+			date_field is date/start_date
+		return boolean
+	'''
+	if not assignment_after_date:
+		assignment_after_date = today()
+	assignments = frappe.db.exists(
+		assignment_doctype,
+		{
+			shift_field: shift_name,
+			date_field: ['>=', getdate(assignment_after_date)],
+			'docstatus': 1
+		}
+	)
+
+	return True if assignments else False

@@ -16,7 +16,6 @@ from one_fm.processor import sendemail
 from frappe.utils.data import get_absolute_url
 
 class OnboardEmployee(Document):
-
 	def validate(self):
 		if not self.number_of_days_off:
 			frappe.throw(_("Please set the number of days off."))
@@ -26,7 +25,14 @@ class OnboardEmployee(Document):
 		elif self.day_off_category == "Monthly":
 			if frappe.utils.cint(self.number_of_days_off) > 30:
 				frappe.throw(_("Number of days off cannot be more than a month."))
+		self.validate_attendance_by_timesheet()
 
+	def validate_attendance_by_timesheet(self):
+		if self.attendance_by_timesheet:
+			self.shift_working = False
+			self.operations_shift = ''
+			self.default_shift = ''
+			self.operation_site = ''
 
 	def on_update(self):
 		if self.workflow_state == 'Inform Applicant':
@@ -143,7 +149,7 @@ class OnboardEmployee(Document):
 						employee.one_fm_first_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_first_name_in_arabic")
 						employee.one_fm_last_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_last_name_in_arabic")
 					else:
-						employee.one_fm_first_name_in_arabic = self.employee_name_in_arabic.split()[len(doc.employee_name_in_arabic.split())-1]
+						employee.one_fm_first_name_in_arabic = self.employee_name_in_arabic.split()[len(self.employee_name_in_arabic.split())-1]
 						employee.one_fm_last_name_in_arabic = self.employee_name_in_arabic.split()[0]
 
 					employee.permanent_address = "Test"
@@ -160,6 +166,8 @@ class OnboardEmployee(Document):
 						employee.date_of_joining = getdate(date_of_joining)
 						self.date_of_joining = getdate(date_of_joining)
 					employee.company_email = self.company_email
+					employee.employment_type = self.employment_type
+					employee.attendance_by_timesheet = self.attendance_by_timesheet
 					employee.save(ignore_permissions=True)
 					self.employee = employee.name
 				user_id = frappe.db.get_value("Employee", self.employee, "user_id")

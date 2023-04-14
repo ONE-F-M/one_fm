@@ -1,5 +1,19 @@
 import frappe
 
+
+def validate_sick_leave_attachment(doc):
+    """
+       Ensure that all sick leaves have an attachment
+
+    Returns:
+        (Bool) : True if attachment is present, False if attachment is not present.
+    """
+    leave_attachments = frappe.get_all("File",{'attached_to_doctype':"Leave Application",'attached_to_name':doc.name},['name'])
+    if not leave_attachments:
+        return False
+    return True
+
+
 def response(code, title, msg, data=None):
     frappe.local.response['http_status_code'] = code
     frappe.local.response['message'] = {
