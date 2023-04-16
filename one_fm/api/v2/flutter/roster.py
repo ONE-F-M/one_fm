@@ -1071,7 +1071,6 @@ def edit_post(posts, values):
         posts = json.loads(posts)
         args = frappe._dict(json.loads(values))
 
-        # frappe.throw("i can explain")
         if args.post_status == "Plan Post":
             # frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
             plan_post(posts=posts, args=args)
