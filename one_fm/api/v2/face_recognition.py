@@ -80,7 +80,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         return response("Internal Server Error", 500, None, error)
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest =1 )
 def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None, 
     shift_assignment: str = None, skip_attendance: str = None, latitude: str = None, longitude: str = None):
     """This method verifies user checking in/checking out.
@@ -184,6 +184,9 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         res = random.choice(stubs).FaceRecognition(req)
 
         if res.verification == "FAILED" and res.data == 'Invalid media content':
+            #log errors
+            frappe.log_error("Invalid Media Content Error Blinks",res.blinks)
+            frappe.log_error("Invalid Media Content Error Image",res.image)
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
             if log_type == "IN":
                 check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
