@@ -20,6 +20,7 @@ from one_fm.one_fm.doctype.hr_and_payroll_additional_settings.hr_and_payroll_add
 from itertools import groupby
 from operator import itemgetter
 from one_fm.processor import sendemail
+from one_fm.overrides.leave_application import close_leaves
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
@@ -174,7 +175,7 @@ def set_bank_details(self, employee_details):
 	missing_ssa = []
 	employee_list = ', '.join(['"{}"'.format(employee.employee) for employee in employee_details])
 	if employee_list:
-		missing_ssa = frappe.db.sql(""" 
+		missing_ssa = frappe.db.sql("""
 			SELECT employee from `tabEmployee` E
 			WHERE E.status = 'Active'
 			AND E.employment_type != 'Subcontractor'
@@ -208,12 +209,12 @@ def set_bank_details(self, employee_details):
 		except Exception as e:
 			frappe.log_error(str(e), 'Payroll Entry')
 			frappe.throw(str(e))
-	
+
 	if len(missing_ssa) > 0:
 		for e in missing_ssa:
 			employee_missing_detail.append(frappe._dict(
 				{'employee':e.employee, 'salary_mode':'', 'issue':'No Salary Structure Assignment'}))
-	
+
 	# check for missing details, log and report
 	if(len(employee_missing_detail)):
 		missing_detail = []
@@ -277,13 +278,13 @@ def auto_create_payroll_entry(payroll_date=None):
 	"""
 		Create Payroll Entry record with payroll cycle configured in HR and Payroll Additional Settings.
 	"""
-	
+
 	if not payroll_date:
 		payroll_date_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'payroll_date')
 		# Calculate payroll date
 		payroll_date = (datetime(getdate().year, getdate().month, cint(payroll_date_day))).strftime("%Y-%m-%d")
 
-	
+
 	# Get Payroll cycle list from HR and Payroll Settings and itrate for payroll cycle
 	query = '''
 		select
@@ -639,7 +640,7 @@ def create_salary_slips(doc):
 				employees=employees,
 				args=args,
 				publish_progress=False,
-				timeout=6000, 
+				timeout=6000,
 				queue='long'
 			)
 			frappe.msgprint(
@@ -688,7 +689,7 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 				if emp['employee'] not in salary_slips_exist_for:
 					args.update({"doctype": "Salary Slip"})
 					args.update(emp)
-					
+
 					frappe.get_doc(args).insert()
 					count += 1
 					if publish_progress:
@@ -696,13 +697,13 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 							count * 100 / len(set(employees) - set(salary_slips_exist_for)),
 							title=_("Creating Salary Slips..."),
 						)
-			
+
 		else:
 			for emp in employees_list:
 				if emp['employee'] not in salary_slips_exist_for:
 					args.update({"doctype": "Salary Slip"})
 					args.update(emp)
-					
+
 					# salary_slip_list.append(frappe.get_doc(args))
 					salary_slip_chunk.append(frappe.get_doc(args))
 					chunk_counter += 1
@@ -712,11 +713,11 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 						chunk_counter=0
 
 					# frappe.get_doc(args).insert()
-		
+
 			if salary_slip_chunk:
 				frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk, queue="long")
-		
-		
+
+
 		payroll_entry.db_set({"status": "Submitted", "salary_slips_created": 1, "error_message": ""})
 
 		if salary_slips_exist_for:
@@ -771,7 +772,7 @@ def seperate_salary_slip(employees, start_date, end_date):
 				parm.append({"employee": emp, "start_date":mid_date , "end_date":end_date})
 		else:
 			parm.append({"employee": emp, "start_date":start_date , "end_date":end_date})
-		
+
 	return parm
 
 def notify_for_open_leave_application():
@@ -780,7 +781,7 @@ def notify_for_open_leave_application():
 	# sort INFO data by 'leave_approver' key.
 	leave_list = sorted(leave_list, key=itemgetter('leave_approver'))
 
-	#group leave application by leave approver 
+	#group leave application by leave approver
 	for key, value in groupby(leave_list, itemgetter('leave_approver')):
 		open_leave_application[key] = []
 		for k in value:
@@ -788,7 +789,7 @@ def notify_for_open_leave_application():
 
 	for ola in open_leave_application:
 		recipient = [ola]
-		message = "<p>The Following Leave Application needs to be approved. Kindly, take action before midnight. </p><ul>" 
+		message = "<p>The Following Leave Application needs to be approved. Kindly, take action before midnight. </p><ul>"
 		for leave_id in open_leave_application[ola]:
 			doc_url = frappe.utils.get_link_to_form("Leave Application", leave_id)
 			message += "<li>"+doc_url+"</li>"
@@ -798,6 +799,8 @@ def notify_for_open_leave_application():
 
 def close_all_leave_application():
 	leave_list = frappe.get_list("Leave Application", {"workflow_state":"Open"}, ['*'])
-	for leave in leave_list:
-		frappe.db.set_value('Leave Application', leave.name, 'workflow_state', 'Approved')
-		frappe.db.commit
+	leave_ids = [leave.name for leave in leave_list]
+	if len(leave_ids) <= 5:
+		close_leaves(leave_ids)
+	else:
+		frappe.enqueue(method=close_leaves, leave_ids=leave_ids, queue='long', timeout=1200, job_name='Closing Leaves')
