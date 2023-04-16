@@ -156,6 +156,7 @@ def get_columns(filters):
 			"width": 180,
 		},
 	]
+
 def get_data(filters):
 	data = []
 	if not filters:
@@ -175,14 +176,12 @@ def get_data(filters):
 			JOIN `tabPayroll Entry` pe ON pe.name=ped.parent
 			JOIN `tabAttendance` at ON at.employee=e.name
 		WHERE ssa.docstatus=1 AND pe.end_date BETWEEN '{first_day_of_month}' and '{last_day_of_month}'
-			AND pe.docstatus=1
 			AND at.attendance_date BETWEEN pe.start_date AND pe.end_date
 			AND at.roster_type='Basic'
 			AND pe.salary_slips_created=1
 		GROUP BY e.name
 		ORDER BY e.name ASC
 	""", as_dict=1)
-
 
 	payroll_cycle = get_payroll_cycle(filters)
 	employee_list = get_employee_list(query)
@@ -221,11 +220,11 @@ def get_payroll_cycle(filters):
 	settings = frappe.get_doc("HR and Payroll Additional Settings")
 	default_date = settings.payroll_date
 
-	start_date = datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
+	end_date = datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
 	payroll_cycle = {
 		'Other': {
-			'start_date': datetime.date(int(filters["year"]), int(filters["month"]), int(default_date)),
-			'end_date': add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(default_date)), 1), -1)
+			'start_date': add_days(add_months(datetime.date(int(filters["year"]),int(filters["month"]), int(default_date)), -1), -1),
+			'end_date': datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
 			}
 		}
 
@@ -233,8 +232,8 @@ def get_payroll_cycle(filters):
 		if row.payroll_start_day == 'Month Start':
 			row.payroll_start_day = 1
 		payroll_cycle[row.project] = {
-			'start_date':datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)),
-			'end_date':add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)), 1), -1)
+			'start_date':add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)), -1), -1),
+			'end_date':datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)),
 		}
 
 	return payroll_cycle
@@ -263,6 +262,7 @@ def get_attendance(projects, employee_list):
 	for key, value in projects.items():
 		start_date = projects[key]['start_date']
 		end_date = projects[key]['end_date']
+		print(start_date, end_date)
 
 		condition = ""
 		if key != "Other":
