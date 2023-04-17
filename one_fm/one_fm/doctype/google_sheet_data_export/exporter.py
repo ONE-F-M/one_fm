@@ -35,7 +35,6 @@ def export_data(
 	all_doctypes=True,
 	with_data=False,
 	select_columns=None,
-	template=False,
 	filters=None,
 	link=None,
 	google_sheet_id=None,
@@ -58,7 +57,6 @@ def export_data(
 		all_doctypes=all_doctypes,
 		with_data=with_data,
 		select_columns=select_columns,
-		template=template,
 		filters=filters,
 		link=link,
 		google_sheet_id=google_sheet_id,
@@ -79,7 +77,6 @@ class DataExporter:
 		all_doctypes=True,
 		with_data=False,
 		select_columns=None,
-		template=False,
 		filters=None,
 		link=None,
 		google_sheet_id=None,
@@ -92,7 +89,6 @@ class DataExporter:
 		self.all_doctypes = all_doctypes
 		self.with_data = cint(with_data)
 		self.select_columns = select_columns
-		self.template = template
 		self.filters = filters
 		self.google_sheet_id = google_sheet_id
 		self.link = link
@@ -558,7 +554,6 @@ class DataExporter:
 
 @frappe.whitelist()
 def update_google_sheet_daily():
-	frappe.log_error(os.getcwd()+"/"+cstr(frappe.local.site)+frappe.local.conf.google_sheet)
 	list_of_export = frappe.get_list("Google Sheet Data Export",{"enable_auto_update":1}, ['name'])
 
 	for e in list_of_export:
@@ -567,14 +562,19 @@ def update_google_sheet_daily():
 		select_columns = doc.field_cache
 		filters = doc.filter_cache
 
+		# log the selected Column
+		frappe.logger().info("Doctype: "+doc.reference_doctype+", Select Columns:"+ select_columns)
+
 		frappe.enqueue(export_data, 
 			doctype= doc.reference_doctype,
 			select_columns= select_columns,
 			filters= filters,
+			with_data = 1,
 			link= doc.link,
 			google_sheet_id= doc.google_sheet_id,
 			sheet_name= doc.sheet_name,
 			owner= doc.owner, 
+			client_id= doc.client_id,
 			is_async=True, queue="long")
 
 @frappe.whitelist()
