@@ -1059,7 +1059,7 @@ def get_project_enddate_for_edit_post(post):
         response("Error", 400, None, _("No contract linked with project {project}".format(project=project)))
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def edit_post(posts, values):
 
     try:
