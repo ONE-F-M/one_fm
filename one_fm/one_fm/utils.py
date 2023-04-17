@@ -304,7 +304,8 @@ def manage_attendance_on_holiday(doc, method):
 
             if not is_site_allowance_exist_for_this_employee(doc.employee, doc.attendance_date):
                 create_additional_salary_from_attendance(doc, salary_component, remark)
-            create_compensatory_leave_request_from_attendance(doc, leave_type, remark)
+            if doc.status == "Present":
+                create_compensatory_leave_request_from_attendance(doc, leave_type, remark)
 
         # cancel additional salary and compensatory leave request on attendance cancel
         if method == "on_cancel":
@@ -486,6 +487,3 @@ def attach_abbreviation_to_roles():
                 role.post_abbrv = post_abbrv
             role.save(ignore_permissions=True)
             frappe.db.commit()
-
-
-
