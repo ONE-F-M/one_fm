@@ -200,7 +200,7 @@ class ERF(Document):
 			""".format(self.designation)
 			sendemail(
 				recipients= [fin_department],
-				subject='{0} ERF for {1}'.format(self.status, self.designation),
+				subject='ERF {0} for {1}'.format(self.status, self.designation),
 				message=message,
 				reference_doctype=self.doctype,
 				reference_name=self.name
@@ -264,7 +264,7 @@ class ERF(Document):
 			message += "</tbody></table></p>"
 			sendemail(
 				recipients= [gsd_department],
-				subject='{0} ERF for {1}'.format(self.status, self.designation),
+				subject='ERF - {0} - {1}'.format(self.status, self.designation),
 				message=message,
 				reference_doctype=self.doctype,
 				reference_name=self.name
@@ -381,7 +381,7 @@ def send_email(doc, recipients):
 		message = "<p>ERF <a href='{0}'>{1}</a> is Declined due to {2}</p>".format(page_link, doc.name, doc.reason_for_decline)
 	sendemail(
 		recipients= recipients,
-		subject='{0} ERF for {1}'.format(doc.status, doc.designation),
+		subject='ERF - {0} - {1}'.format(doc.status, doc.designation),
 		message=message,
 		reference_doctype=doc.doctype,
 		reference_name=doc.name

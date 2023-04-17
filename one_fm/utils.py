@@ -2635,7 +2635,7 @@ def queue_send_workflow_action_email(doc, recipients):
 
     common_args = get_common_email_args(doc)
     message = common_args.pop("message", None)
-    subject = f"Pending - Workflow Action on {_(doc.doctype)} - {doc.workflow_state}"
+    subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
     if not list(user_data_map.values()):
         email_args = {

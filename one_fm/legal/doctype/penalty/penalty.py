@@ -167,7 +167,7 @@ def reject_penalty(rejection_reason, docname):
 def send_email_to_legal(penalty, message=None):
 	legal = frappe.get_value("Legal Settings", "Legal Settings", "legal_department_email")
 	link = get_link_to_form(penalty.doctype, penalty.name)
-	subject = _("Review Penalty: {penalty}".format(penalty=penalty.name))
+	subject = _("Penalty - Review: {penalty}".format(penalty=penalty.name))
 	message = _("Face verification did not match while accepting the penalty.<br> Please review and take necessary action.<br> Link: {link}".format(link=link)) if not message else message
 	create_notification_log(subject, message, [legal], penalty)
 	sendemail([legal], subject=subject, message=message, reference_doctype=penalty.doctype, reference_name=penalty.name)
@@ -295,5 +295,5 @@ def automatic_reject():
 
 		frappe.set_user(session_user) #restore session user
 		if error_list:
-			sendemail([get_legal_manager()], subject='Failed Penalty Rejection by Scheduler', message=error_list)
+			sendemail([get_legal_manager()], subject='Penalty Rejection - Failed', message=error_list)
 		frappe.db.commit()

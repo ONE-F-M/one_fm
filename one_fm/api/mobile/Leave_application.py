@@ -287,7 +287,7 @@ def notify_leave_approver(doc):
         # attachments = get_attachment(doc) // when attachment needed
 
         #send notification
-        sendemail(recipients= [doc.leave_approver], subject="Leave Application", message=message,
+        sendemail(recipients= [doc.leave_approver], subject="Leave Application - Approval", message=message,
                   reference_doctype=doc.doctype, reference_name=doc.name, attachments = [])
 
         employee_id = frappe.get_value("Employee", {"user_id":doc.leave_approver}, ["name"])
