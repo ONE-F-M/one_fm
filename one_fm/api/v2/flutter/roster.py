@@ -1059,9 +1059,8 @@ def get_project_enddate_for_edit_post(post):
         response("Error", 400, None, _("No contract linked with project {project}".format(project=project)))
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def edit_post(posts, values):
-    
 
     try:
         user, user_roles, user_employee = get_current_user_details()
@@ -1070,6 +1069,7 @@ def edit_post(posts, values):
             response("Permission Error", 401, None, _("Insufficient permissions to Edit Post."))
         posts = json.loads(posts)
         args = frappe._dict(json.loads(values))
+
 
         if args.post_status == "Plan Post":
             # frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
@@ -1149,10 +1149,11 @@ def cancel_post(posts, args):
         
      #filter if both cancel_from_date and cancel_end_date both exist   
     if args.cancel_from_date and end_date:
-        from_date = getdate(args.cancel_from_date)
-        end_date = getdate(end_date)
-        posts = [post for post in posts if getdate(post['date']) >= from_date and getdate(post["date"]) <= end_date]
-        posts = extend_edit_post(posts, str(end_date))
+        # from_date = getdate(args.cancel_from_date)
+        # end_date = getdate(end_date)
+        # posts = [post for post in posts if getdate(post['date']) >= from_date and getdate(post["date"]) <= end_date]
+        # posts = extend_edit_post(posts, str(end_date))
+        posts = set_post_based_on_from_date_and_to_date(args.cancel_from_date, end_date, posts)
 
     # filter if plan_from_date
     elif args.cancel_from_date:
@@ -1216,6 +1217,9 @@ def post_off(posts, args):
     post_off_unpaid = args.post_off_unpaid
 
     if args.repeat == "Does not repeat":
+        if args.off_from_date and args.off_to_date:
+            posts = set_post_based_on_from_date_and_to_date(args.off_from_date, args.off_to_date, posts)
+
         for post in posts:
             set_post_off(post["post"], post["date"], post_off_paid, post_off_unpaid)
     else:
@@ -1229,10 +1233,7 @@ def post_off(posts, args):
                 end_date = get_project_enddate_for_edit_post(posts[0]['post'])
                 
             if args.off_from_date and args.off_to_date:
-                off_from_date = getdate(args.off_from_date)
-                off_to_date = getdate(args.off_to_date)
-                posts = [post for post in posts if getdate(post['date']) <= off_to_date and getdate(post['date']) >= off_from_date]
-                posts = extend_edit_post(posts, str(off_to_date))
+                posts = set_post_based_on_from_date_and_to_date(args.off_from_date, args.off_to_date, posts)
 
             # if end_date and all(args.off_from_date, args.off_to_date):
                 # posts = [post for post in posts if getdate(post['date'])<=end_date]
@@ -1266,6 +1267,13 @@ def post_off(posts, args):
                     for date in	pd.date_range(start=post["date"], end=end_date, freq=pd.DateOffset(years=1)):
                         set_post_off(post["post"], post['date'], post_off_paid, post_off_unpaid)
     frappe.db.commit()
+    
+def set_post_based_on_from_date_and_to_date(start_date, end_date, posts):
+    from_date = getdate(start_date)
+    to_date = getdate(end_date)
+    posts = [post for post in posts if getdate(post['date']) <= to_date and getdate(post['date']) >= from_date]
+    posts = extend_edit_post(posts, str(to_date))
+    return posts
 
 def set_post_off(post, date, post_off_paid, post_off_unpaid):
     if frappe.db.exists("Post Schedule", {"date": date, "post": post}):
