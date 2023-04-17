@@ -31,10 +31,10 @@ class LegalInvestigation(Document):
 	def notify_supervisor(self):
 		if self.reference_doctype == "Penalty":
 			supervisor= frappe.get_value("Penalty", self.reference_docname, ["issuer_employee"])
-			subject = _("Legal Investigation opened for Penalty: {penalty}".format(penalty=self.reference_docname))
+			subject = _("Legal Investigation opened from Penalty: {penalty}".format(penalty=self.reference_docname))
 		else: 
 			supervisor= frappe.get_value("Penalty Issuance", self.reference_docname, ["issuing_employee"])
-			subject = _("Legal Investigation opened for Penalty Issuance: {penalty}".format(penalty=self.reference_docname))
+			subject = _("Legal Investigation opened from Penalty Issuance: {penalty}".format(penalty=self.reference_docname))
 		supervisor_user = frappe.get_value("Employee", supervisor, "user_id")
 		link = get_link_to_form(self.doctype, self.name)
 		message = _("Please review and add the necessary details.<br> Link: {link}".format(link=link))

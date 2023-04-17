@@ -29,7 +29,7 @@ class RequestforMaterial(BuyingController):
 		if self.request_for_material_accepter:
 			page_link = get_url(self.get_url())
 			message = "<p>Please Review the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
-			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
+			subject = 'Request for Material - {0} by {1}'.format(self.status, self.requested_by)
 			send_email(self, [self.request_for_material_accepter], message, subject)
 			create_notification_log(subject, message, [self.request_for_material_accepter], self)
 
@@ -37,7 +37,7 @@ class RequestforMaterial(BuyingController):
 		if self.request_for_material_approver:
 			page_link = get_url(self.get_url())
 			message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
-			subject = '{0} Request for Material by {1}'.format(self.status, self.requested_by)
+			subject = 'Request for Material - {0} by {1}'.format(self.status, self.requested_by)
 			send_email(self, [self.request_for_material_approver], message, subject)
 			create_notification_log(subject, message, [self.request_for_material_approver], self)
 
@@ -51,7 +51,7 @@ class RequestforMaterial(BuyingController):
 			# Notify Approver
 			if status == 'Accepted' and frappe.session.user == self.request_for_material_accepter and self.request_for_material_approver:
 				message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
-				subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
+				subject = 'Request for Material - {0} by {1}'.format(status, frappe.session.user)
 				send_email(self, [self.request_for_material_approver], message, subject)
 				create_notification_log(subject, message, [self.request_for_material_approver], self)
 
@@ -73,7 +73,7 @@ class RequestforMaterial(BuyingController):
 						filtered_users.append(user)
 				if filtered_users and len(filtered_users) > 0:
 					message = "Dear Stock Manager, <br/>A Request for Material <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
-					subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
+					subject = 'Request for Material - {0} by {1}'.format(status, frappe.session.user)
 					send_email(self, filtered_users, message, subject)
 					create_notification_log(subject, message, filtered_users, self)
 			self.reason_for_rejection = reason_for_rejection
@@ -81,7 +81,7 @@ class RequestforMaterial(BuyingController):
 			self.reload()
 	def notify_material_requester(self, page_link, status):
 		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}. You will be notified of the expected delivery date as soon as the order is processed".format(page_link, self.name, status, frappe.session.user)
-		subject = '{0} Request for Material by {1}'.format(status, self.requested_by)
+		subject = 'Request for Material - {0} by {1}'.format(status, self.requested_by)
 		send_email(self, [self.requested_by], message, subject)
 		create_notification_log(subject, message, [self.requested_by], self)
 
@@ -89,7 +89,7 @@ class RequestforMaterial(BuyingController):
 		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
 		if status == 'Rejected' and reason_for_rejection:
 			message += " due to {0}".format(reason_for_rejection)
-		subject = '{0} Request for Material by {1}'.format(status, frappe.session.user)
+		subject = 'Request for Material - {0} by {1}'.format(status, frappe.session.user)
 		send_email(self, recipients, message, subject)
 		create_notification_log(subject, message, recipients, self)
 
