@@ -27,6 +27,8 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 				},
 				mounted(){
 					this.getProfile();
+					// show page content
+					document.querySelector("#app-container").style.display = "block";
 				},
 				methods: {
 					getProfile(){
