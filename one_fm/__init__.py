@@ -25,10 +25,13 @@ from one_fm.api.notification import after_insert
 from one_fm.one_fm.payroll_utils import add_tax_components
 from one_fm.utils import post_login, validate_reports_to, custom_validate_nestedset_loop
 
-__version__ = '14.1.0'
+__version__ = '14.1.1'
+from hrms.overrides.employee_master import EmployeeMaster,validate_onboarding_process
+from one_fm.overrides.employee import EmployeeOverride
 
 
-
+EmployeeMaster.validate = EmployeeOverride.validate
+EmployeeMaster.validate_onboarding_process = validate_onboarding_process
 frappe.auth.LoginManager.post_login = post_login
 ShiftRequest.on_submit = shift_request_submit
 ShiftRequest.validate_approver = validate_approver

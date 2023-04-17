@@ -38,7 +38,7 @@ const show_quotes = () => {
             message:__(r.message),
             indicator:'green'
           }, 20);
-          frappe.msgprint(r.message)
+          // frappe.msgprint(r.message)
         } 
     }
   });

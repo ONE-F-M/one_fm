@@ -546,7 +546,7 @@ def create_gp_letter_request():
 def leave_appillication_on_submit(doc, method):
     if doc.status == "Approved":
         update_employee_hajj_status(doc, method)
-        
+
 
 @frappe.whitelist()
 def notify_employee(doc, method):
@@ -2983,9 +2983,28 @@ def validate_reports_to(self):
 
 def custom_validate_nestedset_loop(doctype, name, lft, rgt):
     if doctype == "Employee":
-        designation = frappe.db.get_value(doctype, name, ["designation"])
-        if designation:
-            if designation == "General Manager":
-                return
+        return
     validate_loop(doctype, name, lft, rgt)
-    
+
+def is_assignment_exist_for_the_shift(shift_field, assignment_doctype, shift_name, date_field, assignment_after_date=None):
+	'''
+		Method to check assignment exists on or after a date for shift
+		args:
+			assignment_doctype is Employee Schedule/Shift Assignment
+			shift_field is shift(Operations Shift)
+			shift_name is self.name
+			date_field is date/start_date
+		return boolean
+	'''
+	if not assignment_after_date:
+		assignment_after_date = today()
+	assignments = frappe.db.exists(
+		assignment_doctype,
+		{
+			shift_field: shift_name,
+			date_field: ['>=', getdate(assignment_after_date)],
+			'docstatus': 1
+		}
+	)
+
+	return True if assignments else False
