@@ -1149,10 +1149,6 @@ def cancel_post(posts, args):
         
      #filter if both cancel_from_date and cancel_end_date both exist   
     if args.cancel_from_date and end_date:
-        # from_date = getdate(args.cancel_from_date)
-        # end_date = getdate(end_date)
-        # posts = [post for post in posts if getdate(post['date']) >= from_date and getdate(post["date"]) <= end_date]
-        # posts = extend_edit_post(posts, str(end_date))
         posts = set_post_based_on_from_date_and_to_date(args.cancel_from_date, end_date, posts)
 
     # filter if plan_from_date
