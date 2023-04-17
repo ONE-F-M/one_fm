@@ -111,13 +111,10 @@ const export_data = (frm) => {
 			doctype: frm.doc.reference_doctype,
 			select_columns: select_columns,
 			filters: filters,
-			file_type: frm.doc.file_type,
-			template: true,
 			with_data: 1,
 			link: frm.doc.link,
 			google_sheet_id: frm.doc.google_sheet_id,
 			sheet_name: frm.doc.sheet_name,
-			have_existing_sheet: frm.doc.have_existing_sheet,
 			owner:frm.doc.owner,
 			client_id: frm.doc.client_id
 		},
