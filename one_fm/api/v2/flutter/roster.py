@@ -1020,7 +1020,11 @@ def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
                 response("Error", 500, None, "Start date cannot be after End date")
             else:
                 all_employees=tuple([i['employee'] for i in json.loads(employees)])
-                sql_query_list = [f"""DELETE FROM `tabEmployee Schedule` WHERE employee in {all_employees} AND date BETWEEN '{start_date}' and '{end_date}';"""]
+                if len(all_employees)>1:
+                    sql_query_list = [f"""DELETE FROM `tabEmployee Schedule` WHERE employee in {all_employees} AND date BETWEEN '{start_date}' and '{end_date}';"""]
+                elif len(all_employees)==1:
+                    selected_employee = all_employees[0]
+                    sql_query_list = [f"""DELETE FROM `tabEmployee Schedule` WHERE employee = '{selected_employee}' AND date BETWEEN '{start_date}' and '{end_date}';"""]
                 res =  query_db_list(sql_query_list, commit=True)
                 if res.error:
                     response("Error", 500, None, res.msg)
