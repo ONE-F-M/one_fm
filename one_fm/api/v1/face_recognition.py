@@ -3,7 +3,7 @@ from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.v1.utils import response
-from frappe.utils import cstr, getdate
+from frappe.utils import cstr, getdate,now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
 
@@ -168,6 +168,19 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
         
         if res.verification == "FAILED" and res.data == 'Invalid media content':
+            
+            error_message = f"""
+                            \n <br>
+                            Blinks: {res.blinks}\n <br>
+                            Image: {res.image}\n <br>
+                            "Content-Type":{res.content_type}\n <br>
+                            Time: {now_datetime().strftime('%d-%m-%y  %H:%M')}
+                            """
+            
+            res.data = str(res.data) + str(error_message)
+            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+            **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
+                'message':res.message, 'data':res.data, 'source': 'Checkin'}})
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
             return response("Success", 201, doc, None)
         
