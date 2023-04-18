@@ -170,10 +170,10 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if res.verification == "FAILED" and res.data == 'Invalid media content':
             
             error_message = f"""
-                            \n <br>
-                            Blinks: {res.blinks}\n <br>
-                            Image: {res.image}\n <br>
-                            "Content-Type":{res.content_type}\n <br>
+                            \n 
+                            Blinks: {res.blinks}\n 
+                            Image: {res.image}\n
+                            "Content-Type":{res.content_type}\n 
                             Time: {now_datetime().strftime('%d-%m-%y  %H:%M')}
                             """
             
