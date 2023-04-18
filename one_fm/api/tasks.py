@@ -1707,14 +1707,14 @@ def mark_daily_attendance(start_date, end_date):
 		for i in timesheet_list:
 			timesheet_dict[i.employee] = i
 
-		for i in timesheet_employees_data:
+		for key_emp_id in timesheet_employees_data:
 			try:
-				if not timesheet_dict.get(i.employee):
-					emp = timesheet_employees_data.get(i.employee)
-					employee_attendance[i.employee] = frappe._dict({
-						'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name,
+				if not timesheet_dict.get(key_emp_id):
+					emp = timesheet_employees_data.get(key_emp_id)
+					employee_attendance[key_emp_id] = frappe._dict({
+						'name':f"HR-ATT-{start_date}-{key_emp_id}", 'employee':key_emp_id, 'employee_name':emp.employee_name,
 						'working_hours':0, 'status':'Absent', 'shift':'', 'in_time':'00:00:00', 'out_time':'00:00:00',
-						'shift_assignment':'', 'operations_shift':'', 'site':'', 'project':i.project,
+						'shift_assignment':'', 'operations_shift':'', 'site':'', 'project':timesheet_employees_data[key_emp_id].project,
 						'attendance_date': start_date, 'company':emp.company, 'department': emp.department, 'late_entry':0,
 						'early_exit':0, 'operations_role':'', 'post_abbrv':'', 'roster_type':'', 'docstatus':1, 'owner':owner,
 						'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':f"No Timesheet found"
