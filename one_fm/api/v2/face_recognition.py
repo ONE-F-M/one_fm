@@ -185,16 +185,19 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
 
         if res.verification == "FAILED" and res.data == 'Invalid media content':
             #log errors
-            error_message = f"""Blinks: {res.blinks}\n <br>
+            error_message = f"""
+                            \n <br>
+                            Blinks: {res.blinks}\n <br>
                             Image: {res.image}\n <br>
-                            Employee Identification:{employee_id} \n <br>
-                            Employee Name : {employee.name} \n <br>
-                            Employee Full Name: {employee.employee_name} \n <br>
+                            "Content-Type":{res.content_type}\n <br>
                             Shift Assignment: {shift_assignment or employee.shift} \n <br>
                             Time: {right_now.strftime('%d-%m-%y  %H:%M')}
-                                """
+                            """
             
-            frappe.log_error("Invalid Media Content Error",error_message)
+            res.data = str(res.data) + str(error_message)
+            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+            **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
+                'message':res.message, 'data':res.data, 'source': 'Checkin'}})
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
             if log_type == "IN":
                 check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
