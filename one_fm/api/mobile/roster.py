@@ -5,6 +5,8 @@ from frappe.client import get_list
 import pandas as pd
 import json, base64, ast, itertools, datetime
 from frappe.client import attach_file
+from one_fm.api.v1.utils import response
+from one_fm.utils import query_db_list
 from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view#, get_roster_view as _get_roster_view
 
 # @frappe.whitelist()
@@ -282,12 +284,12 @@ def day_off(employee, date, repeat=0, repeat_freq=None, repeat_till=None):
 
 
 def month_range(start, end):
-    rng = pd.date_range(start=pd.Timestamp(start)-pd.offsets.MonthBegin(),
-                        end=end,
-                        freq='MS')
-    ret = (rng + pd.offsets.Day(pd.Timestamp(start).day-1)).to_series()
-    ret.loc[ret.dt.month > rng.month] -= pd.offsets.MonthEnd(1)
-    return pd.DatetimeIndex(ret)
+	rng = pd.date_range(start=pd.Timestamp(start)-pd.offsets.MonthBegin(),
+						end=end,
+						freq='MS')
+	ret = (rng + pd.offsets.Day(pd.Timestamp(start).day-1)).to_series()
+	ret.loc[ret.dt.month > rng.month] -= pd.offsets.MonthEnd(1)
+	return pd.DatetimeIndex(ret)
 
 
 def create_day_off(employee, date):
@@ -441,22 +443,58 @@ def get_post_details(post_name):
 
 
 @frappe.whitelist()
-def unschedule_staff(employee, start_date, end_date=None, never_end=0):
+def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
 	try:
-		if never_end:
-			rosters = frappe.get_all("Employee Schedule", {"employee": employee,"date": ('>=', start_date)})
-			for roster in rosters:
-				frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
-			return True
+		#If start date and end date are provided
+		if all([start_date,end_date]):
+			if getdate(start_date) > getdate(end_date):
+				frappe.throw("Start date cannot be after End date")
+				response("Error", 500, None, "Start date cannot be after End date")
+			else:
+				all_employees=tuple([i['employee'] for i in json.loads(employees)])
+				if len(all_employees)>1:
+					sql_query_list = [f"""DELETE FROM `tabEmployee Schedule` WHERE employee in {all_employees} AND date BETWEEN '{start_date}' and '{end_date}';"""]
+				elif len(all_employees)==1:
+					selected_employee = all_employees[0]
+					sql_query_list = [f"""DELETE FROM `tabEmployee Schedule` WHERE employee = '{selected_employee}' AND date BETWEEN '{start_date}' and '{end_date}';"""]
+				res =  query_db_list(sql_query_list, commit=True)
+				if res.error:
+					response("Error", 500, None, res.msg)
+				response("Success", 200, {'message':f'Staff(s) unscheduled between {start_date} and {end_date} successfully'})
 		else:
-			for date in	pd.date_range(start=start_date, end=end_date):
-				if frappe.db.exists("Employee Schedule", {"employee": employee, "date":  cstr(date.date())}):
-					roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date":  cstr(date.date())})
-					frappe.delete_doc("Employee Schedule", roster.name, ignore_permissions=True)
-			return True
+			if end_date:
+				stop_date = getdate(end_date)
+			else: stop_date = None
+			delete_list = []
+			employees = json.loads(employees)
+			if not employees:
+				response("Error", 400, None, {'message':'Employees must be selected.'})
+			delete_dict = {}
+			new_employees = []
+			if not start_date:
+				start_date = employees[0]['date']
+			if end_date:
+				for i in employees:
+					if not getdate(i['date']) >= stop_date:
+						new_employees.append(i)
+				employees = new_employees
+			for i in employees:
+				if cint(never_end) == 1:
+					_end_date = f'>="{start_date}"'
+				else:
+					_end_date = '="'+str(i['date'])+'"'
+				_line = f"""DELETE FROM `tabEmployee Schedule` WHERE employee="{i['employee']}" AND date{_end_date};"""
+				if not _line in delete_list:
+					delete_list.append(_line)
+
+			if delete_list:
+				res = query_db_list(delete_list, commit=True)
+				if res.error:
+					response("Error", 500, None, res.msg)
+			response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
 	except Exception as e:
-		print(e)
-		return frappe.utils.response.report_error(e.http_status_code)
+		frappe.throw(str(e))
+		response("Error", 500, None, str(e))
 
 
 @frappe.whitelist()

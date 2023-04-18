@@ -29,10 +29,10 @@ def sendemail(recipients, subject, header=None, message=None,
 		pdf_link = args.get("pdf_link")
 		doc_link = args.get("doc_link")
 
-	if attachments:
-		message += """
-			<p>Please find the attached Document in the mail below.</p>
-		"""
+	# if attachments:
+	# 	message += """
+	# 		<p>Please find the attached Document in the mail below.</p>
+	# 	"""
 
 	if type(recipients) == str:
 		recipients = [recipients]
@@ -59,7 +59,7 @@ def sendemail(recipients, subject, header=None, message=None,
 				pdf_link=pdf_link,
 				doc_link=doc_link
 			),
-			attachments = attachments,
+			# attachments = attachments,
 			delayed=delay
 		)
 

@@ -23,7 +23,7 @@ class PenaltyIssuance(Document):
 
 	def validate_location(self):
 		if self.different_location:
-			subject = _("Penalty Issuance Review")
+			subject = _("Penalty Issuance - Review")
 			link = get_link_to_form(self.doctype, self.name)
 			message = _("Please review the penalty issuance. The penalty location details were added manually by the supervisor.<br> Link: {link}".format(link=link))
 			recipient = [frappe.get_value("Legal Settings", "Legal Settings", "legal_department_email")]

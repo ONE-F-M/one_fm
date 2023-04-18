@@ -1684,6 +1684,10 @@ def mark_daily_attendance(start_date, end_date):
 					})
 			except Exception as e:
 				errors.append(str(frappe.get_traceback()))
+    
+		#Approve all open timesheets whose start date and end date is today
+		frappe.db.sql(f"""UPDATE `tabTimesheet` SET workflow_state = 'Approved' where start_date = '{getdate()}' and end_date = '{getdate()}' and workflow_state = 'Open' """)
+
 
 		# Get attendance by timesheet employees
 		timesheet_employees = frappe.get_list("Employee", filters={'status': 'Active', 'attendance_by_timesheet': 1}, fields="*")
@@ -1813,6 +1817,8 @@ def mark_daily_attendance(start_date, end_date):
 			employees=absent_list, date=str(start_date), queue='long', timeout=6000)
 		frappe.enqueue("one_fm.overrides.attendance.mark_overtime_attendance",
 			from_date=start_date, to_date=end_date, queue='long', timeout=6000)
+
+  
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Mark Attendance')
 

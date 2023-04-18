@@ -11,6 +11,7 @@ from itertools import product
 from one_fm.api.notification import create_notification_log
 from one_fm.api.v2.utils import response
 from one_fm.utils import query_db_list
+from calendar import day_name
 
 
 
@@ -1010,39 +1011,56 @@ def schedule_leave(employees, leave_type, start_date, end_date):
     except Exception as e:
         return frappe.utils.response.report_error(e.http_status_code)
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
     try:
-        if end_date:
-            stop_date = getdate(end_date)
-        else: stop_date = None
-        delete_list = []
-        employees = json.loads(employees)
-        if not employees:
-            response("Error", 400, None, {'message':'Employees must be selected.'})
-        delete_dict = {}
-        new_employees = []
-        if not start_date:
-            start_date = employees[0]['date']
-        if end_date:
-            for i in employees:
-                if not getdate(i['date']) >= stop_date:
-                    new_employees.append(i)
-            employees = new_employees
-        for i in employees:
-            if cint(never_end) == 1:
-                _end_date = f'>="{start_date}"'
+        #If start date and end date are provided
+        if all([start_date,end_date]):
+            if getdate(start_date) > getdate(end_date):
+                frappe.throw("Start date cannot be after End date")
+                response("Error", 500, None, "Start date cannot be after End date")
             else:
-                _end_date = '="'+str(i['date'])+'"'
-            _line = f"""DELETE FROM `tabEmployee Schedule` WHERE employee="{i['employee']}" AND date{_end_date};"""
-            if not _line in delete_list:
-                delete_list.append(_line)
+                all_employees=tuple([i['employee'] for i in json.loads(employees)])
+                if len(all_employees)>1:
+                    sql_query_list = [f"""DELETE FROM `tabEmployee Schedule` WHERE employee in {all_employees} AND date BETWEEN '{start_date}' and '{end_date}';"""]
+                elif len(all_employees)==1:
+                    selected_employee = all_employees[0]
+                    sql_query_list = [f"""DELETE FROM `tabEmployee Schedule` WHERE employee = '{selected_employee}' AND date BETWEEN '{start_date}' and '{end_date}';"""]
+                res =  query_db_list(sql_query_list, commit=True)
+                if res.error:
+                    response("Error", 500, None, res.msg)
+                response("Success", 200, {'message':f'Staff(s) unscheduled between {start_date} and {end_date} successfully'})
+        else:
+            if end_date:
+                stop_date = getdate(end_date)
+            else: stop_date = None
+            delete_list = []
+            employees = json.loads(employees)
+            if not employees:
+                response("Error", 400, None, {'message':'Employees must be selected.'})
+            delete_dict = {}
+            new_employees = []
+            if not start_date:
+                start_date = employees[0]['date']
+            if end_date:
+                for i in employees:
+                    if not getdate(i['date']) >= stop_date:
+                        new_employees.append(i)
+                employees = new_employees
+            for i in employees:
+                if cint(never_end) == 1:
+                    _end_date = f'>="{start_date}"'
+                else:
+                    _end_date = '="'+str(i['date'])+'"'
+                _line = f"""DELETE FROM `tabEmployee Schedule` WHERE employee="{i['employee']}" AND date{_end_date};"""
+                if not _line in delete_list:
+                    delete_list.append(_line)
 
-        if delete_list:
-            res = query_db_list(delete_list, commit=True)
-            if res.error:
-                response("Error", 500, None, res.msg)
-        response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
+            if delete_list:
+                res = query_db_list(delete_list, commit=True)
+                if res.error:
+                    response("Error", 500, None, res.msg)
+            response("Success", 200, {'message':'Staff(s) unscheduled successfully'})
     except Exception as e:
         frappe.throw(str(e))
         response("Error", 500, None, str(e))
@@ -1060,6 +1078,7 @@ def get_project_enddate_for_edit_post(post):
 
 @frappe.whitelist()
 def edit_post(posts, values):
+
     try:
         user, user_roles, user_employee = get_current_user_details()
 
@@ -1067,6 +1086,8 @@ def edit_post(posts, values):
             response("Permission Error", 401, None, _("Insufficient permissions to Edit Post."))
         posts = json.loads(posts)
         args = frappe._dict(json.loads(values))
+
+
         if args.post_status == "Plan Post":
             # frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
             plan_post(posts=posts, args=args)
@@ -1142,16 +1163,22 @@ def cancel_post(posts, args):
 
     if cint(args.project_end_date) and not args.cancel_end_date:
         end_date = get_project_enddate_for_edit_post(posts[0]['post'])
+        
+     #filter if both cancel_from_date and cancel_end_date both exist   
+    if args.cancel_from_date and end_date:
+        posts = set_post_based_on_from_date_and_to_date(args.cancel_from_date, end_date, posts)
 
     # filter if plan_from_date
-    if args.cancel_from_date:
+    elif args.cancel_from_date:
         cancel_from_date = getdate(args.plan_from_date)
         posts = [post for post in posts if getdate(post['date'])>=cancel_from_date]
+        
     # filter if plan_end_date
-    if end_date:
+    elif end_date:
         end_date = getdate(end_date)
         posts = [post for post in posts if getdate(post['date'])<=end_date]
         posts = extend_edit_post(posts, str(end_date))
+    
 
     for post in posts:
         if frappe.db.exists("Post Schedule", {"date": post['date'], "post": post["post"]}):
@@ -1203,6 +1230,9 @@ def post_off(posts, args):
     post_off_unpaid = args.post_off_unpaid
 
     if args.repeat == "Does not repeat":
+        if args.off_from_date and args.off_to_date:
+            posts = set_post_based_on_from_date_and_to_date(args.off_from_date, args.off_to_date, posts)
+
         for post in posts:
             set_post_off(post["post"], post["date"], post_off_paid, post_off_unpaid)
     else:
@@ -1214,24 +1244,28 @@ def post_off(posts, args):
             
             if cint(args.project_end_date) and not args.repeat_till:
                 end_date = get_project_enddate_for_edit_post(posts[0]['post'])
+                
+            if args.off_from_date and args.off_to_date:
+                posts = set_post_based_on_from_date_and_to_date(args.off_from_date, args.off_to_date, posts)
 
-            if end_date:
-                posts = [post for post in posts if getdate(post['date'])<=end_date]
-                posts = extend_edit_post(posts, str(end_date))
-
+            # if end_date and all(args.off_from_date, args.off_to_date):
+                # posts = [post for post in posts if getdate(post['date'])<=end_date]
+                # posts = extend_edit_post(posts, str(end_date))
+                
             if args.repeat == "Daily":
                 for post in posts:
                     set_post_off(post["post"], post["date"], post_off_paid, post_off_unpaid)
 
             elif args.repeat == "Weekly":
                 week_days = []
-                if args.sunday: week_days.append("Sunday")
-                if args.monday: week_days.append("Monday")
-                if args.tuesday: week_days.append("Tuesday")
-                if args.wednesday: week_days.append("Wednesday")
-                if args.thursday: week_days.append("Thursday")
-                if args.friday: week_days.append("Friday")
-                if args.saturday: week_days.append("Saturday")
+                if args.repeat_days:
+                    check_days = range(8)
+                    for integer in args.repeat_days:
+                        if integer in check_days:
+                            week_days.append(day_name[integer])
+                        else:
+                            continue
+                        
                 for post in posts:
                     if getdate(post['date']).strftime('%A') in week_days:
                             set_post_off(post["post"], post['date'], post_off_paid, post_off_unpaid)
@@ -1246,6 +1280,13 @@ def post_off(posts, args):
                     for date in	pd.date_range(start=post["date"], end=end_date, freq=pd.DateOffset(years=1)):
                         set_post_off(post["post"], post['date'], post_off_paid, post_off_unpaid)
     frappe.db.commit()
+    
+def set_post_based_on_from_date_and_to_date(start_date, end_date, posts):
+    from_date = getdate(start_date)
+    to_date = getdate(end_date)
+    posts = [post for post in posts if getdate(post['date']) <= to_date and getdate(post['date']) >= from_date]
+    posts = extend_edit_post(posts, str(to_date))
+    return posts
 
 def set_post_off(post, date, post_off_paid, post_off_unpaid):
     if frappe.db.exists("Post Schedule", {"date": date, "post": post}):

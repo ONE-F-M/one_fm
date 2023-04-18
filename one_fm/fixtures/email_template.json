@@ -4,12 +4,12 @@
   "docstatus": 0,
   "doctype": "Email Template",
   "hr": 0,
-  "modified": "2022-11-02 01:02:59.068501",
+  "modified": "2023-04-17 23:22:25.346062",
   "name": "Exit Questionnaire Notification",
   "response": "<h2>Exit Questionnaire</h2>\n<br>\n\n<p>\n\tDear {{ employee_name }},\n\t<br><br>\n\n\tThank you for the contribution you have made during your time at {{ company }}. We value your opinion and welcome the feedback on your experience working with us.\n\tRequest you to take out a few minutes to fill up this Exit Questionnaire.\n\n\t{% set web_form = frappe.db.get_value('HR Settings', 'HR Settings', 'exit_questionnaire_web_form') %}\n\t{% set web_form_link = frappe.utils.get_url(uri=frappe.db.get_value('Web Form', web_form, 'route')) %}\n\n\t<br><br>\n\t<a class=\"btn btn-primary\" href=\"{{ web_form_link }}\" target=\"_blank\">{{ _('Submit Now') }}</a>\n</p>\n",
-  "response_html": null,
+  "response_html": "",
   "selling": 0,
-  "subject": "Exit Questionnaire Notification",
+  "subject": "Exit Questionnaire - Submission",
   "use_html": 0
  },
  {
@@ -17,12 +17,12 @@
   "docstatus": 0,
   "doctype": "Email Template",
   "hr": 0,
-  "modified": "2022-09-04 14:18:59.292712",
+  "modified": "2023-04-17 23:21:44.883448",
   "name": "Leave Approval Notification",
   "response": "<div class=\"ql-editor read-mode\"><h1>Leave Application Notification</h1><h3>Details:</h3><table class=\"table table-bordered\"><tbody><tr><td data-row=\"1\">Employee</td><td data-row=\"1\">{{employee_name}}</td></tr><tr><td data-row=\"2\">Leave Type</td><td data-row=\"2\">{{leave_type}}</td></tr><tr><td data-row=\"3\">From Date</td><td data-row=\"3\">{{from_date}}</td></tr><tr><td data-row=\"4\">To Date</td><td data-row=\"4\">{{to_date}}</td></tr><tr><td data-row=\"5\">Status</td><td data-row=\"5\">{{status}}</td></tr></tbody></table></div>",
   "response_html": "\n    <h1>Leave Application Notification</h1>\n        <p>Hello,<br>\n            {{employee_name}} has applied for {{leave_type}}. Kindly, check the details below.\n        </p>\n        \n        <table class=\"table table-condensed table-bordered\">\n          <tr>\n            <th class=\"text-center\">Employee</th>\n            <th class=\"text-center\">{{employee_name}}</th>\n          </tr>\n          <tr>\n            <th class=\"text-center\">Leave Type</th>\n            <th class=\"text-center\">{{leave_type}}</th>\n          </tr>\n          <tr>\n            <th class=\"text-center\">Reason</th>\n            <th class=\"text-center\">{{description}}</th>\n          </tr>\n          <tr>\n            <th class=\"text-center\">From Date</th>\n            <th class=\"text-center\">{{from_date}}</th>\n          </tr>\n          <tr>\n            <th class=\"text-center\">To Date</th>\n            <th class=\"text-center\">{{to_date}}</th>\n          </tr>\n        </table>\n        <div style=\"text-align:center; padding: 5px\">\n             <a class=\"btn btn-success\" style=\"background-color:dodgerblue;text-align:center;\" href=\"https://one-fm.com/api/method/one_fm.api.mobile.Leave_application.leave_notify?docname={{name}}&amp;status=Approved\">\n            Approve</a>\n            <a class=\"btn btn-danger\" style=\"background-color:Gray;text-align:center;\" href=\"https://one-fm.com/api/method/one_fm.api.mobile.Leave_application.leave_notify?docname={{name}}&amp;status=Rejected\">\n                Reject</a>  \n        </div>",
   "selling": 0,
-  "subject": "Leave Approval Notification",
+  "subject": "Leave Application - Approval",
   "use_html": 1
  },
  {
@@ -30,12 +30,12 @@
   "docstatus": 0,
   "doctype": "Email Template",
   "hr": 0,
-  "modified": "2021-10-10 16:28:18.929354",
+  "modified": "2023-04-17 23:22:56.053502",
   "name": "Leave Status Notification",
   "response": "<h1>Leave Application Notification</h1>\n<h3>Details:</h3>\n\n\t<table class=\"table table-bordered small\" style=\"max-width: 500px;\">\n\t\t<tbody><tr>\n\t\t\t<td>Employee</td>\n\t\t\t<td>{{employee_name}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Leave Type</td>\n\t\t\t<td>{{leave_type}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>From Date</td>\n\t\t\t<td>{{from_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>To Date</td>\n\t\t\t<td>{{to_date}}</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>Status</td>\n\t\t\t<td>{{status}}</td>\n\t\t</tr> \n\t</tbody></table>\n",
   "response_html": "",
   "selling": 0,
-  "subject": "Leave Status Notification",
+  "subject": "Leave Application - Status",
   "use_html": 0
  },
  {
@@ -43,12 +43,12 @@
   "docstatus": 0,
   "doctype": "Email Template",
   "hr": 0,
-  "modified": "2021-07-17 09:51:48.989705",
+  "modified": "2023-04-17 23:23:24.686953",
   "name": "Dispatch Notification",
   "response": "<h1>Dispatch Notification</h1>\n<h3>Details:</h3>\n<table class=\"table table-bordered small\" style=\"max-width: 500px;\">\n    <tbody>\n        <tr>\n            <td>Customer's Name</td>\n            <td>{{ customer }}</td>\n        </tr>\n        <tr>\n            <td>Contact's Name</td>\n            <td>{{ first_name }} {{ last_name }}</td>\n        </tr>\n        <tr>\n            <td>Address Name</td>\n            <td>{{ address }}</td>\n        </tr>\n        <tr>\n            <td>Address Details</td>\n            <td>{{ customer_address }}</td>\n        </tr>\n        <tr>\n            <td>Order Number</td>\n            <td>{{ delivery_note }}</td>\n        </tr>\n        <tr>\n            <td>Order Total</td>\n            <td>{{ grand_total }}</td>\n        </tr>\n        <tr>\n            <td>Departure Time</td>\n            <td>{{ departure_time }}</td>\n        </tr>\n        <tr>\n            <td>Estimated Arrival</td>\n            <td>{{ estimated_arrival }}</td>\n        </tr>\n        <tr>\n            <td>Driver's Name</td>\n            <td>{{ driver_name }}</td>\n        </tr>\n        <tr>\n            <td>Driver's Number</td>\n            <td>{{ cell_number }}</td>\n        </tr>\n        <tr>\n            <td>Vehicle Number</td>\n            <td>{{ vehicle }}</td>\n        </tr>\n    </tbody>\n</table>",
   "response_html": null,
   "selling": 0,
-  "subject": "Your order is out for delivery!",
+  "subject": "Order Dispatch - Status",
   "use_html": 0
  },
  {
@@ -69,12 +69,12 @@
   "docstatus": 0,
   "doctype": "Email Template",
   "hr": 0,
-  "modified": "2021-11-24 15:05:53.750595",
+  "modified": "2023-04-17 23:22:42.276479",
   "name": "Interview Feedback Reminder",
   "response": "<h1>Interview Feedback Reminder</h1>\n\n<p>\n\tInterview Feedback for Interview {{ name }} is not submitted yet. Please submit your feedback. Thank you, good day!\n</p>\n",
   "response_html": null,
   "selling": 0,
-  "subject": "Interview Feedback Reminder",
+  "subject": "Interview Feedback",
   "use_html": 0
  },
  {
@@ -82,12 +82,12 @@
   "docstatus": 0,
   "doctype": "Email Template",
   "hr": 0,
-  "modified": "2021-12-27 15:05:00.453216",
+  "modified": "2023-04-17 23:21:20.559285",
   "name": "Work Contract Approval",
   "response": "<div class=\"ql-editor read-mode\"><p>The {{job_applicant}} need approval. The Work Contract is below. Kindly, take action to approve this.</p></div>",
   "response_html": "\nHello,\n    The Work Contract <a href=\"http://localhost:8000/app/work-contract/{{name}}\">{{name}}</a> needs approval. Kindly, take the necessary action.\n<br><br>\n<a class=\"btn btn-success\" style=\"background-color:green;text-align:center;\"  href=\"http://localhost:8000/api/method/one_fm.hiring.doctype.work_contract.work_contract.autorized_signatory_approve?docname={{name}}\">\n    Approve</a>\n<a class=\"btn btn-success\" style=\"background-color:red;text-align:center;\" href=\"http://localhost:8000/api/method/one_fm.hiring.doctype.work_contract.work_contract.autorized_signatory_reject?docname={{name}}\">\n    Reject</a>",
   "selling": 0,
-  "subject": "Approval on Work Contract",
+  "subject": "Work Contract - Approval",
   "use_html": 1
  },
  {

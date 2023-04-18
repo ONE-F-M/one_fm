@@ -49,7 +49,7 @@ class TimesheetOveride(Timesheet):
         message = "The Timesheet {0}, is {1} by {2}".format(timesheet_url, self.workflow_state, frappe.get_value('User', frappe.session.user, 'full_name'))
         user = frappe.get_value('Employee', self.employee, 'user_id')
         if user:
-            subject = 'Your timesheet {0} is {1}'.format(timesheet_url, self.workflow_state)
+            subject = 'Timesheet {0} - {1}'.format(timesheet_url, self.workflow_state)
             sendemail(
                 recipients=[user],
                 subject=subject,

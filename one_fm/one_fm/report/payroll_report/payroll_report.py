@@ -81,14 +81,45 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
+			"label": ("No. Of Days(Current Month)"),
+			"fieldname": "day",
+			"fieldtype": "Int",
+			"width": 120,
+		},
+		{
+			"label": ("Holiday List"),
+			"fieldname": "holiday_list",
+			"fieldtype": "Link",
+			"options": "Holiday List",
+			"width": 120,
+		},
+		{
+			"label": ("Shift/Non-Shift Worker"),
+			"fieldname": "shift_work_type",
+			"fieldtype": "Data",
+			"width": 120,
+		},
+		{
 			"label": ("Day off Type"),
 			"fieldname": "day_off_category",
 			"fieldtype": "Data",
 			"width": 120,
 		},
 		{
-			"label": ("No. of Days Off"),
+			"label": ("No. Of Days Off(Employee Docs)"),
 			"fieldname": "number_of_days_off",
+			"fieldtype": "Data",
+			"width": 120,
+		},
+		{
+			"label": ("Theoretical Days Off"),
+			"fieldname": "theoretical_days_off",
+			"fieldtype": "Int",
+			"width": 120,
+		},
+		{
+			"label": ("Theoretical Working Days"),
+			"fieldname": "theoretical_working_days",
 			"fieldtype": "Int",
 			"width": 120,
 		},
@@ -99,16 +130,8 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
-			"label": ("Woring Days (basic)"),
-			"fieldname": "working_days",
-			"fieldtype": "Int",
-			"default": 0,
-			"width": 180,
-		},
-
-		{
-			"label": ("Working Days (OT)"),
-			"fieldname": "ot",
+			"label": ("Days Off (Roster)"),
+			"fieldname": "do_roster",
 			"fieldtype": "Int",
 			"default": 0,
 			"width": 180,
@@ -116,6 +139,21 @@ def get_columns(filters):
 		{
 			"label": ("Days Off (OT)"),
 			"fieldname": "do_ot",
+			"fieldtype": "Int",
+			"default": 0,
+			"width": 180,
+		},
+		{
+			"label": ("Present Days (Basic)"),
+			"fieldname": "working_days",
+			"fieldtype": "Int",
+			"default": 0,
+			"width": 180,
+		},
+
+		{
+			"label": ("Present Days (OT)"),
+			"fieldname": "ot",
 			"fieldtype": "Int",
 			"default": 0,
 			"width": 180,
@@ -149,6 +187,12 @@ def get_columns(filters):
 			"width": 180,
 		},
 		{
+			"label": ("Public Holidays"),
+			"fieldname": "public_holidays",
+			"fieldtype": "Int",
+			"width": 120,
+		},
+		{
 			"label": ("Total"),
 			"fieldname": "total",
 			"fieldtype": "Int",
@@ -156,6 +200,7 @@ def get_columns(filters):
 			"width": 180,
 		},
 	]
+
 def get_data(filters):
 	data = []
 	if not filters:
@@ -165,24 +210,21 @@ def get_data(filters):
 
 	first_day_of_month = str(get_first_day(report_date))
 	last_day_of_month = str(get_last_day(report_date))
-
 	query = frappe.db.sql(f"""
 		SELECT DISTINCT e.name as employee_id, e.employee_name, e.project, e.work_permit_salary, e.one_fm_civil_id, e.bank_ac_no,
-		e.day_off_category, e.pam_file_number as shoon_file, ssa.base, pe.start_date, pe.end_date,
+		e.day_off_category, e.shift_working as shift_work_type, e.holiday_list, e.number_of_days_off , e.pam_file_number as shoon_file, ssa.base, pe.start_date, pe.end_date,
 		COUNT(at.employee) as working_days
 		FROM `tabEmployee` e JOIN `tabSalary Structure Assignment` ssa ON e.name=ssa.employee
 			JOIN `tabPayroll Employee Detail` ped ON e.name=ped.employee
 			JOIN `tabPayroll Entry` pe ON pe.name=ped.parent
 			JOIN `tabAttendance` at ON at.employee=e.name
 		WHERE ssa.docstatus=1 AND pe.end_date BETWEEN '{first_day_of_month}' and '{last_day_of_month}'
-			AND pe.docstatus=1
 			AND at.attendance_date BETWEEN pe.start_date AND pe.end_date
 			AND at.roster_type='Basic'
 			AND pe.salary_slips_created=1
 		GROUP BY e.name
 		ORDER BY e.name ASC
 	""", as_dict=1)
-
 
 	payroll_cycle = get_payroll_cycle(filters)
 	employee_list = get_employee_list(query)
@@ -194,15 +236,39 @@ def get_data(filters):
 		if attendance_by_project.get(i.employee_id):
 			att_project = attendance_by_project.get(i.employee_id)
 			i.working_days = att_project['working_days']
+			i.day = (i.end_date - i.start_date).days + 1
+			i.shift_work_type = "Shift Worker" if i.shift_work_type == 1 else "Non-Shift Worker"
 			i.ot = att_project['ot']
 			i.do_ot = att_project['do_ot']
 			i.sl = att_project['sl']
 			i.al = att_project['al']
 			i.ol = att_project['ol']
 			i.ab = att_project['ab']
-			i.number_of_days_off = att_project['number_of_days_off']
+			if i.shift_work_type == "Shift Worker":
+				i.theoretical_days_off = theoretical_days_off(i.day_off_category, i.number_of_days_off, i.start_date, i.end_date)
+				days_off = frappe.db.sql(f"""SELECT es.employee, COUNT(es.name) as do_roster FROM `tabEmployee Schedule` es JOIN `tabEmployee` e ON e.name=es.employee
+										WHERE es.employee_availability = "Day Off"
+										AND es.date BETWEEN '{i.start_date}' AND '{i.end_date}'
+										Group by es.employee;
+									""", as_dict=1)
+				days_off_ot = frappe.db.sql(f"""SELECT es.employee, COUNT(es.name) as do_ot FROM `tabEmployee Schedule` es JOIN `tabEmployee` e ON e.name=es.employee
+										WHERE es.day_off_ot = 1
+										AND es.date BETWEEN '{i.start_date}' AND '{i.end_date}'
+										Group by es.employee;
+									""", as_dict=1)
+				i.do_roster = days_off[0].do_roster
+				i.do_ot = days_off_ot[0].do_ot
+			else:
+				count_holiday_date = frappe.db.sql(f"""Select count(holiday_date) as days_off from `tabHoliday` h
+										where h.parent = '{i.holiday_list}' 
+										AND h.holiday_date BETWEEN '{i.start_date}' AND '{i.end_date}' 
+										AND h.weekly_off = 1""", as_dict=1)
+				i.theoretical_days_off = count_holiday_date[0].days_off
+				i.do_roster = i.theoretical_days_off
+
+			i.theoretical_working_days = ((i.end_date-i.start_date).days)+1 - i.theoretical_days_off
 			i.total = i.working_days + i.sl + i.al + i.ol + i.ab
-			i.number_of_working_days = ((i.end_date-i.start_date).days)+1 - i.number_of_days_off
+			i.number_of_working_days = ((i.end_date-i.start_date).days)+1 - (i.do_roster + i.do_ot)
 
 	if not query:
 		frappe.msgprint(("No Payroll Submitted or Salary Slip Created from the Payroll Entry this month!"), alert=True, indicator="Blue")
@@ -221,11 +287,13 @@ def get_payroll_cycle(filters):
 	settings = frappe.get_doc("HR and Payroll Additional Settings")
 	default_date = settings.payroll_date
 
-	start_date = datetime.date(int(filters["year"]), int(filters["month"])-1, int(default_date))
+
+	end_date = datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
 	payroll_cycle = {
 		'Other': {
-			'start_date': datetime.date(int(filters["year"]), int(filters["month"])-1, int(default_date)),
-			'end_date': add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(default_date)), 1), -1)
+			'start_date': add_days(add_months(datetime.date(int(filters["year"]),int(filters["month"]), int(default_date)), -1), -1),
+			'end_date': datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
+
 			}
 		}
 
@@ -233,12 +301,20 @@ def get_payroll_cycle(filters):
 		if row.payroll_start_day == 'Month Start':
 			row.payroll_start_day = 1
 		payroll_cycle[row.project] = {
-			'start_date':datetime.date(int(filters["year"]), int(filters["month"])-1, int(row.payroll_start_day)),
-			'end_date':add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)), 1), -1)
+
+			'start_date':add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)), -1), -1),
+			'end_date':datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)),
 		}
 
 	return payroll_cycle
 
+def theoretical_days_off(day_off_category, number_of_days_off, start_date, end_date):
+	if day_off_category == "Monthly":
+		return number_of_days_off
+	else:
+		no_of_days = end_date - start_date
+		weeks = no_of_days.days // 7
+		return weeks * number_of_days_off
 
 def get_attendance(projects, employee_list):
 	attendance_dict = {}
