@@ -1059,7 +1059,7 @@ def get_project_enddate_for_edit_post(post):
         response("Error", 400, None, _("No contract linked with project {project}".format(project=project)))
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=1)
 def edit_post(posts, values):
 
     try:
@@ -1215,7 +1215,8 @@ def post_off(posts, args):
     if args.repeat == "Does not repeat":
         if args.off_from_date and args.off_to_date:
             posts = set_post_based_on_from_date_and_to_date(args.off_from_date, args.off_to_date, posts)
-
+        print(posts)
+        frappe.throw()
         for post in posts:
             set_post_off(post["post"], post["date"], post_off_paid, post_off_unpaid)
     else:
