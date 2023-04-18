@@ -442,7 +442,7 @@ def get_post_details(post_name):
 		return frappe.utils.response.report_error(e.http_status_code)
 
 
-@frappe.whitelist(allow_guest=1)
+@frappe.whitelist()
 def unschedule_staff(employees, start_date=None, end_date=None, never_end=0):
 	try:
 		#If start date and end date are provided
