@@ -1215,8 +1215,7 @@ def post_off(posts, args):
     if args.repeat == "Does not repeat":
         if args.off_from_date and args.off_to_date:
             posts = set_post_based_on_from_date_and_to_date(args.off_from_date, args.off_to_date, posts)
-        print(posts)
-        frappe.throw()
+        
         for post in posts:
             set_post_off(post["post"], post["date"], post_off_paid, post_off_unpaid)
     else:
