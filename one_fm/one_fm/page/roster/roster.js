@@ -408,11 +408,11 @@ function load_js(page) {
 						$('#cover-spin').show(0);
 						
 						frappe.call({
-							// method: 'one_fm.one_fm.page.roster.roster.edit_post',
-							method: 'one_fm.api.v2.flutter.roster.edit_post',
+							method: 'one_fm.one_fm.page.roster.roster.edit_post',
+							// method: 'one_fm.api.v2.flutter.roster.edit_post',
 							args: { posts, values },
 							callback: function (r) {
-								
+								console.log("test")
 								d.hide();
 								$('#cover-spin').hide();
 								let element = get_wrapper_element().slice(1);
@@ -2647,6 +2647,7 @@ function staff_edit_dialog() {
 				method: 'one_fm.one_fm.page.roster.roster.assign_staff',
 				args: { employees, shift, request_employee_assignment},
 				callback: function (r) {
+					
 					d.hide();
 					$('#cover-spin').hide();
 					update_staff_view();
