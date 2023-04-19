@@ -169,18 +169,18 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         
         if res.verification == "FAILED" and res.data == 'Invalid media content':
             
-            error_message = f"""
-                            \n 
-                            Blinks: {res.blinks}\n 
-                            Image: {res.image}\n
-                            "Content-Type":{res.content_type}\n 
-                            Time: {now_datetime().strftime('%d-%m-%y  %H:%M')}
-                            """
+            # error_message = f"""
+            #                 \n 
+            #                 Blinks: {res.blinks}\n 
+            #                 Image: {res.image}\n
+            #                 "Content-Type":{res.content_type}\n 
+            #                 Time: {now_datetime().strftime('%d-%m-%y  %H:%M')}
+            #                 """
             
-            res.data = str(res.data) + str(error_message)
+            # res.data = str(res.data) + str(error_message)
             frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
             **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
-                'message':res.message, 'data':res.data, 'source': 'Checkin'}})
+                'message':res.message, 'data':res, 'source': 'Checkin'}})
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
             return response("Success", 201, doc, None)
         
