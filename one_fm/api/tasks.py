@@ -1690,10 +1690,10 @@ def mark_daily_attendance(start_date, end_date):
 	
 
 		# Get attendance by timesheet employees
-			timesheet_employees = frappe.get_list("Employee", filters={'status': 'Active', 'attendance_by_timesheet': 1}, fields="*")
-			timesheet_employees_data = {}
-			for i in timesheet_employees:
-				timesheet_employees_data[i.name] = i
+		timesheet_employees = frappe.get_list("Employee", filters={'status': 'Active', 'attendance_by_timesheet': 1}, fields="*")
+		timesheet_employees_data = {}
+		for i in timesheet_employees:
+			timesheet_employees_data[i.name] = i
 
 		# Get attendance by timesheet employees timesheet
 		timesheet_list = frappe.get_list("Timesheet",
