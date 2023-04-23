@@ -1,69 +1,213 @@
+<style>
+    .scroll-box {
+        overflow:scroll; 
+        height:200px;
+    }
+</style>
 <div id="OKR-APP">
-    <div class="container" id="app-container" style="display:none;">
-      <div class="row">
-      <div class="col-md-5  toppad  pull-right col-md-offset-3 ">
-           <A href="edit.html" >Edit Profile</A>
+    <div class="container-fluid" id="app-container" style="display:none;">
+    <div class="row">
+        <div class="col-md-9">
+            <div class="card border-dark mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card border-dark mb-3">
+                                <div class="card-body">
+                                    <table class="table table-bordered">
+                                    <tbody>
+                                        <tr class="table-primary">
+                                            <td>The Goal: </td>
+                                        </tr>
+                                        <tr class="table-success">
+                                            <td>Company Objective: </td>
+                                        </tr>
+                                        <tr class="table-warning">
+                                            <td>Company Objective Quarter: </td>
+                                        </tr>
+                                        <tr class="table-danger">
+                                            <td>My Objective: </td>
+                                        </tr>
+                                    </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
 
-        <A href="edit.html" >Logout</A>
-       <br>
-        <p class=" text-info">May 05,2014,03:00 pm </p>
-      </div>
-        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xs-offset-0 col-sm-offset-0 col-md-offset-3 col-lg-offset-3 toppad" >
-   
-   
-          <div class="panel panel-info">
-            <div class="panel-heading">
-              <h3 class="panel-title">Sheena Shrestha</h3>
-            </div>
-            <div class="panel-body">
-              <div class="row">
-                <div class="col-md-3 col-lg-3 " align="center"> <img alt="User Pic" src="https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg" class="img-circle img-responsive"> </div>
-                
-                <!--<div class="col-xs-10 col-sm-10 hidden-md hidden-lg"> <br>
-                  <dl>
-                    <dt>DEPARTMENT:</dt>
-                    <dd>Administrator</dd>
-                    <dt>HIRE DATE</dt>
-                    <dd>11/12/2013</dd>
-                    <dt>DATE OF BIRTH</dt>
-                       <dd>11/12/2013</dd>
-                    <dt>GENDER</dt>
-                    <dd>Male</dd>
-                  </dl>
-                </div>-->
-                <div class=" col-md-9 col-lg-9 "> 
-                  <table class="table table-user-information">
-                    <tbody>
-                      <tr>
-                        <td>First Name:</td>
-                        <td>[%first_name%]</td>
-                      </tr>
-                      <tr>
-                        <td>Last Name:</td>
-                        <td>[%last_name%]</td>
-                      </tr>
-                      <tr>
-                        <td>Email</td>
-                        <td><a href="mailto:[%email%]">[%email%]</a></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  
-                  <a href="#" class="btn btn-primary">My Sales Performance</a>
-                  <a href="#" class="btn btn-primary">Team Sales Performance</a>
-                </div>
-              </div>
-            </div>
-                 <div class="panel-footer">
-                        <a data-original-title="Broadcast Message" data-toggle="tooltip" type="button" class="btn btn-sm btn-primary"><i class="glyphicon glyphicon-envelope"></i></a>
-                        <span class="pull-right">
-                            <a href="edit.html" data-original-title="Edit this user" data-toggle="tooltip" type="button" class="btn btn-sm btn-warning"><i class="glyphicon glyphicon-edit"></i></a>
-                            <a data-original-title="Remove this user" data-toggle="tooltip" type="button" class="btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></a>
-                        </span>
+                        <div class="col-md-12">
+                            <div class="card border-dark mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 card border-dark mx-auto scroll-box" id="box1">
+                                                <h4>Routine Tasks</h4>
+                                                <ul>
+                                                    <li><a href="#">Routine Task 1</a></li>
+                                                    <li><a href="#">Routine Task 2</a></li>
+                                                    <li><a href="#">Routine Task 3</a></li>
+                                                    <li><a href="#">Routine Task 4</a></li>
+                                                    <li><a href="#">Routine Task 5</a></li>
+                                                    <li><a href="#">Routine Task 1</a></li>
+                                                    <li><a href="#">Routine Task 2</a></li>
+                                                    <li><a href="#">Routine Task 3</a></li>
+                                                    <li><a href="#">Routine Task 4</a></li>
+                                                    <li><a href="#">Routine Task 5</a></li>
+                                                </ul>
+                                        </div>
+                                        <div class="col-md-3 card border-dark scroll-box" id="box2">
+                                            <h4> Active Repetitive</h4>
+                                            <ul>
+                                            <li><a href="#">Active Repetitive 1</a></li>
+                                            <li><a href="#">Active Repetitive 2</a></li>
+                                            <li><a href="#">Active Repetitive 3</a></li>
+                                            <li><a href="#">Active Repetitive 4</a></li>
+                                            <li><a href="#">Active Repetitive 5</a></li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-3 card border-dark scroll-box" id="box3">
+                                            <h4> Personal Project</h4>
+                                            <ul>
+                                            <li><a href="#">Personal Project 1</a></li>
+                                            <li><a href="#">Personal Project 2</a></li>
+                                            <li><a href="#">Personal Project 3</a></li>
+                                            <li><a href="#">Personal Project 4</a></li>
+                                            <li><a href="#">Personal Project 5</a></li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-3 card border-dark scroll-box" id="box4">
+                                            <h4> Scrum Project</h4>
+                                            <ul>
+                                            <li><a href="#">Scrum Project 1</a></li>
+                                            <li><a href="#">Scrum Project 2</a></li>
+                                            <li><a href="#">Scrum Project 3</a></li>
+                                            <li><a href="#">Scrum Project 4</a></li>
+                                            <li><a href="#">Scrum Project 5</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="card border-dark mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12 mx-auto scroll-box" id="box1">
+                                            <h4>My Todo</h4>
+                                            <ul>
+                                                <li><a href="#">Routine Task 1</a></li>
+                                                <li><a href="#">Routine Task 2</a></li>
+                                                <li><a href="#">Routine Task 3</a></li>
+                                                <li><a href="#">Routine Task 4</a></li>
+                                                <li><a href="#">Routine Task 5</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="card border-dark mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12 mx-auto scroll-box" id="box1">
+                                            <h4>Assigned Todo</h4>
+                                            <ul>
+                                                <li><a href="#">Routine Task 1</a></li>
+                                                <li><a href="#">Routine Task 2</a></li>
+                                                <li><a href="#">Routine Task 3</a></li>
+                                                <li><a href="#">Routine Task 4</a></li>
+                                                <li><a href="#">Routine Task 5</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-            
-          </div>
+                </div>
+            </div>
         </div>
-      </div>
+        <div class="col-md-3">
+            <div class="card border-dark mb-3">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-6 mb-3">
+                            <input type="text" class="form-control text-center" placeholder="Year (1)" value="Mark" disabled>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <input type="text" class="form-control text-center" placeholder="Quarter (2)" value="Mark" disabled>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="card-body">
+                    <form class="needs-validation" novalidate>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <!-- <label for="validationTooltip01">Title</label> -->
+                                <input type="text" class="form-control text-center" placeholder="Todo Title" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-6 mb-3">
+                                <input type="text" class="form-control text-center" placeholder="Status" value="Mark" disabled>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <input type="text" class="form-control text-center" placeholder="Due Date" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <!-- <label for="validationTooltip01">Title</label> -->
+                                <textarea type="text" class="form-control text-center" placeholder="Description" value="Mark" disabled></textarea>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <!-- <label for="validationTooltip01">Title</label> -->
+                                <input type="text" class="form-control text-center" placeholder="Priority" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-6 mb-3">
+                                <input type="text" class="form-control text-center" placeholder="Assigned By" value="Mark" disabled>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <input type="text" class="form-control text-center" placeholder="Allocated To" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <!-- <label for="validationTooltip01">Title</label> -->
+                                <input type="text" class="form-control text-center" placeholder="Reference Type" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <!-- <label for="validationTooltip01">Title</label> -->
+                                <input type="text" class="form-control text-center" placeholder="User & Full Name" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <!-- <label for="validationTooltip01">Title</label> -->
+                                <input type="text" class="form-control text-center" placeholder="Go to Ref <Button>" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <!-- <label for="validationTooltip01">Title</label> -->
+                                <input type="text" class="form-control text-center" placeholder="Copy link <Button>" value="Mark" disabled>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+    </div>
+</div> 
