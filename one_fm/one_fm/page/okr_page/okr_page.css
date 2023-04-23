@@ -1,0 +1,150 @@
+
+.year_filter{
+  justify-content: center;
+  align-items: center; 
+}
+
+.container_ {
+    justify-content: center;
+    align-items: center; 
+  }  
+  .boxes-container {
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .box {
+    width: 220px;
+    height: 220px;
+    margin: 3px;
+    border: 1px solid black;
+    overflow-y: scroll;
+    text-align: center;
+  }
+  
+  .rect {
+    height: 250px;
+    width: 900px;
+    margin: 2px;
+    overflow-y: scroll;
+    border: 1px solid black;
+    
+  }
+  
+  #date_div{
+    display:flex;
+    flex-wrap: wrap;
+    width:25%;
+    
+  }
+
+  #datefields{
+    padding:0px;
+  }
+
+  .rect h4{
+    padding: 15px ;
+    text-align: center;
+  }
+
+  .filter_div{
+    display: flex;
+    margin: 0px;
+  }
+
+  .filter_div div {
+    display:relative;
+    width:24%;
+    margin-left: 50px;
+    margin-right: 50px;
+    margin-top: 0px;
+  }
+
+
+  .rect ul{
+    padding-top: 15px;
+  }
+  
+.company_goal{
+  padding: 15px;
+  width: 900px;
+  height: 60px;
+  border: 1px solid black;
+  border-radius: 25px;
+}
+
+.company_objective{
+  padding: 15px;
+  width: 900px;
+  height: 55px;
+  border: 1px solid black;
+  border-radius: 25px;
+}
+
+.quarter_comp_objective{
+  padding: 15px;
+  width: 900px;
+  height: 50px;
+  border: 1px solid black;
+  border-radius: 25px;
+}
+
+.my_objective{
+  padding: 15px;
+  width: 900px;
+  height: 45px;
+  border: 1px solid black;
+  border-radius: 25px;
+}
+
+.objective_divs{
+  position:relative;
+  top:240px;
+  left:40px;
+  
+}
+
+.portrait-container {
+  padding-top: 100px;
+  position: relative;
+  border: 1px solid black;
+  height: 880px;
+  width: 310px;
+  border-radius: 25px;
+  top:90px;
+  left:950px;
+}
+
+
+#box1{
+  position: relative;
+  bottom:644px;
+  left:50px;
+}
+#box2{
+  position: relative;
+  left:270px;
+  bottom:867px;
+  
+}
+#box3{
+  position: relative;
+  left:490px;
+  bottom:1090px;
+}
+#box4{
+  position: relative;
+  left:710px;
+  bottom:1313px;
+  
+}
+#rect1{
+  position: relative;
+  bottom:1313px;
+  left:50px;
+}
+#rect2{
+  position: relative;
+  bottom:1310px;
+  left:50px;
+}
