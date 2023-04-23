@@ -3,6 +3,10 @@
         overflow:scroll; 
         height:200px;
     }
+    #save_todo{
+        align-items: center;
+        align-self: center;
+    }
 </style>
 <div id="OKR-APP">
     <div class="container-fluid" id="app-container" style="display:none;">
@@ -96,6 +100,12 @@
                                     <div class="row">
                                         <div class="col-md-12 mx-auto scroll-box" id="box1">
                                             <h4>My Todo</h4>
+                                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                Filter
+                                                </button>
+
+                                                
+
                                             <ul>
                                                 <li><a href="#">Routine Task 1</a></li>
                                                 <li><a href="#">Routine Task 2</a></li>
@@ -136,7 +146,7 @@
                 <div class="card-body">
                     <div class="form-row">
                         <div class="col-md-6 mb-3">
-                            <input type="text" class="form-control text-center" placeholder="Year (1)" value="Mark" disabled>
+                            <input type="text" class="form-control text-center" placeholder="Year (1)" value="Mark " >
                         </div>
                         <div class="col-md-6 mb-3">
                             <input type="text" class="form-control text-center" placeholder="Quarter (2)" value="Mark" disabled>
@@ -202,6 +212,12 @@
                             <div class="col-md-12 mb-3">
                                 <!-- <label for="validationTooltip01">Title</label> -->
                                 <input type="text" class="form-control text-center" placeholder="Copy link <Button>" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3" style="text-align: center;">
+                                <button id = "save_todo">Save Todo 1</button>
+                                
                             </div>
                         </div>
                     </form>
