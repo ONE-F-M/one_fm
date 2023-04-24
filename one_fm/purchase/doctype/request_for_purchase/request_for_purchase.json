@@ -118,6 +118,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
@@ -280,7 +281,7 @@
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2022-12-06 13:38:07.246846",
+ "modified": "2023-04-24 15:13:26.622948",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",
