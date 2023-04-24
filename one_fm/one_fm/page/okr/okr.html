@@ -1,17 +1,8 @@
-<style>
-    .scroll-box {
-        overflow:scroll; 
-        height:200px;
-    }
-    #save_todo{
-        align-items: center;
-        align-self: center;
-    }
-</style>
+<div class="spinner" id="spinner" style="display:block;position: fixed; top: 50%; left: 50%;"></div>
 <div id="OKR-APP">
     <div class="container-fluid" id="app-container" style="display:none;">
     <div class="row">
-        <div class="col-md-9">
+        <div class="col-md-9 scroll-box" style="height:1000px;">
             <div class="card border-dark mb-3">
                 <div class="card-body">
                     <div class="row">
@@ -43,7 +34,12 @@
                                 <div class="card-body">
                                     <div class="row">
                                         <div class="col-md-3 card border-dark mx-auto scroll-box" id="box1">
-                                                <h4>Routine Tasks</h4>
+                                                <div class="widget-head">
+                                                    <div class="widget-label">
+                                                      <div class="widget-title"><span class="ellipsis" title="Interviews (This Week)">Routine Tasks (Count)</span></div>
+                                                      <div class="widget-subtitle"></div>
+                                                    </div>
+                                                  </div>
                                                 <ul>
                                                     <li><a href="#">Routine Task 1</a></li>
                                                     <li><a href="#">Routine Task 2</a></li>
@@ -100,18 +96,25 @@
                                     <div class="row">
                                         <div class="col-md-12 mx-auto scroll-box" id="box1">
                                             <h4>My Todo</h4>
-                                                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                Filter
-                                                </button>
-
-                                                
-
+                                              <form class="needs-validation" novalidate>
+                                                <div class="form-row">
+                                                  <div class="col-md-2 mb-3">
+                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Reference Type" value="">
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Assigned By" value="">
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Priority" value="">
+                                                  </div>
+                                                </form>
+                                              </div>
+                                              
                                             <ul>
-                                                <li><a href="#">Routine Task 1</a></li>
-                                                <li><a href="#">Routine Task 2</a></li>
-                                                <li><a href="#">Routine Task 3</a></li>
-                                                <li><a href="#">Routine Task 4</a></li>
-                                                <li><a href="#">Routine Task 5</a></li>
+                                                <li v-for="todo in my_todos"><a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.name %]</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -125,12 +128,24 @@
                                     <div class="row">
                                         <div class="col-md-12 mx-auto scroll-box" id="box1">
                                             <h4>Assigned Todo</h4>
+                                            <form class="needs-validation" novalidate>
+                                                <div class="form-row">
+                                                  <div class="col-md-2 mb-3">
+                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Reference Type" value="">
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Assigned By" value="">
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Priority" value="">
+                                                  </div>
+                                                </form>
+                                              </div>
                                             <ul>
-                                                <li><a href="#">Routine Task 1</a></li>
-                                                <li><a href="#">Routine Task 2</a></li>
-                                                <li><a href="#">Routine Task 3</a></li>
-                                                <li><a href="#">Routine Task 4</a></li>
-                                                <li><a href="#">Routine Task 5</a></li>
+                                                <li v-for="todo in assigned_todos"><a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -154,69 +169,73 @@
                     </div>
                 </div>
                 <hr>
-                <div class="card-body">
+                <div class="card-body scroll-box" style="height:650px;">
                     <form class="needs-validation" novalidate>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <!-- <label for="validationTooltip01">Title</label> -->
-                                <input type="text" class="form-control text-center" placeholder="Todo Title" value="Mark" disabled>
+                                <label for="validationTooltip01">Title</label>
+                                <input type="text" class="form-control text-center" value="Mark" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-6 mb-3">
-                                <input type="text" class="form-control text-center" placeholder="Status" value="Mark" disabled>
+                            <label for="validationTooltip01">Status</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.status" disabled>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <input type="text" class="form-control text-center" placeholder="Due Date" value="Mark" disabled>
+                            <label for="validationTooltip01">Due Date</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.date" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <!-- <label for="validationTooltip01">Title</label> -->
-                                <textarea type="text" class="form-control text-center" placeholder="Description" value="Mark" disabled></textarea>
+                                <label for="validationTooltip01">Description</label>
+                                <textarea type="text" class="form-control text-center" :value="todo_pane.description" disabled></textarea>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <!-- <label for="validationTooltip01">Title</label> -->
-                                <input type="text" class="form-control text-center" placeholder="Priority" value="Mark" disabled>
+                                <label for="validationTooltip01">Priority</label>
+                                <input type="text" class="form-control text-center"  :value="todo_pane.priority" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-6 mb-3">
-                                <input type="text" class="form-control text-center" placeholder="Assigned By" value="Mark" disabled>
+                                <label for="validationTooltip01">Assigned By</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.assigned_by" disabled>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <input type="text" class="form-control text-center" placeholder="Allocated To" value="Mark" disabled>
+                                <label for="validationTooltip01">Allocated To</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.allocated_to" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <!-- <label for="validationTooltip01">Title</label> -->
-                                <input type="text" class="form-control text-center" placeholder="Reference Type" value="Mark" disabled>
+                                <label for="validationTooltip01">Reference Type</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.reference_type" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <!-- <label for="validationTooltip01">Title</label> -->
-                                <input type="text" class="form-control text-center" placeholder="User & Full Name" value="Mark" disabled>
+                                <label for="validationTooltip01">User & Full Name</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.assigned_by_full_name" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row" :style="">
+                            <div class="col-md-12 mb-3">
+                                <label for="validationTooltip01"></label>
+                                <a :href="todo_pane.name" class="btn btn-warning text-center">Go to Ref (Button)</a>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <!-- <label for="validationTooltip01">Title</label> -->
-                                <input type="text" class="form-control text-center" placeholder="Go to Ref <Button>" value="Mark" disabled>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="col-md-12 mb-3">
-                                <!-- <label for="validationTooltip01">Title</label> -->
-                                <input type="text" class="form-control text-center" placeholder="Copy link <Button>" value="Mark" disabled>
+                                <label for="validationTooltip01">Copy link (Button)</label>
+                                <input type="text" class="form-control text-center" value="Mark" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3" style="text-align: center;">
-                                <button id = "save_todo">Save Todo 1</button>
+                                <button id="save_todo" class="btn btn-primary">Save Todo 1</button>
                                 
                             </div>
                         </div>
