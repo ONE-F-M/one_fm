@@ -412,7 +412,7 @@ function load_js(page) {
 							// method: 'one_fm.api.v2.flutter.roster.edit_post',
 							args: { posts, values },
 							callback: function (r) {
-								console.log("test")
+							
 								d.hide();
 								$('#cover-spin').hide();
 								let element = get_wrapper_element().slice(1);
