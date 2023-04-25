@@ -1840,7 +1840,7 @@ def create_roster_post_actions():
     """
     This function creates a Roster Post Actions document that issues actions to supervisors to fill post types that are not filled for a given date range.
     """
-
+    
     op_shift = frappe.db.sql(f""" select supervisor, name from `tabOperations Shift` """)
     shift_dict = {}
     for item in op_shift:
@@ -1857,23 +1857,36 @@ def create_roster_post_actions():
     operations_roles_not_filled_set = set()
 
     list_of_dict_of_operations_roles_not_filled = []
-
+    
     # Fetch post schedules in the date range that are active
     post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "operations_role", "post"], order_by="date asc")
     # Fetch employee schedules for employees who are working
     employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "operations_role"], order_by="date asc")
-
+    
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
         if not any(es.date == ps.date and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
             if ps.operations_role:
-                operations_roles_not_filled_set.add(ps.operations_role)
-                list_of_dict_of_operations_roles_not_filled.append(ps)
+                project_ = frappe.get_value("Operations Role",ps.operations_role,'project')
+                if project_:
+                    
+                    is_active = frappe.get_value("Project",project_,'is_active')
+                    if is_active == "Yes":
+                        operations_roles_not_filled_set.add(ps.operations_role)
+                        list_of_dict_of_operations_roles_not_filled.append(ps)
+                        
+                else:
+                    
+                    operations_roles_not_filled_set.add(ps.operations_role)
+                    list_of_dict_of_operations_roles_not_filled.append(ps)
+                    
+                
+                
 
 
     # Convert set to tuple for passing it in the sql query as a parameter
     operations_roles_not_filled = tuple(operations_roles_not_filled_set)
-
+    
     if not operations_roles_not_filled:
         return
 
@@ -1887,6 +1900,7 @@ def create_roster_post_actions():
 
 
     # For each supervisor, create post actions to fill post type specifying the post types not filled
+    
     for res in result:
         supervisor = res[0]
         operations_roles = res[1].split(",")
@@ -1903,6 +1917,7 @@ def create_roster_post_actions():
                     second_item["quantity"] = second_item["quantity"] + 1
                     break
             item.update({"quantity": 1})
+            
             second_check_list.append(item)
             check_list.remove(item)
 
