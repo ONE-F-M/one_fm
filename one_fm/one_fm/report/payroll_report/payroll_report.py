@@ -130,7 +130,7 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
-			"label": ("Days Off from (Roster)"),
+			"label": ("Days Off (Roster)"),
 			"fieldname": "do_roster",
 			"fieldtype": "Int",
 			"default": 0,
