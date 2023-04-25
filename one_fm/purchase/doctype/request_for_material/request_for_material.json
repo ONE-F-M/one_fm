@@ -316,6 +316,7 @@
    "depends_on": "eval: doc.type == 'Individual' || doc.type == 'Department'",
    "fieldname": "employee",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee"
