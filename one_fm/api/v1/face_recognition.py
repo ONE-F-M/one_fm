@@ -166,12 +166,9 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         res = random.choice(stubs).FaceRecognition(req)
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        
-        if res.verification == "FAILED" and res.data == 'Invalid media content':
-            
-            if res.verification == "FAILED" and 'Invalid media content' in res.data:
-                frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
-                **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
+        if res.verification == "FAILED" and 'Invalid media content' in res.data:
+            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+            **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
                 'message':res.message, 'data':res.data, 'source': 'Checkin'}})
                 
             doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude)
@@ -250,8 +247,8 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         shift = get_current_shift(employee)
         site, location = None, None
         if shift:
-            if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
-                check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]},["check_in_site","check_out_site"])
+            if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date], "status": "Approved"}):
+                check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date], "status": "Approved"},["check_in_site","check_out_site"])
                 if log_type == "IN":
                     site = check_in_site
                     location = frappe.get_list("Location", {'name':check_in_site}, ["latitude","longitude", "geofence_radius"])

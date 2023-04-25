@@ -1491,6 +1491,7 @@ def mark_day_attendance():
 	start_date, end_date = add_days(getdate(), -1), add_days(getdate(), -1)
 	approve_open_shift_permission(str(start_date), str(end_date))
 	approve_open_employee_checkin_issue(str(start_date), str(end_date))
+	frappe.enqueue(mark_open_timesheet_and_create_attendance)
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 
@@ -1500,6 +1501,7 @@ def mark_night_attendance():
 	end_date =  getdate()
 	approve_open_shift_permission(str(start_date), str(end_date))
 	approve_open_employee_checkin_issue(str(start_date), str(end_date))
+	frappe.enqueue(mark_open_timesheet_and_create_attendance)
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 # mark daily attendance
@@ -1685,9 +1687,7 @@ def mark_daily_attendance(start_date, end_date):
 			except Exception as e:
 				errors.append(str(frappe.get_traceback()))
     
-		#Approve all open timesheets whose start date and end date is today
-		frappe.db.sql(f"""UPDATE `tabTimesheet` SET workflow_state = 'Approved' where start_date = '{getdate()}' and end_date = '{getdate()}' and workflow_state = 'Open' """)
-
+	
 
 		# Get attendance by timesheet employees
 		timesheet_employees = frappe.get_list("Employee", filters={'status': 'Active', 'attendance_by_timesheet': 1}, fields="*")
@@ -2264,3 +2264,12 @@ def run_checkin_reminder():
 			initiate_checkin_notification(res)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Checkin Notification')
+  
+  
+def mark_open_timesheet_and_create_attendance():
+    the_timesheet_list = frappe.db.get_list("Timesheet", filters={"workflow_state": "Open"}, pluck="name")
+    for name in the_timesheet_list:
+        frappe.db.set_value("Timesheet", name, "workflow_state", "Approved")
+        frappe.db.set_value("Timesheet", name, "docstatus", 1)
+        doc = frappe.get_doc("Timesheet", name )
+        doc.create_attendance()
