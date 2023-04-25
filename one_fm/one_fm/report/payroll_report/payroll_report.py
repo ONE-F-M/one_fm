@@ -246,11 +246,12 @@ def get_data(filters):
 			i.ab = att_project['ab']
 		if i.shift_work_type == "Shift Worker":
 			i.theoretical_days_off = theoretical_days_off(i.day_off_category, i.number_of_days_off, i.start_date, i.end_date)
-			days_off = frappe.db.sql(f"""SELECT 
-								(SELECT COUNT(*) FROM `tabEmployee Schedule` WHERE employee_availability = "Day Off" AND date BETWEEN '{i.start_date}' AND '{i.end_date}') as do_roster, 
-								(SELECT COUNT(*) FROM `tabEmployee Schedule` WHERE day_off_ot = 1 AND date BETWEEN '{i.start_date}' AND '{i.end_date}') as do_ot
-								 FROM `tabEmployee Schedule` es
-								 where employee = '{i.employee_id}';""", as_dict=1)
+			days_off = frappe.db.sql(f"""SELECT es.employee,
+								(SELECT COUNT(*) FROM `tabEmployee Schedule` WHERE employee = '{i.employee_id}' AND employee_availability = "Day Off" AND date BETWEEN '{i.start_date}' AND '{i.end_date}') as do_roster, 
+								(SELECT COUNT(*) FROM `tabEmployee Schedule` WHERE employee = '{i.employee_id}' AND  day_off_ot = 1 AND date BETWEEN '{i.start_date}' AND '{i.end_date}') as do_ot
+								FROM `tabEmployee Schedule` es
+								WHERE employee = '{i.employee_id}'
+								GROUP By es.employee;""", as_dict=1)
 			i.do_roster = days_off[0].do_roster if len(days_off) > 0 else 0
 			i.do_ot = days_off[0].do_ot if len(days_off) > 0 else 0
 		else:
@@ -258,7 +259,8 @@ def get_data(filters):
 									where h.parent = '{i.holiday_list}' 
 									AND h.holiday_date BETWEEN '{i.start_date}' AND '{i.end_date}' 
 									AND h.weekly_off = 1""", as_dict=1)
-			i.theoretical_days_off = i.do_roster = count_holiday_date[0].days_off
+			i.theoretical_days_off = count_holiday_date[0].days_off
+			i.do_roster = 0
 
 		i.theoretical_working_days = ((i.end_date-i.start_date).days)+1 - i.theoretical_days_off
 		i.total = i.working_days + i.sl + i.al + i.ol + i.ab
