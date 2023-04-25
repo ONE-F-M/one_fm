@@ -91,6 +91,9 @@
                                               <form class="needs-validation" novalidate>
                                                 <div class="form-row">
                                                   <div class="col-md-2 mb-3 text-center">
+                                                    <input type="text" class="form-control text-center" placeholder="ID" value="" >
+                                                  </div>
+                                                  <div class="col-md-2 mb-3 text-center">
                                                      <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
@@ -107,16 +110,19 @@
 
                                             <div class="form-row" v-for="todo in my_todos">
                                                 <div class="col-md-2 mb-3 text-center">
-                                                    <a href="#" @click.prevent="showTodo(0, todo.date)">[% todo.date %]</a>
+                                                    <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a>
+                                                 </div>
+                                                <div class="col-md-2 mb-3 text-center">
+                                                    <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p>
                                                  </div>
                                                  <div class="col-md-2 mb-3 text-center">
-                                                    <a href="#" @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</a>
+                                                    <p  @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</p>
                                                  </div>
                                                  <div class="col-md-2 mb-3 text-center">
-                                                    <a href="#" @click.prevent="showTodo(0, todo.assigned_by)">[% todo.assigned_by %]</a>
+                                                    <p  @click.prevent="showTodo(0, todo.assigned_by)">[% todo.assigned_by %]</p>
                                                  </div>
                                                  <div class="col-md-2 mb-3 text-center">
-                                                    <a href="#" @click.prevent="showTodo(0, todo.priority)">[% todo.priority %]</a>
+                                                    <p  @click.prevent="showTodo(0, todo.priority)">[% todo.priority %]</a>
                                                  </div>
                                             </div>
                                         </div>
@@ -134,8 +140,11 @@
                                             <form class="needs-validation" novalidate>
                                                 <div class="form-row">
                                                   <div class="col-md-2 mb-3 text-center">
-                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                     <input type="text" class="form-control text-center " placeholder="ID" value="" >
                                                   </div>
+                                                  <div class="col-md-2 mb-3 text-center">
+                                                    <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                 </div>
                                                   <div class="col-md-2 mb-3 text-center">
                                                       <input type="text" class="form-control text-center" placeholder="Reference Type" value="">
                                                   </div>
@@ -150,16 +159,19 @@
                                             <!-- <ul> -->
                                                 <div class="form-row" v-for="todo in assigned_todos">
                                                     <div class="col-md-2 mb-3 text-center">
-                                                        <a href="#" @click.prevent="showTodo(0, todo.date)">[% todo.date %]</a>
+                                                        <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a>
+                                                     </div>
+                                                    <div class="col-md-2 mb-3 text-center">
+                                                        <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p>
                                                      </div>
                                                      <div class="col-md-2 mb-3 text-center">
-                                                        <a href="#" @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</a>
+                                                        <p @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</p>
                                                      </div>
                                                      <div class="col-md-2 mb-3 text-center">
-                                                        <a href="#" @click.prevent="showTodo(0, todo.allocated_to)">[% todo.allocated_to %]</a>
+                                                        <p @click.prevent="showTodo(0, todo.allocated_to)">[% todo.allocated_to %]</p>
                                                      </div>
                                                      <div class="col-md-2 mb-3 text-center">
-                                                        <a href="#" @click.prevent="showTodo(0, todo.priority)">[% todo.priority %]</a>
+                                                        <p @click.prevent="showTodo(0, todo.priority)">[% todo.priority %]</p>
                                                      </div>
                                                 </div>
                                                 
