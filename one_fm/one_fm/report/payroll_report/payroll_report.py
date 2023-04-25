@@ -100,13 +100,19 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
+			"label": ("Theoretical Working Days"),
+			"fieldname": "theoretical_working_days",
+			"fieldtype": "Int",
+			"width": 120,
+		},
+		{
 			"label": ("Day off Type"),
 			"fieldname": "day_off_category",
 			"fieldtype": "Data",
 			"width": 120,
 		},
 		{
-			"label": ("No. Of Days Off(Employee Docs)"),
+			"label": ("Days Off(Employee Docs)"),
 			"fieldname": "number_of_days_off",
 			"fieldtype": "Data",
 			"width": 120,
@@ -118,33 +124,27 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
-			"label": ("Theoretical Working Days"),
-			"fieldname": "theoretical_working_days",
-			"fieldtype": "Int",
-			"width": 120,
-		},
-		{
-			"label": ("No. of Working Days"),
+			"label": ("Actual Working Days(Roster)"),
 			"fieldname": "number_of_working_days",
 			"fieldtype": "Int",
 			"width": 120,
 		},
 		{
-			"label": ("Days Off (Roster)"),
+			"label": ("Days Off from (Roster)"),
 			"fieldname": "do_roster",
 			"fieldtype": "Int",
 			"default": 0,
 			"width": 180,
 		},
 		{
-			"label": ("Days Off (OT)"),
+			"label": ("OT Days Off (Roster)"),
 			"fieldname": "do_ot",
 			"fieldtype": "Int",
 			"default": 0,
 			"width": 180,
 		},
 		{
-			"label": ("Present Days (Basic)"),
+			"label": ("Present Days (Attendance)"),
 			"fieldname": "working_days",
 			"fieldtype": "Int",
 			"default": 0,
@@ -152,7 +152,7 @@ def get_columns(filters):
 		},
 
 		{
-			"label": ("Present Days (OT)"),
+			"label": ("Present OT Days (Attendence)"),
 			"fieldname": "ot",
 			"fieldtype": "Int",
 			"default": 0,
