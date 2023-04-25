@@ -86,8 +86,7 @@
    "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Site Supervisor",
-   "options": "Employee",
-   "reqd": 1
+   "options": "Employee"
   },
   {
    "fetch_from": "site_supervisor.employee_name",
@@ -108,7 +107,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-04-25 16:16:39.734548",
+ "modified": "2023-04-25 20:32:15.294291",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Post Actions",

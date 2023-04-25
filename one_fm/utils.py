@@ -1804,7 +1804,7 @@ def create_roster_employee_actions():
         employees = employees + emp
 
     # fetch supervisors and list of employees(not rostered) under them
-    result = frappe.db.sql("""select sv.employee, group_concat(e.employee)
+    result = frappe.db.sql("""select sv.employee, sv.site, group_concat(e.employee)
             from `tabEmployee` e
             join `tabOperations Shift` sh on sh.name = e.shift
             join `tabEmployee` sv on sh.supervisor=sv.employee
@@ -1814,7 +1814,8 @@ def create_roster_employee_actions():
     # for each supervisor, create a roster action
     for res in result:
         supervisor = res[0]
-        employees = res[1].split(",")
+        site_supervisor = frappe.get_value('Operations Site', res[1], 'account_supervisor')
+        employees = res[2].split(",")
 
         roster_employee_actions_doc = frappe.new_doc("Roster Employee Actions")
         roster_employee_actions_doc.start_date = start_date
@@ -1822,6 +1823,7 @@ def create_roster_employee_actions():
         roster_employee_actions_doc.status = "Pending"
         roster_employee_actions_doc.action_type = "Roster Employee"
         roster_employee_actions_doc.supervisor = supervisor
+        roster_employee_actions_doc.site_supervisor = site_supervisor
 
         for emp in employees:
             roster_employee_actions_doc.append('employees_not_rostered', {

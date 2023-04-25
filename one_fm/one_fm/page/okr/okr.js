@@ -4,7 +4,7 @@ frappe.require([
 	'/assets/one_fm/css/okr/okr.css'
 	], () => {
     // chat.js and chat.css are loaded
-	
+
 })
 
 frappe.pages['okr'].on_page_load = function(wrapper) {
@@ -17,7 +17,7 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 	$(wrapper).find('.layout-main-section').empty().append(frappe.render_template('okr'));
 	setTimeout(()=>{
 		const app = Vue.createApp(
-			{	
+			{
 				delimiters: ['[%', '%]'],
 				data() {
 					return {
@@ -25,14 +25,16 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 							name: ''
 						},
 						my_todos: [],
-						assigned_todos: []
+						assigned_todos: [],
+						scrum_projects: [],
+						personal_projects: []
 					}
 				},
 				mounted(){
 					// show page content
 					this.loadSpinner(0);
 					this.setupJS();
-					this.getDefault();				
+					this.getDefault();
 				},
 				methods: {
 					getDefault(){
@@ -41,10 +43,13 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 							method: "one_fm.one_fm.page.okr.okr.get_defaults", //dotted path to server method
 							callback: function(r) {
 								// code snippet
+								console.log(r.message);
 								if (r.message){
 									let res = r.message;
 									me.my_todos = res.my_todos;
 									me.assigned_todos = res.assigned_todos;
+									me.scrum_projects = res.scrum_projects;
+									me.personal_projects = res.personal_projects;
 								}
 							}
 						});
@@ -66,7 +71,7 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 							if (todo.length>0){
 								me.todo_pane = todo[0];
 							}
-							
+
 						}
 
 						console.log(me.todo_pane)
@@ -79,7 +84,7 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 							document.querySelector("#app-container").style.display = "none";
 							document.querySelector("#spinner").style.display = "block;";
 						}
-						
+
 					},
 					setupJS(){
 						$(".mydatepicker").datepicker({
