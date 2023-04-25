@@ -1,69 +1,240 @@
+<div class="spinner" id="spinner" style="display:block;position: fixed; top: 50%; left: 50%;"></div>
 <div id="OKR-APP">
-    <div class="container" id="app-container" style="display:none;">
-      <div class="row">
-      <div class="col-md-5  toppad  pull-right col-md-offset-3 ">
-           <A href="edit.html" >Edit Profile</A>
+    <div class="container-fluid" id="app-container" style="display:none;">
+    <div class="row">
+        <div class="col-md-9 scroll-box" style="height:1000px;">
+            <div class="card border-dark mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card border-dark mb-3">
+                                <div class="card-body">
+                                    <table class="table table-bordered">
+                                    <tbody>
+                                        <tr class="table-primary">
+                                            <td>The Goal: </td>
+                                        </tr>
+                                        <tr class="table-success">
+                                            <td>Company Objective: </td>
+                                        </tr>
+                                        <tr class="table-warning">
+                                            <td>Company Objective Quarter: </td>
+                                        </tr>
+                                        <tr class="table-danger">
+                                            <td>My Objective: </td>
+                                        </tr>
+                                    </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
 
-        <A href="edit.html" >Logout</A>
-       <br>
-        <p class=" text-info">May 05,2014,03:00 pm </p>
-      </div>
-        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xs-offset-0 col-sm-offset-0 col-md-offset-3 col-lg-offset-3 toppad" >
-   
-   
-          <div class="panel panel-info">
-            <div class="panel-heading">
-              <h3 class="panel-title">Sheena Shrestha</h3>
-            </div>
-            <div class="panel-body">
-              <div class="row">
-                <div class="col-md-3 col-lg-3 " align="center"> <img alt="User Pic" src="https://png.pngtree.com/png-vector/20191101/ourmid/pngtree-cartoon-color-simple-male-avatar-png-image_1934459.jpg" class="img-circle img-responsive"> </div>
-                
-                <!--<div class="col-xs-10 col-sm-10 hidden-md hidden-lg"> <br>
-                  <dl>
-                    <dt>DEPARTMENT:</dt>
-                    <dd>Administrator</dd>
-                    <dt>HIRE DATE</dt>
-                    <dd>11/12/2013</dd>
-                    <dt>DATE OF BIRTH</dt>
-                       <dd>11/12/2013</dd>
-                    <dt>GENDER</dt>
-                    <dd>Male</dd>
-                  </dl>
-                </div>-->
-                <div class=" col-md-9 col-lg-9 "> 
-                  <table class="table table-user-information">
-                    <tbody>
-                      <tr>
-                        <td>First Name:</td>
-                        <td>[%first_name%]</td>
-                      </tr>
-                      <tr>
-                        <td>Last Name:</td>
-                        <td>[%last_name%]</td>
-                      </tr>
-                      <tr>
-                        <td>Email</td>
-                        <td><a href="mailto:[%email%]">[%email%]</a></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  
-                  <a href="#" class="btn btn-primary">My Sales Performance</a>
-                  <a href="#" class="btn btn-primary">Team Sales Performance</a>
-                </div>
-              </div>
-            </div>
-                 <div class="panel-footer">
-                        <a data-original-title="Broadcast Message" data-toggle="tooltip" type="button" class="btn btn-sm btn-primary"><i class="glyphicon glyphicon-envelope"></i></a>
-                        <span class="pull-right">
-                            <a href="edit.html" data-original-title="Edit this user" data-toggle="tooltip" type="button" class="btn btn-sm btn-warning"><i class="glyphicon glyphicon-edit"></i></a>
-                            <a data-original-title="Remove this user" data-toggle="tooltip" type="button" class="btn btn-sm btn-danger"><i class="glyphicon glyphicon-remove"></i></a>
-                        </span>
+                        <div class="col-md-12">
+                            <div class="card border-dark mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 card border-dark mx-auto scroll-box" id="box1">
+                                                <div class="widget-head">
+                                                    <div class="widget-label">
+                                                      <div class="widget-title"><span class="ellipsis" title="Interviews (This Week)">Routine Tasks (Count)</span></div>
+                                                      <div class="widget-subtitle"></div>
+                                                    </div>
+                                                  </div>
+                                                <ul>
+                                                    <li><a href="#">Routine Task 1</a></li>
+                                                    <li><a href="#">Routine Task 2</a></li>
+                                                    <li><a href="#">Routine Task 3</a></li>
+                                                    <li><a href="#">Routine Task 4</a></li>
+                                                    <li><a href="#">Routine Task 5</a></li>
+                                                    <li><a href="#">Routine Task 1</a></li>
+                                                    <li><a href="#">Routine Task 2</a></li>
+                                                    <li><a href="#">Routine Task 3</a></li>
+                                                    <li><a href="#">Routine Task 4</a></li>
+                                                    <li><a href="#">Routine Task 5</a></li>
+                                                </ul>
+                                        </div>
+                                        <div class="col-md-3 card border-dark scroll-box" id="box2">
+                                            <h4> Active Repetitive</h4>
+                                            <ul>
+                                            <li><a href="#">Active Repetitive 1</a></li>
+                                            <li><a href="#">Active Repetitive 2</a></li>
+                                            <li><a href="#">Active Repetitive 3</a></li>
+                                            <li><a href="#">Active Repetitive 4</a></li>
+                                            <li><a href="#">Active Repetitive 5</a></li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-3 card border-dark scroll-box" id="box3">
+                                            <h4> Personal Project</h4>
+                                            <ul>
+                                                <li v-for="project in personal_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-3 card border-dark scroll-box" id="box4">
+                                            <h4> Scrum Project</h4>
+                                            <ul>
+                                                <li v-for="project in scrum_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="card border-dark mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12 mx-auto scroll-box" id="box1">
+                                            <h4>My Todo</h4>
+                                              <form class="needs-validation" novalidate>
+                                                <div class="form-row">
+                                                  <div class="col-md-2 mb-3">
+                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Reference Type" value="">
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Assigned By" value="">
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Priority" value="">
+                                                  </div>
+                                                </form>
+                                              </div>
+
+                                            <ul>
+                                                <li v-for="todo in my_todos"><a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.name %]</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="card border-dark mb-3">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-12 mx-auto scroll-box" id="box1">
+                                            <h4>Assigned Todo</h4>
+                                            <form class="needs-validation" novalidate>
+                                                <div class="form-row">
+                                                  <div class="col-md-2 mb-3">
+                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Reference Type" value="">
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Assigned By" value="">
+                                                  </div>
+                                                  <div class="col-md-2 mb-3">
+                                                      <input type="text" class="form-control text-center" placeholder="Priority" value="">
+                                                  </div>
+                                                </form>
+                                              </div>
+                                            <ul>
+                                                <li v-for="todo in assigned_todos"><a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-            
-          </div>
+                </div>
+            </div>
         </div>
-      </div>
+        <div class="col-md-3">
+            <div class="card border-dark mb-3">
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="col-md-6 mb-3">
+                            <input type="text" class="form-control text-center" placeholder="Year (1)" value="Mark " >
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <input type="text" class="form-control text-center" placeholder="Quarter (2)" value="Mark" disabled>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="card-body scroll-box" style="height:650px;">
+                    <form class="needs-validation" novalidate>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <label for="validationTooltip01">Title</label>
+                                <input type="text" class="form-control text-center" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-6 mb-3">
+                            <label for="validationTooltip01">Status</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.status" disabled>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                            <label for="validationTooltip01">Due Date</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.date" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <label for="validationTooltip01">Description</label>
+                                <textarea type="text" class="form-control text-center" :value="todo_pane.description" disabled></textarea>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <label for="validationTooltip01">Priority</label>
+                                <input type="text" class="form-control text-center"  :value="todo_pane.priority" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-6 mb-3">
+                                <label for="validationTooltip01">Assigned By</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.assigned_by" disabled>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="validationTooltip01">Allocated To</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.allocated_to" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <label for="validationTooltip01">Reference Type</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.reference_type" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <label for="validationTooltip01">User & Full Name</label>
+                                <input type="text" class="form-control text-center" :value="todo_pane.assigned_by_full_name" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row" :style="">
+                            <div class="col-md-12 mb-3">
+                                <label for="validationTooltip01"></label>
+                                <a :href="todo_pane.name" class="btn btn-warning text-center">Go to Ref (Button)</a>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3">
+                                <label for="validationTooltip01">Copy link (Button)</label>
+                                <input type="text" class="form-control text-center" value="Mark" disabled>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3" style="text-align: center;">
+                                <button id="save_todo" class="btn btn-primary">Save Todo 1</button>
+
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     </div>
 </div>

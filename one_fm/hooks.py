@@ -168,7 +168,10 @@ permission_query_conditions = {
 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
 	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
     "Leave Application": "one_fm.permissions.leave_application_list",
+    "Roster Post Actions":"one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_permission_query_conditions",
+	"Roster Employee Actions": "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_permission_query_conditions"
 }
+
 has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",

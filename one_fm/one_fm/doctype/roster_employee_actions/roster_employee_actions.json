@@ -10,9 +10,15 @@
   "end_date",
   "actions",
   "status",
+  "column_break_bi2pf",
   "action_type",
+  "section_break_t1lpn",
   "supervisor",
   "supervisor_name",
+  "column_break_yxhnr",
+  "site_supervisor",
+  "site_supervisor_name",
+  "section_break_h7sd9",
   "employees_not_rostered"
  ],
  "fields": [
@@ -58,7 +64,7 @@
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "in_standard_filter": 1,
-   "label": "Supervisor",
+   "label": "Shift  Supervisor",
    "options": "Employee",
    "reqd": 1
   },
@@ -74,13 +80,45 @@
    "fieldtype": "Data",
    "ignore_user_permissions": 1,
    "in_list_view": 1,
-   "label": "Supervisor Name",
+   "label": "Shift  Supervisor Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_bi2pf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_h7sd9",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_t1lpn",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_yxhnr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "site_supervisor.employee_name",
+   "fieldname": "site_supervisor_name",
+   "fieldtype": "Data",
+   "ignore_user_permissions": 1,
+   "label": "Site Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "site_supervisor",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Site Supervisor",
+   "options": "Employee"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-03-16 01:18:58.950452",
+ "modified": "2023-04-25 08:24:30.276897",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Employee Actions",
