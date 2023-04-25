@@ -31,7 +31,6 @@
    "fieldname": "supervisor",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Shift Supervisor",
    "options": "Employee",
@@ -85,7 +84,6 @@
    "fieldname": "site_supervisor",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Site Supervisor",
    "options": "Employee"
@@ -94,6 +92,7 @@
    "fetch_from": "site_supervisor.employee_name",
    "fieldname": "site_supervisor_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Site Supervisor Name",
    "read_only": 1
   },
@@ -108,7 +107,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-04-20 18:34:00.628526",
+ "modified": "2023-04-25 20:32:15.294291",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Post Actions",
