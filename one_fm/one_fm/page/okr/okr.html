@@ -66,21 +66,13 @@
                                         <div class="col-md-3 card border-dark scroll-box" id="box3">
                                             <h4> Personal Project</h4>
                                             <ul>
-                                            <li><a href="#">Personal Project 1</a></li>
-                                            <li><a href="#">Personal Project 2</a></li>
-                                            <li><a href="#">Personal Project 3</a></li>
-                                            <li><a href="#">Personal Project 4</a></li>
-                                            <li><a href="#">Personal Project 5</a></li>
+                                                <li v-for="project in personal_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
                                             </ul>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box4">
                                             <h4> Scrum Project</h4>
                                             <ul>
-                                            <li><a href="#">Scrum Project 1</a></li>
-                                            <li><a href="#">Scrum Project 2</a></li>
-                                            <li><a href="#">Scrum Project 3</a></li>
-                                            <li><a href="#">Scrum Project 4</a></li>
-                                            <li><a href="#">Scrum Project 5</a></li>
+                                                <li v-for="project in scrum_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -112,7 +104,7 @@
                                                   </div>
                                                 </form>
                                               </div>
-                                              
+
                                             <ul>
                                                 <li v-for="todo in my_todos"><a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.name %]</a></li>
                                             </ul>
@@ -236,7 +228,7 @@
                         <div class="form-row">
                             <div class="col-md-12 mb-3" style="text-align: center;">
                                 <button id="save_todo" class="btn btn-primary">Save Todo 1</button>
-                                
+
                             </div>
                         </div>
                     </form>
@@ -245,4 +237,4 @@
         </div>
     </div>
     </div>
-</div> 
+</div>
