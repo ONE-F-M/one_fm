@@ -73,8 +73,6 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 							}
 
 						}
-
-						console.log(me.todo_pane)
 					},
 					loadSpinner(state){
 						if (state==0){
