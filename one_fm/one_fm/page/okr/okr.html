@@ -90,24 +90,41 @@
                                             <h4>My Todo</h4>
                                               <form class="needs-validation" novalidate>
                                                 <div class="form-row">
-                                                  <div class="col-md-2 mb-3">
+                                                  <div class="col-md-2 mb-3 text-center">
+                                                    <input type="text" class="form-control text-center" placeholder="ID" value="" >
+                                                  </div>
+                                                  <div class="col-md-2 mb-3 text-center">
                                                      <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
                                                   </div>
-                                                  <div class="col-md-2 mb-3">
+                                                  <div class="col-md-2 mb-3 text-center">
                                                       <input type="text" class="form-control text-center" placeholder="Reference Type" value="">
                                                   </div>
-                                                  <div class="col-md-2 mb-3">
+                                                  <div class="col-md-2 mb-3 text-center">
                                                       <input type="text" class="form-control text-center" placeholder="Assigned By" value="">
                                                   </div>
-                                                  <div class="col-md-2 mb-3">
+                                                  <div class="col-md-2 mb-3 text-center">
                                                       <input type="text" class="form-control text-center" placeholder="Priority" value="">
                                                   </div>
                                                 </form>
                                               </div>
 
-                                            <ul>
-                                                <li v-for="todo in my_todos"><a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.name %]</a></li>
-                                            </ul>
+                                            <div class="form-row" v-for="todo in my_todos">
+                                                <div class="col-md-2 mb-3 text-center">
+                                                    <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a>
+                                                 </div>
+                                                <div class="col-md-2 mb-3 text-center">
+                                                    <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p>
+                                                 </div>
+                                                 <div class="col-md-2 mb-3 text-center">
+                                                    <p  @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</p>
+                                                 </div>
+                                                 <div class="col-md-2 mb-3 text-center">
+                                                    <p  @click.prevent="showTodo(0, todo.assigned_by)">[% todo.assigned_by %]</p>
+                                                 </div>
+                                                 <div class="col-md-2 mb-3 text-center">
+                                                    <p  @click.prevent="showTodo(0, todo.priority)">[% todo.priority %]</a>
+                                                 </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -122,23 +139,44 @@
                                             <h4>Assigned Todo</h4>
                                             <form class="needs-validation" novalidate>
                                                 <div class="form-row">
-                                                  <div class="col-md-2 mb-3">
-                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                  <div class="col-md-2 mb-3 text-center">
+                                                     <input type="text" class="form-control text-center " placeholder="ID" value="" >
                                                   </div>
-                                                  <div class="col-md-2 mb-3">
+                                                  <div class="col-md-2 mb-3 text-center">
+                                                    <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                 </div>
+                                                  <div class="col-md-2 mb-3 text-center">
                                                       <input type="text" class="form-control text-center" placeholder="Reference Type" value="">
                                                   </div>
-                                                  <div class="col-md-2 mb-3">
-                                                      <input type="text" class="form-control text-center" placeholder="Assigned By" value="">
+                                                  <div class="col-md-2 mb-3 text-center">
+                                                      <input type="text" class="form-control text-center" placeholder="Assigned To" value="">
                                                   </div>
-                                                  <div class="col-md-2 mb-3">
+                                                  <div class="col-md-2 mb-3 text-center">
                                                       <input type="text" class="form-control text-center" placeholder="Priority" value="">
                                                   </div>
                                                 </form>
                                               </div>
-                                            <ul>
-                                                <li v-for="todo in assigned_todos"><a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a></li>
-                                            </ul>
+                                            <!-- <ul> -->
+                                                <div class="form-row" v-for="todo in assigned_todos">
+                                                    <div class="col-md-2 mb-3 text-center">
+                                                        <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a>
+                                                     </div>
+                                                    <div class="col-md-2 mb-3 text-center">
+                                                        <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p>
+                                                     </div>
+                                                     <div class="col-md-2 mb-3 text-center">
+                                                        <p @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</p>
+                                                     </div>
+                                                     <div class="col-md-2 mb-3 text-center">
+                                                        <p @click.prevent="showTodo(0, todo.allocated_to)">[% todo.allocated_to %]</p>
+                                                     </div>
+                                                     <div class="col-md-2 mb-3 text-center">
+                                                        <p @click.prevent="showTodo(0, todo.priority)">[% todo.priority %]</p>
+                                                     </div>
+                                                </div>
+                                                
+                                                <!-- </li>
+                                            </ul> -->
                                         </div>
                                     </div>
                                 </div>
