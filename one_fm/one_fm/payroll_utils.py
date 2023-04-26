@@ -12,6 +12,7 @@ from frappe.utils import (
     get_url
 )
 import datetime
+from hrms.payroll.doctype.salary_slip.salary_slip import get_salary_component_data
 
 @frappe.whitelist()
 def get_wage_for_employee_incentive(employee, rewarded_by, on_date=False):
