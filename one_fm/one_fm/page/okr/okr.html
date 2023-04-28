@@ -91,20 +91,35 @@
                                               <form class="needs-validation" novalidate>
                                                 <div class="form-row">
                                                   <div class="col-md-2 mb-3 text-center">
-                                                    <input type="text" class="form-control text-center" placeholder="ID" value="" >
+                                                      <select id = "my_todos_id" name = "my_todos_id">
+                                                        <option>ID</option>
+                                                      </select>
+                                                    
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
                                                      <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                      <input type="text" class="form-control text-center" placeholder="Reference Type" value="">
+                                                        <select id = "my_todos_ref_type" name = "my_todos_ref_type">
+                                                            <option>Reference Type</option>
+                                                      </select>
+                                                      
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                      <input type="text" class="form-control text-center" placeholder="Assigned By" value="">
+                                                    <select id = "my_todos_assigned_by" name = "my_todos_assigned_by">
+                                                        <option>Assigned By</option>
+                                                        
+                                                      </select>
+                                                      
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                      <input type="text" class="form-control text-center" placeholder="Priority" value="">
+                                                    <select id = "my_todos_priority" name = "my_todos_priority">
+                                                        <option>Priority</option>
+                                                      </select>
                                                   </div>
+                                                  <!-- <div class="col-md-2 mb-3 text-center">
+                                                    <span>Description</span>
+                                                  </div> -->
                                                 </form>
                                               </div>
 
@@ -124,6 +139,9 @@
                                                  <div class="col-md-2 mb-3 text-center">
                                                     <p  @click.prevent="showTodo(1, todo.priority)">[% todo.priority %]</a>
                                                  </div>
+                                                 <!-- <div class="col-md-2 mb-3 text-center">
+                                                    <span>[% todo.description %]</span>
+                                                 </div> -->
                                                  <hr>
                                             </div>
                                         </div>
@@ -141,19 +159,27 @@
                                             <form class="needs-validation" novalidate>
                                                 <div class="form-row">
                                                   <div class="col-md-2 mb-3 text-center">
-                                                     <input type="text" class="form-control text-center " placeholder="ID" value="" >
+                                                    <select id = "assigned_id" name = "assigned_id">
+                                                        <option>ID</option>
+                                                    </select>
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
                                                  </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                      <input type="text" class="form-control text-center" placeholder="Reference Type" value="">
+                                                    <select id = "assigned_reference_type" name = "assigned_reference_type">
+                                                        <option>Reference Type</option>
+                                                    </select>
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                      <input type="text" class="form-control text-center" placeholder="Assigned To" value="">
+                                                    <select id = "assigned_to" name = "assigned_to">
+                                                        <option>Assigned To</option>
+                                                    </select>
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                      <input type="text" class="form-control text-center" placeholder="Priority" value="">
+                                                    <select id = "assigned_priority" name = "assigned_priority">
+                                                        <option>Priority</option>
+                                                    </select>
                                                   </div>
                                                 </form>
                                               </div>
