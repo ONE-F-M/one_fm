@@ -31,7 +31,7 @@ def get_to_do_linked_projects(type):
 		from
 			`tabProject` p, `tabToDo` t
 		where
-			t.reference_type = "Project" and t.reference_name = p.name and p.type = '{0}'
+			t.reference_type = "Project" and t.reference_name = p.name and p.project_type = '{0}'
 			and allocated_to = '{1}'
 	'''
 
