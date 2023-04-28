@@ -1,7 +1,9 @@
 frappe.require([
 	'/assets/one_fm/js/vue.global.js',
+	'/assets/one_fm/js/daterangepicker.min.js',
 	'/assets/one_fm/js/roster_js/select2.min.js',
 	'/assets/one_fm/css/okr/okr.css',
+	'/assets/one_fm/css/okr/daterangepicker.css',
 	
 	], () => {
     // chat.js and chat.css are loaded
@@ -16,6 +18,8 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 	});
 	// create page layer
 	$(wrapper).find('.layout-main-section').empty().append(frappe.render_template('okr'));
+	console.log(wrapper)
+
 	setTimeout(()=>{
 		const app = Vue.createApp(
 			{
@@ -50,9 +54,9 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 							assigned_arr = []
 							priority_arr = []
 							values.forEach((row)=>{
-								if(!id_arr.includes(row.name)){
-									id_data.push({ 'id': row.name, 'text': row.name });
-									id_arr.push(row.name)
+								if(!id_arr.includes(row.description.substring(0,70))){
+									id_data.push({ 'id': row.name, 'text': row.description.substring(0,70) });
+									id_arr.push(row.description.substring(0,70))
 								}
 								if(!ref_arr.includes(row.reference_type)){
 									reference_data.push({ 'id': row.reference_type, 'text': row.reference_type })
@@ -94,9 +98,9 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 							assigned_arr = []
 							priority_arr = []
 							values.forEach((row)=>{
-								if(!id_arr.includes(row.name)){
-									id_data.push({ 'id': row.name, 'text': row.name });
-									id_arr.push(row.name)
+								if(!id_arr.includes(row.description.substring(0,70))){
+									id_data.push({ 'id': row.name, 'text': row.description.substring(0,70) });
+									id_arr.push(row.description.substring(0,70))
 								}
 								if(!ref_arr.includes(row.reference_type)){
 									reference_data.push({ 'id': row.reference_type, 'text': row.reference_type })
@@ -135,11 +139,12 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 					},
 					getDefault(){
 						let me = this;
+						
 						frappe.call({
 							method: "one_fm.one_fm.page.okr.okr.get_defaults", //dotted path to server method
 							callback: function(r) {
 								// code snippet
-								console.log(r.message);
+								
 								if (r.message){
 									let res = r.message;
 									me.my_todos = res.my_todos;
@@ -184,7 +189,24 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 					},
 					setupJS(){
 						$(".mydatepicker").datepicker({
+							language:'en'
 					  	}).datepicker('update', new Date());
+
+						$('.date-range-picker').daterangepicker({
+							autoUpdateInput: false,
+							opens:'left',
+							language:'en',
+							locale: {
+								format: 'DD-MM-YYYY'
+							  },
+							
+							
+						})
+						$('.date-range-picker').on('apply.daterangepicker',(event,picker)=>{
+							let me = this
+							
+							frappe.show_alert("SET DATE FILTER",5)
+						})
 					}
 				}
 			}

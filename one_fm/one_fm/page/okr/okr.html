@@ -39,7 +39,7 @@
                                                       <div class="widget-title"><span class="ellipsis" title="Interviews (This Week)">Routine Tasks (Count)</span></div>
                                                       <div class="widget-subtitle"></div>
                                                     </div>
-                                                  </div>
+                                                </div>
                                                 <ul>
                                                     <li><a href="#">Routine Task 1</a></li>
                                                     <li><a href="#">Routine Task 2</a></li>
@@ -54,7 +54,12 @@
                                                 </ul>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box2">
-                                            <h4> Active Repetitive</h4>
+                                            <div class="widget-head">
+                                                <div class="widget-label">
+                                                  <div class="widget-title"><span class="ellipsis" title="Interviews (This Week)">Active Repetitive (Count)</span></div>
+                                                  <div class="widget-subtitle"></div>
+                                                </div>
+                                            </div>
                                             <ul>
                                             <li><a href="#">Active Repetitive 1</a></li>
                                             <li><a href="#">Active Repetitive 2</a></li>
@@ -64,13 +69,23 @@
                                             </ul>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box3">
-                                            <h4> Personal Project</h4>
+                                            <div class="widget-head">
+                                                <div class="widget-label">
+                                                  <div class="widget-title"><span class="ellipsis" title="Interviews (This Week)">Person Project (Count)</span></div>
+                                                  <div class="widget-subtitle"></div>
+                                                </div>
+                                            </div>
                                             <ul>
                                                 <li v-for="project in personal_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
                                             </ul>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box4">
-                                            <h4> Scrum Project</h4>
+                                            <div class="widget-head">
+                                                <div class="widget-label">
+                                                  <div class="widget-title"><span class="ellipsis" title="Interviews (This Week)">Scrum Project (Count)</span></div>
+                                                  <div class="widget-subtitle"></div>
+                                                </div>
+                                            </div>
                                             <ul>
                                                 <li v-for="project in scrum_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
                                             </ul>
@@ -97,7 +112,8 @@
                                                     
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                     
+                                                     <input type="text" class="form-control text-center date-range-picker" id="date-range-picker" placeholder="Due Date"/>
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
                                                         <select id = "my_todos_ref_type" name = "my_todos_ref_type">
@@ -125,7 +141,7 @@
 
                                             <div class="form-row" v-for="todo in my_todos">
                                                 <div class="col-md-2 mb-3 text-center">
-                                                    <a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.name %]</a>
+                                                    <a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.description.substring(0,70) %]</a>
                                                  </div>
                                                 <div class="col-md-2 mb-3 text-center">
                                                     <p @click.prevent="showTodo(1, todo.date)">[% todo.date %]</p>
@@ -133,12 +149,13 @@
                                                  <div class="col-md-2 mb-3 text-center">
                                                     <p  @click.prevent="showTodo(1, todo.reference_type)">[% todo.reference_type %]</p>
                                                  </div>
-                                                 <div class="col-md-3 mb-3 text-center">
-                                                    <p  @click.prevent="showTodo(1, todo.assigned_by)">[% todo.assigned_by %]</p>
-                                                 </div>
                                                  <div class="col-md-2 mb-3 text-center">
                                                     <p  @click.prevent="showTodo(1, todo.priority)">[% todo.priority %]</a>
                                                  </div>
+                                                 <div class="col-md-3 mb-3 text-center">
+                                                    <p  @click.prevent="showTodo(1, todo.assigned_by)">[% todo.assigned_by %]</p>
+                                                 </div>
+                                                 
                                                  <!-- <div class="col-md-2 mb-3 text-center">
                                                     <span>[% todo.description %]</span>
                                                  </div> -->
@@ -157,14 +174,15 @@
                                         <div class="col-md-12 mx-auto scroll-box" id="box1">
                                             <h4>Assigned Todo</h4>
                                             <form class="needs-validation" novalidate>
-                                                <div class="form-row">
+                                                <div class="form-row filter-row">
                                                   <div class="col-md-2 mb-3 text-center">
                                                     <select id = "assigned_id" name = "assigned_id">
                                                         <option>ID</option>
                                                     </select>
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                    <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" >
+                                                    <input type="text" class="form-control text-center date-range-picker" placeholder="Due Date" value="" >
+
                                                  </div>
                                                   <div class="col-md-2 mb-3 text-center">
                                                     <select id = "assigned_reference_type" name = "assigned_reference_type">
@@ -172,21 +190,22 @@
                                                     </select>
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                    <select id = "assigned_to" name = "assigned_to">
-                                                        <option>Assigned To</option>
-                                                    </select>
-                                                  </div>
-                                                  <div class="col-md-2 mb-3 text-center">
                                                     <select id = "assigned_priority" name = "assigned_priority">
                                                         <option>Priority</option>
                                                     </select>
                                                   </div>
+                                                  <div class="col-md-2 mb-3 text-center">
+                                                    <select id = "assigned_to" name = "assigned_to">
+                                                        <option>Assigned To</option>
+                                                    </select>
+                                                  </div>
+                                                  
                                                 </form>
                                               </div>
                                             <!-- <ul> -->
                                                 <div class="form-row" v-for="todo in assigned_todos">
                                                     <div class="col-md-2 mb-3 text-center">
-                                                        <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a>
+                                                        <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.description.substring(0,70) %]</a>
                                                      </div>
                                                     <div class="col-md-2 mb-3 text-center">
                                                         <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p>
@@ -194,14 +213,17 @@
                                                      <div class="col-md-2 mb-3 text-center">
                                                         <p @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</p>
                                                      </div>
-                                                     <div class="col-md-3 mb-3 text-center">
-                                                        <p @click.prevent="showTodo(0, todo.allocated_to)">[% todo.allocated_to %]</p>
-                                                     </div>
                                                      <div class="col-md-2 mb-3 text-center">
                                                         <p @click.prevent="showTodo(0, todo.priority)">[% todo.priority %]</p>
                                                      </div>
+                                                     <div class="col-md-3 mb-3 text-center">
+                                                        <p @click.prevent="showTodo(0, todo.allocated_to)">[% todo.allocated_to %]</p>
+                                                     </div>
+                                                     
                                                      <hr>
                                                 </div>
+                                            
+                                              
                                                 
                                                 <!-- </li>
                                             </ul> -->
