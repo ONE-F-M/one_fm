@@ -1,4 +1,5 @@
 import frappe
+from bs4 import BeautifulSoup
 
 @frappe.whitelist()
 def get_profile():
@@ -12,16 +13,19 @@ def get_defaults():
 		'allocated_to':frappe.session.user,
 		'status':'Open'
 	}, fields="*", ignore_permissions=True)
-
+	for each in data.my_todos:
+		each.description = BeautifulSoup(each.description, "lxml").text
 	data.assigned_todos = frappe.db.get_list("ToDo", filters={
 		'assigned_by':frappe.session.user,
 		'status':'Open'
 	}, fields="*", ignore_permissions=True)
+	for each in data.assigned_todos:
+		each.description = BeautifulSoup(each.description, "lxml").text
 
 	data.scrum_projects = get_to_do_linked_projects("SCRUM")
 
 	data.personal_projects = get_to_do_linked_projects("Personal")
-
+	
 	return data
 
 def get_to_do_linked_projects(type):
