@@ -10,14 +10,14 @@ frappe.require([
 
 })
 
-frappe.pages['okr'].on_page_load = function(wrapper) {
+frappe.pages['ows'].on_page_load = function(wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: 'OKR',
+		title: 'OWS',
 		single_column: true
 	});
 	// create page layer
-	$(wrapper).find('.layout-main-section').empty().append(frappe.render_template('okr'));
+	$(wrapper).find('.layout-main-section').empty().append(frappe.render_template('ows'));
 	console.log(wrapper)
 
 	setTimeout(()=>{
@@ -141,7 +141,7 @@ frappe.pages['okr'].on_page_load = function(wrapper) {
 						let me = this;
 						
 						frappe.call({
-							method: "one_fm.one_fm.page.okr.okr.get_defaults", //dotted path to server method
+							method: "one_fm.one_fm.page.ows.ows.get_defaults", //dotted path to server method
 							callback: function(r) {
 								// code snippet
 								
