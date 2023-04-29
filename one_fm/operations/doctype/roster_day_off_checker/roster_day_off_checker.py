@@ -3,7 +3,9 @@
 
 from datetime import datetime
 import frappe, random
-from frappe.utils import getdate, add_days, add_months, now
+from frappe.utils import (
+    get_first_day, get_last_day, getdate, add_days, add_months, now
+)
 from frappe.model.document import Document
 from one_fm.utils import get_payroll_cycle
 
@@ -113,8 +115,8 @@ def validate_offs(emp, project_cycle, supervisor):
 	datalist = []
 
 	if emp.day_off_category == 'Monthly':
-		start_date = getdate()
-		end_date = add_months(start_date, 1)
+		start_date = get_first_day(getdate())
+		end_date = get_last_day(getdate())
 		for i in range(2):
 			off_days = frappe.db.sql("""
 				SELECT COUNT(name) as cnt FROM `tabEmployee Schedule`
@@ -155,7 +157,7 @@ def validate_offs(emp, project_cycle, supervisor):
 			end_date = add_months(start_date, 1)
 
 	elif emp.day_off_category == 'Weekly':
-		start_date = getdate()
+		start_date = get_first_day(getdate())
 		end_date = add_days(start_date, 6)
 		for i in range(2):
 			off_days = frappe.db.sql("""
