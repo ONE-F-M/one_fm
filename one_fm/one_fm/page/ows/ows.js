@@ -146,6 +146,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 								// code snippet
 								
 								if (r.message){
+									
 									let res = r.message;
 									me.my_todos = res.my_todos;
 									me.assigned_todos = res.assigned_todos;
