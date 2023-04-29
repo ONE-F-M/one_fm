@@ -154,7 +154,7 @@ def validate_offs(emp, project_cycle, supervisor):
 					'day_off_difference': day_off_diff
 				})
 			start_date = add_days(end_date, 1)
-			end_date = add_months(start_date, 1)
+			end_date = get_last_day(start_date)
 
 	elif emp.day_off_category == 'Weekly':
 		start_date = get_first_day(getdate())
