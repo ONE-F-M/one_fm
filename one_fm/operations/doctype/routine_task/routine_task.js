@@ -56,4 +56,10 @@ var set_filters = function(frm) {
 			filters: {'parent': frm.doc.process_name}
 		}
 	});
+
+	frm.set_query("task_type", function() {
+		return {
+			filters: {'is_routine_task': true}
+		}
+	});
 };

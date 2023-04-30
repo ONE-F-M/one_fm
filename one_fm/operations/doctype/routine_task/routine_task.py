@@ -67,6 +67,7 @@ class RoutineTask(Document):
 			task = frappe.new_doc('Task')
 			task.subject = (self.task[slice(78)]+"...") if len(self.task) > 80 else self.task
 			task.description = self.task
+			task.type = self.task_type
 			if self.remark:
 				task.description += "<br/><br/><b>Remarks:</b><br/>" + self.remark
 			task.expected_time = self.hours_per_frequency

@@ -19,6 +19,7 @@
   "is_erp_process",
   "erp_document",
   "task",
+  "task_type",
   "column_break_im0w3",
   "frequency",
   "hours_per_frequency",
@@ -210,11 +211,18 @@
    "label": "Auto Repeat Reference",
    "options": "Auto Repeat",
    "read_only": 1
+  },
+  {
+   "fieldname": "task_type",
+   "fieldtype": "Link",
+   "label": "Task Type",
+   "options": "Task Type",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-04-30 09:39:43.697809",
+ "modified": "2023-04-30 14:15:01.618605",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Routine Task",
