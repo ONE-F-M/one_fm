@@ -15,6 +15,7 @@ frappe.ui.form.on('Employee', {
         filterDefaultShift(frm);
         setProjects(frm);
         TransferToNonShift(frm);
+		frm.trigger('mandatory_reports_to');
     },
 	set_queries: frm => {
 		// set bank account query
@@ -28,13 +29,21 @@ frappe.ui.form.on('Employee', {
 		});
 	},
 	onload: function(frm) {
-        var designation = frm.doc.designation;
-        if (designation == "General Manager") {
+        frm.trigger('mandatory_reports_to');
+    },
+	designation: function(frm) {
+		frm.trigger('mandatory_reports_to');
+	},
+	attendance_by_timesheet: function(frm) {
+		frm.trigger('mandatory_reports_to');
+	},
+	mandatory_reports_to: function(frm){
+		if (frm.doc.designation == "General Manager" || frm.doc.shift_working==1 || frm.doc.attendance_by_timesheet==1) {
             frm.set_df_property("reports_to", "reqd", 0);
         } else {
             frm.set_df_property("reports_to", "reqd", 1);
         }
-    }
+	}
 
 });
 
