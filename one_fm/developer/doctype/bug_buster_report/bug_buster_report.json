@@ -1,0 +1,110 @@
+{
+ "actions": [],
+ "creation": "2023-04-30 10:10:00.436938",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "date",
+  "time",
+  "column_break_8cz6c",
+  "bug_buster",
+  "bug_buster_name",
+  "section_break_htvm6",
+  "description",
+  "issues",
+  "pull_requests",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "time",
+   "fieldtype": "Time",
+   "label": "Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_8cz6c",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "bug_buster",
+   "fieldtype": "Link",
+   "label": "Bug Buster",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "bug_buster.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "bug_buster_name",
+   "fieldtype": "Data",
+   "label": "Bug Buster Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_htvm6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "issues",
+   "fieldtype": "Table",
+   "label": "Issues",
+   "options": "Bug Buster Issue Detail"
+  },
+  {
+   "fieldname": "pull_requests",
+   "fieldtype": "Table",
+   "label": "Pull Requests",
+   "options": "Bug Buster Github Detail"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Bug Buster Report",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2023-04-30 10:34:10.602688",
+ "modified_by": "Administrator",
+ "module": "Developer",
+ "name": "Bug Buster Report",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

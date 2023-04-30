@@ -2963,34 +2963,38 @@ def post_login(self):
     self.set_user_info()
 
     # log administrator
-    if frappe.session.user == 'Administrator':
-        session = frappe.session.data
-        environ = frappe._dict(frappe.local.request.environ)
-        doc = frappe.get_doc(
-            {
-            'doctype':'Administrator Auto Log',
-            'ip': session.session_ip,
-            'login_time': session.last_updated,
-            'session_expiry': session.session_expiry,
-            'device': session.device,
-            'session_country': json.dumps(session.session_country),
-            'http_sec_ch_ua':environ.HTTP_SEC_CH_UA,
-            'user_agent':environ.HTTP_USER_AGENT,
-            'platform':environ.HTTP_SEC_CH_UA_PLATFORM,
-            'ip_detail': json.dumps(requests.get(f'https://ipapi.co/{session.session_ip}/json/').json())
-            }
-        ).insert()
-        frappe.db.commit()
-    else:
-        if not frappe.cache().get_value(frappe.session.user):
-            try:
-                if not frappe.session.user:
+    try:
+        if frappe.session.user == 'Administrator':
+            session = frappe.session.data
+            environ = frappe._dict(frappe.local.request.environ)
+            doc = frappe.get_doc(
+                {
+                'doctype':'Administrator Auto Log',
+                'ip': session.session_ip,
+                'login_time': session.last_updated,
+                'session_expiry': session.session_expiry,
+                'device': session.device,
+                'session_country': json.dumps(session.session_country),
+                'http_sec_ch_ua':environ.HTTP_SEC_CH_UA,
+                'user_agent':environ.HTTP_USER_AGENT,
+                'platform':environ.HTTP_SEC_CH_UA_PLATFORM,
+                'ip_detail': json.dumps(requests.get(f'https://ipapi.co/{session.session_ip}/json/').json())
+                }
+            ).insert()
+            frappe.db.commit()
+        else:
+            if not frappe.cache().get_value(frappe.session.user):
+                try:
+                    if not frappe.session.user:
+                        frappe.cache().set_value(frappe.session.user, frappe._dict({}))
+                    else:
+                        employee = frappe.db.get_value('Employee', {'user_id':frappe.session.user }, 'name')
+                        frappe.cache().set_value(frappe.session.user, frappe._dict({'employee':employee}))
+                except:
                     frappe.cache().set_value(frappe.session.user, frappe._dict({}))
-                else:
-                    employee = frappe.db.get_value('Employee', {'user_id':frappe.session.user }, 'name')
-                    frappe.cache().set_value(frappe.session.user, frappe._dict({'employee':employee}))
-            except:
-                frappe.cache().set_value(frappe.session.user, frappe._dict({}))
+    except:
+        pass
+
 
 
 def validate_reports_to(self):

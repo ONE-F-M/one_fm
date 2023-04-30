@@ -1,0 +1,42 @@
+{
+ "actions": [],
+ "creation": "2023-04-30 10:15:22.179547",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "pull_request",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "pull_request",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Pull Request",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Bug Buster Github Detail",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2023-04-30 10:17:06.717233",
+ "modified_by": "Administrator",
+ "module": "Developer",
+ "name": "Bug Buster Github Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
