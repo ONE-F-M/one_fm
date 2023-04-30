@@ -49,8 +49,8 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									due_date:'',
 									reference_type:''
 								},
-								todo:true,
-								assigned_todos:false
+								todo:1,
+								assigned_todos:0
 
 							},
 							callback: function(r) {

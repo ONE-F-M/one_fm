@@ -7,21 +7,22 @@ def get_profile():
 
 @frappe.whitelist()
 def get_defaults(args, todo, assigned_todos):
-	
 	args = json.loads(args)
 	cond = ""
 	for a in args:
 		if args[a]:
-			cond += "AND "+a+"='"+args[a]+"' "
+			if a == 'name':
+				cond += "AND "+a+" LIKE '%"+args[a]+"%' "
+			else:
+				cond += "AND "+a+" = '"+args[a]+"' "
 	data = frappe._dict({})
 	
-	if todo == 'true':
+	if bool(todo):
 		data.my_todos = frappe.db.sql(f"""
 						SELECT * from `tabToDo`
 						where allocated_to = '{frappe.session.user}'
 						AND status = "Open"
 						AND reference_type != 'Project'
-						AND assigned_by != '{frappe.session.user}'
 						{cond}
 						""",as_dict=1)
 	else:
@@ -30,9 +31,8 @@ def get_defaults(args, todo, assigned_todos):
 						where allocated_to = '{frappe.session.user}'
 						AND status = "Open"
 						AND reference_type != 'Project'
-						AND assigned_by != '{frappe.session.user}'
 						""", as_dict=1)
-	if assigned_todos == 'false':
+	if bool(assigned_todos):
 		data.assigned_todos = frappe.db.sql(f"""
 						SELECT * from `tabToDo`
 						where assigned_by ='{frappe.session.user}'
