@@ -31,7 +31,11 @@
   "direct_report_reviewer",
   "direct_report_reviewer_name",
   "column_break_ppanu",
-  "reporting_checkin_type"
+  "reporting_checkin_type",
+  "reference_section",
+  "task_reference",
+  "column_break_rgmau",
+  "auto_repeat_reference"
  ],
  "fields": [
   {
@@ -182,11 +186,35 @@
    "hidden": 1,
    "label": "Series",
    "options": "R-TASK-.YYYY.-"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "reference_section",
+   "fieldtype": "Section Break",
+   "label": "Reference"
+  },
+  {
+   "fieldname": "task_reference",
+   "fieldtype": "Link",
+   "label": "Task Reference",
+   "options": "Task",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_rgmau",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "auto_repeat_reference",
+   "fieldtype": "Link",
+   "label": "Auto Repeat Reference",
+   "options": "Auto Repeat",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-04-26 22:49:00.218015",
+ "modified": "2023-04-30 09:39:43.697809",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Routine Task",
