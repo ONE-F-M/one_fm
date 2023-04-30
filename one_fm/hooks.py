@@ -762,7 +762,7 @@ jenv = {
 
 after_migrate = [
     "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
-    "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
+    "one_fm.after_migrate.execute.disable_workflow_emails",
 ]
 
 # add more info to session on boot

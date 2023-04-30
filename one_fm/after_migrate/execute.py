@@ -40,5 +40,12 @@ def disable_workflow_emails():
     """
     if not production_domain():
         # Disable Work Contract
-        frappe.db.set_value('Workflow', 'Contracts', 'send_email_alert', 0)
+        doctypes = ['Contracts']
+        print("Disabling workflow email for:")
+        for i in doctypes:
+            print(i)
+            try:
+                frappe.db.set_value('Workflow', 'Contracts', 'send_email_alert', 0)
+            except Exception as e:
+                print(str(e))
         frappe.db.commit()
