@@ -41,18 +41,6 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						let me = this;
 						frappe.call({
 							method: "one_fm.one_fm.page.ows.ows.get_defaults", //dotted path to server method
-							args:{
-								args:{
-									name:'6c15912068',
-									allocated_to:'',
-									assigned_by:'',
-									due_date:'',
-									reference_type:''
-								},
-								todo:1,
-								assigned_todos:0
-
-							},
 							callback: function(r) {
 								// code snippet
 								console.log(r.message);
