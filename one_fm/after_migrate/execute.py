@@ -1,4 +1,5 @@
-import frappe 
+import frappe
+from one_fm.utils import production_domain
 
 def comment_timesheet_in_hrms():
     """
@@ -32,3 +33,12 @@ def comment_timesheet_in_hrms():
             frappe.delete_doc("Custom Field", custom_field, ignore_missing=True)
         except:
             print(field, "Does not exist in custom field")
+
+def disable_workflow_emails():
+    """
+        This disables workflow emails on workflow doctype if not on production server.
+    """
+    if not production_domain():
+        # Disable Work Contract
+        frappe.db.set_value('Workflow', 'Contracts', 'send_email_alert', 0)
+        frappe.db.commit()
