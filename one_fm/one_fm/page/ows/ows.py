@@ -17,7 +17,7 @@ def get_defaults(args, todo, assigned_todos):
 				cond += "AND "+a+" = '"+args[a]+"' "
 	data = frappe._dict({})
 	
-	if bool(todo):
+	if bool(int(todo)):
 		data.my_todos = frappe.db.sql(f"""
 						SELECT * from `tabToDo`
 						where allocated_to = '{frappe.session.user}'
@@ -32,7 +32,8 @@ def get_defaults(args, todo, assigned_todos):
 						AND status = "Open"
 						AND reference_type != 'Project'
 						""", as_dict=1)
-	if bool(assigned_todos):
+	
+	if bool(int(assigned_todos)):
 		data.assigned_todos = frappe.db.sql(f"""
 						SELECT * from `tabToDo`
 						where assigned_by ='{frappe.session.user}'
