@@ -6310,7 +6310,7 @@
    "_comments": null,
    "_liked_by": null,
    "_user_tags": null,
-   "creation": "2023-04-20 15:03:04.737188",
+   "creation": "2023-04-30 17:47:28.321699",
    "default_value": null,
    "doc_type": "Employee",
    "docstatus": 0,
@@ -6318,7 +6318,7 @@
    "field_name": "reports_to",
    "idx": 0,
    "is_system_generated": 0,
-   "modified": "2023-04-20 15:03:04.737188",
+   "modified": "2023-04-30 17:47:28.321699",
    "modified_by": "Administrator",
    "module": null,
    "name": "Employee-reports_to-mandatory_depends_on",
@@ -6329,7 +6329,7 @@
    "property": "mandatory_depends_on",
    "property_type": "Data",
    "row_name": null,
-   "value": "eval:doc.designation!='General Manager'\neval:doc.shift_working==0 || doc.attendance_by_timesheet\n"
+   "value": ""
   },
   {
    "_assign": null,
