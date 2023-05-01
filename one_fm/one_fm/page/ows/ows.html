@@ -314,16 +314,13 @@
                             </div>
                         </div>
                         <div class="form-row" :style="">
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-12" title="View the document">
                                 <label for="validationTooltip01"></label>
-                                <a :href="todo_pane.name" class="btn btn-warning text-center">Go to Ref (Button)</a>
+                                <a :href="todo_pane.url" class="btn btn-block btn-warning text-center" target="_blank">Go to Ref</a>
                             </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="col-md-12 mb-3">
-                                
-                                <label class="control-label" style="padding-right: 0px;">Copy Link (Button)</label>
-                                <input type="text" class="form-control text-center" value="Mark" disabled>
+                            <div class="col-md-12 mb-3" title="Copy the link to document">
+                                <label for="validationTooltip01"></label>
+                                <a class="btn btn-block btn-warning text-center" @click="copyText(todo_pane.url)">Copy Link</a>
                             </div>
                         </div>
                         <div class="form-row">
