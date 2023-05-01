@@ -234,6 +234,28 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							}).datepicker('update', new Date(),
 							);						
 					}
+				},
+				copyText(link_to_copy) {
+					const show_success_alert = () => {
+						frappe.show_alert({
+							indicator: "green",
+							message: __("Copied to clipboard."),
+						});
+					};
+					const show_fail_alert = () => {
+						frappe.show_alert({
+							indicator: "red",
+							message: __("Nothing to Copy."),
+						});
+					};
+					if(link_to_copy == undefined){
+						show_fail_alert();
+					}
+					else {
+							if (navigator.clipboard && window.isSecureContext) {
+								navigator.clipboard.writeText(link_to_copy).then(show_success_alert);
+							} 
+					}
 				}
 			}
 		)
