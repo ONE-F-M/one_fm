@@ -53,7 +53,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						
 						me.my_todo_filters.name = $('#my_todos_id').val()
 						
-						me.my_todo_filters.allocated_to = $('#my_todos_assigned_by').val()
+						me.my_todo_filters.assigned_by = $('#my_todos_assigned_by').val()
 						
 						me.my_todo_filters.reference_type = $('#my_todos_ref_type').val()
 						
@@ -63,7 +63,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						me.assigned_todo_filters.date = $('#my_assigned_date').val()
 						me.assigned_todo_filters.reference_type = $('#assigned_reference_type').val()
 						me.assigned_todo_filters.priority = $('#assigned_priority').val()
-						me.assigned_todo_filters.user = $('#assigned_to').val()
+						me.assigned_todo_filters.allocated_to = $('#assigned_to').val()
 						
 						this.getDefault()
 						console.log('after gaf') 

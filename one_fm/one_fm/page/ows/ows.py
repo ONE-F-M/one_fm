@@ -1,29 +1,35 @@
 import frappe
 import json
 from bs4 import BeautifulSoup
+from frappe.utils import get_date_str
 
 @frappe.whitelist()
 def get_profile():
     return frappe.get_doc("User", frappe.session.user)
 
+
+def generate_cond(dict_):
+    cond = ""
+    for each in dict_:
+        if dict_.get(each):
+            if each == 'date':
+                dateformat = get_date_str(dict_.get(each))
+                cond += f" AND {each} = '{dateformat}' "
+            elif each == 'name':
+                cond += f" AND {each} LIKE '%{dict_.get(each)}%' "
+            else:
+                cond += f" AND {each} = '{dict_.get(each)}' "
+    return cond
+
+
 @frappe.whitelist()
 def get_defaults(args=None, has_todo_filter=0, has_assigned_filter=0):
     if args:
         args = json.loads(args)
-        # cond = ""
         
-        mytodo_cond = " AND ".join([f"{key} {'like' if key == 'name' else '='} '{value}'" for key, value in args[0].items() if value != ""])
+        mytodo_cond = generate_cond(args[0]) if int(has_todo_filter) else ""
+        myassigned_cond = generate_cond(args[1]) if int(has_assigned_filter) else ""
         
-        mytodo_cond =" And "+mytodo_cond if mytodo_cond else ""
-        myassigned_cond = " AND ".join([f"{key} {'like' if key == 'name' else '='} '{value}'" for key, value in args[1].items() if value != ""])
-
-        myassigned_cond=" And "+myassigned_cond if myassigned_cond else ""
-        # for a in args:
-        #     if args[a]:
-        #         if a == 'name':
-        #             cond += "AND "+a+" LIKE '%"+args[a]+"%' "
-        #         else:
-        #             cond += "AND "+a+" = '"+args[a]+"' "
                     
     data = frappe._dict({})  
     data.reset_filters  = 0
