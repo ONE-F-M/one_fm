@@ -1114,7 +1114,7 @@ function get_roster_data(page, isOt) {
 			},
 			callback: function(res) {
 				// code snippet
-				console.log(res);
+				// console.log(res);
 				error_handler(res);
 				render_roster(res.data, page, isOt);
 			}
@@ -1158,7 +1158,6 @@ let attendance_abbr_map = {
 function render_roster(res, page, isOt) {
 	let { operations_roles_data, employees_data, total } = res;
 	page.pagination.total = total;
-
 	let b1 = performance.now();
 	let $rosterMonth = isOt ? $('.rosterOtMonth') : $('.rosterMonth');
 	let $rosterMonthbody = isOt ? $('.rosterOtMonth').find('#calenderviewtable tbody') : $('.rosterMonth').find('#calenderviewtable tbody');
@@ -1303,7 +1302,7 @@ function render_roster(res, page, isOt) {
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application+'|'+leave_type}</span></div>
+							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 					</td>`;
 				} else {
 					
@@ -1378,7 +1377,7 @@ function render_roster(res, page, isOt) {
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application+'|'+leave_type}</span></div>
+							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 					</td>`;
 				} else {
 					

@@ -43,6 +43,8 @@ def get_permission_query_conditions(user):
 
 	if "System Manager" in user_roles:
 		return ""
+	if "Operation Admin" in user_roles:
+		return ""
 
 	# Get roles allowed to Roster Employee Actions doctype
 	doctype_roles = get_doctype_roles('Roster Employee Actions')
