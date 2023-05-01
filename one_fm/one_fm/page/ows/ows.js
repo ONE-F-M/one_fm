@@ -236,5 +236,5 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 			}
 		)
 		app.mount('#OKR-APP')
-	}, 2000)
+	}, 5000)
 }
