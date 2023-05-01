@@ -9,14 +9,14 @@ frappe.query_reports["Leave Balance by Type"] = {
 			"label": __("From Date"),
 			"fieldtype": "Date",
 			"reqd": 1,
-			"default": frappe.defaults.get_default("year_start_date")
+			"default": frappe.datetime.add_days(frappe.datetime.get_today(), -1)
 		},
 		{
 			"fieldname": "to_date",
 			"label": __("To Date"),
 			"fieldtype": "Date",
 			"reqd": 1,
-			"default": frappe.defaults.get_default("year_end_date")
+			"default": frappe.datetime.get_today()
 		},
 		{
 			"fieldname": "company",
