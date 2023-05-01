@@ -2304,7 +2304,7 @@ def send_verification_code(doctype, document_name):
             If this was not you, ignore this email.<br>
             """.format(doctype=doctype, document=document_name, verification_code=verification_code)
         header = [_('Verfication Code'), 'blue']
-        sendemail([employee_user_email], subject=subject, header=header,message=message, reference_doctype=doctype, reference_name=document_name, delay=False)
+        sendemail([employee_user_email], subject=subject, header=header,message=message, reference_doctype=doctype, reference_name=document_name, delayed=False)
 
         cache_key = hashlib.md5((employee_user_email + doctype + document_name).encode('utf-8')).hexdigest()
         cache_value = hashlib.md5((employee_user_email + doctype + document_name + str(verification_code)).encode('utf-8')).hexdigest()
@@ -2396,7 +2396,7 @@ def notify_on_close(doc, method):
     """.format(issue_id = doc.name, url= doc.get_url())
 
     if doc.status == "Closed":
-        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delay=False)
+        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False)
 
 def assign_issue(doc, method):
     '''
@@ -2640,7 +2640,7 @@ def get_users_next_action_data(transitions, doc, recipients):
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
-    queue_send_workflow_action_email(doc=doc, recipients=recipients)
+    frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
 
 
 def queue_send_workflow_action_email(doc, recipients):
@@ -2664,7 +2664,7 @@ def queue_send_workflow_action_email(doc, recipients):
         }
         email_args.update(common_args)
         email_args['subject'] = subject
-        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+        frappe.enqueue(method=sendemail, queue="short", **email_args)
     else:
         for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
             email_args = {
@@ -2675,7 +2675,7 @@ def queue_send_workflow_action_email(doc, recipients):
             }
             email_args.update(common_args)
             email_args['subject'] = subject
-        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+        frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 
 def workflow_approve_reject(doc, recipients=None):
