@@ -99,6 +99,7 @@ doctype_js = {
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
     "Wiki Page": "public/js/doctype_js/wiki_page.js",
+    "Error Log": "public/js/doctype_js/error_log.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
