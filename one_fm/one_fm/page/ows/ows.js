@@ -48,7 +48,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 				},
 				methods: {
 					getAllFilters(){
-						console.log('calling gaf') 
+						
 						let me = this;
 						
 						me.my_todo_filters.name = $('#my_todos_id').val()
@@ -66,7 +66,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						me.assigned_todo_filters.allocated_to = $('#assigned_to').val()
 						
 						this.getDefault()
-						console.log('after gaf') 
+						
 					},
 					setupTriggers(){
 						let me = this
@@ -74,7 +74,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						$('#my_todos_id').change(function(){
 							me.getAllFilters()
 						})
-						console.log('uhtyygjku') 
+						
 						$('#my_todos_ref_type').change(()=>{
 							me.getAllFilters()
 						})
@@ -98,11 +98,11 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						$('#assigned_to').change(()=>{
 							me.getAllFilters()
 						})
-						console.log('ygyygyu') 
+						
 					},
 					setupFilters(is_my_todo){
 						let me = this;
-						console.log(me)
+						
 						let assigned_data = [{ 'id': '', 'text': 'Select Assigned' }]
 						let reference_data = [{ 'id': '', 'text': 'Select Reference' }]
 						let priotity_data = [{ 'id': '', 'text': 'Select Priority' },
@@ -152,7 +152,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					},
 					getDefault(){
 						let me = this;
-						console.log(me)
+						
 						frappe.call({
 							method: "one_fm.one_fm.page.ows.ows.get_defaults",
 							args: {
@@ -171,7 +171,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									me.personal_projects = res.personal_projects;
 									me.doctype_ref = res.filter_references[0]
 									me.user_ref = res.filter_references[1]
-									console.log(res)
+									
 									if(res.reset_filters == 1){
 										me.setupFilters(1)
 										me.setupFilters(0)
@@ -234,6 +234,10 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							}).datepicker('update', new Date(),
 							);						
 					},
+					 open_ref(link){
+
+							window.open(link)
+						},
 					copyText(link_to_copy) {
 						const show_success_alert = () => {
 							frappe.show_alert({
@@ -260,5 +264,5 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 			}
 		)
 		app.mount('#OKR-APP')
-	}, 2000)
+	}, 5000)
 }

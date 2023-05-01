@@ -37,11 +37,13 @@
                                                 <div class="widget-head">
                                                     <div class="widget-label">
                                                       <div class="widget-title"><span class="ellipsis" title="Routine Tasks">Routine Tasks (Count)</span></div>
+                                                      
                                                       <div class="widget-subtitle"></div>
                                                     </div>
                                                   </div>
                                                 <ul>
                                                     <li><a href="#">Routine Task 1</a></li>
+                                                    
                                                     <li><a href="#">Routine Task 2</a></li>
                                                     <li><a href="#">Routine Task 3</a></li>
                                                     <li><a href="#">Routine Task 4</a></li>
@@ -73,7 +75,11 @@
                                             
                                             <div class="widget-head">
                                                 <div class="widget-label">
-                                                  <div class="widget-title"><span class="ellipsis" title="Personal Project">Personal Project</span></div>
+                                                  <!-- <div class="widget-title"><span class="ellipsis" title="Personal Project">Personal Project</span></div> -->
+                                                  <div class="section-head">
+                                                    Personal Projects
+                                                    <span class="ml-2 collapse-indicator mb-1" style="display: none;"></span>
+                                                </div>
                                                   <div class="widget-subtitle"></div>
                                                 </div>
                                               </div>
@@ -108,47 +114,52 @@
                                             <h4>My Todo</h4>
                                               <form class="needs-validation" novalidate>
                                                 <div class="form-row">
-                                                  <div class="col-md-2 mb-3 text-center">
+                                                  <div class="col-md-3 mb-3 text-center">
                                                     <input type="text" class="form-control text-center" placeholder="ID" value="" id = "my_todos_id">
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
                                                      <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" id = "my_todos_date" >
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                    <select id = "my_todos_ref_type" name = "my_todos_ref_type">
+                                                    <div class="control-value like-disabled-input" ><select id = "my_todos_ref_type" name = "my_todos_ref_type">
                                                         <option>Reference Type</option>
                                                   </select>
+                                                    </div>
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
+                                                    <div class="control-value like-disabled-input" >
                                                     <select id = "my_todos_priority" name = "my_todos_priority">
                                                         <option>Priority</option>
                                                       </select>
+                                                      </div>
                                                 </div>
-                                                  <div class="col-md-2 mb-3 text-center">
+                                                  <div class="col-md-3 mb-3 text-center">
+                                                    <div class="control-value like-disabled-input" >
                                                     <select id = "my_todos_assigned_by" name = "my_todos_assigned_by">
                                                         <option>Assigned By</option>
                                                         
                                                       </select>
+                                                      </div>
                                                   </div>
                                                   
                                                 </form>
                                               </div>
 
                                             <div class="form-row" v-for="todo in my_todos">
-                                                <div class="col-md-2 mb-3 text-center">
-                                                    <a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.description.substring(0,70) %]</a>
+                                                <div class="col-md-3 mb-3 text-center">
+                                                    <div class="control-value like-disabled-input" > <a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.name %]</a> </div>
                                                  </div>
                                                 <div class="col-md-2 mb-3 text-center">
-                                                    <p @click.prevent="showTodo(1, todo.date)">[% todo.date %]</p>
+                                                    <div class="control-value like-disabled-input" > <p @click.prevent="showTodo(1, todo.date)">[% todo.date %]</p></div>
                                                  </div>
                                                  <div class="col-md-2 mb-3 text-center">
-                                                    <p  @click.prevent="showTodo(1, todo.reference_type)">[% todo.reference_type %]</p>
+                                                    <div class="control-value like-disabled-input" > <p  @click.prevent="showTodo(1, todo.reference_type)">[% todo.reference_type %]</p></div>
                                                  </div>
                                                  <div class="col-md-2 mb-3 text-center">
-                                                    <p  @click.prevent="showTodo(1, todo.priority)">[% todo.priority %]</a>
+                                                    <div class="control-value like-disabled-input" > <p  @click.prevent="showTodo(1, todo.priority)">[% todo.priority %]</p></div>
                                                  </div>
                                                  <div class="col-md-3 mb-3 text-center">
-                                                    <p  @click.prevent="showTodo(1, todo.assigned_by)">[% todo.assigned_by %]</p>
+                                                    <div class="control-value like-disabled-input" > <p  @click.prevent="showTodo(1, todo.assigned_by)">[% todo.assigned_by %]</p></div>
                                                  </div>
                                                  
                                                  <hr>
@@ -167,45 +178,52 @@
                                             <h4>Assigned Todo</h4>
                                             <form class="needs-validation" novalidate>
                                                 <div class="form-row">
-                                                  <div class="col-md-2 mb-3 text-center">
+                                                  <div class="col-md-3 mb-3 text-center">
                                                      <input type="text" class="form-control text-center " placeholder="ID" value=""  id = "my_assigned_id">
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value=""  id = "my_assigned_date">
                                                  </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                    <select id = "assigned_reference_type" name = "assigned_reference_type">
-                                                        <option>Reference Type</option>
-                                                    </select>
+                                                    <div class="control-value like-disabled-input" > <select id = "assigned_reference_type" name = "assigned_reference_type">
+                                                        <option>Reference Type</option></div>
+                                                    </select></div>
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
-                                                    <select id = "assigned_priority" name = "assigned_priority">
+                                                    <div class="control-value like-disabled-input" > <select id = "assigned_priority" name = "assigned_priority">
                                                         <option>Priority</option>
-                                                    </select>
+                                                    </select></div>
                                                   </div>
-                                                  <div class="col-md-2 mb-3 text-center">
-                                                    <select id = "assigned_to" name = "assigned_to">
+                                                  <div class="col-md-3 mb-3 text-center">
+                                                    <div class="control-value like-disabled-input" > <select id = "assigned_to" name = "assigned_to">
                                                         <option>Assigned To</option>
-                                                    </select>
+                                                    </select></div>
                                                 </div>
                                                 </form>
                                               </div>
                                             <!-- <ul> -->
                                                 <div class="form-row" v-for="todo in assigned_todos">
-                                                    <div class="col-md-2 mb-3 text-center">
-                                                        <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.description.substring(0,70) %]</a>
+                                                    <div class="col-md-3 mb-3 text-center">
+                                                        <div class="control-value like-disabled-input" > <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a></div>
                                                      </div>
                                                     <div class="col-md-2 mb-3 text-center">
-                                                        <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p>
+                                                        <div class="control-value like-disabled-input" > <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p></div>
+                                                       
                                                      </div>
                                                      <div class="col-md-2 mb-3 text-center">
+                                                        <div class="control-value like-disabled-input" >
                                                         <p @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</p>
+                                                        </div>
                                                      </div>
                                                      <div class="col-md-2 mb-3 text-center">
+                                                        <div class="control-value like-disabled-input" >
                                                         <p @click.prevent="showTodo(0, todo.priority)">[% todo.priority %]</p>
+                                                        </div>
                                                      </div>
                                                      <div class="col-md-3 mb-3 text-center">
+                                                        <div class="control-value like-disabled-input" >
                                                         <p @click.prevent="showTodo(0, todo.allocated_to)">[% todo.allocated_to %]</p>
+                                                        </div>
                                                      </div>
                                                      <hr>
                                                 </div>
@@ -238,58 +256,68 @@
                     <form class="needs-validation" novalidate>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <label for="validationTooltip01">Title</label>
+                                <!-- <label for="validationTooltip01">Title</label> -->
+                                <label class="control-label" style="padding-right: 0px;">Title</label>
                                 <input type="text" class="form-control" value="Mark" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-6 mb-3">
-                            <label for="validationTooltip01">Status</label>
-                                <input type="text" class="form-control" :value="todo_pane.status" ref="message" disabled>
+                            
+                            <label class="control-label" style="padding-right: 0px;">Status</label>
+                                <input type="text" class="form-control" :value="todo_pane.status" disabled>
                             </div>
                             <div class="col-md-6 mb-3">
-                            <label for="validationTooltip01">Due Date</label>
+                            
+                            <label class="control-label" style="padding-right: 0px;">Due Date</label>
                                 <input type="text" class="form-control" :value="todo_pane.date" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <label for="validationTooltip01">Description</label>
+                                
+                                <label class="control-label" style="padding-right: 0px;">Description</label>
                                 <textarea type="text" class="form-control" :value="todo_pane.description" disabled></textarea>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <label for="validationTooltip01">Priority</label>
+                                
+                                <label class="control-label" style="padding-right: 0px;">Priority</label>
                                 <input type="text" class="form-control"  :value="todo_pane.priority" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-6 mb-3">
-                                <label for="validationTooltip01">Assigned By</label>
+                                <label class="control-label" style="padding-right: 0px;">Assigned By</label>
+                                
                                 <input type="text" class="form-control" :value="todo_pane.assigned_by" disabled>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="validationTooltip01">Allocated To</label>
+                                
+                                <label class="control-label" style="padding-right: 0px;">Allocated To</label>
                                 <input type="text" class="form-control" :value="todo_pane.allocated_to" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <label for="validationTooltip01">Reference Type</label>
+                                
+                                <label class="control-label" style="padding-right: 0px;">Reference Type</label>
                                 <input type="text" class="form-control" :value="todo_pane.reference_type" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                <label for="validationTooltip01">User & Full Name</label>
+                               
+                                <label class="control-label" style="padding-right: 0px;">User & Full Name</label>
                                 <input type="text" class="form-control" :value="todo_pane.assigned_by_full_name" disabled>
                             </div>
                         </div>
                         <div class="form-row" :style="">
                             <div class="col-md-12" title="View the document">
                                 <label for="validationTooltip01"></label>
-                                <a :href="todo_pane.url" class="btn btn-block btn-warning text-center" target="_blank">Go to Ref</a>
+                                
+                                <a href="#" @click="open_ref(todo_pane.url)" class="btn btn-block btn-warning text-center" target="_blank">Go to Ref</a>
                             </div>
                             <div class="col-md-12 mb-3" title="Copy the link to document">
                                 <label for="validationTooltip01"></label>
@@ -308,4 +336,5 @@
         </div>
     </div>
     </div>
+    
 </div>
