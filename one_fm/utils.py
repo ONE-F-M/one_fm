@@ -2640,7 +2640,7 @@ def get_users_next_action_data(transitions, doc, recipients):
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
-    frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
+    queue_send_workflow_action_email(doc=doc, recipients=recipients)
 
 
 def queue_send_workflow_action_email(doc, recipients):
@@ -2651,6 +2651,7 @@ def queue_send_workflow_action_email(doc, recipients):
     user_data_map = get_users_next_action_data(next_possible_transitions, doc, recipients)
 
     common_args = get_common_email_args(doc)
+    common_args.pop('attachments')
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
