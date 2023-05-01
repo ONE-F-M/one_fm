@@ -91,7 +91,6 @@
   },
   {
    "fetch_from": "year.year_start_date",
-   "fetch_if_empty": 1,
    "fieldname": "start_date",
    "fieldtype": "Date",
    "label": "Start Date"
@@ -102,7 +101,6 @@
   },
   {
    "fetch_from": "year.year_end_date",
-   "fetch_if_empty": 1,
    "fieldname": "end_date",
    "fieldtype": "Date",
    "label": "End Date"
@@ -154,7 +152,7 @@
   }
  ],
  "links": [],
- "modified": "2023-05-01 12:19:43.730750",
+ "modified": "2023-05-01 13:15:18.702609",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Objective Key Result",
