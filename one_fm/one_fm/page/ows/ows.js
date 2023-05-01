@@ -190,6 +190,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							});
 							if (todo.length>0){
 								me.todo_pane = todo[0];
+								me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
 							}
 						} else {
 							let todo = me.assigned_todos.filter(function(item){
@@ -197,6 +198,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							});
 							if (todo.length>0){
 								me.todo_pane = todo[0];
+								me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
 							}
 
 						}
