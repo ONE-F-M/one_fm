@@ -234,6 +234,10 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							}).datepicker('update', new Date(),
 							);						
 					},
+					 open_ref(link){
+
+							window.open(link)
+						},
 					copyText(link_to_copy) {
 						const show_success_alert = () => {
 							frappe.show_alert({

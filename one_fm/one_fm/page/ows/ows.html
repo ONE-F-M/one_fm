@@ -204,7 +204,7 @@
                                             <!-- <ul> -->
                                                 <div class="form-row" v-for="todo in assigned_todos">
                                                     <div class="col-md-3 mb-3 text-center">
-                                                        <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a>
+                                                        <div class="control-value like-disabled-input" > <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a></div>
                                                      </div>
                                                     <div class="col-md-2 mb-3 text-center">
                                                         <div class="control-value like-disabled-input" > <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p></div>
@@ -316,7 +316,8 @@
                         <div class="form-row" :style="">
                             <div class="col-md-12" title="View the document">
                                 <label for="validationTooltip01"></label>
-                                <a :href="todo_pane.url" class="btn btn-block btn-warning text-center" target="_blank">Go to Ref</a>
+                                
+                                <a :href="todo_pane.url" @click="open_ref(todo_pane.url)" class="btn btn-block btn-warning text-center" target="_blank">Go to Ref</a>
                             </div>
                             <div class="col-md-12 mb-3" title="Copy the link to document">
                                 <label for="validationTooltip01"></label>
@@ -335,4 +336,5 @@
         </div>
     </div>
     </div>
+    
 </div>
