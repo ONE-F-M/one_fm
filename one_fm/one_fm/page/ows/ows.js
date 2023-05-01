@@ -216,7 +216,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						$("#my_todos_date").datepicker({
 							'language':'en',
 							'autoClose':1,
-							'dateFormat':'dd-mm-yyyy',
+							'dateFormat':'yyyy-mm-dd',
 							onSelect: function(dateText) {
 								me.getAllFilters()
 							}
@@ -225,7 +225,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						$("#my_assigned_date").datepicker({
 							'language':'en',
 							'autoClose':1,
-							'dateFormat':'dd-mm-yyyy',
+							'dateFormat':'yyyy-mm-dd',
 							onSelect: function(dateText) {
 								me.getAllFilters()
 							}
