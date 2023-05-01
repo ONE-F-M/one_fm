@@ -190,6 +190,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							});
 							if (todo.length>0){
 								me.todo_pane = todo[0];
+								me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
 							}
 						} else {
 							let todo = me.assigned_todos.filter(function(item){
@@ -197,6 +198,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							});
 							if (todo.length>0){
 								me.todo_pane = todo[0];
+								me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
 							}
 
 						}
@@ -231,6 +233,28 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							}
 							}).datepicker('update', new Date(),
 							);						
+					}
+				},
+				copyText(link_to_copy) {
+					const show_success_alert = () => {
+						frappe.show_alert({
+							indicator: "green",
+							message: __("Copied to clipboard."),
+						});
+					};
+					const show_fail_alert = () => {
+						frappe.show_alert({
+							indicator: "red",
+							message: __("Nothing to Copy."),
+						});
+					};
+					if(link_to_copy == undefined){
+						show_fail_alert();
+					}
+					else {
+							if (navigator.clipboard && window.isSecureContext) {
+								navigator.clipboard.writeText(link_to_copy).then(show_success_alert);
+							} 
 					}
 				}
 			}
