@@ -52,7 +52,7 @@ class RoutineTask(Document):
 			auto_repeat.start_date = today()
 			auto_repeat.frequency = self.frequency
 			if auto_repeat.frequency in ['Monthly', 'Quarterly', 'Half-yearly', 'Yearly']:
-				day_in_frequency = day_of_the_frequency(auto_repeat.frequency)
+				day_in_frequency = int(day_of_the_frequency(auto_repeat.frequency))
 				if day_in_frequency > 28 and auto_repeat.frequency == 'Monthly':
 					day_in_frequency = 28
 				auto_repeat.repeat_on_day = day_in_frequency
@@ -71,6 +71,8 @@ class RoutineTask(Document):
 			if self.remark:
 				task.description += "<br/><br/><b>Remarks:</b><br/>" + self.remark
 			task.expected_time = self.hours_per_frequency
+			if self.erp_document:
+				task.routine_erp_document = self.erp_document
 			task.save(ignore_permissions=True)
 			self.db_set('task_reference', task.name)
 			return task.name
