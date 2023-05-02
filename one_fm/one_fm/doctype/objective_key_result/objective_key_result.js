@@ -3,11 +3,8 @@
 
 frappe.ui.form.on('Objective Key Result', {
 	refresh: function(frm) {
-		if(!frm.is_new()){
-			frm.set_df_property('okr_title_section', 'hidden', true);
-		}
-	set_objective_option_to_kr(frm);
-	set_objective_link(frm);
+		set_objective_option_to_kr(frm);
+		set_objective_link(frm);
 		set_objectoves_description(frm);
 	},
 	description: function(frm) {
@@ -91,8 +88,5 @@ var set_objective_link = function(frm) {
 		});
 
 	}
-	
+
 };
-
-
-

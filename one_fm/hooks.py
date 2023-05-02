@@ -99,6 +99,7 @@ doctype_js = {
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
     "Wiki Page": "public/js/doctype_js/wiki_page.js",
+    "Error Log": "public/js/doctype_js/error_log.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -743,7 +744,6 @@ override_whitelisted_methods = {
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
-
 }
 #ShiftType.process_auto_attendance = process_auto_attendance
 
@@ -760,7 +760,10 @@ jenv = {
     ]
 }
 
-after_migrate = "one_fm.after_migrate.execute.comment_timesheet_in_hrms"
+after_migrate = [
+    "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
+    "one_fm.after_migrate.execute.disable_workflow_emails",
+]
 
 # add more info to session on boot
 # on_session_creation = "one_fm.session_hooks.on_session_creation"

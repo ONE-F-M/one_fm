@@ -1844,7 +1844,7 @@ def create_roster_post_actions():
     """
     This function creates a Roster Post Actions document that issues actions to supervisors to fill post types that are not filled for a given date range.
     """
-
+    
     op_shift = frappe.db.sql(f""" select supervisor, name from `tabOperations Shift` """)
     shift_dict = {}
     for item in op_shift:
@@ -1861,23 +1861,34 @@ def create_roster_post_actions():
     operations_roles_not_filled_set = set()
 
     list_of_dict_of_operations_roles_not_filled = []
-
+    
     # Fetch post schedules in the date range that are active
     post_schedules = frappe.db.get_list("Post Schedule", {'date': ['between', (start_date, end_date)], 'post_status': 'Planned'}, ["date", "shift", "operations_role", "post"], order_by="date asc")
     # Fetch employee schedules for employees who are working
     employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "operations_role"], order_by="date asc")
-
+    
     for ps in post_schedules:
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
         if not any(es.date == ps.date and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
             if ps.operations_role:
-                operations_roles_not_filled_set.add(ps.operations_role)
-                list_of_dict_of_operations_roles_not_filled.append(ps)
+                # Fetch the project and confirm if the is_active field of the project is set,omit operation roles where the project is not active               
+                project_ = frappe.get_value("Operations Role",ps.operations_role,'project')
+                if project_:
+                    is_active = frappe.get_value("Project",project_,'is_active')
+                    if is_active == "Yes":
+                        operations_roles_not_filled_set.add(ps.operations_role)
+                        list_of_dict_of_operations_roles_not_filled.append(ps)   
+                else:
+                    operations_roles_not_filled_set.add(ps.operations_role)
+                    list_of_dict_of_operations_roles_not_filled.append(ps)
+                    
+
+                
 
 
     # Convert set to tuple for passing it in the sql query as a parameter
     operations_roles_not_filled = tuple(operations_roles_not_filled_set)
-
+    
     if not operations_roles_not_filled:
         return
 
@@ -1891,6 +1902,7 @@ def create_roster_post_actions():
 
 
     # For each supervisor, create post actions to fill post type specifying the post types not filled
+    
     for res in result:
         supervisor = res[0]
         operations_roles = res[1].split(",")
@@ -1907,6 +1919,7 @@ def create_roster_post_actions():
                     second_item["quantity"] = second_item["quantity"] + 1
                     break
             item.update({"quantity": 1})
+            
             second_check_list.append(item)
             check_list.remove(item)
 
@@ -2293,7 +2306,7 @@ def send_verification_code(doctype, document_name):
             If this was not you, ignore this email.<br>
             """.format(doctype=doctype, document=document_name, verification_code=verification_code)
         header = [_('Verfication Code'), 'blue']
-        sendemail([employee_user_email], subject=subject, header=header,message=message, reference_doctype=doctype, reference_name=document_name, delay=False)
+        sendemail([employee_user_email], subject=subject, header=header,message=message, reference_doctype=doctype, reference_name=document_name, delayed=False)
 
         cache_key = hashlib.md5((employee_user_email + doctype + document_name).encode('utf-8')).hexdigest()
         cache_value = hashlib.md5((employee_user_email + doctype + document_name + str(verification_code)).encode('utf-8')).hexdigest()
@@ -2385,7 +2398,7 @@ def notify_on_close(doc, method):
     """.format(issue_id = doc.name, url= doc.get_url())
 
     if doc.status == "Closed":
-        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delay=False)
+        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False)
 
 def assign_issue(doc, method):
     '''
@@ -2640,6 +2653,7 @@ def queue_send_workflow_action_email(doc, recipients):
     user_data_map = get_users_next_action_data(next_possible_transitions, doc, recipients)
 
     common_args = get_common_email_args(doc)
+    common_args.pop('attachments')
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
@@ -2652,7 +2666,7 @@ def queue_send_workflow_action_email(doc, recipients):
         }
         email_args.update(common_args)
         email_args['subject'] = subject
-        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+        frappe.enqueue(method=sendemail, queue="short", **email_args)
     else:
         for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
             email_args = {
@@ -2663,7 +2677,7 @@ def queue_send_workflow_action_email(doc, recipients):
             }
             email_args.update(common_args)
             email_args['subject'] = subject
-        frappe.enqueue(method=frappe.sendmail, queue="short", **email_args)
+        frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 
 def workflow_approve_reject(doc, recipients=None):
@@ -2952,34 +2966,38 @@ def post_login(self):
     self.set_user_info()
 
     # log administrator
-    if frappe.session.user == 'Administrator':
-        session = frappe.session.data
-        environ = frappe._dict(frappe.local.request.environ)
-        doc = frappe.get_doc(
-            {
-            'doctype':'Administrator Auto Log',
-            'ip': session.session_ip,
-            'login_time': session.last_updated,
-            'session_expiry': session.session_expiry,
-            'device': session.device,
-            'session_country': json.dumps(session.session_country),
-            'http_sec_ch_ua':environ.HTTP_SEC_CH_UA,
-            'user_agent':environ.HTTP_USER_AGENT,
-            'platform':environ.HTTP_SEC_CH_UA_PLATFORM,
-            'ip_detail': json.dumps(requests.get(f'https://ipapi.co/{session.session_ip}/json/').json())
-            }
-        ).insert()
-        frappe.db.commit()
-    else:
-        if not frappe.cache().get_value(frappe.session.user):
-            try:
-                if not frappe.session.user:
+    try:
+        if frappe.session.user == 'Administrator':
+            session = frappe.session.data
+            environ = frappe._dict(frappe.local.request.environ)
+            doc = frappe.get_doc(
+                {
+                'doctype':'Administrator Auto Log',
+                'ip': session.session_ip,
+                'login_time': session.last_updated,
+                'session_expiry': session.session_expiry,
+                'device': session.device,
+                'session_country': json.dumps(session.session_country),
+                'http_sec_ch_ua':environ.HTTP_SEC_CH_UA,
+                'user_agent':environ.HTTP_USER_AGENT,
+                'platform':environ.HTTP_SEC_CH_UA_PLATFORM,
+                'ip_detail': json.dumps(requests.get(f'https://ipapi.co/{session.session_ip}/json/').json())
+                }
+            ).insert()
+            frappe.db.commit()
+        else:
+            if not frappe.cache().get_value(frappe.session.user):
+                try:
+                    if not frappe.session.user:
+                        frappe.cache().set_value(frappe.session.user, frappe._dict({}))
+                    else:
+                        employee = frappe.db.get_value('Employee', {'user_id':frappe.session.user }, 'name')
+                        frappe.cache().set_value(frappe.session.user, frappe._dict({'employee':employee}))
+                except:
                     frappe.cache().set_value(frappe.session.user, frappe._dict({}))
-                else:
-                    employee = frappe.db.get_value('Employee', {'user_id':frappe.session.user }, 'name')
-                    frappe.cache().set_value(frappe.session.user, frappe._dict({'employee':employee}))
-            except:
-                frappe.cache().set_value(frappe.session.user, frappe._dict({}))
+    except:
+        pass
+
 
 
 def validate_reports_to(self):

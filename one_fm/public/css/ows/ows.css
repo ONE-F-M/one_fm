@@ -1,3 +1,6 @@
+@import url("/css/select2.min.css");
+
+
 .scroll-box {
     overflow:scroll; 
     height:200px;
