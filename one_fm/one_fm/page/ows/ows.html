@@ -148,13 +148,13 @@
                                               </div>
 
                                             <div class="form-row" v-for="todo in my_todos">
-                                                <div class="col-md-3 mb-3 text-center">
+                                                <div class="col-md-2 mb-3 text-center">
                                                     <div class="control-value like-disabled-input" > <a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.name %]</a> </div>
                                                  </div>
                                                 <div class="col-md-2 mb-3 text-center">
                                                     <div class="control-value like-disabled-input" > <p @click.prevent="showTodo(1, todo.date)">[% todo.date %]</p></div>
                                                  </div>
-                                                 <div class="col-md-2 mb-3 text-center">
+                                                 <div class="col-md-3 mb-3 text-center">
                                                     <div class="control-value like-disabled-input" > <p  @click.prevent="showTodo(1, todo.reference_type)">[% todo.reference_type %]</p></div>
                                                  </div>
                                                  <div class="col-md-2 mb-3 text-center">
@@ -180,13 +180,13 @@
                                             <h4>Assigned Todo</h4>
                                             <form class="needs-validation" novalidate>
                                                 <div class="form-row">
-                                                  <div class="col-md-3 mb-3 text-center">
+                                                  <div class="col-md-2 mb-3 text-center">
                                                      <input type="text" class="form-control text-center " placeholder="ID" value=""  id = "my_assigned_id">
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
                                                     <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value=""  id = "my_assigned_date">
                                                  </div>
-                                                  <div class="col-md-2 mb-3 text-center">
+                                                  <div class="col-md-3 mb-3 text-center">
                                                     <div class="control-value like-disabled-input" > <select id = "assigned_reference_type" name = "assigned_reference_type">
                                                         <option>Reference Type</option></div>
                                                     </select></div>
