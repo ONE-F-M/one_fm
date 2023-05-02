@@ -1385,6 +1385,10 @@ def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, 
 	)
 
 def validate_job_applicant(doc, method):
+    # update night shift
+    if doc.one_fm_night_shift:
+        frappe.db.set_value("Job Applicant", doc.name, "one_fm_night_shift", doc.one_fm_night_shift)
+    
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     # validate_pam_file_number_and_pam_designation(doc, method)
