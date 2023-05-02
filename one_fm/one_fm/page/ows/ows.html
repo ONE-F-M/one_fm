@@ -69,13 +69,9 @@
                                                   <div class="widget-subtitle"></div>
                                                 </div>
                                               </div>
-                                            <ul>
-                                            <li><a href="#">Active Repetitive 1</a></li>
-                                            <li><a href="#">Active Repetitive 2</a></li>
-                                            <li><a href="#">Active Repetitive 3</a></li>
-                                            <li><a href="#">Active Repetitive 4</a></li>
-                                            <li><a href="#">Active Repetitive 5</a></li>
-                                            </ul>
+																							<ul>
+	                                                <li v-for="project in active_repetitive_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
+	                                            </ul>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box3">
 

@@ -30,6 +30,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						assigned_todos: [],
 						scrum_projects: [],
 						personal_projects: [],
+						active_repetitive_projects: [],
 						my_todo_filters : new Object,
 						assigned_todo_filters : new Object,
 						doctype_ref:[],
@@ -174,6 +175,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									me.assigned_todos = res.assigned_todos;
 									me.scrum_projects = res.scrum_projects;
 									me.personal_projects = res.personal_projects;
+									me.active_repetitive_projects = res.active_repetitive_projects;
 									me.doctype_ref = res.filter_references[0]
 									me.user_ref = res.filter_references[1]
 
