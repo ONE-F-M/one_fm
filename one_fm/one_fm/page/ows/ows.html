@@ -116,13 +116,13 @@
                                             <h4>My Todo</h4>
                                               <form class="needs-validation" novalidate>
                                                 <div class="form-row">
-                                                  <div class="col-md-3 mb-3 text-center">
+                                                  <div class="col-md-2 mb-3 text-center">
                                                     <input type="text" class="form-control text-center" placeholder="ID" value="" id = "my_todos_id">
                                                   </div>
                                                   <div class="col-md-2 mb-3 text-center">
                                                      <input type="text" class="form-control text-center mydatepicker" placeholder="Due Date" value="" id = "my_todos_date" >
                                                   </div>
-                                                  <div class="col-md-2 mb-3 text-center">
+                                                  <div class="col-md-3 mb-3 text-center">
                                                     <div class="control-value like-disabled-input" ><select id = "my_todos_ref_type" name = "my_todos_ref_type">
                                                         <option>Reference Type</option>
                                                   </select>
@@ -205,14 +205,14 @@
                                               </div>
                                             <!-- <ul> -->
                                                 <div class="form-row" v-for="todo in assigned_todos">
-                                                    <div class="col-md-3 mb-3 text-center">
+                                                    <div class="col-md-2 mb-3 text-center">
                                                         <div class="control-value like-disabled-input" > <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a></div>
                                                      </div>
                                                     <div class="col-md-2 mb-3 text-center">
                                                         <div class="control-value like-disabled-input" > <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p></div>
 
                                                      </div>
-                                                     <div class="col-md-2 mb-3 text-center">
+                                                     <div class="col-md-3 mb-3 text-center">
                                                         <div class="control-value like-disabled-input" >
                                                         <p @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</p>
                                                         </div>
