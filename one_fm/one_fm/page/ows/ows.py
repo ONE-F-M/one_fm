@@ -71,6 +71,8 @@ def get_defaults(args=None, has_todo_filter=0, has_assigned_filter=0):
     data.personal_projects = get_to_do_linked_projects("Personal")
     data.active_repetitive_projects = get_to_do_linked_projects("Active Repetitive")
 
+    data.routine_tasks = get_to_do_linked_routine_task()
+
     data.company_objective = get_company_objective()
     data.company_objective_quarter = get_company_objective('Quarterly')
     data.my_objective = get_my_objective()
@@ -140,6 +142,19 @@ def get_my_objective():
 		if result:
 			return result[0].name
 	return ''
+
+def get_to_do_linked_routine_task():
+	query = '''
+		select
+			ta.name as task, t.name as todo
+		from
+			`tabTask` ta, `tabToDo` t
+		where
+			t.reference_type = "Task" and t.reference_name = ta.name and ta.is_routine_task = 1
+			and allocated_to = '{0}'
+	'''
+
+	return frappe.db.sql(query.format(frappe.session.user), as_dict=True)
 
 def get_to_do_linked_projects(type):
     query = '''

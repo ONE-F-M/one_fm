@@ -16,17 +16,17 @@
                                         </tr>
                                         <tr class="table-success">
                                             <td>Company Objective:
-																							<input type="text" :value="company_objective">
+																							<input class="form-control" type="text" :value="company_objective">
 																						</td>
                                         </tr>
                                         <tr class="table-warning">
                                             <td>Company Objective Quarter:
-																							<input type="text" :value="company_objective_quarter">
+																							<input class="form-control" type="text" :value="company_objective_quarter">
 																						</td>
                                         </tr>
                                         <tr class="table-danger">
                                             <td>My Objective:
-																							<input type="text" :value="my_objective">
+																							<input class="form-control" type="text" :value="my_objective">
 																						</td>
                                         </tr>
                                     </tbody>
@@ -47,19 +47,9 @@
                                                       <div class="widget-subtitle"></div>
                                                     </div>
                                                   </div>
-                                                <ul>
-                                                    <li><a href="#">Routine Task 1</a></li>
-
-                                                    <li><a href="#">Routine Task 2</a></li>
-                                                    <li><a href="#">Routine Task 3</a></li>
-                                                    <li><a href="#">Routine Task 4</a></li>
-                                                    <li><a href="#">Routine Task 5</a></li>
-                                                    <li><a href="#">Routine Task 1</a></li>
-                                                    <li><a href="#">Routine Task 2</a></li>
-                                                    <li><a href="#">Routine Task 3</a></li>
-                                                    <li><a href="#">Routine Task 4</a></li>
-                                                    <li><a href="#">Routine Task 5</a></li>
-                                                </ul>
+																									<ul>
+			                                                <li v-for="task in routine_tasks"><a href="#" @click.prevent="showTodo(1, task.todo)">[% task.task %]</a></li>
+			                                            </ul>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box2">
 
