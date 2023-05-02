@@ -1,0 +1,249 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2023-04-26 21:30:20.871687",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "employee",
+  "column_break_ecn7a",
+  "employee_name",
+  "column_break_hppoh",
+  "department",
+  "process_section",
+  "process_name",
+  "is_erp_process",
+  "erp_document",
+  "task",
+  "task_type",
+  "column_break_im0w3",
+  "frequency",
+  "hours_per_frequency",
+  "coordination_needed",
+  "coordination_method",
+  "column_break_vzutu",
+  "remark",
+  "reporting_section",
+  "report_frequency",
+  "direct_report_reviewer",
+  "direct_report_reviewer_name",
+  "column_break_ppanu",
+  "reporting_checkin_type",
+  "reference_section",
+  "task_reference",
+  "column_break_rgmau",
+  "auto_repeat_reference"
+ ],
+ "fields": [
+  {
+   "fieldname": "process_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Process",
+   "options": "Routine Task Process",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "process_name.is_erp_process",
+   "fieldname": "is_erp_process",
+   "fieldtype": "Check",
+   "label": "Is ERP Process",
+   "read_only": 1
+  },
+  {
+   "depends_on": "is_erp_process",
+   "fieldname": "erp_document",
+   "fieldtype": "Link",
+   "label": "ERP Document",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "task",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Task",
+   "reqd": 1
+  },
+  {
+   "fieldname": "frequency",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Frequency",
+   "options": "\nDaily\nWeekly\nMonthly",
+   "reqd": 1
+  },
+  {
+   "fieldname": "hours_per_frequency",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Hours per Frequency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_hppoh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "description": "Select 'Yes' if needs coordination with other departments / team members for the task.",
+   "fieldname": "coordination_needed",
+   "fieldtype": "Select",
+   "label": "Coordination Needed",
+   "options": "\nYes\nNo",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.coordination_needed == 'Yes'",
+   "fieldname": "coordination_method",
+   "fieldtype": "Table MultiSelect",
+   "label": "Coordination Method",
+   "mandatory_depends_on": "eval:doc.coordination_needed == 'Yes'",
+   "options": "Routine Task Coordination Method"
+  },
+  {
+   "fieldname": "column_break_vzutu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "remark",
+   "fieldtype": "Small Text",
+   "label": "Remark"
+  },
+  {
+   "fieldname": "reporting_checkin_type",
+   "fieldtype": "Small Text",
+   "label": "Reporting / Checkin Type"
+  },
+  {
+   "fieldname": "report_frequency",
+   "fieldtype": "Select",
+   "label": "Report Frequency",
+   "options": "\nDaily\nWeekly\nMonthly"
+  },
+  {
+   "fieldname": "direct_report_reviewer",
+   "fieldtype": "Link",
+   "label": "Direct Report Reviewer",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "direct_report_reviewer.employee_name",
+   "fieldname": "direct_report_reviewer_name",
+   "fieldtype": "Data",
+   "label": "Direct Report Reviewer Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ecn7a",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reporting_section",
+   "fieldtype": "Section Break",
+   "label": "Reporting"
+  },
+  {
+   "fieldname": "process_section",
+   "fieldtype": "Section Break",
+   "label": "Process"
+  },
+  {
+   "fieldname": "column_break_ppanu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_im0w3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "R-TASK-.YYYY.-"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "reference_section",
+   "fieldtype": "Section Break",
+   "label": "Reference"
+  },
+  {
+   "fieldname": "task_reference",
+   "fieldtype": "Link",
+   "label": "Task Reference",
+   "options": "Task",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_rgmau",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "auto_repeat_reference",
+   "fieldtype": "Link",
+   "label": "Auto Repeat Reference",
+   "options": "Auto Repeat",
+   "read_only": 1
+  },
+  {
+   "fieldname": "task_type",
+   "fieldtype": "Link",
+   "label": "Task Type",
+   "options": "Task Type",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2023-04-30 14:15:01.618605",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Routine Task",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
