@@ -44,7 +44,7 @@
    "name": "Project Type-type",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "\nSCRUM\nPersonal",
+   "options": "\nSCRUM\nPersonal\nActive Repetitive",
    "owner": "Administrator",
    "permlevel": 0,
    "precision": "",

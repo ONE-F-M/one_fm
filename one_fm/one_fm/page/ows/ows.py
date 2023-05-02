@@ -68,8 +68,8 @@ def get_defaults(args=None, has_todo_filter=0, has_assigned_filter=0):
                         """,as_dict=1)
 
     data.scrum_projects = get_to_do_linked_projects("SCRUM")
-
     data.personal_projects = get_to_do_linked_projects("Personal")
+    data.active_repetitive_projects = get_to_do_linked_projects("Active Repetitive")
 
     data.company_objective = get_company_objective()
     data.company_objective_quarter = get_company_objective('Quarterly')
@@ -148,7 +148,7 @@ def get_to_do_linked_projects(type):
         from
             `tabProject` p, `tabToDo` t
         where
-            t.reference_type = "Project" and t.reference_name = p.name and p.project_type = '{0}'
+            t.reference_type = "Project" and t.reference_name = p.name and p.type = '{0}'
             and allocated_to = '{1}'
     '''
 
