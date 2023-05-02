@@ -15,13 +15,19 @@
                                             <td>The Goal: </td>
                                         </tr>
                                         <tr class="table-success">
-                                            <td>Company Objective: </td>
+                                            <td>Company Objective:
+																							<input type="text" :value="company_objective">
+																						</td>
                                         </tr>
                                         <tr class="table-warning">
-                                            <td>Company Objective Quarter: </td>
+                                            <td>Company Objective Quarter:
+																							<input type="text" :value="company_objective_quarter">
+																						</td>
                                         </tr>
                                         <tr class="table-danger">
-                                            <td>My Objective: </td>
+                                            <td>My Objective:
+																							<input type="text" :value="my_objective">
+																						</td>
                                         </tr>
                                     </tbody>
                                     </table>
@@ -37,13 +43,13 @@
                                                 <div class="widget-head">
                                                     <div class="widget-label">
                                                       <div class="widget-title"><span class="ellipsis" title="Routine Tasks">Routine Tasks (Count)</span></div>
-                                                      
+
                                                       <div class="widget-subtitle"></div>
                                                     </div>
                                                   </div>
                                                 <ul>
                                                     <li><a href="#">Routine Task 1</a></li>
-                                                    
+
                                                     <li><a href="#">Routine Task 2</a></li>
                                                     <li><a href="#">Routine Task 3</a></li>
                                                     <li><a href="#">Routine Task 4</a></li>
@@ -56,7 +62,7 @@
                                                 </ul>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box2">
-                                            
+
                                             <div class="widget-head">
                                                 <div class="widget-label">
                                                   <div class="widget-title"><span class="ellipsis" title="Active Repetitive">Active Repetitive</span></div>
@@ -72,7 +78,7 @@
                                             </ul>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box3">
-                                            
+
                                             <div class="widget-head">
                                                 <div class="widget-label">
                                                   <!-- <div class="widget-title"><span class="ellipsis" title="Personal Project">Personal Project</span></div> -->
@@ -88,7 +94,7 @@
                                             </ul>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box4">
-                                            
+
                                             <div class="widget-head">
                                                 <div class="widget-label">
                                                   <div class="widget-title"><span class="ellipsis" title="Scrum Project">Scrum Project</span></div>
@@ -137,11 +143,11 @@
                                                     <div class="control-value like-disabled-input" >
                                                     <select id = "my_todos_assigned_by" name = "my_todos_assigned_by">
                                                         <option>Assigned By</option>
-                                                        
+
                                                       </select>
                                                       </div>
                                                   </div>
-                                                  
+
                                                 </form>
                                               </div>
 
@@ -161,7 +167,7 @@
                                                  <div class="col-md-3 mb-3 text-center">
                                                     <div class="control-value like-disabled-input" > <p  @click.prevent="showTodo(1, todo.assigned_by)">[% todo.assigned_by %]</p></div>
                                                  </div>
-                                                 
+
                                                  <hr>
                                             </div>
                                         </div>
@@ -208,7 +214,7 @@
                                                      </div>
                                                     <div class="col-md-2 mb-3 text-center">
                                                         <div class="control-value like-disabled-input" > <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p></div>
-                                                       
+
                                                      </div>
                                                      <div class="col-md-2 mb-3 text-center">
                                                         <div class="control-value like-disabled-input" >
@@ -227,7 +233,7 @@
                                                      </div>
                                                      <hr>
                                                 </div>
-                                                
+
                                                 <!-- </li>
                                             </ul> -->
                                         </div>
@@ -263,26 +269,26 @@
                         </div>
                         <div class="form-row">
                             <div class="col-md-6 mb-3">
-                            
+
                             <label class="control-label" style="padding-right: 0px;">Status</label>
                                 <input type="text" class="form-control" :value="todo_pane.status" disabled>
                             </div>
                             <div class="col-md-6 mb-3">
-                            
+
                             <label class="control-label" style="padding-right: 0px;">Due Date</label>
                                 <input type="text" class="form-control" :value="todo_pane.date" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                
+
                                 <label class="control-label" style="padding-right: 0px;">Description</label>
                                 <textarea type="text" class="form-control" :value="todo_pane.description" disabled></textarea>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                
+
                                 <label class="control-label" style="padding-right: 0px;">Priority</label>
                                 <input type="text" class="form-control"  :value="todo_pane.priority" disabled>
                             </div>
@@ -290,25 +296,25 @@
                         <div class="form-row">
                             <div class="col-md-6 mb-3">
                                 <label class="control-label" style="padding-right: 0px;">Assigned By</label>
-                                
+
                                 <input type="text" class="form-control" :value="todo_pane.assigned_by" disabled>
                             </div>
                             <div class="col-md-6 mb-3">
-                                
+
                                 <label class="control-label" style="padding-right: 0px;">Allocated To</label>
                                 <input type="text" class="form-control" :value="todo_pane.allocated_to" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                                
+
                                 <label class="control-label" style="padding-right: 0px;">Reference Type</label>
                                 <input type="text" class="form-control" :value="todo_pane.reference_type" disabled>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-                               
+
                                 <label class="control-label" style="padding-right: 0px;">User & Full Name</label>
                                 <input type="text" class="form-control" :value="todo_pane.assigned_by_full_name" disabled>
                             </div>
@@ -316,7 +322,7 @@
                         <div class="form-row" :style="">
                             <div class="col-md-12" title="View the document">
                                 <label for="validationTooltip01"></label>
-                                
+
                                 <a href="#" @click="open_ref(todo_pane.url)" class="btn btn-block btn-warning text-center" target="_blank">Go to Ref</a>
                             </div>
                             <div class="col-md-12 mb-3" title="Copy the link to document">
@@ -336,5 +342,5 @@
         </div>
     </div>
     </div>
-    
+
 </div>
