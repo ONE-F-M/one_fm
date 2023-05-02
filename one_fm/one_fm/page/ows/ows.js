@@ -168,6 +168,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 
 								if (r.message){
 									let res = r.message;
+									me.company_goal =  res.company_goal;
 									me.company_objective =  res.company_objective;
 									me.company_objective_quarter =  res.company_objective_quarter;
 									me.my_objective =  res.my_objective;
@@ -176,8 +177,9 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									me.scrum_projects = res.scrum_projects;
 									me.personal_projects = res.personal_projects;
 									me.active_repetitive_projects = res.active_repetitive_projects;
-									me.doctype_ref = res.filter_references[0]
-									me.user_ref = res.filter_references[1]
+									me.doctype_ref = res.filter_references[0];
+									me.user_ref = res.filter_references[1];
+									me.routine_tasks = res.routine_tasks;
 
 									if(res.reset_filters == 1){
 										me.setupFilters(1)

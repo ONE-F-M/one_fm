@@ -9,6 +9,7 @@
  "engine": "InnoDB",
  "field_order": [
   "okr_title",
+  "is_company_goal",
   "company_objective",
   "employee",
   "section_break_9zbq8",
@@ -83,7 +84,7 @@
    "fieldname": "company_objective",
    "fieldtype": "Check",
    "label": "Is Company Objective",
-   "read_only_depends_on": "employee"
+   "read_only_depends_on": "eval:doc.is_company_goal || doc.employee"
   },
   {
    "fieldname": "column_break_5",
@@ -106,34 +107,35 @@
    "label": "End Date"
   },
   {
-   "depends_on": "eval:!doc.company_objective",
+   "depends_on": "eval:!doc.company_objective && !doc.is_company_goal",
    "fieldname": "employee",
    "fieldtype": "Link",
    "label": "Employee",
-   "mandatory_depends_on": "eval:!doc.company_objective",
+   "mandatory_depends_on": "eval:!doc.company_objective && !doc.is_company_goal",
    "options": "Employee"
   },
   {
+   "depends_on": "eval:!doc.is_company_goal",
    "fieldname": "okr_for",
    "fieldtype": "Select",
    "label": "OKR For",
-   "options": "\nYearly\nQuarterly",
-   "reqd": 1
+   "mandatory_depends_on": "eval:!doc.is_company_goal",
+   "options": "\nYearly\nQuarterly"
   },
   {
-   "depends_on": "okr_for",
+   "depends_on": "eval:!doc.is_company_goal && doc.okr_for",
    "fieldname": "year",
    "fieldtype": "Link",
    "label": "Year",
-   "mandatory_depends_on": "okr_for",
+   "mandatory_depends_on": "eval:!doc.is_company_goal && doc.okr_for",
    "options": "Fiscal Year"
   },
   {
-   "depends_on": "eval:doc.okr_for == 'Quarterly'",
+   "depends_on": "eval:!doc.is_company_goal && doc.okr_for == 'Quarterly'",
    "fieldname": "quarter",
    "fieldtype": "Select",
    "label": "Quarter",
-   "mandatory_depends_on": "eval:doc.okr_for == 'Quarterly'",
+   "mandatory_depends_on": "eval:!doc.is_company_goal && doc.okr_for == 'Quarterly'",
    "options": "\nQ1\nQ2\nQ3\nQ4"
   },
   {
@@ -149,10 +151,17 @@
   {
    "fieldname": "column_break_emcc2",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_company_goal",
+   "fieldtype": "Check",
+   "label": "Is Company Goal",
+   "read_only_depends_on": "eval:doc.company_objective || doc.employee"
   }
  ],
  "links": [],
- "modified": "2023-05-01 13:15:18.702609",
+ "modified": "2023-05-02 13:17:08.671416",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Objective Key Result",
