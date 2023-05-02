@@ -1,0 +1,64 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:process_name",
+ "creation": "2023-04-26 10:53:22.921493",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "process_name",
+  "is_erp_process",
+  "erp_document"
+ ],
+ "fields": [
+  {
+   "fieldname": "process_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Process",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_erp_process",
+   "fieldtype": "Check",
+   "label": "Is ERP Process"
+  },
+  {
+   "depends_on": "is_erp_process",
+   "fieldname": "erp_document",
+   "fieldtype": "Table",
+   "label": "ERP Document",
+   "mandatory_depends_on": "is_erp_process",
+   "options": "Routine Task Document"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2023-04-26 12:18:00.840896",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Routine Task Process",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
