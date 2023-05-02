@@ -76,6 +76,7 @@ def get_defaults(args=None, has_todo_filter=0, has_assigned_filter=0):
     data.company_objective = get_company_objective()
     data.company_objective_quarter = get_company_objective('Quarterly')
     data.my_objective = get_my_objective()
+    data.company_goal = get_company_goal()
 
     for each in data.my_todos:
         each.description= BeautifulSoup(each.description, "lxml").text
@@ -122,6 +123,20 @@ def get_the_quarter(start_date, end_date, date=today()):
 	if add_months(start_date, (3*months_in_qtr)) <= getdate(date) <= add_months(start_date, (4*months_in_qtr)-1):
 		return "Q4"
 	return False
+
+def get_company_goal():
+	query = '''
+		select
+			*
+		from
+			`tabObjective Key Result`
+		where
+			is_company_goal = 1
+	'''
+	result = frappe.db.sql(query, as_dict=True)
+	if result:
+		return result[0].name
+	return ""
 
 def get_my_objective():
 	employee = frappe.db.get_value('Employee', {'user_id': frappe.session.user})

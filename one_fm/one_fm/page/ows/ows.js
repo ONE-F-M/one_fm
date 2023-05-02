@@ -168,6 +168,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 
 								if (r.message){
 									let res = r.message;
+									me.company_goal =  res.company_goal;
 									me.company_objective =  res.company_objective;
 									me.company_objective_quarter =  res.company_objective_quarter;
 									me.my_objective =  res.my_objective;
