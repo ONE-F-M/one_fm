@@ -1867,9 +1867,18 @@ def create_roster_post_actions():
         # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
         if not any(es.date == ps.date and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
             if ps.operations_role:
-                operations_roles_not_filled_set.add(ps.operations_role)
-                list_of_dict_of_operations_roles_not_filled.append(ps)
-                
+                # Fetch the project and confirm if the is_active field of the project is set,omit operation roles where the project is not active               
+                project_ = frappe.get_value("Operations Role",ps.operations_role,'project')
+                if project_:
+                    is_active = frappe.get_value("Project",project_,'is_active')
+                    if is_active == "Yes":
+                        operations_roles_not_filled_set.add(ps.operations_role)
+                        list_of_dict_of_operations_roles_not_filled.append(ps)   
+                else:
+                    operations_roles_not_filled_set.add(ps.operations_role)
+                    list_of_dict_of_operations_roles_not_filled.append(ps)
+                    
+
                 
 
 
