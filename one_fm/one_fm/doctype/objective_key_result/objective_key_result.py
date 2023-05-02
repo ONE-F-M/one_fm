@@ -13,13 +13,30 @@ from frappe.utils import getdate
 
 class ObjectiveKeyResult(Document):
 	def validate(self):
+		self.validate_company_goal()
 		self.validate_okr_with_same_combination()
+
+	def validate_company_goal(self):
+		if self.is_company_goal:
+			self.employee = ""
+			self.company_objective = False
+			self.quarter = ""
+			exists_okr = frappe.db.exists('Objective Key Result',
+				{
+					'name': ['!=', self.name],
+					'is_company_goal': True
+				}
+			)
+			if exists_okr:
+				frappe.throw(_("A Company Goal '{0}' exists!".format(exists_okr)))
 
 	def validate_okr_with_same_combination(self):
 		if self.company_objective:
 			self.employee = ""
+			self.is_company_goal = False
 		if self.employee:
 			self.company_objective = False
+			self.is_company_goal = False
 		if self.okr_for == "Yearly":
 			self.quarter = ""
 		exists_okr = frappe.db.exists('Objective Key Result',
