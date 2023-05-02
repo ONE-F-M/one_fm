@@ -2,8 +2,8 @@ frappe.require([
 	'/assets/one_fm/js/vue.global.js',
 	'/assets/one_fm/js/daterangepicker.min.js',
 	'/assets/one_fm/js/roster_js/select2.min.js',
-	'/assets/one_fm/css/okr/okr.css',
-	'/assets/one_fm/css/okr/daterangepicker.css',
+	'/assets/one_fm/css/ows/okr.css',
+	'/assets/one_fm/css/ows/daterangepicker.css',
 	], () => {
     // chat.js and chat.css are loaded
 
