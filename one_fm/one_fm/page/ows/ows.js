@@ -45,6 +45,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					this.loadSpinner(0);
 					this.setupJS();
 					this.getDefault()
+					
 
 
 					this.setupTriggers()
@@ -156,7 +157,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					},
 					getDefault(){
 						let me = this;
-
+						me.hide_show_button()
 						frappe.call({
 							method: "one_fm.one_fm.page.ows.ows.get_defaults",
 							args: {
@@ -190,9 +191,15 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							}
 						});
 					},
+					clearTodo(){
+						me = this
+						me.todo_pane = {}
+						me.hide_show_button()
+					},
 					showTodo(todoType, todoName){
 						// 1 = mytodo, 0 = assigned_todo
 						let me = this;
+						me.hide_show_button(1)
 						if (todoType==1){
 							let todo = me.my_todos.filter(function(item){
 							 return item.name==todoName;
@@ -242,11 +249,13 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							}
 							}).datepicker('update', new Date(),
 							);
+							
 					},
 					 open_ref(link){
 
 							window.open(link)
 						},
+					
 					copyText(link_to_copy) {
 						const show_success_alert = () => {
 							frappe.show_alert({
@@ -268,6 +277,19 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									navigator.clipboard.writeText(link_to_copy).then(show_success_alert);
 								}
 						}
+					},
+					hide_show_button(show=0){
+						if(!show){
+							$('#copybutton').hide()
+							$('#gotobutton').hide()
+							$('#clear_todo_pane').hide()
+						}
+						else{
+							$('#copybutton').show()
+							$('#gotobutton').show()
+							$('#clear_todo_pane').show()
+						}
+						
 					}
 				},
 			}
