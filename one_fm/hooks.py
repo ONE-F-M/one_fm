@@ -577,8 +577,10 @@ scheduler_events = {
 			'one_fm.grd.utils.sendmail_reminder_to_book_appointment_for_pifss',
 			'one_fm.grd.utils.sendmail_reminder_to_collect_pifss_documents',
 			'one_fm.hiring.doctype.transfer_paper.transfer_paper.check_signed_workContract_employee_completed',
-			'one_fm.utils.issue_roster_actions',
 			'one_fm.grd.doctype.preparation.preparation.auto_create_preparation_record',
+            # create roster post and employee action
+			'one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.create',
+            'one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.create'
 		],
 		"18 9 * * *": [ #“At 09:18"
 			'one_fm.utils.check_upload_tasriah_submission_nine',

@@ -33,3 +33,4 @@ one_fm.patches.v14_0.remove_leave_application_field_from_additional_salary
 one_fm.patches.v14_0.fix_leave_application_attachments
 one_fm.patches.v14_0.approve_all_time_sheets
 one_fm.patches.v14_0.update_leave_application_status_to_approved
+one_fm.patches.v14_0.update_operations_status

@@ -51,7 +51,6 @@ class OperationsPost(Document):
             rename_doc(self.doctype, self.name, condition, force=True)
 
     def on_update(self):
-        print("\n\n on update \n\n")
         if self.status == "Active":
             check_list = frappe.db.get_list("Post Schedule", filters={"post":self.name, "date": [">", getdate()]})
             if len(check_list) < 1 :

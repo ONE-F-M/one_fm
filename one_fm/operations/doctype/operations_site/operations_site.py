@@ -42,8 +42,7 @@ class OperationsSite(Document):
 				SELECT name, status FROM `tabOperations Post` 
 				WHERE site="{self.name}";
 			""", as_dict=1)
-			self.trigger_operations_post_update(operations_post)
-			# frappe.enqueue(self.trigger_operations_post_update, queue="long", operations_post=operations_post)
+			frappe.enqueue(self.trigger_operations_post_update, queue="long", operations_post=operations_post)
 
 		if frappe.db.exists("Operations Role", {'site':self.name}):
 			frappe.db.sql(f"""
@@ -55,7 +54,6 @@ class OperationsSite(Document):
 		"""
 			This method triggers on_update in Operations Post
 		"""
-		print(operations_post)
 		for i in operations_post:
 			frappe.get_doc("Operations Post", i.name).on_update()
 
@@ -82,7 +80,6 @@ class OperationsSite(Document):
 		return get_diff(doc_before_save, self, for_child=True)
 
 	def get_field_label(self, doctype, fieldname):
-		print(frappe.get_meta(doctype), frappe.get_meta(doctype).get_field(fieldname), fieldname)
 		return frappe.get_meta(doctype).get_field(fieldname).label
 
 	def notify_changes(self):
@@ -233,7 +230,7 @@ def changes_action(action, parent, ids):
 
 def revert_changes(change, doctype, docname):
 	cond = ', '.join(['{fieldname}="{old_value}"'.format(fieldname=field[0], old_value=field[1]) for field in change])
-	print(cond)
+	
 
 	if cond:
 		frappe.db.sql("""
@@ -256,7 +253,6 @@ def create_posts(data, site, project=None):
 		data = frappe._dict(json.loads(data))
 		post_names = data.post_names
 		shifts = data.shifts
-		print(shifts)
 		skills = data.skills
 		designations = data.designations
 		gender = data.gender
@@ -264,7 +260,6 @@ def create_posts(data, site, project=None):
 		post_template = data.post_template
 		post_description = data.post_description
 		post_location = data.post_location
-		print(type(designations), len(skills), len(post_names))
 
 		for shift in shifts:
 			for post_name in post_names:
@@ -279,7 +274,6 @@ def create_posts(data, site, project=None):
 				operations_post.site = site
 				operations_post.project = project
 				for designation in designations:
-					print(type(designation), designation)
 					operations_post.append("designations",{
 						"designation": designation["designation"],
 						"primary": designation["primary"] if "primary" in designation else 0

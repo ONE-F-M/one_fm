@@ -144,6 +144,7 @@
    "label": "Day Off Priority"
   },
   {
+   "default": "Active",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
@@ -151,7 +152,7 @@
   }
  ],
  "links": [],
- "modified": "2023-05-04 17:51:26.545447",
+ "modified": "2023-05-04 23:00:47.784960",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",

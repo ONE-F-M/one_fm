@@ -147,8 +147,11 @@
    "options": "Governorate Area"
   },
   {
+   "default": "Active",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
    "options": "Active\nInactive"
   }
@@ -160,7 +163,7 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2023-05-04 17:49:53.384472",
+ "modified": "2023-05-04 23:19:05.736946",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",

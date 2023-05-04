@@ -184,6 +184,7 @@
    "label": "Site Allowance"
   },
   {
+   "default": "Active",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -193,7 +194,7 @@
   }
  ],
  "links": [],
- "modified": "2023-05-04 15:58:50.270678",
+ "modified": "2023-05-04 21:58:18.376106",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Site",
