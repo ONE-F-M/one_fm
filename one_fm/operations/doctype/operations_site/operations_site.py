@@ -15,8 +15,6 @@ class OperationsSite(Document):
 		self.validate_user_role()
 		if len(self.poc) == 0:
 			frappe.throw("POC list is mandatory.")
-		if self.status != 'Active':
-			self.set_operation_shift_inactive()
 		self.validate_project_status()
 
 	def validate_project_status(self):
@@ -29,16 +27,40 @@ class OperationsSite(Document):
 			if active_open:
 				frappe.throw(_("The Project '<b>{0}</b>' selected in the Site '<b>{1}</b>' is <b>Not {2}</b>. <br/> To make the Site atcive first make the project {2}".format(self.project, self.name, active_open)))
 
-	def set_operation_shift_inactive(self):
-		operations_shift_list = frappe.get_all('Operations Shift', {'status': 'Active', 'site': self.name})
-		if operations_shift_list:
-			if len(operations_shift_list) > 10:
-				frappe.enqueue(queue_operation_shift_inactive, operations_shift_list=operations_shift_list, is_async=True, queue="long")
-				frappe.msgprint(_("Operations Shift linked to the Site {0} will set to Inactive!".format(self.name)), alert=True, indicator='green')
-			else:
-				queue_operation_shift_inactive(operations_shift_list)
-				frappe.msgprint(_("Operations Shift linked to the Site {0} is set to Inactive!".format(self.name)), alert=True, indicator='green')
+	def update_shift_post_role_status(self):
+		if frappe.db.exists("Operations Shift", {'site':self.name}):
+			frappe.db.sql(f"""
+				UPDATE `tabOperations Shift` set status="{self.status}"
+				WHERE site="{self.name}";
+			""")
+		if frappe.db.exists("Operations Post", {'site':self.name}):
+			frappe.db.sql(f"""
+				UPDATE `tabOperations Post` set status="{self.status}"
+				WHERE site="{self.name}";
+			""")
+			operations_post = frappe.db.sql(f"""
+				SELECT name, status FROM `tabOperations Post` 
+				WHERE site="{self.name}";
+			""", as_dict=1)
+			self.trigger_operations_post_update(operations_post)
+			# frappe.enqueue(self.trigger_operations_post_update, queue="long", operations_post=operations_post)
 
+		if frappe.db.exists("Operations Role", {'site':self.name}):
+			frappe.db.sql(f"""
+				UPDATE `tabOperations Role` set status="{self.status}"
+				WHERE site="{self.name}";
+			""")
+
+	def trigger_operations_post_update(self, operations_post):
+		"""
+			This method triggers on_update in Operations Post
+		"""
+		print(operations_post)
+		for i in operations_post:
+			frappe.get_doc("Operations Post", i.name).on_update()
+
+
+		
 	def validate_user_role(self):
 		site_supervisor = self.get_employee_user_id(self.account_supervisor)
 		# project_manager = self.get_project_manager()
@@ -49,6 +71,7 @@ class OperationsSite(Document):
 
 	def on_update(self):
 		doc_before_save = self.get_doc_before_save()
+		self.update_shift_post_role_status()
 		# changes = self.get_changes()
 		# self.notify_changes()
 		# self.update_permissions(doc_before_save)
@@ -178,12 +201,6 @@ class OperationsSite(Document):
 			recipient_list.append(manager_user)
 		recipient_list.append(project_manager_user)
 		return recipient_list
-
-def queue_operation_shift_inactive(operations_shift_list):
-	for operations_shift in operations_shift_list:
-		doc = frappe.get_doc('Operations Shift', operations_shift.name)
-		doc.status = "Not Active"
-		doc.save(ignore_permissions=True)
 
 def create_notification_log(subject, message, for_users, reference_doc):
 	for user in for_users:
