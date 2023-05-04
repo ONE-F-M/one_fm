@@ -13,12 +13,12 @@
   "project",
   "post_template",
   "column_break_4",
+  "status",
   "priority_level",
   "allow_staff_rotation",
   "day_off_priority",
   "post_location",
   "gender",
-  "status",
   "section_break_6",
   "section_break_12",
   "post_description",
@@ -144,6 +144,7 @@
    "label": "Day Off Priority"
   },
   {
+   "default": "Active",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
@@ -151,7 +152,7 @@
   }
  ],
  "links": [],
- "modified": "2022-11-22 18:30:14.013787",
+ "modified": "2023-05-04 23:00:47.784960",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",

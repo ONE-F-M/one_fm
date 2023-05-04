@@ -57,3 +57,77 @@ def get_permission_query_conditions(user):
 			return '(`tabRoster Employee Actions`.`supervisor`="{employee}" or `tabRoster Employee Actions`.`site_supervisor`="{employee}")'.format(employee = employee)
 
 	return ""
+
+
+def create():
+	frappe.enqueue(create_roster_employee_actions, is_async=True, queue='long')
+
+
+def create_roster_employee_actions():
+    """
+    This function creates a Roster Employee Actions document and issues notifications to relevant supervisors
+    directing them to schedule employees that are unscheduled and assigned to them.
+    It computes employees not scheduled for the span of two weeks, starting from tomorrow.
+    """
+
+    # start date to be from tomorrow
+    start_date = add_to_date(cstr(getdate()), days=1)
+    # end date to be 14 days after start date
+    end_date = add_to_date(start_date, days=14)
+
+    #-------------------- Roster Employee actions ------------------#
+    # fetch employees that are active and don't have a schedule in the specified date range
+    employees_not_rostered = frappe.db.sql("""
+                            select
+                                employee from `tabEmployee`
+                            where
+                                status = 'Active'
+                            AND
+                                employee not in
+                                (select employee
+                                from `tabEmployee Schedule`
+                                where date >= %(start)s and date <=%(end)s)""",
+                                {'start': start_date, 'end': end_date})
+
+    list_of_leaves_within_employee_action_period = frappe.db.get_list("Leave Application", {"status": "Approved", "from_date":["<", start_date ], "to_date": [">", end_date]}, pluck="employee")
+
+    employees = ()
+
+    # fetch employees that are not rostered from the result returned by the query and append to tuple
+    for emp in employees_not_rostered:
+        if emp[0] in list_of_leaves_within_employee_action_period:
+            continue
+        employees = employees + emp
+
+    # fetch supervisors and list of employees(not rostered) under them
+    result = frappe.db.sql("""select sv.employee, sv.site, group_concat(e.employee)
+            from `tabEmployee` e
+            join `tabOperations Shift` sh on sh.name = e.shift
+            join `tabEmployee` sv on sh.supervisor=sv.employee
+            where e.employee in {employees}
+	    	AND sh.status='Active'
+            group by sv.employee """.format(employees=employees))
+
+    # for each supervisor, create a roster action
+    for res in result:
+        supervisor = res[0]
+        site_supervisor = frappe.get_value('Operations Site', res[1], 'account_supervisor')
+        employees = res[2].split(",")
+
+        roster_employee_actions_doc = frappe.new_doc("Roster Employee Actions")
+        roster_employee_actions_doc.start_date = start_date
+        roster_employee_actions_doc.end_date = end_date
+        roster_employee_actions_doc.status = "Pending"
+        roster_employee_actions_doc.action_type = "Roster Employee"
+        roster_employee_actions_doc.supervisor = supervisor
+        roster_employee_actions_doc.site_supervisor = site_supervisor
+
+        for emp in employees:
+            roster_employee_actions_doc.append('employees_not_rostered', {
+                'employee': emp
+            })
+
+        roster_employee_actions_doc.save()
+        frappe.db.commit()
+
+    #-------------------- END Roster Employee actions ------------------#
