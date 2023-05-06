@@ -37,7 +37,9 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						user_ref:[],
 						company_objective: '',
 						company_objective_quarter: '',
-						my_objective: ''
+						my_objective: '',
+						okr_year: '',
+						okr_quarter: ''
 					}
 				},
 				mounted(){
@@ -74,12 +76,13 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					},
 					fetchOKR(){
 						let me = this;
-
+						me.okr_year = $('#okr_year').val();
+						me.okr_quarter = $('#okr_quarter').val();
 						frappe.call({
 							method: "one_fm.one_fm.page.ows.ows.get_okr_details",
 							args: {
-								okr_year : $('#okr_year').val(),
-								okr_quarter : $('#okr_quarter').val()
+								okr_year: me.okr_year,
+								okr_quarter: me.okr_quarter
 							},
 							callback: function(r) {
 								if (r.message){
@@ -96,7 +99,14 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						let me = this
 
 						$('#okr_year').change(function(){
-							me.fetchOKR()
+							me.fetchOKR();
+							if(me.okr_year){
+								$('#okr_quarter').prop('disabled', false);
+							}
+							else{
+								$('#okr_quarter').prop('disabled', 'disabled');
+								$("#okr_quarter").val("Default");
+							}
 						})
 
 						$('#okr_quarter').change(function(){
@@ -223,19 +233,20 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					setOKRYearQuarter(okr_year_data){
 						$('#okr_year').empty()
 						$('#okr_year').select2({
-							data:[{ 'id': '', 'text': 'Select Year' }].concat(okr_year_data)
+							data:[{ 'id': '', 'text': 'Default' }].concat(okr_year_data)
 						})
 
 						$('#okr_quarter').empty()
 						$('#okr_quarter').select2({
 							data:[
-								{ 'id': '', 'text': 'Select Quarter' },
+								{ 'id': '', 'text': 'Default' },
 								{ 'id': 'Q1', 'text': 'Q1' },
 								{ 'id': 'Q2', 'text': 'Q2' },
 								{ 'id': 'Q3', 'text': 'Q3' },
 								{ 'id': 'Q4', 'text': 'Q4' },
 							]
 						})
+						$('#okr_quarter').prop('disabled', 'disabled');
 					},
 					showTodo(todoType, todoName){
 						// 1 = mytodo, 0 = assigned_todo
