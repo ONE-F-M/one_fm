@@ -72,8 +72,36 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						this.getDefault()
 
 					},
+					fetchOKR(){
+						let me = this;
+
+						frappe.call({
+							method: "one_fm.one_fm.page.ows.ows.get_okr_details",
+							args: {
+								okr_year : $('#okr_year').val(),
+								okr_quarter : $('#okr_quarter').val()
+							},
+							callback: function(r) {
+								if (r.message){
+									let data = r.message;
+									me.company_goal =  data.company_goal;
+									me.company_objective =  data.company_objective ? data.company_objective.name : '';
+									me.company_objective_quarter =  data.company_objective_quarter ? data.company_objective_quarter.name : '';
+									me.my_objective =  data.my_objective ? data.my_objective.name : '';
+								}
+							}
+						});
+					},
 					setupTriggers(){
 						let me = this
+
+						$('#okr_year').change(function(){
+							me.fetchOKR()
+						})
+
+						$('#okr_quarter').change(function(){
+							me.fetchOKR()
+						})
 
 						$('#my_todos_id').change(function(){
 							me.getAllFilters()
@@ -115,6 +143,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 											{ 'id': 'High', 'text': 'High' }]
 						reference_data = reference_data.concat(me.doctype_ref)
 						assigned_data = assigned_data.concat(me.user_ref)
+
 						if(is_my_todo){
 
 							$('#my_todos_ref_type').empty()
@@ -169,9 +198,9 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 								if (r.message){
 									let res = r.message;
 									me.company_goal =  res.company_goal;
-									me.company_objective =  res.company_objective;
-									me.company_objective_quarter =  res.company_objective_quarter;
-									me.my_objective =  res.my_objective;
+									me.company_objective =  res.company_objective ? res.company_objective.name : '';
+									me.company_objective_quarter =  res.company_objective_quarter ? res.company_objective_quarter.name : '';
+									me.my_objective =  res.my_objective ? res.my_objective.name : '';
 									me.my_todos = res.my_todos;
 									me.assigned_todos = res.assigned_todos;
 									me.scrum_projects = res.scrum_projects;
@@ -186,9 +215,27 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 										me.setupFilters(0)
 									}
 
+									me.setOKRYearQuarter(res.okr_year)
 								}
 							}
 						});
+					},
+					setOKRYearQuarter(okr_year_data){
+						$('#okr_year').empty()
+						$('#okr_year').select2({
+							data:[{ 'id': '', 'text': 'Select Year' }].concat(okr_year_data)
+						})
+
+						$('#okr_quarter').empty()
+						$('#okr_quarter').select2({
+							data:[
+								{ 'id': '', 'text': 'Select Quarter' },
+								{ 'id': 'Q1', 'text': 'Q1' },
+								{ 'id': 'Q2', 'text': 'Q2' },
+								{ 'id': 'Q3', 'text': 'Q3' },
+								{ 'id': 'Q4', 'text': 'Q4' },
+							]
+						})
 					},
 					showTodo(todoType, todoName){
 						// 1 = mytodo, 0 = assigned_todo
