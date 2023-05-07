@@ -132,7 +132,8 @@ def create_roster_post_actions():
         return
 
     #Fetch supervisor and post types in his/her shift
-    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.operations_role)
+    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.operations_role),
+            sh.site
             from `tabPost Schedule` ps
             join `tabOperations Shift` sh on sh.name = ps.shift
             join `tabEmployee` sv on sh.supervisor=sv.employee
@@ -145,6 +146,7 @@ def create_roster_post_actions():
     
     for res in result:
         supervisor = res[0]
+        site = frappe.get_value("Operations Site", res[2], 'account_supervisor')
         operations_roles = res[1].split(",")
 
         check_list = []
@@ -170,6 +172,7 @@ def create_roster_post_actions():
             roster_post_actions_doc.status = "Pending"
             roster_post_actions_doc.action_type = "Fill Post Type"
             roster_post_actions_doc.supervisor = supervisor
+            roster_post_actions_doc.site_supervisor = site
 
             for obj in second_check_list:
                 roster_post_actions_doc.append('operations_roles_not_filled', {
