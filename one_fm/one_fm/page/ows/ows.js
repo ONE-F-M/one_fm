@@ -212,6 +212,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									me.company_objective =  res.company_objective ? res.company_objective.name : '';
 									me.company_objective_quarter =  res.company_objective_quarter ? res.company_objective_quarter.name : '';
 									me.my_objective =  res.my_objective ? res.my_objective.name : '';
+									me.all_todos = res.all_todos;
 									me.my_todos = res.my_todos;
 									me.assigned_todos = res.assigned_todos;
 									me.scrum_projects = res.scrum_projects;
@@ -249,7 +250,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						})
 						$('#okr_quarter').prop('disabled', 'disabled');
 					},
-					showTodo(todoType, todoName){
+					showTodo(todoName){
 						// 1 = mytodo, 0 = assigned_todo
 						let me = this;
 						let todo = me.all_todos.filter(function(item){
