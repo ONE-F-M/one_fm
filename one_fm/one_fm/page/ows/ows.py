@@ -30,9 +30,16 @@ def get_defaults(args=None, has_todo_filter=0, has_assigned_filter=0):
         mytodo_cond = generate_cond(args[0]) if int(has_todo_filter) else ""
         myassigned_cond = generate_cond(args[1]) if int(has_assigned_filter) else ""
 
-
     data = frappe._dict({})
     data.reset_filters  = 0
+
+    data.all_todos = frappe.db.sql(f"""
+                        SELECT * from `tabToDo`
+                        where allocated_to = '{frappe.session.user}'
+                        OR assigned_by ='{frappe.session.user}'
+                        AND status = "Open"
+                        """,as_dict=1)
+
     if bool(int(has_todo_filter)):
         data.my_todos = frappe.db.sql(f"""
                         SELECT * from `tabToDo`
@@ -199,7 +206,7 @@ def get_to_do_linked_routine_task():
 			`tabTask` ta, `tabToDo` t
 		where
 			t.reference_type = "Task" and t.reference_name = ta.name and ta.is_routine_task = 1
-			and allocated_to = '{0}'
+			and t.allocated_to = '{0}'
 	'''
 
 	return frappe.db.sql(query.format(frappe.session.user), as_dict=True)
@@ -212,7 +219,7 @@ def get_to_do_linked_projects(type):
             `tabProject` p, `tabToDo` t
         where
             t.reference_type = "Project" and t.reference_name = p.name and p.type = '{0}'
-            and allocated_to = '{1}'
+            and t.allocated_to = '{1}'
     '''
 
     return frappe.db.sql(query.format(type, frappe.session.user), as_dict=True)
