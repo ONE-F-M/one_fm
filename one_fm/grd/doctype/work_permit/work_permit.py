@@ -28,9 +28,22 @@ class WorkPermit(Document):
         self.update_work_permit_details_in_tp()
         self.check_required_document_for_workflow()
         self.notify()
+        
 
     def validate(self):
         self.set_grd_values()
+        self.validate_workflow_state_fields()
+
+
+    def validate_workflow_state_fields(self):
+        states = ['Pending By PAM', 'Pending By Operator']
+        db_state = frappe.db.get_value("Work Permit", self.name, 'workflow_state')
+        # check for required fields based on workflow
+        if db_state in states and not (
+            self.upload_work_permit and self.new_work_permit_expiry_date and self.upload_work_permit_on
+            ):
+            frappe.throw("Missing Data\nUpload Work Permit, fill Updated Work Permit Expiry Date and Upload On field.")
+            
 
     def set_grd_values(self):
         """

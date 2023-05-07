@@ -6,12 +6,12 @@
  "engine": "InnoDB",
  "field_order": [
   "site",
-  "site_location",
-  "governorate_area",
-  "column_break_2",
   "project",
-  "service_type",
+  "site_location",
+  "column_break_2",
   "status",
+  "governorate_area",
+  "service_type",
   "shift_details_section",
   "shift_number",
   "shift_type",
@@ -147,10 +147,13 @@
    "options": "Governorate Area"
   },
   {
+   "default": "Active",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
-   "options": "Active\nNot Active"
+   "options": "Active\nInactive"
   }
  ],
  "links": [
@@ -160,7 +163,7 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2022-12-26 20:43:07.401383",
+ "modified": "2023-05-04 23:19:05.736946",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",
