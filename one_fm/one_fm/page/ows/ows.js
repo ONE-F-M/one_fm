@@ -26,6 +26,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						todo_pane: {
 							name: ''
 						},
+						all_todos: [],
 						my_todos: [],
 						assigned_todos: [],
 						scrum_projects: [],
@@ -211,6 +212,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									me.company_objective =  res.company_objective ? res.company_objective.name : '';
 									me.company_objective_quarter =  res.company_objective_quarter ? res.company_objective_quarter.name : '';
 									me.my_objective =  res.my_objective ? res.my_objective.name : '';
+									me.all_todos = res.all_todos;
 									me.my_todos = res.my_todos;
 									me.assigned_todos = res.assigned_todos;
 									me.scrum_projects = res.scrum_projects;
@@ -248,27 +250,17 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						})
 						$('#okr_quarter').prop('disabled', 'disabled');
 					},
-					showTodo(todoType, todoName){
+					showTodo(todoName){
 						// 1 = mytodo, 0 = assigned_todo
 						let me = this;
-						if (todoType==1){
-							let todo = me.my_todos.filter(function(item){
-							 return item.name==todoName;
-							});
-							if (todo.length>0){
-								me.todo_pane = todo[0];
-								me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
-							}
-						} else {
-							let todo = me.assigned_todos.filter(function(item){
+						let todo = me.all_todos.filter(function(item){
 							return item.name==todoName;
-							});
-							if (todo.length>0){
-								me.todo_pane = todo[0];
-								me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
-							}
-
+						});
+						if (todo.length>0){
+							me.todo_pane = todo[0];
+							me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
 						}
+					
 					},
 					loadSpinner(state){
 						if (state==0){
