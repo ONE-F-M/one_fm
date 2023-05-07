@@ -12,24 +12,16 @@
                                     <table class="table table-bordered">
                                     <tbody>
                                         <tr class="table-primary">
-                                            <td>The Goal:
-																							<input class="form-control" type="text" :value="company_goal">
-																						</td>
+                                            <td>The Goal: <b>[% company_goal %]</b></td>
                                         </tr>
                                         <tr class="table-success">
-                                            <td>Company Objective:
-																							<input class="form-control" type="text" :value="company_objective">
-																						</td>
+                                            <td>Company Objective: <b>[% company_objective %]</b></td>
                                         </tr>
                                         <tr class="table-warning">
-                                            <td>Company Objective Quarter:
-																							<input class="form-control" type="text" :value="company_objective_quarter">
-																						</td>
+                                            <td>Company Objective Quarter: <b>[% company_objective_quarter %]</b></td>
                                         </tr>
                                         <tr class="table-danger">
-                                            <td>My Objective:
-																							<input class="form-control" type="text" :value="my_objective">
-																						</td>
+                                            <td>My Objective: <b>[% my_objective %]</b></td>
                                         </tr>
                                     </tbody>
                                     </table>
@@ -237,11 +229,17 @@
             <div class="card border-dark mb-3">
                 <div class="card-body">
                     <div class="form-row">
-                        <div class="col-md-6 mb-3">
-                            <input type="text" class="form-control text-center" placeholder="Year (1)" value="Mark " >
+                        <div class="awesomplete col-md-6 mb-3">
+														<label class="control-label" style="padding-right: 0px;">Year</label>
+                            <select class="input-with-feedback form-control" id = "okr_year" name = "okr_year">
+																<option>Select Year</option>
+														</select>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <input type="text" class="form-control text-center" placeholder="Quarter (2)" value="Mark" disabled>
+												<div class="awesomplete col-md-6 mb-3">
+														<label class="control-label" style="padding-right: 0px;">Quarter</label>
+                            <select class="input-with-feedback form-control" id = "okr_quarter" name = "okr_quarter">
+																<option>Select Quarter</option>
+														</select>
                         </div>
                     </div>
                 </div>

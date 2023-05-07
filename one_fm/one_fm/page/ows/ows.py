@@ -85,32 +85,63 @@ def get_defaults(args=None, has_todo_filter=0, has_assigned_filter=0):
     data.filter_references = get_reference_and_users()
     if not any([bool(mytodo_cond),bool(myassigned_cond)]):
         data.reset_filters = 1
+
+    data.okr_year = get_fiscal_year()
     return data
 
-def get_company_objective(okr_for='Yearly'):
+@frappe.whitelist()
+def get_okr_details(okr_year, okr_quarter):
+	data = frappe._dict({})
+	data.company_objective = get_company_objective(okr_year=okr_year)
+	data.company_objective_quarter = get_company_objective('Quarterly', okr_year, okr_quarter)
+	data.my_objective = get_my_objective(okr_year)
+	data.company_goal = get_company_goal()
+	return data
+
+def get_fiscal_year():
 	query = '''
 		select
-			*
+			name as id, name as text
+		from
+			`tabFiscal Year`
+		where
+			disabled != 1
+	'''
+	return frappe.db.sql(query, as_dict=True)
+
+def get_company_objective(okr_for='Yearly', okr_year=False, okr_quarter=False):
+	query = '''
+		select
+			name, okr_title, employee, description, year, quarter, okr_for, start_date, end_date
 		from
 			`tabObjective Key Result`
 		where
-			'{0}' between start_date and end_date
-			and
 			company_objective = 1
 			and
-			okr_for = '{1}'
-	'''
-	result = frappe.db.sql(query.format(getdate(today()), okr_for), as_dict=True)
-	if result:
-		if okr_for == 'Yearly':
-			return result[0].name
+			okr_for = '{0}'
+	'''.format(okr_for)
+
+	if okr_year:
+		if okr_for == 'Quarterly' and not okr_quarter:
+			return False
+		query += " and year = '{0}'".format(okr_year)
+		if okr_quarter:
+			query += " and quarter = '{0}'".format(okr_quarter)
+	else:
+		query += " and '{0}' between start_date and end_date".format(getdate(today()))
+
+	results = frappe.db.sql(query, as_dict=True)
+	if results:
+		if okr_year or okr_for == 'Yearly':
+			return results[0]
 		elif okr_for == 'Quarterly':
-			quarter = get_the_quarter(result[0].start_date, result[0].end_date)
+			quarter = get_the_quarter(results[0].start_date, results[0].end_date)
 			if quarter:
-				for res in result:
-					if res.quarter == quarter:
-						return res.name
-	return ''
+				for result in results:
+					if result.quarter == quarter:
+						return result
+
+	return False
 
 def get_the_quarter(start_date, end_date, date=today()):
 	months_in_qtr = month_diff(end_date, start_date)/4
@@ -127,7 +158,7 @@ def get_the_quarter(start_date, end_date, date=today()):
 def get_company_goal():
 	query = '''
 		select
-			*
+			name, okr_title, employee, description, year, quarter, okr_for, start_date, end_date
 		from
 			`tabObjective Key Result`
 		where
@@ -138,25 +169,27 @@ def get_company_goal():
 		return result[0].name
 	return ""
 
-def get_my_objective():
+def get_my_objective(year=False):
 	employee = frappe.db.get_value('Employee', {'user_id': frappe.session.user})
 	if employee:
 		query = '''
 			select
-				*
+				name, okr_title, employee, description, year, quarter, okr_for, start_date, end_date
 			from
 				`tabObjective Key Result`
 			where
-				'{0}' between start_date and end_date
-				and
-				employee = '{1}'
+				employee = '{0}'
 				and
 				okr_for = "Yearly"
-		'''
-		result = frappe.db.sql(query.format(getdate(today()), employee), as_dict=True)
+		'''.format(employee)
+		if year:
+			query += " and year = '{0}'".format(year)
+		else:
+			query += " and '{0}' between start_date and end_date".format(getdate(today()))
+		result = frappe.db.sql(query, as_dict=True)
 		if result:
-			return result[0].name
-	return ''
+			return result[0]
+	return False
 
 def get_to_do_linked_routine_task():
 	query = '''
