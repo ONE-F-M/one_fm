@@ -31,6 +31,9 @@ class OperationsPost(Document):
             frappe.throw(f"Operations Role ({self.post_template}) does not belong to selected shift ({self.site_shift})")
 
         self.validate_operations_role_status()
+		# check if operations site inactive
+        if (self.status=='Active' and frappe.db.exists("Operations Site", {'name':self.site, 'status':'Inactive'})):frappe.throw(f"You cannot make this post active because Operations Site '{self.site}' is Inactive.")
+
 
     def validate_operations_role_status(self):
         if self.status == 'Active' and self.post_template \
@@ -39,6 +42,8 @@ class OperationsPost(Document):
 
     def on_update(self):
         self.validate_name()
+        self.update_operation_roles()
+		
 
     def validate_name(self):
         condition = self.post_name+"-"+self.gender+"|"+self.site_shift
@@ -51,13 +56,12 @@ class OperationsPost(Document):
             if len(check_list) < 1 :
                 create_post_schedule_for_operations_post(self)
         elif self.status == "Inactive":
-            frappe.enqueue(delete_schedule, doc=self, is_async=True, queue="long")
+              delete_schedule(self)
 
 def delete_schedule(doc):
-    check_list = frappe.db.get_list("Post Schedule", filters={"post": doc.name, "date": [">", getdate()]})
-    for schedule in check_list:
-        frappe.get_doc("Post Schedule", schedule.name).delete()
-    frappe.db.commit()
+    frappe.db.sql(f"""
+		DELETE FROM `tabPost Schedule` WHERE post="{doc.name}" AND date>'{getdate()}'
+    """)
 
 def create_post_schedule_for_operations_post(operations_post):
 	contracts = get_active_contracts_for_project(operations_post.project)

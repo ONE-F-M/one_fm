@@ -27,7 +27,7 @@ from one_fm.utils import post_login, validate_reports_to, custom_validate_nested
 from hrms.overrides.employee_master import EmployeeMaster,validate_onboarding_process
 from one_fm.overrides.employee import EmployeeOverride
 
-__version__ = '14.2.1'
+__version__ = '14.2.2'
 
 EmployeeMaster.validate = EmployeeOverride.validate
 EmployeeMaster.validate_onboarding_process = validate_onboarding_process

@@ -26,6 +26,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						todo_pane: {
 							name: ''
 						},
+						all_todos: [],
 						my_todos: [],
 						assigned_todos: [],
 						scrum_projects: [],
@@ -37,7 +38,9 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						user_ref:[],
 						company_objective: '',
 						company_objective_quarter: '',
-						my_objective: ''
+						my_objective: '',
+						okr_year: '',
+						okr_quarter: ''
 					}
 				},
 				mounted(){
@@ -73,8 +76,44 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						this.getDefault()
 
 					},
+					fetchOKR(){
+						let me = this;
+						me.okr_year = $('#okr_year').val();
+						me.okr_quarter = $('#okr_quarter').val();
+						frappe.call({
+							method: "one_fm.one_fm.page.ows.ows.get_okr_details",
+							args: {
+								okr_year: me.okr_year,
+								okr_quarter: me.okr_quarter
+							},
+							callback: function(r) {
+								if (r.message){
+									let data = r.message;
+									me.company_goal =  data.company_goal;
+									me.company_objective =  data.company_objective ? data.company_objective.name : '';
+									me.company_objective_quarter =  data.company_objective_quarter ? data.company_objective_quarter.name : '';
+									me.my_objective =  data.my_objective ? data.my_objective.name : '';
+								}
+							}
+						});
+					},
 					setupTriggers(){
 						let me = this
+
+						$('#okr_year').change(function(){
+							me.fetchOKR();
+							if(me.okr_year){
+								$('#okr_quarter').prop('disabled', false);
+							}
+							else{
+								$('#okr_quarter').prop('disabled', 'disabled');
+								$("#okr_quarter").val("Default");
+							}
+						})
+
+						$('#okr_quarter').change(function(){
+							me.fetchOKR()
+						})
 
 						$('#my_todos_id').change(function(){
 							me.getAllFilters()
@@ -116,6 +155,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 											{ 'id': 'High', 'text': 'High' }]
 						reference_data = reference_data.concat(me.doctype_ref)
 						assigned_data = assigned_data.concat(me.user_ref)
+
 						if(is_my_todo){
 
 							$('#my_todos_ref_type').empty()
@@ -170,9 +210,10 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 								if (r.message){
 									let res = r.message;
 									me.company_goal =  res.company_goal;
-									me.company_objective =  res.company_objective;
-									me.company_objective_quarter =  res.company_objective_quarter;
-									me.my_objective =  res.my_objective;
+									me.company_objective =  res.company_objective ? res.company_objective.name : '';
+									me.company_objective_quarter =  res.company_objective_quarter ? res.company_objective_quarter.name : '';
+									me.my_objective =  res.my_objective ? res.my_objective.name : '';
+									me.all_todos = res.all_todos;
 									me.my_todos = res.my_todos;
 									me.assigned_todos = res.assigned_todos;
 									me.scrum_projects = res.scrum_projects;
@@ -187,6 +228,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 										me.setupFilters(0)
 									}
 
+									me.setOKRYearQuarter(res.okr_year)
 								}
 							}
 						});
@@ -196,28 +238,36 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						me.todo_pane = {}
 						me.hide_show_button()
 					},
-					showTodo(todoType, todoName){
+					setOKRYearQuarter(okr_year_data){
+						$('#okr_year').empty()
+						$('#okr_year').select2({
+							data:[{ 'id': '', 'text': 'Default' }].concat(okr_year_data)
+						})
+
+						$('#okr_quarter').empty()
+						$('#okr_quarter').select2({
+							data:[
+								{ 'id': '', 'text': 'Default' },
+								{ 'id': 'Q1', 'text': 'Q1' },
+								{ 'id': 'Q2', 'text': 'Q2' },
+								{ 'id': 'Q3', 'text': 'Q3' },
+								{ 'id': 'Q4', 'text': 'Q4' },
+							]
+						})
+						$('#okr_quarter').prop('disabled', 'disabled');
+					},
+					showTodo(todoName){
 						// 1 = mytodo, 0 = assigned_todo
 						let me = this;
 						me.hide_show_button(1)
-						if (todoType==1){
-							let todo = me.my_todos.filter(function(item){
-							 return item.name==todoName;
-							});
-							if (todo.length>0){
-								me.todo_pane = todo[0];
-								me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
-							}
-						} else {
-							let todo = me.assigned_todos.filter(function(item){
+						let todo = me.all_todos.filter(function(item){
 							return item.name==todoName;
-							});
-							if (todo.length>0){
-								me.todo_pane = todo[0];
-								me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
-							}
-
+						});
+						if (todo.length>0){
+							me.todo_pane = todo[0];
+							me.todo_pane.url = frappe.urllib.get_base_url()+'/app/todo/'+me.todo_pane.name
 						}
+					
 					},
 					loadSpinner(state){
 						if (state==0){

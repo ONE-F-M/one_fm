@@ -53,13 +53,11 @@ def get_notification_user(doc, employee=None):
 
 	if operations_site.project:
 		project = frappe.get_doc("Project", operations_site.project)
-		print(project.account_manager, project.name)
 		if project.account_manager:
 			account_manager = get_employee_user_id(project.account_manager)
 			if account_manager != doc.owner:
 				return account_manager
 	reporting_manager = frappe.get_value("Employee", {"name": employee}, "reports_to")
-	print("191", employee, doc.owner, reporting_manager)
 	return get_employee_user_id(reporting_manager)
 
 def validate_location(doc):
@@ -249,6 +247,14 @@ def update_training_event_data(doc, method):
 def on_project_update_switch_shift_site_post_to_inactive(doc, method):
     if doc.is_active == "No" and  doc.project_type == "External":
         list_of_shift = frappe.db.sql(f""" select name from `tabOperations Shift` where project = "{doc.name}" """)
+
+        list_of_sites = frappe.db.sql(f""" select name from `tabOperations Site` where project = "{doc.name}" """)
+        if list_of_sites:
+            for site in list_of_sites:
+                frappe.db.set_value("Operations Site", site, {
+                    "status": "Inactive"
+                })
+		
         if list_of_shift:
             for shift in list_of_shift:
                 frappe.db.set_value("Operations Shift", shift, {
@@ -269,9 +275,3 @@ def on_project_update_switch_shift_site_post_to_inactive(doc, method):
                     "status": "Inactive"
                 })
 
-        list_of_sites = frappe.db.sql(f""" select name from `tabOperations Site` where project = "{doc.name}" """)
-        if list_of_sites:
-            for site in list_of_sites:
-                frappe.db.set_value("Operations Site", site, {
-                    "status": "Inactive"
-                })
