@@ -26,6 +26,10 @@
             {% if content is not none %}   
                 {{ content }}
             {% endif %}
+            
+            {%if attachments is not none%}
+                <p>Please find the attached Document in the mail below.</p>
+            {% endif %}
         </div>
        
         <div class="email-signature">
