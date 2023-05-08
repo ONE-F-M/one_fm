@@ -174,7 +174,6 @@ def email_authority_for_signature(doc):
 	It's a action that takes place on update of Leave Application.
 	"""
 	#If Leave Approver Exist
-	print(doc.authorized_signatory_user_id)
 	if doc.authorized_signatory_user_id:
 		parent_doc = frappe.get_doc('Work Contract', doc.name)
 		args = parent_doc.as_dict() #fetch fields from the doc.
@@ -184,7 +183,6 @@ def email_authority_for_signature(doc):
 		message = frappe.render_template(email_template.response_html, args)
 		subject = email_template.subject
 		recipient= [doc.authorized_signatory_user_id]
-		print(recipient)
 		#send Email notification
 		try:
 			sendemail(
