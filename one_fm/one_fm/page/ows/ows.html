@@ -256,10 +256,8 @@
                 <div class="card-body scroll-box" style="height:650px;">
                     <form class="needs-validation" novalidate>
                         <div class="form-row">
-                            <div class="col-md-12 mb-3">
-                                <!-- <label for="validationTooltip01">Title</label> -->
-                                <label class="control-label" style="padding-right: 0px;">Title</label>
-                                <input type="text" class="form-control" value="Mark" disabled>
+                            <div class="col-md-12 mb-3" style="text-align: center;">
+                                <button id="clear_todo_pane"  @click.prevent="clearTodo()" class="btn btn-warning">Clear Todo Pane</button>
                             </div>
                         </div>
                         <div class="form-row">
@@ -318,11 +316,11 @@
                             <div class="col-md-12" title="View the document">
                                 <label for="validationTooltip01"></label>
 
-                                <a href="#" @click="open_ref(todo_pane.url)" class="btn btn-block btn-warning text-center" target="_blank">Go to Ref</a>
+                                <a href="#" @click="open_ref(todo_pane.url)" class="btn btn-block btn-warning text-center" id ="gotobutton" target="_blank">Go to Ref</a>
                             </div>
                             <div class="col-md-12 mb-3" title="Copy the link to document">
                                 <label for="validationTooltip01"></label>
-                                <a class="btn btn-block btn-warning text-center" @click="copyText(todo_pane.url)">Copy Link</a>
+                                <a class="btn btn-block btn-warning text-center" @click="copyText(todo_pane.url)" id ="copybutton">Copy Link</a>
                             </div>
                         </div>
                         <div class="form-row">
