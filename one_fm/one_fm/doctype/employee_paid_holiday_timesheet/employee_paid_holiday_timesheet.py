@@ -22,7 +22,7 @@ class EmployeePaidHolidayTimesheet(Document):
 				"message": "Employee Paid Holiday Timesheet is Opened by {0}, please Approve or Reject".format(self.employee_name),
 				"message_to": self.approver,
 				# for email
-				"subject": "Employee Paid Holiday Timesheet is Opened by {0}".format(self.employee_name)
+				"subject": "Employee Paid Holiday Timesheet - Opened by {0}".format(self.employee_name)
 			})
 
 	def notify_employee(self, status=False):
@@ -36,7 +36,7 @@ class EmployeePaidHolidayTimesheet(Document):
 			"message": "Your Employee Paid Holiday Timesheet {0} by {1}".format(status, self.employee_name),
 			"message_to": employee.user_id,
 			# for email
-			"subject": "Your Employee Paid Holiday Timesheet {0} by {1}".format(status, self.employee_name),
+			"subject": "Employee Paid Holiday Timesheet - {0} by {1}".format(status, self.employee_name),
 			"notify": "employee"
 		})
 

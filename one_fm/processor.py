@@ -28,11 +28,8 @@ def sendemail(recipients, subject, header=None, message=None,
 		message = args.get("message")
 		pdf_link = args.get("pdf_link")
 		doc_link = args.get("doc_link")
-
-	if attachments:
-		message += """
-			<p>Please find the attached Document in the mail below.</p>
-		"""
+		workflow_state = args.get("workflow_state")
+		mandatory_field = args.get("mandatory_field")
 
 	if type(recipients) == str:
 		recipients = [recipients]
@@ -57,7 +54,9 @@ def sendemail(recipients, subject, header=None, message=None,
 				logo=logo,
 				actions=actions,
 				pdf_link=pdf_link,
-				doc_link=doc_link
+				doc_link=doc_link,
+				workflow_state=workflow_state,
+				mandatory_field=mandatory_field[0]
 			),
 			attachments = attachments,
 			delayed=delayed

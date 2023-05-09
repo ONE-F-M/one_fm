@@ -1388,7 +1388,7 @@ def validate_job_applicant(doc, method):
     # update night shift
     if doc.one_fm_night_shift:
         frappe.db.set_value("Job Applicant", doc.name, "one_fm_night_shift", doc.one_fm_night_shift)
-    
+
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     # validate_pam_file_number_and_pam_designation(doc, method)
@@ -2464,7 +2464,8 @@ def get_users_next_action_data(transitions, doc, recipients):
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
-    frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
+    queue_send_workflow_action_email(doc=doc, recipients=recipients)
+    # frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
 
 
 def queue_send_workflow_action_email(doc, recipients):
@@ -2476,31 +2477,43 @@ def queue_send_workflow_action_email(doc, recipients):
 
     common_args = get_common_email_args(doc)
     common_args.pop('attachments')
+
+    mandatory_field = get_mandatory_fields(doc.doctype, doc.get("name"))
+
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
     if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,
-            "args": {"message": message, "doc_link": frappe.utils.get_url(doc.get_url())},
+            "args": {"message": message, 
+                    "doc_link": frappe.utils.get_url(doc.get_url()),
+                    "workflow_state": doc.workflow_state,
+                    "mandatory_field":mandatory_field},
             "reference_name": doc.name,
-            "reference_doctype": doc.doctype
+            "reference_doctype": doc.doctype,
         }
         email_args.update(common_args)
         email_args['subject'] = subject
-        frappe.enqueue(method=sendemail, queue="short", **email_args)
+        sendemail(**email_args)
+        # frappe.enqueue(method=sendemail, queue="short", **email_args)
     else:
         for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
             email_args = {
                 "recipients": recipients,
-                "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))), "message": message, "pdf_link": pdf_link, "doc_link": frappe.utils.get_url(doc.get_url())},
+                "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))),
+                        "message": message,
+                        "pdf_link": pdf_link, 
+                        "doc_link": frappe.utils.get_url(doc.get_url()),
+                        "workflow_state": doc.workflow_state,
+                        "mandatory_field":mandatory_field },
                 "reference_name": doc.name,
                 "reference_doctype": doc.doctype,
             }
             email_args.update(common_args)
             email_args['subject'] = subject
-        frappe.enqueue(method=sendemail, queue="short", **email_args)
-
+        sendemail(**email_args)
+        # frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 def workflow_approve_reject(doc, recipients=None):
     if not recipients:
@@ -2514,6 +2527,13 @@ def workflow_approve_reject(doc, recipients=None):
     }
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
+def get_mandatory_fields(doctype, doc_name):
+    meta = frappe.get_meta(doctype)
+    mandatory_fields = []
+    for d in meta.get("fields", {"reqd": 1}):
+        mandatory_fields.append(d.fieldname)
+    doc = frappe.get_all(doctype, {'name':doc_name},mandatory_fields)
+    return doc
 
 @frappe.whitelist()
 def notify_live_user(company, message, users=False):
@@ -2854,3 +2874,21 @@ def is_assignment_exist_for_the_shift(shift_field, assignment_doctype, shift_nam
 	)
 
 	return True if assignments else False
+
+@frappe.whitelist()
+def mark_suggestions_to_issue(suggestions):
+	issue = frappe.new_doc('Issue')
+	issue.subject = (suggestions[slice(78)]+"...") if len(suggestions) > 80 else suggestions
+	issue.issue_type = get_issue_type("Feedback")
+	issue.description = suggestions
+	issue.save(ignore_permissions=True)
+
+def get_issue_type(issue_type):
+	exist_issue_type = frappe.db.exists('Issue Type', {'name': issue_type})
+	if exist_issue_type:
+		return issue_type
+	else:
+		new_issue_type = frappe.new_doc("Issue Type")
+		new_issue_type.__newname = issue_type
+		new_issue_type.save(ignore_permissions=True)
+		return new_issue_type.name

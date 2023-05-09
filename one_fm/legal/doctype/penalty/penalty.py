@@ -276,7 +276,7 @@ def automatic_reject():
 	time = add_to_date(now_datetime(), hours=-48, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	time_range = add_to_date(now_datetime(), hours=-47, as_datetime=True).strftime("%Y-%m-%d %H:%M")
 	docs = frappe.get_all("Penalty", {"penalty_issuance_time": ["between", [time, time_range]], "workflow_state": "Penalty Issued"})
-	error_list = """"""
+	error_list = """Following Penalty List had error in Auto Rejection. Kindly, take a note.<br>"""
 	if docs:
 		session_user = frappe.session.user #store session user temporarily
 		for doc in docs:
@@ -295,5 +295,5 @@ def automatic_reject():
 
 		frappe.set_user(session_user) #restore session user
 		if error_list:
-			sendemail([get_legal_manager()], subject='Penalty Rejection - Failed', message=error_list)
+			sendemail([get_legal_manager()], subject='Auto Penalty Rejection - Failed', message=error_list)
 		frappe.db.commit()

@@ -6,7 +6,7 @@ from erpnext.setup.doctype.employee.employee import is_holiday
 from hrms.hr.utils import validate_active_employee, validate_dates
 from hrms.hr.doctype.attendance_request.attendance_request import AttendanceRequest
 from frappe.model.workflow import apply_workflow
-from one_fm.utils import send_workflow_action_email, get_holiday_today
+from one_fm.utils import send_workflow_action_email, get_holiday_today, workflow_approve_reject
 
 
 class AttendanceRequestOverride(AttendanceRequest):
@@ -140,9 +140,10 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 
 	def send_notification(self):
-		if self.workflow_state in ['Pending Approval', 'Rejected', 'Approved', 'Update Request', 'Cancelled']:
+		if self.workflow_state in ['Pending Approval']:
 			send_workflow_action_email(self, [self.get_reports_to()])
-
+		if self.workflow_state in ['Rejected', 'Approved', 'Update Request', 'Cancelled']:
+			workflow_approve_reject(self, recipients=None)
 
 	def validate_if_attendance_not_applicable(self, attendance_date):
 		# Check if attendance_date is a Holiday

@@ -19,21 +19,39 @@
              <h2 style="text-align: center;"> {{header}} </h2>
             {% endif %} 
 
-            <p>
-                {{ _("Please take your action to the following document.")}}
-            </p>
-
-            <p>
-            <a target="_blank" class="underline" href="{{ doc_link }}">{{ reference_doctype }} : {{reference_name}}</a>
-            </p>
-            {% if actions is not none %}            
+            {% if actions is not none %} 
+                <p>
+                    Here is to inform you that the following {{ reference_doctype }} requires your attention/action.<br>
+                    {% if mandatory_field is not none %}
+                    The details of the request are as follows:
+                    <br>
+                    <table cellpadding="0" cellspacing="0" border="1" style="border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+                                <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for m in mandatory_field %} 
+                            <tr>
+                                <td style="padding: 10px;">{{ m }}</td> 
+                                <td style="padding: 10px;">{{ mandatory_field[m] }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                    <br>
+                    The link to the document is  <a target="_blank" class="underline" href="{{ doc_link }}"> {{reference_name}}</a> <br>
+                    Please take your action for document using the action button below.<br>
+                </p>           
                 {% for action in actions %}      
                     <a href="{{ action.action_link }}" class="btn btn-primary btn-action">{{ action.action_name }}</a>
                 {% endfor %}
+                <a href="/" class="btn btn-secondary btn-action">Cancel</a>
             {% endif %} 
-            
-            <a href="/" class="btn btn-secondary btn-action">Cancel</a>
-        
+
             {% if content is not none %}   
                 {{ content }}
             {% endif %}
@@ -59,7 +77,7 @@
                     <a href="https://kw.linkedin.com/company/one-facilities-management-kuwait" ><img class="linkedin_logo" src="https://one-fm.com/files/linkedin.png"/></a>
                     <a href="https://www.instagram.com/onefmkuwait" ><img class="instagram_logo" src="https://one-fm.com/files/instagram.png"/></a>
                 </div>
-            </div>                                                                   
+            </div>
             <p style="color:#a8b0b0 ;">The content of this email is confidential and intended for the recipient
             specified in the message only. It is strictly forbidden to share any part of this message 
             with any third party, without the written consent of the sender. If you received this message by 

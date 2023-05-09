@@ -63,7 +63,8 @@ frappe.ui.form.on('ERF', {
 			}
 		}
 		if (frm.doc.docstatus == 1 && frm.doc.status == "Accepted"){
-			if(frappe.session.user==frm.doc.erf_requested_by || frappe.session.user==frm.doc.recruiter_assigned || frappe.session.user==frm.doc.secondary_recruiter_assigned){
+			const is_senior_recruiter = frappe.user.has_role('Senior Recruiter');
+			if (is_senior_recruiter || [frm.doc.erf_requested_by, frm.doc.recruiter_assigned, frm.doc.secondary_recruiter_assigned].includes(frappe.session.user)) {
 				frm.add_custom_button(__('Close ERF'), () => frm.events.close_erf(frm)).addClass('btn-primary');
 			}
 		}
