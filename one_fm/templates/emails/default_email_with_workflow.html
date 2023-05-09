@@ -19,23 +19,25 @@
              <h2 style="text-align: center;"> {{header}} </h2>
             {% endif %} 
 
-            <p>
-                {{ _("Please take your action to the following document.")}}
-            </p>
-
-            <p>
-            <a target="_blank" class="underline" href="{{ doc_link }}">{{ reference_doctype }} : {{reference_name}}</a>
-            </p>
-            {% if actions is not none %}            
+            {% if actions is not none %} 
+                <p>
+                    Here is to inform you that the following {{ reference_doctype }} requires your attention/action  
+                    {% if employee is not none %}, that was applied by {{ employee }} {% endif %} {% if from_date is not none %} from {{from_date}}{% endif %} {% if to_date is not none %} to {{to_date}}{% endif %}. 
+                    The link to the document is  <a target="_blank" class="underline" href="{{ doc_link }}"> {{reference_name}}</a>
+                    Please take your action for document using the action button below.
+                </p>           
                 {% for action in actions %}      
                     <a href="{{ action.action_link }}" class="btn btn-primary btn-action">{{ action.action_name }}</a>
                 {% endfor %}
+                <a href="/" class="btn btn-secondary btn-action">Cancel</a>
             {% endif %} 
-            
-            <a href="/" class="btn btn-secondary btn-action">Cancel</a>
-        
+
             {% if content is not none %}   
                 {{ content }}
+            {% endif %}
+            
+            {%if attachments is not none%}
+                <p>Please find the attached Document in the mail below.</p>
             {% endif %}
         </div>
        
@@ -59,7 +61,7 @@
                     <a href="https://kw.linkedin.com/company/one-facilities-management-kuwait" ><img class="linkedin_logo" src="https://one-fm.com/files/linkedin.png"/></a>
                     <a href="https://www.instagram.com/onefmkuwait" ><img class="instagram_logo" src="https://one-fm.com/files/instagram.png"/></a>
                 </div>
-            </div>                                                                   
+            </div>
             <p style="color:#a8b0b0 ;">The content of this email is confidential and intended for the recipient
             specified in the message only. It is strictly forbidden to share any part of this message 
             with any third party, without the written consent of the sender. If you received this message by 
