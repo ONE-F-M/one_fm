@@ -21,8 +21,19 @@
 
             {% if actions is not none %} 
                 <p>
-                    Here is to inform you that the following {{ reference_doctype }} requires your attention/action  
-                    {% if employee is not none %}, that was applied by {{ employee }} {% endif %} {% if from_date is not none %} from {{from_date}}{% endif %} {% if to_date is not none %} to {{to_date}}{% endif %}. 
+                    Here is to inform you that the following {{ reference_doctype }} requires your attention/action. The details of the request are as follows:
+                    <br>
+                    <table style="border-collapse: collapse;">
+                        <tr>
+                          <th>Lable</th> <th>Value</th>
+                        </tr>
+                    {% for m in mandatory_field %} 
+                        <tr>
+                            <td>{{ m }}</td> <td>{{ mandatory_field[m] }}</td>
+                        </tr>
+                    {% endfor %}
+                    </table>
+                    <br>
                     The link to the document is  <a target="_blank" class="underline" href="{{ doc_link }}"> {{reference_name}}</a>
                     Please take your action for document using the action button below.
                 </p>           
@@ -34,10 +45,6 @@
 
             {% if content is not none %}   
                 {{ content }}
-            {% endif %}
-            
-            {%if attachments is not none%}
-                <p>Please find the attached Document in the mail below.</p>
             {% endif %}
         </div>
        
