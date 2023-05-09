@@ -15,6 +15,13 @@ frappe.ui.form.on('Objective Key Result', {
 	},
 	end_date: function(frm){
 		set_objective_link(frm);
+	},
+	employee: function(frm) {
+		if(frm.doc.employee){
+			if(!frm.doc.okr_for || frm.doc.okr_for == 'Yearly'){
+				frm.set_value('okr_for', 'Quarterly');
+			}
+		}
 	}
 });
 
