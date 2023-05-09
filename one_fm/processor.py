@@ -29,9 +29,7 @@ def sendemail(recipients, subject, header=None, message=None,
 		pdf_link = args.get("pdf_link")
 		doc_link = args.get("doc_link")
 		workflow_state = args.get("workflow_state")
-		employee = args.get("employee")
-		from_date = args.get("from_date")
-		to_date = args.get("to_date")
+		mandatory_field = args.get("mandatory_field")
 
 	if type(recipients) == str:
 		recipients = [recipients]
@@ -58,9 +56,7 @@ def sendemail(recipients, subject, header=None, message=None,
 				pdf_link=pdf_link,
 				doc_link=doc_link,
 				workflow_state=workflow_state,
-				employee = employee,
-				from_date = from_date,
-				to_date = to_date,
+				mandatory_field=mandatory_field[0]
 			),
 			attachments = attachments,
 			delayed=delayed
