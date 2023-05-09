@@ -22,6 +22,7 @@ class OperationsShift(Document):
 
 	def on_update(self):
 		self.validate_name()
+		self.update_post_status()
 
 	def validate_name(self):
 		#this method is updating the name of the record and sending clear message through exception if any of the records are missing
@@ -38,6 +39,18 @@ class OperationsShift(Document):
 			self.set_operation_role_inactive()
 		self.validate_operations_site_status()
 		self.validate_operations_shift_link_to_employees()
+
+	def update_post_status(self):
+		if frappe.db.exists("Operations Post", {'site_shift':self.name}):
+			frappe.db.sql(f"""
+				UPDATE `tabOperations Post` set status="{self.status}"
+				WHERE site_shift="{self.name}";
+			""")
+		if frappe.db.exists("Operations Role", {'shift':self.name}):
+			frappe.db.sql(f"""
+				UPDATE `tabOperations Role` set status="{self.status}"
+				WHERE shift="{self.name}";
+			""")
 
 	def validate_operations_shift_link_to_employees(self):
 		if self.status != 'Active' and self.shift_type:
@@ -60,7 +73,7 @@ class OperationsShift(Document):
 	def validate_operations_site_status(self):
 		if self.status == "Active" and self.site \
 			and frappe.db.get_value('Operations Site', self.site, 'status') != 'Active':
-			frappe.throw(_("The Site '<b>{0}</b>' selected in the Shift '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Shift atcive first make the Site active".format(self.site, self.name)))
+			frappe.throw(_("The Site '<b>{0}</b>' selected in the Shift '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Shift active first make the Site active".format(self.site, self.name)))
 
 	def set_operation_role_inactive(self):
 		operations_role_list = frappe.get_all('Operations Role', {'is_active': 1, 'shift': self.name})

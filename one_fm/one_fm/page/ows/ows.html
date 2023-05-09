@@ -12,24 +12,16 @@
                                     <table class="table table-bordered">
                                     <tbody>
                                         <tr class="table-primary">
-                                            <td>The Goal:
-																							<input class="form-control" type="text" :value="company_goal">
-																						</td>
+                                            <td>The Goal: <b>[% company_goal %]</b></td>
                                         </tr>
                                         <tr class="table-success">
-                                            <td>Company Objective:
-																							<input class="form-control" type="text" :value="company_objective">
-																						</td>
+                                            <td>Company Objective: <b>[% company_objective %]</b></td>
                                         </tr>
                                         <tr class="table-warning">
-                                            <td>Company Objective Quarter:
-																							<input class="form-control" type="text" :value="company_objective_quarter">
-																						</td>
+                                            <td>Company Objective Quarter: <b>[% company_objective_quarter %]</b></td>
                                         </tr>
                                         <tr class="table-danger">
-                                            <td>My Objective:
-																							<input class="form-control" type="text" :value="my_objective">
-																						</td>
+                                            <td>My Objective: <b>[% my_objective %]</b></td>
                                         </tr>
                                     </tbody>
                                     </table>
@@ -49,9 +41,12 @@
                                                       <div class="widget-subtitle"></div>
                                                     </div>
                                                   </div>
-																									<ul>
-			                                                <li v-for="task in routine_tasks"><a href="#" @click.prevent="showTodo(1, task.todo)">[% task.task %]</a></li>
-			                                            </ul>
+                                                  <div v-for="task in routine_tasks">
+                                                    <div class="control-value like-disabled-input" >
+                                                        <a href="#" @click.prevent="showTodo(task.todo)">[% task.task %]</a>
+                                                    </div>
+                                                   
+                                                </div>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box2">
 
@@ -61,9 +56,11 @@
                                                   <div class="widget-subtitle"></div>
                                                 </div>
                                               </div>
-																							<ul>
-	                                                <li v-for="project in active_repetitive_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
-	                                            </ul>
+													<div v-for="project in active_repetitive_projects">
+                                                        <div class="control-value like-disabled-input">
+                                                            <a href="#" @click.prevent="showTodo(project.todo)">[% project.project %]</a>
+                                                        </div>
+                                                    </div>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box3">
 
@@ -77,9 +74,11 @@
                                                   <div class="widget-subtitle"></div>
                                                 </div>
                                               </div>
-                                            <ul>
-                                                <li v-for="project in personal_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
-                                            </ul>
+                                            <div v-for="project in personal_projects">
+                                                <div class="control-value like-disabled-input">
+                                                    <a href="#" @click.prevent="showTodo(project.todo)">[% project.project %]</a>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="col-md-3 card border-dark scroll-box" id="box4">
 
@@ -89,9 +88,11 @@
                                                   <div class="widget-subtitle"></div>
                                                 </div>
                                               </div>
-                                            <ul>
-                                                <li v-for="project in scrum_projects"><a href="#" @click.prevent="showTodo(1, project.todo)">[% project.project %]</a></li>
-                                            </ul>
+                                            <div v-for="project in scrum_projects">
+                                                <div class="control-value like-disabled-input">
+                                                    <a href="#" @click.prevent="showTodo(project.todo)">[% project.project %]</a>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -141,19 +142,19 @@
 
                                             <div class="form-row" v-for="todo in my_todos">
                                                 <div class="col-md-2 mb-3 text-center">
-                                                    <div class="control-value like-disabled-input" > <a href="#" @click.prevent="showTodo(1, todo.name)">[% todo.name %]</a> </div>
+                                                    <div class="control-value like-disabled-input" > <a href="#" @click.prevent="showTodo(todo.name)">[% todo.name %]</a> </div>
                                                  </div>
                                                 <div class="col-md-2 mb-3 text-center">
-                                                    <div class="control-value like-disabled-input" > <p @click.prevent="showTodo(1, todo.date)">[% todo.date %]</p></div>
+                                                    <div class="control-value like-disabled-input" > <p>[% todo.date %]</p></div>
                                                  </div>
                                                  <div class="col-md-3 mb-3 text-center">
-                                                    <div class="control-value like-disabled-input" > <p  @click.prevent="showTodo(1, todo.reference_type)">[% todo.reference_type %]</p></div>
+                                                    <div class="control-value like-disabled-input" > <p>[% todo.reference_type %]</p></div>
                                                  </div>
                                                  <div class="col-md-2 mb-3 text-center">
-                                                    <div class="control-value like-disabled-input" > <p  @click.prevent="showTodo(1, todo.priority)">[% todo.priority %]</p></div>
+                                                    <div class="control-value like-disabled-input" > <p>[% todo.priority %]</p></div>
                                                  </div>
                                                  <div class="col-md-3 mb-3 text-center">
-                                                    <div class="control-value like-disabled-input" > <p  @click.prevent="showTodo(1, todo.assigned_by)">[% todo.assigned_by %]</p></div>
+                                                    <div class="control-value like-disabled-input" > <p>[% todo.assigned_by %]</p></div>
                                                  </div>
 
                                                  <hr>
@@ -198,25 +199,25 @@
                                             <!-- <ul> -->
                                                 <div class="form-row" v-for="todo in assigned_todos">
                                                     <div class="col-md-2 mb-3 text-center">
-                                                        <div class="control-value like-disabled-input" > <a href="#" @click.prevent="showTodo(0, todo.name)">[% todo.name %]</a></div>
+                                                        <div class="control-value like-disabled-input" > <a href="#" @click.prevent="showTodo(todo.name)">[% todo.name %]</a></div>
                                                      </div>
                                                     <div class="col-md-2 mb-3 text-center">
-                                                        <div class="control-value like-disabled-input" > <p @click.prevent="showTodo(0, todo.date)">[% todo.date %]</p></div>
+                                                        <div class="control-value like-disabled-input" > <p>[% todo.date %]</p></div>
 
                                                      </div>
                                                      <div class="col-md-3 mb-3 text-center">
                                                         <div class="control-value like-disabled-input" >
-                                                        <p @click.prevent="showTodo(0, todo.reference_type)">[% todo.reference_type %]</p>
+                                                        <p>[% todo.reference_type %]</p>
                                                         </div>
                                                      </div>
                                                      <div class="col-md-2 mb-3 text-center">
                                                         <div class="control-value like-disabled-input" >
-                                                        <p @click.prevent="showTodo(0, todo.priority)">[% todo.priority %]</p>
+                                                        <p>[% todo.priority %]</p>
                                                         </div>
                                                      </div>
                                                      <div class="col-md-3 mb-3 text-center">
                                                         <div class="control-value like-disabled-input" >
-                                                        <p @click.prevent="showTodo(0, todo.allocated_to)">[% todo.allocated_to %]</p>
+                                                        <p>[% todo.allocated_to %]</p>
                                                         </div>
                                                      </div>
                                                      <hr>
@@ -237,11 +238,17 @@
             <div class="card border-dark mb-3">
                 <div class="card-body">
                     <div class="form-row">
-                        <div class="col-md-6 mb-3">
-                            <input type="text" class="form-control text-center" placeholder="Year (1)" value="Mark " >
+                        <div class="awesomplete col-md-6 mb-3">
+														<label class="control-label" style="padding-right: 0px;">Year</label>
+                            <select class="input-with-feedback form-control" id = "okr_year" name = "okr_year">
+																<option>Select Year</option>
+														</select>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <input type="text" class="form-control text-center" placeholder="Quarter (2)" value="Mark" disabled>
+												<div class="awesomplete col-md-6 mb-3">
+														<label class="control-label" style="padding-right: 0px;">Quarter</label>
+                            <select class="input-with-feedback form-control" id = "okr_quarter" name = "okr_quarter">
+																<option>Select Quarter</option>
+														</select>
                         </div>
                     </div>
                 </div>

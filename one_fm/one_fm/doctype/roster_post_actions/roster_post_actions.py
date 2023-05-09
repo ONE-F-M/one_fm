@@ -62,3 +62,123 @@ def get_permission_query_conditions(user):
 			return '(`tabRoster Post Actions`.`supervisor`="{employee}" or `tabRoster Post Actions`.`site_supervisor`="{employee}")'.format(employee = employee)
 
 	return ""
+
+def create():
+	frappe.enqueue(create_roster_post_actions, is_async=True, queue='long')
+
+def create_roster_post_actions():
+    """
+    This function creates a Roster Post Actions document that issues actions to supervisors to fill post types that are not filled for a given date range.
+    """
+    # clear existing
+    
+    op_shift = frappe.db.sql(f""" 
+    	SELECT supervisor, name FROM `tabOperations Shift` 
+        WHERE
+        status='Active'
+    """, as_dict=1)
+    shift_dict = {}
+    for item in op_shift:
+        if item.supervisor in shift_dict.keys():
+            shift_dict[item.supervisor].append(item.name)
+        else:
+            shift_dict[item.supervisor] = [item.name]
+
+    # start date to be from tomorrow
+    start_date = add_to_date(cstr(getdate()), days=1)
+    # end date to be 14 days after start date
+    end_date = add_to_date(start_date, days=14)
+
+    operations_roles_not_filled_set = set()
+
+    list_of_dict_of_operations_roles_not_filled = []
+    
+    # Fetch post schedules in the date range that are active
+    post_schedules = frappe.db.sql(f"""
+		SELECT ps.name, ps.date, ps.shift, ps.operations_role, ps.post
+        FROM `tabPost Schedule` ps JOIN `tabOperations Site` os 
+        ON ps.site=os.name
+          WHERE
+        ps.post_status='Planned' AND os.status='Active'
+        AND ps.date BETWEEN '{start_date}' AND '{end_date}'
+        ORDER BY date ASC
+    """, as_dict=1)
+    # Fetch employee schedules for employees who are working
+    employee_schedules = frappe.db.get_list("Employee Schedule", {'date': ['between', (start_date, end_date)], 'employee_availability': 'Working'}, ["date", "shift", "operations_role"], order_by="date asc")
+    
+    for ps in post_schedules:
+        # if there is not any employee schedule that matches the post schedule for the specified date, add to post types not filled
+        if not any(es.date == ps.date and es.shift == ps.shift and es.operations_role == ps.operations_role for es in employee_schedules):
+            if ps.operations_role:
+                # Fetch the project and confirm if the is_active field of the project is set,omit operation roles where the project is not active               
+                project_ = frappe.get_value("Operations Role",ps.operations_role,'project')
+                if project_:
+                    is_active = frappe.get_value("Project",project_,'is_active')
+                    if is_active == "Yes":
+                        operations_roles_not_filled_set.add(ps.operations_role)
+                        list_of_dict_of_operations_roles_not_filled.append(ps)   
+                else:
+                    operations_roles_not_filled_set.add(ps.operations_role)
+                    list_of_dict_of_operations_roles_not_filled.append(ps)
+                    
+
+                
+
+
+    # Convert set to tuple for passing it in the sql query as a parameter
+    operations_roles_not_filled = tuple(operations_roles_not_filled_set)
+    
+    if not operations_roles_not_filled:
+        return
+
+    #Fetch supervisor and post types in his/her shift
+    result = frappe.db.sql("""select sv.employee, group_concat(distinct ps.operations_role)
+            from `tabPost Schedule` ps
+            join `tabOperations Shift` sh on sh.name = ps.shift
+            join `tabEmployee` sv on sh.supervisor=sv.employee
+            where ps.operations_role in {operations_roles}
+            AND sh.status='Active' AND sv.status='Active'
+            group by sv.employee""".format(operations_roles=operations_roles_not_filled))
+
+
+    # For each supervisor, create post actions to fill post type specifying the post types not filled
+    
+    for res in result:
+        supervisor = res[0]
+        operations_roles = res[1].split(",")
+
+        check_list = []
+        second_check_list = []
+        for val in list_of_dict_of_operations_roles_not_filled:
+            if val["operations_role"] in operations_roles and val["shift"] in shift_dict[supervisor]:
+                check_list.append(val)
+
+        for item in check_list:
+            for second_item in second_check_list:
+                if (item["date"] == second_item["date"]) and (item["shift"] == second_item["shift"]) and (item["operations_role"] == second_item["operations_role"]):
+                    second_item["quantity"] = second_item["quantity"] + 1
+                    break
+            item.update({"quantity": 1})
+            
+            second_check_list.append(item)
+            check_list.remove(item)
+
+        if second_check_list and len(second_check_list) > 0:
+            roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
+            roster_post_actions_doc.start_date = start_date
+            roster_post_actions_doc.end_date = end_date
+            roster_post_actions_doc.status = "Pending"
+            roster_post_actions_doc.action_type = "Fill Post Type"
+            roster_post_actions_doc.supervisor = supervisor
+
+            for obj in second_check_list:
+                roster_post_actions_doc.append('operations_roles_not_filled', {
+                    'operations_role': obj.get("operations_role"),
+                    "operations_shift": obj.get("shift"),
+                    "date": obj.get("date"),
+                    "quantity": obj.get("quantity") if obj.get("quantity") else 1
+                })
+
+            roster_post_actions_doc.save()
+            frappe.db.commit()
+        del check_list

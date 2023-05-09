@@ -393,9 +393,11 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "upload_work_permit",
    "fieldtype": "Attach",
-   "label": "Upload Work Permit"
+   "label": "Upload Work Permit",
+   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'"
   },
   {
    "allow_on_submit": 1,
@@ -413,10 +415,11 @@
    "options": "Preparation"
   },
   {
-   "depends_on": "eval: doc.work_permit_status == \"Pending by Operator\" || doc.work_permit_status == \"Completed\"",
+   "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "new_work_permit_expiry_date",
    "fieldtype": "Date",
-   "label": "Updated Work Permit Expiry Date"
+   "label": "Updated Work Permit Expiry Date",
+   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'"
   },
   {
    "allow_on_submit": 1,
@@ -438,9 +441,11 @@
   },
   {
    "allow_on_submit": 1,
+   "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "upload_work_permit_on",
    "fieldtype": "Data",
-   "label": "Upload On"
+   "label": "Upload On",
+   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM'"
   },
   {
    "allow_on_submit": 1,
@@ -873,7 +878,7 @@
    "label": "Payment Details Section"
   },
   {
-   "depends_on": "eval: !doc.__islocal",
+   "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "work_permit_information_section",
    "fieldtype": "Section Break",
    "label": "Work Permit Information"
@@ -885,7 +890,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-03-11 12:10:09.583298",
+ "modified": "2023-05-07 09:51:23.748199",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
