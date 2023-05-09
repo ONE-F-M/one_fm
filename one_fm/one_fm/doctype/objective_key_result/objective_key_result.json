@@ -120,7 +120,8 @@
    "fieldtype": "Select",
    "label": "OKR For",
    "mandatory_depends_on": "eval:!doc.is_company_goal",
-   "options": "\nYearly\nQuarterly"
+   "options": "\nYearly\nQuarterly",
+   "read_only_depends_on": "employee"
   },
   {
    "depends_on": "eval:!doc.is_company_goal && doc.okr_for",
@@ -161,7 +162,7 @@
   }
  ],
  "links": [],
- "modified": "2023-05-02 13:17:08.671416",
+ "modified": "2023-05-09 15:18:51.736389",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Objective Key Result",
