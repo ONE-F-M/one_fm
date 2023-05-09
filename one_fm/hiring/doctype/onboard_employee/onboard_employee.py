@@ -85,8 +85,8 @@ class OnboardEmployee(Document):
 		if not self.orientation_location and not self.orientation_on:
 			frappe.throw(_('To inform applicant, You need to set Location and Orientation On!'))
 		else:
-			subject = "<p>Dear {0} You Orientation Program is scheduled at {1} on {2}</p>".format(self.employee_name, self.orientation_on, self.orientation_location)
-			message = subject + "<p>Please be there in time and documents requested</p>"
+			subject = "Orientation Program Invite"
+			message = "<p>Dear {0}, </br> Your Orientation Program has scheduled at {1} on {2}. Please be there in time and documents requested</p>".format(self.employee_name, self.orientation_on, self.orientation_location)
 			if self.email_id:
 				sendemail(recipients= [self.email_id], subject=subject, message=message,
 					reference_doctype=self.doctype, reference_name=self.name)
