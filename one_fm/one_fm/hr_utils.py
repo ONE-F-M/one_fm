@@ -78,7 +78,7 @@ def create_invoice_payment_entry(
 	pe.paid_amount = paid_amount
 	pe.received_amount = received_amount
 	pe.letter_head = doc.get("letter_head")
-	if doc.employee_advance:
+	if doc.get('employee_advance'):
 		try:
 			advance_account = frappe.get_value("Employee Advance",doc.employee_advance,'advance_account')
 			pe.paid_from = advance_account
