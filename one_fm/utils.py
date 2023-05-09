@@ -2464,7 +2464,8 @@ def get_users_next_action_data(transitions, doc, recipients):
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
-    frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
+    queue_send_workflow_action_email(doc=doc, recipients=recipients)
+    # frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
 
 
 def queue_send_workflow_action_email(doc, recipients):
@@ -2475,19 +2476,9 @@ def queue_send_workflow_action_email(doc, recipients):
     user_data_map = get_users_next_action_data(next_possible_transitions, doc, recipients)
 
     common_args = get_common_email_args(doc)
-    attachments = common_args.pop('attachments')
-    employee = from_date = to_date = None
-    if doc.employee:
-        employee = doc.employee
-        
-    if doc.from_date:
-        from_date = doc.from_date
-    elif doc.date:
-        from_date = to_date = doc.date
-    else:
-        from_date = to_date = today()
-    if doc.to_date:
-        to_date = doc.to_date
+    common_args.pop('attachments')
+
+    mandatory_field = get_mandatory_fields(doc.doctype, doc.get("name"))
 
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
@@ -2498,16 +2489,14 @@ def queue_send_workflow_action_email(doc, recipients):
             "args": {"message": message, 
                     "doc_link": frappe.utils.get_url(doc.get_url()),
                     "workflow_state": doc.workflow_state,
-                    "employee": employee,
-                    "from_date":from_date,
-                    "to_date": to_date},
+                    "mandatory_field":mandatory_field},
             "reference_name": doc.name,
             "reference_doctype": doc.doctype,
-            "attachments": attachments,
         }
         email_args.update(common_args)
         email_args['subject'] = subject
-        frappe.enqueue(method=sendemail, queue="short", **email_args)
+        sendemail(**email_args)
+        # frappe.enqueue(method=sendemail, queue="short", **email_args)
     else:
         for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
             email_args = {
@@ -2516,16 +2505,15 @@ def queue_send_workflow_action_email(doc, recipients):
                         "message": message,
                         "pdf_link": pdf_link, 
                         "doc_link": frappe.utils.get_url(doc.get_url()),
-                         "workflow_state": doc.workflow_state,
-                        "employee": employee,
-                        "from_date":from_date,
-                        "to_date": to_date },
+                        "workflow_state": doc.workflow_state,
+                        "mandatory_field":mandatory_field },
                 "reference_name": doc.name,
                 "reference_doctype": doc.doctype,
             }
             email_args.update(common_args)
             email_args['subject'] = subject
-        frappe.enqueue(method=sendemail, queue="short", **email_args)
+        sendemail(**email_args)
+        # frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 def workflow_approve_reject(doc, recipients=None):
     if not recipients:
@@ -2539,6 +2527,13 @@ def workflow_approve_reject(doc, recipients=None):
     }
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
+def get_mandatory_fields(doctype, doc_name):
+    meta = frappe.get_meta(doctype)
+    mandatory_fields = []
+    for d in meta.get("fields", {"reqd": 1}):
+        mandatory_fields.append(d.fieldname)
+    doc = frappe.get_all(doctype, {'name':doc_name},mandatory_fields)
+    return doc
 
 @frappe.whitelist()
 def notify_live_user(company, message, users=False):
