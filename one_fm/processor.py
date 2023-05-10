@@ -11,8 +11,9 @@ def sendemail(recipients, subject, header=None, message=None,
 	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None):
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
-	actions=pdf_link=""
+	actions=pdf_link=workflow_state=""
 	doc_link = "#"
+	mandatory_field=None
 
 	head = header[0] if header else ""
 	if not message:
