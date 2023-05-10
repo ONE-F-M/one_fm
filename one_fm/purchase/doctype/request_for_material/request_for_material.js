@@ -816,50 +816,63 @@ frappe.ui.form.on("Request for Material Item", {
 					if(r.message && r.message.length > 0){
 						var data = r.message;
 						var $wrapper = dialog.fields_dict.stock_level_html.$wrapper;
-						var template = `{% for d in data %}
-							<div class="dashboard-list-item">
-								<div class="row">
-									<div class="col-sm-3" style="margin-top: 8px;">
-										<a data-type="warehouse" data-name="{{ d.warehouse }}">{{ d.warehouse }}</a>
-									</div>
-									<div class="col-sm-3" style="margin-top: 8px;">
-										{% if show_item %}
-											<a data-type="item"
-												data-name="{{ d.item_code }}">{{ d.item_code }}
-												{% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %}
-											</a>
-										{% endif %}
-									</div>
-									<div class="col-sm-4">
-										<span class="inline-graph">
-											<span class="inline-graph-half" title="{{ __("Reserved Qty") }}">
-												<span class="inline-graph-count">{{ d.total_reserved }}</span>
-												<span class="inline-graph-bar">
-													<span class="inline-graph-bar-inner"
-														style="width: {{ cint(Math.abs(d.total_reserved)/max_count * 100) || 5 }}%">
-													</span>
-												</span>
-											</span>
-											<span class="inline-graph-half" title="{{ __("Actual Qty {0} / Waiting Qty {1}", [d.actual_qty, d.pending_qty]) }}">
-												<span class="inline-graph-count">
-													{{ d.actual_qty }} {{ (d.pending_qty > 0) ? ("(" + d.pending_qty+ ")") : "" }}
-												</span>
-												<span class="inline-graph-bar">
-													<span class="inline-graph-bar-inner dark"
-														style="width: {{ cint(d.actual_qty/max_count * 100) }}%">
-													</span>
-													{% if d.pending_qty > 0 %}
-													<span class="inline-graph-bar-inner" title="{{ __("Projected Qty") }}"
-														style="width: {{ cint(d.pending_qty/max_count * 100) }}%">
-													</span>
-													{% endif %}
-												</span>
-											</span>
-										</span>
-									</div>
+						var template = `
+							<div class="row">
+								<div class="col-sm-3" style="margin-top: 1px;">
+									<b>Warehouse</b>
+								</div>
+								<div class="col-sm-3" style="margin-top: 1px;">
+									<b>Item</b>
+								</div>
+								<div class="col-sm-4" style="margin-top: 1px; text-align: center;">
+									<b>Stock Level</b>
 								</div>
 							</div>
-						{% endfor %}
+							<hr/>
+							{% for d in data %}
+								<div class="dashboard-list-item">
+									<div class="row">
+										<div class="col-sm-3" style="margin-top: 8px;">
+											<a data-type="warehouse" data-name="{{ d.warehouse }}">{{ d.warehouse }}</a>
+										</div>
+										<div class="col-sm-3" style="margin-top: 8px;">
+											{% if show_item %}
+												<a data-type="item"
+													data-name="{{ d.item_code }}">{{ d.item_code }}
+													{% if d.item_name != d.item_code %}({{ d.item_name }}){% endif %}
+												</a>
+											{% endif %}
+										</div>
+										<div class="col-sm-4">
+											<span class="inline-graph">
+												<span class="inline-graph-half" title="{{ __("Reserved Qty") }}">
+													<span class="inline-graph-count">{{ d.total_reserved }}</span>
+													<span class="inline-graph-bar">
+														<span class="inline-graph-bar-inner"
+															style="width: {{ cint(Math.abs(d.total_reserved)/max_count * 100) || 5 }}%">
+														</span>
+													</span>
+												</span>
+												<span class="inline-graph-half" title="{{ __("Actual Qty {0} / Waiting Qty {1}", [d.actual_qty, d.pending_qty]) }}">
+													<span class="inline-graph-count">
+														{{ d.actual_qty }} {{ (d.pending_qty > 0) ? ("(" + d.pending_qty+ ")") : "" }}
+													</span>
+													<span class="inline-graph-bar">
+														<span class="inline-graph-bar-inner dark"
+															style="width: {{ cint(d.actual_qty/max_count * 100) }}%">
+														</span>
+														{% if d.pending_qty > 0 %}
+														<span class="inline-graph-bar-inner" title="{{ __("Projected Qty") }}"
+															style="width: {{ cint(d.pending_qty/max_count * 100) }}%">
+														</span>
+														{% endif %}
+													</span>
+												</span>
+											</span>
+										</div>
+									</div>
+								</div>
+							{% endfor %}
 						`;
 
 						var max_count = 0;
