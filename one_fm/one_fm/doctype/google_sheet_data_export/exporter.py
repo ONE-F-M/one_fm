@@ -562,11 +562,6 @@ def update_google_sheet_daily():
 		select_columns = doc.field_cache
 		filters = doc.filter_cache
 
-		# log the selected Column
-		log = "Doctype: "+doc.reference_doctype+", Select Columns:"+ select_columns
-		frappe.logger().info(log)
-		frappe.log_error(log)
-
 		frappe.enqueue(export_data, 
 			doctype= doc.reference_doctype,
 			select_columns= select_columns,
