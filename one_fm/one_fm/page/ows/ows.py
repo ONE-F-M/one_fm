@@ -197,11 +197,12 @@ def get_my_objective(year=False, quarter=False):
 		else:
 			query += " and '{0}' between start_date and end_date".format(getdate(today()))
 			results = frappe.db.sql(query, as_dict=True)
-			quarter = get_the_quarter(results[0].start_date, results[0].end_date)
-			if quarter:
-				for result in results:
-					if result.quarter == quarter:
-						return result
+			if results:
+				quarter = get_the_quarter(results[0].start_date, results[0].end_date)
+				if quarter:
+					for result in results:
+						if result.quarter == quarter:
+							return result
 
 		return False
 
