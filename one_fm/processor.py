@@ -11,9 +11,10 @@ def sendemail(recipients, subject, header=None, message=None,
 	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None):
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
-	actions=pdf_link=""
+	actions=pdf_link=workflow_state=""
 	doc_link = "#"
-
+	mandatory_field=None
+	print("inMail")
 	head = header[0] if header else ""
 	if not message:
 		message = " "
@@ -29,7 +30,7 @@ def sendemail(recipients, subject, header=None, message=None,
 		pdf_link = args.get("pdf_link")
 		doc_link = args.get("doc_link")
 		workflow_state = args.get("workflow_state")
-		mandatory_field = args.get("mandatory_field")
+		mandatory_field = args.get("mandatory_field")[0]
 
 	if type(recipients) == str:
 		recipients = [recipients]
@@ -56,7 +57,7 @@ def sendemail(recipients, subject, header=None, message=None,
 				pdf_link=pdf_link,
 				doc_link=doc_link,
 				workflow_state=workflow_state,
-				mandatory_field=mandatory_field[0]
+				mandatory_field=mandatory_field
 			),
 			attachments = attachments,
 			delayed=delayed
