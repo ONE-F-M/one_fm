@@ -346,12 +346,17 @@ def get_attendance(projects, employee_list):
 			GROUP BY at.employee
 		""", as_dict=1)
 
-		attendance_list_ot = frappe.db.sql(f""" SELECT employee,
-										(SELECT COUNT(*) FROM `tabEmployee Schedule` WHERE employee_availability = "Day Off" AND date BETWEEN '{start_date}' AND {end_date}) as do_roster, 
-										(SELECT COUNT(*) FROM `tabEmployee Schedule` WHERE day_off_ot = 1 AND date BETWEEN '{start_date}' AND '{end_date}') as do_ot,
-										(SELECT Count(*) FROM `tabAttendance` WHERE attendance_date BETWEEN '{start_date}' AND '{end_date}' AND status IN ("Present", "Work From Home") AND roster_type='Over-Time') as ot
-										FROM `tabEmployee Schedule` es
-										GROUP By es.employee""", as_dict=1)
+		attendance_list_ot = frappe.db.sql(f"""SELECT 
+								e.name AS employee,
+								COUNT(CASE WHEN es.employee_availability = 'Day Off' THEN 1 END) AS do_roster,
+								COUNT(CASE WHEN es.day_off_ot = 1 THEN 1 END) AS do_ot,
+								COUNT(CASE WHEN a.status IN ('Present', 'Work From Home') AND a.roster_type = 'Over-Time' THEN 1 END) AS ot
+								FROM 
+								`tabEmployee` e
+								LEFT JOIN `tabEmployee Schedule` es ON e.name = es.employee AND es.date BETWEEN '{start_date}' AND '{end_date}'
+								LEFT JOIN `tabAttendance` a ON e.name = a.employee AND a.attendance_date BETWEEN '{start_date}' AND '{end_date}'
+								GROUP BY 
+								e.name;""", as_dict=1)
 
 		attendance_leave_details = frappe.db.sql(f"""
 			SELECT at.employee, at.leave_type, COUNT(at.leave_type) AS leave_count FROM `tabAttendance` at JOIN `tabEmployee` e ON e.name=at.employee
@@ -376,7 +381,7 @@ def get_attendance(projects, employee_list):
 				{condition}
 				Group by es.employee;
 			""", as_dict=1)
-
+		print(attendance_list_ot)
 		for row in present_list:
 			present_dict[row.employee] = row.working_days
 
