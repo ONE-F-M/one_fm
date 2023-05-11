@@ -24,13 +24,13 @@ class OperationsRole(Document):
 			frappe.throw("Post Name cannot be empty.")
 		if not self.shift:
 			frappe.throw("Shift cannot be empty.")
-		if not self.is_active:
+		if self.status == 'Inactive':
 			self.set_operation_post_inactive()
 
 		self.validate_operations_shift_status()
 
 	def validate_operations_shift_status(self):
-		if self.is_active and self.shift \
+		if self.status=='Active' and self.shift \
 			and frappe.db.get_value('Operations Shift', self.shift, 'status') != 'Active':
 			frappe.throw(_("The Shift <br/>'<b>{0}</b>' selected in the Role '<b>{1}</b>' is <b>Inactive</b>. <br/> To make the Role atcive first make the Shift active".format(self.shift, self.name)))
 
@@ -90,7 +90,7 @@ def get_operations_role_list(doctype, txt, searchfield, start, page_len, filters
 		select %s
 		from `tabOperations Role`
 		where docstatus < 2
-			and is_active = 1
+			and status = 'Active'
 			and (%s like %s or post_name like %s)
 			{match_conditions}
 		order by

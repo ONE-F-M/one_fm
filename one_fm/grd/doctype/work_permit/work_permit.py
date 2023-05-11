@@ -289,7 +289,8 @@ class WorkPermit(Document):
                 if employee_document.document_name == 'Work Permit':
                     employee_document.attach = work_permit_attachment
                     employee_document.issued_on = today
-                    valid_till.attach = new_expiry_date
+                    employee_document.valid_till = new_expiry_date
+                    # valid_till.attach = new_expiry_date
                     Find = True
                     break
         if not Find:
