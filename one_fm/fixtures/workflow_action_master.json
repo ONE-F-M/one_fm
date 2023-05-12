@@ -334,5 +334,26 @@
   "modified": "2022-09-07 11:49:10.373503",
   "name": "Submit",
   "workflow_action_name": "Submit"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-05-13 00:21:53.606438",
+  "name": "Save",
+  "workflow_action_name": "Save"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-05-13 00:22:19.003890",
+  "name": "Informed Previous Company",
+  "workflow_action_name": "Informed Previous Company"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-05-13 00:22:57.927107",
+  "name": "Paid",
+  "workflow_action_name": "Paid"
  }
 ]

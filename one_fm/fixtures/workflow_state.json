@@ -835,5 +835,14 @@
   "name": "Pending Approval from Operations Manager",
   "style": "",
   "workflow_state_name": "Pending Approval from Operations Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-05-13 00:19:36.362855",
+  "name": "Pending By PAM Operator",
+  "style": "",
+  "workflow_state_name": "Pending By PAM Operator"
  }
 ]

@@ -581,7 +581,7 @@
   "doctype": "Workflow",
   "document_type": "Work Permit",
   "is_active": 1,
-  "modified": "2021-09-12 15:27:39.765866",
+  "modified": "2023-05-13 00:31:38.956045",
   "name": "Work Permit",
   "override_status": 0,
   "send_email_alert": 0,
@@ -665,7 +665,7 @@
     "update_value": "Pending by Operator"
    },
    {
-    "allow_edit": "GRD Operator",
+    "allow_edit": "PAM Operator",
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -673,7 +673,7 @@
     "parent": "Work Permit",
     "parentfield": "states",
     "parenttype": "Workflow",
-    "state": "Pending By PAM",
+    "state": "Pending By PAM Operator",
     "update_field": "work_permit_status",
     "update_value": "Pending by Operator"
    },
@@ -745,7 +745,7 @@
     "allow_self_approval": 1,
     "allowed": "GRD Supervisor",
     "condition": null,
-    "next_state": "Pending By PAM",
+    "next_state": "Pending By PAM Operator",
     "parent": "Work Permit",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -776,31 +776,31 @@
    {
     "action": "Accept",
     "allow_self_approval": 1,
-    "allowed": "GRD Operator",
+    "allowed": "PAM Operator",
     "condition": null,
     "next_state": "Completed",
     "parent": "Work Permit",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Pending By PAM"
+    "state": "Pending By PAM Operator"
    },
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "GRD Operator",
+    "allowed": "PAM Operator",
     "condition": null,
     "next_state": "Reason of Rejection",
     "parent": "Work Permit",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Pending By PAM"
+    "state": "Pending By PAM Operator"
    },
    {
     "action": "Informed Previous Company",
     "allow_self_approval": 1,
     "allowed": "GRD Operator",
     "condition": "doc.work_permit_type == \"Local Transfer\"\n",
-    "next_state": "Pending By PAM",
+    "next_state": "Pending By PAM Operator",
     "parent": "Work Permit",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -809,13 +809,13 @@
    {
     "action": "Accept",
     "allow_self_approval": 1,
-    "allowed": "GRD Operator",
+    "allowed": "PAM Operator",
     "condition": "doc.work_permit_type == \"Local Transfer\"",
     "next_state": "Pending  For Payment",
     "parent": "Work Permit",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Pending By PAM"
+    "state": "Pending By PAM Operator"
    },
    {
     "action": "Paid",
@@ -842,13 +842,13 @@
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "GRD Operator",
+    "allowed": "PAM Operator",
     "condition": null,
     "next_state": "Reason of Rejection",
     "parent": "Work Permit",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "state": "Pending By PAM"
+    "state": "Pending By PAM Operator"
    },
    {
     "action": "Done",
@@ -4834,10 +4834,10 @@
   "doctype": "Workflow",
   "document_type": "Contracts",
   "is_active": 1,
-  "modified": "2023-02-21 00:26:18.549395",
+  "modified": "2023-05-12 11:59:55.183545",
   "name": "Contracts",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Finance User",
