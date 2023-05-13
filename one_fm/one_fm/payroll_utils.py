@@ -191,7 +191,9 @@ def add_tax_components(doc):
                 if d.name not in other_deduction_components
             ]   
     
+        doc.component_based_veriable_tax = {}
         for d in tax_components:
+            doc.component_based_veriable_tax.setdefault(d, {})
             tax_amount = doc.calculate_variable_based_on_taxable_salary(d)
             tax_row = get_salary_component_data(d)
             doc.update_component_row(tax_row, tax_amount, "deductions")
