@@ -40,11 +40,37 @@ from frappe.desk.notifications import extract_mentions
 from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
-    get_common_email_args, deduplicate_actions, get_next_possible_transitions,
+    get_email_template, deduplicate_actions, get_next_possible_transitions,
     get_doc_workflow_state, get_workflow_name, get_workflow_action_url
 )
 from six import string_types
 from frappe.core.doctype.doctype.doctype import validate_series
+
+
+def get_common_email_args(doc):
+	doctype = doc.get("doctype")
+	docname = doc.get("name")
+
+	email_template = get_email_template(doc)
+	if email_template:
+		subject = frappe.render_template(email_template.subject, vars(doc))
+		response = frappe.render_template(email_template.response, vars(doc))
+	else:
+		subject = _("Workflow Action") + f" on {doctype}: {docname}"
+		response = get_link_to_form(doctype, docname, f"{doctype}: {docname}")
+
+	common_args = {
+		"template": "workflow_action",
+		"header": "Workflow Action",
+		"attachments": [],
+		"subject": subject,
+		"message": response,
+	}
+	return common_args
+
+
+
+
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -2531,7 +2557,11 @@ def get_mandatory_fields(doctype, doc_name):
     meta = frappe.get_meta(doctype)
     mandatory_fields = []
     for d in meta.get("fields", {"reqd": 1}):
-        mandatory_fields.append(d.fieldname)
+        if doctype != "Purchase Order":
+            mandatory_fields.append(d.fieldname)
+        else:
+            if d.fieldtype !="Table":
+                mandatory_fields.append(d.fieldname)
     doc = frappe.get_all(doctype, {'name':doc_name},mandatory_fields)
     return doc
 

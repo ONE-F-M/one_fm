@@ -13,8 +13,13 @@ from frappe.utils import getdate
 
 class ObjectiveKeyResult(Document):
 	def validate(self):
+		self.validate_employee_okr()
 		self.validate_company_goal()
 		self.validate_okr_with_same_combination()
+
+	def validate_employee_okr(self):
+		if self.employee and self.okr_for != 'Quarterly':
+			frappe.throw(_("Employee can create OKR for Quarterly only"))
 
 	def validate_company_goal(self):
 		if self.is_company_goal:
