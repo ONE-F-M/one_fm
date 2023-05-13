@@ -173,7 +173,7 @@ def update_payroll_entry_details(salary_slip):
 		)
 
 @frappe.whitelist()
-def add_tax_components(doc, payroll_period):
+def add_tax_components(doc):
     # Calculate variable_based_on_taxable_salary after all components updated in salary slip
     tax_components, other_deduction_components = [], []
     salary_structure = frappe.get_doc("Salary Structure",doc.salary_structure)
@@ -192,6 +192,6 @@ def add_tax_components(doc, payroll_period):
             ]   
     
         for d in tax_components:
-            tax_amount = doc.calculate_variable_based_on_taxable_salary(d, payroll_period)
+            tax_amount = doc.calculate_variable_based_on_taxable_salary(d)
             tax_row = get_salary_component_data(d)
             doc.update_component_row(tax_row, tax_amount, "deductions")
