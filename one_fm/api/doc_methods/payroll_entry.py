@@ -21,6 +21,7 @@ from itertools import groupby
 from operator import itemgetter
 from one_fm.processor import sendemail
 from one_fm.overrides.leave_application import close_leaves
+from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
