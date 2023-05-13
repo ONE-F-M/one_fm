@@ -42,14 +42,6 @@ class OperationsSite(Document):
 
 	def update_shift_post_role_status(self):
 		# check if employee in any of the existing site, shift, role, post
-		if self.status=='Active':
-			active_emp_sites = frappe.db.sql(f"""
-				SELECT name FROM tabEmployee WHERE site="{self.name}" AND status='Active'
-			""", as_dict=1)
-			# confirm active employees for site and related shifts
-			if active_emp_sites:
-				frappe.throw(f"There are {len(active_emp_sites)} active employees in site {self.name}")
-			
 		if frappe.db.exists("Operations Shift", {'site':self.name}):
 			frappe.db.sql(f"""
 				UPDATE `tabOperations Shift` set status="{self.status}"
