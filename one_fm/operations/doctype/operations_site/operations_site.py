@@ -18,6 +18,19 @@ class OperationsSite(Document):
 		self.validate_project_status()
 
 	def validate_project_status(self):
+		# validate active employees
+		if self.status=='Inactive':
+			active_emp_sites = frappe.db.sql(f"""
+				SELECT name, employee_name FROM tabEmployee WHERE site="{self.name}" AND status='Active'
+			""", as_dict=1)
+			# confirm active employees for site and related shifts
+			if active_emp_sites:
+				msg = "The site `{0}` is linked with {1} employee(s):<br/>".format(self.name, len(active_emp_sites))
+				for employee in active_emp_sites:
+					msg += "<br/>"+"<a href='/app/employee/{0}'>{0}: {1}</a>".format(employee.name, employee.employee_name)
+				msg += '</br></br><a href="/app/employee?status=Active&site={0}">click here to view the list</a>'.format(self.name)
+				frappe.throw(_("{0}".format(msg)))
+
 		if self.status == "Active" and self.project:
 			active_open = False
 			if frappe.db.get_value('Project', self.project, 'status') != 'Open':
@@ -28,6 +41,15 @@ class OperationsSite(Document):
 				frappe.throw(_("The Project '<b>{0}</b>' selected in the Site '<b>{1}</b>' is <b>Not {2}</b>. <br/> To make the Site atcive first make the project {2}".format(self.project, self.name, active_open)))
 
 	def update_shift_post_role_status(self):
+		# check if employee in any of the existing site, shift, role, post
+		if self.status=='Active':
+			active_emp_sites = frappe.db.sql(f"""
+				SELECT name FROM tabEmployee WHERE site="{self.name}" AND status='Active'
+			""", as_dict=1)
+			# confirm active employees for site and related shifts
+			if active_emp_sites:
+				frappe.throw(f"There are {len(active_emp_sites)} active employees in site {self.name}")
+			
 		if frappe.db.exists("Operations Shift", {'site':self.name}):
 			frappe.db.sql(f"""
 				UPDATE `tabOperations Shift` set status="{self.status}"
