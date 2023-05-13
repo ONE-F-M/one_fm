@@ -66,8 +66,8 @@ class OperationsShift(Document):
 			if employees and len(employees) > 0:
 				msg = "The shift `{0}` is linked with {1} employee(s):<br/>".format(self.name, len(employees))
 				for employee in employees:
-					msg += "<br/>"+employee.name+":"+employee.employee_name
-				msg += '</br></br><a href="{0}/app/employee?shift={1}">click here to view the list</a>'.format(frappe.utils.get_url(), self.name)
+					msg += "<br/>"+"<a href='/app/employee/{0}'>{0}: {1}</a>".format(employee.name, employee.employee_name)
+				msg += '</br></br><a href="/app/employee?status=Active&shift={0}">click here to view the list</a>'.format(self.name)
 				frappe.throw(_("{0}".format(msg)))
 
 	def validate_operations_site_status(self):

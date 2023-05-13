@@ -40,18 +40,32 @@ def validate_poc_list(doc, method):
         frappe.throw('POC list is mandatory for project type <b>External</b>')
 
 def validate_project(doc, method):
-	if doc.status != 'Open' or doc.is_active == "No":
+	"""
+        Check is active status, the update site, shift, ...
+    """
+	if doc.is_active == "No":
 		set_operation_site_inactive(doc)
 
 def set_operation_site_inactive(doc):
-	operations_site_list = frappe.get_all('Operations Site', {'status': 'Active', 'project': doc.name})
-	if operations_site_list:
-		if len(operations_site_list) > 10:
-			frappe.enqueue(queue_operation_site_inactive, operations_site_list=operations_site_list, is_async=True, queue="long")
-			frappe.msgprint(_("Operations Site linked to the Project {0} will set to Inactive!".format(doc.name)), alert=True, indicator='green')
-		else:
-			queue_operation_site_inactive(operations_site_list)
-			frappe.msgprint(_("Operations Site linked to the Project {0} is set to Inactive!".format(doc.name)), alert=True, indicator='green')
+	# check for active employees
+    active_emp_project = frappe.db.sql(f"""
+        SELECT name, employee_name FROM tabEmployee WHERE project="{doc.name}" AND status='Active'
+    """, as_dict=1)
+    if active_emp_project:
+        msg = "The project `{0}` is linked with {1} employee(s):<br/>".format(doc.name, len(active_emp_project))
+        for employee in active_emp_project:
+            msg += "<br/>"+"<a href='/app/employee/{0}'>{0}: {1}</a>".format(employee.name, employee.employee_name)
+        msg += '</br></br><a href="/app/employee?status=Active&project={0}">click here to view the list</a>'.format(doc.name)
+        frappe.throw(_("{0}".format(msg)))
+
+    operations_site_list = frappe.get_all('Operations Site', {'status': 'Active', 'project': doc.name})
+    if operations_site_list:
+        if len(operations_site_list) > 10:
+            frappe.enqueue(queue_operation_site_inactive, operations_site_list=operations_site_list, is_async=True, queue="long")
+            frappe.msgprint(_("Operations Site linked to the Project {0} will set to Inactive!".format(doc.name)), alert=True, indicator='green')
+        else:
+            queue_operation_site_inactive(operations_site_list)
+            frappe.msgprint(_("Operations Site linked to the Project {0} is set to Inactive!".format(doc.name)), alert=True, indicator='green')
 
 def queue_operation_site_inactive(operations_site_list):
 	for operations_site in operations_site_list:
