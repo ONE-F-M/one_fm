@@ -49,3 +49,12 @@ def disable_workflow_emails():
             except Exception as e:
                 print(str(e))
         frappe.db.commit()
+
+def before_migrate():
+    """
+        Things to do before migrate
+    """
+    print("Removing column_break_20 from Salary Structure Assignment in Custom Field.")
+    frappe.db.sql("""
+        DELETE FROM `tabCustom Field` WHERE name='Salary Structure Assignment-column_break_20'
+    """)

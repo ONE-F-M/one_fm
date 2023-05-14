@@ -363,7 +363,6 @@ doc_events = {
 	},
 	"Shift Request":{
 		"before_save":[
-			"one_fm.api.doc_methods.shift_request.send_workflow_action_email",
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
 		],
 		"on_update_after_submit":[
@@ -719,10 +718,10 @@ fixtures = [
 		"dt": "Role",
 		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
 	},
-	{
-		"dt": "Custom DocPerm",
-		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	},
+	# {
+	# 	"dt": "Custom DocPerm",
+	# 	"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	# },
 	{
 		"dt": "Email Template"
 	},
@@ -767,6 +766,10 @@ jenv = {
 after_migrate = [
     "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.disable_workflow_emails",
+]
+
+before_migrate = [
+    "one_fm.after_migrate.execute.before_migrate"
 ]
 
 # add more info to session on boot
