@@ -2478,11 +2478,11 @@ def queue_send_workflow_action_email(doc, recipients):
     common_args = get_common_email_args(doc)
     common_args.pop('attachments')
 
-    mandatory_field = get_mandatory_fields(doc.doctype, doc.get("name"))
+    mandatory_field = get_mandatory_fields(doc.doctype, doc.name)
 
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
-    pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
+    pdf_link = get_url_to_form(doc.get("doctype"), doc.name)
     if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,
@@ -2530,8 +2530,10 @@ def workflow_approve_reject(doc, recipients=None):
 def get_mandatory_fields(doctype, doc_name):
     meta = frappe.get_meta(doctype)
     mandatory_fields = []
-    for d in meta.get("fields", {"reqd": 1}):
+    for d in meta.get("fields", {"reqd": 1, "fieldtype":["!=", "Table"], "fieldname":["!=", "naming_series"]}):
         mandatory_fields.append(d.fieldname)
+    if not mandatory_fields:
+        mandatory_fields = ["name"]
     doc = frappe.get_all(doctype, {'name':doc_name},mandatory_fields)
     return doc
 
