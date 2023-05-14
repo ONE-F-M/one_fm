@@ -73,6 +73,7 @@
   },
   {
    "fetch_from": "supervisor.employee_name",
+   "fetch_if_empty": 1,
    "fieldname": "supervisor_name",
    "fieldtype": "Data",
    "ignore_user_permissions": 1,
@@ -90,6 +91,7 @@
   },
   {
    "fetch_from": "site_supervisor.employee_name",
+   "fetch_if_empty": 1,
    "fieldname": "site_supervisor_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -107,7 +109,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-04-25 20:32:15.294291",
+ "modified": "2023-05-08 01:13:52.146240",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Post Actions",

@@ -457,7 +457,10 @@ class DataExporter:
 		try:
 			no_of_row = len(values)
 			no_of_col = len(self.column)
-			ranges = self.sheet_name + "!A1:" + chr(ord('A') + no_of_col) + str(no_of_row)
+			if no_of_col <= 26:
+				ranges = self.sheet_name + "!A1:" + chr(ord('A') + no_of_col) + str(no_of_row)
+			else:
+				ranges = self.sheet_name + "!A1:A" + chr(ord('A') + no_of_col - 26) + str(no_of_row)
 
 			# clear sheet
 			service.spreadsheets().values().clear(spreadsheetId=self.google_sheet_id, 
@@ -561,11 +564,6 @@ def update_google_sheet_daily():
 
 		select_columns = doc.field_cache
 		filters = doc.filter_cache
-
-		# log the selected Column
-		log = "Doctype: "+doc.reference_doctype+", Select Columns:"+ select_columns
-		frappe.logger().info(log)
-		frappe.log_error(log)
 
 		frappe.enqueue(export_data, 
 			doctype= doc.reference_doctype,
