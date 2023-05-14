@@ -19,6 +19,7 @@ from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
+from one_fm.utils import send_workflow_action_email, get_holiday_today, workflow_approve_reject
 
 # from PyPDF2 import PdfFileReader
 
@@ -29,7 +30,7 @@ class WorkPermit(Document):
         self.check_required_document_for_workflow()
         self.notify()
         self.send_work_permit_receipt_to_perm_operator()
-        frappe.throw(f"""{self.reference_number_on_pam_registration}, {self.workflow_state}""")
+        # frappe.throw(f"""{self.reference_number_on_pam_registration}, {self.workflow_state}""")
         
 
     def validate(self):
@@ -46,6 +47,13 @@ class WorkPermit(Document):
             ):
             frappe.throw("Missing Data\nUpload Work Permit, fill Updated Work Permit Expiry Date and Upload On field.")
             
+        # check if receipt uploaded and status is supervisor
+        if self.attach_invoice and self.workflow_state=="Pending By PAM Operator":
+            # send email to perm operation
+            send_workflow_action_email(self, [self.pam_operator])
+        # frappe.throw(f"""{pam_operator_email}, {self.attach_invoice}, {self.workflow_state}""")
+
+
     def send_work_permit_receipt_to_perm_operator(self):
         if (self.reference_number_on_pam_registration and self.workflow_state=='Apply Online by PRO'):
             pass
@@ -62,6 +70,8 @@ class WorkPermit(Document):
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+        if not self.pam_operator:
+            self.pam_operator = pam_operator_email = frappe.db.get_single_value("GRD Settings", 'default_pam_operator')
 
     def notify(self):
         if self.workflow_state == "Pending By Supervisor":
