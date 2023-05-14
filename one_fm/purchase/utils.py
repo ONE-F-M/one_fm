@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 import frappe, os
+from one_fm.purchase.doctype.request_for_purchase.request_for_purchase  import get_users_with_role
 import json
 from frappe.model.document import Document
 from frappe.utils import get_site_base_path
@@ -23,7 +24,7 @@ import time
 import math, random
 import hashlib
 from one_fm.utils import fetch_employee_signature
-
+from frappe.desk.form.assign_to import  remove as remove_assignment
 @frappe.whitelist()
 def get_warehouse_contact_details(warehouse):
     from frappe.contacts.doctype.contact.contact import get_default_contact, get_contact_details
@@ -145,9 +146,16 @@ def get_supplier_list(doctype, txt, searchfield, start, page_len, filters):
                 'txt': "%%%s%%" % txt
             }
         )
-
+def close_assignments(doc):
+    "Close Todos for RFP when purchase order is being created"
+    if doc.one_fm_request_for_purchase:
+        purchase_users = get_users_with_role('Purchase User')
+        for each in purchase_users:
+            remove_assignment("Request for Purchase", doc.one_fm_request_for_purchase,each)
+    
 def set_quotation_attachment_in_po(doc, method):
     if doc.one_fm_request_for_purchase:
+        close_assignments(doc)
         quotations = frappe.get_list('Quotation From Supplier', {'request_for_purchase': doc.one_fm_request_for_purchase})
         if len(quotations) > 0:
             set_attachments_to_doctype('Quotation From Supplier', quotations, doc.doctype, doc.name)
