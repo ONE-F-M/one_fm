@@ -19,6 +19,7 @@ from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
+from one_fm.utils import send_workflow_action_email, get_holiday_today, workflow_approve_reject
 
 # from PyPDF2 import PdfFileReader
 
@@ -28,6 +29,8 @@ class WorkPermit(Document):
         self.update_work_permit_details_in_tp()
         self.check_required_document_for_workflow()
         self.notify()
+        self.send_work_permit_receipt_to_perm_operator()
+        # frappe.throw(f"""{self.reference_number_on_pam_registration}, {self.workflow_state}""")
         
 
     def validate(self):
@@ -36,7 +39,7 @@ class WorkPermit(Document):
 
 
     def validate_workflow_state_fields(self):
-        states = ['Pending By PAM', 'Pending By Operator']
+        states = ['Pending By PAM Operator', 'Pending By Operator']
         db_state = frappe.db.get_value("Work Permit", self.name, 'workflow_state')
         # check for required fields based on workflow
         if db_state in states and not (
@@ -44,6 +47,16 @@ class WorkPermit(Document):
             ):
             frappe.throw("Missing Data\nUpload Work Permit, fill Updated Work Permit Expiry Date and Upload On field.")
             
+        # check if receipt uploaded and status is supervisor
+        if self.attach_invoice and self.workflow_state=="Pending By PAM Operator":
+            # send email to perm operation
+            send_workflow_action_email(self, [self.pam_operator])
+        # frappe.throw(f"""{pam_operator_email}, {self.attach_invoice}, {self.workflow_state}""")
+
+
+    def send_work_permit_receipt_to_perm_operator(self):
+        if (self.reference_number_on_pam_registration and self.workflow_state=='Apply Online by PRO'):
+            pass
 
     def set_grd_values(self):
         """
@@ -57,6 +70,8 @@ class WorkPermit(Document):
             self.grd_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
+        if not self.pam_operator:
+            self.pam_operator = pam_operator_email = frappe.db.get_single_value("GRD Settings", 'default_pam_operator')
 
     def notify(self):
         if self.workflow_state == "Pending By Supervisor":
@@ -85,7 +100,7 @@ class WorkPermit(Document):
                 self.set_mendatory_fields(field_list,message_detail)
             self.reload()
 
-        if self.workflow_state == "Pending By PAM":
+        if self.workflow_state == "Pending By PAM Operator":
             if self.work_permit_type == "Renewal Kuwaiti" or self.work_permit_type == "Renewal Non Kuwaiti" or self.work_permit_type == "New Kuwaiti":
                 field_list = [{'Upload Payment Invoice':'attach_invoice'}]
                 message_detail = '<b style="color:red; text-align:center;">First, You Need to Pay through <a href="{0}" target="_blank">PAM Website</a></b>'.format(self.pam_website)
@@ -250,7 +265,7 @@ class WorkPermit(Document):
             if has_permission(doctype=self.doctype, user=user):
                 filtered_users.append(user)
             if filtered_users and len(filtered_users) > 0:
-                if "Pending By PAM" in self.workflow_state and not self.upload_work_permit and not self.attach_invoice:
+                if "Pending By PAM Operator" in self.workflow_state and not self.upload_work_permit and not self.attach_invoice:
                     frappe.throw(_("Upload Required Documents To Submit"))
 
     def notify_grd(self,message,subject,user):

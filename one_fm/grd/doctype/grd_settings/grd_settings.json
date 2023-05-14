@@ -11,6 +11,7 @@
   "column_break_4",
   "default_grd_operator_pifss",
   "default_grd_operator_transfer",
+  "default_pam_operator",
   "preparation_record_settings_section",
   "preparation_record_creation_day",
   "create_preparation_record_manually",
@@ -116,11 +117,17 @@
    "fieldtype": "Link",
    "label": "Costing Print Format",
    "options": "Print Format"
+  },
+  {
+   "fieldname": "default_pam_operator",
+   "fieldtype": "Link",
+   "label": "Default PAM Operator",
+   "options": "User"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2022-11-01 11:25:26.255317",
+ "modified": "2023-05-14 15:33:20.237365",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "GRD Settings",
