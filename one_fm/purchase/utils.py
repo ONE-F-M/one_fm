@@ -53,9 +53,13 @@ def get_approving_user(doc):
         rfm = doc.get('request_for_material')
         if  rfm:
             employee = frappe.get_value("Request for Material",rfm,'employee')
-            approving_employee = frappe.db.get_value('Employee',employee, 'reports_to')
-            approver = get_employee_user_id(approving_employee)
-            return approver
+            department = frappe.db.get_value('Employee',employee, 'department')
+            if department:
+                approver = frappe.get_doc("Department",department).expense_approvers[0].approver
+                if approver:
+                    return approver
+                else:
+                    frappe.throw(f"Please set an Expense Approver for {department}")
         else:
             rfp = doc.get('one_fm_request_for_purchase')
             if not rfp:
