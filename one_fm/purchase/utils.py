@@ -84,8 +84,16 @@ def get_approving_user(doc):
     elif doc.get('purchase_type') == "Stock":
         rfm = doc.get('request_for_material')
         if rfm:
-            approver = frappe.db.get_value('Request for Material',rfm, 'request_for_material_approver')
-            return approver
+            requesting_user = frappe.get_value("Request for Material",rfm,'requested_by')
+            employee_ = frappe.get_all("Employee",{'user_id':requesting_user},['name','reports_to'])
+            if employee_:
+                reports_to = employee_[0].get('reports_to')
+                if not reports_to:
+                    frappe.throw(f"Please Set Reports To for {requesting_user}")
+                approver = get_employee_user_id(reports_to)
+                return approver
+            else:
+                frappe.throw(f'User {requesting_user} not linked to any employee')
         else:
             rfp = doc.get('one_fm_request_for_purchase')
             if not rfp:
