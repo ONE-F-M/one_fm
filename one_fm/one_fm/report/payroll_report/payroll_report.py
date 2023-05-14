@@ -236,7 +236,7 @@ def get_data(filters):
 		att_project = attendance_by_employee.get(i.employee_id)
 		if att_project:
 			i.working_days = att_project['working_days']
-			i.do_roster = att_project['do']
+			i.do_roster = att_project['do'] if att_project['do'] else 0
 			i.do_ot = att_project['do_ot']
 			i.present_days = att_project['present_days']
 			i.present_days_ot = att_project['present_days_ot']
@@ -309,7 +309,6 @@ def theoretical_days_off(day_off_category, number_of_days_off, start_date, end_d
 
 def get_attendance(employee_list):
 	attendance_dict = {}
-
 	for employee in employee_list:
 		start_time = time.time()
 		start_date = employee_list[employee]['start_date']
@@ -356,7 +355,6 @@ def get_attendance(employee_list):
 									AND at.roster_type='Basic'
 									GROUP BY at.employee
 								""", as_dict=1)
-		# print(attendance)
 		present_list_ot = frappe.db.sql(f"""
 			SELECT COUNT(*) as present_days_ot FROM `tabAttendance` at
 			WHERE at.employee = '{employee}'
@@ -388,8 +386,6 @@ def get_attendance(employee_list):
 				attendance_dict[employee]['al'] = row.leave_count
 			else:
 				attendance_dict[employee]['ol'] = row.leave_count
-		print(attendance_dict[employee])
-		print(time.time()-start_time)
 	return attendance_dict
 
 @frappe.whitelist()
