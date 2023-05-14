@@ -7,9 +7,9 @@ frappe.pages['pending-purchase-doc'].on_page_load = function(wrapper) {
 	page.start = 0;
 
 
-	// frappe.require('/assets/one_fm/js/pending_purchase_docs_dash.js', function() {
+	
 	frappe.require('purchase.bundle.js', function() {
-		
+		console.log("INSIDE LOADED FUNC")
 		page.item_dashboard = new one_fm.purchase.PendingPurchaseBoard({
 			parent: page.main,
 		})

@@ -15,7 +15,7 @@ one_fm.purchase.PendingPurchaseBoard = Class.extend({
 		
 		
 		this.content = $(frappe.render_template('pending_purchase_docs_')).appendTo(this.parent);
-		console.log("LOADED JS FILE")
+		
 		this.result = this.content.find('.result');
 
 		this.content.on('click', '.btn-move', function() {
@@ -70,7 +70,7 @@ one_fm.purchase.PendingPurchaseBoard = Class.extend({
 		if(this.before_refresh) {
 			this.before_refresh();
 		}
-
+		
 		var me = this;
 		frappe.call({
 			method: 'one_fm.purchase.dashboard.item_dashboard_1.get_data',
