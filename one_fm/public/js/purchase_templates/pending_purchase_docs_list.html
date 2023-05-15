@@ -3,12 +3,12 @@
 		<div class="row">
 			<div class="col-sm-2 small" style="margin-top: 8px;">
 				<span class="indicator blue"></span>
-				<a data-type="rfm" data-name="{{ d.rfm }}">{{ d.rfm }}</a>
+				<a  href = "request-for-material/{{ d.rfm}}" data-type="rfm" data-name="{{ d.rfm }}">{{ d.rfm }}</a>
 			</div>
 			<div class="col-sm-2 small" style="margin-top: 8px;">
-				{% if d.rfp %}
+				{% if d.rfm %}
 					<span class="indicator blue"></span>
-					<a data-type="rfp"
+					<a  data-type="rfm_status"
 						data-name="{{ d.rfm_status }}">{{ d.rfm_status }}
 					</a>
 				{% else %}
@@ -21,7 +21,7 @@
 			<div class="col-sm-2 small" style="margin-top: 8px;">
 				{% if d.rfp %}
 					<span class="indicator blue"></span>
-					<a data-type="rfp"
+					<a href = "request-for-purchase/{{ d.rfp }}" data-type="rfp"
 						data-name="{{ d.rfp }}">{{ d.rfp }}
 					</a>
 				{% else %}
@@ -48,7 +48,7 @@
 			<div class="col-sm-2 small" style="margin-top: 8px;">
 				{% if d.po %}
 					<span class="indicator blue"></span>
-					<a data-type="pr"
+					<a href = "purchase-order/{{d.po}}" data-type="pr"
 						data-name="{{ d.po }}">{{ d.po }}
 					</a>
 				{% else %}
@@ -58,7 +58,7 @@
 					</a>
 				{% endif %}
 			</div>
-			<div class="col-sm-1 small">
+			<div class="col-sm-2 small">
 				{% if d.po_status %}
 					<span class="indicator blue"></span>
 					<a data-type="po_status"
@@ -71,15 +71,7 @@
 					</a>
 				{% endif %}
 			</div>
-			<div class="col-sm-1 small">
-				<div class="progress level" style="margin: 0px;">
-					<div class="progress-bar progress-bar-success" role="progressbar"
-						aria-valuenow={{d.progress}}
-						aria-valuemin="0" aria-valuemax="100" style="width: {{d.progress}}%; background-color: {{d.progress_bgc}};">
-					</div>
-				</div>
-				
-			</div>
+			
 		</div>
 	</div>
 {% endfor %}

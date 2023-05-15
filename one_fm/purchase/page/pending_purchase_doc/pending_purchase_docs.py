@@ -11,7 +11,7 @@ def get_data():
     rfp2 = frappe.get_all('Request for Purchase',{'docstatus':1,'status':'Accepted','approver':current_user},['status','name'])
     rfp_docs = frappe.get_all('ToDo',{'status':'Open','allocated_to':current_user,'reference_type':'Request for Purchase'},['reference_name']) 
     # For the query above, we have to ensure that only approved RFP are added to the page
-    po_docs = frappe.get_all("Workflow Action",{'reference_doctype':"Purchase Order",'role':['IN',[user_roles]]},['reference_name','workflow_state']) 
+    po_docs = frappe.get_all("Workflow Action",{'status':"Open",'reference_doctype':"Purchase Order",'role':['IN',user_roles]},['reference_name','workflow_state']) 
     results = PendingPurchases(rfm_data=rfm_docs,rfp_data1=rfp1,rfp_data2=rfp2,rfp_data3=rfp_docs,po_data=po_docs)
     return results.items
     
@@ -34,6 +34,8 @@ class PendingPurchases:
     def sort_rfm(self):
         for each in self.rfm_data:
             if each.name not in self.added_rfm_docs:
+                if each.status in ["Draft",'Accepted']:
+                    each.status = "Pending Approval"
                 self.items.append({'rfm':each.name,'rfm_status':each.status})
                 self.added_rfm_docs.append(each.name)
 
@@ -41,15 +43,15 @@ class PendingPurchases:
         #Loop through the items table and update the row where the document is referenced
         if is_rfm:
             for each in self.items:
-                if each['rfm'] == document:
+                if each.get('rfm') == document:
                     each['rfp'] = row['name']
-                    each['status'] = row['status']
+                    each['rfp_status'] = row['status']
                     self.added_rfp_docs.append(row['name'])
         if is_rfp:
             for each in self.items:
-                if each['rfp'] == document:
+                if each.get('rfp') == document:
                     each['po'] = row['name']
-                    each['status'] = row['status']
+                    each['po_status'] = row['status']
                     self.added_po_docs.append(row['name'])
             
             
@@ -76,7 +78,7 @@ class PendingPurchases:
             if ind.reference_name not in self.added_rfp_docs and frappe.get_value("Request for Purchase",ind.reference_name,'docstatus') == 1:
                 rfm = frappe.db.get_value("Request for Purchase",ind.reference_name,'request_for_material')
                 # only add rows that have been accepted and approved, if the RFP has not been approved or accepted then leave it.
-                if frappe.get_value("Request for Purchase",ind.reference_name,'status') == ['Approved']:
+                if frappe.get_value("Request for Purchase",ind.reference_name,'status') == 'Approved':
                     if rfm in self.added_rfm_docs:
                         self.update_items(rfm,{'name':ind.reference_name,'status':'Pending Conversion to PO'},is_rfm=True)
                     else:
@@ -88,6 +90,7 @@ class PendingPurchases:
     def sort_po(self):
         for each in self.po_data:
             if int(frappe.get_value("Purchase Order",each.reference_name,'docstatus')) < 1:
+                
                 rfp = frappe.get_value("Purchase Order",each.reference_name,'one_fm_request_for_purchase')
                 rfm = frappe.get_value("Purchase Order",each.reference_name,'request_for_material')
                 if not rfm:
