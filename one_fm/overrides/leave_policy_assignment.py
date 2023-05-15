@@ -17,6 +17,7 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 			date_of_joining = frappe.db.get_value("Employee", self.employee, "date_of_joining")
 
 			for leave_policy_detail in leave_policy.leave_policy_details:
+				leave_details = leave_type_details.get(leave_policy_detail.leave_type)
 				if not leave_type_details.get(leave_policy_detail.leave_type).is_lwp:
 					allocate_leave = True
 					new_leaves_allocate = leave_policy_detail.annual_allocation
@@ -33,14 +34,41 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 
 					if allocate_leave:
 						leave_allocation, new_leaves_allocated = self.create_leave_allocation(
-							leave_policy_detail.leave_type, new_leaves_allocate,
-							leave_type_details, date_of_joining
+							new_leaves_allocate,
+							leave_details, date_of_joining
 						)
 
 						leave_allocations[leave_policy_detail.leave_type] = {"name": leave_allocation, "leaves": new_leaves_allocated}
 
 			self.db_set("leaves_allocated", 1)
 		return leave_allocations
+
+	def create_leave_allocation(self, annual_allocation, leave_details, date_of_joining):
+		# Creates leave allocation for the given employee in the provided leave period
+		carry_forward = self.carry_forward
+		if self.carry_forward and not leave_details.is_carry_forward:
+			carry_forward = 0
+
+		new_leaves_allocated = self.get_new_leaves(annual_allocation, leave_details, date_of_joining)
+
+		allocation = frappe.get_doc(
+			dict(
+				doctype="Leave Allocation",
+				employee=self.employee,
+				leave_type=leave_details.name,
+				from_date=self.effective_from,
+				to_date=self.effective_to,
+				new_leaves_allocated=new_leaves_allocated,
+				leave_period=self.leave_period if self.assignment_based_on == "Leave Policy" else "",
+				leave_policy_assignment=self.name,
+				leave_policy=self.leave_policy,
+				carry_forward=carry_forward,
+			)
+		)
+		allocation.save(ignore_permissions=True)
+		allocation.submit()
+		return allocation.name, new_leaves_allocated
+	
 
 def get_leave_type_detail():
 	leave_type_details = frappe._dict()
