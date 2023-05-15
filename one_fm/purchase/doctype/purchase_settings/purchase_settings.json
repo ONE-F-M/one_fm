@@ -56,7 +56,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2020-11-27 22:38:54.822075",
+ "modified": "2023-05-14 08:16:36.618318",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Purchase Settings",
@@ -74,5 +74,7 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
 }
