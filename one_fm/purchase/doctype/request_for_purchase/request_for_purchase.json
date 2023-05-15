@@ -241,7 +241,6 @@
    "allow_on_submit": 1,
    "fieldname": "approver",
    "fieldtype": "Link",
-   "hidden": 1,
    "label": "Approver",
    "options": "User",
    "read_only": 1
@@ -281,7 +280,7 @@
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2023-04-24 15:13:26.622948",
+ "modified": "2023-05-14 08:28:11.632485",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",
