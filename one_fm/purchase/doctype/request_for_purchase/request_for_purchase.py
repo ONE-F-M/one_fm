@@ -90,8 +90,8 @@ class RequestforPurchase(Document):
 			create_notification_log(subject, message, [approver], self)
 
 		# Notify Accepter
-		if status in ['Draft Request'] or (status in ['Approved', 'Rejected'] and frappe.session.user == approver):
-			self.notify_requester_accepter(page_link, status, [accepter], "Dear FRP Accepter({0}), <br/>".format(accepter), reason_for_rejection)
+		if status in ['Draft'] or (status in ['Approved', 'Rejected'] and frappe.session.user == approver):
+			self.notify_requester_accepter(page_link, status, [accepter], "Dear RFP Accepter({0}), <br/>".format(accepter), reason_for_rejection)
 
 		self.status = status
 		self.reason_for_rejection = reason_for_rejection

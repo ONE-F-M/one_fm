@@ -73,13 +73,7 @@ one_fm.purchase.PendingPurchaseBoard = Class.extend({
 		
 		var me = this;
 		frappe.call({
-			method: 'one_fm.purchase.dashboard.item_dashboard_1.get_data',
-			args: {
-				rfm: this.rfm,
-				start: this.start,
-				sort_by: this.sort_by,
-				sort_order: this.sort_order,
-			},
+			method: 'one_fm.purchase.page.pending_purchase_doc.pending_purchase_docs.get_data',
 			callback: function(r) {
 				me.render(r.message);
 			}
@@ -108,7 +102,7 @@ one_fm.purchase.PendingPurchaseBoard = Class.extend({
 		if (context.data.length > 0) {
 			$(frappe.render_template('pending_purchase_docs_list', context)).appendTo(this.result);
 		} else {
-			var message = __(" Currently no stock available in any warehouse")
+			var message = __("No Pending Purchase Documents Found")
 			$("<span class='text-muted small'>"+message+"</span>").appendTo(this.result);
 		}
 	},

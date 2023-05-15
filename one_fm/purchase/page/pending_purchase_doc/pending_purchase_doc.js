@@ -9,7 +9,6 @@ frappe.pages['pending-purchase-doc'].on_page_load = function(wrapper) {
 
 	
 	frappe.require('purchase.bundle.js', function() {
-		console.log("INSIDE LOADED FUNC")
 		page.item_dashboard = new one_fm.purchase.PendingPurchaseBoard({
 			parent: page.main,
 		})
@@ -34,17 +33,17 @@ frappe.pages['pending-purchase-doc'].on_page_load = function(wrapper) {
 		// setup_click('Purchase Receipt', 'pr');
 		// setup_click('Purchase Invoice', 'pi');
 
-		page.main.on('click', 'div[data-type=pri]', function() {
-			var name = $(this).attr('data-name');
-			frappe.call({
-				method: "erpnext.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_invoice",
-				args: {source_name: name},
-				callback: function (r) {
-					var doclist = frappe.model.sync(r.message);
-					frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
-				}
-			});
-		});
+		// page.main.on('click', 'div[data-type=pri]', function() {
+		// 	var name = $(this).attr('data-name');
+		// 	frappe.call({
+		// 		method: "erpnext.stock.doctype.purchase_receipt.purchase_receipt.make_purchase_invoice",
+		// 		args: {source_name: name},
+		// 		callback: function (r) {
+		// 			var doclist = frappe.model.sync(r.message);
+		// 			frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+		// 		}
+		// 	});
+		// });
 	});
 
 
