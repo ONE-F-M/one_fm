@@ -109,7 +109,7 @@ class RequestforPurchase(Document):
 					wh = item.t_warehouse
 				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
 					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description,
-					warehouse=wh, quotation=item.quotation)
+					warehouse=wh, quotation=item.quotation, do_not_submit=True)
 
 	@frappe.whitelist()
 	def accept_approve_reject_request_for_purchase(self, status, approver, accepter, reason_for_rejection=None):
@@ -296,7 +296,5 @@ def create_purchase_order(**args):
 	})
 	if not args.do_not_save:
 		po.save(ignore_permissions=True)
-		# if not args.do_not_submit:
-		# 	po.submit()
-
-	return po
+		if not args.do_not_submit:
+			po.submit()
