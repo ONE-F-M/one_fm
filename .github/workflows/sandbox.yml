@@ -27,6 +27,7 @@ jobs:
           git pull upstream sandbox # we pull any changes from git
           cd /home/frappe/frappe-bench
           bench setup requirements
+          bench build
           bench migrate # sync database
           bench restart # we remove any unused dependencies
           bench doctor
