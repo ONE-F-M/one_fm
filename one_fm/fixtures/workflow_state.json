@@ -3,10 +3,37 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2023-05-13 00:19:36.362855",
-  "name": "Pending By PAM Operator",
+  "modified": "2023-05-12 23:15:12.667903",
+  "name": "Pending HOD Approval",
   "style": "",
-  "workflow_state_name": "Pending By PAM Operator"
+  "workflow_state_name": "Pending HOD Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-05-12 23:15:40.911568",
+  "name": "Pending Procurement Manager Approval",
+  "style": "",
+  "workflow_state_name": "Pending Procurement Manager Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-05-12 23:16:34.526968",
+  "name": "Pending Project Manager Approval",
+  "style": "",
+  "workflow_state_name": "Pending Project Manager Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-05-12 23:35:23.881176",
+  "name": "Pending Finance Manager",
+  "style": "",
+  "workflow_state_name": "Pending Finance Manager"
  },
  {
   "docstatus": 0,
@@ -844,5 +871,14 @@
   "name": "Pending Approval from Operations Manager",
   "style": "",
   "workflow_state_name": "Pending Approval from Operations Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-05-13 21:26:42.802755",
+  "name": "Pending Stock Approval",
+  "style": "",
+  "workflow_state_name": "Pending Stock Approval"
  }
 ]

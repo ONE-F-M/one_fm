@@ -23,7 +23,11 @@ from frappe.utils import cint, cstr, date_diff, flt, formatdate, getdate, get_li
 import time
 import math, random
 import hashlib
+from one_fm.api.notification import create_notification_log
 from one_fm.utils import fetch_employee_signature
+from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
+from one_fm.api.doc_events import get_employee_user_id
+
 from frappe.desk.form.assign_to import  remove as remove_assignment
 @frappe.whitelist()
 def get_warehouse_contact_details(warehouse):
@@ -44,6 +48,125 @@ def get_warehouse_contact_details(warehouse):
         contact_details = get_contact_details(contact)
     return contact_details, location
 
+def get_approving_user(doc):
+    """Fetch the line manager of the user that created the request for material
+    if no request for material is found, the Request for Purchase approver will be used """
+    if doc.get('purchase_type') not in ['Project',"Stock"]:
+        rfm = doc.get('request_for_material')
+        if  rfm:
+            employee = frappe.get_value("Request for Material",rfm,'employee')
+            department = frappe.db.get_value('Employee',employee, 'department')
+            if department:
+                approver = frappe.get_doc("Department",department).expense_approvers[0].approver
+                if approver:
+                    return approver
+                else:
+                    frappe.throw(f"Please set an Expense Approver for {department}")
+        else:
+            rfp = doc.get('one_fm_request_for_purchase')
+            if not rfp:
+                frappe.throw("No approver found, Please create this Purchase Order from a Request for Purchase")
+            else:
+                approver = frappe.get_value("Request for Purchase",rfp,'approver')
+                return approver
+    elif doc.get("purchase_type") == "Project":
+        rfm = doc.get('request_for_material')
+        if rfm:
+            project = frappe.get_value("Request for Material",rfm,'project')
+            approving_employee = frappe.db.get_value('Project', project, 'account_manager')
+            approver = get_employee_user_id(approving_employee)
+            return approver
+        else:
+            rfp = doc.get('one_fm_request_for_purchase')
+            if not rfp:
+                frappe.throw("No approver found, Please create this Purchase Order from a Request for Purchase")
+            else:
+                approver = frappe.get_value("Request for Purchase",rfp,'approver')
+                return approver
+    elif doc.get('purchase_type') == "Stock":
+        rfm = doc.get('request_for_material')
+        if rfm:
+            requesting_user = frappe.get_value("Request for Material",rfm,'requested_by')
+            employee_ = frappe.get_all("Employee",{'user_id':requesting_user},['name','reports_to'])
+            if employee_:
+                reports_to = employee_[0].get('reports_to')
+                if not reports_to:
+                    frappe.throw(f"Please Set Reports To for {requesting_user}")
+                approver = get_employee_user_id(reports_to)
+                return approver
+            else:
+                frappe.throw(f'User {requesting_user} not linked to any employee')
+        else:
+            rfp = doc.get('one_fm_request_for_purchase')
+            if not rfp:
+                frappe.throw("No approver found, Please create this Purchase Order from a Request for Purchase")
+            else:
+                approver = frappe.get_value("Request for Purchase",rfp,'approver')
+                return approver
+        
+
+
+
+def set_approver(doc,ev):
+    """
+    Fetch the line manager of the user that created the request for material
+    if no request for material is found, the Request for Purchase.
+    
+
+    Args:
+        doc (doctype): valid doctype
+    """
+    approving_user = get_approving_user(doc)
+    doc.department_manager = approving_user
+    
+def get_users_with_role(role):
+    """
+    Get the users with the role
+
+    Args:
+        role: Valid role 
+    """
+    enabled_users = frappe.get_all("User",{'enabled':1})
+    enabled_users_ = [i.name for i in enabled_users if i.name!="Administrator"]
+    required_users = frappe.get_all("Has Role",{'role':role,'parent':['In',enabled_users_]},['parent'])
+    if required_users:
+        return [i.parent for i in required_users]
+    return []
+
+
+def on_update(doc,ev):
+    # "Send workflow action emails to various employees based on the value of the workflow state field"
+    if doc.workflow_state == 'Pending HOD Approval':
+        #Expense Approver in department
+        send_workflow_action_email(doc,[doc.department_manager]) if doc.department_manager else send_workflow_action_email(doc,[get_approving_user(doc)])
+        frappe.msgprint("Email Sent to {}".format(doc.department_manager),alert=1)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.department_manager], doc)
+    elif doc.workflow_state == 'Pending Procurement Manager Approval':
+        #Get all the employees with purchase manager role
+        users = get_users_with_role("Purchase Manager")
+        send_workflow_action_email(doc,users)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), users, doc)
+    elif doc.workflow_state == 'Pending Finance Manager':
+        fin_users = get_users_with_role('Finance Manager')
+        send_workflow_action_email(doc,fin_users)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), fin_users, doc)
+    elif doc.workflow_state == 'Pending Project Manager Approval':
+        #Get the employee managing the project or project manager
+        send_workflow_action_email(doc,[doc.department_manager]) if doc.department_manager else send_workflow_action_email(doc,[get_approving_user(doc)])
+        frappe.msgprint("Email Sent to {}".format(doc.department_manager),alert=1)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.department_manager], doc)
+    elif doc.workflow_state == 'Pending Stock Approval':
+        send_workflow_action_email(doc,[doc.department_manager]) if doc.department_manager else send_workflow_action_email(doc,[get_approving_user(doc)])
+        frappe.msgprint("Email Sent to {}".format(doc.department_manager),alert=1)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.department_manager], doc)
+        # Get the owner of  the purchase order
+    elif doc.workflow_state == 'Draft':
+        send_workflow_action_email(doc,[doc.owner])
+        frappe.msgprint("Email Sent to {}".format(doc.owner),alert=1)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.owner], doc)
+        # Get the owner of  the purchase order
+    
+    
 
 @frappe.whitelist()
 def make_material_delivery_note(source_name, target_doc=None):
@@ -155,6 +278,7 @@ def close_assignments(doc):
     
 def set_quotation_attachment_in_po(doc, method):
     if doc.one_fm_request_for_purchase:
+        doc.purchase_type = frappe.db.get_value("Request for Purchase",doc.one_fm_request_for_purchase,'type')
         close_assignments(doc)
         quotations = frappe.get_list('Quotation From Supplier', {'request_for_purchase': doc.one_fm_request_for_purchase})
         if len(quotations) > 0:
