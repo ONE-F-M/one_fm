@@ -13,6 +13,22 @@ from one_fm.processor import sendemail
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from one_fm.api.doc_events import get_employee_user_id
+from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
+
+def get_users_with_role(role):
+    """
+    Get the users with the role
+
+    Args:
+        role: Valid role 
+    """
+    enabled_users = frappe.get_all("User",{'enabled':1})
+    enabled_users_ = [i.name for i in enabled_users if i.name!="Administrator"]
+    required_users = frappe.get_all("Has Role",{'role':role,'parent':['In',enabled_users_]},['parent'])
+    if required_users:
+        return [i.parent for i in required_users]
+    return []
+
 
 class RequestforPurchase(Document):
 	def onload(self):
@@ -40,10 +56,29 @@ class RequestforPurchase(Document):
 		self.set_onload('accepter', accepter)
 		self.set_onload('approver', approver)
 		return accepter, approver
-
+	def assign_users(self):
+		purchase_officers = get_users_with_role("Purchase User")
+		if purchase_officers:
+			requested_items = '<br>'.join([i.item_name for i in self.items])
+			
+			add_assignment({
+					'doctype': self.doctype,
+					'name': self.name,
+					'assign_to': purchase_officers,
+					'description': _(f"""Please Note that a Request for Purchase {self.name} has been submitted.<br>
+									Requested Items: {requested_items} <br>
+								
+                      					Please review and take necessary actions""")
+				})
+			
+		
+		
 	def on_submit(self):
 		# Notify the Purchase Manger about the RFP to Do further action to create the Purchase Order
 		self.notify_purchase_manager()
+		self.assign_users()
+		
+			
 
 	def notify_purchase_manager(self):
 		users = get_users_with_role('Purchase Manager')
