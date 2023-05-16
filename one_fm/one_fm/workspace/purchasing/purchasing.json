@@ -8,6 +8,7 @@
  "hide_custom": 0,
  "icon": "buying",
  "idx": 0,
+ "is_hidden": 0,
  "label": "Purchasing",
  "links": [
   {
@@ -171,12 +172,23 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Pending Purchase Documents",
+   "link_count": 0,
+   "link_to": "pending-purchase-doc",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2022-10-31 21:19:34.370940",
+ "modified": "2023-05-15 19:20:34.838066",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Purchasing",
+ "number_cards": [],
  "owner": "Administrator",
  "parent_page": "GSD",
  "public": 1,
