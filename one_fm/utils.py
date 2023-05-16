@@ -2516,11 +2516,11 @@ def queue_send_workflow_action_email(doc, recipients):
     common_args = get_common_email_args(doc)
     common_args.pop('attachments')
 
-    mandatory_field = get_mandatory_fields(doc.doctype, doc.get("name"))
+    mandatory_field = get_mandatory_fields(doc.doctype, doc.name)
 
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
-    pdf_link = get_url_to_form(doc.get("doctype"), doc.get("name"))
+    pdf_link = get_url_to_form(doc.get("doctype"), doc.name)
     if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,

@@ -29,6 +29,9 @@ def get_working_days_details(
 		"HR and Payroll Additional Settings", "include_day_off_in_total_working_days"
 	)
 
+	if not (joining_date and relieving_date):
+			joining_date, relieving_date = self.get_joining_and_relieving_dates()
+
 	working_days = date_diff(self.end_date, self.start_date) + 1
 	if for_preview:
 		self.total_working_days = working_days
@@ -36,28 +39,34 @@ def get_working_days_details(
 		return
 
 	holidays = self.get_holidays_for_employee(self.start_date, self.end_date)
+	working_days_list = [
+		add_days(getdate(self.start_date), days=day) for day in range(0, working_days)
+	]
+
+	day_off_dates = get_scheduled_day_off(self.employee, self.start_date, self.end_date)
 
 	if not cint(include_holidays_in_total_working_days):
+		working_days_list = [i for i in working_days_list if i not in holidays]
+
 		working_days -= len(holidays)
 		if working_days < 0:
 			frappe.throw(_("There are more holidays than working days this month."))
 
 	day_off_dates = get_scheduled_day_off(self.employee, self.start_date, self.end_date)
 
-	# if not cint(include_day_off_in_total_working_days):
-	# 	working_days -= len(day_off_dates)
-	# 	if working_days < 0:
-	# 		frappe.throw(_("There are more day off/holidays than working days this month."))
-
 	if not payroll_based_on:
 		frappe.throw(_("Please set Payroll based on in Payroll settings"))
 
 	if payroll_based_on == "Attendance":
-		actual_lwp, absent = self.calculate_lwp_ppl_and_absent_days_based_on_attendance(holidays)
+		actual_lwp, absent = self.calculate_lwp_ppl_and_absent_days_based_on_attendance(
+			holidays, relieving_date
+		)
 		self.absent_days = absent
 	else:
-		actual_lwp = self.calculate_lwp_or_ppl_based_on_leave_application(holidays, working_days)
-
+		actual_lwp = self.calculate_lwp_or_ppl_based_on_leave_application(
+			holidays, working_days_list, relieving_date
+		)
+	
 	if not lwp:
 		lwp = actual_lwp
 	elif lwp != actual_lwp:

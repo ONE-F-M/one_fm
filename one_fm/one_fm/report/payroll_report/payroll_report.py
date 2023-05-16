@@ -94,15 +94,15 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
-			"label": ("Shift/Non-Shift Worker"),
-			"fieldname": "shift_work_type",
-			"fieldtype": "Data",
+			"label": ("Public Holidays"),
+			"fieldname": "public_holidays",
+			"fieldtype": "Int",
 			"width": 120,
 		},
 		{
-			"label": ("Theoretical Working Days"),
-			"fieldname": "theoretical_working_days",
-			"fieldtype": "Int",
+			"label": ("Shift/Non-Shift Worker"),
+			"fieldname": "shift_work_type",
+			"fieldtype": "Data",
 			"width": 120,
 		},
 		{
@@ -124,8 +124,14 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
-			"label": ("Actual Working Days(Roster)"),
-			"fieldname": "number_of_working_days",
+			"label": ("Theoretical Working Days"),
+			"fieldname": "theoretical_working_days",
+			"fieldtype": "Int",
+			"width": 120,
+		},
+		{
+			"label": ("Scheduled Working Days(Roster)"),
+			"fieldname": "working_days",
 			"fieldtype": "Int",
 			"width": 120,
 		},
@@ -145,15 +151,21 @@ def get_columns(filters):
 		},
 		{
 			"label": ("Present Days (Attendance)"),
-			"fieldname": "working_days",
+			"fieldname": "present_days",
 			"fieldtype": "Int",
 			"default": 0,
 			"width": 180,
 		},
-
+		{
+			"label": ("Days Off (Attendance)"),
+			"fieldname": "do_att",
+			"fieldtype": "Int",
+			"default": 0,
+			"width": 180,
+		},
 		{
 			"label": ("Present OT Days (Attendence)"),
-			"fieldname": "ot",
+			"fieldname": "present_days_ot",
 			"fieldtype": "Int",
 			"default": 0,
 			"width": 180,
@@ -187,12 +199,6 @@ def get_columns(filters):
 			"width": 180,
 		},
 		{
-			"label": ("Public Holidays"),
-			"fieldname": "public_holidays",
-			"fieldtype": "Int",
-			"width": 120,
-		},
-		{
 			"label": ("Total"),
 			"fieldname": "total",
 			"fieldtype": "Int",
@@ -212,8 +218,7 @@ def get_data(filters):
 	last_day_of_month = str(get_last_day(report_date))
 	query = frappe.db.sql(f"""
 		SELECT DISTINCT e.name as employee_id, e.employee_name, e.project, e.work_permit_salary, e.one_fm_civil_id, e.bank_ac_no,
-		e.day_off_category, e.shift_working as shift_work_type, e.holiday_list, e.number_of_days_off , e.pam_file_number as shoon_file, ssa.base, pe.start_date, pe.end_date,
-		COUNT(at.employee) as working_days
+		e.day_off_category, e.shift_working as shift_work_type, e.holiday_list, e.number_of_days_off , e.pam_file_number as shoon_file, ssa.base, pe.start_date, pe.end_date
 		FROM `tabEmployee` e JOIN `tabSalary Structure Assignment` ssa ON e.name=ssa.employee
 			JOIN `tabPayroll Employee Detail` ped ON e.name=ped.employee
 			JOIN `tabPayroll Entry` pe ON pe.name=ped.parent
@@ -226,40 +231,36 @@ def get_data(filters):
 		ORDER BY e.name ASC
 	""", as_dict=1)
 
-	payroll_cycle = get_payroll_cycle(filters)
+	# payroll_cycle = get_payroll_cycle(filters)
 	employee_list = get_employee_list(query)
 
-	ot_dict = frappe._dict({})
-	attendance_by_employee = get_attendance(payroll_cycle, employee_list)
+	attendance_by_employee = get_attendance(employee_list)
 
 	for i in query:
 		i.days_in_period = (i.end_date - i.start_date).days + 1
 		att_project = attendance_by_employee.get(i.employee_id)
 		if att_project:
-			i.working_days = att_project['working_days']
-			i.ot = att_project['ot']
 			i.do_ot = att_project['do_ot']
+			i.present_days = att_project['present_days']
+			i.present_days_ot = att_project['present_days_ot']
+			i.do_att = att_project['do_att']
 			i.sl = att_project['sl']
 			i.al = att_project['al']
 			i.ol = att_project['ol']
 			i.ab = att_project['ab']
-			i.do_roster = att_project['do_roster']
-
-		if i.shift_work_type == 1:
-			i.shift_work_type = "Shift Worker"
-			i.theoretical_days_off = theoretical_days_off(i.day_off_category, i.number_of_days_off, i.start_date, i.end_date)
-		else:
-			i.shift_work_type = "Non-Shift Worker"
-			count_holiday_date = frappe.db.sql(f"""Select count(holiday_date) as days_off from `tabHoliday` h
-												WHERE h.parent = '{i.holiday_list}' 
-												AND h.holiday_date BETWEEN '{i.start_date}' AND '{i.end_date}' 
-	 											AND h.weekly_off = 1""", as_dict=1)
-			i.theoretical_days_off = count_holiday_date[0].days_off
-			i.do_roster = 0
-
+			i.public_holidays = att_project['h']	
+			if i.shift_work_type == 1:
+				i.shift_work_type = "Shift Worker"
+				i.do_roster = att_project['do_roster_se']
+				i.working_days = att_project['working_days']
+			else:
+				i.shift_work_type = "Non-Shift Worker"
+				i.do_roster = att_project['do_roster_nse']
+				i.working_days = i.days_in_period - i.do_roster - i.public_holidays
+			
+		i.theoretical_days_off = theoretical_days_off(i.day_off_category, i.number_of_days_off, i.start_date, i.end_date)
 		i.theoretical_working_days = i.days_in_period - i.theoretical_days_off
-		i.total = i.working_days + i.sl + i.al + i.ol + i.ab
-		i.number_of_working_days = ((i.end_date-i.start_date).days)+1 - (i.do_roster + i.do_ot)
+		i.total = i.present_days + i.do_att + i.sl + i.al + i.ol + i.ab + i.public_holidays
 
 	if not query:
 		frappe.msgprint(("No Payroll Submitted or Salary Slip Created from the Payroll Entry this month!"), alert=True, indicator="Blue")
@@ -267,158 +268,123 @@ def get_data(filters):
 	return query
 
 def get_employee_list(query):
-	employee = []
+	employee = {}
 	for q in query:
-		if q.employee_id not in employee:
-			employee.append(q.employee_id)
+		employee[q.employee_id] = {}
+		employee[q.employee_id]['start_date'] = q.start_date
+		employee[q.employee_id]['end_date'] = q.end_date
 	return employee
 
 
-def get_payroll_cycle(filters):
-	settings = frappe.get_doc("HR and Payroll Additional Settings")
-	default_date = settings.payroll_date
+# def get_payroll_cycle(filters):
+# 	settings = frappe.get_doc("HR and Payroll Additional Settings")
+# 	default_date = settings.payroll_date
 
 
-	end_date = datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
-	payroll_cycle = {
-		'Other': {
-			'start_date': add_days(add_months(datetime.date(int(filters["year"]),int(filters["month"]), int(default_date)), -1), -1),
-			'end_date': datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
+# 	end_date = datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
+# 	payroll_cycle = {
+# 		'Other': {
+# 			'start_date': add_days(add_months(datetime.date(int(filters["year"]),int(filters["month"]), int(default_date)), -1), -1),
+# 			'end_date': datetime.date(int(filters["year"]), int(filters["month"]), int(default_date))
 
-			}
-		}
+# 			}
+# 		}
 
-	for row in settings.project_payroll_cycle:
-		if row.payroll_start_day == 'Month Start':
-			row.payroll_start_day = 1
-		payroll_cycle[row.project] = {
+# 	for row in settings.project_payroll_cycle:
+# 		if row.payroll_start_day == 'Month Start':
+# 			row.payroll_start_day = 1
+# 		payroll_cycle[row.project] = {
 
-			'start_date':add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)), -1), -1),
-			'end_date':datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)),
-		}
+# 			'start_date':add_days(add_months(datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)), -1), -1),
+# 			'end_date':datetime.date(int(filters["year"]), int(filters["month"]), int(row.payroll_start_day)),
+# 		}
 
-	return payroll_cycle
+# 	return payroll_cycle
 
 def theoretical_days_off(day_off_category, number_of_days_off, start_date, end_date):
 	if day_off_category == "Monthly":
 		return number_of_days_off
 	else:
-		no_of_days = end_date - start_date
-		weeks = no_of_days.days // 7
+		no_of_days = (end_date - start_date).days 
+		weeks = no_of_days // 7
 		return weeks * number_of_days_off
 
-def get_attendance(projects, employee_list):
+def get_attendance(employee_list):
 	attendance_dict = {}
-	present_dict = {}
-	working_days = {}
-	ot_dict = {}
-	leave_dict = {}
-	absent_dict = {}
-	day_off_dict = {}
+	for employee in employee_list:
+		start_time = time.time()
+		start_date = employee_list[employee]['start_date']
+		end_date = employee_list[employee]['end_date']
+		attendance_dict[employee]={'working_days':0, 'do_roster_se':0, 'do_ot': 0, 'do_roster_nse':0, 'present_days': 0, 'present_days_ot':0, 'sl':0, 'al':0, 'ab':0, 'ol':0, 'do_att':0, 'h':0}
+		
+		working_days = frappe.db.sql(f"""
+			SELECT COUNT(*) as working_days FROM `tabEmployee Schedule` es
+			WHERE es.employee = '{employee}'
+			AND es.date BETWEEN '{start_date}' AND '{end_date}'
+			AND es.employee_availability = 'Working'
+			AND es.roster_type='Basic'
+		""", as_dict=1)
 
-	all_project = frappe.db.get_list("Project", pluck="name")
-
-	for key, value in projects.items():
-		if key in all_project:
-			all_project.remove(key)
-
-	all_project = tuple(all_project)
-
-	for e in employee_list:
-		attendance_dict[e]={'working_days': 0,'number_of_days_off':0, 'ot': 0, 'sl':0, 'al':0, 'ab':0, 'ol':0, 'do_ot':0, 'do_roster':0}
-
-	for key, value in projects.items():
-		start_date = projects[key]['start_date']
-		end_date = projects[key]['end_date']
-
-		condition = ""
-		if key != "Other":
-			condition += f" AND e.project='{key}' "
-		else:
-			condition += f" AND e.project IN {all_project} "
-
-		present_list = frappe.db.sql(f"""
-			SELECT at.employee, COUNT(*) as working_days FROM `tabAttendance` at JOIN `tabEmployee` e ON e.name=at.employee
-			WHERE at.attendance_date BETWEEN '{start_date}' AND '{end_date}'
+		day_off = frappe.db.sql(f"""SELECT
+										COUNT(CASE WHEN es.day_off_ot = 0 THEN 1 END) AS do,
+										COUNT(CASE WHEN es.day_off_ot = 1 THEN 1 END) AS do_ot
+									FROM `tabEmployee Schedule` es  
+									WHERE  es.employee = '{employee}'
+									AND es.employee_availability = 'Day Off'
+									AND es.date BETWEEN '{start_date}' AND '{end_date}'
+									AND es.roster_type='Basic'
+									GROUP BY es.employee
+								""", as_dict=1)
+		
+		do_roster_nse = frappe.db.sql(f"""Select count(*) as do from `tabHoliday` h JOIN `tabEmployee` e ON e.holiday_list=h.parent
+												WHERE e.name = '{employee}'
+												AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}' 
+	 											AND h.weekly_off = 1""", as_dict=1)
+		attendance = frappe.db.sql(f"""SELECT 
+									COUNT(CASE WHEN at.status IN ("Present", "Work From Home") THEN 1 END) AS present_days,
+									COUNT(CASE WHEN at.status = "Absent" THEN 1 END) AS absent,
+									COUNT(CASE WHEN at.status = "Holiday" THEN 1 END) AS holiday,
+									COUNT(CASE WHEN at.status = "Day Off" THEN 1 END) AS do
+									FROM `tabAttendance` at 
+									WHERE  at.employee = '{employee}'
+									AND at.attendance_date BETWEEN '{start_date}' AND '{end_date}'
+									AND at.roster_type='Basic'
+									GROUP BY at.employee
+								""", as_dict=1)
+		present_list_ot = frappe.db.sql(f"""
+			SELECT COUNT(*) as present_days_ot FROM `tabAttendance` at
+			WHERE at.employee = '{employee}'
+			AND at.attendance_date BETWEEN '{start_date}' AND '{end_date}'
 			AND at.status IN ("Present", "Work From Home")
-			AND at.roster_type='Basic'
-			{condition}
+			AND at.roster_type='Over-Time'
 			GROUP BY at.employee
 		""", as_dict=1)
 
-		attendance_list_ot = frappe.db.sql(f"""SELECT 
-								e.name AS employee,
-								COUNT(CASE WHEN es.employee_availability = 'Day Off' THEN 1 END) AS do_roster,
-								COUNT(CASE WHEN es.day_off_ot = 1 THEN 1 END) AS do_ot,
-								COUNT(CASE WHEN a.status IN ('Present', 'Work From Home') AND a.roster_type = 'Over-Time' THEN 1 END) AS ot
-								FROM 
-								`tabEmployee` e
-								LEFT JOIN `tabEmployee Schedule` es ON e.name = es.employee AND es.date BETWEEN '{start_date}' AND '{end_date}'
-								LEFT JOIN `tabAttendance` a ON e.name = a.employee AND a.attendance_date BETWEEN '{start_date}' AND '{end_date}'
-								GROUP BY 
-								e.name;""", as_dict=1)
-
 		attendance_leave_details = frappe.db.sql(f"""
-			SELECT at.employee, at.leave_type, COUNT(at.leave_type) AS leave_count FROM `tabAttendance` at JOIN `tabEmployee` e ON e.name=at.employee
-				WHERE at.status = "On Leave"
+			SELECT at.leave_type, COUNT(at.leave_type) AS leave_count FROM `tabAttendance` at
+				WHERE at.employee = '{employee}'
+				AND at.status = "On Leave"
 				AND at.attendance_date BETWEEN '{start_date}' AND '{end_date}'
-				{condition}
 				Group by at.leave_type;
 			""", as_dict=1)
 
-		attendance_absent = frappe.db.sql(f"""
-			SELECT at.employee, COUNT(at.employee) as absent FROM `tabAttendance` at JOIN `tabEmployee` e ON e.name=at.employee
-				WHERE at.status = "Absent"
-				AND at.attendance_date BETWEEN '{start_date}' AND '{end_date}'
-				{condition}
-				Group by at.employee;
-			""", as_dict=1)
 
-		day_off_list = frappe.db.sql(f"""
-			SELECT es.employee, COUNT(es.employee) as number_of_days_off FROM `tabEmployee Schedule` es JOIN `tabEmployee` e ON e.name=es.employee
-				WHERE es.employee_availability = "Day Off"
-				AND es.date BETWEEN '{start_date}' AND '{end_date}'
-				{condition}
-				Group by es.employee;
-			""", as_dict=1)
-		print(attendance_list_ot)
-		for row in present_list:
-			present_dict[row.employee] = row.working_days
-
-		for row in attendance_list_ot:
-			ot_dict[row.employee] = {'ot':row.ot,'do_ot':row.do_ot, 'do_roster':row.do_roster}
-
-		for row in attendance_absent:
-			absent_dict[row.employee] = row.absent
-
-		for row in day_off_list:
-			day_off_dict[row.employee] = row.number_of_days_off
-
+		attendance_dict[employee]['working_days'] = working_days[0].working_days if working_days else 0
+		attendance_dict[employee]['do_roster_se'] = day_off[0].do if day_off else 0
+		attendance_dict[employee]['do_ot'] = day_off[0].do_ot if day_off else 0
+		attendance_dict[employee]['do_roster_nse'] = do_roster_nse[0].do if do_roster_nse else 0
+		attendance_dict[employee]['do_att'] = attendance[0].do if attendance else 0
+		attendance_dict[employee]['present_days'] = attendance[0].present_days if attendance else 0
+		attendance_dict[employee]['present_days_ot']  = present_list_ot[0].present_days_ot if present_list_ot else 0
+		attendance_dict[employee]['ab'] = attendance[0].absent if attendance else 0
+		attendance_dict[employee]['h'] = attendance[0].holiday if attendance else 0	
 		for row in attendance_leave_details:
-			if row.leave_type not in ['Sick Leave', 'Annual Leave']:
-				row.leave_type = "Other Leave"
-			leave_dict[row.employee] = {'leave_type' : row.leave_type, 'leave_count':row.leave_count}
-
-	for row in attendance_dict:
-		if present_dict.get(row):
-			attendance_dict[row]['working_days'] = present_dict.get(row)
-
-		if ot_dict.get(row):
-			attendance_dict[row]['ot'] = ot_dict.get(row)["ot"]
-			attendance_dict[row]['do_ot'] = ot_dict.get(row)["do_ot"]
-
-		if day_off_dict.get(row):
-			attendance_dict[row]['number_of_days_off'] = day_off_dict.get(row)
-
-		if leave_dict.get(row):
-			if leave_dict.get(row)["leave_type"] == "Sick Leave":
-				attendance_dict[row]['sl'] = leave_dict.get(row)["leave_count"]
-			if leave_dict.get(row)["leave_type"] == "Annual Leave":
-				attendance_dict[row]['al'] = leave_dict.get(row)["leave_count"]
-			if leave_dict.get(row)["leave_type"] == "Other Leave":
-				attendance_dict[row]['ol'] = leave_dict.get(row)["leave_count"]
-		if absent_dict.get(row):
-			attendance_dict[row]['ab'] = absent_dict.get(row)
+			if row.leave_type == 'Sick Leave':
+				attendance_dict[employee]['sl'] = row.leave_count
+			elif row.leave_type == 'Annual Leave':
+				attendance_dict[employee]['al'] = row.leave_count
+			else:
+				attendance_dict[employee]['ol'] = row.leave_count
 	return attendance_dict
 
 @frappe.whitelist()
