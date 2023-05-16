@@ -2,6 +2,20 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2022-11-22 15:52:19.536115",
+  "name": "Attached Proof Document",
+  "workflow_action_name": "Attached Proof Document"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-05-15 07:36:57.828465",
+  "name": "Submit for Approval",
+  "workflow_action_name": "Submit for Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2023-05-13 00:21:53.606438",
   "name": "Save",
   "workflow_action_name": "Save"
