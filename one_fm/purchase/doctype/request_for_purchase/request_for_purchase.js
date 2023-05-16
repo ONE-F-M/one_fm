@@ -43,7 +43,7 @@ frappe.ui.form.on('Request for Purchase', {
 				// Changed from "Send request" while removing authorizations and approvals.
 				frm.add_custom_button(__('Confirm Item Details and Send for Approval'), () => frm.events.accept_approve_reject_request_for_purchase(frm, "Draft Request", false)).addClass('btn-primary');
 			}
-			if("accepter" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.accepter && frm.doc.status == "Draft"){
+			if("accepter" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.accepter && frm.doc.status == "Draft Request"){
 				frm.add_custom_button(__('Accept'), () => frm.events.accept_approve_reject_request_for_purchase(frm, "Accepted", false)).addClass('btn-primary');
 				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_purchase(frm, 'Rejected')).addClass('btn-danger');
 			}
