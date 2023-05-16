@@ -47,7 +47,7 @@ frappe.ui.form.on('Request for Purchase', {
 				frm.add_custom_button(__('Accept'), () => frm.events.accept_approve_reject_request_for_purchase(frm, "Accepted", false)).addClass('btn-primary');
 				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_purchase(frm, 'Rejected')).addClass('btn-danger');
 			}
-			if("approver" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.approver && frm.doc.status == "Accepted"){
+			if("approver" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.approver && ["Accepted", "Draft Request"].includes(frm.doc.status)){
 				frm.add_custom_button(__('Approve'), () => frm.events.accept_approve_reject_request_for_purchase(frm, "Approved", false)).addClass('btn-primary');
 				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_purchase(frm, 'Rejected')).addClass('btn-danger');
 			}
