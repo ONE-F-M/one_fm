@@ -473,8 +473,24 @@
  "icon": "fa fa-ticket",
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2023-05-15 18:44:47.641003",
+ "links": [
+  {
+   "group": "Reference",
+   "link_doctype": "Request for Purchase",
+   "link_fieldname": "request_for_material"
+  },
+  {
+   "group": "Reference",
+   "link_doctype": "Purchase Order",
+   "link_fieldname": "request_for_material"
+  },
+  {
+   "group": "Reference",
+   "link_doctype": "Delivery Note",
+   "link_fieldname": "request_for_material"
+  }
+ ],
+ "modified": "2023-05-16 11:48:12.685089",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
