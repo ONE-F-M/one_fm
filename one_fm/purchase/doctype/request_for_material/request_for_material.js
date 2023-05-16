@@ -6,7 +6,7 @@
 
 frappe.ui.form.on('Request for Material', {
 	before_workflow_action: function(frm){
-		if(frm.doc.request_for_material_approver != frappe.session.user){
+		if(frm.doc.workflow_state == 'Pending Approval' && frm.doc.request_for_material_approver != frappe.session.user){
 			frappe.throw(__("You are not authorized to approve!!"));
 		}
 	},
