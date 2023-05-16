@@ -8,15 +8,6 @@ frappe.ui.form.on('Item', {
 				]
 			};
 		});
-
-		// frm.set_query("value", "item_descriptions", function(doc, cdt, cdn) {
-		// 	var child = locals[cdt][cdn];
-		// 	return {
-		// 		query: "one_fm.purchase.utils.filter_description_specific_for_item_group",
-		// 		filters: {'doctype': child.description_attribute, 'item_group': doc.item_group}
-		// 	};
-		// });
-
 		frm.set_query("item_group", function() {
 			return {
 				filters: [
@@ -40,7 +31,6 @@ frappe.ui.form.on('Item', {
 		});
 		var fields = ["linked_items"];
 		for ( var i=0; i< fields.length; i++ ){
-			//console.log("here");
 			frm.set_query(fields[i], function(){
 				return{
 					filters: [
@@ -56,6 +46,16 @@ frappe.ui.form.on('Item', {
 			}
 		});
 	},
+	is_stock_item: function(frm) {
+		if(frm.doc.is_stock_item){
+			if(frm.doc.workflow_state != 'Approved'){
+				frm.set_value('disabled', true);
+			}
+		}
+		else if(frm.is_new()){
+			frm.set_value('disabled', false);
+		}
+	},
 	validate: function(frm){
 		frm.set_value("item_barcode", cur_frm.doc.item_code)
 		var final_description = ""
@@ -65,12 +65,6 @@ frappe.ui.form.on('Item', {
 		if(frm.doc.one_fm_designation){
 			final_description+=(final_description?' - ':'')+frm.doc.one_fm_designation
 		}
-		// if(frm.doc.uniform_type){
-		// 	final_description+=(final_description?' - ':'')+frm.doc.uniform_type
-		// }
-		// if(frm.doc.uniform_type_description){
-		// 	final_description+=(final_description?' - ':'')+frm.doc.uniform_type_description
-		// }
 		if(frm.doc.item_type){
 			final_description+=(final_description?' - ':'')+frm.doc.item_type
 		}
@@ -103,11 +97,6 @@ frappe.ui.form.on('Item', {
 				final_description+=(final_description?' - ':'')+item.supplier
 			});
 		}
-		// if(frm.doc.item_descriptions){
-		// 	frm.doc.item_descriptions.forEach((item, i) => {
-		// 		final_description+=(final_description?' - ':'')+item.value
-		// 	});
-		// }
 		if(frm.doc.other_description){
 			final_description+=(final_description?' - ':'')+frm.doc.other_description
 		}
