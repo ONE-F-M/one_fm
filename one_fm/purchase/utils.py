@@ -140,30 +140,30 @@ def on_update(doc,ev):
         #Expense Approver in department
         send_workflow_action_email(doc,[doc.department_manager]) if doc.department_manager else send_workflow_action_email(doc,[get_approving_user(doc)])
         frappe.msgprint("Email Sent to {}".format(doc.department_manager),alert=1)
-        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.department_manager], doc)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _(f'Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.department_manager], doc)
     elif doc.workflow_state == 'Pending Procurement Manager Approval':
         #Get all the employees with purchase manager role
         users = get_users_with_role("Purchase Manager")
         send_workflow_action_email(doc,users)
-        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), users, doc)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _(f'Please note that a workflow action created by {frappe.session.user} is awaiting your review'), users, doc)
     elif doc.workflow_state == 'Pending Finance Manager':
         fin_users = get_users_with_role('Finance Manager')
         send_workflow_action_email(doc,fin_users)
-        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), fin_users, doc)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _(f'Please note that a workflow action created by {frappe.session.user} is awaiting your review'), fin_users, doc)
     elif doc.workflow_state == 'Pending Project Manager Approval':
         #Get the employee managing the project or project manager
         send_workflow_action_email(doc,[doc.department_manager]) if doc.department_manager else send_workflow_action_email(doc,[get_approving_user(doc)])
         frappe.msgprint("Email Sent to {}".format(doc.department_manager),alert=1)
-        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.department_manager], doc)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _(f'Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.department_manager], doc)
     elif doc.workflow_state == 'Pending Stock Approval':
         send_workflow_action_email(doc,[doc.department_manager]) if doc.department_manager else send_workflow_action_email(doc,[get_approving_user(doc)])
         frappe.msgprint("Email Sent to {}".format(doc.department_manager),alert=1)
-        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.department_manager], doc)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _(f'Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.department_manager], doc)
         # Get the owner of  the purchase order
     elif doc.workflow_state == 'Draft':
         send_workflow_action_email(doc,[doc.owner])
         frappe.msgprint("Email Sent to {}".format(doc.owner),alert=1)
-        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _('Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.owner], doc)
+        create_notification_log(_(f"Workflow Action from {frappe.session.user}"), _(f'Please note that a workflow action created by {frappe.session.user} is awaiting your review'), [doc.owner], doc)
         # Get the owner of  the purchase order
     
     
