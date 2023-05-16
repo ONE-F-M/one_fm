@@ -45,6 +45,8 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
 )
 from six import string_types
 from frappe.core.doctype.doctype.doctype import validate_series
+from frappe.utils.user import get_users_with_role
+from frappe.permissions import has_permission
 
 
 def get_common_email_args(doc):
@@ -1290,7 +1292,17 @@ def validate_item(doc, method):
     if not doc.parent_item_group:
         doc.parent_item_group = "All Item Groups"
     doc.description = final_description
-    #set_item_description(doc)
+    item_approval_workflow_notification(doc)
+
+def item_approval_workflow_notification(doc):
+	if doc.is_stock_item and not doc.variant_of and doc.workflow_state=='Pending Approval':
+		users = get_users_with_role('Purchase Officer')
+		filtered_users = []
+		for user in users:
+			if has_permission(doctype='Item', user=user):
+				filtered_users.append(user)
+		if filtered_users and len(filtered_users) > 0:
+			send_workflow_action_email(doc, filtered_users)
 
 def set_item_id(doc):
     next_item_id = "000000"
@@ -2512,7 +2524,7 @@ def queue_send_workflow_action_email(doc, recipients):
     if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,
-            "args": {"message": message, 
+            "args": {"message": message,
                     "doc_link": frappe.utils.get_url(doc.get_url()),
                     "workflow_state": doc.workflow_state,
                     "mandatory_field":mandatory_field},
@@ -2529,7 +2541,7 @@ def queue_send_workflow_action_email(doc, recipients):
                 "recipients": recipients,
                 "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))),
                         "message": message,
-                        "pdf_link": pdf_link, 
+                        "pdf_link": pdf_link,
                         "doc_link": frappe.utils.get_url(doc.get_url()),
                         "workflow_state": doc.workflow_state,
                         "mandatory_field":mandatory_field },
