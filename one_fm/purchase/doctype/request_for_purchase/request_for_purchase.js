@@ -125,6 +125,9 @@ frappe.ui.form.on('Request for Purchase', {
 						message: "Purchase Order Created",
 						indicator: "green"
 					});
+					frappe.set_route('List', 'Purchase Order', {
+						one_fm_request_for_purchase: frm.doc.name
+					})
 				}
 			},
 			freeze: true,
@@ -132,6 +135,16 @@ frappe.ui.form.on('Request for Purchase', {
 		})
 	},
 	make_purchase_order: function(frm) {
+		if(frm.is_dirty()){
+			frappe.throw(__('Please Save the Document and Continue .!'))
+		}
+		var zero_rate_item_in_items_to_order = frm.doc.items_to_order.filter(items_to_order => items_to_order.rate <= 0);
+		var zero_rate_item_idx_in_items_to_order = zero_rate_item_in_items_to_order.map(pt => {return pt.idx}).join(', ');
+		if(zero_rate_item_idx_in_items_to_order && zero_rate_item_idx_in_items_to_order.length > 0) {
+			frm.scroll_to_field('items_to_order');
+			frappe.throw(__("Not able to create PO, because the rates are not set in the `Items to Order` table for rows {0}", [zero_rate_item_idx_in_items_to_order]))
+		}
+
 		var stock_item_in_items_to_order = frm.doc.items_to_order.filter(items_to_order => items_to_order.is_stock_item === 1 && !items_to_order.t_warehouse);
 		var stock_item_code_in_items_to_order = stock_item_in_items_to_order.map(pt => {return pt.item_code}).join(', ');
 		if(stock_item_in_items_to_order && stock_item_in_items_to_order.length > 0 && !frm.doc.warehouse) {
