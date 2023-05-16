@@ -2556,12 +2556,10 @@ def workflow_approve_reject(doc, recipients=None):
 def get_mandatory_fields(doctype, doc_name):
     meta = frappe.get_meta(doctype)
     mandatory_fields = []
-    for d in meta.get("fields", {"reqd": 1}):
-        if doctype != "Purchase Order":
-            mandatory_fields.append(d.fieldname)
-        else:
-            if d.fieldtype !="Table":
-                mandatory_fields.append(d.fieldname)
+    for d in meta.get("fields", {"reqd": 1, "fieldtype":["!=", "Table"], "fieldname":["!=", "naming_series"]}):
+        mandatory_fields.append(d.fieldname)
+    if not mandatory_fields:
+        mandatory_fields = ["name"]
     doc = frappe.get_all(doctype, {'name':doc_name},mandatory_fields)
     return doc
 
