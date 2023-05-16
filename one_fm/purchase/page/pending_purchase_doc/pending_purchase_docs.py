@@ -7,7 +7,7 @@ def get_data():
     current_user = frappe.session.user
     user_roles = frappe.get_roles(current_user)
     rfm_docs = frappe.get_all("Request for Material",{'status':['IN',['Accepted',"Draft"]],'docstatus':1,'request_for_material_approver':current_user},['name','status'])
-    rfp1 = frappe.get_all('Request for Purchase',{'docstatus':1,'status':'Draft','accepter':current_user},['status','name'])
+    rfp1 = frappe.get_all('Request for Purchase',{'docstatus':1,'status':['IN',['Draft Request',"Draft"]],'accepter':current_user},['status','name'])
     rfp2 = frappe.get_all('Request for Purchase',{'docstatus':1,'status':'Accepted','approver':current_user},['status','name'])
     rfp_docs = frappe.get_all('ToDo',{'status':'Open','allocated_to':current_user,'reference_type':'Request for Purchase'},['reference_name']) 
     # For the query above, we have to ensure that only approved RFP are added to the page
