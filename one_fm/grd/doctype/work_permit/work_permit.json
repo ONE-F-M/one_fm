@@ -102,6 +102,7 @@
   "grd_operator_transfer",
   "grd_operator",
   "grd_supervisor",
+  "pam_operator",
   "section_break_61",
   "check_record",
   "reminded_grd_operator",
@@ -886,11 +887,20 @@
   {
    "fieldname": "column_break_29",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pam_operator",
+   "fieldtype": "Link",
+   "label": "PAM Operator",
+   "no_copy": 1,
+   "options": "User",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-05-07 09:51:23.748199",
+ "modified": "2023-05-14 16:13:28.882651",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
@@ -941,6 +951,17 @@
    "read": 1,
    "report": 1,
    "role": "GRD Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "PAM Operator",
    "share": 1,
    "write": 1
   }

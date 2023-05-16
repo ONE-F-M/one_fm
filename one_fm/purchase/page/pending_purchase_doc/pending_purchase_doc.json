@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2023-05-10 18:24:25.840879",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2023-05-10 18:24:25.840879",
+ "modified_by": "Administrator",
+ "module": "Purchase",
+ "name": "pending-purchase-doc",
+ "owner": "Administrator",
+ "page_name": "pending-purchase-doc",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Pending Purchase Documents"
+}

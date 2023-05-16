@@ -1,0 +1,77 @@
+{% for d in data %}
+	<div class="dashboard-list-item">
+		<div class="row">
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				<span class="indicator blue"></span>
+				<a  href = "request-for-material/{{ d.rfm}}" data-type="rfm" data-name="{{ d.rfm }}">{{ d.rfm }}</a>
+			</div>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.rfm %}
+					<span class="indicator blue"></span>
+					<a  data-type="rfm_status"
+						data-name="{{ d.rfm_status }}">{{ d.rfm_status }}
+					</a>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.rfp %}
+					<span class="indicator blue"></span>
+					<a href = "request-for-purchase/{{ d.rfp }}" data-type="rfp"
+						data-name="{{ d.rfp }}">{{ d.rfp }}
+					</a>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.rfp_status %}	
+					<span class="indicator blue"></span>
+					<a data-type="rfp_status"
+						data-name="{{ d.rfp_status }}">{{ d.rfp_status }}
+					</a>
+					<br/>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			<div class="col-sm-2 small" style="margin-top: 8px;">
+				{% if d.po %}
+					<span class="indicator blue"></span>
+					<a href = "purchase-order/{{d.po}}" data-type="pr"
+						data-name="{{ d.po }}">{{ d.po }}
+					</a>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			<div class="col-sm-2 small">
+				{% if d.po_status %}
+					<span class="indicator blue"></span>
+					<a data-type="po_status"
+						data-name="{{ d.po_status }}">{{ d.po_status }}
+					</a>
+				{% else %}
+					<span class="indicator darkgrey"></span>
+					<a style="font-size: 12px; color: #8d99a6;">
+						No Record found.
+					</a>
+				{% endif %}
+			</div>
+			
+		</div>
+	</div>
+{% endfor %}

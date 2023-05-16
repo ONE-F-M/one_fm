@@ -7,12 +7,28 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import nowdate, getdate, get_url
+from frappe.utils import nowdate, getdate, get_url, get_fullname
 from one_fm.utils import fetch_employee_signature
 from one_fm.processor import sendemail
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from one_fm.api.doc_events import get_employee_user_id
+from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
+
+def get_users_with_role(role):
+    """
+    Get the users with the role
+
+    Args:
+        role: Valid role
+    """
+    enabled_users = frappe.get_all("User",{'enabled':1})
+    enabled_users_ = [i.name for i in enabled_users if i.name!="Administrator"]
+    required_users = frappe.get_all("Has Role",{'role':role,'parent':['In',enabled_users_]},['parent'])
+    if required_users:
+        return [i.parent for i in required_users]
+    return []
+
 
 class RequestforPurchase(Document):
 	def onload(self):
@@ -40,10 +56,29 @@ class RequestforPurchase(Document):
 		self.set_onload('accepter', accepter)
 		self.set_onload('approver', approver)
 		return accepter, approver
+	def assign_users(self):
+		purchase_officers = get_users_with_role("Purchase User")
+		if purchase_officers:
+			requested_items = '<br>'.join([i.item_name for i in self.items])
+
+			add_assignment({
+					'doctype': self.doctype,
+					'name': self.name,
+					'assign_to': purchase_officers,
+					'description': _(f"""Please Note that a Request for Purchase {self.name} has been submitted.<br>
+									Requested Items: {requested_items} <br>
+
+                      					Please review and take necessary actions""")
+				})
+
+
 
 	def on_submit(self):
 		# Notify the Purchase Manger about the RFP to Do further action to create the Purchase Order
 		self.notify_purchase_manager()
+		self.assign_users()
+
+
 
 	def notify_purchase_manager(self):
 		users = get_users_with_role('Purchase Manager')
@@ -58,8 +93,8 @@ class RequestforPurchase(Document):
 				Dear Purchase Manager, <br/>
 				<p>Please Review the Request for Purchase <a href='{0}'>{1}</a> Submitted by {2}.
 				Do further action on the Request for Purchase to Create the Purchase Order</p>
-			""".format(page_link, self.name, self.requested_by)
-			subject = '{0} Request for Purchase by {1}'.format(self.status, self.requested_by)
+			""".format(page_link, self.name, get_fullname(self.requested_by))
+			subject = '{0} Request for Purchase by {1}'.format(self.status, get_fullname(self.requested_by))
 			send_email(self, filtered_users, message, subject)
 			create_notification_log(subject, message, filtered_users, self)
 			frappe.msgprint(_("Notification sent to Purchase Manager"))
@@ -74,24 +109,24 @@ class RequestforPurchase(Document):
 					wh = item.t_warehouse
 				create_purchase_order(supplier=item.supplier, request_for_purchase=self.name, item_code=item.item_code,
 					qty=item.qty, rate=item.rate, delivery_date=item.delivery_date, uom=item.uom, description=item.description,
-					warehouse=wh, quotation=item.quotation)
+					warehouse=wh, quotation=item.quotation, do_not_submit=True)
 
 	@frappe.whitelist()
 	def accept_approve_reject_request_for_purchase(self, status, approver, accepter, reason_for_rejection=None):
 		page_link = get_url(self.get_url())
 		# Notify Requester
-		self.notify_requester_accepter(page_link, status, [self.requested_by], "Dear {0}, <br/>".format(self.requested_by), reason_for_rejection)
+		self.notify_requester_accepter(page_link, status, [self.owner], "Dear {0}, <br/>".format(get_fullname(self.owner)), reason_for_rejection)
 
 		# Notify Approver
-		if status == 'Accepted' and frappe.session.user == accepter:
-			message = "<p>Please Review and Approve or Reject the Request for Purchase <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
-			subject = '{0} Request for Purchase by {1}'.format(status, frappe.session.user)
+		if status == 'Draft Request':
+			message = "<p>Please Review and Approve or Reject the Request for Purchase <a href='{0}'>{1}</a> by {2}</p>".format(page_link, self.name, get_fullname(frappe.session.user))
+			subject = '{0} Request for Purchase by {1}'.format(status, get_fullname(frappe.session.user))
 			send_email(self, [approver], message, subject)
 			create_notification_log(subject, message, [approver], self)
 
 		# Notify Accepter
-		if status in ['Draft Request'] or (status in ['Approved', 'Rejected'] and frappe.session.user == approver):
-			self.notify_requester_accepter(page_link, status, [accepter], "Dear FRP Accepter({0}), <br/>".format(accepter), reason_for_rejection)
+		if status in ['Draft'] or (status in ['Approved', 'Rejected'] and frappe.session.user == approver):
+			self.notify_requester_accepter(page_link, status, [accepter], "Dear RFP Accepter({0}), <br/>".format(accepter), reason_for_rejection)
 
 		self.status = status
 		self.reason_for_rejection = reason_for_rejection
@@ -261,7 +296,5 @@ def create_purchase_order(**args):
 	})
 	if not args.do_not_save:
 		po.save(ignore_permissions=True)
-		# if not args.do_not_submit:
-		# 	po.submit()
-
-	return po
+		if not args.do_not_submit:
+			po.submit()

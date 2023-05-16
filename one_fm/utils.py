@@ -40,11 +40,39 @@ from frappe.desk.notifications import extract_mentions
 from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
-    get_common_email_args, deduplicate_actions, get_next_possible_transitions,
+    get_email_template, deduplicate_actions, get_next_possible_transitions,
     get_doc_workflow_state, get_workflow_name, get_workflow_action_url
 )
 from six import string_types
 from frappe.core.doctype.doctype.doctype import validate_series
+from frappe.utils.user import get_users_with_role
+from frappe.permissions import has_permission
+
+
+def get_common_email_args(doc):
+	doctype = doc.get("doctype")
+	docname = doc.get("name")
+
+	email_template = get_email_template(doc)
+	if email_template:
+		subject = frappe.render_template(email_template.subject, vars(doc))
+		response = frappe.render_template(email_template.response, vars(doc))
+	else:
+		subject = _("Workflow Action") + f" on {doctype}: {docname}"
+		response = get_link_to_form(doctype, docname, f"{doctype}: {docname}")
+
+	common_args = {
+		"template": "workflow_action",
+		"header": "Workflow Action",
+		"attachments": [],
+		"subject": subject,
+		"message": response,
+	}
+	return common_args
+
+
+
+
 
 def check_upload_original_visa_submission_reminder2():
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where upload_original_visa_submitted=0 and upload_original_visa_reminder2_done=1")
@@ -1264,7 +1292,17 @@ def validate_item(doc, method):
     if not doc.parent_item_group:
         doc.parent_item_group = "All Item Groups"
     doc.description = final_description
-    #set_item_description(doc)
+    item_approval_workflow_notification(doc)
+
+def item_approval_workflow_notification(doc):
+	if doc.is_stock_item and not doc.variant_of and doc.workflow_state=='Pending Approval':
+		users = get_users_with_role('Purchase Officer')
+		filtered_users = []
+		for user in users:
+			if has_permission(doctype='Item', user=user):
+				filtered_users.append(user)
+		if filtered_users and len(filtered_users) > 0:
+			send_workflow_action_email(doc, filtered_users)
 
 def set_item_id(doc):
     next_item_id = "000000"
@@ -2486,7 +2524,7 @@ def queue_send_workflow_action_email(doc, recipients):
     if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,
-            "args": {"message": message, 
+            "args": {"message": message,
                     "doc_link": frappe.utils.get_url(doc.get_url()),
                     "workflow_state": doc.workflow_state,
                     "mandatory_field":mandatory_field},
@@ -2503,7 +2541,7 @@ def queue_send_workflow_action_email(doc, recipients):
                 "recipients": recipients,
                 "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))),
                         "message": message,
-                        "pdf_link": pdf_link, 
+                        "pdf_link": pdf_link,
                         "doc_link": frappe.utils.get_url(doc.get_url()),
                         "workflow_state": doc.workflow_state,
                         "mandatory_field":mandatory_field },

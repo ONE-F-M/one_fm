@@ -26,6 +26,7 @@ app_include_js = [
 		"/assets/one_fm/js/maps.js",
 		"/assets/one_fm/js/desk.js",
         "/assets/one_fm/js/showdown.min.js",
+        "purchase.bundle.js",
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -192,6 +193,8 @@ doc_events = {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po",
+		"validate":"one_fm.purchase.utils.set_approver",
+		'on_update':"one_fm.purchase.utils.on_update",
 		"on_update_after_submit": "one_fm.purchase.utils.set_po_letter_head"
 	},
 	"Leave Application": {
@@ -716,10 +719,10 @@ fixtures = [
 		"dt": "Role",
 		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
 	},
-	{
-		"dt": "Custom DocPerm",
-		"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	},
+	# {
+	# 	"dt": "Custom DocPerm",
+	# 	"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	# },
 	{
 		"dt": "Email Template"
 	},

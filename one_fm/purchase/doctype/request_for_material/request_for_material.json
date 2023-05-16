@@ -12,11 +12,11 @@
   "material_request_type",
   "requested_by",
   "type",
+  "schedule_date",
   "status",
   "reason_for_rejection",
   "column_break_2",
   "transaction_date",
-  "schedule_date",
   "company",
   "priority",
   "material_request_attach",
@@ -116,6 +116,7 @@
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
+   "hidden": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
@@ -472,11 +473,28 @@
  "icon": "fa fa-ticket",
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2022-09-10 19:44:58.554792",
+ "links": [
+  {
+   "group": "Reference",
+   "link_doctype": "Request for Purchase",
+   "link_fieldname": "request_for_material"
+  },
+  {
+   "group": "Reference",
+   "link_doctype": "Purchase Order",
+   "link_fieldname": "request_for_material"
+  },
+  {
+   "group": "Reference",
+   "link_doctype": "Delivery Note",
+   "link_fieldname": "request_for_material"
+  }
+ ],
+ "modified": "2023-05-16 11:48:12.685089",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -556,5 +574,6 @@
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

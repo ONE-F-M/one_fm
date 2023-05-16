@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import flt, get_url
+from frappe.utils import flt, get_url, get_fullname
 from frappe import _
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
@@ -15,83 +15,28 @@ from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_b
 from one_fm.utils import fetch_employee_signature
 from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
+from one_fm.utils import send_workflow_action_email
+from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment
 
 class RequestforMaterial(BuyingController):
 	def on_submit(self):
-		self.notify_request_for_material_accepter()
-		self.notify_request_for_material_approver()
+		if self.workflow_state == 'Pending Approval':
+			send_workflow_action_email(self, [self.request_for_material_approver])
+			subject = '{0}: Request for Material by {1}'.format(self.workflow_state, get_fullname(self.requested_by))
+			create_notification_log(subject, subject, [self.request_for_material_approver], self)
 
 	@frappe.whitelist()
 	def get_default_warehouse(self):
 		return frappe.db.get_single_value('Stock Settings', 'default_warehouse')
 
-	def notify_request_for_material_accepter(self):
-		if self.request_for_material_accepter:
-			page_link = get_url(self.get_url())
-			message = "<p>Please Review the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
-			subject = 'Request for Material - {0} by {1}'.format(self.status, self.requested_by)
-			send_email(self, [self.request_for_material_accepter], message, subject)
-			create_notification_log(subject, message, [self.request_for_material_accepter], self)
-
-	def notify_request_for_material_approver(self):
-		if self.request_for_material_approver:
-			page_link = get_url(self.get_url())
-			message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a> Submitted by {2}.</p>".format(page_link, self.name, self.requested_by)
-			subject = 'Request for Material - {0} by {1}'.format(self.status, self.requested_by)
-			send_email(self, [self.request_for_material_approver], message, subject)
-			create_notification_log(subject, message, [self.request_for_material_approver], self)
-
-	@frappe.whitelist()
-	def accept_approve_reject_request_for_material(self, status, reason_for_rejection=None):
-		if frappe.session.user in [self.request_for_material_accepter, self.request_for_material_approver]:
-			page_link = get_url(self.get_url())
-			# Notify Requester
-			self.notify_requester_accepter(page_link, status, [self.requested_by], reason_for_rejection)
-
-			# Notify Approver
-			if status == 'Accepted' and frappe.session.user == self.request_for_material_accepter and self.request_for_material_approver:
-				message = "<p>Please Review and Approve or Reject the Request for Material <a href='{0}'>{1}</a>, Accepted by {2}</p>".format(page_link, self.name, frappe.session.user)
-				subject = 'Request for Material - {0} by {1}'.format(status, frappe.session.user)
-				send_email(self, [self.request_for_material_approver], message, subject)
-				create_notification_log(subject, message, [self.request_for_material_approver], self)
-
-			# Notify Accepter and requester
-			if status in ['Approved', 'Rejected'] and frappe.session.user == self.request_for_material_approver:
-				if self.request_for_material_accepter:
-					self.notify_requester_accepter(page_link, status, [self.request_for_material_accepter], reason_for_rejection)
-				self.notify_material_requester(status, page_link)
-
-			self.status = status
-			if status == "Approved":
-				# Notify Stock Manager - Stock Manger Check If Item Available
-				# If Item Available then Create SE Issue and Transfer and update qty issued in the RFMItem
-				# If Qty - qty Issued > 0 then Create RFP button appear
-				users = get_users_with_role('Stock Manager')
-				filtered_users = []
-				for user in users:
-					if has_permission(doctype=self.doctype, user=user):
-						filtered_users.append(user)
-				if filtered_users and len(filtered_users) > 0:
-					message = "Dear Stock Manager, <br/>A Request for Material <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
-					subject = 'Request for Material - {0} by {1}'.format(status, frappe.session.user)
-					send_email(self, filtered_users, message, subject)
-					create_notification_log(subject, message, filtered_users, self)
-			self.reason_for_rejection = reason_for_rejection
-			self.save()
-			self.reload()
-	def notify_material_requester(self, page_link, status):
-		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}. You will be notified of the expected delivery date as soon as the order is processed".format(page_link, self.name, status, frappe.session.user)
-		subject = 'Request for Material - {0} by {1}'.format(status, self.requested_by)
+	def notify_material_requester(self):
+		page_link = get_url(self.get_url())
+		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}.".format(page_link, self.name, self.workflow_state, frappe.session.user)
+		if self.workflow_state == 'Approved':
+			message += "You will be notified of the expected delivery date as soon as the order is processed"
+		subject = '{0} {1} your Request for Material {2}'.format(self.workflow_state, get_fullname(frappe.session.user), self.name)
 		send_email(self, [self.requested_by], message, subject)
 		create_notification_log(subject, message, [self.requested_by], self)
-
-	def notify_requester_accepter(self, page_link, status, recipients, reason_for_rejection=None):
-		message = "Request for Material <a href='{0}'>{1}</a> is {2} by {3}".format(page_link, self.name, status, frappe.session.user)
-		if status == 'Rejected' and reason_for_rejection:
-			message += " due to {0}".format(reason_for_rejection)
-		subject = 'Request for Material - {0} by {1}'.format(status, frappe.session.user)
-		send_email(self, recipients, message, subject)
-		create_notification_log(subject, message, recipients, self)
 
 	def validate(self):
 		self.validate_details_against_type()
@@ -100,7 +45,6 @@ class RequestforMaterial(BuyingController):
 		self.set_title()
 		self.validate_item_qty()
 		# self.validate_item_reservation()
-
 
 	def validate_item_reservation(self):
 		# validate item reservation
@@ -138,7 +82,6 @@ class RequestforMaterial(BuyingController):
 				context={'added_items':added_items})
 			frappe.throw(template, title='Following items have been reserved.')
 
-
     #in process
 	def validate_item_qty(self):
 		if self.items:
@@ -175,8 +118,6 @@ class RequestforMaterial(BuyingController):
 					item.requested_description = item.description
 
 	def set_request_for_material_accepter_and_approver(self):
-		# if not self.request_for_material_accepter:
-		# 	self.request_for_material_accepter = frappe.db.get_value('Purchase Settings', None, 'request_for_material_accepter')
 		if not self.request_for_material_approver:
 			approver = False
 			if self.type == 'Project' and self.project:
@@ -214,15 +155,43 @@ class RequestforMaterial(BuyingController):
 		items = ', '.join([d.requested_item_name for d in self.items][:3])
 		self.title = _('Material Request for {0}').format(items)[:100]
 
+	def before_cancel(self):
+		if self.workflow_state == 'Rejected' and frappe.session.user == self.request_for_material_approver:
+			self.notify_material_requester()
+
 	def on_update_after_submit(self):
 		self.validate_item_qty()
-		from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment
+		self.assign_for_technical_verification()
+		if self.workflow_state == 'Approved' and frappe.session.user == self.request_for_material_approver:
+			self.notify_material_requester()
+			self.assign_to_warehouse_supervisor()
+
+	def assign_to_warehouse_supervisor(self):
+		try:
+			users = get_users_with_role('Warehouse Supervisor')
+			filtered_users = []
+			for user in users:
+				if has_permission(doctype=self.doctype, user=user):
+					filtered_users.append(user)
+			if filtered_users and len(filtered_users) > 0:
+				add_assignment({
+					'doctype': self.doctype,
+					'name': self.name,
+					'assign_to': filtered_users,
+					'description': _('{0}: Request for Material by {1}'.format(self.workflow_state, get_fullname(self.request_for_material_approver)))
+				})
+				self.add_comment("Comment", _("Assign to Warehouse Supervisor {0} to process the request".format(filtered_users[0])))
+		except DuplicateToDoError:
+			frappe.message_log.pop()
+			pass
+
+	def assign_for_technical_verification(self):
 		if self.technical_verification_needed == 'Yes' and self.technical_verification_from and not self.technical_remarks:
 			try:
 				add_assignment({
 					'doctype': self.doctype,
 					'name': self.name,
-					'assign_to': self.technical_verification_from,
+					'assign_to': [self.technical_verification_from],
 					'description': _('Please add Your Technical Remarks for the Item Descriptions')
 				})
 				self.add_comment("Comment", _("Waiting for Technical Verification"))
