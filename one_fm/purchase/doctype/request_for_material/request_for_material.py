@@ -543,6 +543,9 @@ def make_request_for_purchase(source_name, target_doc=None):
 	def update_item(obj, target, source_parent):
 		qty = obj.pur_qty
 		target.qty = qty
+		if not obj.item_code:
+			frappe.throw(_("Please specify the Item Code in each line before you create RFP"))
+
 	doclist = get_mapped_doc("Request for Material", source_name, 	{
 		"Request for Material": {
 			"doctype": "Request for Purchase",
