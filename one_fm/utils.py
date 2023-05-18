@@ -47,6 +47,7 @@ from six import string_types
 from frappe.core.doctype.doctype.doctype import validate_series
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
+from frappe.desk.form.linked_with import get_linked_fields
 
 
 def get_common_email_args(doc):
@@ -2572,17 +2573,34 @@ def workflow_approve_reject(doc, recipients=None):
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 def get_mandatory_fields(doctype, doc_name):
-    meta = frappe.get_meta(doctype)
-    mandatory_fields = []
-    labels = {}
-    for d in meta.get("fields", {"reqd": 1, "fieldtype":["!=", "Table"], "fieldname":["!=", "naming_series"]}):
-        mandatory_fields.append(d.fieldname)
-        labels[d.fieldname] = d.label
-    if not mandatory_fields:
-        mandatory_fields = ["name"]
-        labels['name'] = "Document Name"
-    doc = frappe.get_all(doctype, {'name':doc_name}, mandatory_fields)
-    return doc, labels
+	meta = frappe.get_meta(doctype)
+	mandatory_fields = []
+	labels = {}
+	employee_fields = []
+	for d in meta.get("fields", {"reqd": 1, "fieldtype":["!=", "Table"], "fieldname":["!=", "naming_series"]}):
+		mandatory_fields.append(d.fieldname)
+		labels[d.fieldname] = d.label
+		if d.fieldtype == "Link" and d.options=="Employee":
+			employee_fields.append(d.fieldname)
+
+	if not employee_fields:
+		for link_field in meta.get_link_fields():
+			if link_field.options == 'Employee':
+				employee_fields.append(link_field.fieldname)
+				mandatory_fields.append(link_field.fieldname)
+				labels[link_field.fieldname] = link_field.label
+
+	if not mandatory_fields:
+		mandatory_fields = ['name']
+		labels['name'] = 'Document Name'
+
+	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
+
+	for employee_field in employee_fields:
+		employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
+		doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
+
+	return doc, labels
 
 @frappe.whitelist()
 def notify_live_user(company, message, users=False):
