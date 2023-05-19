@@ -122,7 +122,7 @@ class RequestforMaterial(BuyingController):
 			approver = False
 			if self.type == 'Project' and self.project:
 				approver = frappe.db.get_value('Project', self.project, 'account_manager')
-			elif self.type == 'Individual' and self.employee:
+			elif self.type in ['Individual', 'Department'] and self.employee:
 				approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
 			elif self.type == 'Onboarding':
 				employee = frappe.db.exists("Employee", {'user_id': self.owner})
