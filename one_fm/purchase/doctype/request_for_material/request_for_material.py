@@ -181,6 +181,9 @@ class RequestforMaterial(BuyingController):
 					'description': _('{0}: Request for Material by {1}'.format(self.workflow_state, get_fullname(self.request_for_material_approver)))
 				})
 				self.add_comment("Comment", _("Assign to Warehouse Supervisor {0} to process the request".format(filtered_users[0])))
+			else:
+				frappe.msgprint(_("Not able to find user with role Warehouse Supervisor to assign this RFM"), alert=True)
+				self.add_comment("Comment", _("On Approval, not able to find user with role Warehouse Supervisor to assign this RFM"))
 		except DuplicateToDoError:
 			frappe.message_log.pop()
 			pass
