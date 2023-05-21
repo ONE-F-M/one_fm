@@ -14,7 +14,7 @@ def get_subject(doc):
     return new_subject
 
 
-# class EmailQueueOverride(EmailQueue):
+
 def prepare_email_content(self):
     sender_ = get_outgoing_support_email(self)
     self.email_sender = sender_.get('email_id') if sender_ else self.sender
