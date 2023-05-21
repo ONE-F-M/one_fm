@@ -7,22 +7,19 @@ from frappe.email.queue import get_unsubcribed_url
 
 
 
-
-
-
 def get_unsubscribe_str_(self, recipient_email: str) -> str:
-		unsubscribe_url = ""
+    unsubscribe_url = ""
 
-		if self.queue_doc.add_unsubscribe_link and self.queue_doc.reference_doctype:
-			unsubscribe_url = get_unsubcribed_url(
-				reference_doctype=self.queue_doc.reference_doctype,
-				reference_name=str(self.queue_doc.reference_name),
-				email=recipient_email,
-				unsubscribe_method=self.queue_doc.unsubscribe_method,
-				unsubscribe_params=self.queue_doc.unsubscribe_param,
-			)
+    if self.queue_doc.add_unsubscribe_link and self.queue_doc.reference_doctype:
+        unsubscribe_url = get_unsubcribed_url(
+            reference_doctype=self.queue_doc.reference_doctype,
+            reference_name=str(self.queue_doc.reference_name),
+            email=recipient_email,
+            unsubscribe_method=self.queue_doc.unsubscribe_method,
+            unsubscribe_params=self.queue_doc.unsubscribe_param,
+        )
 
-		return quopri.encodestring(unsubscribe_url.encode()).decode()
+    return quopri.encodestring(unsubscribe_url.encode()).decode()
 
 
 
