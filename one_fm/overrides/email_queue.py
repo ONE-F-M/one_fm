@@ -1,5 +1,30 @@
 import frappe 
 from frappe.email.email_body import  get_email
+from frappe.utils import  get_url
+from frappe.utils.verified_command import get_signed_params
+import quopri
+from frappe.email.queue import get_unsubcribed_url
+
+
+
+
+
+
+def get_unsubscribe_str_(self, recipient_email: str) -> str:
+		unsubscribe_url = ""
+
+		if self.queue_doc.add_unsubscribe_link and self.queue_doc.reference_doctype:
+			unsubscribe_url = get_unsubcribed_url(
+				reference_doctype=self.queue_doc.reference_doctype,
+				reference_name=str(self.queue_doc.reference_name),
+				email=recipient_email,
+				unsubscribe_method=self.queue_doc.unsubscribe_method,
+				unsubscribe_params=self.queue_doc.unsubscribe_param,
+			)
+
+		return quopri.encodestring(unsubscribe_url.encode()).decode()
+
+
 
 def get_outgoing_support_email(doc):
     if doc.reference_doctype == "HD Ticket":
@@ -7,6 +32,7 @@ def get_outgoing_support_email(doc):
         if email_acc:
             return email_acc[0]
         return False
+    return False
 
 def get_subject(doc):
     ticket_subject = frappe.db.get_value("HD Ticket",doc.reference_name,'subject')
