@@ -122,7 +122,7 @@ class RequestforMaterial(BuyingController):
 			approver = False
 			if self.type == 'Project' and self.project:
 				approver = frappe.db.get_value('Project', self.project, 'account_manager')
-			elif self.type == 'Individual' and self.employee:
+			elif self.type in ['Individual', 'Department'] and self.employee:
 				approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
 			elif self.type == 'Onboarding':
 				employee = frappe.db.exists("Employee", {'user_id': self.owner})
@@ -181,6 +181,9 @@ class RequestforMaterial(BuyingController):
 					'description': _('{0}: Request for Material by {1}'.format(self.workflow_state, get_fullname(self.request_for_material_approver)))
 				})
 				self.add_comment("Comment", _("Assign to Warehouse Supervisor {0} to process the request".format(filtered_users[0])))
+			else:
+				frappe.msgprint(_("Not able to find user with role Warehouse Supervisor to assign this RFM"), alert=True)
+				self.add_comment("Comment", _("On Approval, not able to find user with role Warehouse Supervisor to assign this RFM"))
 		except DuplicateToDoError:
 			frappe.message_log.pop()
 			pass
