@@ -9,17 +9,17 @@
     }
 </style>
 <div style="background-color: #f9fafa;border-radius: 2vw;padding: 2vh;">
-	<div style="text-align: center;padding: 5px 10px"> 
+	<div style="text-align: center;padding: 5px 10px">
         <img class="brand_logo" src={{logo}}/>
     </div>
     <div style="background-color:white;padding: 3vw;border-radius: 8px;">
-        <div style="padding: 2vh;"> 
-             
-            {% if header is not none %}   
-             <h2 style="text-align: center;"> {{header}} </h2>
-            {% endif %} 
+        <div style="padding: 2vh;">
 
-            {% if actions is not none %} 
+            {% if header is not none %}
+             <h2 style="text-align: center;"> {{header}} </h2>
+            {% endif %}
+
+            {% if actions is not none %}
                 <p>
                     Here is to inform you that the following {{ reference_doctype }} requires your attention/action.<br>
                     {% if mandatory_field is not none %}
@@ -33,9 +33,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for m in mandatory_field %} 
+                        {% for m in mandatory_field %}
                             <tr>
-                                <td style="padding: 10px;">{{ m }}</td> 
+                                <td style="padding: 10px;">{{ field_labels[m] }}</td>
                                 <td style="padding: 10px;">{{ mandatory_field[m] }}</td>
                             </tr>
                         {% endfor %}
@@ -45,25 +45,25 @@
                     <br>
                     The link to the document is  <a target="_blank" class="underline" href="{{ doc_link }}"> {{reference_name}}</a> <br>
                     Please take your action for document using the action button below.<br>
-                </p>           
-                {% for action in actions %}      
+                </p>
+                {% for action in actions %}
                     <a href="{{ action.action_link }}" class="btn btn-primary btn-action">{{ action.action_name }}</a>
                 {% endfor %}
                 <a href="/" class="btn btn-secondary btn-action">Cancel</a>
-            {% endif %} 
+            {% endif %}
 
-            {% if content is not none %}   
+            {% if content is not none %}
                 {{ content }}
             {% endif %}
         </div>
-       
+
         <div class="email-signature">
             <h5 style="margin-bottom: 0px;">Yours, One Facility Management</h5>
             <a href="mailto:support@one-fm.com">support@one-fm.com</a>
         </div>
         <hr>
         <div >
-            
+
             <div style="display:block;text-align: center;">
                 <div style="color: #454a4a;  ">
                     <h4 style="margin: 0;">Address: 
@@ -79,9 +79,9 @@
                 </div>
             </div>
             <p style="color:#a8b0b0 ;">The content of this email is confidential and intended for the recipient
-            specified in the message only. It is strictly forbidden to share any part of this message 
-            with any third party, without the written consent of the sender. If you received this message by 
-            mistake, please reply to this message and follow with its deletion, so that we can ensure such 
+            specified in the message only. It is strictly forbidden to share any part of this message
+            with any third party, without the written consent of the sender. If you received this message by
+            mistake, please reply to this message and follow with its deletion, so that we can ensure such
             a mistake does not occur in the future.</p>
         </div>
 	</div>
