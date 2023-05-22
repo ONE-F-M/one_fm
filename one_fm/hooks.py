@@ -439,6 +439,10 @@ website_route_rules = [
 		"to_route": "careers/opening"
 	},
 	{
+		"from_route": "/services/view_more/<path:title>",
+		"to_route": "services/view_more"
+	},
+	{
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
@@ -692,7 +696,7 @@ scheduler_events = {
 
 fixtures = [
 	{
-		"dt": "Custom Field",
+		# "dt": "Custom Field",
 		# 'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
 	},
 	{
