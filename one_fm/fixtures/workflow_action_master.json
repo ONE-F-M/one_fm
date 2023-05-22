@@ -369,5 +369,12 @@
   "modified": "2022-09-07 11:49:10.373503",
   "name": "Submit",
   "workflow_action_name": "Submit"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-05-22 13:17:38.784574",
+  "name": "Submit to Purchase Officer",
+  "workflow_action_name": "Submit to Purchase Officer"
  }
 ]
