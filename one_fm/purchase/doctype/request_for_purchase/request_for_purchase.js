@@ -2,6 +2,11 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Request for Purchase', {
+	before_workflow_action: function(frm){
+		if(frm.doc.workflow_state == 'Submit to Purchase Officer' && frm.doc.items_to_order.length <= 0){
+			frm.scroll_to_field('items_to_order');
+		}
+	},
 	refresh: function(frm) {
 		set_intro_related_to_status(frm);
 		frm.events.make_custom_buttons(frm);
@@ -38,55 +43,6 @@ frappe.ui.form.on('Request for Purchase', {
 					() => frm.events.make_purchase_order(frm), __('Create'));
 			}
 		}
-		if (frm.doc.docstatus == 1){
-			if(frappe.session.user==frm.doc.owner && frm.doc.status == "Draft" && frm.doc.items_to_order && frm.doc.items_to_order.length > 0){
-				// Changed from "Send request" while removing authorizations and approvals.
-				frm.add_custom_button(__('Confirm Item Details and Send for Approval'), () => frm.events.accept_approve_reject_request_for_purchase(frm, "Draft Request", false)).addClass('btn-primary');
-			}
-			if("accepter" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.accepter && frm.doc.status == "Draft Request"){
-				frm.add_custom_button(__('Accept'), () => frm.events.accept_approve_reject_request_for_purchase(frm, "Accepted", false)).addClass('btn-primary');
-				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_purchase(frm, 'Rejected')).addClass('btn-danger');
-			}
-			if("approver" in frm.doc.__onload && frappe.session.user==frm.doc.__onload.approver && ["Accepted", "Draft Request"].includes(frm.doc.status)){
-				frm.add_custom_button(__('Approve'), () => frm.events.accept_approve_reject_request_for_purchase(frm, "Approved", false)).addClass('btn-primary');
-				frm.add_custom_button(__('Reject'), () => frm.events.reject_request_for_purchase(frm, 'Rejected')).addClass('btn-danger');
-			}
-		}
-	},
-	reject_request_for_purchase: function(frm, status) {
-		var d = new frappe.ui.Dialog({
-			title : __("Reject Request for Purchase"),
-			fields : [{
-				fieldtype: "Small Text",
-				label: "Reason for Rejection",
-				fieldname: "reason_for_rejection",
-				reqd : 1
-			}],
-			primary_action_label: __("Reject"),
-			primary_action: function(){
-				frm.events.accept_approve_reject_request_for_purchase(frm, status, d.get_value('reason_for_rejection'));
-				d.hide();
-			},
-		});
-		d.show();
-	},
-	accept_approve_reject_request_for_purchase: function(frm, status, reason_for_rejection) {
-		frappe.call({
-			doc: frm.doc,
-			method: 'accept_approve_reject_request_for_purchase',
-			args: {
-				status: status,
-				accepter: frm.doc.__onload.accepter,
-				approver: frm.doc.__onload.approver,
-				reason_for_rejection: reason_for_rejection
-			},
-			callback(r) {
-				if (!r.exc) {
-					frm.reload_doc();
-				}
-			},
-			freeze: true
-		});
 	},
 	make_request_for_quotation: function(frm) {
 		frappe.model.open_mapped_doc({

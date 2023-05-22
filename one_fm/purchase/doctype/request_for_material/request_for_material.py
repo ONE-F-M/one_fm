@@ -566,5 +566,6 @@ def make_request_for_purchase(source_name, target_doc=None):
 			"condition": lambda doc: (doc.pur_qty > 0 and doc.reject_item==0)
 		}
 	}, target_doc)
+	doclist.submit()
 
 	return doclist
