@@ -439,6 +439,10 @@ website_route_rules = [
 		"to_route": "careers/opening"
 	},
 	{
+		"from_route": "/services/view_more/<path:title>",
+		"to_route": "services/view_more"
+	},
+	{
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
