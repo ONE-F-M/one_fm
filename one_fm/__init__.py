@@ -27,10 +27,12 @@ from hrms.overrides.employee_master import EmployeeMaster,validate_onboarding_pr
 from one_fm.overrides.employee import EmployeeOverride
 from frappe.email.doctype.email_queue.email_queue import QueueBuilder,SendMailContext
 from one_fm.overrides.email_queue import prepare_email_content as email_content,get_unsubscribe_str_
+from frappe.workflow.doctype.workflow_action import workflow_action
+from one_fm.utils import override_frappe_send_workflow_action_email
 
 __version__ = '14.3.0'
 
-
+workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
 SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
 QueueBuilder.prepare_email_content  = email_content
 EmployeeMaster.validate = EmployeeOverride.validate
