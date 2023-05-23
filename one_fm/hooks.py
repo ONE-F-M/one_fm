@@ -232,11 +232,6 @@ doc_events = {
 		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
-	"Job Offer": {
-		"validate": "one_fm.hiring.utils.validate_job_offer",
-		"on_update_after_submit": "one_fm.hiring.utils.job_offer_on_update_after_submit",
-		"onload": "one_fm.hiring.utils.job_offer_onload"
-	},
 	"Shift Type": {
 		"autoname": "one_fm.api.doc_events.naming_series",
 		"validate": "one_fm.overrides.shift_type.validate_shift_type"
@@ -470,6 +465,7 @@ override_doctype_class = {
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
+    "Job Offer": "one_fm.overrides.job_offer.JobOfferOverride",
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
