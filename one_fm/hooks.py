@@ -262,7 +262,7 @@ doc_events = {
 	},
 	"Supplier Group": {
 		"on_update": "one_fm.utils.supplier_group_on_update",
-},
+	},
 	"Bank Account": {
 		"after_insert": "one_fm.api.doc_methods.bank_account.after_insert",
 		"on_update": "one_fm.utils.bank_account_on_update",
@@ -393,6 +393,9 @@ doc_events = {
 	},
 	"Communication": {
 		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
+	},
+	"ToDo": {
+		"validate": "one_fm.overrides.todo.validate_todo"
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
