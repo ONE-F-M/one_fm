@@ -2959,3 +2959,13 @@ def get_issue_type(issue_type):
 		new_issue_type.__newname = issue_type
 		new_issue_type.save(ignore_permissions=True)
 		return new_issue_type.name
+
+def get_users_with_role_permitted_to_doctype(role, doctype=False):
+	filtered_users = []
+	users = get_users_with_role(role)
+	for user in users:
+		if has_permission(doctype=doctype, user=user):
+			filtered_users.append(user)
+	if filtered_users and len(filtered_users) > 0:
+		return filtered_users
+	return False
