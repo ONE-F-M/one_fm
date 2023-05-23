@@ -1,9 +1,6 @@
 frappe.ui.form.on('Payroll Entry', {
-	// onload: function(frm){
-	// 	check_salary_slip_counts(frm)
-	// },
     refresh: function(frm) {
-		if(!frm.is_new() && frm.doc.salary_slips_created == 1){
+		if(!frm.is_new()){
 			check_salary_slip_counts(frm)
 		}
 		if (frm.doc.status == "Pending Salary Slip"){
@@ -11,7 +8,7 @@ frappe.ui.form.on('Payroll Entry', {
 				frm.trigger("create_pending_salary_slip");
 			}).addClass("btn-warning");
 		}
-		if (frm.doc.salary_slips_created == 1 && frm.doc.bank_account){
+		if (frm.doc.status =="Submitted" && frm.doc.salary_slips_created == 1 && frm.doc.bank_account){
 			frm.add_custom_button(__("Download Payroll Bank Export"), function() {
 				let payroll_entry = frm.doc.name
 				window.open("/files/payroll-entry/" + payroll_entry + ".xlsx", "Download");
