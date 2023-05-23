@@ -19,8 +19,10 @@ from hrms.hr.doctype.leave_application.leave_application import LeaveApplication
 from one_fm.api.mobile.Leave_application import notify_leave_approver
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 from one_fm.operations.doctype.contracts.contracts import calculate_item_values
+
 from one_fm.overrides.workflow import filter_allowed_users, get_next_possible_transitions,is_workflow_action_already_created_
 from frappe.workflow.doctype.workflow_action import workflow_action
+
 
 from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 from one_fm.api.notification import after_insert
@@ -28,14 +30,19 @@ from one_fm.one_fm.payroll_utils import add_tax_components
 from one_fm.utils import post_login, validate_reports_to, custom_validate_nestedset_loop
 from hrms.overrides.employee_master import EmployeeMaster,validate_onboarding_process
 from one_fm.overrides.employee import EmployeeOverride
-from frappe.email.doctype.email_queue.email_queue import QueueBuilder
-from one_fm.overrides.email_queue import prepare_email_content as email_content
+from frappe.email.doctype.email_queue.email_queue import QueueBuilder,SendMailContext
+from one_fm.overrides.email_queue import prepare_email_content as email_content,get_unsubscribe_str_
 
 __version__ = '14.3.0'
+
 
 workflow_action.filter_allowed_users = filter_allowed_users
 workflow_action.get_next_possible_transitions = get_next_possible_transitions
 workflow_action.is_workflow_action_already_created = is_workflow_action_already_created_
+
+
+SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
+
 QueueBuilder.prepare_email_content  = email_content
 EmployeeMaster.validate = EmployeeOverride.validate
 EmployeeMaster.validate_onboarding_process = validate_onboarding_process
