@@ -4,6 +4,8 @@ from frappe.utils import get_fullname
 from one_fm.processor import is_user_id_company_prefred_email_in_employee
 
 def validate_todo(doc, method):
+	if doc.is_new():
+		return
 	status_in_db = frappe.db.get_value(doc.doctype, doc.name, 'status')
 	if status_in_db != doc.status and doc.assigned_by != doc.allocated_to:
 		user = frappe.session.user
