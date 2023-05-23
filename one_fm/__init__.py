@@ -30,7 +30,7 @@ from one_fm.overrides.email_queue import prepare_email_content as email_content,
 from frappe.workflow.doctype.workflow_action import workflow_action
 from one_fm.utils import override_frappe_send_workflow_action_email
 
-__version__ = '14.3.0'
+__version__ = '14.3.1'
 
 workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
 SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
