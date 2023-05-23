@@ -257,7 +257,7 @@ doc_events = {
 	},
 	"Supplier Group": {
 		"on_update": "one_fm.utils.supplier_group_on_update",
-},
+	},
 	"Bank Account": {
 		"after_insert": "one_fm.api.doc_methods.bank_account.after_insert",
 		"on_update": "one_fm.utils.bank_account_on_update",
@@ -389,6 +389,9 @@ doc_events = {
 	"Communication": {
 		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
 	},
+	"ToDo": {
+		"validate": "one_fm.overrides.todo.validate_todo"
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -432,6 +435,10 @@ website_route_rules = [
 	{
 		"from_route": "/careers/opening/<path:job_id>",
 		"to_route": "careers/opening"
+	},
+	{
+		"from_route": "/services/view_more/<path:title>",
+		"to_route": "services/view_more"
 	},
 	{
 		"from_route": "/job_application/<path:job_title>",
@@ -688,7 +695,7 @@ scheduler_events = {
 
 fixtures = [
 	{
-		"dt": "Custom Field",
+		# "dt": "Custom Field",
 		# 'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
 	},
 	{

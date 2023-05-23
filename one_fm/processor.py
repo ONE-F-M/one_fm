@@ -13,7 +13,8 @@ def sendemail(recipients, subject, header=None, message=None,
 	template = "default_email"
 	actions=pdf_link=workflow_state=""
 	doc_link = "#"
-	mandatory_field=None
+	mandatory_field = None
+	field_labels = None
 	print("inMail")
 	head = header[0] if header else ""
 	if not message:
@@ -30,7 +31,8 @@ def sendemail(recipients, subject, header=None, message=None,
 		pdf_link = args.get("pdf_link")
 		doc_link = args.get("doc_link")
 		workflow_state = args.get("workflow_state")
-		mandatory_field = args.get("mandatory_field")[0]
+		mandatory_field = args.get("mandatory_field")
+		field_labels = args.get("field_labels")
 
 	if type(recipients) == str:
 		recipients = [recipients]
@@ -57,7 +59,8 @@ def sendemail(recipients, subject, header=None, message=None,
 				pdf_link=pdf_link,
 				doc_link=doc_link,
 				workflow_state=workflow_state,
-				mandatory_field=mandatory_field
+				mandatory_field=mandatory_field,
+				field_labels=field_labels
 			),
 			attachments = attachments,
 			delayed=delayed

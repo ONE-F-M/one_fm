@@ -47,6 +47,7 @@ from six import string_types
 from frappe.core.doctype.doctype.doctype import validate_series
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
+from frappe.desk.form.linked_with import get_linked_fields
 
 
 def get_common_email_args(doc):
@@ -2500,6 +2501,13 @@ def get_users_next_action_data(transitions, doc, recipients):
 			)
 	return user_data_map
 
+def override_frappe_send_workflow_action_email(users_data, doc):
+	recipients = []
+	for d in users_data:
+		recipients.append(d.get("email"))
+	if recipients:
+		send_workflow_action_email(doc, recipients)
+
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
     queue_send_workflow_action_email(doc=doc, recipients=recipients)
@@ -2516,7 +2524,7 @@ def queue_send_workflow_action_email(doc, recipients):
     common_args = get_common_email_args(doc)
     common_args.pop('attachments')
 
-    mandatory_field = get_mandatory_fields(doc.doctype, doc.name)
+    mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
 
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
@@ -2524,10 +2532,13 @@ def queue_send_workflow_action_email(doc, recipients):
     if not list(user_data_map.values()):
         email_args = {
             "recipients": recipients,
-            "args": {"message": message,
-                    "doc_link": frappe.utils.get_url(doc.get_url()),
-                    "workflow_state": doc.workflow_state,
-                    "mandatory_field":mandatory_field},
+            "args": {
+                "message": message,
+                "doc_link": frappe.utils.get_url(doc.get_url()),
+                "workflow_state": doc.workflow_state,
+                "mandatory_field":mandatory_field,
+                "field_labels": labels
+            },
             "reference_name": doc.name,
             "reference_doctype": doc.doctype,
         }
@@ -2539,12 +2550,15 @@ def queue_send_workflow_action_email(doc, recipients):
         for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
             email_args = {
                 "recipients": recipients,
-                "args": {"actions": list(deduplicate_actions(d.get("possible_actions"))),
-                        "message": message,
-                        "pdf_link": pdf_link,
-                        "doc_link": frappe.utils.get_url(doc.get_url()),
-                        "workflow_state": doc.workflow_state,
-                        "mandatory_field":mandatory_field },
+                "args": {
+                    "actions": list(deduplicate_actions(d.get("possible_actions"))),
+                    "message": message,
+                    "pdf_link": pdf_link,
+                    "doc_link": frappe.utils.get_url(doc.get_url()),
+                    "workflow_state": doc.workflow_state,
+                    "mandatory_field":mandatory_field,
+                    "field_labels": labels
+                },
                 "reference_name": doc.name,
                 "reference_doctype": doc.doctype,
             }
@@ -2566,14 +2580,34 @@ def workflow_approve_reject(doc, recipients=None):
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 def get_mandatory_fields(doctype, doc_name):
-    meta = frappe.get_meta(doctype)
-    mandatory_fields = []
-    for d in meta.get("fields", {"reqd": 1, "fieldtype":["!=", "Table"], "fieldname":["!=", "naming_series"]}):
-        mandatory_fields.append(d.fieldname)
-    if not mandatory_fields:
-        mandatory_fields = ["name"]
-    doc = frappe.get_all(doctype, {'name':doc_name},mandatory_fields)
-    return doc
+	meta = frappe.get_meta(doctype)
+	mandatory_fields = []
+	labels = {}
+	employee_fields = []
+	for d in meta.get("fields", {"reqd": 1, "fieldtype":["!=", "Table"], "fieldname":["!=", "naming_series"]}):
+		mandatory_fields.append(d.fieldname)
+		labels[d.fieldname] = d.label
+		if d.fieldtype == "Link" and d.options=="Employee":
+			employee_fields.append(d.fieldname)
+
+	if not employee_fields:
+		for link_field in meta.get_link_fields():
+			if link_field.options == 'Employee':
+				employee_fields.append(link_field.fieldname)
+				mandatory_fields.append(link_field.fieldname)
+				labels[link_field.fieldname] = link_field.label
+
+	if not mandatory_fields:
+		mandatory_fields = ['name']
+		labels['name'] = 'Document Name'
+
+	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
+
+	for employee_field in employee_fields:
+		employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
+		doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
+
+	return doc, labels
 
 @frappe.whitelist()
 def notify_live_user(company, message, users=False):
@@ -2932,3 +2966,13 @@ def get_issue_type(issue_type):
 		new_issue_type.__newname = issue_type
 		new_issue_type.save(ignore_permissions=True)
 		return new_issue_type.name
+
+def get_users_with_role_permitted_to_doctype(role, doctype=False):
+	filtered_users = []
+	users = get_users_with_role(role)
+	for user in users:
+		if has_permission(doctype=doctype, user=user):
+			filtered_users.append(user)
+	if filtered_users and len(filtered_users) > 0:
+		return filtered_users
+	return False
