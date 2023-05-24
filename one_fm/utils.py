@@ -2510,8 +2510,7 @@ def override_frappe_send_workflow_action_email(users_data, doc):
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
-    queue_send_workflow_action_email(doc=doc, recipients=recipients)
-    # frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
+    frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
 
 
 def queue_send_workflow_action_email(doc, recipients):
@@ -2544,8 +2543,7 @@ def queue_send_workflow_action_email(doc, recipients):
         }
         email_args.update(common_args)
         email_args['subject'] = subject
-        sendemail(**email_args)
-        # frappe.enqueue(method=sendemail, queue="short", **email_args)
+        frappe.enqueue(method=sendemail, queue="short", **email_args)
     else:
         for d in [i for i in list(user_data_map.values()) if i.get('email') in recipients]:
             email_args = {
@@ -2564,8 +2562,7 @@ def queue_send_workflow_action_email(doc, recipients):
             }
             email_args.update(common_args)
             email_args['subject'] = subject
-        sendemail(**email_args)
-        # frappe.enqueue(method=sendemail, queue="short", **email_args)
+        frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 def workflow_approve_reject(doc, recipients=None):
     if not recipients:
