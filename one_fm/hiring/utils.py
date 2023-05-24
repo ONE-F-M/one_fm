@@ -35,92 +35,12 @@ def get_performance_profile_guid():
     if file_path:
         return get_url(file_path)
 
-def validate_job_offer(doc, method):
-    job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
-    validate_mandatory_fields(job_applicant)
-    job_offer_validate_attendance_by_timesheet(doc)
-    validate_job_offer_mandatory_fields(doc)
-    # Validate day off
-    if not doc.number_of_days_off:
-        frappe.throw(_("Please set the number of days off."))
-    if doc.day_off_category == "Weekly":
-        if frappe.utils.cint(doc.number_of_days_off) > 7:
-            frappe.throw(_("Number of days off cannot be more than a week."))
-    elif doc.day_off_category == "Monthly":
-        if frappe.utils.cint(doc.number_of_days_off) > 30:
-            frappe.throw(_("Number of days off cannot be more than a month."))
-    salary_per_person_from_erf = 0
-    if doc.one_fm_erf and not doc.one_fm_salary_structure:
-        erf_salary_structure = frappe.db.get_value('ERF', doc.one_fm_erf, 'salary_structure')
-        if erf_salary_structure:
-            doc.one_fm_salary_structure = erf_salary_structure
-        if not doc.base:
-            salary_per_person = frappe.db.get_value('ERF', doc.one_fm_erf, 'salary_per_person')
-            salary_per_person_from_erf = salary_per_person if salary_per_person else 0
-    if doc.one_fm_salary_structure:
-        salary_structure = frappe.get_doc('Salary Structure', doc.one_fm_salary_structure)
-        total_amount = 0
-        doc.set('one_fm_salary_details', [])
-        base = doc.base if doc.base else salary_per_person_from_erf
-        for salary in salary_structure.earnings:
-            if salary.amount_based_on_formula and salary.formula:
-                formula = salary.formula
-                percent = formula.split("*")[1]
-                amount = int(base)*float(percent)
-                total_amount += amount
-                if amount!=0:
-                    salary_details = doc.append('one_fm_salary_details')
-                    salary_details.salary_component = salary.salary_component
-                    salary_details.amount = amount
-                    doc.one_fm_job_offer_total_salary = total_amount
-            else:
-                total_amount += salary.amount
-                if salary.amount!=0:
-                    salary_details = doc.append('one_fm_salary_details')
-                    salary_details.salary_component = salary.salary_component
-                    salary_details.amount = salary.amount
-        doc.one_fm_job_offer_total_salary = total_amount
-    elif doc.one_fm_salary_details:
-        total_amount = 0
-        for salary in doc.one_fm_salary_details:
-            total_amount += salary.amount if salary.amount else 0
-        doc.one_fm_job_offer_total_salary = total_amount
-    if frappe.db.exists('Letter Head', 'ONE FM - Job Offer') and not doc.letter_head:
-        doc.letter_head = 'ONE FM - Job Offer'
-
-def job_offer_validate_attendance_by_timesheet(doc):
-	if doc.attendance_by_timesheet:
-		doc.shift_working = False
-		doc.operations_shift = ''
-		doc.default_shift = ''
-		doc.operation_site = ''
-
 def employee_validate_attendance_by_timesheet(doc, method):
 	if doc.attendance_by_timesheet:
 		doc.shift_working = False
 		doc.shift = ''
 		doc.default_shift = ''
 		doc.site = ''
-
-def validate_job_offer_mandatory_fields(job_offer):
-    if job_offer.workflow_state == 'Submit for Candidate Response':
-        mandatory_field_required = False
-        fields = ['Reports To', 'Project', 'Base', 'Salary Structure', 'Project']
-        if not job_offer.attendance_by_timesheet:
-            fields.append('Operations Shift')
-            if job_offer.shift_working:
-                fields.append('Operations Site')
-        msg = "Mandatory fields required to Submit Job Offer<br/><br/><ul>"
-        for field in fields:
-            if field == 'Salary Structure':
-                if not job_offer.get('one_fm_salary_structure'):
-                    mandatory_field_required = True
-                    msg += '<li>' + field +'</li>'
-            elif not job_offer.get(scrub(field)):
-                mandatory_field_required = True
-                msg += '<li>' + field +'</li>'
-        if mandatory_field_required:
-            frappe.throw(msg + '</ul>')
 
 def after_insert_job_applicant(doc, method):
     notify_recruiter_and_requester_from_job_applicant(doc, method)
@@ -541,37 +461,6 @@ def update_onboarding_doc(doc, is_trash=False, cancel_oe=False):
             onboard_employee.reload()
             onboard_employee.cancel()
 
-def job_offer_on_update_after_submit(doc, method):
-    validate_job_offer_mandatory_fields(doc)
-    if doc.workflow_state == 'Submit to Onboarding Officer':
-        msg = "Please select {0} to Accept the Offer and Process Onboard"
-        if not doc.estimated_date_of_joining and not doc.onboarding_officer:
-            frappe.throw(_(msg.format("<b>Estimated Date of Joining</b> and <b>Onboarding Officer</b>")))
-        elif not doc.estimated_date_of_joining:
-            frappe.throw(_(msg.format("<b>Estimated Date of Joining</b>")))
-        elif not doc.onboarding_officer:
-            frappe.throw(_(msg.format("<b>Onboarding Officer</b>")))
-    # Send Notification to Assined Officer to accept the Onboarding Task
-    notify_onboarding_officer(doc)
-    if doc.workflow_state in ['Onboarding Officer Rejected', 'Accepted']:
-        # Notify Recruiter
-        notify_recruiter(doc)
-
-def notify_onboarding_officer(job_offer):
-    page_link = get_url(job_offer.get_url())
-    subject = ("Job Offer {0} is assigned to you for Onboard Employee").format(job_offer.name)
-    message = ("Job Offer <a href='{1}'>{0}</a> is assigned to you for Onboard Employee. Please respond immediatly!").format(job_offer.name, page_link)
-    create_notification_log(subject, message, [job_offer.onboarding_officer], job_offer)
-
-def notify_recruiter(job_offer):
-    recruiter = frappe.db.get_value('ERF', job_offer.one_fm_erf, ['recruiter_assigned'])
-    if recruiter:
-        user_name = frappe.get_value("User", job_offer.onboarding_officer, "full_name")
-        page_link = get_url(job_offer.get_url())
-        subject = ("Job Offer {0} is {1} by Onboard Officer {2}").format(job_offer.name, job_offer.workflow_state, user_name)
-        message = ("Job Offer <a href='{1}'>{0}</a> is {2} by Onboard Officer {3}").format(job_offer.name, page_link, job_offer.workflow_state, user_name)
-        create_notification_log(subject, message, [recruiter], job_offer)
-
 @frappe.whitelist()
 def btn_create_onboarding_from_job_offer(job_offer):
     if frappe.db.exists('Job Offer', {'name': job_offer}):
@@ -668,10 +557,6 @@ def create_onboarding_from_job_offer(job_offer):
                 'description': _('Employee Onboarding'),
             }
             assign_to.add(args)
-
-def job_offer_onload(doc, method):
-    o_employee = frappe.db.get_value("Onboard Employee", {"job_offer": doc.name}, "name") or ""
-    doc.set_onload("onboard_employee", o_employee)
 
 
 @frappe.whitelist()

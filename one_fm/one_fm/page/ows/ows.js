@@ -45,12 +45,8 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 				},
 				mounted(){
 					// show page content
-					this.loadSpinner(0);
 					this.setupJS();
-					this.getDefault()
-					
-
-
+					this.getDefault();
 					this.setupTriggers()
 
 				},
@@ -93,6 +89,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									me.company_objective =  data.company_objective ? data.company_objective.name : '';
 									me.company_objective_quarter =  data.company_objective_quarter ? data.company_objective_quarter.name : '';
 									me.my_objective =  data.my_objective ? data.my_objective.name : '';
+									
 								}
 							}
 						});
@@ -255,8 +252,9 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 								has_assigned_filter : Object.keys(me.assigned_todo_filters).length
 							},
 							callback: function(r) {
-
+	
 								if (r.message){
+									me.loadSpinner(0)
 									let res = r.message;
 									me.company_goal =  res.company_goal;
 									me.company_objective =  res.company_objective ? res.company_objective.name : '';
@@ -320,11 +318,11 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					},
 					loadSpinner(state){
 						if (state==0){
-							document.querySelector("#app-container").style.display = "block";
-							document.querySelector("#spinner").style.display = "none;";
+							$('#spinner').hide();
+							$('#app-container').show();
 						} else {
-							document.querySelector("#app-container").style.display = "none";
-							document.querySelector("#spinner").style.display = "block;";
+							$('#spinner').show();
+							$('#app-container').hide();
 						}
 
 					},

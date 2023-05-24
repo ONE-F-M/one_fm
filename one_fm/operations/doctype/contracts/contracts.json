@@ -200,7 +200,8 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
-   "options": "Contract Item"
+   "options": "Contract Item",
+   "reqd": 1
   },
   {
    "collapsible": 1,

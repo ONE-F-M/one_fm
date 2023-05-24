@@ -13,7 +13,8 @@ def sendemail(recipients, subject, header=None, message=None,
 	template = "default_email"
 	actions=pdf_link=workflow_state=""
 	doc_link = "#"
-	mandatory_field=None
+	mandatory_field = None
+	field_labels = None
 	print("inMail")
 	head = header[0] if header else ""
 	if not message:
