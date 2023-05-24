@@ -72,3 +72,9 @@ def queue_operation_site_inactive(operations_site_list):
 		doc = frappe.get_doc('Operations Site', operations_site.name)
 		doc.status = "Inactive"
 		doc.save(ignore_permissions=True)
+  
+
+def validate_customers(doc, method):
+    if doc.project_type == "External":
+        if not doc.customer:
+            frappe.throw("Customer is required for external Projects !")
