@@ -278,7 +278,7 @@ doc_events = {
 	"Project": {
 		"validate": [
 			"one_fm.one_fm.project_custom.validate_poc_list",
-			"one_fm.one_fm.project_custom.validate_project"
+			"one_fm.one_fm.project_custom.validate_project",
 		],
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
 		"on_update": "one_fm.api.doc_events.on_project_update_switch_shift_site_post_to_inactive"
