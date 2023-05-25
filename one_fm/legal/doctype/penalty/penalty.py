@@ -134,17 +134,17 @@ def accept_penalty(file, retries, docname):
 			penalty.workflow_state = "Penalty Accepted"
 		penalty.save(ignore_permissions=True)
 
-		file_doc = frappe.get_doc({
-			"doctype": "File",
-			"file_url": "/private/files/"+frappe.session.user+".png",
-			"file_name": frappe.session.user+".png",
-			"attached_to_doctype": "Penalty",
-			"attached_to_name": docname,
-			"folder": "Home/Attachments",
-			"is_private": 1
-		})
-		file_doc.flags.ignore_permissions = True
-		file_doc.insert()
+		# file_doc = frappe.get_doc({
+		# 	"doctype": "File",
+		# 	"file_url": "/private/files/"+frappe.session.user+".png",
+		# 	"file_name": frappe.session.user+".png",
+		# 	"attached_to_doctype": "Penalty",
+		# 	"attached_to_name": docname,
+		# 	"folder": "Home/Attachments",
+		# 	"is_private": 1
+		# })
+		# file_doc.flags.ignore_permissions = True
+		# file_doc.insert()
 
 		frappe.db.commit()
 
