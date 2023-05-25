@@ -627,28 +627,12 @@ def create_salary_slips(doc):
 	doc.check_permission("write")
 	employees = [emp.employee for emp in doc.employees]
 	if employees:
-		args = frappe._dict(
-			{
-				"salary_slip_based_on_timesheet": doc.salary_slip_based_on_timesheet,
-				"payroll_frequency": doc.payroll_frequency,
-				"company": doc.company,
-				"start_date": doc.start_date,
-				"end_date": doc.end_date,
-				"posting_date": doc.posting_date,
-				"deduct_tax_for_unclaimed_employee_benefits": doc.deduct_tax_for_unclaimed_employee_benefits,
-				"deduct_tax_for_unsubmitted_tax_exemption_proof": doc.deduct_tax_for_unsubmitted_tax_exemption_proof,
-				"payroll_entry": doc.name,
-				"exchange_rate": doc.exchange_rate,
-				"currency": doc.currency,
-			}
-		)
-
 		if len(employees) > 30 or frappe.flags.enqueue_payroll_entry:
 			doc.db_set("status", "Queued")
 			frappe.enqueue(
 				create_salary_slips_for_employees,
 				employees=employees,
-				args=args,
+				payroll_entry=doc,
 				publish_progress=False,
 				timeout=6000,
 				queue='long'
@@ -659,7 +643,7 @@ def create_salary_slips(doc):
 				indicator="blue",
 			)
 		else:
-			create_salary_slips_for_employees(employees, args, publish_progress=False)
+			create_salary_slips_for_employees(employees, payroll_entry = doc, publish_progress=False)
 			# since this method is called via frm.call this doc needs to be updated manually
 			doc.reload()
 
@@ -680,16 +664,26 @@ def log_payroll_failure(process, payroll_entry, error):
 
 	payroll_entry.db_set({"error_message": error_message, "status": "Failed"})
 
-def create_salary_slips_for_employees(employees, args, publish_progress=True ):
+def create_salary_slips_for_employees(employees, payroll_entry, publish_progress=True ):
 	try:
-		payroll_entry = frappe.get_doc("Payroll Entry", args.payroll_entry)
+		payroll_entry = frappe.get_doc("Payroll Entry", payroll_entry.name)
+		args = frappe._dict(
+			{
+				"salary_slip_based_on_timesheet": payroll_entry.salary_slip_based_on_timesheet,
+				"payroll_frequency": payroll_entry.payroll_frequency,
+				"company": payroll_entry.company,
+				"posting_date": payroll_entry.posting_date,
+				"deduct_tax_for_unclaimed_employee_benefits": payroll_entry.deduct_tax_for_unclaimed_employee_benefits,
+				"deduct_tax_for_unsubmitted_tax_exemption_proof": payroll_entry.deduct_tax_for_unsubmitted_tax_exemption_proof,
+				"exchange_rate": payroll_entry.exchange_rate,
+				"currency": payroll_entry.currency,
+				"payroll_entry": payroll_entry.name
+			}
+		)
 		salary_slips_exist_for = get_existing_salary_slips(employees, args)
 		count = 0
-		start_date = args.start_date
-		end_date = args.end_date
-
-		args.pop('start_date')
-		args.pop('end_date')
+		start_date = payroll_entry.start_date
+		end_date = payroll_entry.end_date
 		salary_slip_chunk = []
 		chunk_counter = 0
 
@@ -699,7 +693,6 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 				if emp['employee'] not in salary_slips_exist_for:
 					args.update({"doctype": "Salary Slip"})
 					args.update(emp)
-
 					frappe.get_doc(args).insert()
 					count += 1
 					if publish_progress:
@@ -726,10 +719,8 @@ def create_salary_slips_for_employees(employees, args, publish_progress=True ):
 
 			if salary_slip_chunk:
 				frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk, queue="long")
-
-
-		payroll_entry.db_set({"status": "Submitted", "salary_slips_created": 1, "error_message": ""})
-
+		payroll_entry.db_set("status", "Submitted")
+		
 		if salary_slips_exist_for:
 			frappe.msgprint(
 				_(
@@ -751,6 +742,65 @@ def create_salary_slip_chunk(slips):
 	for slip in slips:
 		slip.insert()
 		slip.save()
+
+@frappe.whitelist()
+def check_salary_slip_count(doc):
+	payroll_entry = frappe.get_doc("Payroll Entry", doc)
+	
+	salary_count = frappe.db.sql_list(
+		f"""
+		select Count(distinct employee) as salary_count from `tabSalary Slip`
+		where docstatus!= 2 
+			and company = '{payroll_entry.company}'
+			and start_date = '{payroll_entry.start_date}'
+			and end_date = '{payroll_entry.end_date}'
+
+		""")
+
+	if salary_count[0] != payroll_entry.number_of_employees:
+		payroll_entry.db_set({"status": "Pending Salary Slip", "salary_slips_created": 0, "error_message": ""})
+	else:
+		payroll_entry.db_set({"status": "Submitted", "salary_slips_created": 1, "error_message": ""})
+	frappe.db.commit()
+	payroll_entry.reload()
+	return True
+
+@frappe.whitelist()
+def create_pending_sal_slip(doc):
+	payroll_entry = frappe.get_doc("Payroll Entry", doc)
+	pe_employees = [emp.employee for emp in payroll_entry.employees]
+	ss_employees = frappe.db.sql_list(
+		f"""
+		select distinct employee from `tabSalary Slip`
+		where docstatus!= 2 
+			and company = '{payroll_entry.company}'
+			and start_date >= '{payroll_entry.start_date}'
+			and end_date <='{payroll_entry.end_date}'
+		""", as_dict=True)
+	employees = [e for e in pe_employees if e not in ss_employees]
+
+	if len(employees) != 0:
+		if len(employees) > 30 or frappe.flags.enqueue_payroll_entry:
+			payroll_entry.db_set("status", "Queued")
+			frappe.enqueue(
+				create_salary_slips_for_employees,
+				employees=employees,
+				payroll_entry=payroll_entry,
+				publish_progress=False,
+				timeout=6000,
+				queue='long'
+			)
+			frappe.msgprint(
+				_("Salary Slip creation is queued. It may take a few minutes"),
+				alert=True,
+				indicator="blue",
+			)
+		else:
+			create_salary_slips_for_employees(employees, payroll_entry=payroll_entry, publish_progress=False)
+			# since this method is called via frm.call this doc needs to be updated manually
+			payroll_entry.reload()
+	return True
+
 
 def get_existing_salary_slips(employees, args):
 	return frappe.db.sql_list(

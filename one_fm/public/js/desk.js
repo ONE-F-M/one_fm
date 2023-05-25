@@ -1,14 +1,19 @@
 // dom ready
 document.addEventListener("DOMContentLoaded", (event)=>{
   // Add knowledge base to help button
+  setTimeout(()=>{
 	improve_my_erp();
+  }, 5000)
   knowledgeBase();
   quotes_flash();
 });
 
+
 let improve_my_erp = () => {
-	var $wrapper = $('<a class="btn btn-default btn-xs improve-my-erp">Improve</a>')
-  $wrapper.insertBefore($('.search-bar'));
+	let improveBTN = document.createElement('a');
+	improveBTN.classList = "btn btn-default btn-xs improve-my-erp";
+	improveBTN.textContent = "Improve";
+	document.querySelector(".form-inline.fill-width.justify-content-end").prepend(improveBTN);
 	$('.improve-my-erp').on('click', function() {
 		var dialog = new frappe.ui.Dialog({
 			title: __("Tell us, How can we improve our ONEERP?"),
@@ -50,6 +55,7 @@ let improve_my_erp = () => {
 // KNOWLEDGE BASE
 let knowledgeBase = () => {
   // Add knowledge base to help button
+//   console.log('red')
 //  let helpbtn = $('#toolbar-help')[0]
 //  let faq = document.createElement('a');
 //  faq.id="faq";

@@ -2501,6 +2501,13 @@ def get_users_next_action_data(transitions, doc, recipients):
 			)
 	return user_data_map
 
+def override_frappe_send_workflow_action_email(users_data, doc):
+	recipients = []
+	for d in users_data:
+		recipients.append(d.get("email"))
+	if recipients:
+		send_workflow_action_email(doc, recipients)
+
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
     queue_send_workflow_action_email(doc=doc, recipients=recipients)
@@ -2959,3 +2966,13 @@ def get_issue_type(issue_type):
 		new_issue_type.__newname = issue_type
 		new_issue_type.save(ignore_permissions=True)
 		return new_issue_type.name
+
+def get_users_with_role_permitted_to_doctype(role, doctype=False):
+	filtered_users = []
+	users = get_users_with_role(role)
+	for user in users:
+		if has_permission(doctype=doctype, user=user):
+			filtered_users.append(user)
+	if filtered_users and len(filtered_users) > 0:
+		return filtered_users
+	return False
