@@ -101,6 +101,7 @@ doctype_js = {
 	"Attendance" :  "public/js/doctype_js/attendance.js",
     "Wiki Page": "public/js/doctype_js/wiki_page.js",
     "Error Log": "public/js/doctype_js/error_log.js",
+    "Workflow": "public/js/doctype_js/workflow.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -277,7 +278,7 @@ doc_events = {
 	"Project": {
 		"validate": [
 			"one_fm.one_fm.project_custom.validate_poc_list",
-			"one_fm.one_fm.project_custom.validate_project"
+			"one_fm.one_fm.project_custom.validate_project",
 		],
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
 		"on_update": "one_fm.api.doc_events.on_project_update_switch_shift_site_post_to_inactive"
@@ -695,6 +696,15 @@ scheduler_events = {
 
 fixtures = [
 	{
+
+		# "dt": "Custom Field",
+		# 'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
+	},
+	
+	{
+		"dt": "Property Setter"
+	},
+	{
 		"dt": "Workflow State"
 	},
 	{
@@ -727,6 +737,8 @@ fixtures = [
 # ------------------------------
 #
 override_whitelisted_methods = {
+    "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
+	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
 	"erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry":'one_fm.one_fm.hr_utils.create_invoice_payment_entry',
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
