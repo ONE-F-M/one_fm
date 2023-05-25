@@ -58,49 +58,49 @@ frappe.ui.form.on('Item', {
 	},
 	validate: function(frm){
 		frm.set_value("item_barcode", cur_frm.doc.item_code)
-		var final_description = ""
-		if(frm.doc.one_fm_project){
-			final_description+=frm.doc.one_fm_project
-		}
-		if(frm.doc.one_fm_designation){
-			final_description+=(final_description?' - ':'')+frm.doc.one_fm_designation
-		}
-		if(frm.doc.item_type){
-			final_description+=(final_description?' - ':'')+frm.doc.item_type
-		}
-		if(frm.doc.brand){
-			final_description+=(final_description?' - ':'')+frm.doc.brand
-		}
-		if(frm.doc.item_model){
-			final_description+=(final_description?' - ':'')+frm.doc.item_model
-		}
-		if(frm.doc.item_material){
-			final_description+=(final_description?' - ':'')+frm.doc.item_material
-		}
-		if(frm.doc.item_area_of_use){
-			final_description+=(final_description?' - ':'')+frm.doc.item_area_of_use
-		}
-		if(frm.doc.item_color){
-			final_description+=(final_description?' - ':'')+frm.doc.item_color
-		}
-		if(frm.doc.item_size){
-			final_description+=(final_description?' - ':'')+frm.doc.item_size
-		}
-		if(frm.doc.item_gender){
-			final_description+=(final_description?' - ':'')+frm.doc.item_gender
-		}
-		if(frm.doc.origin){
-			final_description+=(final_description?' - ':'')+frm.doc.origin
-		}
-		if(frm.doc.supplier_items){
-			frm.doc.supplier_items.forEach((item, i) => {
-				final_description+=(final_description?' - ':'')+item.supplier
-			});
-		}
-		if(frm.doc.other_description){
-			final_description+=(final_description?' - ':'')+frm.doc.other_description
-		}
-		frm.set_value("description", final_description);
+		// var final_description = ""
+		// if(frm.doc.one_fm_project){
+		// 	final_description+=frm.doc.one_fm_project
+		// }
+		// if(frm.doc.one_fm_designation){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.one_fm_designation
+		// }
+		// if(frm.doc.item_type){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.item_type
+		// }
+		// if(frm.doc.brand){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.brand
+		// }
+		// if(frm.doc.item_model){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.item_model
+		// }
+		// if(frm.doc.item_material){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.item_material
+		// }
+		// if(frm.doc.item_area_of_use){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.item_area_of_use
+		// }
+		// if(frm.doc.item_color){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.item_color
+		// }
+		// if(frm.doc.item_size){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.item_size
+		// }
+		// if(frm.doc.item_gender){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.item_gender
+		// }
+		// if(frm.doc.origin){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.origin
+		// }
+		// if(frm.doc.supplier_items){
+		// 	frm.doc.supplier_items.forEach((item, i) => {
+		// 		final_description+=(final_description?' - ':'')+item.supplier
+		// 	});
+		// }
+		// if(frm.doc.other_description){
+		// 	final_description+=(final_description?' - ':'')+frm.doc.other_description
+		// }
+		// frm.set_value("description", final_description);
 	},
 	parent_item_group: function(frm) {
 		if(cur_frm.doc.parent_item_group){
