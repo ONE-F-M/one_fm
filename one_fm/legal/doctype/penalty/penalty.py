@@ -3,7 +3,7 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
-import frappe
+import frappe, random
 from frappe.model.document import Document
 import base64
 from frappe import _
@@ -14,6 +14,14 @@ from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datet
 from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
 import grpc
 
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+channels = [
+    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+]
+# setup stub for face recognition
+stubs = [
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+]
 
 class Penalty(Document):
 	def after_insert(self):
@@ -109,12 +117,6 @@ def accept_penalty(file, retries, docname):
 	retries_left = cint(retries) - 1
 	penalty = frappe.get_doc("Penalty", docname)
 	
-	# setup channel
-	face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-	channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-	# setup stub
-	stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
-
 	# request body
 	req = facial_recognition_pb2.FaceRecognitionRequest(
 		username = frappe.session.user,
@@ -122,7 +124,7 @@ def accept_penalty(file, retries, docname):
 		media_content = file,
 	)
 	# Call service stub and get response
-	res = stub.FaceRecognition(req)
+	res = random.choice(stubs).FaceRecognition(req)
 	if res.verification == "OK":
 		if retries_left == 0:
 			penalty.verified = 0
