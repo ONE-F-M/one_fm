@@ -699,13 +699,6 @@ scheduler_events = {
 
 fixtures = [
 	{
-		# "dt": "Custom Field",
-		# 'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
-	},
-	{
-		"dt": "Property Setter"
-	},
-	{
 		"dt": "Workflow State"
 	},
 	{
@@ -715,21 +708,9 @@ fixtures = [
 		"dt": "Workflow"
 	},
 	{
-		"dt": "Client Script",
-		'filters': [['dt', 'in', ['Stock Entry', 'Warehouse',
-		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
-	},
-	{
-		"dt": "Print Format"
-	},
-	{
 		"dt": "Role",
 		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
 	},
-	# {
-	# 	"dt": "Custom DocPerm",
-	# 	"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	# },
 	{
 		"dt": "Email Template"
 	},
