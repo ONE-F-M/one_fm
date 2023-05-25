@@ -28,11 +28,13 @@ from one_fm.one_fm.payroll_utils import add_tax_components
 from one_fm.utils import post_login, validate_reports_to, custom_validate_nestedset_loop
 from hrms.overrides.employee_master import EmployeeMaster,validate_onboarding_process
 from one_fm.overrides.employee import EmployeeOverride
-from frappe.email.doctype.email_queue.email_queue import QueueBuilder
-from one_fm.overrides.email_queue import prepare_email_content as email_content
+from frappe.email.doctype.email_queue.email_queue import QueueBuilder,SendMailContext
+from one_fm.overrides.email_queue import prepare_email_content as email_content,get_unsubscribe_str_
 
 __version__ = '14.3.0'
 
+
+SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
 workflow_action.filter_allowed_users = filter_allowed_users
 workflow_action.get_next_possible_transitions = get_next_possible_transitions
 workflow_action.is_workflow_action_already_created = is_workflow_action_already_created_

@@ -144,53 +144,102 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						})
 
 					},
-					setupFilters(is_my_todo){
+					setupFilters(is_my_todo,result_set){
 						let me = this;
-
-						let assigned_data = [{ 'id': '', 'text': 'Select Assigned' }]
-						let reference_data = [{ 'id': '', 'text': 'Select Reference' }]
-						let priotity_data = [{ 'id': '', 'text': 'Select Priority' },
-											{ 'id': 'Low', 'text': 'Low' },
-											{ 'id': 'Medium', 'text': 'Medium' },
-											{ 'id': 'High', 'text': 'High' }]
-						reference_data = reference_data.concat(me.doctype_ref)
-						assigned_data = assigned_data.concat(me.user_ref)
-
+						let my_todo_user_data = [{ 'id': '', 'text': 'Select Assigned' }]
+						let my_todo_reference_data = [{ 'id': '', 'text': 'Select Reference' }]
+						let my_todo_priority_data = [{ 'id': '', 'text': 'Select Priority' }]
+						let assigned_todo_user_data = [{ 'id': '', 'text': 'Select Allocated' }]
+						let assigned_todo_reference_data = [{ 'id': '', 'text': 'Select Reference' }]
+						let assigned_todo_priority_data = [{ 'id': '', 'text': 'Select Priority' }]
+						let my_assigned_refname = []
+						let my_todo_refname = []
+						let my_assigned_priority = []
+						let my_todo_priority = []
+						let my_assigned_user = []
+						let my_todo_user = []
+						
+						
 						if(is_my_todo){
-
+							result_set.my_todo_filters.forEach((obj) => {
+								if(!my_todo_refname.includes(obj.reference_type)){
+									
+									my_todo_reference_data.push({
+										'id':obj.reference_type,'text':obj.reference_type
+									})
+									my_todo_refname.push(obj.reference_type)
+								}
+								if(!my_todo_priority.includes(obj.priority)){
+									my_todo_priority_data.push({
+										'id':obj.priority,'text':obj.priority
+									})
+									my_todo_priority.push(obj.priority)
+	
+								}
+								if(!my_todo_user.includes(obj.assigned_by)){
+									
+									my_todo_user_data.push({
+										'id':obj.assigned_by,'text':obj.assigned_by
+									})
+									my_todo_user.push(obj.assigned_by)
+	
+								}
+							})
 							$('#my_todos_ref_type').empty()
 							$('#my_todos_assigned_by').empty()
 							$('#my_todos_priority').empty()
-
+							
 							$('#my_todos_ref_type').select2({
-								data:reference_data,
+								data:my_todo_reference_data,
 								width:'100%'
 							})
 							$('#my_todos_assigned_by').select2({
-								data:assigned_data,
+								data:my_todo_user_data,
 								width:'100%'
 							})
 							$('#my_todos_priority').select2({
-								data:priotity_data,
+								data:my_todo_priority_data,
 								width:'100%'
 							})
 						}
 						else{
-
+							result_set.assigned_todo_filters.forEach((obj) => {
+								if(!my_assigned_refname.includes(obj.reference_type)){
+									assigned_todo_reference_data.push({
+										'id':obj.reference_type,'text':obj.reference_type
+									})
+									my_assigned_refname.push(obj.reference_type)
+	
+								}
+								if(!my_assigned_priority.includes(obj.priority)){
+									assigned_todo_priority_data.push({
+										'id':obj.priority,'text':obj.priority
+									})
+									my_assigned_priority.push(obj.priority)
+	
+								}
+								if(!my_assigned_user.includes(obj.allocated_to)){
+									assigned_todo_user_data.push({
+										'id':obj.allocated_to,'text':obj.allocated_to
+									})
+									my_assigned_user.push(obj.allocated_to)
+	
+								}
+							})
 							$('#assigned_reference_type').empty()
 							$('#assigned_to').empty()
 							$('#assigned_priority').empty()
 
 							$('#assigned_reference_type').select2({
-								data:reference_data,
+								data:assigned_todo_reference_data,
 								width:'100%'
 							})
 							$('#assigned_to').select2({
-								data:assigned_data,
+								data:assigned_todo_user_data,
 								width:'100%'
 							})
 							$('#assigned_priority').select2({
-								data:priotity_data,
+								data:assigned_todo_priority_data,
 								width:'100%'
 							})
 						}
@@ -224,8 +273,8 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									me.routine_tasks = res.routine_tasks;
 
 									if(res.reset_filters == 1){
-										me.setupFilters(1)
-										me.setupFilters(0)
+										me.setupFilters(1,res)
+										me.setupFilters(0,res)
 									}
 
 									me.setOKRYearQuarter(res.okr_year)
