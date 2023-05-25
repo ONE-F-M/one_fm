@@ -38,6 +38,8 @@ from one_fm.utils import override_frappe_send_workflow_action_email
 __version__ = '14.3.1'
 
 workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
+
+SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
 workflow_action.filter_allowed_users = filter_allowed_users
 workflow_action.get_next_possible_transitions = get_next_possible_transitions
 workflow_action.is_workflow_action_already_created = is_workflow_action_already_created_
