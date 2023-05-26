@@ -28,7 +28,7 @@ jobs:
           cd /home/frappe/frappe-bench
           bench setup requirements
           cd /home/frappe/frappe-bench/apps/one_fm
-          find . -name "*.pyc" -delete
+          
           bench migrate # sync database
           bench restart # we remove any unused dependencies
           bench doctor
