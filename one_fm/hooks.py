@@ -728,7 +728,7 @@ fixtures = [
 #
 override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-	"erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry":'one_fm.one_fm.hr_utils.create_invoice_payment_entry',
+	
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
