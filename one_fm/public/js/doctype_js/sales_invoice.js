@@ -39,34 +39,7 @@ frappe.ui.form.on('Sales Invoice', {
         }
     },
 	refresh(frm) {
-        // frm.cscript.delivery_note_btn = function() {
-        //     var me = this;
-        //     this.$delivery_note_btn = this.frm.add_custom_button(__('Delivery Note'),
-        //         function() {
-        //             erpnext.utils.map_current_doc({
-        //                 method: "erpnext.stock.doctype.delivery_note.delivery_note.make_sales_invoice",
-        //                 source_doctype: "Delivery Note",
-        //                 target: me.frm,
-        //                 date_field: "posting_date",
-        //                 setters: {
-        //                     customer: me.frm.doc.customer || undefined,
-        //                     project: me.frm.doc.project || undefined
-        //                 },
-        //                 get_query: function() {
-        //                     var filters = {
-        //                         docstatus: 1,
-        //                         company: me.frm.doc.company,
-        //                         is_return: 0
-        //                     };
-        //                     if(me.frm.doc.customer) filters["customer"] = me.frm.doc.customer;
-        //                     return {
-        //                         query: "one_fm.one_fm.delivery_note_custom.get_delivery_notes_to_be_billed",
-        //                         filters: filters
-        //                     };
-        //                 }
-        //             });
-        //         }, __("Get items from"));
-        // }
+        
 
         if(frm.doc.customer){
             frm.set_query("project", function() {
@@ -78,15 +51,7 @@ frappe.ui.form.on('Sales Invoice', {
             });
             frm.refresh_field("project");
         }
-        // frm.fields_dict['items'].grid.get_field('income_account').get_query = function() {
-        //     return {
-        //         filters:{
-        //             root_type:'Income',
-        //             is_group: 0
-        //         }
-        //     }
-        // }
-        // frm.refresh_field("items");
+        
     },
     customer: function(frm){
         if(frm.doc.project){
@@ -340,16 +305,7 @@ var get_contracts_items = function(frm){
             if(!s.exc){
                 if(s.message != undefined){
                     
-                    frm.set_query("item_code", "items", function(frm, cdt, cdn) {
-                        var d = locals[cdt][cdn];
-                        console.log(frm)
-                        return {
-                            query: "one_fm.operations.doctype.contracts.contracts.get_si_contracts_items",
-                            filters: {
-                                contracts: frm.contracts
-                            }
-                        }
-                    });
+                    
                     $.each(s.message, function(i, d) {
                         var row = frappe.model.add_child(frm.doc, "Sales Invoice Item", "items");
                         frappe.model.set_value(row.doctype, row.name, "item_code", d.item_code)
