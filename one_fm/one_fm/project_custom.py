@@ -72,3 +72,4 @@ def queue_operation_site_inactive(operations_site_list):
 		doc = frappe.get_doc('Operations Site', operations_site.name)
 		doc.status = "Inactive"
 		doc.save(ignore_permissions=True)
+  

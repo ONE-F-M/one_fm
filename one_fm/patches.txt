@@ -35,3 +35,4 @@ one_fm.patches.v14_0.approve_all_time_sheets
 one_fm.patches.v14_0.update_leave_application_status_to_approved
 #one_fm.patches.v14_0.update_operations_status
 one_fm.patches.v14_0.remove_rfp_workflow
+one_fm.patches.v14_0.update_sales_invoice_workflow
