@@ -487,3 +487,22 @@ def attach_abbreviation_to_roles():
                 role.post_abbrv = post_abbrv
             role.save(ignore_permissions=True)
             frappe.db.commit()
+
+
+
+def validate_store_keeper_project_supervisor_roles(doc):
+    user = frappe.session.user
+    user_emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    if doc.doctype == "Purchase Order":
+        if doc.set_warehouse:
+            warehouse_manager = frappe.db.get_value("Warehouse", doc.set_warehouse, "one_fm_store_keeper")
+            if warehouse_manager:
+                emp = frappe.db.get_value("Employee", warehouse_manager, "name")
+                return bool(emp == user_emp)
+            
+        elif False:
+            pass
+        
+        store_keepers = frappe.db.get_list("Warehouse", pluck="one_fm_store_keeper")
+        return bool(user_emp in store_keepers)
+    return False
