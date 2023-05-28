@@ -200,8 +200,7 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
-   "options": "Contract Item",
-   "reqd": 1
+   "options": "Contract Item"
   },
   {
    "collapsible": 1,
@@ -483,7 +482,7 @@
   }
  ],
  "links": [],
- "modified": "2023-05-28 09:50:41.365007",
+ "modified": "2023-02-14 23:33:59.030912",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

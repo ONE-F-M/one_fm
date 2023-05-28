@@ -39,20 +39,6 @@ def get_defaults(args=None, has_todo_filter=0, has_assigned_filter=0):
                         OR assigned_by ='{frappe.session.user}'
                         AND status = "Open"
                         """,as_dict=1)
-    data.my_todo_filters = frappe.db.sql(f"""
-								SELECT  DISTINCT reference_type,  priority, assigned_by from `tabToDo`
-								where allocated_to = '{frappe.session.user}'
-								AND status = "Open"
-								AND reference_type != 'Project'
-								""",as_dict=1)
-    
-    data.assigned_todo_filters = frappe.db.sql(f"""
-									SELECT DISTINCT reference_type, priority, allocated_to from `tabToDo`
-									where assigned_by = '{frappe.session.user}'
-									AND status = "Open"
-									AND reference_type != 'Project'
-									AND allocated_to != '{frappe.session.user}'
-									""",as_dict=1)
 
     if bool(int(has_todo_filter)):
         data.my_todos = frappe.db.sql(f"""

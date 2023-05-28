@@ -2271,15 +2271,5 @@ def mark_open_timesheet_and_create_attendance():
     for name in the_timesheet_list:
         frappe.db.set_value("Timesheet", name, "workflow_state", "Approved")
         frappe.db.set_value("Timesheet", name, "docstatus", 1)
-        comment = frappe.get_doc({
-            "doctype": "Comment",
-            "content": _("Approved"),
-            "owner": frappe.session.user,
-            "comment_type": "Workflow",
-            "comment_email": "Administrator",
-            "reference_doctype": "Timesheet",
-            "reference_name": name
-        })
-        comment.insert(ignore_permissions=True)
         doc = frappe.get_doc("Timesheet", name )
         doc.create_attendance()
