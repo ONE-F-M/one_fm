@@ -99,8 +99,9 @@ doctype_js = {
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
-    "Wiki Page": "public/js/doctype_js/wiki_page.js",
-    "Error Log": "public/js/doctype_js/error_log.js",
+	"Wiki Page": "public/js/doctype_js/wiki_page.js",
+	"Error Log": "public/js/doctype_js/error_log.js",
+	"Assignment Rule": "public/js/doctype_js/assignment_rule.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -706,6 +707,10 @@ fixtures = [
 	{
 		"dt": "Role",
 		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Assignment Rule",
+		"filters": [["name", "in",["RFM Approver"]]]
 	},
 	{
 		"dt": "Email Template"

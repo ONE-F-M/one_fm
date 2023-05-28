@@ -2577,6 +2577,17 @@ def workflow_approve_reject(doc, recipients=None):
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 def get_mandatory_fields(doctype, doc_name):
+	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doctype)
+
+	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
+
+	for employee_field in employee_fields:
+		employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
+		doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
+
+	return doc, labels
+
+def get_doctype_mandatory_fields(doctype):
 	meta = frappe.get_meta(doctype)
 	mandatory_fields = []
 	labels = {}
@@ -2598,13 +2609,7 @@ def get_mandatory_fields(doctype, doc_name):
 		mandatory_fields = ['name']
 		labels['name'] = 'Document Name'
 
-	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
-
-	for employee_field in employee_fields:
-		employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
-		doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
-
-	return doc, labels
+	return mandatory_fields, employee_fields, labels
 
 @frappe.whitelist()
 def notify_live_user(company, message, users=False):
@@ -2973,3 +2978,31 @@ def get_users_with_role_permitted_to_doctype(role, doctype=False):
 	if filtered_users and len(filtered_users) > 0:
 		return filtered_users
 	return False
+
+@frappe.whitelist()
+def get_assignment_rule_description(doctype):
+	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doctype)
+	message_html = '<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.'
+	if mandatory_fields:
+		message_html += '''
+			<br/>
+			The details of the request are as follows:<br/>
+			<table cellpadding="0" cellspacing="0" border="1" style="border-collapse: collapse;">
+				<thead>
+					<tr>
+						<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+						<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+					</tr>
+				</thead>
+				<tbody>
+		'''
+		for mandatory_field in mandatory_fields:
+			message_html += '''
+				<tr>
+					<td style="padding: 10px;">'''+labels[mandatory_field]+'''</td>
+					<td style="padding: 10px;">{{'''+mandatory_field+'''}}</td>
+				</tr>
+			'''
+		message_html += '</tbody></table>'
+	message_html += '</p>'
+	return message_html
