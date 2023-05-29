@@ -502,14 +502,14 @@ def validate_store_keeper_project_supervisor_roles(doc):
                     warehouse_manager = frappe.db.get_value("Warehouse", doc["set_warehouse"], "one_fm_store_keeper")
                     if warehouse_manager:
                         emp = frappe.db.get_value("Employee", warehouse_manager, "name")
-                        return any((emp == user_emp, roles_check))
+                        return emp == user_emp
                     
             if "project" in doc.keys():
                 if doc["project"]:
                     project_manager = frappe.db.get_value("Project", doc["project"], "account_manager")
                     if project_manager:
-                        return any((project_manager == user_emp, roles_check))
-                    
+                        return project_manager == user_emp
+                       
             return roles_check
         return False
     except Exception as e:
