@@ -2594,6 +2594,7 @@ def get_mandatory_fields(doctype, doc_name):
 	if not employee_fields:
 		for link_field in meta.get_link_fields():
 			if link_field.options == 'Employee':
+				employee_fields.append(link_field.fieldname)
 				mandatory_fields.append(link_field.fieldname)
 				labels[link_field.fieldname] = link_field.label
 
@@ -2603,10 +2604,11 @@ def get_mandatory_fields(doctype, doc_name):
 
 	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
 	
-    if employee_fields:
+	if employee_fields:
 		for employee_field in employee_fields:
 			employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
-			doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
+			if employee_details:
+				doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
 
 	return doc, labels
 
