@@ -7,10 +7,35 @@ from frappe.utils import getdate,cstr,get_first_day,get_last_day,add_days,add_mo
 from one_fm.overrides.timesheet import timesheet_automation,calculate_hourly_rate,days_of_month
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
+from erpnext.accounts.utils import get_balance_on
 
 
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.operations.doctype.contracts.contracts import get_contracts_items
+
+@frappe.whitelist()
+def get_customer_advance_balance(customer):
+    """
+        Fetch the customer balance on the advance account if exists, If not account is set then return 0
+    Args:
+        customer (Valid Customer): A valid customer
+    """
+    customer_advance = frappe.get_value('Accounts Additional Settings',None,'customer_advance_account')
+    if not customer_advance:
+        return 0
+    customer_balance = get_balance_on(customer_advance,party_type = "Customer",party = customer)
+    if customer_balance > 0:
+        #Debit Balance, Customer is owing
+        return (0-customer_balance)
+    elif customer_balance < 0:
+        # Credit balance, customer is being owed
+        return (abs(customer_balance))
+    else:
+        # Balance is zero
+        return customer_balance
+    return customer_balance
+    
+
 
 
 def create_sales_invoice():
@@ -1004,6 +1029,9 @@ def add_admin_manpower(sales_invoice,project,journal_entry_start_date,journal_en
     return sales_invoice
 
 def set_print_settings_from_contracts(doc, method):
+    if doc.get('automatic_settlement') == "Yes":
+        if not doc.get('settlement_amount'):
+            frappe.throw("Please set an amount to be settled from advances for this invoice.")
     if doc.contracts:
         contracts_print_settings = frappe.db.get_values('Contracts', doc.contracts, ['sales_invoice_print_format', 'sales_invoice_letter_head'], as_dict=True)
         if contracts_print_settings and len(contracts_print_settings) > 0:

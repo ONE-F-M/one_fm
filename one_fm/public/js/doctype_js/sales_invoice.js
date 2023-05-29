@@ -37,37 +37,9 @@ frappe.ui.form.on('Sales Invoice', {
                 // set_income_account_and_cost_center(frm);
             }
         }
+        
     },
 	refresh(frm) {
-        // frm.cscript.delivery_note_btn = function() {
-        //     var me = this;
-        //     this.$delivery_note_btn = this.frm.add_custom_button(__('Delivery Note'),
-        //         function() {
-        //             erpnext.utils.map_current_doc({
-        //                 method: "erpnext.stock.doctype.delivery_note.delivery_note.make_sales_invoice",
-        //                 source_doctype: "Delivery Note",
-        //                 target: me.frm,
-        //                 date_field: "posting_date",
-        //                 setters: {
-        //                     customer: me.frm.doc.customer || undefined,
-        //                     project: me.frm.doc.project || undefined
-        //                 },
-        //                 get_query: function() {
-        //                     var filters = {
-        //                         docstatus: 1,
-        //                         company: me.frm.doc.company,
-        //                         is_return: 0
-        //                     };
-        //                     if(me.frm.doc.customer) filters["customer"] = me.frm.doc.customer;
-        //                     return {
-        //                         query: "one_fm.one_fm.delivery_note_custom.get_delivery_notes_to_be_billed",
-        //                         filters: filters
-        //                     };
-        //                 }
-        //             });
-        //         }, __("Get items from"));
-        // }
-
         if(frm.doc.customer){
             frm.set_query("project", function() {
                 return {
@@ -78,17 +50,36 @@ frappe.ui.form.on('Sales Invoice', {
             });
             frm.refresh_field("project");
         }
-        // frm.fields_dict['items'].grid.get_field('income_account').get_query = function() {
-        //     return {
-        //         filters:{
-        //             root_type:'Income',
-        //             is_group: 0
-        //         }
-        //     }
-        // }
-        // frm.refresh_field("items");
     },
     customer: function(frm){
+        
+        if(frm.doc.customer){
+            frappe.call({
+                method: 'one_fm.one_fm.sales_invoice_custom.get_customer_advance_balance',
+                args:{
+                    'customer':frm.doc.customer,
+                },
+                callback:function(s){
+                    if (!s.exc) {
+                        frm.doc.balance_in_advance_account = s.message
+                        frm.doc.automatic_settlement = ""
+                        frm.refresh_fields()
+                        if((frm.doc.balance_in_advance_account> 1) && (frm.doc.automatic_settlement == "")){
+                            frappe.confirm(`${frm.doc.customer} has ${cur_frm.doc.currency}${cur_frm.doc.balance_in_advance_account} in their advance account.\nDo you wish to use it in this invoice?`,
+                                    () => {
+                                        frm.doc.automatic_settlement = "Yes"
+                                        frm.set_df_property('settlement_amount', 'hidden', false);
+                                        frm.refresh_fields()
+                                    }, () => {
+                                        frm.doc.automatic_settlement = "No"
+                                        frm.set_df_property('settlement_amount', 'hidden', true);
+                                        frm.refresh_fields()
+                                 })
+                        }
+                    }
+                }
+            });
+        }
         if(frm.doc.project){
             frappe.call({
                 method: 'frappe.client.get_value',
@@ -147,7 +138,7 @@ frappe.ui.form.on('Sales Invoice', {
                 },
                 callback:function(s){
                     if (!s.exc) {
-                        //console.log(s.message);
+                        
                         if(frm.doc.selling_price_list == null){
                             if(s.message){
                                 var selling_price_list = s.message.name;
@@ -175,7 +166,7 @@ frappe.ui.form.on('Sales Invoice', {
                 },
                 callback:function(s){
                     if (!s.exc) {
-                        //console.log(s.message);
+                        
                         if(s.message){
                             var contracts = s.message.name;
                             frm.set_value("contracts",contracts);
@@ -230,7 +221,7 @@ frappe.ui.form.on('Sales Invoice', {
 //     }
 // });
 var set_income_account_and_cost_center = function(frm){
-    console.log('set_income_account_and_cost_center');
+    
     frappe.call({
         method: 'frappe.client.get_value',
         args:{
@@ -256,7 +247,7 @@ var set_income_account_and_cost_center = function(frm){
 };
 //Add timesheet amount
 var add_timesheet_rate = function(frm){
-    console.log('add_timesheet_rate.........event');
+    
     $.each(frm.doc.items || [], function(i, v) {
         var amount = 0;
         $.each(frm.doc.timesheets || [], function(i, d) {
@@ -280,7 +271,7 @@ var get_timesheet_details =  function(frm,item) {
         },
         callback:function(s){
             if (!s.exc) {
-                console.log(s.message);
+                
                 if(s.message != undefined && s.message.length > 0){
                     add_timesheet_data(frm,s.message,item);
                 }
@@ -301,7 +292,7 @@ var add_timesheet_data = function(frm,timesheet_data,item_code){
     }
 };
 var get_contracts_asset_items = function(frm){
-    console.log('get_contracts_asset_items');
+    
     frappe.call({
         method: "one_fm.operations.doctype.contracts.contracts.get_contracts_asset_items",
         args:{
@@ -310,7 +301,7 @@ var get_contracts_asset_items = function(frm){
         callback:function(s){
             if(!s.exc){
                 if(s.message != undefined){
-                    console.log(s.message);
+                   
                     for (var i=0; i<s.message.length; i++){
                         var d = frm.add_child("items");
                         var item = s.message[i];
@@ -342,7 +333,7 @@ var get_contracts_items = function(frm){
                     
                     frm.set_query("item_code", "items", function(frm, cdt, cdn) {
                         var d = locals[cdt][cdn];
-                        console.log(frm)
+                       
                         return {
                             query: "one_fm.operations.doctype.contracts.contracts.get_si_contracts_items",
                             filters: {
