@@ -12,7 +12,7 @@ from frappe.modules import scrub
 from frappe import _
 from frappe.desk.form import assign_to
 from one_fm.processor import sendemail
-from one_fm.utils import validate_mandatory_fields
+from one_fm.utils import validate_mandatory_fields, get_mandatory_fields, create_message_with_details
 from one_fm.templates.pages.career_history import send_career_history_magic_link
 from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 from one_fm.one_fm.doctype.erf.erf import (
@@ -46,7 +46,7 @@ def after_insert_job_applicant(doc, method):
     notify_recruiter_and_requester_from_job_applicant(doc, method)
 
 def notify_recruiter_and_requester_from_job_applicant(doc, method):
-    if doc.one_fm_erf:
+    if doc.one_fm_erf and doc.one_fm_hiring_method == "A la carte Recruitment":
         recipients = []
         erf_details = frappe.db.get_values('ERF', filters={'name': doc.one_fm_erf},
         fieldname=["erf_requested_by", "recruiter_assigned", "secondary_recruiter_assigned"], as_dict=True)
@@ -59,7 +59,11 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
                 recipients.append(erf_details[0].secondary_recruiter_assigned)
         designation = frappe.db.get_value('Job Opening', doc.job_title, 'designation')
         page_link = get_url(doc.get_url())
+        mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
         message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
+        
+        if mandatory_field and labels:
+            message = create_message_with_details(message, mandatory_field, labels)
 
         if recipients:
             sendemail(

@@ -44,12 +44,13 @@
                     {% endif %}
                     <br>
                     The link to the document is  <a target="_blank" class="underline" href="{{ doc_link }}"> {{reference_name}}</a> <br>
-                    Please take your action for document using the action button below.<br>
+                    {% if attachments is not none%}
+                        Please take your action for document using the action button below.<br>
+                    {% endif %}
                 </p>
                 {% for action in actions %}
                     <a href="{{ action.action_link }}" class="btn btn-primary btn-action">{{ action.action_name }}</a>
                 {% endfor %}
-                <a href="/" class="btn btn-secondary btn-action">Cancel</a>
             {% endif %}
 
             {% if content is not none %}
