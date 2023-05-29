@@ -491,20 +491,28 @@ def attach_abbreviation_to_roles():
 
 @frappe.whitelist()
 def validate_store_keeper_project_supervisor_roles(doc):
-    doc = json.loads(doc)
-    print(doc.values())
-    user = frappe.session.user
-    user_emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
-    if doc["doctype"] == "Purchase Order":
-        if doc["set_warehouse"]:
-            warehouse_manager = frappe.db.get_value("Warehouse", doc["set_warehouse"], "one_fm_store_keeper")
-            if warehouse_manager:
-                emp = frappe.db.get_value("Employee", warehouse_manager, "name")
-                return bool(emp == user_emp)
-            
-        elif False:
-            pass
-        
-        store_keepers = frappe.db.get_list("Warehouse", pluck="one_fm_store_keeper")
-        return bool(user_emp in store_keepers)
-    return False
+    try:
+        doc = json.loads(doc)
+        user = frappe.session.user
+        user_emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
+        roles_check = "Warehouse Supervisor" in frappe.get_roles()
+        if doc["doctype"] == "Purchase Order":
+            if "set_warehouse" in doc.keys():
+                if doc["set_warehouse"]:
+                    warehouse_manager = frappe.db.get_value("Warehouse", doc["set_warehouse"], "one_fm_store_keeper")
+                    if warehouse_manager:
+                        emp = frappe.db.get_value("Employee", warehouse_manager, "name")
+                        return any((emp == user_emp, roles_check))
+                    
+            if "project" in doc.keys():
+                if doc["project"]:
+                    project_manager = frappe.db.get_value("Project", doc["project"], "account_manager")
+                    if project_manager:
+                        return any((project_manager == user_emp, roles_check))
+                    
+            return roles_check
+        return False
+    except Exception as e:
+        frappe.log_error(e, "Validate Purchase Order(store keeper)")
+        return False
+   

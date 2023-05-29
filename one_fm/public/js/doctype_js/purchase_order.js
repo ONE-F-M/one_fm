@@ -18,7 +18,7 @@ frappe.ui.form.on('Purchase Order', {
 			method: "one_fm.one_fm.utils.validate_store_keeper_project_supervisor_roles",
 			args: {"doc": frm.doc},
 			callback: function(r){
-				if (r.message){
+				if (!r.message){
 					frm.remove_custom_button("Purchase Receipt", 'Create');
 				}
 			}
