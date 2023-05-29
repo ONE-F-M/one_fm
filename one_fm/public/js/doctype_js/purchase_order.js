@@ -8,7 +8,7 @@ frappe.ui.form.on('Purchase Order', {
 		// frm.set_df_property('quoted_delivery_date', 'hidden', (frm.doc.docstatus==1 && frappe.user.has_role("Purchase User"))?false:true);
 	},
 	refresh: function(frm) {
-		hide_tax_fields(frm);
+		
 		hide_subscription_section(frm);
 		set_field_property_for_documents(frm);
 		set_field_property_for_other_documents(frm);
@@ -70,12 +70,6 @@ var set_field_property_for_documents = function(frm) {
 	}
 };
 
-var hide_tax_fields = function(frm) {
-	let field_list = ['tax_category', 'section_break_52', 'taxes_and_charges', 'taxes', 'sec_tax_breakup', 'totals'];
-	field_list.forEach((field, i) => {
-		frm.set_df_property(field, 'hidden', true);
-	});
-};
 
 var hide_subscription_section = function(frm) {
 	frm.set_df_property('subscription_section', 'hidden', true);
