@@ -13,6 +13,18 @@ frappe.ui.form.on('Purchase Order', {
 		set_field_property_for_documents(frm);
 		set_field_property_for_other_documents(frm);
 	},
+	onload_post_render: function(frm){
+		frappe.call({
+			method: "one_fm.one_fm.utils.validate_store_keeper_project_supervisor_roles",
+			args: {"doc": frm.doc},
+			callback: function(r){
+				if (!r.message){
+					frm.remove_custom_button("Purchase Receipt", 'Create');
+				}
+			}
+		});
+
+	},
 
 	set_warehouse: function(frm){
 		if(frm.doc.set_warehouse){
@@ -90,3 +102,4 @@ frappe.ui.form.on('Payment Schedule', {
 		}
 	}
 })
+
