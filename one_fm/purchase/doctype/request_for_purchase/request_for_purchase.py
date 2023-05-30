@@ -49,6 +49,11 @@ class RequestforPurchase(Document):
 		if no_item_code_in_items_to_order and len(no_item_code_in_items_to_order) > 0:
 			frappe.throw(_("Set Item Code/Supplier in <b>Items to Order</b> rows {0}".format(no_item_code_in_items_to_order)))
 
+		# Get items qty is greater than the requested qty
+		items = [item.idx for item in self.items_to_order if (item.qty_requested and item.qty_requested < item.qty)]
+		if items and len(items) > 0:
+			frappe.throw(_("Items <b>Items Order</b> are greater in quantity than requested in rows {0}".format(items)))
+
 	@frappe.whitelist()
 	def make_purchase_order_for_quotation(self, warehouse=None):
 		self.validate_items_to_order()

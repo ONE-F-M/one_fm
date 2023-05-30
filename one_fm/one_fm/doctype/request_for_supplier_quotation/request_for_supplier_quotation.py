@@ -51,6 +51,7 @@ class RequestforSupplierQuotation(Document):
                 item = quotation.append('items')
                 item.item_name = rfq_item.item_name
                 item.description = rfq_item.description
+                item.qty_requested = rfq_item.qty
                 item.qty = rfq_item.qty
                 item.uom = rfq_item.uom
                 item.stock_uom = rfq_item.uom
