@@ -14,6 +14,7 @@
   "section_break_5",
   "description",
   "quantity",
+  "qty_requested",
   "qty",
   "uom",
   "rate",
@@ -168,11 +169,18 @@
    "fieldtype": "Link",
    "label": "Warehouse",
    "options": "Warehouse"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "qty_requested",
+   "fieldtype": "Float",
+   "label": "Quantity Requested",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2023-05-15 19:32:38.049118",
+ "modified": "2023-05-30 08:27:51.080212",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase Quotation Item",
