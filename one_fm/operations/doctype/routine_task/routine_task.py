@@ -3,11 +3,23 @@
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today, getdate
+from frappe.utils import getdate
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from frappe import _
 
 class RoutineTask(Document):
+	def validate(self):
+		self.validate_dates()
+
+	def validate_dates(self):
+		if self.end_date:
+			self.validate_from_to_dates("start_date", "end_date")
+
+		if self.end_date == self.start_date:
+			frappe.throw(
+				_("{0} should not be same as {1}").format(frappe.bold("End Date"), frappe.bold("Start Date"))
+			)
+
 	@frappe.whitelist()
 	def set_task_and_auto_repeat(self):
 		task = self.set_task_for_routine_task()
@@ -49,16 +61,28 @@ class RoutineTask(Document):
 			auto_repeat = frappe.new_doc('Auto Repeat')
 			auto_repeat.reference_doctype = "Task"
 			auto_repeat.reference_document = task
-			auto_repeat.start_date = today()
+			auto_repeat.start_date = self.start_date
 			auto_repeat.frequency = self.frequency
-			if auto_repeat.frequency in ['Monthly', 'Quarterly', 'Half-yearly', 'Yearly']:
-				day_in_frequency = int(day_of_the_frequency(auto_repeat.frequency))
-				if day_in_frequency > 28 and auto_repeat.frequency == 'Monthly':
-					day_in_frequency = 28
-				auto_repeat.repeat_on_day = day_in_frequency
+			if self.end_date:
+				auto_repeat.end_date = self.end_date
+			if auto_repeat.frequency == 'Monthly':
+				if self.repeat_on_last_day:
+					auto_repeat.repeat_on_last_day = self.repeat_on_last_day
+				elif self.repeat_on_day:
+					auto_repeat.repeat_on_day = self.repeat_on_day
+				else:
+					day_in_frequency = int(day_of_the_frequency(auto_repeat.frequency, self.start_date))
+					if day_in_frequency > 28 and auto_repeat.frequency == 'Monthly':
+						day_in_frequency = 28
+					auto_repeat.repeat_on_day = day_in_frequency
 			if auto_repeat.frequency == 'Weekly':
-				repeat_on_days = auto_repeat.append('repeat_on_days')
-				repeat_on_days.day = day_of_the_frequency(auto_repeat.frequency)
+				if self.repeat_on_days and len(self.repeat_on_days) > 0:
+					for item in self.repeat_on_days:
+						repeat_on_days = auto_repeat.append('repeat_on_days')
+						repeat_on_days.day = item.day
+				else:
+					repeat_on_days = auto_repeat.append('repeat_on_days')
+					repeat_on_days.day = day_of_the_frequency(auto_repeat.frequency, self.start_date)
 			auto_repeat.save(ignore_permissions=True)
 			self.db_set('auto_repeat_reference', auto_repeat.name)
 
@@ -99,10 +123,10 @@ def filter_routine_document(doctype, txt, searchfield, start, page_len, filters)
 		}
 	)
 
-def day_of_the_frequency(frequency, date=today()):
+def day_of_the_frequency(frequency, date):
 	week_map = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
 	if frequency == 'Monthly':
 		return getdate(date).strftime("%d")
 	if frequency == 'Weekly':
-		return week_map[getdate(today()).weekday()]
+		return week_map[getdate(date).weekday()]
 	return 1
