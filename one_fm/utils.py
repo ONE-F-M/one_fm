@@ -2576,6 +2576,7 @@ def workflow_approve_reject(doc, recipients=None):
     }
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
+@frappe.whitelist()
 def get_mandatory_fields(doctype, doc_name):
 	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doctype)
 
@@ -2610,6 +2611,31 @@ def get_doctype_mandatory_fields(doctype):
 		labels['name'] = 'Document Name'
 
 	return mandatory_fields, employee_fields, labels
+
+@frappe.whitelist()
+def create_message_with_details(message, mandatory_field, labels):
+    if mandatory_field and labels:
+        message += """The details of the request are as follows:
+                    <br>
+                    <table cellpadding="0" cellspacing="0" border="1" style="border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+                                <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+                            </tr>
+                        </thead>
+                    <tbody>
+                    """
+        for m in mandatory_field:
+            message += f"""<tr>
+                        <td style="padding: 10px;">{ labels[m] }</td>
+                        <td style="padding: 10px;">{ mandatory_field[m] }</td>
+                        </tr>
+                        """
+        message += """
+                </tbody>
+                </table>"""
+    return message
 
 @frappe.whitelist()
 def notify_live_user(company, message, users=False):

@@ -696,6 +696,13 @@ scheduler_events = {
 # ]
 
 fixtures = [
+	# {
+	# 	"dt": "Custom Field",
+	# 	'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
+	# },
+	{
+		"dt": "Property Setter"
+	},
 	{
 		"dt": "Workflow State"
 	},
