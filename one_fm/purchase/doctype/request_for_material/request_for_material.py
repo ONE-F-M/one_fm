@@ -19,12 +19,6 @@ from one_fm.utils import send_workflow_action_email
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment
 
 class RequestforMaterial(BuyingController):
-	def on_submit(self):
-		if self.workflow_state == 'Pending Approval':
-			send_workflow_action_email(self, [self.request_for_material_approver])
-			subject = '{0}: Request for Material by {1}'.format(self.workflow_state, get_fullname(self.requested_by))
-			create_notification_log(subject, subject, [self.request_for_material_approver], self)
-
 	@frappe.whitelist()
 	def get_default_warehouse(self):
 		return frappe.db.get_single_value('Stock Settings', 'default_warehouse')

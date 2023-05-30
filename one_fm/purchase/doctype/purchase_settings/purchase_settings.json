@@ -7,10 +7,7 @@
  "field_order": [
   "request_for_material_section",
   "request_for_material_accepter",
-  "request_for_material_approver",
-  "request_for_purchase_section",
-  "request_for_purchase_accepter",
-  "request_for_purchase_approver"
+  "request_for_material_approver"
  ],
  "fields": [
   {
@@ -22,7 +19,7 @@
    "fieldname": "request_for_material_approver",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Request for Material Approver",
+   "label": "Default RFM Approver",
    "options": "User",
    "reqd": 1
   },
@@ -30,33 +27,14 @@
    "fieldname": "request_for_material_accepter",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Request for Material Accepter",
-   "options": "User",
-   "reqd": 1
-  },
-  {
-   "fieldname": "request_for_purchase_section",
-   "fieldtype": "Section Break",
-   "label": "Request for Purchase"
-  },
-  {
-   "fieldname": "request_for_purchase_accepter",
-   "fieldtype": "Link",
-   "label": "Request for Purchase Accepter",
-   "options": "User",
-   "reqd": 1
-  },
-  {
-   "fieldname": "request_for_purchase_approver",
-   "fieldtype": "Link",
-   "label": "Request for Purchase Approver",
+   "label": "Default RFM Accepter",
    "options": "User",
    "reqd": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-05-14 08:16:36.618318",
+ "modified": "2023-05-25 07:20:12.938845",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Purchase Settings",
