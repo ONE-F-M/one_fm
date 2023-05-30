@@ -18,7 +18,7 @@ from one_fm.utils import get_users_with_role_permitted_to_doctype
 class RequestforPurchase(Document):
 	def onload(self):
 		self.set_onload('exists_qfs', False)
-		if frappe.db.get_value('Quotation from Supplier', {'request_for_purchase': self.name}, 'name'):
+		if frappe.db.get_value('Quotation From Supplier', {'request_for_purchase': self.name}, 'name'):
 			self.set_onload('exists_qfs', True)
 
 	def on_submit(self):
