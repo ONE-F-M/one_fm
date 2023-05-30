@@ -224,6 +224,7 @@ def get_payment_details_for_po(po):
 def before_submit_purchase_receipt(doc, method):
     if not doc.one_fm_attach_delivery_note:
         frappe.throw(_('Please Attach Signed and Stamped Delivery Note'))
+        
 
 def filter_description_specific_for_item_group(doctype, txt, searchfield, start, page_len, filters):
     description_values = False
@@ -304,3 +305,30 @@ def set_po_letter_head(doc, method):
 	if doc.workflow_state == "Approved" and not doc.letter_head:
 		if frappe.db.exists('Letter Head', {'name': 'Authorization Signature'}):
 			doc.db_set('letter_head', 'Authorization Signature')
+
+
+def validate_store_keeper_project_supervisor(doc, method):
+    user = frappe.session.user
+    user_emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    roles_check = "Warehouse Supervisor" in frappe.get_roles()
+    if doc.set_warehouse:
+        warehouse_manager = frappe.db.get_value("Warehouse", doc.set_warehouse, "one_fm_store_keeper")
+        if warehouse_manager:
+            emp = frappe.db.get_value("Employee", warehouse_manager, "name")
+            if not emp == user_emp:
+                frappe.throw("You are not authorized to generate the receipt !")
+            else:
+                return
+            
+    if doc.project:
+        project_manager = frappe.db.get_value("Project", doc.project, "account_manager")
+        if project_manager:
+            if not project_manager == user_emp:
+                frappe.throw("You are not authorized to generate this receipt !")
+            else:
+                return
+                
+    if not roles_check:
+        frappe.throw("You are not authorized to generate this receipt !")
+    else:
+        return
