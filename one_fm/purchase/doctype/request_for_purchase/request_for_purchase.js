@@ -88,6 +88,13 @@ frappe.ui.form.on('Request for Purchase', {
 			frappe.throw(__("Not able to create PO, Set Item Code/Supplier/Rate in <b>Items to Order</b> rows {0}", [idx_mandatory_fields_not_set_for_po]))
 		}
 
+		var items = frm.doc.items_to_order.filter(item => (item.qty_requested && item.qty_requested < item.qty));
+		var idx_items = items.map(pt => {return pt.idx}).join(', ');
+		if(idx_items && idx_items.length > 0) {
+			frm.scroll_to_field('items_to_order');
+			frappe.throw(__("Items <b>Items Order</b> are greater in quantity than requested in rows {0}", [idx_items]))
+		}
+
 		var stock_item_in_items_to_order = frm.doc.items_to_order.filter(items_to_order => items_to_order.is_stock_item === 1 && !items_to_order.t_warehouse);
 		var stock_item_code_in_items_to_order = stock_item_in_items_to_order.map(pt => {return pt.item_code}).join(', ');
 		if(stock_item_in_items_to_order && stock_item_in_items_to_order.length > 0 && !frm.doc.warehouse) {
@@ -115,6 +122,7 @@ frappe.ui.form.on('Request for Purchase', {
 			items_to_order.description = item.description
 			items_to_order.uom = item.uom
 			items_to_order.t_warehouse = item.t_warehouse
+			items_to_order.qty_requested = item.qty
 			items_to_order.qty = item.qty
 			items_to_order.delivery_date = item.schedule_date
 			items_to_order.request_for_material = item.request_for_material

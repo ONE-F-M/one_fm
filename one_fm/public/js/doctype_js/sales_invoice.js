@@ -40,6 +40,8 @@ frappe.ui.form.on('Sales Invoice', {
         
     },
 	refresh(frm) {
+        
+
         if(frm.doc.customer){
             frm.set_query("project", function() {
                 return {
@@ -346,16 +348,7 @@ var get_contracts_items = function(frm){
             if(!s.exc){
                 if(s.message != undefined){
                     
-                    frm.set_query("item_code", "items", function(frm, cdt, cdn) {
-                        var d = locals[cdt][cdn];
-                       
-                        return {
-                            query: "one_fm.operations.doctype.contracts.contracts.get_si_contracts_items",
-                            filters: {
-                                contracts: frm.contracts
-                            }
-                        }
-                    });
+                    
                     $.each(s.message, function(i, d) {
                         var row = frappe.model.add_child(frm.doc, "Sales Invoice Item", "items");
                         frappe.model.set_value(row.doctype, row.name, "item_code", d.item_code)

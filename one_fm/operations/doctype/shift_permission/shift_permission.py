@@ -31,6 +31,7 @@ class ShiftPermission(Document):
 		self.check_shift_details_value()
 		self.validate_date()
 		self.validate_record()
+		self.validate_approver()
 		if self.workflow_state in ['Pending', 'Approved']:
 			self.validate_attendance()
 			self.validate_employee_checkin()
@@ -123,6 +124,11 @@ class ShiftPermission(Document):
 
 		if self.workflow_state in ['Rejected']:
 			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
+	
+	def validate_approver(self):
+		if self.workflow_state in ["Approved", "Rejected"]:
+			if frappe.session.user not in [self.approver_user_id, 'abdullah@one-fm.com']:
+				frappe.throw(_("This document can only be approved/rejected by the approver."))
 
 def create_employee_checkin_for_shift_permission(shift_permission):
 	"""

@@ -99,8 +99,9 @@ doctype_js = {
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
-    "Wiki Page": "public/js/doctype_js/wiki_page.js",
-    "Error Log": "public/js/doctype_js/error_log.js",
+	"Wiki Page": "public/js/doctype_js/wiki_page.js",
+	"Error Log": "public/js/doctype_js/error_log.js",
+	"Assignment Rule": "public/js/doctype_js/assignment_rule.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -270,6 +271,7 @@ doc_events = {
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
 		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
+		"validate": "one_fm.purchase.utils.validate_store_keeper_project_supervisor"
 	},
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
@@ -277,7 +279,7 @@ doc_events = {
 	"Project": {
 		"validate": [
 			"one_fm.one_fm.project_custom.validate_poc_list",
-			"one_fm.one_fm.project_custom.validate_project"
+			"one_fm.one_fm.project_custom.validate_project",
 		],
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
 		"on_update": "one_fm.api.doc_events.on_project_update_switch_shift_site_post_to_inactive"
@@ -696,6 +698,13 @@ scheduler_events = {
 # ]
 
 fixtures = [
+	# {
+	# 	"dt": "Custom Field",
+	# 	'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
+	# },
+	{
+		"dt": "Property Setter"
+	},
 	{
 		"dt": "Workflow State"
 	},
@@ -708,6 +717,10 @@ fixtures = [
 	{
 		"dt": "Role",
 		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Assignment Rule",
+		"filters": [["name", "in",["RFM Approver"]]]
 	},
 	{
 		"dt": "Email Template"

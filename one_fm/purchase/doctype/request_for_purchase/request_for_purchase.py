@@ -18,7 +18,7 @@ from one_fm.utils import get_users_with_role_permitted_to_doctype
 class RequestforPurchase(Document):
 	def onload(self):
 		self.set_onload('exists_qfs', False)
-		if frappe.db.get_value('Quotation from Supplier', {'request_for_purchase': self.name}, 'name'):
+		if frappe.db.get_value('Quotation From Supplier', {'request_for_purchase': self.name}, 'name'):
 			self.set_onload('exists_qfs', True)
 
 	def on_submit(self):
@@ -48,6 +48,11 @@ class RequestforPurchase(Document):
 		no_item_code_in_items_to_order = [item.idx for item in self.items_to_order if (not item.item_code or not item.supplier)]
 		if no_item_code_in_items_to_order and len(no_item_code_in_items_to_order) > 0:
 			frappe.throw(_("Set Item Code/Supplier in <b>Items to Order</b> rows {0}".format(no_item_code_in_items_to_order)))
+
+		# Get items qty is greater than the requested qty
+		items = [item.idx for item in self.items_to_order if (item.qty_requested and item.qty_requested < item.qty)]
+		if items and len(items) > 0:
+			frappe.throw(_("Items <b>Items Order</b> are greater in quantity than requested in rows {0}".format(items)))
 
 	@frappe.whitelist()
 	def make_purchase_order_for_quotation(self, warehouse=None):
