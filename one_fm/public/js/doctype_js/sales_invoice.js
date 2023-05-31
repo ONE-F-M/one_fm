@@ -59,7 +59,7 @@ frappe.ui.form.on('Sales Invoice', {
     },
     customer: function(frm){
         
-        console.log("HAHAHA")
+        
         if(frm.doc.customer){
             frappe.call({
                 method: 'one_fm.one_fm.sales_invoice_custom.get_customer_advance_balance',
