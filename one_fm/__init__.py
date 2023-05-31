@@ -29,9 +29,13 @@ from frappe.email.doctype.email_queue.email_queue import QueueBuilder,SendMailCo
 from one_fm.overrides.email_queue import prepare_email_content as email_content,get_unsubscribe_str_
 from frappe.workflow.doctype.workflow_action import workflow_action
 from one_fm.utils import override_frappe_send_workflow_action_email
+from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
+from  one_fm.overrides.payment_entry import add_party_gl_entries_
+
 
 __version__ = '14.3.2'
 
+PaymentEntry.add_party_gl_entries = add_party_gl_entries_
 workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
 SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
 QueueBuilder.prepare_email_content  = email_content

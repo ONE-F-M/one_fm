@@ -297,6 +297,8 @@ doc_events = {
 	},
 	"Sales Invoice":{
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice",
+		"on_submit":"one_fm.one_fm.sales_invoice_custom.submit_sales_invoice",
+		"before_cancel":'one_fm.one_fm.sales_invoice_custom.cancel_sales_invoice',
 		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
 		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
@@ -741,7 +743,7 @@ fixtures = [
 #
 override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-	"erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry":'one_fm.one_fm.hr_utils.create_invoice_payment_entry',
+	
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
