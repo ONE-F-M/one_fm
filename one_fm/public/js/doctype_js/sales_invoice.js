@@ -50,9 +50,14 @@ frappe.ui.form.on('Sales Invoice', {
             });
             frm.refresh_field("project");
         }
+        if(frm.doc.automatic_settlement == "Yes"){
+            frm.set_df_property('settlement_amount', 'hidden', false);
+            frm.refresh_fields()
+        }
     },
     customer: function(frm){
         
+        console.log("HAHAHA")
         if(frm.doc.customer){
             frappe.call({
                 method: 'one_fm.one_fm.sales_invoice_custom.get_customer_advance_balance',
@@ -63,18 +68,28 @@ frappe.ui.form.on('Sales Invoice', {
                     if (!s.exc) {
                         frm.doc.balance_in_advance_account = s.message
                         frm.doc.automatic_settlement = ""
-                        frm.refresh_fields()
-                        if((frm.doc.balance_in_advance_account> 1) && (frm.doc.automatic_settlement == "")){
+                        frm.doc.settlement_amount = ""
+                        frm.refresh_field('balance_in_advance_account')
+                        frm.refresh_field('settlement_amount')
+                        if((frm.doc.balance_in_advance_account> 1) && (frm.doc.automatic_settlement == "")  && !(frm.doc.active_modal)){
+                            frm.doc.active_modal = 1
                             frappe.confirm(`${frm.doc.customer} has ${cur_frm.doc.currency}${cur_frm.doc.balance_in_advance_account} in their advance account.\nDo you wish to use it in this invoice?`,
                                     () => {
                                         frm.doc.automatic_settlement = "Yes"
                                         frm.set_df_property('settlement_amount', 'hidden', false);
-                                        frm.refresh_fields()
+                                        frm.refresh_field('settlement_amount')
+                                        frm.refresh_field('automatic_settlement')
+                                        frm.doc.active_modal = 0
                                     }, () => {
                                         frm.doc.automatic_settlement = "No"
                                         frm.set_df_property('settlement_amount', 'hidden', true);
-                                        frm.refresh_fields()
-                                 })
+                                        frm.refresh_field('settlement_amount')
+                                        frm.refresh_field('automatic_settlement')
+                                        frm.doc.active_modal = 0
+                                 }
+                                
+                                
+                                 )
                         }
                     }
                 }
