@@ -40,7 +40,7 @@ def create_attendance_check():
 					doc.checkin_record = frappe.get_doc("Employee Checkin", checkin.name)
 				if checkin.log_type == "OUT":
 					doc.checkout_record = frappe.get_doc("Employee Checkin", checkin.name)
-		if data[employee]['attendance'] == 0:
+		if data[employee]['attendance'] == 0 and not has_day_off(employee, date):
 			doc.has_the_attendance_for_the_marked = 1
 			doc.attendance =  frappe.get_value("Attendance", {'employee': employee, 'attendance_date':date}, ['name'])
 
@@ -148,3 +148,10 @@ def fetch_no_attendance(date, employees):
 	no_attendance =  [e for e in employees if e not in shift_assignment and e not in attendance]
 	return no_attendance
 
+def assign_doc(doc):
+	supervisor = doc.reports_to if doc.reports_to else doc.shift_supervisor if doc.shift_supervisor else doc.site_supervisor
+	supervisor_user_id = frappe.db.get_value("Employee", {"name": supervisor}, ["user_id"], as_dict=1)
+	if supervisor_user_id:
+		doc.assign_to = supervisor_user_id.user_id
+	doc.submit()
+	frappe.db.commit()
