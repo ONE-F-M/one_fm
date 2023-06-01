@@ -1013,16 +1013,11 @@ def send_contract_reminders():
     Generate Reminders for Contract Termination Decision Period and Contract End Internal Notification periods
     """
     
-    # contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':getdate()},['contract_end_internal_notification',\
-    #     'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
-    # contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':getdate()},['contract_end_internal_notification',\
-    #     'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
+    contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':getdate()},['contract_end_internal_notification',\
+        'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
+    contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':getdate()},['contract_end_internal_notification',\
+        'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
     
-    
-    contracts_due_internal_notification = frappe.get_all("Contracts",['contract_end_internal_notification',\
-        'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client', "contract"])[:2]
-    contracts_due_termination_notification = frappe.get_all("Contracts",['contract_end_internal_notification',\
-        'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client', "contract"])[:2]
     relevant_roles = ["Finance Manager",'Legal Manager','Projects Manager','Operations Manager']
     active_users = frappe.get_all("User",{'enabled':1})
     active_users_ = [i.name for i in active_users] if active_users else []
@@ -1047,7 +1042,7 @@ def send_contract_reminders():
                        "link": frappe.utils.get_url_to_form("Contracts",each[3]),
                        "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
             msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
-            sendemail(recipients="a.adekunle@one-fm.com", subject="Expiring Contracts", content=msg)
+            sendemail(recipients=[users], subject="Expiring Contracts", content=msg)
     if contracts_due_termination_notification:
         contracts_due_termination_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
             get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
@@ -1066,7 +1061,7 @@ def send_contract_reminders():
                        "link": frappe.utils.get_url_to_form("Contracts",each[3]),
                        "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
             msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
-            sendemail(recipients="a.adekunle@one-fm.com", subject="Expiring Contracts", content=msg)
+            sendemail(recipients=[users], subject="Expiring Contracts", content=msg)
         
 @frappe.whitelist()
 def renew_contracts_by_termination_date():
