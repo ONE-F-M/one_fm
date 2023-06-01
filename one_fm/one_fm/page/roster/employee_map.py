@@ -218,8 +218,6 @@ class CreateMap():
                 else:
                     self.formated_rs[key] = [result]
             else:
-                if self.cur_date == '2023-04-30' and key == 'Brian Anywar':
-                    pass
                 attendance_schedule_for_day = [u for u in value if self.cur_date == cstr(u['date'])]
                 if self.formated_rs.get(key):
                     # if key not in self.merged_employees:
