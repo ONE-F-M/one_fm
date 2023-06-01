@@ -1047,6 +1047,9 @@ body[data-route="roster"] .lightgreenbox {
 body[data-route="roster"] .darkblackox {
   background: #262626;
 }
+body[data-route="roster"] .darkgreenbox {
+  background: #006400;
+}
 body[data-route="roster"] .borderbox {
   background: #ffffff;
   border: 3px solid #787878;

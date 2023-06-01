@@ -145,6 +145,8 @@ class CreateMap():
         self.roster_type = "Over-Time" if isOt else "Basic"
         if self.isOt:
             self.str_filter+=' and es.roster_type = "Over-Time"'
+        else:
+            self.str_filter+=' and es.roster_type = "Basic"'
 
 
 
@@ -161,8 +163,9 @@ class CreateMap():
         else:
             self.schedule_query  = f"SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
                 es.shift, es.roster_type, es.employee_availability, es.day_off_ot, es.project from `tabEmployee Schedule`es  where \
-                    es.employee in {self.employees} and {self.str_filter} order by es.employee "
-            self.attendance_query = f"SELECT at.status,at.leave_type,at.leave_application, at.attendance_date,at.employee,at.employee_name, at.operations_shift from `tabAttendance`at where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{self.end}' and at.docstatus = 1 AND at.roster_type='{self.roster_type}' order by at.employee """
+                    es.employee in {self.employees} and {self.str_filter}   order by es.employee "
+            self.attendance_query = f"SELECT at.status,at.leave_type,at.leave_application, at.attendance_date,at.employee,at.employee_name, at.operations_shift from `tabAttendance`at where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{self.end}' and at.docstatus = 1 AND at.roster_type='{self.roster_type}' order by at.employee "
+            
             self.employee_query = f"SELECT name, employee_id,relieving_date, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
 
         
@@ -174,7 +177,6 @@ class CreateMap():
 
     def combine_maps(self,iter1,iter2):
         key = list(iter1.keys())[0]
-        
         return {key:iter1[key]+iter2[key]}
 
 
@@ -195,6 +197,7 @@ class CreateMap():
     def add_blanks(self,emp_dict):
         #Add the days individually for each employee
         try:
+            #Key is the employee name
             key = list(emp_dict.keys())[0]
             
             value = emp_dict[key]
@@ -202,7 +205,6 @@ class CreateMap():
 
             if getdate(self.cur_date) not in [i['date'] for i in value]:
                 result = {
-                    
                     'employee':self.employee_period_details[key]['name'],
                     'employee_id':self.employee_period_details[key]['employee_id'],
                     'employee_name':self.employee_period_details[key]['employee_name'],
@@ -216,14 +218,23 @@ class CreateMap():
                 else:
                     self.formated_rs[key] = [result]
             else:
+                if self.cur_date == '2023-04-30' and key == 'Brian Anywar':
+                    pass
+                attendance_schedule_for_day = [u for u in value if self.cur_date == cstr(u['date'])]
                 if self.formated_rs.get(key):
                     # if key not in self.merged_employees:
-                    month_data = [u for u in value if self.cur_date == cstr(u['date'])][0]
+                    month_data = attendance_schedule_for_day[0]
+                    #Add Day Off OT from Attendance, Doing this from the initial query takes too long
+                    if len(attendance_schedule_for_day) >1:
+                        month_data['day_off_ot'] = attendance_schedule_for_day[1]['day_off_ot']
                     self.formated_rs[key].append(month_data)
                 
                 else:
                     #When an employee has both attendance and employee schedule records the attendance is selected.
-                    month_data = [u for u in value if self.cur_date == cstr(u['date'])][0]
+                    month_data = attendance_schedule_for_day[0]
+                    #Add Day Off OT from Attendance
+                    if len(attendance_schedule_for_day) >1:
+                        month_data['day_off_ot'] = attendance_schedule_for_day[1]['day_off_ot']
                     self.formated_rs[key] = [month_data]
         except KeyError:
             pass
