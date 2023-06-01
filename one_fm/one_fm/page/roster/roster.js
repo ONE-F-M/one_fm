@@ -1114,7 +1114,7 @@ function get_roster_data(page, isOt) {
 			},
 			callback: function(res) {
 				// code snippet
-				// console.log(res);
+				
 				error_handler(res);
 				render_roster(res.data, page, isOt);
 			}
@@ -1254,7 +1254,7 @@ function render_roster(res, page, isOt) {
 			
 			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, actual_shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application,relieving_date } = employees_data[employee_key][i];
 			//OT schedule view
-			console.log(employee_availability)
+
 			
 			if (isOt) {
 				if ((actual_shift && shift) && (actual_shift!=shift) && roster_type == 'Over-Time' && day_off_ot==0) {
@@ -1332,8 +1332,6 @@ function render_roster(res, page, isOt) {
 			else {
 				
 			 	if ((actual_shift && shift) && (actual_shift!=shift) && day_off_ot==0) {
-				
-				
 				sch = `
 				<td>
 					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
@@ -1374,13 +1372,25 @@ function render_roster(res, page, isOt) {
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else if (attendance && !employee_availability) {
-					console.log(employee)
-					if (attendance == 'Present') { j++; }
+					
+					if(day_off_ot){
+						sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkgreenbox d-flex justify-content-center align-items-center text-white so customtooltip"
+							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
+					</td>`;
+					}
+					else{
+						if (attendance == 'Present') { j++; }
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 					</td>`;
+					}
+					
+					
+					
 				} else {
 					
 					if(moment(date)>=moment(relieving_date)){
