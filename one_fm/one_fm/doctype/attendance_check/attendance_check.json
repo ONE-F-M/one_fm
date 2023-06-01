@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "HR-AC-.YY.-.MM.-.#####",
  "creation": "2023-05-31 11:09:42.081247",
  "default_view": "List",
  "doctype": "DocType",
@@ -60,16 +61,20 @@
    "options": "Employee"
   },
   {
+   "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
    "label": "Employee Name"
   },
   {
+   "fetch_from": "employee.department",
    "fieldname": "department",
-   "fieldtype": "Data",
-   "label": "Department"
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
   },
   {
+   "fetch_from": "employee.reports_to",
    "fieldname": "reports_to",
    "fieldtype": "Data",
    "label": "Reports To"
@@ -159,6 +164,7 @@
    "label": "Has the attendance for the marked?"
   },
   {
+   "fetch_from": "attendance.status",
    "fieldname": "marked_attendance_status",
    "fieldtype": "Data",
    "label": "Marked Attendance Status"
@@ -167,7 +173,7 @@
    "fetch_if_empty": 1,
    "fieldname": "attendance",
    "fieldtype": "Link",
-   "label": "Attendance ",
+   "label": "Attendance",
    "options": "Attendance"
   },
   {
@@ -264,10 +270,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-05-31 15:19:32.741988",
+ "modified": "2023-06-01 15:51:23.688080",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -279,6 +286,19 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Shift Supervisor",
    "share": 1,
    "write": 1
   }
