@@ -13,37 +13,44 @@ class AttendanceCheck(Document):
 def create_attendance_check():
 	date = add_to_date(nowdate(), days=-1)
 	data = fetch_data(date)
-
-	for d in data:
+	
+	for employee in data:
 		doc = frappe.new_doc("Attendance Check")
-		doc.employee = d
+		doc.employee = employee
 		doc.date = date
-		if data[d]['shift_assignment'] == 0:
+		supervisor = get_supervisor(employee)
+		if supervisor:
+			if supervisor['shift_supervisor']:
+				doc.shift_supervisor = supervisor['shift_supervisor']
+			if supervisor['site_supervisor']:
+				doc.site_supervisor = supervisor['site_supervisor']
+				
+		if data[employee]['shift_assignment'] == 0 and not has_day_off(employee, date):
 			doc.has_shift_assignment = 1
-			doc.shift_assignment = frappe.get_doc("Shift Assignment", {'employee': d, 'start_date':date})
+			doc.shift_assignment = frappe.get_doc("Shift Assignment", {'employee': employee, 'start_date':date})
 			
-		if data[d]['checkin']== 0:
+		if data[employee]['checkin'] == 0:
 			doc.has_checkin_record = 1
 			emp_checkin = frappe.db.sql("""SELECT name, log_type FROM `tabEmployee Checkin` empChkin
 							WHERE
 							date(empChkin.time)='{date}'
-							AND employee = '{employee}'""".format(date=cstr(date), employee=d), as_dict=1)
+							AND employee = '{employee}'""".format(date=cstr(date), employee=employee), as_dict=1)
 			for checkin in emp_checkin:
 				if checkin.log_type == "IN":
 					doc.checkin_record = frappe.get_doc("Employee Checkin", checkin.name)
 				if checkin.log_type == "OUT":
 					doc.checkout_record = frappe.get_doc("Employee Checkin", checkin.name)
-		if data[d]['attendance'] == 0:
+		if data[employee]['attendance'] == 0:
 			doc.has_the_attendance_for_the_marked = 1
-			doc.attendance =  frappe.get_value("Attendance", {'employee': d, 'attendance_date':date}, ['name'])
+			doc.attendance =  frappe.get_value("Attendance", {'employee': employee, 'attendance_date':date}, ['name'])
 
-		if frappe.db.exists("Shift Permission", {'employee': d, 'date':date}):
+		if frappe.db.exists("Shift Permission", {'employee': employee, 'date':date}):
 			doc.has_shift_pemission = 1
-			doc.shift_permission = frappe.get_value("Shift Permission", {'employee': d, 'date':date}, ['name'])
+			doc.shift_permission = frappe.get_value("Shift Permission", {'employee': employee, 'date':date}, ['name'])
 		
-		if frappe.db.exists("Attendance Request", {'employee': d, 'date':date}):
+		if frappe.db.exists("Attendance Request", {'employee': employee, 'date':date}):
 			doc.has_attendance_request = 1
-			doc.attendance_request = frappe.get_value("Attendance Request", {'employee': d, 'date':date}, ['name'])
+			doc.attendance_request = frappe.get_value("Attendance Request", {'employee': employee, 'date':date}, ['name'])
 
 		doc.insert()
 		doc.submit()
@@ -71,12 +78,24 @@ def fetch_data(date):
 
 	return data
 
+def get_supervisor(employee):
+	shifts = frappe.get_list("Employee", {'name':employee}, ['shift', 'default_shift'])
+
+	shift = shifts[0].shift if shifts[0].shift != "" else shifts[0].default_shift if shifts[0].default_shift!="" else ""
+	if shift != "":
+		shift_doc = frappe.get_list("Operations Shift", {"name":shift}, ['site','supervisor'])
+		shift_supervisor = shift_doc[0].supervisor
+		site_supervisor = frappe.get_value("Operations Site", {"name":shift_doc[0].site}, ['account_supervisor'])
+		return {'shift_supervisor':shift_supervisor, 'site_supervisor':site_supervisor}
+	else:
+		return
 
 def fetch_no_shift_assignment(date, employees):
 	shift_assignment = get_assigned_shift(date)
 	day_off = get_days_off(date)
-	
-	no_sa = [e for e in employees if e not in shift_assignment]
+	sa = shift_assignment + day_off
+
+	no_sa = [e for e in employees if e not in sa]
 	return no_sa
 
 def get_assigned_shift(date):
@@ -95,9 +114,15 @@ def get_days_off(date):
 					AND h.holiday_date = '{date}')
 					""".format(date=date), as_dict=1)
 	day_off_emp_nse = [emp.employee for emp in day_off_emp_nse]
-	day_off_emp_se.extend(day_off_emp_nse)
+	day_off = day_off_emp_se + day_off_emp_nse
+	return day_off
 
-	return day_off_emp_se
+def has_day_off(employee, date):
+	day_off_employees = get_days_off(date)
+	if employee in day_off_employees:
+		return True
+	else:
+		return False
 
 def fetch_no_checkin_record(date, employees):
 	shift_assignment = get_assigned_shift(date)
