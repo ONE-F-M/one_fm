@@ -15,7 +15,6 @@ def sendemail(recipients, subject, header=None, message=None,
 	doc_link = "#"
 	mandatory_field = None
 	field_labels = None
-	print("inMail")
 	head = header[0] if header else ""
 	if not message:
 		message = " "
