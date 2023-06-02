@@ -2584,7 +2584,7 @@ def get_mandatory_fields(doctype, doc_name):
 
 	for employee_field in employee_fields:
 		employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
-		doc[employee_field] = ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
+		doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
 
 	return doc, labels
 
@@ -2613,7 +2613,7 @@ def get_doctype_mandatory_fields(doctype):
 	return mandatory_fields, employee_fields, labels
 
 @frappe.whitelist()
-def create_message_with_details(message, mandatory_field, labels, cv=None):
+def create_message_with_details(message, mandatory_field, labels):
     if mandatory_field and labels:
         message += """The details of the request are as follows:
                     <br>
@@ -2632,12 +2632,6 @@ def create_message_with_details(message, mandatory_field, labels, cv=None):
                         <td style="padding: 10px;">{ mandatory_field[m] }</td>
                         </tr>
                         """
-        if cv:
-            message += f"""<tr>
-            <td style="padding: 10px;">CV</td>
-            <td style="padding: 10px;"><a href ="{cv}">Attached CV</a></td>
-            </tr>
-            """
             
         message += """
                 </tbody>
