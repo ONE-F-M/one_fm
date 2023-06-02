@@ -58,20 +58,31 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
             if erf_details[0].secondary_recruiter_assigned:
                 recipients.append(erf_details[0].secondary_recruiter_assigned)
         designation = frappe.db.get_value('Job Opening', doc.job_title, 'designation')
-        page_link = get_url(doc.get_url())
-        mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
-        message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
+        context = {
+            "designation": designation,
+            "status": doc.status,
+            "applicant_name": doc.applicant_name,
+            "cv": frappe.utils.get_url(doc.resume_attachment) if doc.resume_attachment else None,
+            "passport_type": doc.one_fm_passport_type,
+            "job_applicant": get_url(doc.get_url()),
+            "contact_email": doc.one_fm_email_id 
+        }
         
-        if mandatory_field and labels:
-            message = create_message_with_details(message, mandatory_field, labels)
-
+        message = frappe.render_template('one_fm/templates/emails/job_application_notification.html', context=context)
+        # page_link = get_url(doc.get_url())
+        # mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
+        # message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
+        
+        # if mandatory_field and labels:
+            # message = create_message_with_details(message, mandatory_field, labels, cv=cv_link)
+            
         if recipients:
             sendemail(
-                recipients= recipients,
+                recipients= ["a.adekunle@one-fm.com"],
                 subject='Job Application created for {0}'.format(designation),
                 message=message,
                 reference_doctype=doc.doctype,
-                reference_name=doc.name
+                reference_name=doc.name,
             )
 
 @frappe.whitelist()
