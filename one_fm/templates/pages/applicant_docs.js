@@ -362,7 +362,6 @@ function Submit(){
     frappe.freeze();
 		frappe.confirm('Are you sure you want to Submit?, On Submit the link will be expired!',
     () => {
-      applicant_details['applicant_doc']={}
 
       var frontPassport = document.getElementById('Passport_Front');
       var backPassport = document.getElementById('Passport_Back');
@@ -379,7 +378,7 @@ function Submit(){
 				method: "one_fm.templates.pages.applicant_docs.update_job_applicant",
 				args: {
 					job_applicant: $('#First_Name').attr("data"),
-					data: applicant_details,
+					data: applicant_details
 				},
 				btn: this,
 				callback: function(r){
@@ -449,6 +448,10 @@ function get_details_from_form() {
   applicant_details['one_fm_passport_expire'] = $('#Passport_Date_of_Expiry').val();
   applicant_details['one_fm_passport_holder_of'] = $('#Passport_Place_of_Issue').val();
   applicant_details['one_fm_country_code'] = $('#Country_Code').val();
+  
+
+  applicant_details['applicant_doc']={}
+
   
   get_filepath(applicant_details['applicant_doc'],front_cid_filepath, "Civil ID Front" )
   get_filepath(applicant_details['applicant_doc'],back_cid_filepath, "Civil ID Back" )

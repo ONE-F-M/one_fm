@@ -390,7 +390,6 @@ def send_applicant_doc_magic_link(job_applicant, applicant_name, designation):
 
 @frappe.whitelist(allow_guest=True)
 def update_job_applicant(job_applicant, data):
-    print(data, "\n\n\n\n\n\n\n")
     doc = update_application_function(job_applicant, data)
     doc.save(ignore_permissions=True)
     set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
