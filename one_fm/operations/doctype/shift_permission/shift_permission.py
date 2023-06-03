@@ -34,7 +34,6 @@ class ShiftPermission(Document):
 		self.validate_approver()
 		if self.workflow_state in ['Pending', 'Approved']:
 			self.validate_attendance()
-			self.validate_employee_checkin()
 		if not self.title:
 			self.title = self.emp_name
 
@@ -42,15 +41,6 @@ class ShiftPermission(Document):
 		attendance = frappe.db.exists('Attendance',{'attendance_date': self.date, 'employee': self.employee, 'docstatus': 1})
 		if attendance:
 			frappe.throw(_('There is an Attendance {0} exists for the Employee {1} on {2}'.format(attendance, self.emp_name, format_date(self.date))), exc=ExistAttendance)
-
-	def validate_employee_checkin(self):
-		start_date = get_datetime(self.date)
-		end_date = add_to_date(start_date, hours=23.9998)
-		employee_checkin = frappe.db.exists('Employee Checkin',
-			{'log_type': self.log_type, 'time': ["between", [start_date, end_date]], 'employee': self.employee}
-		)
-		if employee_checkin:
-			frappe.throw(_('There is an Employee Checkin {0} exists for the Employee {1} on {2}'.format(employee_checkin, self.emp_name, format_date(self.date))), exc=ExistCheckin)
 
 	def validate_permission_type(self):
 		if self.log_type == 'IN' and self.permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
@@ -124,7 +114,7 @@ class ShiftPermission(Document):
 
 		if self.workflow_state in ['Rejected']:
 			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
-	
+
 	def validate_approver(self):
 		if self.workflow_state in ["Approved", "Rejected"]:
 			if frappe.session.user not in [self.approver_user_id, 'abdullah@one-fm.com']:
