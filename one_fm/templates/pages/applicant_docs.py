@@ -414,7 +414,6 @@ def update_application_function(job_applicant, data):
 
         for field in applicant_details:
             new_doc.set(field, applicant_details[field])
-        print(applicant_details, "\n\n\n\n\n")
         for documents, path in applicant_details['applicant_doc'].items():
             new_doc.append("one_fm_documents_required", {
             "document_required": documents,
