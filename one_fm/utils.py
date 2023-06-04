@@ -2634,6 +2634,7 @@ def create_message_with_details(message, mandatory_field, labels):
                         <td style="padding: 10px;">{ mandatory_field[m] }</td>
                         </tr>
                         """
+            
         message += """
                 </tbody>
                 </table>"""
