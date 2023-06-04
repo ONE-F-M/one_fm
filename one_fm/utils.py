@@ -1592,7 +1592,8 @@ def get_mandatory_fields_work_details(doc):
         if erf.travel_required:
             if erf.type_of_travel:
                 field_list.append({'Type of Travel': 'one_fm_type_of_travel'})
-            field_list.append({'Type of Driving License': 'one_fm_type_of_driving_license'})
+            if erf.driving_license_required:
+                field_list.append({'Type of Driving License': 'one_fm_type_of_driving_license'})
     return field_list
 
 def get_mandatory_fields_contact_details(doc):
