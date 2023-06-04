@@ -232,7 +232,8 @@ class CreateMap():
                     month_data = attendance_schedule_for_day[0]
                     #Add Day Off OT from Attendance
                     if len(attendance_schedule_for_day) >1:
-                        month_data['day_off_ot'] = attendance_schedule_for_day[1]['day_off_ot']
+                        # The Employee schedule is always the last in the list
+                        month_data['day_off_ot'] = attendance_schedule_for_day[-1].get('day_off_ot')
                     self.formated_rs[key] = [month_data]
         except KeyError:
             pass
