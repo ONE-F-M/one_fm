@@ -8,7 +8,7 @@ from frappe.utils.jinja import (get_email_from_template)
 @frappe.whitelist()
 def sendemail(recipients, subject, header=None, message=None,
 	content=None, reference_name=None, reference_doctype=None,
-	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None):
+	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None, is_external_mail=False):
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
 	actions=pdf_link=workflow_state=""
@@ -37,11 +37,12 @@ def sendemail(recipients, subject, header=None, message=None,
 	if type(recipients) == str:
 		recipients = [recipients]
 
-	for recipient in recipients:
-		if not is_user_id_company_prefred_email_in_employee(recipient):
-			recipients.remove(recipient)
-	if not sender:
-		sender = "Administrator"
+	if not is_external_mail:
+		for recipient in recipients:
+			if not is_user_id_company_prefred_email_in_employee(recipient):
+				recipients.remove(recipient)
+		if not sender:
+			sender = "Administrator"
 	
 	if recipients and len(recipients) > 0:
 		frappe.sendmail(template = template,
