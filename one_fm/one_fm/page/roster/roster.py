@@ -767,7 +767,7 @@ def cancel_post(posts, args):
                 doc.post = post["post"]
                 doc.date = cstr(date.date())
             doc.paid = args.suspend_paid
-            doc.unpaid = args.suspend_unpaid
+            
             doc.post_status = "Cancelled"
             doc.save()
     frappe.db.commit()
@@ -796,7 +796,7 @@ def suspend_post(posts, args):
                 doc.post = post["post"]
                 doc.date = cstr(date.date())
             doc.paid = args.suspend_paid
-            doc.unpaid = args.suspend_unpaid
+            
             doc.post_status = "Suspended"
             doc.save()
     frappe.db.commit()
@@ -804,11 +804,11 @@ def suspend_post(posts, args):
 def post_off(posts, args):
     from one_fm.api.mobile.roster import month_range
     post_off_paid = args.post_off_paid
-    post_off_unpaid = args.post_off_unpaid
+    
 
     if args.repeat == "Does not repeat":
         for post in json.loads(posts):
-            set_post_off(post["post"], post["date"], post_off_paid, post_off_unpaid)
+            set_post_off(post["post"], post["date"], post_off_paid)
     else:
         if args.repeat and args.repeat in ["Daily", "Weekly", "Monthly", "Yearly"]:
             end_date = None
@@ -828,7 +828,7 @@ def post_off(posts, args):
                             frappe.throw(_("No contract linked with project {project}".format(project=project)))
 
                     for date in	pd.date_range(start=post["date"], end=end_date):
-                        set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
+                        set_post_off(post["post"], cstr(date.date()), post_off_paid)
 
             elif args.repeat == "Weekly":
                 week_days = []
@@ -851,7 +851,7 @@ def post_off(posts, args):
 
                     for date in	pd.date_range(start=post["date"], end=end_date):
                         if getdate(date).strftime('%A') in week_days:
-                            set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
+                            set_post_off(post["post"], cstr(date.date()), post_off_paid)
 
             elif args.repeat == "Monthly":
                 for post in json.loads(posts):
@@ -865,7 +865,7 @@ def post_off(posts, args):
                             frappe.throw(_("No contract linked with project {project}".format(project=project)))
 
                     for date in	month_range(post["date"], end_date):
-                        set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
+                        set_post_off(post["post"], cstr(date.date()), post_off_paid)
 
             elif args.repeat == "Yearly":
                 for post in json.loads(posts):
@@ -879,10 +879,10 @@ def post_off(posts, args):
                             frappe.throw(_("No contract linked with project {project}".format(project=project)))
 
                     for date in	pd.date_range(start=post["date"], end=end_date, freq=pd.DateOffset(years=1)):
-                        set_post_off(post["post"], cstr(date.date()), post_off_paid, post_off_unpaid)
+                        set_post_off(post["post"], cstr(date.date()), post_off_paid)
     frappe.db.commit()
 
-def set_post_off(post, date, post_off_paid, post_off_unpaid):
+def set_post_off(post, date, post_off_paid):
     if frappe.db.exists("Post Schedule", {"date": date, "post": post}):
         doc = frappe.get_doc("Post Schedule", {"date": date, "post": post})
     else:
@@ -890,7 +890,7 @@ def set_post_off(post, date, post_off_paid, post_off_unpaid):
         doc.post = post
         doc.date = date
     doc.paid = post_off_paid
-    doc.unpaid = post_off_unpaid
+    
     doc.post_status = "Post Off"
     doc.save()
 

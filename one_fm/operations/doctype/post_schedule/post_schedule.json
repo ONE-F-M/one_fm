@@ -87,6 +87,7 @@
    "default": "0",
    "fieldname": "unpaid",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Unpaid"
   },
   {
@@ -124,10 +125,11 @@
   }
  ],
  "links": [],
- "modified": "2022-08-25 08:51:25.446784",
+ "modified": "2023-05-31 23:35:20.337186",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Post Schedule",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
@@ -145,5 +147,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
