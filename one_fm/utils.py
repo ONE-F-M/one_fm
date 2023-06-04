@@ -2583,8 +2583,10 @@ def get_mandatory_fields(doctype, doc_name):
 	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
 
 	for employee_field in employee_fields:
-		employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
-		doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
+		if doc[employee_field]:
+			employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
+			if employee_details.employee_name and  employee_details.employee_id:
+				doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
 
 	return doc, labels
 
@@ -2632,6 +2634,7 @@ def create_message_with_details(message, mandatory_field, labels):
                         <td style="padding: 10px;">{ mandatory_field[m] }</td>
                         </tr>
                         """
+            
         message += """
                 </tbody>
                 </table>"""
