@@ -10,8 +10,9 @@ class AttendanceCheck(Document):
 	pass
 
 @frappe.whitelist()
-def create_attendance_check():
-	date = add_to_date(nowdate(), days=-1)
+def create_attendance_check(date = None):
+    # Date is in "YYYY-MM-DD" format
+	date = add_to_date(nowdate(), days=-1) if not date else add_to_date(date)
 	data = fetch_data(date)
 	
 	for employee in data:
@@ -53,7 +54,7 @@ def create_attendance_check():
 			doc.attendance_request = frappe.get_value("Attendance Request", {'employee': employee, 'date':date}, ['name'])
 
 		doc.insert()
-		doc.submit()
+		# doc.submit()
 	frappe.db.commit()
 
 def fetch_data(date):
