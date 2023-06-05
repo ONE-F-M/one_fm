@@ -607,21 +607,20 @@ def get_current_shift(employee):
         current_datetime = now_datetime()
         date, time = current_datetime.strftime("%Y-%m-%d %H:%M:%S").split(" ")
         
-        shift = frappe.get_list("Shift Assignment", {"employee":employee, 'start_date': ['>=', date]}, ['*'], order_by="creation asc")
-        # print(shift)
+        shift = frappe.db.sql("""SELECT sa.* FROM `tabShift Assignment` sa, `tabShift Type` st
+							WHERE sa.shift_type = st.name
+                            AND employee ='{employee}'
+                            AND DATE_SUB(sa.start_datetime, INTERVAL st.begin_check_in_before_shift_start_time MINUTE) <= '{current_datetime}'
+                            AND DATE_ADD(sa.end_datetime, INTERVAL st.allow_check_out_after_shift_end_time MINUTE) >= '{current_datetime}'
+                            ORDER BY creation ASC""".format(current_datetime=cstr(current_datetime), employee=employee), as_dict=1)
+
         if len(shift) == 1:
-            if shift_is_within_timeframe(shift[0], current_datetime):
-                cur_shift = shift[0]
-        elif len(shift) == 2:
-            if shift_is_within_timeframe(shift[0], current_datetime):
-                cur_shift = shift[0]
-            if shift_is_within_timeframe(shift[1], current_datetime):
+            cur_shift = shift[0]
+        elif len(shift) == 2: #2 shift colliding
+            if has_checkout(shift[0], employee, date): #
                 cur_shift = shift[1]
-            if shift_is_within_timeframe(shift[0], current_datetime) and  shift_is_within_timeframe(shift[1], current_datetime):
-                if has_checkout(shift[0], employee, date):
-                    cur_shift = shift[1]
-                else:
-                    cur_shift = shift[0]
+            else:
+                cur_shift = shift[0]
         else:
             cur_shift =  shift
         return cur_shift
@@ -638,21 +637,6 @@ def has_checkout(shift, employee, date):
                             AND log_type = 'OUT'""".format(date=cstr(date), shift=shift.name, employee=employee), as_dict=1)
     if checkin:
         return True
-    else:
-        return False
-
-def shift_is_within_timeframe(shift, current_datetime):
-    if shift:
-        before_time, after_time = frappe.get_value("Shift Type", shift.shift_type,
-                                                       ["begin_check_in_before_shift_start_time",
-                                                        "allow_check_out_after_shift_end_time"])
-        if shift.start_datetime and shift.end_datetime:
-            # include early entry and late exit time
-            start_time = shift.start_datetime - datetime.timedelta(minutes=before_time)
-            end_time = shift.end_datetime + datetime.timedelta(minutes=after_time)
-            # Check if current time is within the shift start and end time.
-            if start_time <= current_datetime <= end_time:
-                return True
     else:
         return False
 
