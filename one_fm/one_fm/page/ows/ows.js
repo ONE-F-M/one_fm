@@ -289,10 +289,37 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					editTodo(){
 						$('#save_todo').show();
 						$('#edit_todo_pane').hide();
+						$("#status_field").prop('disabled', false);
+						$("#description_field").prop('disabled', false);
+						$("#priority_field").prop('disabled', false);
 					},
 					saveTodo(){
-						$('#save_todo').hide();
-						$('#edit_todo_pane').show();
+						// $('#save_todo').hide();
+						// $('#edit_todo_pane').show();
+						let priority_field = $('#priority_field');
+						let status_field = $('#status_field');
+						let description_field = $('#description_field');
+						console.log(this.todo_pane);
+						// update todo
+						frappe.call({
+							url: `/api/resource/ToDO/${this.todo_pane}`,
+							type: "PUT",
+							args: {
+								status:this.todo_pane.status,
+								description: this.todo_pane.description,
+								priority:this.todo_pane.priority
+							},
+							success: function(r) {
+								console.log('success', r)
+							},
+							error: function(r) {
+								console.log('error', r)
+							},
+							always: function(r) {},
+							freeze: true,
+							freeze_message: "Updating ToDO",
+							async: true,
+						});
 					},
 					setOKRYearQuarter(okr_year_data){
 						$('#okr_year').empty()
