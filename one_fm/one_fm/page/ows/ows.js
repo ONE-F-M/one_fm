@@ -348,9 +348,8 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							);
 							
 					},
-					 open_ref(link){
-
-							window.open(link)
+					 open_ref(){
+							window.open(this.todo_pane.url)
 						},
 					
 					copyText(link_to_copy) {
