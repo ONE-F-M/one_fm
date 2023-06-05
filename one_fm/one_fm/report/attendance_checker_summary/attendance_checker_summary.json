@@ -1,5 +1,5 @@
 {
- "add_total_row": 0,
+ "add_total_row": 1,
  "columns": [],
  "creation": "2023-06-04 00:31:44.885765",
  "disable_prepared_report": 0,
@@ -10,7 +10,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letter_head": "ONEFM",
- "modified": "2023-06-04 00:31:44.885765",
+ "modified": "2023-06-05 20:08:11.347836",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Checker Summary",
