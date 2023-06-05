@@ -409,17 +409,20 @@ def save_as_draft(job_applicant, data):
 @frappe.whitelist(allow_guest=True)
 def update_application_function(job_applicant, data):
     new_doc = frappe.get_doc('Job Applicant', job_applicant)
-    
-    applicant_details = json.loads(data)
+    try:
+        applicant_details = json.loads(data)
 
-    for field in applicant_details:
-        new_doc.set(field, applicant_details[field])
-    for documents in applicant_details['applicant_doc']:
-        new_doc.append("one_fm_documents_required", {
-		"document_required": documents,
-		"attach": frappe.get_value('File', {'file_name':applicant_details['applicant_doc'][documents]},["file_url"]),
-        "type_of_copy": "Soft Copy",
-	    })
+        for field in applicant_details:
+            new_doc.set(field, applicant_details[field])
+        for documents, path in applicant_details['applicant_doc'].items():
+            new_doc.append("one_fm_documents_required", {
+            "document_required": documents,
+            "attach": frappe.get_value('File', {'file_name':path.split("\\")[-1]}, ["file_url"]),
+            "type_of_copy": "Soft Copy",
+            })
+    except Exception as e:
+        frappe.log_error(e, "Update Job Applicant (Magic Link)")
+        
     return new_doc
 
 

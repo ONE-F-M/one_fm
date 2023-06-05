@@ -9,7 +9,7 @@ class BugBusterReport(Document):
 		# set employee
 		if not self.bug_buster and frappe.session.user not in ['Administrator', 'administrator']:
 			try:
-				user_id, employee_name = frappe.db.get_values('Employee', {'user_id':'e.anthony@one-fm.com'}, ['name', 'employee_name'], as_dict=1)[0].values()
+				user_id, employee_name = frappe.db.get_values('Employee', {'user_id':frappe.session.user}, ['name', 'employee_name'], as_dict=1)[0].values()
 			except:
 				user_id, employee_name = '', ''
 			self.bug_buster = user_id
