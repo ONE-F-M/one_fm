@@ -284,6 +284,55 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						me = this
 						me.todo_pane = {}
 						me.hide_show_button()
+						$('.todo-pane-block').hide();
+					},
+					editTodo(){
+						$('#save_todo').show();
+						$('#edit_todo_pane').hide();
+						$("#status_field").prop('disabled', false);
+						$("#description_field").prop('disabled', false);
+						$("#priority_field").prop('disabled', false);
+						// set color
+						$('#status_field').prop('style', 'border: 3px solid blue;')
+						$('#description_field').prop('style', 'border: 3px solid blue;')
+						$('#priority_field').prop('style', 'border: 3px solid blue;')
+					},
+					saveTodo(){
+						let me = this;
+						// update todo
+						frappe.call({
+							url: `/api/resource/ToDo/${this.todo_pane.name}`,
+							type: "PUT",
+							args: {
+								status:this.todo_pane.status,
+								description: this.todo_pane.description,
+								priority:this.todo_pane.priority
+							},
+							callback: function(r) {
+								if (r.data){
+									me.todo_pane = r.data;
+									frappe.show_alert('ToDo update complete', 5);
+									$('#save_todo').hide();
+									$('#edit_todo_pane').show();
+									$('#save_todo').hide();
+									$("#status_field").prop('disabled', true);
+									$("#description_field").prop('disabled', true);
+									$("#priority_field").prop('disabled', true);
+									// set color
+									$('#status_field').prop('style', 'border: 1px solid black;')
+									$('#description_field').prop('style', 'border: 1px solid black;')
+									$('#priority_field').prop('style', 'border: 1px solid black;')
+									me.getDefault();
+									$('#clear_todo_pane').show();
+								} else {
+									frappe.throw("An error occured, we could not update your ToDo.")
+								}
+							},
+							always: function(r) {},
+							freeze: true,
+							freeze_message: "Updating ToDO",
+							async: true,
+						});
 					},
 					setOKRYearQuarter(okr_year_data){
 						$('#okr_year').empty()
@@ -305,6 +354,17 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					},
 					showTodo(todoName){
 						// 1 = mytodo, 0 = assigned_todo
+						$('.todo-pane-block').show();
+						$('#save_todo').hide();
+						$('#edit_todo_pane').show();
+						$('#save_todo').hide();
+						$("#status_field").prop('disabled', true);
+						$("#description_field").prop('disabled', true);
+						$("#priority_field").prop('disabled', true);
+						// set color
+						$('#status_field').prop('style', 'border: 1px solid black;')
+						$('#description_field').prop('style', 'border: 1px solid black;')
+						$('#priority_field').prop('style', 'border: 1px solid black;')
 						let me = this;
 						me.hide_show_button(1)
 						let todo = me.all_todos.filter(function(item){
