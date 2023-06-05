@@ -324,6 +324,8 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									$('#priority_field').prop('style', 'border: 1px solid black;')
 									me.getDefault();
 									$('#clear_todo_pane').show();
+									$('#copybutton').show()
+									$('#gotobutton').show()
 								} else {
 									frappe.throw("An error occured, we could not update your ToDo.")
 								}
@@ -408,30 +410,19 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 							);
 							
 					},
-					 open_ref(){
-							window.open(this.todo_pane.url)
-						},
+					open_ref(){
+							window.open(`${window.location.origin}/app/todo/${this.todo_pane.name}`);
+					},
 					
-					copyText(link_to_copy) {
-						const show_success_alert = () => {
-							frappe.show_alert({
-								indicator: "green",
-								message: __("Copied to clipboard."),
+					copyText() {
+						if (navigator.clipboard && window.isSecureContext) {
+							navigator.clipboard.writeText(`${window.location.origin}/app/todo/${this.todo_pane.name}`).then(()=>{
+								frappe.show_alert({
+									indicator: "green",
+									message: __("Copied to clipboard."),
+								});
 							});
-						};
-						const show_fail_alert = () => {
-							frappe.show_alert({
-								indicator: "red",
-								message: __("Nothing to Copy."),
-							});
-						};
-						if(link_to_copy == undefined){
-							show_fail_alert();
-						}
-						else {
-								if (navigator.clipboard && window.isSecureContext) {
-									navigator.clipboard.writeText(link_to_copy).then(show_success_alert);
-								}
+							
 						}
 					},
 					hide_show_button(show=0){
