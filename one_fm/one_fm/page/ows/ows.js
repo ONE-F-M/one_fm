@@ -284,6 +284,15 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						me = this
 						me.todo_pane = {}
 						me.hide_show_button()
+						$('.todo-pane-block').hide();
+					},
+					editTodo(){
+						$('#save_todo').show();
+						$('#edit_todo_pane').hide();
+					},
+					saveTodo(){
+						$('#save_todo').hide();
+						$('#edit_todo_pane').show();
 					},
 					setOKRYearQuarter(okr_year_data){
 						$('#okr_year').empty()
@@ -305,6 +314,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					},
 					showTodo(todoName){
 						// 1 = mytodo, 0 = assigned_todo
+						$('.todo-pane-block').show();
 						let me = this;
 						me.hide_show_button(1)
 						let todo = me.all_todos.filter(function(item){
