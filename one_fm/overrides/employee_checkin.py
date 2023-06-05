@@ -33,9 +33,9 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			try:			
 				existing_perm = None
 				checkin_time = get_datetime(self.time)
-				curr_shift = get_current_shift_checkin(self.employee)
+				curr_shift = get_current_shift(self.employee)
 				if curr_shift:
-					curr_shift = curr_shift[0]
+					curr_shift = curr_shift
 					start_date = curr_shift["start_date"].strftime("%Y-%m-%d")
 					existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{start_date}' and employee = '{self.employee}' and permission_type = '{perm_map[self.log_type]}' and workflow_state = 'Approved' """, as_dict=1)
 					self.shift_assignment = curr_shift["name"]
