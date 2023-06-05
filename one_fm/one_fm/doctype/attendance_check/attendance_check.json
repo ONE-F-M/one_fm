@@ -14,8 +14,11 @@
   "column_break_1",
   "date",
   "reports_to",
+  "reports_to_user",
   "site_supervisor",
+  "site_supervisor_user",
   "shift_supervisor",
+  "shift_supervisor_user",
   "employee_checkin_details_section",
   "has_checkin_record",
   "section_break_o6yav",
@@ -76,18 +79,21 @@
   {
    "fetch_from": "employee.reports_to",
    "fieldname": "reports_to",
-   "fieldtype": "Data",
-   "label": "Reports To"
+   "fieldtype": "Link",
+   "label": "Reports To",
+   "options": "Employee"
   },
   {
    "fieldname": "site_supervisor",
-   "fieldtype": "Data",
-   "label": "Site Supervisor"
+   "fieldtype": "Link",
+   "label": "Site Supervisor",
+   "options": "Employee"
   },
   {
    "fieldname": "shift_supervisor",
-   "fieldtype": "Data",
-   "label": "Shift Supervisor"
+   "fieldtype": "Link",
+   "label": "Shift Supervisor",
+   "options": "Employee"
   },
   {
    "fieldname": "justification",
@@ -265,12 +271,36 @@
   {
    "fieldname": "justification_section",
    "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "reports_to.user_id",
+   "fieldname": "reports_to_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Reports To User",
+   "options": "User"
+  },
+  {
+   "fetch_from": "site_supervisor.user_id",
+   "fieldname": "site_supervisor_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Site Supervisor User",
+   "options": "User"
+  },
+  {
+   "fetch_from": "shift_supervisor.user_id",
+   "fieldname": "shift_supervisor_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Shift Supervisor User",
+   "options": "User"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-06-01 15:51:23.688080",
+ "modified": "2023-06-05 08:58:25.204430",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
