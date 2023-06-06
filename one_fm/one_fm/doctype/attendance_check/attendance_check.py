@@ -1,19 +1,99 @@
 # Copyright (c) 2023, omar jaber and contributors
 # For license information, please see license.txt
 
-# import frappe
 from frappe.model.document import Document
 import frappe
+from frappe import _
 from frappe.utils import nowdate, add_to_date, cstr
+from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, close_all_assignments
 
 class AttendanceCheck(Document):
-	pass
+	def after_insert(self):
+		self.assign_to_supervisor()
+
+	def on_submit(self):
+		self.validate_justification_and_attendance_status()
+		close_all_assignments(self.doctype, self.name)
+		self.mark_attendance()
+
+	def mark_attendance(self):
+		if self.workflow_state == 'Approved':
+			attendance_exists = frappe.db.exists('Attendance',
+				{'attendance_date': self.date, 'employee': self.employee, 'docstatus': ['<', 2]})
+			if attendance_exists:
+				att = frappe.get_doc("Attendance", attendance_exists)
+				if att.status != self.attendance_status:
+					att.db_set("status", self.attendance_status)
+			else:
+				att = frappe.new_doc("Attendance")
+				att.employee = self.employee
+				att.employee_name = self.employee_name
+				att.attendance_date = self.date
+				att.status = self.attendance_status
+				att.working_hours = 8 if self.attendance_status == 'Present' else 0
+				att.insert(ignore_permissions=True)
+				att.submit()
+
+	def validate_justification_and_attendance_status(self):
+		if self.workflow_state in ['Approved', 'Rejected']:
+			message = 'Justification' if not self.justification else False
+			if not self.attendance_status:
+				message = message + ' and Attendance Status' if message else 'Attendance Status'
+			if message:
+				frappe.throw(_('To Approve or Reject the Record set {0}'.format(message)))
+
+	def assign_to_supervisor(self):
+		try:
+			users = []
+			if self.reports_to:
+				users.append(self.reports_to_user)
+			if self.shift_supervisor_user:
+				users.append(self.shift_supervisor_user)
+			if self.site_supervisor_user:
+				users.append(self.site_supervisor_user)
+			description = f"""
+				<p>Here is to inform you that the following {self.doctype}({self.name}) requires your attention/action.
+				<br>
+				The details of the request are as follows:<br>
+				</p>
+				<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+					<thead>
+						<tr>
+							<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+							<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td style="padding: 10px;">Employee</td>
+							<td style="padding: 10px;">{self.employee} - {self.employee_name}</td>
+						</tr>
+						<tr>
+							<td style="padding: 10px;">Date</td>
+							<td style="padding: 10px;">{self.date}</td>
+						</tr>
+						<tr>
+							<td style="padding: 10px;">Department</td>
+							<td style="padding: 10px;">{self.department}</td>
+						</tr>
+					</tbody>
+				</table>
+			"""
+			add_assignment({
+				'doctype': self.doctype,
+				'name': self.name,
+				'assign_to': users,
+				'description': description,
+			})
+		except DuplicateToDoError:
+			frappe.message_log.pop()
+			pass
 
 @frappe.whitelist()
 def create_attendance_check():
 	date = add_to_date(nowdate(), days=-1)
 	data = fetch_data(date)
-	
+
 	for employee in data:
 		doc = frappe.new_doc("Attendance Check")
 		doc.employee = employee
@@ -24,11 +104,11 @@ def create_attendance_check():
 				doc.shift_supervisor = supervisor['shift_supervisor']
 			if supervisor['site_supervisor']:
 				doc.site_supervisor = supervisor['site_supervisor']
-				
+
 		if data[employee]['shift_assignment'] == 0 and not has_day_off(employee, date):
 			doc.has_shift_assignment = 1
 			doc.shift_assignment = frappe.get_doc("Shift Assignment", {'employee': employee, 'start_date':date})
-			
+
 		if data[employee]['checkin'] == 0:
 			doc.has_checkin_record = 1
 			emp_checkin = frappe.db.sql("""SELECT name, log_type FROM `tabEmployee Checkin` empChkin
@@ -47,13 +127,12 @@ def create_attendance_check():
 		if frappe.db.exists("Shift Permission", {'employee': employee, 'date':date}):
 			doc.has_shift_pemission = 1
 			doc.shift_permission = frappe.get_value("Shift Permission", {'employee': employee, 'date':date}, ['name'])
-		
+
 		if frappe.db.exists("Attendance Request", {'employee': employee, 'date':date}):
 			doc.has_attendance_request = 1
 			doc.attendance_request = frappe.get_value("Attendance Request", {'employee': employee, 'date':date}, ['name'])
 
 		doc.insert()
-		doc.submit()
 	frappe.db.commit()
 
 def fetch_data(date):
