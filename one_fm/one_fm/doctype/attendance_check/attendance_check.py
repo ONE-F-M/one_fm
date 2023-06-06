@@ -4,7 +4,7 @@
 from frappe.model.document import Document
 import frappe
 from frappe import _
-from frappe.utils import nowdate, add_to_date, cstr
+from frappe.utils import nowdate, add_to_date, cstr, add_days
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, close_all_assignments
 
 class AttendanceCheck(Document):
@@ -234,4 +234,27 @@ def assign_doc(doc):
 	if supervisor_user_id:
 		doc.assign_to = supervisor_user_id.user_id
 	doc.submit()
+	frappe.db.commit()
+
+def approve_attendance_check():
+	date_before_24_hours = add_days(nowdate(), -1)
+	attendance_check_list = frappe.get_list("Attendance Check", {"workflow_state": "Pending Approval", "date": ['<=', date_before_24_hours]}, ['name'])
+	if len(attendance_check_list) <= 10:
+		auto_approve_attendance_check(attendance_check_list)
+	else:
+		frappe.enqueue(method=auto_approve_attendance_check, attendance_check_list=attendance_check_list, queue='long', timeout=1200, job_name='Approve Attendance Check')
+
+def auto_approve_attendance_check(attendance_check_list):
+	for attendance_check in attendance_check_list:
+		try:
+			doc = frappe.get_doc("Attendance Check", attendance_check.name)
+			doc.workflow_state = "Approved"
+			doc.attendance_status = "Present"
+			doc.justification = "No valid reason"
+			doc.flags.ignore_validate = True
+			doc.submit()
+			doc.add_comment(comment_type="Info", text="Auto Approved on {0}".format(nowdate()))
+		except:
+			frappe.log_error("Error while auto approve attendance check {0}".format(attendance_check.name))
+			continue
 	frappe.db.commit()
