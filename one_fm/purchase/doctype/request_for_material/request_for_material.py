@@ -153,7 +153,7 @@ class RequestforMaterial(BuyingController):
 		if self.workflow_state == 'Rejected' and frappe.session.user == self.request_for_material_approver:
 			self.notify_material_requester()
 
-	def on_update_after_submit(self):
+	def on_submit(self):
 		self.validate_item_qty()
 		self.assign_for_technical_verification()
 		if self.workflow_state == 'Approved' and frappe.session.user == self.request_for_material_approver:
