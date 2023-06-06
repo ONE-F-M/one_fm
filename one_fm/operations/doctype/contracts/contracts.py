@@ -14,6 +14,8 @@ from frappe.utils import (
 )
 from frappe import _
 
+from one_fm.processor import sendemail
+
 class Contracts(Document):
     def validate(self):
         self.calculate_contract_duration()
@@ -1015,6 +1017,7 @@ def send_contract_reminders():
         'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
     contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':getdate()},['contract_end_internal_notification',\
         'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
+    
     relevant_roles = ["Finance Manager",'Legal Manager','Projects Manager','Operations Manager']
     active_users = frappe.get_all("User",{'enabled':1})
     active_users_ = [i.name for i in active_users] if active_users else []
@@ -1022,43 +1025,43 @@ def send_contract_reminders():
     relevant_users = frappe.get_all("Has Role",{'role':['IN',relevant_roles],'parent':['IN',active_users_]},['distinct parent'])
     users = [i.parent for i in relevant_users]
     if contracts_due_internal_notification:
-        due_contracts = ""
-        #get the  users with the relevant roles
         contracts_due_internal_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
             get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
-            get_date_str(i.end_date),i.duration,i.client,i.engagement_type] for i in contracts_due_internal_notification]
+            get_date_str(i.end_date),i.duration,i.client,i.engagement_type, i.contract] for i in contracts_due_internal_notification]
         for each in contracts_due_internal_notification_list:
-            due_contracts += f"Project: {each[8]}<br/> <br/>Engagement Type: {each[9]} <br/> <br/>Start Date: {each[4]} <br/> \
-                <br/>Contract End Internal Notification Period (Months):{each[1]} Months <br/> \
-                <br/>Contract End Internal Notification Date:{each[5]} <br/> \
-                <br/>Contract Termination Decision Period (Months):{each[0]} Months <br/> \
-                <br/>Contract Termination Decision Period Date:{each[2]} <br/>\
-                <br/>End Date: {each[6]}<br/>\
-                <br/> Duration: {each[7]} <br/>\
-                <br/>Document ID: {each[3]} <br/>"
-            link_to_form = '<a href={}>Contracts Form </a> <br/>'.format(frappe.utils.get_url_to_form("Contracts",each[3]))
-            due_contracts+="<br/>Link: {}".format(link_to_form)
-        message = "Good Day <br/><p>Please note that today is the Contract internal notification Period  for the following expiring contracts.</p>" + due_contracts
-        
-        frappe.sendmail(recipients=users, content=message, subject="Expiring Contracts")
+            context = {"project": each[8], 
+                       "contract_end_internal_notif_period": each[1],
+                       "start_date": each[4],
+                       "engagement_type": each[9],
+                       "contract_end_internal_notif_date": each[5],
+                       "contract_termination_decision_period": each[0],
+                       "contract_termination_decision_date": each[2],
+                       "end_date": each[6],
+                       "duration": each[7],
+                       "document_id": each[3],
+                       "link": frappe.utils.get_url_to_form("Contracts",each[3]),
+                       "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
+            msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
+            sendemail(recipients=[users], subject="Expiring Contracts", content=msg)
     if contracts_due_termination_notification:
-        due_contracts = ""
         contracts_due_termination_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
             get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
-            get_date_str(i.end_date),i.duration,i.client,i.engagement_type] for i in contracts_due_termination_notification]
+            get_date_str(i.end_date),i.duration,i.client,i.engagement_type, i.contract] for i in contracts_due_termination_notification]
         for each in contracts_due_termination_notification_list:
-            due_contracts += f"Project: {each[8]}<br/> <br/>Engagement Type: {each[9]} <br/> <br/>Start Date: {each[4]} <br/> \
-                <br/>Contract End Internal Notification Period (Months):{each[1]} Months <br/> \
-                <br/>Contract End Internal Notification Date:{each[5]} <br/> \
-                <br/>Contract Termination Decision Period (Months):{each[0]} Months <br/> \
-                <br/>Contract Termination Decision Period Date:{each[2]} <br/>\
-                <br/>End Date: {each[6]}<br/>\
-                <br/> Duration: {each[7]} <br/>\
-                <br/>Document ID: {each[3]} <br/>"
-            link_to_form = '<a href={}>Contracts Form </a><br/>'.format(frappe.utils.get_url_to_form("Contracts",each[3]))
-            due_contracts+="<br/>Link: {}".format(link_to_form)
-        message = "Good Day <br><p>Please note that today is the Contract Termination Decision Period  for the following expiring contracts.</p>" + due_contracts
-        frappe.sendmail(recipients=users, content=message, subject="Expiring Contracts")
+            context = {"project": each[8], 
+                       "contract_end_internal_notif_period": each[1],
+                       "start_date": each[4],
+                       "engagement_type": each[9],
+                       "contract_end_internal_notif_date": each[5],
+                       "contract_termination_decision_period": each[0],
+                       "contract_termination_decision_date": each[2],
+                       "end_date": each[6],
+                       "duration": each[7],
+                       "document_id": each[3],
+                       "link": frappe.utils.get_url_to_form("Contracts",each[3]),
+                       "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
+            msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
+            sendemail(recipients=[users], subject="Expiring Contracts", content=msg)
         
 @frappe.whitelist()
 def renew_contracts_by_termination_date():

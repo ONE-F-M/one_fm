@@ -1,0 +1,106 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, .job_application_notif td {
+      border: 1px solid #ddd;
+      padding: 12px;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      text-align: left;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .job_application_notif td {
+      padding: 12px;
+    }
+
+    .job_application_notif th:first-child,
+    .job_application_notif td:first-child {
+      width: 40%;
+    }
+
+    .job_application_notif th,
+    .job_application_notif td {
+      vertical-align: top;
+    }
+
+    .job_application_notif th {
+      font-weight: bold;
+    }
+
+    .job_application_notif td {
+      font-weight: normal;
+    }
+
+    .job_application_notif td a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+
+    .job_application_notif td a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      margin-bottom: 20px;
+    }
+
+    .container p {
+      margin-bottom: 10px;
+    }
+
+    </style>
+
+    <div class="container">
+      <h4>Good Day</h4>
+      <p>This is a Job application created for the position of {{ designation}} </p>
+    </div>
+
+    <table>
+      <tbody class="job_application_notif">
+        <tr>
+          <th>Applicant Name</th>
+          <td>{{ applicant_name }}</td>
+        </tr>
+        <tr>
+          <th>Designation</th>
+          <td>{{ designation }}</td>
+        </tr>
+        <tr>
+          <th>Status</th>
+          <td>{{ status }}</td>
+        </tr>
+        <tr>
+           <th>Contact Email</th>
+           <td>{{ contact_email }}</td>
+        </tr>
+        <tr>
+          <th>Passport Type</th>
+          <td>{{ passport_type }}</td>
+        </tr>
+        <tr>
+          <th>Link to form</th>
+          <td><a href="{{ job_applicant }}">Job Applicant Form</a></td>
+        </tr>
+        {% if cv is not none %}
+        <tr>
+            <th>Attachment</th>
+            <td><a href={{ cv }}>CV Attachment</a></td>
+          </tr>
+          {% endif %}
+      </tbody>
+    </table>

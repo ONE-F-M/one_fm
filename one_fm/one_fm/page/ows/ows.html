@@ -142,7 +142,8 @@
                                                      <input type="text" class="form-control spl_form-control bg-white text-center mydatepicker" placeholder="Due Date" value="" id = "my_todos_date" >
                                                   </div>
                                                   <div class="col-md-3 mb-3 text-center">
-                                                    <div class="control-value sp-like-disabled-input" ><select id = "my_todos_ref_type" name = "my_todos_ref_type">
+                                                    <div class="control-value sp-like-disabled-input" >
+                                                    <select id = "my_todos_ref_type" name = "my_todos_ref_type">
                                                         <option>Reference Type</option>
                                                   </select>
                                                     </div>
@@ -279,18 +280,25 @@
                     </div>
                 </div>
                 <hr>
-                <div class="card-body scroll-box" style="height:650px;">
+                <div class="card-body scroll-box todo-pane-block" style="height:650px; display:none;">
                     <form class="needs-validation" novalidate>
                         <div class="form-row">
-                            <div class="col-md-12 mb-3" style="text-align: center;">
-                                <button id="clear_todo_pane"  @click.prevent="clearTodo()" class="btn btn-warning">Clear Todo Pane</button>
+                            <div class="col-md-6 mb-3" style="text-align: center;">
+                                <button id="clear_todo_pane"  @click.prevent="clearTodo()" class="btn btn-warning">Clear Todo</button>
+                            </div>
+                            <div class="col-md-6 mb-3" style="text-align: center;">
+                                <button id="edit_todo_pane"  @click.prevent="editTodo()" class="btn btn-primary">Edit Todo</button>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-6 mb-3">
 
                             <label class="control-label" style="padding-right: 0px;">Status</label>
-                                <input type="text" class="form-control spl_form-control bg-white" :value="todo_pane.status" disabled>
+                                <select class="form-control spl_form-control bg-white" id = "status_field" name="status_field" :value="todo_pane.status"  v-model="todo_pane.status" disabled>
+                                    <option>Open</option>
+                                    <option>Closed</option>
+                                    <option>Cancelled</option>
+                                </select>
                             </div>
                             <div class="col-md-6 mb-3">
 
@@ -302,14 +310,17 @@
                             <div class="col-md-12 mb-3">
 
                                 <label class="control-label" style="padding-right: 0px;">Description</label>
-                                <textarea type="text" class="form-control spl_form-control bg-white" :value="todo_pane.description" disabled></textarea>
+                                <textarea type="text" id="description_field" class="form-control spl_form-control bg-white" :value="todo_pane.description" v-model="todo_pane.description" disabled></textarea>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col-md-12 mb-3">
-
                                 <label class="control-label" style="padding-right: 0px;">Priority</label>
-                                <input type="text" class="form-control spl_form-control bg-white"  :value="todo_pane.priority" disabled>
+                                <select class="form-control spl_form-control bg-white" id="priority_field" name="status_field" :value="todo_pane.priority" v-model="todo_pane.priority" disabled>
+                                    <option>High</option>
+                                    <option>Medium</option>
+                                    <option>Low</option>
+                                </select>
                             </div>
                         </div>
                         <div class="form-row">
@@ -338,21 +349,20 @@
                                 <input type="text" class="form-control spl_form-control bg-white" :value="todo_pane.assigned_by_full_name" disabled>
                             </div>
                         </div>
+
+                        <div class="form-row">
+                            <div class="col-md-12 mb-3" style="text-align: center;">
+                                <button id="save_todo" @click.prevent="saveTodo" class="btn btn-primary" style="display:none">Save Todo</button>
+                            </div>
+                        </div>
                         <div class="form-row" :style="">
                             <div class="col-md-12" title="View the document">
                                 <label for="validationTooltip01"></label>
-
-                                <a href="#" @click="open_ref(todo_pane.url)" class="btn btn-block btn-warning text-center" id ="gotobutton" target="_blank">Go to Ref</a>
+                                <a href="#" @click="open_ref" class="btn btn-block btn-warning text-center" id ="gotobutton">Go to Ref</a>
                             </div>
                             <div class="col-md-12 mb-3" title="Copy the link to document">
                                 <label for="validationTooltip01"></label>
-                                <a class="btn btn-block btn-warning text-center" @click="copyText(todo_pane.url)" id ="copybutton">Copy Link</a>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="col-md-12 mb-3" style="text-align: center;">
-                                <button id="save_todo" class="btn btn-primary">Save Todo 1</button>
-
+                                <a class="btn btn-block btn-warning text-center" @click="copyText" id ="copybutton">Copy Link</a>
                             </div>
                         </div>
                     </form>
