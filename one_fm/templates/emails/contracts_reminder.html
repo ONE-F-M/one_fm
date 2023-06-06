@@ -1,0 +1,126 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, .contract_reminder td {
+      border: 1px solid #ddd;
+      padding: 12px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      text-align: left;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    
+    .contract_reminder td {
+      padding: 12px;
+    }
+    
+    .contract_reminder th:first-child,
+    .contract_reminder td:first-child {
+      width: 40%;
+    }
+    
+    .contract_reminder th,
+    .contract_reminder td {
+      vertical-align: top;
+    }
+    
+    .contract_reminder th {
+      font-weight: bold;
+    }
+    
+    .contract_reminder td {
+      font-weight: normal;
+    }
+    
+    .contract_reminder td a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    
+    .contract_reminder td a:hover {
+      text-decoration: underline;
+    }
+    
+    .container {
+      margin-bottom: 20px;
+    }
+    
+    .container p {
+      margin-bottom: 10px;
+    }
+    
+    </style>
+    
+    <div class="container">
+      <p>Please note that, today is the Contract internal notification Period for the following expiring contracts.</p>
+    </div>
+    
+    <table>
+      <tbody class="contract_reminder">
+        <tr>
+          <th>Project</th>
+          <td>{{ project }}</td>
+        </tr>
+        <tr>
+          <th>Engagement Type</th>
+          <td>{{ engagement_type }}</td>
+        </tr>
+        <tr>
+          <th>Contract End Internal Notification Period (Months)</th>
+          <td>{{ contract_end_internal_notif_period }}</td>
+        </tr>
+        <tr>
+          <th>Start Date</th>
+          <td>{{ start_date }}</td>
+        </tr>
+        <tr>
+          <th>Contract End Internal Notification Date</th>
+          <td>{{ contract_end_internal_notif_date }}</td>
+        </tr>
+        <tr>
+          <th>Contract Termination Decision Period (Months)</th>
+          <td>{{ contract_termination_decision_period }}</td>
+        </tr>
+        <tr>
+          <th>Contract Termination Decision Period Date</th>
+          <td>{{ contract_termination_decision_date }}</td>
+        </tr>
+        <tr>
+          <th>End Date</th>
+          <td>{{ end_date }}</td>
+        </tr>
+        <tr>
+          <th>Duration</th>
+          <td>{{ duration }}</td>
+        </tr>
+        <tr>
+          <th>Document ID</th>
+          <td>{{ document_id }}</td>
+        </tr>
+        <tr>
+          <th>Link</th>
+          <td><a href="{{ link }}">Contract Form</a></td>
+        </tr>
+        {% if attachment is not none %}
+        <tr>
+            <th>Attachment</th>
+            <td><a href={{ attachment}}>Contract Attachment</a></td>
+          </tr>
+          {% endif %}
+      </tbody>
+    </table>
+    

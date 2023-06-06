@@ -357,11 +357,22 @@ function input_data(Data, key1, key2){
 
 function Submit(){
   var applicant_details = get_details_from_form();
-
+  
   if($('#First_Name').attr("data")){
     frappe.freeze();
 		frappe.confirm('Are you sure you want to Submit?, On Submit the link will be expired!',
     () => {
+
+      var frontPassport = document.getElementById('Passport_Front');
+      var backPassport = document.getElementById('Passport_Back');
+
+      upload_image_to_server(frontPassport.files[0]);
+      upload_image_to_server(backPassport.files[0]);
+
+      applicant_details['applicant_doc']['Passport Front'] = frontPassport.value;
+      applicant_details['applicant_doc']['Passport Back'] =  backPassport.value;
+
+
 			frappe.call({
 				type: "POST",
 				method: "one_fm.templates.pages.applicant_docs.update_job_applicant",
@@ -437,13 +448,15 @@ function get_details_from_form() {
   applicant_details['one_fm_passport_expire'] = $('#Passport_Date_of_Expiry').val();
   applicant_details['one_fm_passport_holder_of'] = $('#Passport_Place_of_Issue').val();
   applicant_details['one_fm_country_code'] = $('#Country_Code').val();
+  
 
   applicant_details['applicant_doc']={}
 
+  
   get_filepath(applicant_details['applicant_doc'],front_cid_filepath, "Civil ID Front" )
   get_filepath(applicant_details['applicant_doc'],back_cid_filepath, "Civil ID Back" )
-  get_filepath(applicant_details['applicant_doc'],front_passport_filepath, "Passport Front" )
-  get_filepath(applicant_details['applicant_doc'],back_passport_filepath, "Passport Back" )
+  //get_filepath(applicant_details['applicant_doc'],front_passport_filepath, "Passport Front" )
+  //get_filepath(applicant_details['applicant_doc'],back_passport_filepath, "Passport Back" )
 
   // applicant_details['paci_no'] = $('#PACI_No').val();
   return applicant_details;
@@ -495,4 +508,21 @@ function get_uploaded_data(data){
 
     }
   })
+}
+
+
+
+function upload_image_to_server(file){
+  var xhr = new XMLHttpRequest();
+  let form_data = new FormData();
+
+  xhr.open('POST', '/api/method/upload_file', false);
+
+  xhr.setRequestHeader("X-Frappe-CSRF-Token", frappe.csrf_token);
+  xhr.setRequestHeader("Accept", "application/json");
+
+  form_data.append('file', file);
+  form_data.append('is_private', true)
+  xhr.send(form_data);
+
 }
