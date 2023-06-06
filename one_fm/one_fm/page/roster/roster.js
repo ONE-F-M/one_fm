@@ -305,17 +305,6 @@ function load_js(page) {
 							fieldtype: 'Column Break',
 						},
 						{
-							label: 'Unpaid',
-							fieldname: 'post_off_unpaid',
-							fieldtype: 'Check',
-							onchange: function () {
-								let val = d.get_value('post_off_unpaid');
-								if (val) {
-									d.set_value('post_off_paid', 0);
-								}
-							}
-						},
-						{
 							fieldname: 'sb5',
 							fieldtype: 'Section Break',
 							depends_on: "eval:doc.post_status == 'Post Off'",

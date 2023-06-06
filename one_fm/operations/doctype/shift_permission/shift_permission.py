@@ -11,7 +11,6 @@ from one_fm.api.notification import create_notification_log, get_employee_user_i
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
 from one_fm.api.tasks import get_action_user
 from one_fm.api.utils import get_reports_to_employee_name
-from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 
 class PermissionTypeandLogTypeError(frappe.ValidationError):
 	pass
@@ -34,7 +33,6 @@ class ShiftPermission(Document):
 		self.validate_approver()
 		if self.workflow_state in ['Pending', 'Approved']:
 			self.validate_attendance()
-			self.validate_employee_checkin()
 		if not self.title:
 			self.title = self.emp_name
 
@@ -42,15 +40,6 @@ class ShiftPermission(Document):
 		attendance = frappe.db.exists('Attendance',{'attendance_date': self.date, 'employee': self.employee, 'docstatus': 1})
 		if attendance:
 			frappe.throw(_('There is an Attendance {0} exists for the Employee {1} on {2}'.format(attendance, self.emp_name, format_date(self.date))), exc=ExistAttendance)
-
-	def validate_employee_checkin(self):
-		start_date = get_datetime(self.date)
-		end_date = add_to_date(start_date, hours=23.9998)
-		employee_checkin = frappe.db.exists('Employee Checkin',
-			{'log_type': self.log_type, 'time': ["between", [start_date, end_date]], 'employee': self.employee}
-		)
-		if employee_checkin:
-			frappe.throw(_('There is an Employee Checkin {0} exists for the Employee {1} on {2}'.format(employee_checkin, self.emp_name, format_date(self.date))), exc=ExistCheckin)
 
 	def validate_permission_type(self):
 		if self.log_type == 'IN' and self.permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
@@ -105,7 +94,10 @@ class ShiftPermission(Document):
 			frappe.throw(message, exc=frappe.MandatoryError)
 
 	def after_insert(self):
-		pass
+		if self.log_type == 'IN':
+			frappe.msgprint(_("Please ensure checkin once arriving the site!"), alert=True, indicator='orange')
+		if self.log_type == 'OUT':
+			frappe.msgprint(_("Please ensure checkout before leaving the site!"), alert=True, indicator='orange')
 
 	def send_notification(self):
 		date = getdate(self.date).strftime('%d-%m-%Y')
@@ -114,21 +106,30 @@ class ShiftPermission(Document):
 		message = _("{employee} has applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date))
 		create_notification_log(subject, message, [user], self)
 
-	def on_update(self):
-		if self.workflow_state == 'Approved':
-			create_employee_checkin_for_shift_permission(self)
-			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
-
-		if self.workflow_state == 'Pending':
-			send_workflow_action_email(self, recipients=[get_employee_user_id(self.shift_supervisor)])
-
-		if self.workflow_state in ['Rejected']:
-			workflow_approve_reject(self, [get_employee_user_id(self.employee)])
-	
 	def validate_approver(self):
 		if self.workflow_state in ["Approved", "Rejected"]:
 			if frappe.session.user not in [self.approver_user_id, 'abdullah@one-fm.com']:
 				frappe.throw(_("This document can only be approved/rejected by the approver."))
+
+	def on_submit(self):
+		employee_user = frappe.get_value('Employee', self.employee, 'user_id')
+		subject = _('Your shift request {0} has been {1} by {2}'.format(self.name, self.workflow_state, self.approver_name))
+		if self.workflow_state == 'Approved':
+			create_employee_checkin_for_shift_permission(self)
+			if employee_user:
+				create_notification_log(subject, subject, [employee_user], self)
+
+		if self.workflow_state == 'Rejected':
+			message = False
+			if self.log_type == 'IN':
+				message = _('Your shift request has been rejected, Please checkin once you arrive to the site before [half way mark] or your attendance will be marked absent!')
+			if self.log_type == 'OUT':
+				message = _('Your shift request has been rejected, Please make sure to checkout!')
+			if message and employee_user:
+				create_notification_log(subject, message, [employee_user], self)
+
+	def on_cancel(self):
+		pass
 
 def create_employee_checkin_for_shift_permission(shift_permission):
 	"""
@@ -188,9 +189,10 @@ def create_checkin(name):
 		'shift_permission':name
 		}):
 		sp = frappe.get_doc("Shift Permission", name)
-		sp.db_set('Workflow_state', 'Approved')
-		sp.db_set('docstatus', 1)
-		sp.reload()
+		if not sp.workflow_state == 'Approved':
+			sp.db_set('Workflow_state', 'Approved')
+			sp.db_set('docstatus', 1)
+			sp.reload()
 		# Get shift details for the employee shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
 		employee_checkin = frappe.new_doc('Employee Checkin')
 		shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
