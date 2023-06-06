@@ -2,8 +2,7 @@
 // For license information, please see license.txt
 /* eslint-disable */
 
-frappe.query_reports["Attendance Checker Summary"] = {
-	
+frappe.query_reports["Summary Attendance Report"] = {
 	"filters": [
 		{
             "fieldname": "from_date",
@@ -21,5 +20,4 @@ frappe.query_reports["Attendance Checker Summary"] = {
             "reqd": 1,
         },
 	],
-	
 };

@@ -15,6 +15,17 @@ def execute(filters=None):
     data = fetch_data(filters)
     return columns, data
 
+def use_the_app(date):
+    sql_result = frappe.db.sql(f"SELECT  employee from  `tabEmployee Checkin` where date = '{date}'",as_dict=1)
+    if sql_result:
+        employees=[each.employee for each in sql_result]
+        employees_set = set(employees) # remove duplicates
+        employee_list = list(employees_set)
+        return len(employee_list)
+    else:
+        return 0
+    
+
 def fetch_no_checkin(date,active_employees):
     sql_result = frappe.db.sql(f"SELECT  employee from  `tabEmployee Checkin` where date = '{date}'",as_dict=1)
     if sql_result:
@@ -24,6 +35,7 @@ def fetch_no_checkin(date,active_employees):
         # checkin_employees = [i.employee for i in sql_result]
         no_checkin_employees =  [one for one in active_employees if one not in employee_list]
         return len(no_checkin_employees)
+    return 0
         
 
 
@@ -95,8 +107,8 @@ def update_data(cur_date,dates,datapack,active_employees):
                         'indent':1
                         }
             if one == "Use the App" and sql_result:
-                data_dict[dates[cur_date]] = int(sql_result[0].present)
-                day_values['present'] = int(sql_result[0].present)
+                data_dict[dates[cur_date]] = use_the_app(cur_date)
+                day_values['present'] = data_dict[dates[cur_date]]
             elif one == "Absent (AB)" and sql_result:
                 data_dict[dates[cur_date]] = int(sql_result[0].absent)
                 day_values['absent'] = int(sql_result[0].absent)
@@ -137,32 +149,32 @@ def update_data(cur_date,dates,datapack,active_employees):
                         'indent':1
                         }
             if one == "Use the App" and sql_result:
-                data_dict[dates[cur_date]] = int(sql_result[0].present)
-                day_values['present'] = int(sql_result[0].present)
-            elif one == 'Absent (AB)' and sql_result:
-                data_dict[dates[cur_date]] = sql_result[0].absent
-                day_values['absent'] = int(sql_result[0].absent)
-            elif one == 'Day Off (DO)' and sql_result:
-                data_dict[dates[cur_date]] = sql_result[0].day_off
-                day_values['day_off'] = int(sql_result[0].day_off)
-            elif one == 'Sick Leave (SL)' and sql_result:
-                data_dict[dates[cur_date]] = sql_result[0].sick_leave
-                day_values['sick_leave'] = int(sql_result[0].sick_leave)
-            elif one == 'Annual Leave (AL)' and sql_result:
-                data_dict[dates[cur_date]] = sql_result[0].annual_leave
-                day_values['annual_leave'] = int(sql_result[0].annual_leave)
-            elif one == 'Work From Home (WFH)' and sql_result:
-                data_dict[dates[cur_date]] = sql_result[0].work_from_home
-                day_values['work_from_home'] = int(sql_result[0].work_from_home)
-            elif one == "Justified" and sql_result:
-                data_dict[dates[cur_date]] = get_justified(cur_date)
-                day_values['justified'] = get_justified(cur_date)
-            elif one == "Exited (EX)" and sql_result:
-                data_dict[dates[cur_date]] = get_exited_employees(cur_date)
-                day_values['exited'] = get_exited_employees(cur_date)
-            elif one == "Didn't Use the App" and sql_result:
-                data_dict[dates[cur_date]] = get_no_app_use(day_values,cur_date,active_employees)
-            # elif one == "NA" and sql_result:
+                data_dict[dates[cur_date]] = use_the_app(cur_date)
+                day_values['present'] = data_dict[dates[cur_date]]
+            # elif one == 'Absent (AB)' and sql_result:
+            #     data_dict[dates[cur_date]] = sql_result[0].absent
+            #     day_values['absent'] = int(sql_result[0].absent)
+            # elif one == 'Day Off (DO)' and sql_result:
+            #     data_dict[dates[cur_date]] = sql_result[0].day_off
+            #     day_values['day_off'] = int(sql_result[0].day_off)
+            # elif one == 'Sick Leave (SL)' and sql_result:
+            #     data_dict[dates[cur_date]] = sql_result[0].sick_leave
+            #     day_values['sick_leave'] = int(sql_result[0].sick_leave)
+            # elif one == 'Annual Leave (AL)' and sql_result:
+            #     data_dict[dates[cur_date]] = sql_result[0].annual_leave
+            #     day_values['annual_leave'] = int(sql_result[0].annual_leave)
+            # elif one == 'Work From Home (WFH)' and sql_result:
+            #     data_dict[dates[cur_date]] = sql_result[0].work_from_home
+            #     day_values['work_from_home'] = int(sql_result[0].work_from_home)
+            # elif one == "Justified" and sql_result:
+            #     data_dict[dates[cur_date]] = get_justified(cur_date)
+            #     day_values['justified'] = get_justified(cur_date)
+            # elif one == "Exited (EX)" and sql_result:
+            #     data_dict[dates[cur_date]] = get_exited_employees(cur_date)
+            #     day_values['exited'] = get_exited_employees(cur_date)
+            # elif one == "Didn't Use the App" and sql_result:
+            #     data_dict[dates[cur_date]] = get_no_app_use(day_values,cur_date,active_employees)
+            # # elif one == "NA" and sql_result:
             #     data_dict[dates[cur_date]] = get_not_applicable(cur_date,active_employees)
                 
             
@@ -177,7 +189,7 @@ def update_data(cur_date,dates,datapack,active_employees):
 def get_no_app_use(day_values,cur_date,active_employees):
     
     no_app = fetch_no_checkin(cur_date,active_employees)    
-    return (no_app-(day_values['justified']+day_values['day_off']+day_values['work_from_home']+day_values['absent']+day_values['annual_leave']+day_values['sick_leave']+day_values['exited']++day_values['na']))
+    return (no_app-(day_values.get('justified',0)+day_values.get('day_off',0)+day_values.get('work_from_home',0)+day_values.get('absent',0)+day_values.get('annual_leave',0)+day_values.get('sick_leave',0)+day_values.get('exited',0)+day_values.get('na',0)))
 
 
 
