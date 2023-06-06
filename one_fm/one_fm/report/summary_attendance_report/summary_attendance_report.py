@@ -151,32 +151,6 @@ def update_data(cur_date,dates,datapack,active_employees):
             if one == "Use the App" and sql_result:
                 data_dict[dates[cur_date]] = use_the_app(cur_date)
                 day_values['present'] = data_dict[dates[cur_date]]
-            # elif one == 'Absent (AB)' and sql_result:
-            #     data_dict[dates[cur_date]] = sql_result[0].absent
-            #     day_values['absent'] = int(sql_result[0].absent)
-            # elif one == 'Day Off (DO)' and sql_result:
-            #     data_dict[dates[cur_date]] = sql_result[0].day_off
-            #     day_values['day_off'] = int(sql_result[0].day_off)
-            # elif one == 'Sick Leave (SL)' and sql_result:
-            #     data_dict[dates[cur_date]] = sql_result[0].sick_leave
-            #     day_values['sick_leave'] = int(sql_result[0].sick_leave)
-            # elif one == 'Annual Leave (AL)' and sql_result:
-            #     data_dict[dates[cur_date]] = sql_result[0].annual_leave
-            #     day_values['annual_leave'] = int(sql_result[0].annual_leave)
-            # elif one == 'Work From Home (WFH)' and sql_result:
-            #     data_dict[dates[cur_date]] = sql_result[0].work_from_home
-            #     day_values['work_from_home'] = int(sql_result[0].work_from_home)
-            # elif one == "Justified" and sql_result:
-            #     data_dict[dates[cur_date]] = get_justified(cur_date)
-            #     day_values['justified'] = get_justified(cur_date)
-            # elif one == "Exited (EX)" and sql_result:
-            #     data_dict[dates[cur_date]] = get_exited_employees(cur_date)
-            #     day_values['exited'] = get_exited_employees(cur_date)
-            # elif one == "Didn't Use the App" and sql_result:
-            #     data_dict[dates[cur_date]] = get_no_app_use(day_values,cur_date,active_employees)
-            # # elif one == "NA" and sql_result:
-            #     data_dict[dates[cur_date]] = get_not_applicable(cur_date,active_employees)
-                
             
         
             datapack.append(data_dict)
