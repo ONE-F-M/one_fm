@@ -640,6 +640,7 @@ scheduler_events = {
 		],
 		"15 13 * * *":[
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check'
+		],
 		"45 2 * * *":[
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.approve_attendance_check'
 		],
