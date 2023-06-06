@@ -1679,7 +1679,7 @@ def mark_daily_attendance(start_date, end_date):
 					emp = employees_data.get(i.employee)
 					employee_attendance[i.employee] = frappe._dict({
 						'name':f"HR-ATT-{start_date}-{i.employee}", 'employee':i.employee, 'employee_name':emp.employee_name, 'working_hours':0, 'status':'Day Off',
-						'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':'', 'operations_shift':i.shift,
+						'shift':i.shift_type, 'in_time':'00:00:00', 'out_time':'00:00:00', 'shift_assignment':'', 'operations_shift':i.shift,'day_off_ot':i.day_off_ot,
 						'site':i.site, 'project':i.project, 'attendance_date': start_date, 'company':emp.company,
 						'department': emp.department, 'late_entry':0, 'early_exit':0, 'operations_role':i.operations_role, 'post_abbrv':i.post_abbrv,
 						'roster_type':i.roster_type, 'docstatus':1, 'owner':owner, 'modified_by':owner, 'creation':creation, 'modified':creation, 'comment':f"Employee Schedule - {i.name}"
