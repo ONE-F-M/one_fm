@@ -90,8 +90,9 @@ class AttendanceCheck(Document):
 			pass
 
 @frappe.whitelist()
-def create_attendance_check():
-	date = add_to_date(nowdate(), days=-1)
+def create_attendance_check(date = None):
+    # Date is in "YYYY-MM-DD" format
+	date = add_to_date(nowdate(), days=-1) if not date else add_to_date(date)
 	data = fetch_data(date)
 
 	for employee in data:
