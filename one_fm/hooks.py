@@ -638,8 +638,9 @@ scheduler_events = {
 		"45 1 * * *": [ # validate shift assignment
 			'one_fm.api.tasks.validate_am_shift_assignment'
 		],
+		"15 13 * * *":[
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check'
 		"45 2 * * *":[
-			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check',
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.approve_attendance_check'
 		],
 		"15 12 * * *": [ # create shift assignment
