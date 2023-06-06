@@ -1653,9 +1653,9 @@ function get_post_data(page) {
 						}
 						i++;
 						start_date.add(1, 'days');
-						$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(schedule);
+						$postMonth.find(`#calenderviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(schedule);
 					}
-					$postMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(post_name)}']`).append(`<td></td>`);
+					$postMonth.find(`#calenderviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(`<td></td>`);
 				}
 				// frappe.show_alert({message:__("Postview updated"), indicator:'green'});
 				bind_events(page);

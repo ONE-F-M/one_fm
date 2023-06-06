@@ -90,7 +90,10 @@ class WorkContract(Document):
 			for auth_sign in pam_auth_sign["authorized_signatory"]:
 				authorize_signatory.append(auth_sign["authorized_signatory_name_english"])
 		else:
-			frappe.msgprint(_("Please select a PAM File in ERF({0}) to get Authorised Signatory").format(self.erf))
+			if self.erf:
+				for_remote_working = frappe.db.get_value("ERF", self.erf, "for_remote_working")
+				if not for_remote_working:
+					frappe.msgprint(_("Please select a PAM File in ERF({0}) to get Authorised Signatory").format(self.erf))
 		return authorize_signatory
 
 	@frappe.whitelist()
