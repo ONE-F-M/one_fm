@@ -15,8 +15,8 @@ from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_b
 from one_fm.utils import fetch_employee_signature
 from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
-from one_fm.utils import send_workflow_action_email
-from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment
+from one_fm.utils import get_users_with_role_permitted_to_doctype
+from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment, close_all_assignments
 
 class RequestforMaterial(BuyingController):
 	@frappe.whitelist()
@@ -159,14 +159,12 @@ class RequestforMaterial(BuyingController):
 		if self.workflow_state == 'Approved' and frappe.session.user == self.request_for_material_approver:
 			self.notify_material_requester()
 			self.assign_to_warehouse_supervisor()
+		if self.per_received == 100:
+			close_all_assignments(self.doctype, self.name)
 
 	def assign_to_warehouse_supervisor(self):
 		try:
-			users = get_users_with_role('Warehouse Supervisor')
-			filtered_users = []
-			for user in users:
-				if has_permission(doctype=self.doctype, user=user):
-					filtered_users.append(user)
+			filtered_users = get_users_with_role_permitted_to_doctype('Warehouse Supervisor', self.doctype)
 			if filtered_users and len(filtered_users) > 0:
 				add_assignment({
 					'doctype': self.doctype,
