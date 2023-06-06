@@ -639,7 +639,8 @@ scheduler_events = {
 			'one_fm.api.tasks.validate_am_shift_assignment'
 		],
 		"45 2 * * *":[
-			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check'
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check',
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.approve_attendance_check'
 		],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
@@ -746,7 +747,7 @@ fixtures = [
 #
 override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-	
+
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
