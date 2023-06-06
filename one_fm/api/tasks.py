@@ -1728,7 +1728,7 @@ def mark_daily_attendance(start_date, end_date):
 				INSERT INTO `tabAttendance` (`name`, `employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
 				`shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`,
 				`department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
-				`creation`, `modified`, `comment`)
+				`creation`, `modified`,`day_off_ot`, `comment`)
 				VALUES
 
 			"""
@@ -1740,7 +1740,7 @@ def mark_daily_attendance(start_date, end_date):
 						"{v.name}", "{v.employee}", "{v.employee_name}", {v.working_hours}, "{v.status}", '{v.shift}', '{v.in_time}',
 						'{v.out_time}', "{v.shift_assignment}", "{v.operations_shift}", "{v.site}", "{v.project}", "{v.attendance_date}", "{v.company}",
 						"{v.department}", {v.late_entry}, {v.early_exit}, "{v.operations_role}", "{v.post_abbrv}", "{v.roster_type}", {v.docstatus}, "{v.owner}",
-						"{v.owner}", "{v.creation}", "{v.modified}", "{v.comment}"
+						"{v.owner}", "{v.creation}", "{v.modified}","{v.day_off_ot}", "{v.comment}"
 					),"""
 
 			query = query[:-1]
@@ -1756,6 +1756,7 @@ def mark_daily_attendance(start_date, end_date):
 					shift_assignment = VALUES(shift_assignment),
 					operations_shift = VALUES(operations_shift),
 					site = VALUES(site),
+					day_off_ot = VALUES(day_off_ot),
 					project = VALUES(project),
 					attendance_date = VALUES(attendance_date),
 					company = VALUES(company),
