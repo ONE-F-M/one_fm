@@ -31,6 +31,9 @@ class AttendanceCheck(Document):
 				att.attendance_date = self.date
 				att.status = self.attendance_status
 				att.working_hours = 8 if self.attendance_status == 'Present' else 0
+				att.roster_type = self.roster_type
+				if self.shift_assignment:
+					att.shift_assignment = self.shift_assignment
 				att.insert(ignore_permissions=True)
 				att.submit()
 
