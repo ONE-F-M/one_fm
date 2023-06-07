@@ -291,8 +291,11 @@ def create_attendance_check(attendance_date=None):
 				at_check.site_supervisor_name = site_supervisor.account_supervisor_name
 		
 		if not frappe.db.exists("Attendance Check", {"employee":i, 'date':attendance_date, 'roster_type':at_check.roster_type}):
-			at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
-			attendance_check_list.append(at_check_doc.name)
+			try:
+				at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
+				attendance_check_list.append(at_check_doc.name)
+			except:
+				pass
 
 	# OT Create
 	for i in missing_ot+absent_attendance_ot_list:
@@ -351,8 +354,11 @@ def create_attendance_check(attendance_date=None):
 				at_check.site_supervisor_name = site_supervisor.account_supervisor_name
 
 		if not frappe.db.exists("Attendance Check", {"employee":i, 'date':attendance_date, 'roster_type':at_check.roster_type}):
-			at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
-			attendance_check_list.append(at_check_doc.name)
+			try:
+				at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
+				attendance_check_list.append(at_check_doc.name)
+			except:
+				pass
 
 	if len(attendance_check_list)==1:
 		attendance_check_tuple = (attendance_check_list[0])
