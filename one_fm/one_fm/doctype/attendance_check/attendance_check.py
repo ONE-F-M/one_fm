@@ -23,6 +23,8 @@ class AttendanceCheck(Document):
 			if attendance_exists:
 				att = frappe.get_doc("Attendance", attendance_exists)
 				if att.status != self.attendance_status:
+					if self.shift_assignment and not att.shift_assignment:
+						att.db_set("shift_assignment", self.shift_assignment)
 					att.db_set("status", self.attendance_status)
 			else:
 				att = frappe.new_doc("Attendance")
