@@ -34,7 +34,8 @@ class AttendanceCheck(Document):
 					else:
 						if att.shift_assignment:
 							shift_assignment = frappe.get_doc("Shift Assignment", att.shift_assignment)
-							att.shift_assignment = att.shift_assignment.name
+							att.db_set('shift_assignment', att.shift_assignment.name)
+					att.reload()
 					att.db_set("comment", f"Created from Attendance Check, \n{att.comment or ''}")
 					att.db_set("status", self.attendance_status)
 					att.db_set('reference_doctype', "Attendance Check")
@@ -66,11 +67,11 @@ class AttendanceCheck(Document):
 							shift_assignment.submit()
 							self.db_set("shift_assignment", shift_assignment.name)
 							self.db_set("has_shift_assignment", 1)
-					att.db_set("shift_Assignment", shift_assignment.name)
-					att.db_set('operations_role', shift_assignment.operations_role)
-					att.db_set('operations_site', shift_assignment.site)
-					att.db_set('operations_shift', shift_assignment.shif)
-					att.db_set('project', shift_assignment.project)
+						att.db_set("shift_Assignment", shift_assignment.name)
+						att.db_set('operations_role', shift_assignment.operations_role)
+						att.db_set('operations_site', shift_assignment.site)
+						att.db_set('operations_shift', shift_assignment.shif)
+						att.db_set('project', shift_assignment.project)
 			else:
 				att = frappe.new_doc("Attendance")
 				att.employee = self.employee
