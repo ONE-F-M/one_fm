@@ -15,6 +15,7 @@
   "permission_type",
   "section_break_5",
   "assigned_shift",
+  "roster_type",
   "shift_supervisor",
   "approver_name",
   "approver_user_id",
@@ -202,11 +203,19 @@
   {
    "fieldname": "column_break_20",
    "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "assigned_shift.roster_type",
+   "fetch_if_empty": 1,
+   "fieldname": "roster_type",
+   "fieldtype": "Data",
+   "label": "Roster Type",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-02-16 09:03:03.466801",
+ "modified": "2023-06-07 17:24:10.689160",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
