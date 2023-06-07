@@ -88,7 +88,7 @@ def update_data(cur_date,dates,datapack,active_employees):
     #Get the attendance for each day
     sql_query = f"""SELECT 
                                 (Select count(status) from `tabAttendance` where docstatus=1 and status = 'Present' and  attendance_date ='{cur_date}') as present,
-                                (Select count(attendance_status) from `tabAttendance Check` where docstatus=1 and attendance_status = 'Absence' and  date ='{cur_date}') as absent,
+                                (Select count(attendance_status) from `tabAttendance Check` where docstatus=1 and attendance_status = 'Absent' and  date ='{cur_date}') as absent,
                                 (Select count(status) from `tabAttendance` where docstatus=1 and status = 'Day Off' and  attendance_date ='{cur_date}') as day_off,
                                 (Select count(status) from `tabAttendance` where docstatus=1 and status = 'On Leave' and leave_type ='Sick Leave' and  attendance_date ='{cur_date}') as sick_leave,
                                 (Select count(status) from `tabAttendance` where docstatus=1 and status = 'On Leave' and leave_type ='Annual Leave' and  attendance_date ='{cur_date}') as annual_leave,
