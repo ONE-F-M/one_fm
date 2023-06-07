@@ -25,7 +25,10 @@ class AttendanceCheck(Document):
 				if att.status != self.attendance_status:
 					if self.shift_assignment and not att.shift_assignment:
 						att.db_set("shift_assignment", self.shift_assignment)
+						att.db_set("comment", f"Created from Attendance Check, \n{att.comment or ''}")
 					att.db_set("status", self.attendance_status)
+					att.db_set('reference_doctype', "Attendance Check")
+					att.db_set('reference_docname', self.name)
 			else:
 				att = frappe.new_doc("Attendance")
 				att.employee = self.employee
@@ -34,6 +37,9 @@ class AttendanceCheck(Document):
 				att.status = self.attendance_status
 				att.working_hours = 8 if self.attendance_status == 'Present' else 0
 				att.roster_type = self.roster_type
+				att.reference_doctype = "Attendance Check"
+				att.reference_docname = self.name
+				att.comment = "Created from Attendance Check"
 				if self.shift_assignment:
 					att.shift_assignment = self.shift_assignment
 				att.insert(ignore_permissions=True)
@@ -379,3 +385,20 @@ def create_attendance_check(attendance_date=None):
 	workflow. is_active = 1
 	workflow.save()
 	frappe.db.commit()
+
+
+def approve_attendance_check():
+	attendance_checks = frappe.get_all("Attendance Check", filters={
+		"date":["<", today()], "workflow_state":"Pending Approval"}
+	)
+	for i in attendance_checks:
+		doc = frappe.get_doc("Attendance Check", i.name)
+		doc.justification = "Approved by Administrator"
+		doc.attendance_status = "Present"
+		doc.workflow_state = "Approved"
+		try:
+			doc.submit()
+		except Exception as e:
+			if str(e)=="To date can not greater than employee's relieving date":
+				doc.db_set("Comment", f"Employee exited company on {frappe.db.get_value('Employee', doc.employee, 'relieving_date')}\n{doc.comment or ''}")
+

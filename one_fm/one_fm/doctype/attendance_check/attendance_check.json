@@ -54,6 +54,7 @@
   "section_break_xzkb1",
   "has_attendance_request",
   "attendance_request",
+  "comment",
   "amended_from"
  ],
  "fields": [
@@ -68,6 +69,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
    "read_only": 1
@@ -92,6 +94,7 @@
    "fetch_from": "employee.reports_to",
    "fieldname": "reports_to",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Reports To",
    "options": "Employee",
    "read_only": 1
@@ -99,6 +102,7 @@
   {
    "fieldname": "site_supervisor",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Site Supervisor",
    "options": "Employee",
    "read_only": 1
@@ -106,6 +110,7 @@
   {
    "fieldname": "shift_supervisor",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Shift Supervisor",
    "options": "Employee",
    "read_only": 1
@@ -114,7 +119,7 @@
    "fieldname": "justification",
    "fieldtype": "Select",
    "label": "Justification",
-   "options": "\nInvalid media content\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nNo valid reason\nSuddenly, the App stop working!\nEmployees insist that he/she did check in or out"
+   "options": "\nInvalid media content\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nNo valid reason\nSuddenly, the App stop working!\nEmployees insist that he/she did check in or out\nApproved by Administrator"
   },
   {
    "fieldname": "attendance_status",
@@ -382,12 +387,22 @@
    "fieldtype": "Data",
    "label": "Shift Supervisor Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Small Text",
+   "label": "Comment"
   }
  ],
  "in_create": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2023-06-07 19:56:04.308151",
+ "links": [
+  {
+   "link_doctype": "Attendance",
+   "link_fieldname": "reference_docname"
+  }
+ ],
+ "modified": "2023-06-07 23:23:37.824573",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
