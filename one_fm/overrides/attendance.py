@@ -91,18 +91,18 @@ class AttendanceOverride(Attendance):
         duplicate = get_duplicate_attendance_record(
 			self.employee, self.attendance_date, self.shift, self.roster_type, self.name
 		)
-
-        if duplicate:
-            frappe.throw(
-				_("Attendance for employee {0} is already marked for the date {1}: {2} : {3}").format(
-					frappe.bold(self.employee),
-					frappe.bold(self.attendance_date),
-					get_link_to_form("Attendance", duplicate[0].name),
-                    self.roster_type
-				),
-				title=_("Duplicate Attendance"),
-				exc=DuplicateAttendanceError,
-			)
+        for d in duplicate:
+            if d.roster_type==self.roster_type:
+                frappe.throw(
+                    _("Attendance for employee {0} is already marked for the date {1}: {2} : {3}").format(
+                        frappe.bold(self.employee),
+                        frappe.bold(self.attendance_date),
+                        get_link_to_form("Attendance", d.name),
+                        self.roster_type
+                    ),
+                    title=_("Duplicate Attendance"),
+                    exc=DuplicateAttendanceError,
+                )
 
     def validate_overlapping_shift_attendance(self):
         attendance = get_overlapping_shift_attendance(
