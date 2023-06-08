@@ -3,6 +3,7 @@ import pandas as pd
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate
 
 
+
 class PostMap():
     """
         This class uses maps and list comprehensions to create the data structures to be returned to the front end.
@@ -192,7 +193,6 @@ class CreateMap():
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
         #Add missing  calendar days 
         res=list(map(self.add_blank_days,iter(self.date_range)))
-    
 
     def add_blanks(self,emp_dict):
         #Add the days individually for each employee
@@ -201,6 +201,11 @@ class CreateMap():
             key = list(emp_dict.keys())[0]
             
             value = emp_dict[key]
+            if value:
+                emp_name = value[0].get('employee_name')
+            else:
+                emp_name = frappe.db.get_value("Employee",key,'employee_name')
+
             
 
             if getdate(self.cur_date) not in [i['date'] for i in value]:
@@ -213,19 +218,20 @@ class CreateMap():
                     'day_off_category': self.employee_period_details[key]['day_off_category'],
                     'number_of_days_off': self.employee_period_details[key]['number_of_days_off']
                 }
-                if self.formated_rs.get(key):
-                    self.formated_rs[key].append(result)
+                if self.formated_rs.get(emp_name):
+                    self.formated_rs[emp_name].append(result)
                 else:
-                    self.formated_rs[key] = [result]
+                    self.formated_rs[emp_name] = [result]
             else:
                 attendance_schedule_for_day = [u for u in value if self.cur_date == cstr(u['date'])]
-                if self.formated_rs.get(key):
+                if self.formated_rs.get(emp_name):
                     # if key not in self.merged_employees:
                     month_data = attendance_schedule_for_day[0]
                     #Add Day Off OT from Attendance, Doing this from the initial query takes too long
                     if len(attendance_schedule_for_day) >1:
-                        month_data['day_off_ot'] = attendance_schedule_for_day[1]['day_off_ot']
-                    self.formated_rs[key].append(month_data)
+                        # month_data['day_off_ot'] = attendance_schedule_for_day[1]['day_off_ot']
+                        month_data['day_off_ot'] = attendance_schedule_for_day[1].get('day_off_ot',0)
+                    self.formated_rs[emp_name].append(month_data)
                 
                 else:
                     #When an employee has both attendance and employee schedule records the attendance is selected.
@@ -234,8 +240,8 @@ class CreateMap():
                     if len(attendance_schedule_for_day) >1:
                         # The Employee schedule is always the last in the list
                         month_data['day_off_ot'] = attendance_schedule_for_day[-1].get('day_off_ot')
-                    self.formated_rs[key] = [month_data]
-        except KeyError:
+                    self.formated_rs[emp_name] = [month_data]
+        except KeyError :
             pass
         return self.formated_rs
 
@@ -255,8 +261,8 @@ class CreateMap():
 
 
     def create_employee_schedule(self,row):
-        self.employee_period_details[row['employee_name']] = row
-        return
+        self.employee_period_details[row['name']] = row
+        return self.employee_period_details
 
 
     def create_schedule_map(self,row):
@@ -265,10 +271,10 @@ class CreateMap():
         for one in self.schedule_set:
             try:
                 if one.employee==row[0]:
-                    schedule.append(one.update(self.employee_period_details[row[1]]))
-            except:
+                    schedule.append(one.update(self.employee_period_details[row[0]]))
+            except KeyError:
                 pass
-        return {row[1]:schedule}
+        return {row[0]:schedule}
 
 
     
@@ -284,15 +290,15 @@ class CreateMap():
                     'leave_application': one.leave_application,
                     'leave_type':one.leave_type,
                     'date': one.attendance_date,
-                    'relieving_date':self.employee_period_details[row[1]].get('relieving_date'),
+                    'relieving_date':self.employee_period_details[row[0]].get('relieving_date'),
                     'attendance': one.status,
                     'employee_availability':one.status if one.status == "Day Off" else "",
-                    'day_off_category': self.employee_period_details[row[1]].get('day_off_category'),
-                    'number_of_days_off': self.employee_period_details[row[1]].get('number_of_days_off'),
+                    'day_off_category': self.employee_period_details[row[0]].get('day_off_category'),
+                    'number_of_days_off': self.employee_period_details[row[0]].get('number_of_days_off'),
                     'shift': one.operations_shift,
-                    'employee_id': self.employee_period_details[row[1]].get('employee_id')
+                    'employee_id': self.employee_period_details[row[0]].get('employee_id')
                 })
         except Exception as e:
             pass
        
-       return {row[1]:attendance}
+       return {row[0]:attendance}
