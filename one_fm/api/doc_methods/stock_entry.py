@@ -170,8 +170,11 @@ def get_other_condition(args, budget, for_doc):
 def validate_stock_entry_items(doc, method):
     if doc.stock_entry_type == "Material Receipt":
         if doc.items:
+            list_of_t_ware_house = [i.t_warehouse for i in doc.items]
+            warehouse_fields = frappe.db.get_all("Warehouse", {"name": ["in", list_of_t_ware_house]}, ["name", "allow_zero_valuation_rate"])
+            warehouse_check = {item["name"]: item["allow_zero_valuation_rate"] for item in warehouse_fields}
             for obj in doc.items:
-                if obj.t_warehouse == "Mahboula Uniform Used - ONEFM":
+                if warehouse_check.get(obj.t_warehouse, False):
                     obj.allow_zero_valuation_rate = True
                     obj.amount = 0
                     obj.basic_amount = 0
