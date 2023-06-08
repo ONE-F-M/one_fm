@@ -113,7 +113,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 				attendance.project = shift_assignment.project if shift_assignment else ''
 				attendance.site = shift_assignment.site if shift_assignment else ''
 				attendance.operations_role = shift_assignment.operations_role if shift_assignment else ''
-				attendance.reference_doctype = "Attendance Check"
+				attendance.reference_doctype = "Attendance Request"
 				attendance.reference_docname = self.name
 				attendance.save(ignore_permissions=True)
 				attendance.submit()

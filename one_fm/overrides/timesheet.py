@@ -57,7 +57,7 @@ class TimesheetOveride(Timesheet):
                 recipients=[user],
                 subject=subject,
                 message=message,
-                reference_doctype=self.doctype,
+                reference_doctype='self.doctype',
                 reference_name=self.name
             )
             create_notification_log(subject, message, [user], self)
@@ -93,7 +93,7 @@ class TimesheetOveride(Timesheet):
             att.timesheet = self.name
             att.status = "Present"
             att.working_hours = self.total_hours
-            att.reference_doctype = "Attendance Check"
+            att.reference_doctype = "Timesheet"
             att.reference_docname = self.name
             att.insert(ignore_permissions=True)
             att.submit()
