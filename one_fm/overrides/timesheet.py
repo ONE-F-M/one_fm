@@ -82,7 +82,7 @@ class TimesheetOveride(Timesheet):
                 att.db_set("status", "Present")
                 att.db_set("timesheet", self.name)
                 att.db_set("working_hours", self.total_hours, notify=True)
-                att.db_set("reference_doctype", "Attendance Check")
+                att.db_set("reference_doctype", "Timesheet")
                 att.db_set("reference_docname", self.name)
         else:
             att = frappe.new_doc("Attendance")
