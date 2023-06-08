@@ -651,10 +651,10 @@ scheduler_events = {
 			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
 		"25 0 * * *": [ # mark day attendance 11:15 pm
-			'one_fm.api.tasks.mark_day_attendance'
+			'one_fm.overrides.attendance.mark_day_attendance'
 		],
 		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
-			'one_fm.api.tasks.mark_night_attendance'
+			'one_fm.overrides.attendance.mark_night_attendance'
 		],
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
