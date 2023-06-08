@@ -4,35 +4,75 @@
 from frappe.model.document import Document
 import frappe
 from frappe import _
-from frappe.utils import nowdate, add_to_date, cstr, add_days
-from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, close_all_assignments
+from frappe.utils import nowdate, add_to_date, cstr, add_days, today
+from one_fm.utils import production_domain
 
 class AttendanceCheck(Document):
-	def after_insert(self):
-		self.assign_to_supervisor()
-
 	def on_submit(self):
 		self.validate_justification_and_attendance_status()
-		close_all_assignments(self.doctype, self.name)
 		self.mark_attendance()
 
 	def mark_attendance(self):
 		if self.workflow_state == 'Approved':
-			attendance_exists = frappe.db.exists('Attendance',
-				{'attendance_date': self.date, 'employee': self.employee, 'docstatus': ['<', 2]})
-			if attendance_exists:
-				att = frappe.get_doc("Attendance", attendance_exists)
-				if att.status != self.attendance_status:
-					att.db_set("status", self.attendance_status)
-			else:
-				att = frappe.new_doc("Attendance")
-				att.employee = self.employee
-				att.employee_name = self.employee_name
-				att.attendance_date = self.date
-				att.status = self.attendance_status
+			comment = ""
+			logs = []
+			if frappe.db.exists('Attendance',
+				{'attendance_date': self.date, 'employee': self.employee, 'docstatus': ['<', 2],
+				'roster_type':self.roster_type
+				}):
+				att = frappe.get_doc("Attendance", {
+					'attendance_date': self.date, 'employee': self.employee, 
+					'docstatus': ['<', 2],
+					'roster_type':self.roster_type
+				})
+				logs = frappe.get_all("Employee Checkin", filters={"attendance":att.name})
+				comment = att.comment
+				frappe.db.sql(f"""DELETE FROM `tabAttendance` WHERE name="{att.name}" """)
+
+			att = frappe.new_doc("Attendance")
+			att.employee = self.employee
+			att.employee_name = self.employee_name
+			att.attendance_date = self.date
+			att.status = self.attendance_status
+			att.roster_type = self.roster_type
+			att.reference_doctype = "Attendance Check"
+			att.reference_docname = self.name
+			att.comment = f"Created from Attendance Check\n{self.justification}\n{self.comment or ''}\n{comment or ''}"
+			if self.shift_assignment:
+				att.shift_assignment = self.shift_assignment
+			if not att.shift_assignment:
+				if frappe.db.exists("Shift Assignment", {
+						'employee':self.employee, 'start_date':self.date, 'roster_type':self.roster_type
+					}):
+					shift_assignment = frappe.get_doc("Shift Assignment", {
+						'employee':self.employee, 'start_date':self.date, 'roster_type':self.roster_type
+					})
+					att.shift_Assignment = shift_assignment.name
+				elif frappe.db.exists("Employee Schedule", {
+						'employee':self.employee, 'date':self.date, 'roster_type':self.roster_type
+					}):
+					employee_schedule = frappe.get_doc("Employee Schedule", {
+						'employee':self.employee, 'date':self.date, 'roster_type':self.roster_type
+					})
+					shift_assignment = frappe.get_doc({
+						'doctype':"Shift Assignment",
+						'employee':employee_schedule.employee,
+						'shift_type':employee_schedule.shift_type,
+						'start_date':employee_schedule.date,
+						'status':'Active'
+					}).insert(ignore_permissions=1)
+					shift_assignment.submit()
+					att.shift_Assignment = shift_assignment.name
+			if att.shift_assignment and att.status=='Present':
+				att.working_hours = frappe.db.get_value("Operations Shift", 
+					frappe.db.get_value("Shift Assignment", att.shift_assignment, 'shift'), 'duration')
+			if not att.working_hours:
 				att.working_hours = 8 if self.attendance_status == 'Present' else 0
-				att.insert(ignore_permissions=True)
-				att.submit()
+			att.insert(ignore_permissions=True)
+			att.submit()
+			for i in logs:
+				frappe.db.set_value("Employee Checkin", i.name, "attendance", att.name)
+
 
 	def validate_justification_and_attendance_status(self):
 		if self.workflow_state in ['Approved', 'Rejected']:
@@ -42,219 +82,339 @@ class AttendanceCheck(Document):
 			if message:
 				frappe.throw(_('To Approve or Reject the Record set {0}'.format(message)))
 
-	def assign_to_supervisor(self):
-		try:
-			users = []
-			if self.reports_to:
-				users.append(self.reports_to_user)
-			if self.shift_supervisor_user:
-				users.append(self.shift_supervisor_user)
-			if self.site_supervisor_user:
-				users.append(self.site_supervisor_user)
-			description = f"""
-				<p>Here is to inform you that the following {self.doctype}({self.name}) requires your attention/action.
-				<br>
-				The details of the request are as follows:<br>
-				</p>
-				<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-					<thead>
-						<tr>
-							<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
-							<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td style="padding: 10px;">Employee</td>
-							<td style="padding: 10px;">{self.employee} - {self.employee_name}</td>
-						</tr>
-						<tr>
-							<td style="padding: 10px;">Date</td>
-							<td style="padding: 10px;">{self.date}</td>
-						</tr>
-						<tr>
-							<td style="padding: 10px;">Department</td>
-							<td style="padding: 10px;">{self.department}</td>
-						</tr>
-					</tbody>
-				</table>
-			"""
-			add_assignment({
-				'doctype': self.doctype,
-				'name': self.name,
-				'assign_to': users,
-				'description': description,
+def create_attendance_check(attendance_date=None):
+	if production_domain():
+		if not attendance_date:
+			attendance_date = add_days(today(), -1)
+		all_attendance = frappe.get_all("Attendance", filters={
+			'attendance_date':attendance_date}, fields="*")
+		all_attendance_employee = [i.employee for i in all_attendance]
+		
+		employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':attendance_date, 'employee_availability':'Working'}, fields="*")
+		employee_schedules_basic = [i for i in employee_schedules if i.roster_type=='Basic']
+		employee_schedules_ot = [i for i in employee_schedules if i.roster_type=='Over-Time']
+		shift_assignments = frappe.db.get_list("Shift Assignment", filters={'start_date':attendance_date}, fields="*")
+		shift_assignment_basic = [i for i in shift_assignments if i.roster_type=='Basic']
+		shift_assignment_ot = [i for i in shift_assignments if i.roster_type=='Over-Time']
+		shift_permissions = frappe.db.get_list("Shift Permission", filters={'date':attendance_date}, fields="*")
+		timesheets = frappe.db.get_all("Timesheet", filters={'start_date':attendance_date}, fields="*")
+		attendance_requests = frappe.db.sql(f"""
+			SELECT * FROM `tabAttendance Request`
+			WHERE '{attendance_date}' BETWEEN from_date AND to_date
+			AND docstatus=1
+		""", as_dict=1)
+
+		attendance_basic = [i for i in all_attendance if i.roster_type=='Basic']
+		attendance_ot = [i for i in all_attendance if i.roster_type=='Over-Time']
+		attendance_basic_employees = [i.employee for i in attendance_basic]
+		attendance_ot_employees = [i.employee for i in attendance_ot]
+
+		#absent
+		absent_attendance_basic = [i for i in attendance_basic if i.status=='Absent']
+		absent_attendance_basic_list = [i.employee for i in absent_attendance_basic]
+		absent_attendance_ot = [i for i in attendance_ot if i.status=='Absent']
+		absent_attendance_ot_list = [i.employee for i in absent_attendance_ot]
+		# missing attendance
+		missing_basic = []
+		for i in employee_schedules_basic: #employee schedule
+			if not i.employee in attendance_basic_employees:
+				missing_basic.append(i.employee)
+		for i in shift_assignment_basic: #shift assignment
+			if not i.employee in attendance_basic_employees:
+				missing_basic.append(i.employee)
+
+		missing_ot = []
+		for i in employee_schedules_ot: #employee schedule
+			if not i.employee in attendance_ot_employees:
+				missing_ot.append(i.employee)
+		for i in shift_assignment_ot: #shift assignment
+			if not i.employee in attendance_ot_employees:
+				missing_ot.append(i.employee)
+
+		### Checkins
+		checkin_basic_filter = missing_basic+absent_attendance_basic_list
+		if len(checkin_basic_filter)==1:
+			checkin_basic_filter_tuple = (checkin_basic_filter[0])
+		elif len(checkin_basic_filter)>1:
+			checkin_basic_filter_tuple = tuple(checkin_basic_filter)
+		else:
+			checkin_basic_filter_tuple = ()
+
+		checkin_ot_filter = missing_ot+absent_attendance_ot_list
+		if len(checkin_ot_filter)==1:
+			checkin_ot_filter_tuple = (checkin_ot_filter[0])
+		elif len(checkin_ot_filter)>1:
+			checkin_ot_filter_tuple = tuple(checkin_ot_filter)
+		else:
+			checkin_ot_filter_tuple = ()
+
+		in_checkins_basic = frappe.db.sql(f""" 
+			SELECT * FROM `tabEmployee Checkin` 
+			WHERE 
+			roster_type='Basic' AND log_type='IN' AND employee IN {checkin_basic_filter_tuple} AND
+			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
+			GROUP BY employee
+			ORDER BY employee
+		""", as_dict=1)
+		
+		out_checkins_basic = frappe.db.sql(f""" 
+			SELECT * FROM `tabEmployee Checkin` 
+			WHERE 
+			roster_type='Basic' AND log_type='OUT' AND employee IN {checkin_basic_filter_tuple} AND
+			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
+			GROUP BY employee
+			ORDER BY employee
+		""", as_dict=1)
+		
+		in_checkins_ot = frappe.db.sql(f""" 
+			SELECT * FROM `tabEmployee Checkin` 
+			WHERE 
+			roster_type='Over-Time' AND log_type='IN' AND employee IN {checkin_ot_filter_tuple} AND
+			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
+			GROUP BY employee
+			ORDER BY employee
+		""", as_dict=1)
+		
+		out_checkins_ot = frappe.db.sql(f""" 
+			SELECT * FROM `tabEmployee Checkin` 
+			WHERE 
+			roster_type='Over-Time' AND log_type='OUT' AND employee IN {checkin_ot_filter_tuple} AND
+			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
+			GROUP BY employee
+			ORDER BY employee
+		""", as_dict=1)
+
+		### Create maps
+		#  Schedules
+		employee_schedules_ot_dict = {}
+		for i in employee_schedules_ot:
+			employee_schedules_ot_dict[i.employee] = i
+		employee_schedules_basic_dict = {}
+		for i in employee_schedules_basic:
+			employee_schedules_basic_dict[i.employee] = i
+		# Shift Assignment
+		shift_assignment_ot_dict = {}
+		for i in shift_assignment_ot:
+			shift_assignment_ot_dict[i.employee] = i
+		shift_assignment_basic_dict = {}
+		for i in shift_assignment_basic:
+			shift_assignment_basic_dict[i.employee] = i
+		# Shift Permissions
+		shift_permission_basic_dict = {}
+		shift_permission_ot_dict = {}
+		for i in shift_permissions:
+			if i.roster_type=='Basic':
+				shift_permission_basic_dict[i.employee] = i
+			if i.roster_type=='Over-Time':
+				shift_permission_ot_dict[i.employee] = i
+		# Timesheet
+		timesheets_dict = {}
+		for i in timesheets:
+			timesheets_dict[i.employee] = i
+		
+		# Attendance Request
+		attendance_requests_dict = {}
+		for i in attendance_requests:
+			attendance_requests_dict[i.employee] = i
+		
+		# Attendance
+		absent_attendance_basic_dict = {}
+		for i in absent_attendance_basic:absent_attendance_basic_dict[i.employee] = i
+		absent_attendance_ot_dict = {}
+		for i in absent_attendance_ot:absent_attendance_ot_dict[i.employee] = i
+
+		# Checkins
+		in_checkins_basic_dict = {}
+		for i in in_checkins_basic:in_checkins_basic_dict[i.employee] = i
+		out_checkins_basic_dict = {}
+		for i in out_checkins_basic:out_checkins_basic_dict[i.employee] = i
+		in_checkins_ot_dict = {}
+		for i in in_checkins_ot:in_checkins_ot_dict[i.employee] = i
+		out_checkins_ot_dict = {}
+		for i in out_checkins_ot:out_checkins_ot_dict[i.employee] = i
+
+		# Get Supervisors
+		operations_shifts = frappe.get_all("Operations Shift", fields=["name", "supervisor", "supervisor_name"])
+		operations_sites = frappe.get_all("Operations Site", fields=["name", "account_supervisor", "account_supervisor_name"])
+		operations_shifts_dict = {}
+		for i in operations_shifts: operations_shifts_dict[i.name] = i
+		operations_sites_dict = {}
+		for i in operations_sites: operations_sites_dict[i.name] = i
+		
+		# Employees
+		employees_dict = {}
+		for i in frappe.get_all("Employee", filters={"name":["IN", missing_ot+missing_basic+absent_attendance_basic_list+absent_attendance_ot_list]}, fields="*"):
+			employees_dict[i.name] = i
+		
+		
+		### Create records
+		# disable workflow
+		workflow = frappe.get_doc("Workflow", "Attendance Check")
+		workflow. is_active = 0
+		workflow.save()
+		# Absent record Basic
+		attendance_check_list = []
+		#basic create
+		print(len(missing_basic+absent_attendance_basic_list), len(missing_ot+absent_attendance_ot_list))
+		for i in missing_basic+absent_attendance_basic_list:
+			employee = employees_dict.get(i)
+			at_check = frappe._dict({
+				"doctype":"Attendance Check",
+				"employee": i,
+				"employee_name":employee.employee_name,
+				"department":employee.department,
+				"date":str(attendance_date),
 			})
-		except DuplicateToDoError:
-			frappe.message_log.pop()
-			pass
+			if absent_attendance_basic_dict.get(i):
+				attendance = absent_attendance_basic_dict.get(i)
+				at_check.attendance_marked = 1
+				at_check.attendance = attendance.name
+				at_check.marked_attendance_status = attendance.status
+				at_check.roster_type = attendance.roster_type
+				at_check.comment = attendance.comment
+			if in_checkins_basic_dict.get(i):
+				checkin_basic = in_checkins_basic_dict.get(i)
+				at_check.has_checkin_record = 1
+				at_check.checkin_record = checkin_basic.name
+				at_check.roster_type = checkin_basic.roster_type
+			if out_checkins_basic_dict.get(i):
+				checkout_basic = out_checkins_basic_dict.get(i)
+				at_check.has_checkout_record = 1
+				at_check.checkout_record = checkout_basic.name
+				at_check.roster_type = checkout_basic.roster_type
+			if shift_assignment_basic_dict.get(i):
+				shift_assignment = shift_assignment_basic_dict.get(i)
+				at_check.has_shift_assignment = 1
+				at_check.shift_assignment = shift_assignment.name
+				at_check.start_time = shift_assignment.start_datetime
+				at_check.end_time = shift_assignment.end_datetime
+				at_check.roster_type = shift_assignment.roster_type
+				shift_supervisor = operations_shifts_dict.get(shift_assignment.shift)
+				if shift_supervisor:
+					at_check.shift_supervisor = shift_supervisor.supervisor
+					at_check.shift_supervisor_name = shift_supervisor.supervisor_name
+			if shift_permission_basic_dict.get(i):
+				shift_permission = shift_permission_basic_dict.get(i)
+				at_check.has_shift_permission
+				at_check.shift_permission = shift_permission.name
+				at_check.roster_type = shift_permission.roster_type
+			if attendance_requests_dict.get(i):
+				attendance_request = attendance_requests_dict.get(i)
+				at_check.has_attendance_request = 1
+				at_check.attendance_request = attendance_request.name
 
-@frappe.whitelist()
-def create_attendance_check(date = None):
-    # Date is in "YYYY-MM-DD" format
-	date = add_to_date(nowdate(), days=-1) if not date else add_to_date(date)
-	data = fetch_data(date)
+			# add supervisor
+			if not at_check.shift_supervisor:
+				if employee.shift:
+					shift_supervisor = operations_shifts_dict.get(employee.shift)
+					at_check.shift_supervisor = shift_supervisor.supervisor
+					at_check.shift_supervisor_name = shift_supervisor.supervisor_name
+			if not at_check.site_supervisor:
+				if employee.site:
+					site_supervisor = operations_sites_dict.get(employee.site)
+					at_check.site_supervisor = site_supervisor.account_supervisor
+					at_check.site_supervisor_name = site_supervisor.account_supervisor_name
+			
+			if not frappe.db.exists("Attendance Check", {"employee":i, 'date':attendance_date, 'roster_type':at_check.roster_type}):
+				try:
+					at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
+					attendance_check_list.append(at_check_doc.name)
+				except:
+					pass
 
-	for employee in data:
-		doc = frappe.new_doc("Attendance Check")
-		doc.employee = employee
-		doc.date = date
-		supervisor = get_supervisor(employee)
-		if supervisor:
-			if supervisor['shift_supervisor']:
-				doc.shift_supervisor = supervisor['shift_supervisor']
-			if supervisor['site_supervisor']:
-				doc.site_supervisor = supervisor['site_supervisor']
+		# OT Create
+		for i in missing_ot+absent_attendance_ot_list:
+			employee = employees_dict.get(i)
+			at_check = frappe._dict({
+				"doctype":"Attendance Check",
+				"employee": i,
+				"employee_name":employee.employee_name,
+				"department":employee.department,
+				"date":str(attendance_date),
+			})
+			if absent_attendance_ot_dict.get(i):
+				attendance = absent_attendance_ot_dict.get(i)
+				at_check.attendance_marked = 1
+				at_check.attendance = attendance.name
+				at_check.marked_attendance_status = attendance.status
+				at_check.roster_type = attendance.roster_type
+				at_check.comment = attendance.comment
+			if in_checkins_ot_dict.get(i):
+				checkin_ot = in_checkins_ot_dict.get(i)
+				at_check.has_checkin_record = 1
+				at_check.checkin_record = checkin_ot.name
+				at_check.roster_type = checkin_ot.roster_type
+			if out_checkins_ot_dict.get(i):
+				checkout_ot = out_checkins_ot_dict.get(i)
+				at_check.has_checkout_record = 1
+				at_check.checkout_record = checkout_ot.name
+				at_check.roster_type = checkout_ot.roster_type
+			if shift_assignment_ot_dict.get(i):
+				shift_assignment = shift_assignment_ot_dict.get(i)
+				at_check.has_shift_assignment = 1
+				at_check.shift_assignment = shift_assignment.name
+				at_check.start_time = shift_assignment.start_datetime
+				at_check.end_time = shift_assignment.end_datetime
+				at_check.roster_type = shift_assignment.roster_type
+				shift_supervisor = operations_shifts_dict.get(shift_assignment.shift)
+				if shift_supervisor:
+					at_check.shift_supervisor = shift_supervisor.supervisor
+					at_check.shift_supervisor_name = shift_supervisor.supervisor_name
+			if shift_permission_ot_dict.get(i):
+				shift_permission = shift_permission_ot_dict.get(i)
+				at_check.has_shift_permission
+				at_check.shift_permission = shift_permission.name
+				at_check.roster_type = shift_permission.roster_type
+			
+					# add supervisor
+			if not at_check.shift_supervisor:
+				if employee.shift:
+					shift_supervisor = operations_shifts_dict.get(employee.shift)
+					at_check.shift_supervisor = shift_supervisor.supervisor
+					at_check.shift_supervisor_name = shift_supervisor.supervisor_name
+			if not at_check.site_supervisor:
+				if employee.site:
+					site_supervisor = operations_sites_dict.get(employee.site)
+					at_check.site_supervisor = site_supervisor.account_supervisor
+					at_check.site_supervisor_name = site_supervisor.account_supervisor_name
 
-		if data[employee]['shift_assignment'] == 0 and not has_day_off(employee, date):
-			doc.has_shift_assignment = 1
-			doc.shift_assignment = frappe.get_doc("Shift Assignment", {'employee': employee, 'start_date':date})
+			if not frappe.db.exists("Attendance Check", {"employee":i, 'date':attendance_date, 'roster_type':at_check.roster_type}):
+				try:
+					at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
+					attendance_check_list.append(at_check_doc.name)
+				except:
+					pass
 
-		if data[employee]['checkin'] == 0:
-			doc.has_checkin_record = 1
-			emp_checkin = frappe.db.sql("""SELECT name, log_type FROM `tabEmployee Checkin` empChkin
-							WHERE
-							date(empChkin.time)='{date}'
-							AND employee = '{employee}'""".format(date=cstr(date), employee=employee), as_dict=1)
-			for checkin in emp_checkin:
-				if checkin.log_type == "IN":
-					doc.checkin_record = frappe.get_doc("Employee Checkin", checkin.name)
-				if checkin.log_type == "OUT":
-					doc.checkout_record = frappe.get_doc("Employee Checkin", checkin.name)
-		if data[employee]['attendance'] == 0 and not has_day_off(employee, date):
-			doc.has_the_attendance_for_the_marked = 1
-			doc.attendance =  frappe.get_value("Attendance", {'employee': employee, 'attendance_date':date}, ['name'])
+		if len(attendance_check_list)==1:
+			attendance_check_tuple = (attendance_check_list[0])
+		elif len(attendance_check_list)>1:
+			attendance_check_tuple = tuple(attendance_check_list)
+		if attendance_check_list:
+			frappe.db.sql(f"""
+				UPDATE `tabAttendance Check` SET workflow_state="Pending Approval"
+				WHERE name in {attendance_check_tuple}     
+			""")
+		# Enable workflow
+		workflow = frappe.get_doc("Workflow", "Attendance Check")
+		workflow. is_active = 1
+		workflow.save()
+		frappe.db.commit()
 
-		if frappe.db.exists("Shift Permission", {'employee': employee, 'date':date}):
-			doc.has_shift_pemission = 1
-			doc.shift_permission = frappe.get_value("Shift Permission", {'employee': employee, 'date':date}, ['name'])
-
-		if frappe.db.exists("Attendance Request", {'employee': employee, 'date':date}):
-			doc.has_attendance_request = 1
-			doc.attendance_request = frappe.get_value("Attendance Request", {'employee': employee, 'date':date}, ['name'])
-
-		doc.insert()
-	frappe.db.commit()
-
-def fetch_data(date):
-	active_employee = frappe.get_list("Employee", {"status":"Active"},['name'])
-
-	active_employee = [emp.name for emp in active_employee]
-	no_shift_assignment = fetch_no_shift_assignment(date, active_employee)
-	no_checkin = fetch_no_checkin_record(date, active_employee)
-	no_attendance = fetch_no_attendance(date, active_employee)
-
-	data = {}
-	processed_values = set()
-
-	for value in no_shift_assignment + no_checkin + no_attendance:  # Merge all lists and create a set of unique values
-		if value not in processed_values:
-			data[value] = {
-				'shift_assignment': int(value in no_shift_assignment),
-				'checkin': int(value in no_checkin),
-				'attendance': int(value in no_attendance)
-			}
-			processed_values.add(value)
-
-	return data
-
-def get_supervisor(employee):
-	shifts = frappe.get_list("Employee", {'name':employee}, ['shift', 'default_shift'])
-
-	shift = shifts[0].shift if shifts[0].shift != "" else shifts[0].default_shift if shifts[0].default_shift!="" else ""
-	if shift != "":
-		shift_doc = frappe.get_list("Operations Shift", {"name":shift}, ['site','supervisor'])
-		shift_supervisor = shift_doc[0].supervisor
-		site_supervisor = frappe.get_value("Operations Site", {"name":shift_doc[0].site}, ['account_supervisor'])
-		return {'shift_supervisor':shift_supervisor, 'site_supervisor':site_supervisor}
-	else:
-		return
-
-def fetch_no_shift_assignment(date, employees):
-	shift_assignment = get_assigned_shift(date)
-	day_off = get_days_off(date)
-	sa = shift_assignment + day_off
-
-	no_sa = [e for e in employees if e not in sa]
-	return no_sa
-
-def get_assigned_shift(date):
-	shift_assignment = frappe.get_list("Shift Assignment", {'start_date':date}, ['employee'])
-	shift_assignment = [emp.employee for emp in shift_assignment]
-	return shift_assignment
-
-def get_days_off(date):
-	day_off_emp_se = frappe.get_list("Employee Schedule", {'date':date, 'employee_availability':'Day Off'}, ['employee'])
-	day_off_emp_se = [emp.employee for emp in day_off_emp_se]
-	day_off_emp_nse = frappe.db.sql("""SELECT name as employee, holiday_list from `tabEmployee` E
-				WHERE E.shift_working = 0 AND E.status='Active' AND E.attendance_by_timesheet != 1
-				AND EXISTS(SELECT * from `tabHoliday` h
-					WHERE
-						h.parent = E.holiday_list
-					AND h.holiday_date = '{date}')
-					""".format(date=date), as_dict=1)
-	day_off_emp_nse = [emp.employee for emp in day_off_emp_nse]
-	day_off = day_off_emp_se + day_off_emp_nse
-	return day_off
-
-def has_day_off(employee, date):
-	day_off_employees = get_days_off(date)
-	if employee in day_off_employees:
-		return True
-	else:
-		return False
-
-def fetch_no_checkin_record(date, employees):
-	shift_assignment = get_assigned_shift(date)
-	checkin_employee = get_checkin(date)
-
-	no_checkin = [e for e in employees if e not in shift_assignment and e not in checkin_employee]
-	return no_checkin
-
-def get_checkin(date):
-	checkin = frappe.db.sql("""SELECT DISTINCT employee FROM `tabEmployee Checkin` empChkin
-							WHERE
-							date(empChkin.time)='{date}'""".format(date=cstr(date)), as_dict=1)
-	checkin = [emp.employee for emp in checkin]
-	return checkin
-
-def fetch_no_attendance(date, employees):
-	shift_assignment =  get_assigned_shift(date)
-	attendance = frappe.db.sql("""SELECT employee FROM `tabAttendance`
-							WHERE attendance_date='{date}'
-							AND employee in {employees}""".format(date=cstr(date), employees=tuple(employees)), as_dict=1)
-	attendance = [emp.employee for emp in attendance]
-
-	no_attendance =  [e for e in employees if e not in shift_assignment and e not in attendance]
-	return no_attendance
-
-def assign_doc(doc):
-	supervisor = doc.reports_to if doc.reports_to else doc.shift_supervisor if doc.shift_supervisor else doc.site_supervisor
-	supervisor_user_id = frappe.db.get_value("Employee", {"name": supervisor}, ["user_id"], as_dict=1)
-	if supervisor_user_id:
-		doc.assign_to = supervisor_user_id.user_id
-	doc.submit()
-	frappe.db.commit()
 
 def approve_attendance_check():
-	date_before_24_hours = add_days(nowdate(), -1)
-	attendance_check_list = frappe.get_list("Attendance Check", {"workflow_state": "Pending Approval", "date": ['<=', date_before_24_hours]}, ['name'])
-	if len(attendance_check_list) <= 10:
-		auto_approve_attendance_check(attendance_check_list)
-	else:
-		frappe.enqueue(method=auto_approve_attendance_check, attendance_check_list=attendance_check_list, queue='long', timeout=1200, job_name='Approve Attendance Check')
-
-def auto_approve_attendance_check(attendance_check_list):
-	for attendance_check in attendance_check_list:
+	attendance_checks = frappe.get_all("Attendance Check", filters={
+		"date":["<", today()], "workflow_state":"Pending Approval"}
+	)
+	for i in attendance_checks:
+		doc = frappe.get_doc("Attendance Check", i.name)
+		if not doc.justification:
+			doc.justification = "Approved by Administrator"
+		if not doc.attendance_status:
+			doc.attendance_status = "Absent"
+		doc.workflow_state = "Approved"
 		try:
-			doc = frappe.get_doc("Attendance Check", attendance_check.name)
-			doc.workflow_state = "Approved"
-			doc.attendance_status = "Present"
-			doc.justification = "No valid reason"
-			doc.flags.ignore_validate = True
 			doc.submit()
-			doc.add_comment(comment_type="Info", text="Auto Approved on {0}".format(nowdate()))
-		except:
-			frappe.log_error("Error while auto approve attendance check {0}".format(attendance_check.name))
-			continue
-	frappe.db.commit()
+		except Exception as e:
+			if str(e)=="To date can not greater than employee's relieving date":
+				doc.db_set("Comment", f"Employee exited company on {frappe.db.get_value('Employee', doc.employee, 'relieving_date')}\n{doc.comment or ''}")
+

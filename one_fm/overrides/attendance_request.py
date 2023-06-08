@@ -80,7 +80,12 @@ class AttendanceRequestOverride(AttendanceRequest):
 				old_status = doc.status
 
 				if old_status != 'Present':
-					doc.db_set({"status": status, "attendance_request": self.name, "working_hours": working_hours})
+					doc.db_set({
+						"status": status, 
+						"attendance_request": self.name, 
+						"working_hours": working_hours,
+						"reference_doctype":"Attendance Request",
+						"reference_name":self.name})
 					text = _("Changed the status from {0} to {1} via Attendance Request").format(
 						frappe.bold(old_status), frappe.bold(status)
 					)
@@ -108,10 +113,11 @@ class AttendanceRequestOverride(AttendanceRequest):
 				attendance.project = shift_assignment.project if shift_assignment else ''
 				attendance.site = shift_assignment.site if shift_assignment else ''
 				attendance.operations_role = shift_assignment.operations_role if shift_assignment else ''
+				attendance.reference_doctype = "Attendance Request"
+				attendance.reference_docname = self.name
 				attendance.save(ignore_permissions=True)
 				attendance.submit()
 		except Exception as e:
-			print(frappe.get_traceback())
 			frappe.log_error(str(frappe.get_traceback()), 'Attendance Request')
 
 
