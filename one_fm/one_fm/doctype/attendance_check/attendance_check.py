@@ -24,19 +24,16 @@ class AttendanceCheck(Document):
 				'roster_type':self.roster_type
 				}):
 				att = frappe.get_doc("Attendance", {
-					'attendance_date': self.date, 'employee': self.employee, 
+					'attendance_date': self.date, 'employee': self.employee,
 					'docstatus': ['<', 2],
 					'roster_type':self.roster_type
 				})
 				if att.status != self.attendance_status:
 					if self.shift_assignment and not att.shift_assignment:
 						att.db_set("shift_assignment", self.shift_assignment)
-					else:
-						if att.shift_assignment:
-							shift_assignment = frappe.get_doc("Shift Assignment", att.shift_assignment)
-							att.db_set('shift_assignment', att.shift_assignment.name)
 					att.reload()
-					att.db_set("comment", f"Created from Attendance Check, \n{att.comment or ''}")
+					comment = _("Attendance updated from the Attendance Check {0} with the justification {1}".format(self.name, self.justification))
+					att.db_set("comment", f"{comment}, \n{att.comment or ''}")
 					att.db_set("status", self.attendance_status)
 					att.db_set('reference_doctype', "Attendance Check")
 					att.db_set('reference_docname', self.name)
@@ -82,7 +79,7 @@ class AttendanceCheck(Document):
 				att.roster_type = self.roster_type
 				att.reference_doctype = "Attendance Check"
 				att.reference_docname = self.name
-				att.comment = "Created from Attendance Check"
+				att.comment = _("Attendance created from the Attendance Check {0} with the justification {1}".format(self.name, self.justification))
 				if self.shift_assignment:
 					att.shift_assignment = self.shift_assignment
 				if not att.shift_assignment:
@@ -107,7 +104,7 @@ class AttendanceCheck(Document):
 							'status':'Active'
 						}).insert(ignore_permissions=1)
 						shift_assignment.submit()
-						att.shift_Assignment = shift_assignment.name	
+						att.shift_Assignment = shift_assignment.name
 				att.insert(ignore_permissions=True)
 				att.submit()
 
@@ -173,7 +170,7 @@ def create_attendance_check(attendance_date=None):
 	all_attendance = frappe.get_all("Attendance", filters={
 		'attendance_date':attendance_date}, fields="*")
 	all_attendance_employee = [i.employee for i in all_attendance]
-	
+
 	employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':attendance_date, 'employee_availability':'Working'}, fields="*")
 	employee_schedules_basic = [i for i in employee_schedules if i.roster_type=='Basic']
 	employee_schedules_ot = [i for i in employee_schedules if i.roster_type=='Over-Time']
@@ -220,20 +217,20 @@ def create_attendance_check(attendance_date=None):
 		'log_type': 'IN', 'shift_actual_start':['BETWEEN', [f"{attendance_date} 00:00:00.000000", f"{attendance_date} 23:59:59.999999"]],
 		'roster_type':'Basic', 'employee':["IN", missing_basic+absent_attendance_basic_list]},
 		fields="*", order_by="employee ASC", group_by="employee")
-	
+
 	out_checkins_basic = frappe.get_all("Employee Checkin", filters={
-		'log_type': 'OUT', 
+		'log_type': 'OUT',
 		'shift_actual_start':['BETWEEN', [f"{attendance_date} 00:00:00.000000", f"{attendance_date} 23:59:59.999999"]],
 		'roster_type':'Basic', 'employee':["IN", missing_basic+absent_attendance_basic_list]},
 		fields="*", order_by="employee DESC", group_by="employee")
-	
+
 	in_checkins_ot = frappe.get_all("Employee Checkin", filters={
 		'log_type': 'IN', 'shift_actual_start':['BETWEEN', [f"{attendance_date} 00:00:00.000000", f"{attendance_date} 23:59:59.999999"]],
 		'roster_type':'Over-Time', 'employee':["IN", missing_ot+absent_attendance_ot_list]},
 		fields="*", order_by="employee ASC", group_by="employee")
-	
+
 	out_checkins_ot = frappe.get_all("Employee Checkin", filters={
-		'log_type': 'OUT', 
+		'log_type': 'OUT',
 		'shift_actual_start':['BETWEEN', [f"{attendance_date} 00:00:00.000000", f"{attendance_date} 23:59:59.999999"]],
 		'roster_type':'Over-Time', 'employee':["IN", missing_ot+absent_attendance_ot_list]},
 		fields="*", order_by="employee DESC", group_by="employee")
@@ -265,12 +262,12 @@ def create_attendance_check(attendance_date=None):
 	timesheets_dict = {}
 	for i in timesheets:
 		timesheets_dict[i.employee] = i
-	
+
 	# Attendance Request
 	attendance_requests_dict = {}
 	for i in attendance_requests:
 		attendance_requests_dict[i.employee] = i
-	
+
 	# Attendance
 	absent_attendance_basic_dict = {}
 	for i in absent_attendance_basic:absent_attendance_basic_dict[i.employee] = i
@@ -294,13 +291,13 @@ def create_attendance_check(attendance_date=None):
 	for i in operations_shifts: operations_shifts_dict[i.name] = i
 	operations_sites_dict = {}
 	for i in operations_sites: operations_sites_dict[i.name] = i
-	
+
 	# Employees
 	employees_dict = {}
 	for i in frappe.get_all("Employee", filters={"name":["IN", missing_ot+missing_basic+absent_attendance_basic_list+absent_attendance_ot_list]}, fields="*"):
 		employees_dict[i.name] = i
-	
-	
+
+
 	### Create records
 	# disable workflow
 	workflow = frappe.get_doc("Workflow", "Attendance Check")
@@ -368,7 +365,7 @@ def create_attendance_check(attendance_date=None):
 				site_supervisor = operations_sites_dict.get(employee.site)
 				at_check.site_supervisor = site_supervisor.account_supervisor
 				at_check.site_supervisor_name = site_supervisor.account_supervisor_name
-		
+
 		if not frappe.db.exists("Attendance Check", {"employee":i, 'date':attendance_date, 'roster_type':at_check.roster_type}):
 			try:
 				at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
@@ -419,7 +416,7 @@ def create_attendance_check(attendance_date=None):
 			at_check.has_shift_permission
 			at_check.shift_permission = shift_permission.name
 			at_check.roster_type = shift_permission.roster_type
-		
+
 				# add supervisor
 		if not at_check.shift_supervisor:
 			if employee.shift:
@@ -446,7 +443,7 @@ def create_attendance_check(attendance_date=None):
 	if attendance_check_list:
 		frappe.db.sql(f"""
 			UPDATE `tabAttendance Check` SET workflow_state="Pending Approval"
-			WHERE name in {attendance_check_tuple}     
+			WHERE name in {attendance_check_tuple}
 		""")
 	# Enable workflow
 	workflow = frappe.get_doc("Workflow", "Attendance Check")
@@ -469,4 +466,3 @@ def approve_attendance_check():
 		except Exception as e:
 			if str(e)=="To date can not greater than employee's relieving date":
 				doc.db_set("Comment", f"Employee exited company on {frappe.db.get_value('Employee', doc.employee, 'relieving_date')}\n{doc.comment or ''}")
-
