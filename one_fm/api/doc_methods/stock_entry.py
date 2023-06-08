@@ -165,3 +165,16 @@ def get_other_condition(args, budget, for_doc):
 		)
 
 	return condition
+
+
+def validate_stock_entry_items(doc, method):
+    if doc.stock_entry_type == "Material Receipt":
+        if doc.items:
+            for obj in doc.items:
+                if obj.t_warehouse == "Mahboula Uniform Used - ONEFM":
+                    obj.allow_zero_valuation_rate = True
+                    obj.amount = 0
+                    obj.basic_amount = 0
+                    obj.valuation_rate = 0
+                    obj.additional_cost = 0
+                    obj.basic_rate = 0
