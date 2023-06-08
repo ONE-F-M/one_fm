@@ -90,7 +90,6 @@ class TimesheetOveride(Timesheet):
             att.employee_name = self.employee_name
             att.attendance_date = self.start_date
             att.company = self.company
-            att.timesheet = self.name
             att.status = "Present"
             att.working_hours = self.total_hours
             att.reference_doctype = "Timesheet"
