@@ -5,17 +5,11 @@ from frappe.model.document import Document
 import frappe
 from frappe import _
 from frappe.utils import nowdate, add_to_date, cstr, add_days, today
-from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, close_all_assignments
 
 class AttendanceCheck(Document):
-	def after_insert(self):
-		self.assign_to_supervisor()
-
 	def on_submit(self):
 		self.validate_justification_and_attendance_status()
-		close_all_assignments(self.doctype, self.name)
 		self.mark_attendance()
-		# frappe.throw('')
 
 	def mark_attendance(self):
 		if self.workflow_state == 'Approved':
@@ -118,54 +112,6 @@ class AttendanceCheck(Document):
 				message = message + ' and Attendance Status' if message else 'Attendance Status'
 			if message:
 				frappe.throw(_('To Approve or Reject the Record set {0}'.format(message)))
-
-	def assign_to_supervisor(self):
-		try:
-			users = []
-			if self.reports_to:
-				users.append(self.reports_to_user)
-			if self.shift_supervisor_user:
-				users.append(self.shift_supervisor_user)
-			if self.site_supervisor_user:
-				users.append(self.site_supervisor_user)
-			description = f"""
-				<p>Here is to inform you that the following {self.doctype}({self.name}) requires your attention/action.
-				<br>
-				The details of the request are as follows:<br>
-				</p>
-				<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-					<thead>
-						<tr>
-							<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
-							<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td style="padding: 10px;">Employee</td>
-							<td style="padding: 10px;">{self.employee} - {self.employee_name}</td>
-						</tr>
-						<tr>
-							<td style="padding: 10px;">Date</td>
-							<td style="padding: 10px;">{self.date}</td>
-						</tr>
-						<tr>
-							<td style="padding: 10px;">Department</td>
-							<td style="padding: 10px;">{self.department}</td>
-						</tr>
-					</tbody>
-				</table>
-			"""
-			add_assignment({
-				'doctype': self.doctype,
-				'name': self.name,
-				'assign_to': users,
-				'description': description,
-			})
-		except DuplicateToDoError:
-			frappe.message_log.pop()
-			pass
-
 
 def create_attendance_check(attendance_date=None):
 	if not attendance_date:

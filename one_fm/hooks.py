@@ -726,7 +726,12 @@ fixtures = [
 	},
 	{
 		"dt": "Assignment Rule",
-		"filters": [["name", "in",["RFM Approver", "Shift Permission Approver"]]]
+		"filters": [["name", "in",
+			[
+				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
+				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor"
+			]
+		]]
 	},
 	{
 		"dt": "Email Template"
