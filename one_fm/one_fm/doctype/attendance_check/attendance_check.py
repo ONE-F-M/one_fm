@@ -130,27 +130,57 @@ def create_attendance_check(attendance_date=None):
 			missing_ot.append(i.employee)
 
 	### Checkins
-	in_checkins_basic = frappe.get_all("Employee Checkin", filters={
-		'log_type': 'IN', 'shift_actual_start':['BETWEEN', [f"{attendance_date} 00:00:00.000000", f"{attendance_date} 23:59:59.999999"]],
-		'roster_type':'Basic', 'employee':["IN", missing_basic+absent_attendance_basic_list]},
-		fields="*", order_by="employee ASC", group_by="employee")
+	checkin_basic_filter = missing_basic+absent_attendance_basic_list
+	if len(checkin_basic_filter)==1:
+		checkin_basic_filter_tuple = (checkin_basic_filter[0])
+	elif len(checkin_basic_filter)>1:
+		checkin_basic_filter_tuple = tuple(checkin_basic_filter)
+	else:
+		checkin_basic_filter_tuple = ()
+
+	checkin_ot_filter = missing_ot+absent_attendance_ot_list
+	if len(checkin_ot_filter)==1:
+		checkin_ot_filter_tuple = (checkin_ot_filter[0])
+	elif len(checkin_ot_filter)>1:
+		checkin_ot_filter_tuple = tuple(checkin_ot_filter)
+	else:
+		checkin_ot_filter_tuple = ()
+
+	in_checkins_basic = frappe.db.sql(f""" 
+		SELECT * FROM `tabEmployee Checkin` 
+		WHERE 
+		roster_type='Basic' AND log_type='IN' AND employee IN {checkin_basic_filter_tuple} AND
+		shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
+		GROUP BY employee
+		ORDER BY employee
+	""", as_dict=1)
 	
-	out_checkins_basic = frappe.get_all("Employee Checkin", filters={
-		'log_type': 'OUT', 
-		'shift_actual_start':['BETWEEN', [f"{attendance_date} 00:00:00.000000", f"{attendance_date} 23:59:59.999999"]],
-		'roster_type':'Basic', 'employee':["IN", missing_basic+absent_attendance_basic_list]},
-		fields="*", order_by="employee DESC", group_by="employee")
+	out_checkins_basic = frappe.db.sql(f""" 
+		SELECT * FROM `tabEmployee Checkin` 
+		WHERE 
+		roster_type='Basic' AND log_type='OUT' AND employee IN {checkin_basic_filter_tuple} AND
+		shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
+		GROUP BY employee
+		ORDER BY employee
+	""", as_dict=1)
 	
-	in_checkins_ot = frappe.get_all("Employee Checkin", filters={
-		'log_type': 'IN', 'shift_actual_start':['BETWEEN', [f"{attendance_date} 00:00:00.000000", f"{attendance_date} 23:59:59.999999"]],
-		'roster_type':'Over-Time', 'employee':["IN", missing_ot+absent_attendance_ot_list]},
-		fields="*", order_by="employee ASC", group_by="employee")
+	in_checkins_ot = frappe.db.sql(f""" 
+		SELECT * FROM `tabEmployee Checkin` 
+		WHERE 
+		roster_type='Over-Time' AND log_type='IN' AND employee IN {checkin_ot_filter_tuple} AND
+		shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
+		GROUP BY employee
+		ORDER BY employee
+	""", as_dict=1)
 	
-	out_checkins_ot = frappe.get_all("Employee Checkin", filters={
-		'log_type': 'OUT', 
-		'shift_actual_start':['BETWEEN', [f"{attendance_date} 00:00:00.000000", f"{attendance_date} 23:59:59.999999"]],
-		'roster_type':'Over-Time', 'employee':["IN", missing_ot+absent_attendance_ot_list]},
-		fields="*", order_by="employee DESC", group_by="employee")
+	out_checkins_ot = frappe.db.sql(f""" 
+		SELECT * FROM `tabEmployee Checkin` 
+		WHERE 
+		roster_type='Over-Time' AND log_type='OUT' AND employee IN {checkin_ot_filter_tuple} AND
+		shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
+		GROUP BY employee
+		ORDER BY employee
+	""", as_dict=1)
 
 	### Create maps
 	#  Schedules
