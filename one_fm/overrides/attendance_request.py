@@ -118,7 +118,6 @@ class AttendanceRequestOverride(AttendanceRequest):
 				attendance.save(ignore_permissions=True)
 				attendance.submit()
 		except Exception as e:
-			print(frappe.get_traceback())
 			frappe.log_error(str(frappe.get_traceback()), 'Attendance Request')
 
 
