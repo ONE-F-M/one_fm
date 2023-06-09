@@ -165,3 +165,7 @@ def get_other_condition(args, budget, for_doc):
 		)
 
 	return condition
+
+
+def validate_stock_entry_difference_account(doc, method):
+    
