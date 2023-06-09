@@ -110,6 +110,8 @@ def after_insert_background(self):
 				shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
 				shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
 				late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}', 
+				operations_site="{curr_shift.site}", post_abbrv="{curr_shift.post_abbrv}", project="{curr_shift.project}",
+				company="{curr_shift.company}", operations_role="{curr_shift.operations_role}",
 				roster_type='{curr_shift.roster_type}'
 				WHERE name="{self.name}"
 			"""

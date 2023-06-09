@@ -149,7 +149,10 @@ def create_attendance_check(attendance_date=None):
 			checkin_ot_filter_tuple = ()
 
 		in_checkins_basic = frappe.db.sql(f""" 
-			SELECT * FROM `tabEmployee Checkin` 
+			SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
+			employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
+			shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, 
+			shift_permission, actual_time, MIN(time) as time FROM `tabEmployee Checkin` 
 			WHERE 
 			roster_type='Basic' AND log_type='IN' AND employee IN {checkin_basic_filter_tuple} AND
 			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
@@ -158,7 +161,10 @@ def create_attendance_check(attendance_date=None):
 		""", as_dict=1)
 		
 		out_checkins_basic = frappe.db.sql(f""" 
-			SELECT * FROM `tabEmployee Checkin` 
+			SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
+			employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
+			shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, 
+			shift_permission, actual_time, MAX(time) as time FROM `tabEmployee Checkin` 
 			WHERE 
 			roster_type='Basic' AND log_type='OUT' AND employee IN {checkin_basic_filter_tuple} AND
 			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
@@ -167,7 +173,11 @@ def create_attendance_check(attendance_date=None):
 		""", as_dict=1)
 		
 		in_checkins_ot = frappe.db.sql(f""" 
-			SELECT * FROM `tabEmployee Checkin` 
+			SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
+            employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
+            shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
+            roster_type, operations_site, project, company, operations_role, post_abbrv,
+            shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin` 
 			WHERE 
 			roster_type='Over-Time' AND log_type='IN' AND employee IN {checkin_ot_filter_tuple} AND
 			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
@@ -176,7 +186,11 @@ def create_attendance_check(attendance_date=None):
 		""", as_dict=1)
 		
 		out_checkins_ot = frappe.db.sql(f""" 
-			SELECT * FROM `tabEmployee Checkin` 
+			SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
+            employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
+            shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
+            roster_type, operations_site, project, company, operations_role, post_abbrv,
+            shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin` 
 			WHERE 
 			roster_type='Over-Time' AND log_type='OUT' AND employee IN {checkin_ot_filter_tuple} AND
 			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59' 
