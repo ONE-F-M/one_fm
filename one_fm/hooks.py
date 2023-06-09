@@ -388,6 +388,7 @@ doc_events = {
 		"after_insert":"one_fm.events.email_queue.after_insert",
 	},
 	"Stock Entry": {
+		"validate": "one_fm.api.doc_methods.stock_entry.validate_stock_entry_items",
 		"on_submit": "one_fm.api.doc_methods.stock_entry.validate_budget"
 	},
 	"Communication": {
