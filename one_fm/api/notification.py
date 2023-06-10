@@ -3,7 +3,7 @@ from frappe import _
 from frappe.desk.doctype.notification_log.notification_log import set_notifications_as_unseen, is_email_notifications_enabled_for_type, send_notification_email
 from one_fm.processor import is_user_id_company_prefred_email_in_employee
 
-def create_notification_log(subject, message, for_users, reference_doc, mobile_notification=None):
+def create_notification_log(subject, message, for_users, reference_doc, mobile_notification=None, alert=False):
 	for user in for_users:
 		doc = frappe.new_doc('Notification Log')
 		doc.subject = subject
@@ -13,6 +13,9 @@ def create_notification_log(subject, message, for_users, reference_doc, mobile_n
 		doc.document_name = reference_doc.name
 		doc.from_user = reference_doc.modified_by
 		doc.one_fm_mobile_app = mobile_notification
+		# If notification log type is Alert then it will not send email for the log
+		if alert:
+			doc.type = 'Alert'
 		doc.save(ignore_permissions=True)
 		frappe.publish_realtime(event='eval_js', message="frappe.show_alert({message: '"+message+"', indicator: 'blue'})", user=user)
 	frappe.db.commit()
@@ -34,9 +37,9 @@ def get_notification_list():
 		site = frappe.local.conf.app_url
 		user_id = frappe.session.user
 
-		#fetch Notification List which were sent to Mobile App 
+		#fetch Notification List which were sent to Mobile App
 		notification_list = frappe.get_all("Notification Log", filters={'for_user':user_id,'one_fm_mobile_app': 1 }, fields=["name","title","subject","category","creation"])
-	
+
 		# Create Result List
 		result = []
 		for notification in notification_list:
@@ -60,7 +63,7 @@ def get_notification_list():
 		return response(e, {}, False, 500)
 
 # This function deletes notification of a given `notification_name`
-# params: notification_name (eg: b9ddeb43dd) 
+# params: notification_name (eg: b9ddeb43dd)
 @frappe.whitelist()
 def delete_notification(notification_name):
 	"""
@@ -84,9 +87,9 @@ def delete_notification(notification_name):
 # This method returing the message and status code of the API
 def response(message, data, success, status_code):
     """
-    Params: 
+    Params:
 	-------
-	message: 
+	message:
 	status code: (eg: 200) based on the message
 	data: (eg {doctype_list} or {})
 	success: (eg: True or False)

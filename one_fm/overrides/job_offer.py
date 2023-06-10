@@ -75,7 +75,7 @@ class JobOfferOverride(JobOffer):
             self.letter_head = 'ONE FM - Job Offer'
 
     def on_update_after_submit(self):
-        self.validate_job_offer_mandatory_fields(self)
+        self.validate_job_offer_mandatory_fields()
         if self.workflow_state == 'Submit to Onboarding Officer':
             msg = "Please select {0} to Accept the Offer and Process Onboard"
             if not self.estimated_date_of_joining and not self.onboarding_officer:
@@ -93,7 +93,9 @@ class JobOfferOverride(JobOffer):
     def validate_job_offer_mandatory_fields(self):
         if self.workflow_state == 'Submit for Candidate Response':
             mandatory_field_required = False
-            fields = ['Reports To', 'Project', 'Base', 'Salary Structure', 'Project']
+            fields = ['Project', 'Base', 'Salary Structure', 'Project']
+            if not self.shift_working:
+                fields.append("reports_to")
             if not self.attendance_by_timesheet:
                 fields.append('Operations Shift')
                 if self.shift_working:

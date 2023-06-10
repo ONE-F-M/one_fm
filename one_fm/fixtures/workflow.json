@@ -2,9 +2,187 @@
  {
   "docstatus": 0,
   "doctype": "Workflow",
+  "document_type": "Attendance Check",
+  "is_active": 1,
+  "modified": "2023-06-05 09:48:52.793217",
+  "name": "Attendance Check",
+  "override_status": 0,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "Employee",
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Attendance Check",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending Approval",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Employee",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Attendance Check",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved",
+    "update_field": null,
+    "update_value": null
+   },
+   {
+    "allow_edit": "Employee",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Attendance Check",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected",
+    "update_field": null,
+    "update_value": null
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "condition": null,
+    "next_state": "Approved",
+    "parent": "Attendance Check",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending Approval"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "condition": null,
+    "next_state": "Rejected",
+    "parent": "Attendance Check",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending Approval"
+   }
+  ],
+  "workflow_name": "Attendance Check",
+  "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
+  "document_type": "Request for Purchase",
+  "is_active": 1,
+  "modified": "2023-05-22 14:42:02.493687",
+  "name": "RFP",
+  "override_status": 0,
+  "send_email_alert": 0,
+  "states": [
+   {
+    "allow_edit": "Warehouse Supervisor",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "RFP",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Submit to Purchase Officer",
+    "update_field": "",
+    "update_value": ""
+   },
+   {
+    "allow_edit": "Purchase Officer",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "RFP",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Pending Approval",
+    "update_field": "",
+    "update_value": ""
+   },
+   {
+    "allow_edit": "Purchase Manager",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "RFP",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Approved",
+    "update_field": "status",
+    "update_value": "Approved"
+   },
+   {
+    "allow_edit": "Purchase Manager",
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "RFP",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Rejected",
+    "update_field": "status",
+    "update_value": "Rjected"
+   }
+  ],
+  "transitions": [
+   {
+    "action": "Submit for Approval",
+    "allow_self_approval": 1,
+    "allowed": "Purchase Officer",
+    "condition": null,
+    "next_state": "Pending Approval",
+    "parent": "RFP",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Submit to Purchase Officer"
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Purchase Manager",
+    "condition": null,
+    "next_state": "Approved",
+    "parent": "RFP",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending Approval"
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Purchase Manager",
+    "condition": null,
+    "next_state": "Rejected",
+    "parent": "RFP",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Pending Approval"
+   }
+  ],
+  "workflow_name": "RFP",
+  "workflow_state_field": "workflow_state"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow",
   "document_type": "Request for Material",
   "is_active": 1,
-  "modified": "2023-05-15 07:55:50.830891",
+  "modified": "2023-05-26 10:10:37.942113",
   "name": "RFM",
   "override_status": 0,
   "send_email_alert": 0,
@@ -24,7 +202,7 @@
    },
    {
     "allow_edit": "Employee",
-    "doc_status": "1",
+    "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -50,7 +228,7 @@
    },
    {
     "allow_edit": "Employee",
-    "doc_status": "2",
+    "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
     "next_action_email_template": null,
@@ -59,7 +237,7 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "status",
-    "update_value": "Rjected"
+    "update_value": "Rejected"
    }
   ],
   "transitions": [
@@ -3446,7 +3624,7 @@
   "doctype": "Workflow",
   "document_type": "Shift Permission",
   "is_active": 1,
-  "modified": "2022-11-28 11:09:25.665307",
+  "modified": "2023-05-25 12:16:58.767989",
   "name": "Shift Permission",
   "override_status": 0,
   "send_email_alert": 0,
@@ -4156,7 +4334,7 @@
   "doctype": "Workflow",
   "document_type": "Sales Invoice",
   "is_active": 1,
-  "modified": "2023-04-02 20:44:28.208513",
+  "modified": "2023-05-26 18:48:33.941562",
   "name": "Sales Invoice",
   "override_status": 0,
   "send_email_alert": 0,
@@ -4238,6 +4416,19 @@
     "state": "Rejected by Finance",
     "update_field": null,
     "update_value": null
+   },
+   {
+    "allow_edit": "Accounts Manager",
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Sales Invoice",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Cancelled",
+    "update_field": null,
+    "update_value": null
    }
   ],
   "transitions": [
@@ -4295,6 +4486,17 @@
     "parentfield": "transitions",
     "parenttype": "Workflow",
     "state": "Approved by Operations Manager"
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Accounts Manager",
+    "condition": null,
+    "next_state": "Cancelled",
+    "parent": "Sales Invoice",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "state": "Approved by Finance"
    }
   ],
   "workflow_name": "Sales Invoice",
@@ -5233,7 +5435,7 @@
   "doctype": "Workflow",
   "document_type": "Contracts",
   "is_active": 1,
-  "modified": "2023-05-22 08:14:42.898973",
+  "modified": "2023-06-06 08:07:18.294354",
   "name": "Contracts",
   "override_status": 0,
   "send_email_alert": 0,
@@ -5751,7 +5953,7 @@
   "doctype": "Workflow",
   "document_type": "Timesheet",
   "is_active": 1,
-  "modified": "2023-03-27 14:53:55.057106",
+  "modified": "2023-05-31 23:20:13.204720",
   "name": "Timesheet",
   "override_status": 0,
   "send_email_alert": 0,
@@ -5862,7 +6064,7 @@
     "action": "Approve",
     "allow_self_approval": 1,
     "allowed": "Employee",
-    "condition": "frappe.session.user == doc.approver and doc.attendance_by_timesheet == 1",
+    "condition": "doc.attendance_by_timesheet == 1",
     "next_state": "Approved",
     "parent": "Timesheet",
     "parentfield": "transitions",
@@ -5873,7 +6075,7 @@
     "action": "Reject",
     "allow_self_approval": 1,
     "allowed": "Employee",
-    "condition": "frappe.session.user == doc.approver and doc.attendance_by_timesheet == 1",
+    "condition": "doc.attendance_by_timesheet == 1",
     "next_state": "Rejected",
     "parent": "Timesheet",
     "parentfield": "transitions",
@@ -6016,107 +6218,6 @@
    }
   ],
   "workflow_name": "Employee Checkin Issue",
-  "workflow_state_field": "workflow_state"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow",
-  "document_type": "Request for Purchase",
-  "is_active": 1,
-  "modified": "2023-05-22 14:42:02.493687",
-  "name": "RFP",
-  "override_status": 0,
-  "send_email_alert": 0,
-  "states": [
-   {
-    "allow_edit": "Warehouse Supervisor",
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "RFP",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Submit to Purchase Officer",
-    "update_field": "",
-    "update_value": ""
-   },
-   {
-    "allow_edit": "Purchase Officer",
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "RFP",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Pending Approval",
-    "update_field": "",
-    "update_value": ""
-   },
-   {
-    "allow_edit": "Purchase Manager",
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "RFP",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Approved",
-    "update_field": "status",
-    "update_value": "Approved"
-   },
-   {
-    "allow_edit": "Purchase Manager",
-    "doc_status": "2",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "RFP",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "state": "Rejected",
-    "update_field": "status",
-    "update_value": "Rjected"
-   }
-  ],
-  "transitions": [
-   {
-    "action": "Submit for Approval",
-    "allow_self_approval": 1,
-    "allowed": "Purchase Officer",
-    "condition": null,
-    "next_state": "Pending Approval",
-    "parent": "RFP",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "state": "Submit to Purchase Officer"
-   },
-   {
-    "action": "Approve",
-    "allow_self_approval": 1,
-    "allowed": "Purchase Manager",
-    "condition": null,
-    "next_state": "Approved",
-    "parent": "RFP",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "state": "Pending Approval"
-   },
-   {
-    "action": "Reject",
-    "allow_self_approval": 1,
-    "allowed": "Purchase Manager",
-    "condition": null,
-    "next_state": "Rejected",
-    "parent": "RFP",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "state": "Pending Approval"
-   }
-  ],
-  "workflow_name": "RFP",
   "workflow_state_field": "workflow_state"
  }
 ]

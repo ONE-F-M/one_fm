@@ -99,8 +99,9 @@ doctype_js = {
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
-    "Wiki Page": "public/js/doctype_js/wiki_page.js",
-    "Error Log": "public/js/doctype_js/error_log.js",
+	"Wiki Page": "public/js/doctype_js/wiki_page.js",
+	"Error Log": "public/js/doctype_js/error_log.js",
+	"Assignment Rule": "public/js/doctype_js/assignment_rule.js",
     "Workflow": "public/js/doctype_js/workflow.js"
 }
 doctype_list_js = {
@@ -271,6 +272,7 @@ doc_events = {
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
 		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
+		"validate": "one_fm.purchase.utils.validate_store_keeper_project_supervisor"
 	},
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
@@ -296,6 +298,8 @@ doc_events = {
 	},
 	"Sales Invoice":{
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice",
+		"on_submit":"one_fm.one_fm.sales_invoice_custom.submit_sales_invoice",
+		"before_cancel":'one_fm.one_fm.sales_invoice_custom.cancel_sales_invoice',
 		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
 		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
@@ -635,6 +639,9 @@ scheduler_events = {
 		"45 1 * * *": [ # validate shift assignment
 			'one_fm.api.tasks.validate_am_shift_assignment'
 		],
+		"45 2 * * *":[
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check'
+		],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
 		],
@@ -695,11 +702,10 @@ scheduler_events = {
 # ]
 
 fixtures = [
-	{
-		# "dt": "Custom Field",
-		# 'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
-	},
-	
+	# {
+	# 	"dt": "Custom Field",
+	# 	'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
+	# },
 	{
 		"dt": "Property Setter"
 	},
@@ -713,21 +719,13 @@ fixtures = [
 		"dt": "Workflow"
 	},
 	{
-		"dt": "Client Script",
-		'filters': [['dt', 'in', ['Stock Entry', 'Warehouse',
-		'Payment Entry', 'Payment Request', 'Purchase Receipt', 'Purchase Order']]]
-	},
-	{
-		"dt": "Print Format"
-	},
-	{
 		"dt": "Role",
 		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
 	},
-	# {
-	# 	"dt": "Custom DocPerm",
-	# 	"filters": [["role", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	# },
+	{
+		"dt": "Assignment Rule",
+		"filters": [["name", "in",["RFM Approver", "Shift Permission Approver"]]]
+	},
 	{
 		"dt": "Email Template"
 	},
@@ -751,7 +749,7 @@ override_whitelisted_methods = {
     "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
 	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-	"erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry":'one_fm.one_fm.hr_utils.create_invoice_payment_entry',
+	
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
@@ -774,6 +772,7 @@ jenv = {
 after_migrate = [
     "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.disable_workflow_emails",
+    "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
 ]
 
 before_migrate = [

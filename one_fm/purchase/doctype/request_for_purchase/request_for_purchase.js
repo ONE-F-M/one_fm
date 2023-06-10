@@ -2,46 +2,29 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Request for Purchase', {
-	before_workflow_action: function(frm){
-		if(frm.doc.workflow_state == 'Submit to Purchase Officer' && frm.doc.items_to_order.length <= 0){
-			frm.scroll_to_field('items_to_order');
-		}
-	},
 	refresh: function(frm) {
 		set_intro_related_to_status(frm);
 		frm.events.make_custom_buttons(frm);
-		if(!frm.doc.approver || (frm.doc.approver != frm.doc.__onload.approver)){
-			frm.set_value('approver', frm.doc.__onload.approver);
-		}
-		if(!frm.doc.accepter || (frm.doc.accepter != frm.doc.__onload.accepter)){
-			frm.set_value('accepter', frm.doc.__onload.accepter);
-		}
-	},
-	status: function(frm) {
-		if(frm.doc.status && frm.doc.status == 'Rejected'){
-			frm.set_df_property('reason_for_rejection', 'reqd', true);
-		}
-		else{
-			frm.set_df_property('reason_for_rejection', 'reqd', false);
-		}
 	},
 	make_custom_buttons: function(frm) {
-		if (frm.doc.docstatus == 1){
-			if(frm.doc.status == 'Draft') {
-				if(frm.doc.items.length > frm.doc.items_to_order.length && !frm.doc.notified_the_rfm_requester){
-					frm.add_custom_button(__("Notify the Requester"),
-						() => frm.events.notify_the_rfm_requester(frm));
-				}
-				frm.add_custom_button(__("Request for Quotation"),
-					() => frm.events.make_request_for_quotation(frm), __('Create'));
+		if (frm.doc.docstatus == 1 && frappe.user.has_role('Purchase Officer')){
+			if(frm.doc.items.length > frm.doc.items_to_order.length && !frm.doc.notified_the_rfm_requester){
+				frm.add_custom_button(__("Notify the Requester"),
+					() => frm.events.notify_the_rfm_requester(frm));
+			}
 
+			frm.add_custom_button(__("Create Request for Quotation"),
+				() => frm.events.make_request_for_quotation(frm), __('Actions'));
+
+			if(frm.doc.__onload.exists_qfs){
 				frm.add_custom_button(__("Compare Quotations"),
-					() => frm.events.make_quotation_comparison_sheet(frm));
+					() => frm.events.make_quotation_comparison_sheet(frm), __('Actions'));
 			}
-			if(frm.doc.status == 'Approved'){
-				frm.add_custom_button(__("Purchase Order"),
-					() => frm.events.make_purchase_order(frm), __('Create'));
-			}
+
+			frm.add_custom_button(__("Create Purchase Order"),
+				() => frm.events.make_purchase_order(frm), __('Actions'));
+
+			frm.page.set_inner_btn_group_as_primary(__('Actions'));
 		}
 	},
 	make_request_for_quotation: function(frm) {
@@ -94,11 +77,22 @@ frappe.ui.form.on('Request for Purchase', {
 		if(frm.is_dirty()){
 			frappe.throw(__('Please Save the Document and Continue .!'))
 		}
-		var zero_rate_item_in_items_to_order = frm.doc.items_to_order.filter(items_to_order => items_to_order.rate <= 0);
-		var zero_rate_item_idx_in_items_to_order = zero_rate_item_in_items_to_order.map(pt => {return pt.idx}).join(', ');
-		if(zero_rate_item_idx_in_items_to_order && zero_rate_item_idx_in_items_to_order.length > 0) {
+		if(frm.doc.items_to_order.length <= 0){
 			frm.scroll_to_field('items_to_order');
-			frappe.throw(__("Not able to create PO, because the rates are not set in the `Items to Order` table for rows {0}", [zero_rate_item_idx_in_items_to_order]))
+			frappe.throw(__("Fill Items to Order to Create Purchase Order"))
+		}
+		var mandatory_fields_not_set_for_po = frm.doc.items_to_order.filter(items_to_order => (items_to_order.rate <= 0 || !items_to_order.item_code || !items_to_order.supplier));
+		var idx_mandatory_fields_not_set_for_po = mandatory_fields_not_set_for_po.map(pt => {return pt.idx}).join(', ');
+		if(idx_mandatory_fields_not_set_for_po && idx_mandatory_fields_not_set_for_po.length > 0) {
+			frm.scroll_to_field('items_to_order');
+			frappe.throw(__("Not able to create PO, Set Item Code/Supplier/Rate in <b>Items to Order</b> rows {0}", [idx_mandatory_fields_not_set_for_po]))
+		}
+
+		var items = frm.doc.items_to_order.filter(item => (item.qty_requested && item.qty_requested < item.qty));
+		var idx_items = items.map(pt => {return pt.idx}).join(', ');
+		if(idx_items && idx_items.length > 0) {
+			frm.scroll_to_field('items_to_order');
+			frappe.throw(__("Items <b>Items Order</b> are greater in quantity than requested in rows {0}", [idx_items]))
 		}
 
 		var stock_item_in_items_to_order = frm.doc.items_to_order.filter(items_to_order => items_to_order.is_stock_item === 1 && !items_to_order.t_warehouse);
@@ -128,6 +122,7 @@ frappe.ui.form.on('Request for Purchase', {
 			items_to_order.description = item.description
 			items_to_order.uom = item.uom
 			items_to_order.t_warehouse = item.t_warehouse
+			items_to_order.qty_requested = item.qty
 			items_to_order.qty = item.qty
 			items_to_order.delivery_date = item.schedule_date
 			items_to_order.request_for_material = item.request_for_material
@@ -140,34 +135,14 @@ frappe.ui.form.on('Request for Purchase', {
 });
 
 var set_intro_related_to_status = function(frm) {
-	if(frm.doc.docstatus == 0){
-		frm.set_intro("")
-		frm.set_intro(__("Submit the document to confirm and notify the Purchase Manager"), 'blue');
-	}
 	if (frm.doc.docstatus == 1){
-		if(frm.doc.status == 'Draft') {
-			frm.set_intro(__("Create Request for Quotation (Optional)."), 'yellow');
-			frm.set_intro(__("Compare Quotations if Quotaiton Available (Optional)."), 'yellow');
-			if((frm.doc.items_to_order && frm.doc.items_to_order.length == 0) || !frm.doc.items_to_order){
-				frm.set_intro(__("Fill Items to Order - Check Supplier and Item Code set Correctly."), 'yellow');
-			}
-			frm.set_intro(__("Click `Confirm Item Details and Send for Approval` Button"), 'yellow');
-			frm.set_intro(__("On Approval, Requester can create PO from the create dropdown button"), 'yellow');
+		frm.set_intro(__("Create Request for Quotation (Optional) from the Actions dropdown"), 'yellow');
+		frm.set_intro(__("Create Quotation from Supplier (Optional) from the Request for Quotation"), 'yellow');
+		frm.set_intro(__("Compare Quotations if Quotaiton Available (Optional) from the Actions dropdown"), 'yellow');
+		if((frm.doc.items_to_order && frm.doc.items_to_order.length == 0) || !frm.doc.items_to_order){
+			frm.set_intro(__("Fill Items to Order - Check Supplier, Item Code and Rate set Correctly."), 'yellow');
 		}
-		if(frm.doc.status == "Draft Request"){
-			frm.set_intro(__("On Accept notify Approver"), 'yellow');
-			frm.set_intro(__("On Approval, Requester can create PO from the create dropdown button"), 'yellow');
-		}
-		if(frm.doc.status == "Accepted"){
-			frm.set_intro(__("On Approval, Requester can create PO from the create dropdown button"), 'yellow');
-		}
-		if(frm.doc.status == 'Approved'){
-			frappe.db.get_value("Purchase Order", {"one_fm_request_for_purchase": frm.doc.name}, "name", function(r) {
-				if(!r || !r.name){
-					frm.set_intro(__("Requester can create PO"), 'yellow');
-				}
-			})
-		}
+		frm.set_intro(__("Purchase Officer can Create Purchase Order from the Actions dropdown"), 'yellow');
 	}
 };
 

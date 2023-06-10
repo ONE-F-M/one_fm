@@ -68,6 +68,9 @@ frappe.ui.form.on('ERF', {
 				frm.add_custom_button(__('Close ERF'), () => frm.events.close_erf(frm)).addClass('btn-primary');
 			}
 		}
+		if (!frm.is_new() && frm.doc.docstatus == 0 && frm.doc.amended_from && frm.doc.status == "Cancelled"){
+			frm.set_value('draft_erf_to_hrm', 0);
+		}
 		if (!frm.is_new() && frm.doc.docstatus == 0 && !frm.doc.draft_erf_to_hrm){
 			frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
 

@@ -176,39 +176,6 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
         return frappe.utils.response.report_error(e.http_status_code)
 
 
-# @frappe.whitelist()
-# def edit_post(operations_role, shift, post_status, date_list, paid=0, repeat=None):
-# 	"""
-# 		post_status: Post Off/Suspend Post/Cancel Post
-# 		date_list: List of dates
-# 		paid: 1/0 if the changes are paid/unpaid
-# 		repeat: If changes are to be repeated. List of dates when to repeat this.
-# 	"""
-# 	try:
-# 		date_list = json.loads(date_list)
-# 		for date in date_list:
-# 			if frappe.db.exists("Post Schedule", {"date": date, "operations_role": operations_role, "shift": shift}):
-# 				post_schedule = frappe.get_doc("Post Schedule", {"date": date, "operations_role": operations_role, "shift": shift})
-# 			else:
-# 				post_schedule = frappe.new_doc("Post Schedule")
-# 				post_schedule.post = operations_role
-# 				post_schedule.date = date
-# 			post_schedule.post_status = post_status
-# 			if cint(paid):
-# 				print("81",post_schedule.paid,post_schedule.unpaid)
-# 				post_schedule.paid = 1
-# 				post_schedule.unpaid = 0
-# 			else:
-# 				print("85",post_schedule.paid,post_schedule.unpaid)
-# 				post_schedule.unpaid = 1
-# 				post_schedule.paid = 0
-# 			post_schedule.save(ignore_permissions=True)
-# 			# print(post_schedule.as_dict())
-# 		print(post_status, date_list, type(date_list))
-# 		frappe.db.commit()
-
-# 	except Exception as e:
-# 		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def edit_post(post, post_status, start_date, end_date, paid=0, never_end=0, repeat=0, repeat_freq=None):
@@ -251,9 +218,9 @@ def create_edit_post(date, post, post_status, paid):
     post_schedule.post_status = post_status
     if cint(paid):
         post_schedule.paid = 1
-        post_schedule.unpaid = 0
+        
     else:
-        post_schedule.unpaid = 1
+        
         post_schedule.paid = 0
     post_schedule.save(ignore_permissions=True)
 
@@ -605,27 +572,40 @@ def get_current_shift(employee):
     try:
         # fetch datetime
         current_datetime = now_datetime()
+        date, time = current_datetime.strftime("%Y-%m-%d %H:%M:%S").split(" ")
+        
+        shift = frappe.db.sql("""SELECT sa.* FROM `tabShift Assignment` sa, `tabShift Type` st
+							WHERE sa.shift_type = st.name
+                            AND employee ='{employee}'
+                            AND DATE_SUB(sa.start_datetime, INTERVAL st.begin_check_in_before_shift_start_time MINUTE) <= '{current_datetime}'
+                            AND DATE_ADD(sa.end_datetime, INTERVAL st.allow_check_out_after_shift_end_time MINUTE) >= '{current_datetime}'
+                            ORDER BY creation ASC""".format(current_datetime=cstr(current_datetime), employee=employee), as_dict=1)
 
-        # fetch the last shift assignment
-        shift = frappe.get_last_doc("Shift Assignment", filters={"employee": employee}, order_by="creation desc")
-
-        if shift:
-            before_time, after_time = frappe.get_value("Shift Type", shift.shift_type,
-                                                       ["begin_check_in_before_shift_start_time",
-                                                        "allow_check_out_after_shift_end_time"])
-
-            if shift.start_datetime and shift.end_datetime:
-                # include early entry and late exit time
-                start_time = shift.start_datetime - datetime.timedelta(minutes=before_time)
-                end_time = shift.end_datetime + datetime.timedelta(minutes=after_time)
-
-                # Check if current time is within the shift start and end time.
-                if start_time <= current_datetime <= end_time:
-                    return shift
+        if len(shift) == 1:
+            cur_shift = shift[0]
+        elif len(shift) == 2: #2 shift colliding
+            if has_checkout(shift[0], employee, date): #
+                cur_shift = shift[1]
+            else:
+                cur_shift = shift[0]
+        else:
+            cur_shift =  shift
+        return cur_shift
+            
     except Exception as e:
         print(frappe.get_traceback())
         return frappe.utils.response.report_error(e.http_status_code)
 
+def has_checkout(shift, employee, date):
+    checkin = frappe.db.sql("""SELECT * FROM `tabEmployee Checkin` empChkin
+							WHERE date(empChkin.time)='{date}'
+                            AND shift_assignment = '{shift}'
+                            AND employee ='{employee}'
+                            AND log_type = 'OUT'""".format(date=cstr(date), shift=shift.name, employee=employee), as_dict=1)
+    if checkin:
+        return True
+    else:
+        return False
 
 @frappe.whitelist()
 def get_report_comments(report_name):

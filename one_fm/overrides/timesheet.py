@@ -40,8 +40,10 @@ class TimesheetOveride(Timesheet):
         self.validate_mandatory_fields()
         self.update_task_and_project()
         if self.workflow_state == "Approved":
+            self.check_approver()
             self.create_attendance()
         elif self.workflow_state == "Rejected":
+            self.check_approver()
             self.notify_the_employee()
 
     def notify_the_employee(self):
@@ -90,6 +92,10 @@ class TimesheetOveride(Timesheet):
             att.working_hours = self.total_hours
             att.insert(ignore_permissions=True)
             att.submit()
+    
+    def check_approver(self):
+        if frappe.session.user != self.approver:
+            frappe.throw(_("Only Approver can Approve/Reject the timesheet"))
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
     filters = {

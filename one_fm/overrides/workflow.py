@@ -235,7 +235,7 @@ def filter_allowed_users(users, doc, transition):
 			if has_permission(doctype=doc, user=user):
 				filtered_users.append(user)
 			else:
-				frappe.share.add(doc.doctype, doc.name, user=user, write=1, flags={'ignore_share_permission':1})
+				frappe.share.add(doc.doctype, doc.name, user=user, write=1)
 				filtered_users.append(user)
 
 	return filtered_users

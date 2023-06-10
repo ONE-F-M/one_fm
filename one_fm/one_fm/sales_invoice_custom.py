@@ -7,10 +7,105 @@ from frappe.utils import getdate,cstr,get_first_day,get_last_day,add_days,add_mo
 from one_fm.overrides.timesheet import timesheet_automation,calculate_hourly_rate,days_of_month
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
+from erpnext.accounts.utils import get_balance_on
+from frappe.desk.form.linked_with import get as get_linked_docs
 
 
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
 from one_fm.operations.doctype.contracts.contracts import get_contracts_items
+
+
+
+def cancel_sales_invoice(doc,ev):
+    """
+    Cancel all advance journals linked to the 
+    Args:
+        doc (_type_): Journal Entry document
+        ev (_type_): event
+    """
+    if doc.get("settlement_amount") and doc.get('automatic_settlement') == "Yes":
+        linked_docs = get_linked_docs(doctype="Sales Invoice",docname = doc.name)
+        if linked_docs.get("Journal Entry"):
+            for each in linked_docs.get("Journal Entry"):
+                parent_je = frappe.get_doc("Journal Entry",each.name)
+                parent_je.cancel()
+                
+        # linked_jea = frappe.db.sql("SELECT parent from `tabJournal Entry Account` where reference_name = {}".format(doc.name),as_dict=1)
+        # # linked_jea = frappe.get_all('Journal Entry Account',{'reference_name':doc.name,'docstatus':1},['parent'])
+        # if linked_jea:
+        #     parent_je = frappe.get_doc("Journal Entry",linked_jea.parent)
+        #     parent_je.cancel()
+    
+def submit_sales_invoice(doc,ev):
+    """
+     Create a journal entry for advance payments if the sales invoice is set to settle from an existing advance payment
+
+    Args:
+        doc (_type_): doctype (Sales Invoice)
+        ev (_type_): evennt
+
+    
+    """
+    advance_account = frappe.get_value('Accounts Additional Settings',None,'customer_advance_account')
+    if doc.get('automatic_settlement') == "Yes" and advance_account:
+        naming_controller = frappe.get_doc("Document Naming Settings")
+        journal_series = naming_controller.get_options("Journal Entry").strip("\n")
+        
+        if journal_series:
+            args = {
+                'doctype':"Journal Entry",
+                'naming_series':journal_series,
+                'company':doc.company,
+                'voucher_type':"Journal Entry",
+                'posting_date':doc.posting_date,
+                'user_remark':"Invoice settlement for Sales Invoice {}".format(doc.name)
+            }
+            journal_dict = frappe._dict(args)
+            je_doc  = frappe.get_doc(journal_dict)
+            je_doc.append("accounts",{
+                'account':advance_account,
+                'debit_in_account_currency':doc.settlement_amount,
+                'party_type':'Customer',
+                'party':doc.customer,
+            })
+            je_doc.append("accounts",{
+                'account':doc.debit_to,
+                'credit_in_account_currency':doc.settlement_amount,
+                'party_type':'Customer',
+                'party':doc.customer,
+                'reference_type':'Sales Invoice',
+                'reference_name':doc.name
+                
+            })
+            je_doc.save()
+            je_doc.submit()
+            
+
+
+
+@frappe.whitelist()
+def get_customer_advance_balance(customer):
+    """
+        Fetch the customer balance on the advance account if exists, If not account is set then return 0
+    Args:
+        customer (Valid Customer): A valid customer
+    """
+    customer_advance = frappe.get_value('Accounts Additional Settings',None,'customer_advance_account')
+    if not customer_advance:
+        return 0
+    customer_balance = get_balance_on(customer_advance,party_type = "Customer",party = customer)
+    if customer_balance > 0:
+        #Debit Balance, Customer is owing
+        return (0-customer_balance)
+    elif customer_balance < 0:
+        # Credit balance, customer is being owed
+        return (abs(customer_balance))
+    else:
+        # Balance is zero
+        return customer_balance
+    return customer_balance
+    
+
 
 
 def create_sales_invoice():
@@ -1004,6 +1099,11 @@ def add_admin_manpower(sales_invoice,project,journal_entry_start_date,journal_en
     return sales_invoice
 
 def set_print_settings_from_contracts(doc, method):
+    if doc.get('automatic_settlement') == "Yes":
+        if not doc.get('settlement_amount'):
+            frappe.throw("Please set an amount to be settled from advances for this invoice.")
+        if doc.get('settlement_amount') > doc.get('balance_in_advance_account') and doc.get('automatic_settlement') == "Yes":
+            frappe.throw("Settlement amount cannot be more than balance in advance account")
     if doc.contracts:
         contracts_print_settings = frappe.db.get_values('Contracts', doc.contracts, ['sales_invoice_print_format', 'sales_invoice_letter_head'], as_dict=True)
         if contracts_print_settings and len(contracts_print_settings) > 0:
