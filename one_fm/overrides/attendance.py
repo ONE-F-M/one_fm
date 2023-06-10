@@ -446,7 +446,7 @@ def mark_daily_attendance(start_date, end_date):
                 emp = employees_dict.get(i.employee)
                 query_body+= f"""
                 (
-                    "HR-ATT_{start_date}_{i.employee}_Basic", "{i.employee}", "{i.employee_name}", 0, "Day Off", '', NULL,
+                    "HR-ATT_{start_date}_{i.employee}_Basic", "{i.employee}", "{emp.employee_name}", 0, "Day Off", '', NULL,
                     NULL, "", "", "", "", "{start_date}", "{emp.company}",
                     "{emp.department}", 0, 0, "", "", "Basic", 1, "{owner}",
                     "{owner}", "{creation}", "{creation}", "Employee Schedule - {i.name}"

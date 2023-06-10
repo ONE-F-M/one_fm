@@ -37,4 +37,4 @@ one_fm.patches.v14_0.update_leave_application_status_to_approved
 one_fm.patches.v14_0.remove_rfp_workflow
 one_fm.patches.v14_0.update_sales_invoice_workflow
 one_fm.patches.v14_0.set_shift_permission_roster_type
-one_fm.patches.v14_0.update_employee_checkin_record
+#one_fm.patches.v14_0.update_employee_checkin_record
