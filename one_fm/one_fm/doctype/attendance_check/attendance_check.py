@@ -83,7 +83,8 @@ class AttendanceCheck(Document):
 				frappe.throw(_('To Approve or Reject the Record set {0}'.format(message)))
 
 def create_attendance_check(attendance_date=None):
-	if production_domain():
+	if production_domain() or 1:
+		attendance_checkin_found = []
 		if not attendance_date:
 			attendance_date = add_days(today(), -1)
 		all_attendance = frappe.get_all("Attendance", filters={
@@ -269,7 +270,6 @@ def create_attendance_check(attendance_date=None):
 		# Absent record Basic
 		attendance_check_list = []
 		#basic create
-		print(len(missing_basic+absent_attendance_basic_list), len(missing_ot+absent_attendance_ot_list))
 		for i in missing_basic+absent_attendance_basic_list:
 			employee = employees_dict.get(i)
 			at_check = frappe._dict({
@@ -331,10 +331,13 @@ def create_attendance_check(attendance_date=None):
 			
 			if not frappe.db.exists("Attendance Check", {"employee":i, 'date':attendance_date, 'roster_type':at_check.roster_type}):
 				try:
-					at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
-					attendance_check_list.append(at_check_doc.name)
-				except:
-					pass
+					if at_check.has_checkin_record and not str(at_check.comment).startswith('4'):
+						attendance_checkin_found.append(at_check)
+					else:
+						at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
+						attendance_check_list.append(at_check_doc.name)
+				except Exception as e:
+					print(e)
 
 		# OT Create
 		for i in missing_ot+absent_attendance_ot_list:
@@ -394,11 +397,18 @@ def create_attendance_check(attendance_date=None):
 
 			if not frappe.db.exists("Attendance Check", {"employee":i, 'date':attendance_date, 'roster_type':at_check.roster_type}):
 				try:
-					at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
-					attendance_check_list.append(at_check_doc.name)
-				except:
-					pass
+					if at_check.has_checkin_record and not str(at_check.comment).startswith('4'):
+						attendance_checkin_found.append(at_check)
+					else:
+						at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
+						attendance_check_list.append(at_check_doc.name)
+				except Exception as e:
+					print(e)
 
+		# remark missing
+		frappe.enqueue(mark_missing_attendance, attendance_checkin_found=attendance_checkin_found, queue='long', timeout=5000)
+
+		# update employee checkin
 		if len(attendance_check_list)==1:
 			attendance_check_tuple = (attendance_check_list[0])
 		elif len(attendance_check_list)>1:
@@ -432,3 +442,72 @@ def approve_attendance_check():
 			if str(e)=="To date can not greater than employee's relieving date":
 				doc.db_set("Comment", f"Employee exited company on {frappe.db.get_value('Employee', doc.employee, 'relieving_date')}\n{doc.comment or ''}")
 
+
+def mark_missing_attendance(attendance_checkin_found):
+	for i in attendance_checkin_found:
+		try:
+			checkin_record = ""
+			checkout_record = ""
+			shift_assignment = ""
+			att = ""
+			working_hours = 0
+			in_time = ''
+			out_time = ''
+			comment = ''
+			day_off_ot = 0
+			
+			if i.attendance:
+				att = frappe.get_doc("Attendance", i.attendance)
+			if i.shift_assignment:
+				shift_assignment = frappe.get_doc("Shift Assignment", i.shift_assignment)
+				day_off_ot = frappe.get_value("Employee Schedule", {
+					'employee':i.employee,
+					'date':i.date,
+					'roster_type':i.roster_type
+				}, 'day_off_ot')
+			if i.checkin_record:
+				checkin_record = frappe.get_doc("Employee Checkin", i.checkin_record)
+			if i.checkout_record:
+				checkout_record = frappe.get_doc("Employee Checkin", i.checkout_record)
+			
+			# calculate working hours
+			if checkin_record and not checkout_record and shift_assignment:
+				working_hours = (shift_assignment.end_datetime - checkin_record.time).total_seconds() / (60 * 60)
+				in_time = checkin_record.time
+				out_time = shift_assignment.end_datetime
+				comment = "No checkout record found"
+			elif checkin_record and checkout_record and shift_assignment:
+				working_hours = (checkout_record.time - checkin_record.time).total_seconds() / (60 * 60)
+				in_time = checkin_record.time
+				out_time = checkout_record.time
+			if att:
+				# set values based on existing attendance
+				if att.status=='Absent':
+					att.db_set({
+						'working_hours':working_hours,
+						'in_time':in_time,
+						'out_time':out_time,
+						'comment':comment,
+						'day_off_ot':day_off_ot,
+						'status':'Present'
+					})
+			else:
+				att = frappe.new_doc("Attendance")
+				att.employee = i.employee
+				att.employee_name = i.employee_name
+				att.attendance_date = i.date
+				att.status = 'Present'
+				att.roster_type = i.roster_type
+				att.shift_assignment = i.shift_assignment
+				att.in_time = in_time
+				att.out_time = out_time
+				att.working_hours = working_hours
+				att.comment = comment
+				att.day_off_ot = day_off_ot
+				att.insert(ignore_permissions=True)
+				att.submit()
+			frappe.db.set_value("Employee Checkin", i.checkin_record, "attendance", att.name)
+			if checkout_record:
+				frappe.db.set_value("Employee Checkin", i.checkout_record, "attendance", attendance.name)
+		except Exception as e:
+			frappe.log_error(frappe.get_traceback(), 'Attendance Remark')

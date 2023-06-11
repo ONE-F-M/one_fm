@@ -396,7 +396,7 @@ def mark_daily_attendance(start_date, end_date):
 
         """
         query_body = """"""
-        employees = frappe.get_all("Employee", filters={'status':'Active'}, fields="*")
+        employees = frappe.get_all("Employee", fields="*")
         employees_dict = {}
         for i in employees:
             employees_dict[i.employee] = i
@@ -523,7 +523,7 @@ def mark_daily_attendance(start_date, end_date):
             name = f"HR-ATT_{i.employee}_Basic"
             query_body+= f"""
             (
-                "{name}", "{i.employee}", "{emp.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
+                "{name}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
                 NULL, "{i.name}", "{i.shift}", "{i.site}", "{operations_shift_dict.get(i.shift).project}", "{start_date}", "{i.company}",
                 "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
                 "{owner}", "{creation}", "{creation}", "No attendance record found"
@@ -633,7 +633,7 @@ def mark_daily_attendance(start_date, end_date):
             name = f"HR-ATT_{i.employee}_Basic"
             query_body+= f"""
             (
-                "{name}", "{i.employee}", "{emp.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
+                "{name}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
                 NULL, "{i.name}", "{i.shift}", "{i.site}", "{operations_shift_dict.get(i.shift).project}", "{start_date}", "{i.company}",
                 "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
                 "{owner}", "{creation}", "{creation}", "No attendance record found"
