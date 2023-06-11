@@ -405,7 +405,8 @@ def mark_daily_attendance(start_date, end_date):
         basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
         
         basic_shift_assignments = frappe.get_all("Shift Assignment", filters={
-            'start_date':["BETWEEN", [start_date, end_date]],
+            'start_date':start_date, 
+            'end_date': end_date,
             'roster_type':'Basic', 'docstatus':1
         }, fields="*")
         basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
