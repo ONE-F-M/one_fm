@@ -3,24 +3,6 @@ frappe.ui.form.on('Job Offer', {
     if(frm.is_new()){
       frm.set_value('offer_date', frappe.datetime.now_date());
     }
-    if (frm.doc.workflow_state != 'Accepted' && frm.doc.one_fm_erf != undefined){
-      frappe.call({
-        method: "frappe.client.get",
-        args: {
-            doctype: "ERF",
-            name: frm.doc.one_fm_erf,
-        },
-        callback(r) {
-            if(r.message) {
-                var erf = r.message;
-                if (erf.docstatus == 2){
-                  frm.set_df_property("one_fm_erf", "read_only", 0);
-                }
-
-            }
-        }
-    });
-    }
     set_shift_working_btn(frm);
     filterDefaultShift(frm);
     check_and_info_offer_terms(frm, false);
@@ -51,6 +33,25 @@ frappe.ui.form.on('Job Offer', {
           });
         }
       });
+    }
+    const status = ['Accepted', 'Rejected'];
+    if (!status.includes(frm.doc.status) && frm.doc.one_fm_erf != undefined){
+      frappe.call({
+        method: "frappe.client.get",
+        args: {
+            doctype: "ERF",
+            name: frm.doc.one_fm_erf,
+        },
+        callback(r) {
+            if(r.message) {
+                var erf = r.message;
+                if (erf.docstatus == 2){
+                  frm.set_df_property("one_fm_erf", "read_only", 0);
+                }
+
+            }
+        }
+    });
     }
     if (frm.doc.workflow_state == 'Accepted' && frm.doc.docstatus === 1){
       if (!frm.doc.__onload || !frm.doc.__onload.onboard_employee){
