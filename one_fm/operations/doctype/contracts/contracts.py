@@ -70,7 +70,9 @@ class Contracts(Document):
     @frappe.whitelist()
     def generate_sales_invoice(self):
         # if period, contract came from frontend else scheduler (use dnow())
-
+        
+        # print(vars(self).values())
+        # return
         curent_month = False
         calculation_date = None
         if str(self.month_of_invoice).lower() == "current month":
@@ -105,6 +107,7 @@ class Contracts(Document):
         sales_invoice_doc.ignore_pricing_rule = 1
         sales_invoice_doc.set_posting_time = 1
         sales_invoice_doc.posting_date = contract_invoice_date
+        
 
         try:
             if self.create_sales_invoice_as == "Single Invoice":
@@ -1130,3 +1133,12 @@ def prepare_employee_schedules(project,old_start,old_end,new_start,new_end,durat
                     frappe.db.commit()
                 else:
                     continue
+                
+
+def calculate_rate_for_daily_rate_type(self, period, sales_invoice):
+    for obj in self.items:
+        if obj.rate_type == "Daily":
+            the_roles_list = frappe.db.get_list("Operation Role", {"sale_item": obj.item_code}, pluck="name")
+            the_attendance = frappe.db.count("Attendance", {"name": ["in", the_roles_list], "status": "Present"})
+        
+    
