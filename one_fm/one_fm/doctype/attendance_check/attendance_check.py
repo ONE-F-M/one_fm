@@ -83,7 +83,7 @@ class AttendanceCheck(Document):
 				frappe.throw(_('To Approve or Reject the Record set {0}'.format(message)))
 
 def create_attendance_check(attendance_date=None):
-	if production_domain() or 1:
+	if production_domain():
 		attendance_checkin_found = []
 		if not attendance_date:
 			attendance_date = add_days(today(), -1)
