@@ -103,7 +103,7 @@ frappe.ui.form.on('Job Applicant', {
 			}
 			frm.add_custom_button(__(''), function() {
 			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
+			if(frm.doc.status != 'Rejected'){
 				if (frappe.user.has_role("Job Applicant ERF Changer")){
 					frm.add_custom_button(__('Change ERF'), function() {
 						change_applicant_erf(frm);
@@ -765,36 +765,54 @@ var change_applicant_erf = function(frm) {
 		],
 		primary_action_label: __("Change ERF"),
 		primary_action : function(){
-			frappe.confirm(
-				__('Are you sure to change ERF for the Job Applicant?'),
-				function(){
-					// Yes
-					frappe.call({
-						method: "one_fm.hiring.utils.change_applicant_erf",
-						args: {
-							'job_applicant': frm.doc.name,
-							'old_erf': frm.doc.one_fm_erf,
-							'new_erf': dialog.get_value('erf')
-						},
-						callback: function(r) {
-							if(!r.exc){
-								dialog.hide();
-								frm.reload_doc();
-							}
-						},
-						freeze: true,
-						freeze_message: __("Change ERF.....")
-					});
-				},
-				function(){
-					// No
-					dialog.hide();
+			frappe.call({
+				method: 'frappe.client.get',
+				args: {doctype: 'ERF', filters:{name: dialog.get_value('erf')}},
+				callback: function(r) {
+					if(r.message){
+						var erf = r.message;
+						set_work_details_section(frm, erf);
+					}
+					confirm_erf_change(frm, dialog);
 				}
-			);
+			});
 		}
 	});
 	dialog.show();
 };
+
+var confirm_erf_change = function(frm, dialog) {
+	var msg = __('Are you sure to change ERF for the Job Applicant?');
+	if(frm.doc.one_fm_applicant_status == 'Selected'){
+		msg = __('Make sure that the Job Offer, Onboard Employee and Employee record are update to new ERF selelected. \nAre you sure to change ERF for the Job Applicant?');
+	}
+	frappe.confirm(
+		msg,
+		function(){
+			// Yes
+			frappe.call({
+				method: "one_fm.hiring.utils.change_applicant_erf",
+				args: {
+					'job_applicant': frm.doc.name,
+					'old_erf': frm.doc.one_fm_erf,
+					'new_erf': dialog.get_value('erf')
+				},
+				callback: function(r) {
+					if(!r.exc){
+						dialog.hide();
+						frm.reload_doc();
+					}
+				},
+				freeze: true,
+				freeze_message: __("Change ERF.....")
+			});
+		},
+		function(){
+			// No
+			dialog.hide();
+		}
+	);
+}
 
 var change_applicant_status = function(frm, status_field, status) {
 	let msg = __('Do you really want to make {0} the applicant?', [status])
