@@ -3,6 +3,24 @@ frappe.ui.form.on('Job Offer', {
     if(frm.is_new()){
       frm.set_value('offer_date', frappe.datetime.now_date());
     }
+    if (frm.doc.workflow_state != 'Accepted' && frm.doc.one_fm_erf != undefined){
+      frappe.call({
+        method: "frappe.client.get",
+        args: {
+            doctype: "ERF",
+            name: frm.doc.one_fm_erf,
+        },
+        callback(r) {
+            if(r.message) {
+                var erf = r.message;
+                if (erf.docstatus == 2){
+                  frm.set_df_property("one_fm_erf", "read_only", 0);
+                }
+
+            }
+        }
+    });
+    }
     set_shift_working_btn(frm);
     filterDefaultShift(frm);
     check_and_info_offer_terms(frm, false);
@@ -171,6 +189,7 @@ var set_job_applicant_details = function(frm) {
           callback: function(ret) {
             if(ret && ret.message){
               var erf = ret.message;
+              frm.set_value('one_fm_erf', erf.name);
               set_erf_details(frm, erf);
             }
           }
