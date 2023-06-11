@@ -641,40 +641,41 @@ def mark_daily_attendance(start_date, end_date):
             new_attendances.append(name)
 
         # UPDATE QUERY
-        query += query_body[:-1]
-        query += f"""
-            ON DUPLICATE KEY UPDATE
-            employee = VALUES(employee),
-            employee_name = VALUES(employee_name),
-            working_hours = VALUES(working_hours),
-            status = VALUES(status),
-            shift = VALUES(shift),
-            in_time = VALUES(in_time),
-            out_time = VALUES(out_time),
-            shift_assignment = VALUES(shift_assignment),
-            operations_shift = VALUES(operations_shift),
-            site = VALUES(site),
-            project = VALUES(project),
-            attendance_date = VALUES(attendance_date),
-            company = VALUES(company),
-            department = VALUES(department),
-            late_entry = VALUES(late_entry),
-            early_exit = VALUES(early_exit),
-            operations_role = VALUES(operations_role),
-            roster_type = VALUES(roster_type),
-            docstatus = VALUES(docstatus),
-            modified_by = VALUES(modified_by),
-            modified = VALUES(modified)
-        """
-        frappe.db.sql(query, values=[], as_dict=1)
-        frappe.db.commit()
+        if query_body:
+            query += query_body[:-1]
+            query += f"""
+                ON DUPLICATE KEY UPDATE
+                employee = VALUES(employee),
+                employee_name = VALUES(employee_name),
+                working_hours = VALUES(working_hours),
+                status = VALUES(status),
+                shift = VALUES(shift),
+                in_time = VALUES(in_time),
+                out_time = VALUES(out_time),
+                shift_assignment = VALUES(shift_assignment),
+                operations_shift = VALUES(operations_shift),
+                site = VALUES(site),
+                project = VALUES(project),
+                attendance_date = VALUES(attendance_date),
+                company = VALUES(company),
+                department = VALUES(department),
+                late_entry = VALUES(late_entry),
+                early_exit = VALUES(early_exit),
+                operations_role = VALUES(operations_role),
+                roster_type = VALUES(roster_type),
+                docstatus = VALUES(docstatus),
+                modified_by = VALUES(modified_by),
+                modified = VALUES(modified)
+            """
+            frappe.db.sql(query, values=[], as_dict=1)
+            frappe.db.commit()
 
-        # update employee checkin
-        frappe.enqueue(update_employee_checkin_with_attendance, attendance_dict=checkin_attendance_link,
-            queue='long', timeout=6000)
-        # update day_off_ot
-        frappe.enqueue(update_day_off_ot, attendances=new_attendances,
-            queue='long', timeout=6000)
+            # update employee checkin
+            frappe.enqueue(update_employee_checkin_with_attendance, attendance_dict=checkin_attendance_link,
+                queue='long', timeout=6000)
+            # update day_off_ot
+            frappe.enqueue(update_day_off_ot, attendances=new_attendances,
+                queue='long', timeout=6000)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Attendance Marking")    
 
