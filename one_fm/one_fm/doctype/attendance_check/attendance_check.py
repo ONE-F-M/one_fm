@@ -290,6 +290,9 @@ def create_attendance_check(attendance_date=None):
 				checkin_basic = in_checkins_basic_dict.get(i)
 				at_check.has_checkin_record = 1
 				at_check.checkin_record = checkin_basic.name
+				# check if late hours
+				if (checkin_basic.time - checkin_basic.shift_actual_start).total_seconds() / (60*60) > 4:
+					at_check.comment = f"4 hrs late, checkin in at {checkin_basic.time}"
 				at_check.roster_type = checkin_basic.roster_type
 			if out_checkins_basic_dict.get(i):
 				checkout_basic = out_checkins_basic_dict.get(i)
@@ -360,6 +363,9 @@ def create_attendance_check(attendance_date=None):
 				checkin_ot = in_checkins_ot_dict.get(i)
 				at_check.has_checkin_record = 1
 				at_check.checkin_record = checkin_ot.name
+				# check if late hours
+				if (checkin_ot.time - checkin_ot.shift_actual_start).total_seconds() / (60*60) > 4:
+					at_check.comment = f"4 hrs late, checkin in at {checkin_ot.time}"
 				at_check.roster_type = checkin_ot.roster_type
 			if out_checkins_ot_dict.get(i):
 				checkout_ot = out_checkins_ot_dict.get(i)
