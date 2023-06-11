@@ -69,6 +69,19 @@ class AttendanceOverride(Attendance):
             if not self.working_hours:frappe.throw("Working hours is required.")
             if self.working_hours <= 0:frappe.throw("Working hours must be greater than 0 if staus is Presnet ot Work From Home.")
 
+    def after_insert(self):
+        self.set_day_off_ot()
+
+    def set_day_off_ot(self):
+        if self.shift_assignment:
+            day_off_ot = frappe.db.get_value("Employee Schedule", {
+                'employee':self.employee,
+                'date':self.attendance_date,
+                'roster_type':self.roster_type
+            }, 'day_off_ot')
+            if day_off_ot:
+                self.db_set("day_off_ot", day_off_ot)
+
     def before_save(self):
         if not self.shift_assignment and self.status=='Present':
             shift_assignment = frappe.db.get_value("Shift Assignment", {
@@ -500,6 +513,7 @@ def mark_daily_attendance(start_date, end_date):
                 "{owner}", "{creation}", "{creation}", "{comment}"
             ),"""
             basic_attendance_employees.append(i.employee)
+            new_attendances.append(name)
         # update schedules
         basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
         basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
@@ -514,6 +528,7 @@ def mark_daily_attendance(start_date, end_date):
                 "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
                 "{owner}", "{creation}", "{creation}", "No attendance record found"
             ),"""
+            new_attendances.append(name)
 
 
         ### DO SAME FOR OVERTIME
@@ -608,6 +623,7 @@ def mark_daily_attendance(start_date, end_date):
                 "{owner}", "{creation}", "{creation}", "{comment}"
             ),"""
             ot_attendance_employees.append(i.employee)
+            new_attendances.append(name)
         # update schedules
         ot_employee_schedules = [i for i in ot_employee_schedules if not i.employee in ot_attendance_employees]
         ot_shift_assignments = [i for i in ot_shift_assignments if not i.employee in ot_attendance_employees]
@@ -622,6 +638,7 @@ def mark_daily_attendance(start_date, end_date):
                 "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
                 "{owner}", "{creation}", "{creation}", "No attendance record found"
             ),"""
+            new_attendances.append(name)
 
         # UPDATE QUERY
         query += query_body[:-1]
@@ -655,6 +672,9 @@ def mark_daily_attendance(start_date, end_date):
         # update employee checkin
         frappe.enqueue(update_employee_checkin_with_attendance, attendance_dict=checkin_attendance_link,
             queue='long', timeout=6000)
+        # update day_off_ot
+        frappe.enqueue(update_day_off_ot, attendances=new_attendances,
+            queue='long', timeout=6000)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Attendance Marking")    
 
@@ -664,6 +684,20 @@ def update_employee_checkin_with_attendance(attendance_dict):
         for i in v:
             frappe.db.set_value("Employee Checkin", i, 'attendance', k)
 
+def update_day_off_ot(attendances):
+    for i in attendances:
+        att = frappe.get_doc("Attendance", i)
+        if att.shift_assignment:
+            try:
+                day_off_ot = frappe.db.get_value("Employee Schedule", {
+                    'employee':att.employee,
+                    'date':att.attendance_date,
+                    'roster_type':att.roster_type
+                }, 'day_off_ot')
+                if day_off_ot:
+                    att.db_set("day_off_ot", day_off_ot)
+            except:
+                frappe.log_error(frappe.get_traceback(), "Attendance Marking OT")   
 
 def mark_open_timesheet_and_create_attendance():
     the_timesheet_list = frappe.db.get_list("Timesheet", filters={"workflow_state": "Open"}, pluck="name")
