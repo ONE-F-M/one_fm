@@ -197,7 +197,7 @@ def validate_stock_entry_items(doc, method):
                         if group == "Uniform":
                             obj.expense_account = "Stock Issued - ONEFM"
                         elif group == "Bedding":
-                            obj.expense_account = "Provision for Utility Expenses - ONEFM"
+                            obj.expense_account = "Accommodation Utility Expenses - ONEFM"
                             
                     
         
