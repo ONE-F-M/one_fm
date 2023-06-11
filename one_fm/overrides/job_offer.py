@@ -119,6 +119,11 @@ class JobOfferOverride(JobOffer):
             self.default_shift = ''
             self.operation_site = ''
 
+    def before_cancel(self):
+        employee = self.get_onload('employee')
+        if employee:
+            frappe.throw(_("Not Allowed to Reject the Job Offer, it is linked with Employee {0}".format(employee)))
+
     def notify_onboarding_officer(self):
         page_link = get_url(self.get_url())
         subject = ("Job Offer {0} is assigned to you for Onboard Employee").format(self.name)
