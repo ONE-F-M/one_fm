@@ -388,6 +388,7 @@ doc_events = {
 		"after_insert":"one_fm.events.email_queue.after_insert",
 	},
 	"Stock Entry": {
+		"validate": "one_fm.api.doc_methods.stock_entry.validate_stock_entry_items",
 		"on_submit": "one_fm.api.doc_methods.stock_entry.validate_budget"
 	},
 	"Communication": {
@@ -638,10 +639,10 @@ scheduler_events = {
 		"45 1 * * *": [ # validate shift assignment
 			'one_fm.api.tasks.validate_am_shift_assignment'
 		],
-		"15 13 * * *":[
+		"15 13 * * *":[ # Attendance Check
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check'
 		],
-		"45 2 * * *":[
+		"15 17 * * *":[ # Auto approve attendance check
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.approve_attendance_check'
 		],
 		"15 12 * * *": [ # create shift assignment
@@ -651,10 +652,10 @@ scheduler_events = {
 			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
 		"25 0 * * *": [ # mark day attendance 11:15 pm
-			'one_fm.api.tasks.mark_day_attendance'
+			'one_fm.overrides.attendance.mark_day_attendance'
 		],
 		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
-			'one_fm.api.tasks.mark_night_attendance'
+			'one_fm.overrides.attendance.mark_night_attendance'
 		],
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
@@ -726,7 +727,12 @@ fixtures = [
 	},
 	{
 		"dt": "Assignment Rule",
-		"filters": [["name", "in",["RFM Approver", "Shift Permission Approver"]]]
+		"filters": [["name", "in",
+			[
+				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
+				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor"
+			]
+		]]
 	},
 	{
 		"dt": "Email Template"
