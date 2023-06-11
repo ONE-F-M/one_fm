@@ -422,20 +422,20 @@ website_route_rules = [
 		}
 	},
 	 {
-		"from_route": "/knowledge-base/search",
-		"to_route": "knowledge-base/search"
+		"from_route": "/knowledge_base/search",
+		"to_route": "knowledge_base/search"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>",
-		"to_route": "knowledge-base/kbcategory"
+		"from_route": "/knowledge_base/<path:category>",
+		"to_route": "knowledge_base/kbcategory"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory"
+		"from_route": "/knowledge_base/<path:category>/<path:subcategory>",
+		"to_route": "knowledge_base/kbcategory/kbsubcategory"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
+		"from_route": "/knowledge_base/<path:category>/<path:subcategory>/<path:article>",
+		"to_route": "knowledge_base/kbcategory/kbsubcategory/kbdetail"
 	},
 	{
 		"from_route": "/careers/opening/<path:job_id>",
