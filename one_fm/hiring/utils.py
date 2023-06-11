@@ -65,17 +65,17 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
             "cv": frappe.utils.get_url(doc.resume_attachment) if doc.resume_attachment else None,
             "passport_type": doc.one_fm_passport_type,
             "job_applicant": get_url(doc.get_url()),
-            "contact_email": doc.one_fm_email_id 
+            "contact_email": doc.one_fm_email_id
         }
-        
+
         message = frappe.render_template('one_fm/templates/emails/job_application_notification.html', context=context)
         # page_link = get_url(doc.get_url())
         # mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
         # message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
-        
+
         # if mandatory_field and labels:
             # message = create_message_with_details(message, mandatory_field, labels, cv=cv_link)
-            
+
         if recipients:
             sendemail(
                 recipients= recipients,
@@ -572,7 +572,7 @@ def create_onboarding_from_job_offer(job_offer):
                 'description': _('Employee Onboarding'),
             }
             assign_to.add(args)
-
+            assign_to.close_all_assignments(job_offer.doctype, job_offer.name)
 
 @frappe.whitelist()
 def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
