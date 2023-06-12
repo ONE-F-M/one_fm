@@ -34,6 +34,25 @@ frappe.ui.form.on('Job Offer', {
         }
       });
     }
+    const status = ['Accepted', 'Rejected'];
+    if (!status.includes(frm.doc.status) && frm.doc.one_fm_erf != undefined){
+      frappe.call({
+        method: "frappe.client.get",
+        args: {
+            doctype: "ERF",
+            name: frm.doc.one_fm_erf,
+        },
+        callback(r) {
+            if(r.message) {
+                var erf = r.message;
+                if (erf.docstatus == 2){
+                  frm.set_df_property("one_fm_erf", "read_only", 0);
+                }
+
+            }
+        }
+    });
+    }
     if (frm.doc.workflow_state == 'Accepted' && frm.doc.docstatus === 1){
       if (!frm.doc.__onload || !frm.doc.__onload.onboard_employee){
         frm.add_custom_button(__('Start Onboard Employee'),
@@ -171,6 +190,7 @@ var set_job_applicant_details = function(frm) {
           callback: function(ret) {
             if(ret && ret.message){
               var erf = ret.message;
+              frm.set_value('one_fm_erf', erf.name);
               set_erf_details(frm, erf);
             }
           }

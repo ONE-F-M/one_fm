@@ -4,6 +4,7 @@ from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
 from calendar import monthrange
 from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
+from frappe import _
 from one_fm.processor import sendemail
 from one_fm.utils import send_workflow_action_email
 
@@ -56,7 +57,7 @@ class TimesheetOveride(Timesheet):
                 recipients=[user],
                 subject=subject,
                 message=message,
-                reference_doctype=self.doctype,
+                reference_doctype='self.doctype',
                 reference_name=self.name
             )
             create_notification_log(subject, message, [user], self)
@@ -81,15 +82,18 @@ class TimesheetOveride(Timesheet):
                 att.db_set("status", "Present")
                 att.db_set("timesheet", self.name)
                 att.db_set("working_hours", self.total_hours, notify=True)
+                att.db_set("reference_doctype", "Timesheet")
+                att.db_set("reference_docname", self.name)
         else:
             att = frappe.new_doc("Attendance")
             att.employee = self.employee
             att.employee_name = self.employee_name
             att.attendance_date = self.start_date
             att.company = self.company
-            att.timesheet = self.name
             att.status = "Present"
             att.working_hours = self.total_hours
+            att.reference_doctype = "Timesheet"
+            att.reference_docname = self.name
             att.insert(ignore_permissions=True)
             att.submit()
     

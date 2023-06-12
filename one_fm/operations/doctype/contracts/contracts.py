@@ -528,9 +528,9 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 
     item_price = item.item_price
     item_rate = item.rate
-
+    days_off = frappe.get_value("Item Price", item_price, ["days_off"])
     shift_hours = item.shift_hours
-    working_days_in_month = days_in_month - (int(item.days_off) * 4)
+    working_days_in_month = days_in_month - (int(days_off) * 4)
 
     item_hours = 0
     expected_item_hours = working_days_in_month * shift_hours * cint(item.count)
@@ -558,15 +558,17 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
     # Compute working hours
     for attendance in attendances:
         hours = 0
-        if attendance.working_hours:
-            hours += attendance.working_hours
+        if item.include_actual_hour == 1:
+            if attendance.working_hours:
+                hours += attendance.working_hours
 
-        elif attendance.in_time and attendance.out_time:
-            hours += round((get_datetime(attendance.in_time) - get_datetime(attendance.out_time)).total_seconds() / 3600, 1)
+            elif attendance.in_time and attendance.out_time:
+                hours += round((get_datetime(attendance.in_time) - get_datetime(attendance.out_time)).total_seconds() / 3600, 1)
 
         # Use working hours as duration of shift if no in-out time available in attendance
-        elif attendance.operations_shift:
-            hours += float(frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"]))
+        else:
+            if attendance.operations_shift:
+                hours += float(frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"]))
 
         item_hours += hours
 

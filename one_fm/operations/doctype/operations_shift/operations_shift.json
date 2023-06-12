@@ -104,7 +104,7 @@
    "description": "In hours",
    "fetch_from": "shift_type.duration",
    "fieldname": "duration",
-   "fieldtype": "Int",
+   "fieldtype": "Float",
    "label": "Duration",
    "read_only": 1
   },
@@ -163,7 +163,7 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2023-05-04 23:19:05.736946",
+ "modified": "2023-06-08 09:37:28.458764",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",

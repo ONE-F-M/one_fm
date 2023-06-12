@@ -27,6 +27,7 @@
   "rate_type_off",
   "days_off_category",
   "no_of_days_off",
+  "include_actual_hour",
   "overtime_rate",
   "site"
  ],
@@ -219,11 +220,17 @@
    "fieldname": "no_of_days_off",
    "fieldtype": "Int",
    "label": "No of Days Off"
+  },
+  {
+   "default": "0",
+   "fieldname": "include_actual_hour",
+   "fieldtype": "Check",
+   "label": "Include Actual Hour"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2023-06-07 15:59:36.562669",
+ "modified": "2023-06-11 13:12:36.724869",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",
