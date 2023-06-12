@@ -69,6 +69,19 @@ class AttendanceOverride(Attendance):
             if not self.working_hours:frappe.throw("Working hours is required.")
             if self.working_hours <= 0:frappe.throw("Working hours must be greater than 0 if staus is Presnet ot Work From Home.")
 
+    def after_insert(self):
+        self.set_day_off_ot()
+
+    def set_day_off_ot(self):
+        if self.shift_assignment:
+            day_off_ot = frappe.db.get_value("Employee Schedule", {
+                'employee':self.employee,
+                'date':self.attendance_date,
+                'roster_type':self.roster_type
+            }, 'day_off_ot')
+            if day_off_ot:
+                self.db_set("day_off_ot", day_off_ot)
+
     def before_save(self):
         if not self.shift_assignment and self.status=='Present':
             shift_assignment = frappe.db.get_value("Shift Assignment", {
@@ -383,7 +396,7 @@ def mark_daily_attendance(start_date, end_date):
 
         """
         query_body = """"""
-        employees = frappe.get_all("Employee", filters={'status':'Active'}, fields="*")
+        employees = frappe.get_all("Employee", fields="*")
         employees_dict = {}
         for i in employees:
             employees_dict[i.employee] = i
@@ -405,7 +418,8 @@ def mark_daily_attendance(start_date, end_date):
         basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
         
         basic_shift_assignments = frappe.get_all("Shift Assignment", filters={
-            'start_date':["BETWEEN", [start_date, end_date]],
+            'start_date':start_date, 
+            'end_date': end_date,
             'roster_type':'Basic', 'docstatus':1
         }, fields="*")
         basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
@@ -446,7 +460,7 @@ def mark_daily_attendance(start_date, end_date):
                 emp = employees_dict.get(i.employee)
                 query_body+= f"""
                 (
-                    "HR-ATT_{start_date}_{i.employee}_Basic", "{i.employee}", "{i.employee_name}", 0, "Day Off", '', NULL,
+                    "HR-ATT_{start_date}_{i.employee}_Basic", "{i.employee}", "{emp.employee_name}", 0, "Day Off", '', NULL,
                     NULL, "", "", "", "", "{start_date}", "{emp.company}",
                     "{emp.department}", 0, 0, "", "", "Basic", 1, "{owner}",
                     "{owner}", "{creation}", "{creation}", "Employee Schedule - {i.name}"
@@ -499,6 +513,7 @@ def mark_daily_attendance(start_date, end_date):
                 "{owner}", "{creation}", "{creation}", "{comment}"
             ),"""
             basic_attendance_employees.append(i.employee)
+            new_attendances.append(name)
         # update schedules
         basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
         basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
@@ -508,11 +523,12 @@ def mark_daily_attendance(start_date, end_date):
             name = f"HR-ATT_{i.employee}_Basic"
             query_body+= f"""
             (
-                "{name}", "{i.employee}", "{emp.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
+                "{name}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
                 NULL, "{i.name}", "{i.shift}", "{i.site}", "{operations_shift_dict.get(i.shift).project}", "{start_date}", "{i.company}",
                 "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
                 "{owner}", "{creation}", "{creation}", "No attendance record found"
             ),"""
+            new_attendances.append(name)
 
 
         ### DO SAME FOR OVERTIME
@@ -607,6 +623,7 @@ def mark_daily_attendance(start_date, end_date):
                 "{owner}", "{creation}", "{creation}", "{comment}"
             ),"""
             ot_attendance_employees.append(i.employee)
+            new_attendances.append(name)
         # update schedules
         ot_employee_schedules = [i for i in ot_employee_schedules if not i.employee in ot_attendance_employees]
         ot_shift_assignments = [i for i in ot_shift_assignments if not i.employee in ot_attendance_employees]
@@ -616,44 +633,49 @@ def mark_daily_attendance(start_date, end_date):
             name = f"HR-ATT_{i.employee}_Basic"
             query_body+= f"""
             (
-                "{name}", "{i.employee}", "{emp.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
+                "{name}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
                 NULL, "{i.name}", "{i.shift}", "{i.site}", "{operations_shift_dict.get(i.shift).project}", "{start_date}", "{i.company}",
                 "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
                 "{owner}", "{creation}", "{creation}", "No attendance record found"
             ),"""
+            new_attendances.append(name)
 
         # UPDATE QUERY
-        query += query_body[:-1]
-        query += f"""
-            ON DUPLICATE KEY UPDATE
-            employee = VALUES(employee),
-            employee_name = VALUES(employee_name),
-            working_hours = VALUES(working_hours),
-            status = VALUES(status),
-            shift = VALUES(shift),
-            in_time = VALUES(in_time),
-            out_time = VALUES(out_time),
-            shift_assignment = VALUES(shift_assignment),
-            operations_shift = VALUES(operations_shift),
-            site = VALUES(site),
-            project = VALUES(project),
-            attendance_date = VALUES(attendance_date),
-            company = VALUES(company),
-            department = VALUES(department),
-            late_entry = VALUES(late_entry),
-            early_exit = VALUES(early_exit),
-            operations_role = VALUES(operations_role),
-            roster_type = VALUES(roster_type),
-            docstatus = VALUES(docstatus),
-            modified_by = VALUES(modified_by),
-            modified = VALUES(modified)
-        """
-        frappe.db.sql(query, values=[], as_dict=1)
-        frappe.db.commit()
+        if query_body:
+            query += query_body[:-1]
+            query += f"""
+                ON DUPLICATE KEY UPDATE
+                employee = VALUES(employee),
+                employee_name = VALUES(employee_name),
+                working_hours = VALUES(working_hours),
+                status = VALUES(status),
+                shift = VALUES(shift),
+                in_time = VALUES(in_time),
+                out_time = VALUES(out_time),
+                shift_assignment = VALUES(shift_assignment),
+                operations_shift = VALUES(operations_shift),
+                site = VALUES(site),
+                project = VALUES(project),
+                attendance_date = VALUES(attendance_date),
+                company = VALUES(company),
+                department = VALUES(department),
+                late_entry = VALUES(late_entry),
+                early_exit = VALUES(early_exit),
+                operations_role = VALUES(operations_role),
+                roster_type = VALUES(roster_type),
+                docstatus = VALUES(docstatus),
+                modified_by = VALUES(modified_by),
+                modified = VALUES(modified)
+            """
+            frappe.db.sql(query, values=[], as_dict=1)
+            frappe.db.commit()
 
-        # update employee checkin
-        frappe.enqueue(update_employee_checkin_with_attendance, attendance_dict=checkin_attendance_link,
-            queue='long', timeout=6000)
+            # update employee checkin
+            frappe.enqueue(update_employee_checkin_with_attendance, attendance_dict=checkin_attendance_link,
+                queue='long', timeout=6000)
+            # update day_off_ot
+            frappe.enqueue(update_day_off_ot, attendances=new_attendances,
+                queue='long', timeout=6000)
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Attendance Marking")    
 
@@ -663,6 +685,20 @@ def update_employee_checkin_with_attendance(attendance_dict):
         for i in v:
             frappe.db.set_value("Employee Checkin", i, 'attendance', k)
 
+def update_day_off_ot(attendances):
+    for i in attendances:
+        att = frappe.get_doc("Attendance", i)
+        if att.shift_assignment:
+            try:
+                day_off_ot = frappe.db.get_value("Employee Schedule", {
+                    'employee':att.employee,
+                    'date':att.attendance_date,
+                    'roster_type':att.roster_type
+                }, 'day_off_ot')
+                if day_off_ot:
+                    att.db_set("day_off_ot", day_off_ot)
+            except:
+                frappe.log_error(frappe.get_traceback(), "Attendance Marking OT")   
 
 def mark_open_timesheet_and_create_attendance():
     the_timesheet_list = frappe.db.get_list("Timesheet", filters={"workflow_state": "Open"}, pluck="name")
