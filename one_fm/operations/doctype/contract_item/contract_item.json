@@ -197,7 +197,7 @@
    "fieldname": "rate_type",
    "fieldtype": "Select",
    "label": "Rate Type",
-   "options": "Monthly\nHourly"
+   "options": "Monthly\nHourly\nDaily"
   },
   {
    "default": "Full Month",
