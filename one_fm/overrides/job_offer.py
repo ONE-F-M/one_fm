@@ -19,10 +19,10 @@ class JobOfferOverride(JobOffer):
         o_employee = frappe.db.get_value("Onboard Employee", {"job_offer": self.name}, "name") or ""
         self.set_onload("onboard_employee", o_employee)
 
-
     def validate(self):
         super(JobOfferOverride, self).validate()
         job_applicant = frappe.get_doc("Job Applicant", self.job_applicant)
+        self.one_fm_erf = job_applicant.one_fm_erf
         validate_mandatory_fields(job_applicant)
         self.job_offer_validate_attendance_by_timesheet()
         self.validate_job_offer_mandatory_fields()
