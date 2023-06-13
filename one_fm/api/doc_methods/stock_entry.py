@@ -192,12 +192,12 @@ def validate_stock_entry_items(doc, method):
                 group = account_check[obj.item_code].get("group", False)
                 if account:
                     obj.expense_account = account  
-                else:
-                    if group:
-                        if group == "Uniform":
-                            obj.expense_account = "Stock Issued - ONEFM"
-                        elif group == "Bedding":
-                            obj.expense_account = "Accommodation Utility Expenses - ONEFM"
+                # else:
+                #     if group:
+                #         if group == "Uniform":
+                #             obj.expense_account = "Stock Issued - ONEFM"
+                #         elif group == "Bedding":
+                #             obj.expense_account = "Accommodation Utility Expenses - ONEFM"
                             
                     
         
