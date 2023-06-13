@@ -188,7 +188,7 @@ def validate_stock_entry_items(doc, method):
             difference_account_field = frappe.db.get_all("Item", {"name": ["in", list_of_items]}, ["name", "difference_account"])
             account_check = {item["name"]: item["difference_account"] for item in difference_account_field}
             for obj in doc.items:
-                account = account_check[obj.item_code].get("account", False)
+                account = account_check.get(obj.item_code, False)
                 if account:
                     obj.expense_account = account 
                             
