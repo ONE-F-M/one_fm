@@ -185,19 +185,12 @@ def validate_stock_entry_items(doc, method):
     elif doc.stock_entry_type == "Material Issue":
         if doc.items:
             list_of_items = [i.item_code for i in doc.items]
-            difference_account_field = frappe.db.get_all("Item", {"name": ["in", list_of_items]}, ["name", "difference_account", "subitem_group"])
-            account_check = {item["name"]: {"account": item["difference_account"], "group": item["subitem_group"]} for item in difference_account_field}
+            difference_account_field = frappe.db.get_all("Item", {"name": ["in", list_of_items]}, ["name", "difference_account"])
+            account_check = {item["name"]: item["difference_account"] for item in difference_account_field}
             for obj in doc.items:
                 account = account_check[obj.item_code].get("account", False)
-                group = account_check[obj.item_code].get("group", False)
                 if account:
-                    obj.expense_account = account  
-                # else:
-                #     if group:
-                #         if group == "Uniform":
-                #             obj.expense_account = "Stock Issued - ONEFM"
-                #         elif group == "Bedding":
-                #             obj.expense_account = "Accommodation Utility Expenses - ONEFM"
+                    obj.expense_account = account 
                             
                     
         
