@@ -334,11 +334,11 @@ def create_attendance_check(attendance_date=None):
 			
 			if not frappe.db.exists("Attendance Check", {"employee":i, 'date':attendance_date, 'roster_type':at_check.roster_type}):
 				try:
-					if at_check.has_checkin_record and not str(at_check.comment).startswith('4'):
-						attendance_checkin_found.append(at_check)
-					else:
-						at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
-						attendance_check_list.append(at_check_doc.name)
+					# if at_check.has_checkin_record and not str(at_check.comment).startswith('4'):
+					# 	attendance_checkin_found.append(at_check)
+					# else:
+					at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
+					attendance_check_list.append(at_check_doc.name)
 				except Exception as e:
 					print(e)
 
@@ -403,11 +403,11 @@ def create_attendance_check(attendance_date=None):
 
 			if not frappe.db.exists("Attendance Check", {"employee":i, 'date':attendance_date, 'roster_type':at_check.roster_type}):
 				try:
-					if at_check.has_checkin_record and not str(at_check.comment).startswith('4'):
-						attendance_checkin_found.append(at_check)
-					else:
-						at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
-						attendance_check_list.append(at_check_doc.name)
+					# if at_check.has_checkin_record and not str(at_check.comment).startswith('4'):
+					# 	attendance_checkin_found.append(at_check)
+					# else:
+					at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
+					attendance_check_list.append(at_check_doc.name)
 				except Exception as e:
 					print(e)
 
