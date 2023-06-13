@@ -275,3 +275,4 @@ def on_project_update_switch_shift_site_post_to_inactive(doc, method):
                     "status": "Inactive"
                 })
 
+

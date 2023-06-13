@@ -6,6 +6,7 @@
 from __future__ import unicode_literals
 import frappe, json
 from datetime import datetime
+import calendar
 from frappe.model.document import Document
 
 from frappe.utils import (
@@ -105,6 +106,14 @@ class Contracts(Document):
         sales_invoice_doc.ignore_pricing_rule = 1
         sales_invoice_doc.set_posting_time = 1
         sales_invoice_doc.posting_date = contract_invoice_date
+        
+        
+        for obj in self.items:
+            if obj.rate_type == "Daily":
+                item_obj = calculate_rate_for_daily_rate_type(obj=obj, period=period)
+                sales_invoice_doc.append("items", item_obj)
+                
+        
 
         try:
             if self.create_sales_invoice_as == "Single Invoice":
@@ -519,9 +528,9 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
 
     item_price = item.item_price
     item_rate = item.rate
-
+    days_off = frappe.get_value("Item Price", item_price, ["days_off"])
     shift_hours = item.shift_hours
-    working_days_in_month = days_in_month - (int(item.days_off) * 4)
+    working_days_in_month = days_in_month - (int(days_off) * 4)
 
     item_hours = 0
     expected_item_hours = working_days_in_month * shift_hours * cint(item.count)
@@ -549,15 +558,17 @@ def get_item_hourly_amount(item, project, first_day_of_month, last_day_of_month,
     # Compute working hours
     for attendance in attendances:
         hours = 0
-        if attendance.working_hours:
-            hours += attendance.working_hours
+        if item.include_actual_hour == 1:
+            if attendance.working_hours:
+                hours += attendance.working_hours
 
-        elif attendance.in_time and attendance.out_time:
-            hours += round((get_datetime(attendance.in_time) - get_datetime(attendance.out_time)).total_seconds() / 3600, 1)
+            elif attendance.in_time and attendance.out_time:
+                hours += round((get_datetime(attendance.in_time) - get_datetime(attendance.out_time)).total_seconds() / 3600, 1)
 
         # Use working hours as duration of shift if no in-out time available in attendance
-        elif attendance.operations_shift:
-            hours += float(frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"]))
+        else:
+            if attendance.operations_shift:
+                hours += float(frappe.db.get_value("Operations Shift", {'name': attendance.operations_shift}, ["duration"]))
 
         item_hours += hours
 
@@ -1130,3 +1141,23 @@ def prepare_employee_schedules(project,old_start,old_end,new_start,new_end,durat
                     frappe.db.commit()
                 else:
                     continue
+                
+
+def calculate_rate_for_daily_rate_type(obj, period):
+    date = datetime.strptime(period, "%Y-%m-%d")
+    first_day = date.replace(day=1).date()
+    _, last_date = calendar.monthrange(date.year, date.month)
+    last_day = date.replace(day=last_date).date()
+    the_roles_list = frappe.db.get_list("Operations Role", {"sale_item": obj.item_code}, pluck="name")
+    the_attendance_count = frappe.db.count("Attendance", {"operations_role": ["in", the_roles_list], "status": "Present", "attendance_date": ["between", [first_day, last_day]]})
+    return {
+        "item_code": obj.item_code,
+        "rate": obj.rate,
+        "uom": obj.uom,
+        "amount": obj.rate * the_attendance_count,
+        "item_name": obj.item_name,
+        "qty": the_attendance_count
+    }
+            
+        
+    

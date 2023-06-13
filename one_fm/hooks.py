@@ -101,7 +101,9 @@ doctype_js = {
 	"Attendance" :  "public/js/doctype_js/attendance.js",
 	"Wiki Page": "public/js/doctype_js/wiki_page.js",
 	"Error Log": "public/js/doctype_js/error_log.js",
-	"Assignment Rule": "public/js/doctype_js/assignment_rule.js"
+	"Assignment Rule": "public/js/doctype_js/assignment_rule.js",
+    "Workflow": "public/js/doctype_js/workflow.js",
+    "Stock Entry": "public/js/doctype_js/stock_entry.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -388,6 +390,7 @@ doc_events = {
 		"after_insert":"one_fm.events.email_queue.after_insert",
 	},
 	"Stock Entry": {
+		"validate": "one_fm.api.doc_methods.stock_entry.validate_stock_entry_items",
 		"on_submit": "one_fm.api.doc_methods.stock_entry.validate_budget"
 	},
 	"Communication": {
@@ -753,6 +756,8 @@ fixtures = [
 # ------------------------------
 #
 override_whitelisted_methods = {
+    "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
+	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
 
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",

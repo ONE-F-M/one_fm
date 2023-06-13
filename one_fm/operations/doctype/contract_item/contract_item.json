@@ -27,6 +27,7 @@
   "rate_type_off",
   "days_off_category",
   "no_of_days_off",
+  "include_actual_hour",
   "overtime_rate",
   "site"
  ],
@@ -196,7 +197,7 @@
    "fieldname": "rate_type",
    "fieldtype": "Select",
    "label": "Rate Type",
-   "options": "Monthly\nHourly"
+   "options": "Monthly\nHourly\nDaily"
   },
   {
    "default": "Full Month",
@@ -219,11 +220,18 @@
    "fieldname": "no_of_days_off",
    "fieldtype": "Int",
    "label": "No of Days Off"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.rate_type=='Hourly'",
+   "fieldname": "include_actual_hour",
+   "fieldtype": "Check",
+   "label": "Include Actual Hour"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2023-01-27 19:44:00.255255",
+ "modified": "2023-06-13 11:04:43.785579",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",
