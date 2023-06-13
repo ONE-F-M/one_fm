@@ -1247,7 +1247,7 @@ def scrub_options_list(ol):
 @frappe.whitelist(allow_guest=True)
 def item_naming_series(doc, method):
     doc.name = doc.item_code
-    doc.item_name = doc.item_code
+    
 
 @frappe.whitelist()
 def before_insert_warehouse(doc, method):
