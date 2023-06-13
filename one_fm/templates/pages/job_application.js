@@ -249,7 +249,7 @@ job_application = Class.extend({
             frappe.unfreeze();
             if(!r.exc && r.message) {
               frappe.msgprint(frappe._("Successfully submitted your application. Our HR team will be responding to you soon."));
-              window.location.href = "/jobs";
+              setTimeout(()=>{window.location.href = "/jobs"}, 3000);
             } else {
               frappe.msgprint(__("Application is not submitted. <br /> " + r.exc));
             }
