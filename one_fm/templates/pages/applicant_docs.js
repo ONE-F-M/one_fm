@@ -244,9 +244,13 @@ function upload(){
       if (!!passport_image.entries().next().value){
         $("#cover-spin").show(0);
         send_request(method_map['passport'], passport_image, token,"Passport")
+        // disable button
+        $('#fileUpload').prop('disabled', 1)
       };
     }
   });
+  $('#declare-div').prop('hidden', true);
+  $('#submitForm').prop('hidden', true);
 }
 // };
 
@@ -387,8 +391,8 @@ function function_set_passport_data(data){
     })
   }
   if($('#perdonal-detail :input')){
-    $.makeArray($('#perdonal-detail :input')).forEach((item)=>{if (!item.value){$(`#${item.id}`).prop('style', 'border: 2px solid red;')};})
-    $.makeArray($('select')).forEach((item)=>{if (!item.value && item.id){$(`#${item.id}`).prop('style', 'border: 2px solid red;')};})
+    $.makeArray($('#perdonal-detail :input')).forEach((item)=>{if (!item.value && item.required){$(`#${item.id}`).prop('style', 'border: 2px solid red;')};})
+    $.makeArray($('select')).forEach((item)=>{if (!item.value && item.required && item.id){$(`#${item.id}`).prop('style', 'border: 2px solid red;')};})
   }
 
   // end
@@ -449,6 +453,7 @@ function Submit(){
 				}
 			});
     }, () => {
+      frappe.unfreeze();
         // action to perform if No is selected
     })
   }
@@ -458,27 +463,47 @@ function Submit(){
 }
 
 function Save(){
-  var applicant_details = get_details_from_form();
+  // $.makeArray($('#perdonal-detail :input')).forEach((item)=>{if (!item.value && item.required){$(`#${item.id}`).prop('style', 'border: 2px solid red;')};})
+  // $.makeArray($('select')).forEach((item)=>{if (!item.value && item.required && item.id){$(`#${item.id}`).prop('style', 'border: 2px solid red;')};})
+  let goodTogo = false;
+    $.makeArray($('#perdonal-detail :input')).forEach((item)=>{if (!item.value && item.required){
+      $('#declare-div').prop('hidden', true);
+      $('#submitForm').prop('hidden', true);
+      frappe.throw("Please fill all fields in red box.");
+      return;
+    };})
 
-  if($('#First_Name').attr("data")){
-    frappe.freeze();
-    frappe.call({
-      type: "POST",
-      method: "one_fm.templates.pages.applicant_docs.save_as_draft",
-      args: {
-        job_applicant: $('#First_Name').attr("data"),
-        data: applicant_details
-      },
-      btn: this,
-      callback: function(r){
-        frappe.unfreeze();
-        frappe.msgprint(frappe._("Succesfully Saved your application as draft, you can finish up and Submit later!."));
+    $.makeArray($('select')).forEach((item)=>{if (!item.value && item.required){
+      $('#declare-div').prop('hidden', true);
+      $('#submitForm').prop('hidden', true);
+      frappe.throw("Please fill all fields in red box.");
+      return;
+    };})
+
+      var applicant_details = get_details_from_form();
+
+      if($('#First_Name').attr("data")){
+        frappe.freeze();
+        frappe.call({
+          type: "POST",
+          method: "one_fm.templates.pages.applicant_docs.save_as_draft",
+          args: {
+            job_applicant: $('#First_Name').attr("data"),
+            data: applicant_details
+          },
+          btn: this,
+          callback: function(r){
+            frappe.unfreeze();
+            frappe.msgprint(frappe._("Succesfully Saved your application as draft, you can finish up and Submit later!."));
+            $('#declare-div').prop('hidden', false);
+            $('#submitForm').prop('hidden', false);
+          }
+        });
+
+      } else{
+        frappe.msgprint(frappe._("Please, you need to fill some details before you can save "));
       }
-    });
-  }
-  else{
-    frappe.msgprint(frappe._("Please, you need to fill some details before you can save "));
-  }
+  
 }
 
 function get_details_from_form() {
