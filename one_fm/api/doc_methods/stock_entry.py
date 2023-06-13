@@ -166,7 +166,7 @@ def get_other_condition(args, budget, for_doc):
 
 	return condition
 
-
+    
 def validate_stock_entry_items(doc, method):
     if doc.stock_entry_type == "Material Receipt":
         if doc.items:
@@ -181,3 +181,21 @@ def validate_stock_entry_items(doc, method):
                     obj.valuation_rate = 0
                     obj.additional_cost = 0
                     obj.basic_rate = 0
+                    
+    elif doc.stock_entry_type == "Material Issue":
+        if doc.items:
+            list_of_items = [i.item_code for i in doc.items]
+            difference_account_field = frappe.db.get_all("Item", {"name": ["in", list_of_items]}, ["name", "difference_account"])
+            account_check = {item["name"]: item["difference_account"] for item in difference_account_field}
+            for obj in doc.items:
+                account = account_check[obj.item_code].get("account", False)
+                if account:
+                    obj.expense_account = account 
+                            
+                    
+        
+    
+                
+                
+                
+        
