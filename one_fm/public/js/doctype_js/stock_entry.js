@@ -22,5 +22,15 @@ frappe.ui.form.on('Stock Entry Detail', {
             })
 
         }
+    },
+
+    expense_account(frm, cdt, cdn){
+        let row = locals[cdt][cdn];
+        if (frm.doc.stock_entry_type === "Material Issue"){
+            frappe.db.get_value("Item", row.item_code, "difference_account").then(res=>{
+                row.expense_account = res.message.difference_account
+                 frm.refresh_field('items');
+            })
+        }
     }
 })
