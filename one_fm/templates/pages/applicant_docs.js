@@ -170,6 +170,7 @@ function fetchNationality(code){
 
 
 function send_request(method, data, token, type){
+
   var request = new XMLHttpRequest();
   // POST to httpbin which returns the POST data as JSON
     request.open('POST', method ,true);
@@ -184,13 +185,8 @@ function send_request(method, data, token, type){
           let r = null;
           try {
             r = JSON.parse(request.responseText);
-            $("#cover-spin").hide();
-            $('#finalForm').css('display', 'block');
-            console.log(r.message)
             fill_form(r.message,request.type, token);
-            get_uploaded_data(r.message);
           } catch (e) {
-            console.log(e)
             $("#cover-spin").hide();
             $('#finalForm').css('display', 'block');
             r = request.responseText;
@@ -298,17 +294,19 @@ function fill_form(data, type,token){
       total_fill_counter += (front_side_cid_filled_fields_count + back_side_cid_filled_fields_count);
     }
     else if(type == "Passport"){
-      front_passport_filepath = input_filepath(data, 'front_text', 'Passport_Front',token)
-      back_passport_filepath = input_filepath(data, 'back_text', 'Passport_Back',token)
-      input_data(data,'front_text','Passport_Number');
-      input_data(data,'front_text','Passport_Date_of_Issue');
-      input_data(data,'front_text','Passport_Date_of_Expiry');
-      input_data(data,'back_text','Passport_Place_of_Issue');
+      // front_passport_filepath = input_filepath(data, 'front_text', 'Passport_Front',token)
+      // back_passport_filepath = input_filepath(data, 'back_text', 'Passport_Back',token)
 
-      let front_side_pp_filled_fields_count = count_filled_fields(data, 'front_text', PASSPORT_FRONT_TEXT_FIELDS);
-      let back_side_pp_filled_fields_count = count_filled_fields(data, 'back_text', PASSPORT_BACK_TEXT_FIELDS);
+      function_set_passport_data(data)
+      // input_data(data,'front_text','Passport_Number');
+      // input_data(data,'front_text','Passport_Date_of_Issue');
+      // input_data(data,'front_text','Passport_Date_of_Expiry');
+      // input_data(data,'back_text','Passport_Place_of_Issue');
 
-      total_fill_counter += (front_side_pp_filled_fields_count + back_side_pp_filled_fields_count);
+      // let front_side_pp_filled_fields_count = count_filled_fields(data, 'front_text', PASSPORT_FRONT_TEXT_FIELDS);
+      // let back_side_pp_filled_fields_count = count_filled_fields(data, 'back_text', PASSPORT_BACK_TEXT_FIELDS);
+
+      // total_fill_counter += (front_side_pp_filled_fields_count + back_side_pp_filled_fields_count);
     }
 
     // if (total_fill_counter < TOTAL_FORM_FIELDS){
@@ -340,6 +338,67 @@ function input_filepath(Data, key1, key2,token){
     return Data[key1][key2]
   }
 };
+
+function sentenceCase (str) {
+  if ((str===null) || (str===''))
+    return false;
+  else
+  str = str.toString();
+
+  return str.replace(/\w\S*/g,
+  function(txt){return txt.charAt(0).toUpperCase() +
+    txt.substr(1).toLowerCase();});
+}
+
+
+function function_set_passport_data(data){
+  console.log(data);
+  let doc = data.front_text;
+  if(doc.surname){
+    $('#Last_Name').val(doc.surname);
+  }
+  if (doc.birth_date){
+    $('#Date_Of_Birth').val(doc.birth_date)
+  }
+  if (doc.gender){
+    $('#Gender').val(doc.gender=='M' ? 'Male' : 'Female')
+  }
+  if (doc.id_number){
+    $('#Passport_Number').val(doc.id_number)
+  }
+  if (doc.issuance_date){
+    $('#Passport_Date_of_Issue').val(doc.issuance_date)
+  }
+  if (doc.expiry_date){
+    $('#Passport_Date_of_Expiry').val(doc.expiry_date)
+  }
+  if (doc.birth_place){
+    $.makeArray($('#Birth_Place>option')).forEach((item)=>{
+      if (item.value.toLowerCase()==doc.birth_place.toLowerCase()){
+        $('#Birth_Place').val(sentenceCase(doc.birth_place))
+      }
+    })
+    
+  }
+  if (doc.given_names.length){
+    let fields = ["#First_Name", "#Second_Name", "#Third_Name"]
+    doc.given_names.forEach((item, index)=>{
+      $(fields[index]).val(item);
+    })
+  }
+  if($('#perdonal-detail :input')){
+    $.makeArray($('#perdonal-detail :input')).forEach((item)=>{if (!item.value){$(`#${item.id}`).prop('style', 'border: 2px solid red;')};})
+    $.makeArray($('select')).forEach((item)=>{if (!item.value && item.id){$(`#${item.id}`).prop('style', 'border: 2px solid red;')};})
+  }
+
+  // end
+  $("#cover-spin").hide();
+  $('#finalForm').css('display', 'block');
+  get_uploaded_data(data);
+  
+  
+  
+}
 
 function input_data(Data, key1, key2){
   if(Data[key1][key2]!= undefined){
@@ -385,7 +444,7 @@ function Submit(){
 					frappe.unfreeze();
 					frappe.msgprint(frappe._("Succesfully Submitted your Details and our HR team will be responding to you soon."));
 					if(r.message){
-						window.location.href = "/careers";
+            setTimeout(()=>{window.location.href = "/careers"}, 3000);
 					}
 				}
 			});
@@ -465,7 +524,6 @@ function get_details_from_form() {
 function get_filepath(object, value, key){
   if(value != ""){
     var file_name = key.replaceAll(" ","_")
-    console.log(file_name)
     object[key] = applicant_name+"_"+file_name+'.png';
   }
   return object
@@ -500,7 +558,6 @@ function get_uploaded_data(data){
       data: data
     },
     callback: function(r){
-      console.log(r.message)
       frappe.unfreeze();
       frappe.msgprint(frappe._(`The following were extracted from the Image <ul>${r.message.map(item => (
         `<li>${item}</li>`

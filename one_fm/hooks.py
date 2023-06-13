@@ -101,7 +101,8 @@ doctype_js = {
 	"Attendance" :  "public/js/doctype_js/attendance.js",
 	"Wiki Page": "public/js/doctype_js/wiki_page.js",
 	"Error Log": "public/js/doctype_js/error_log.js",
-	"Assignment Rule": "public/js/doctype_js/assignment_rule.js"
+	"Assignment Rule": "public/js/doctype_js/assignment_rule.js",
+    "Stock Entry": "public/js/doctype_js/stock_entry.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -781,7 +782,8 @@ after_migrate = [
 ]
 
 before_migrate = [
-    "one_fm.after_migrate.execute.before_migrate"
+    "one_fm.after_migrate.execute.before_migrate",
+    "one_fm.after_migrate.execute.set_files_directories",
 ]
 
 # add more info to session on boot

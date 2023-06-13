@@ -30,6 +30,11 @@
         integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
     <link rel="stylesheet" href="/assets/one_fm/assets/css/applicant_docs.css">
+    <style>
+        input:placeholder-shown {
+            border: 1px solid red; /* Red border only if the input is empty */
+        }
+    </style> 
 </head>
 {% endblock %}
 
@@ -78,6 +83,17 @@
                                 </small>
                             </h2>
                             <hr>
+                            <div class="row">
+                                    <div class="form-group col-md-12">
+                                        <label  for="file">International Passport Detail Page</label>
+                                        <input class="form-control" type="file" id="Passport_Front" placeholder="Front Passport"  name="file"  accept="image/png, image/jpeg" onchange="preview_front(this)">
+                                    </div>
+                                    <div class="form-group col-md-6" style="display:none;">
+                                        <label  for="file">Passport Back Side</label>
+                                        <input class="form-control" type="file" id="Passport_Back" placeholder="Back Passport"  name="file"  accept="image/png, image/jpeg" onchange="preview_back(this)">
+                                        <br>
+                                    </div>
+                            </div>
                             {% if civil_id_reqd %}
                                 <div class="row">
                                     <div class="form-group col-md-6">
@@ -93,17 +109,7 @@
                                     </div>
                                 </div>
                             {% endif %}
-                            <div class="row">
-                                    <div class="form-group col-md-6">
-                                        <label  for="file">Passport Front Side</label>
-                                        <input class="form-control" type="file" id="Passport_Front" placeholder="Front Passport"  name="file"  accept="image/png, image/jpeg" onchange="preview_front(this)">
-                                    </div>
-                                    <div class="form-group col-md-6">
-                                        <label  for="file">Passport Back Side</label>
-                                        <input class="form-control" type="file" id="Passport_Back" placeholder="Back Passport"  name="file"  accept="image/png, image/jpeg" onchange="preview_back(this)">
-                                        <br>
-                                    </div>
-                            </div>
+                            
 
 
                             <div class="row">
@@ -150,7 +156,7 @@
                         </div>
 
                         <div class="form-container">
-                            <form class="form">
+                            <form class="form" id="perdonal-detail">
                                 <h2>Personal Details</h2>
                                 <hr>
                                 <div class="form-row">
@@ -197,7 +203,7 @@
                                     <div class="form-group col-md-6 w-50">
                                         <label class="form-label" for="Gender">Gender *</label>
                                         <select class="form-control input" id="Gender" name="gender" aria-placeholder="Gender">
-                                            <option value="select" selected disabled>Select Your Gender</option>
+                                            <option value="select" selected disabled></option>
                                             <option value="Male">Male</option>
                                             <option value="Female">Female</option>
                                             {% if job_applicant.one_fm_gender != None %}
@@ -211,7 +217,7 @@
                                     <div class="form-group col-md-6 w-50">
                                         <label class="form-label" for="MaritalStatus">Marital Status *</label>
                                         <select class="form-control input" id="MaritalStatus" name="marital_status" aria-placeholder="Marital Status">
-                                            <option value="select" selected disabled>Select Your Marital Status</option>
+                                            <option value="select" selected disabled></option>
                                             <option value="Unmarried">Unmarried</option>
                                             <option value="Married">Married</option>
                                             <option value="Widow">Widow</option>
@@ -230,7 +236,7 @@
                                     <div class="form-group col-md-6 w-50">
                                         <label class="form-label" for="Religion">Religion *</label>
                                         <select class="form-control input" id="Religion" name="religion" aria-placeholder="Religion">
-                                            <option value="select" selected disabled>Select Your Religion</option>
+                                            <option value="select" disabled></option>
                                             <option value="Muslim">Muslim</option>
                                             <option value="Christian">Christian</option>
                                             <option value="Hindu">Hindu</option>
@@ -244,7 +250,7 @@
                                     <div class="form-group col-md-6 w-50">
                                         <label class="form-label" for="EducationalQualification">Highest Educational Qualification *</label>
                                         <select class="form-control input" id="EducationalQualification" name="educational_qualification" aria-placeholder="Select Your Highest Educational Qualification">
-                                            <option value="select" selected disabled>Select Your Highest Educational Qualification</option>
+                                            <option value="select" selected disabled></option>
                                             <option value="Post Graduate">Post Graduate</option>
                                             <option value="Masters">Masters</option>
                                             <option value="Graduate">Graduate</option>
@@ -278,7 +284,7 @@
                                     <div class="form-group col-md-4 w-75">
                                         <label class="form-label" for="Nationality">Nationality *</label>
                                         <select class="form-control input2" id="Nationality" name="nationality" aria-placeholder="Select Your Nationality">
-                                            <option value="select" selected disabled>Select Your Nationality</option>
+                                            <option value="select" selected disabled></option>
                                             {% if job_applicant.one_fm_nationality != None %}
                                                 <option value="{{ job_applicant.one_fm_nationality }}" selected>{{ job_applicant.one_fm_nationality }}</option>
                                             {% endif %}>
@@ -291,7 +297,7 @@
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Birth_Place">Place of Birth *</label>
                                         <select class="form-control input2" id="Birth_Place" name="birth_place" aria-placeholder="Select Your Birth Place">
-																					<option value="select" selected disabled>Select Your Birth Place</option>
+																					<option value="select" selected disabled></option>
 																					{% if job_applicant.one_fm_nationality != None %}
 																							<option value="{{ job_applicant.one_fm_place_of_birth }}" selected>{{ job_applicant.one_fm_place_of_birth }}</option>
 																					{% endif %}>
@@ -321,7 +327,7 @@
                                     <div class="form-group col-md-6">
                                         <label class="form-label" for="Passport_Type">Passport Type</label>
                                         <select class="form-control input" id="Passport_Type" name="passport_type" aria-placeholder="Select Passport Type">
-                                            <option value="select" selected disabled>Select Passport Type</option>
+                                            <option value="select" selected disabled></option>
                                             <option value="Normal">Normal</option>
                                             <option value="Diplomat">Diplomat</option>
                                             {% if job_applicant.one_fm_passport_type != None %}
@@ -343,7 +349,7 @@
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Passport_Place_of_Issue">Passport Place of Issue *</label>
                                         <select class="form-control input2" id="Passport_Place_of_Issue" name="p_place_of_issue" aria-placeholder="Select Place of Issue">
-                                            <option value="select" selected disabled>Select Place of Issue</option>
+                                            <option value="select" selected disabled></option>
                                         </select>
                                     </div>
                                 </div>
