@@ -8,6 +8,7 @@ from frappe.utils import (
 from hrms.hr.doctype.job_offer.job_offer import JobOffer
 from one_fm.utils import validate_mandatory_fields
 from one_fm.api.notification import create_notification_log
+from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, close_all_assignments
 
 
 class JobOfferOverride(JobOffer):
@@ -84,18 +85,16 @@ class JobOfferOverride(JobOffer):
                 frappe.throw(_(msg.format("<b>Estimated Date of Joining</b>")))
             elif not self.onboarding_officer:
                 frappe.throw(_(msg.format("<b>Onboarding Officer</b>")))
-        # Send Notification to Assined Officer to accept the Onboarding Task
-        self.notify_onboarding_officer()
-        if self.workflow_state in ['Onboarding Officer Rejected', 'Accepted']:
-            # Notify Recruiter
-            self.notify_recruiter()
+            assign_to_onboarding_officer(self)
+        if self.workflow_state == 'Accepted' and self.get_onload('onboard_employee'):
+            close_all_assignments(self.doctype, self.name)
 
     def validate_job_offer_mandatory_fields(self):
         if self.workflow_state == 'Submit for Candidate Response':
             mandatory_field_required = False
             fields = ['Project', 'Base', 'Salary Structure', 'Project']
-            if not self.shift_working:
-                fields.append("reports_to")
+            if not self.shift_working and not self.reports_to:
+                fields.append("Reports to")
             if not self.attendance_by_timesheet:
                 fields.append('Operations Shift')
                 if self.shift_working:
@@ -119,8 +118,56 @@ class JobOfferOverride(JobOffer):
             self.default_shift = ''
             self.operation_site = ''
 
-    def notify_onboarding_officer(self):
-        page_link = get_url(self.get_url())
-        subject = ("Job Offer {0} is assigned to you for Onboard Employee").format(self.name)
-        message = ("Job Offer <a href='{1}'>{0}</a> is assigned to you for Onboard Employee. Please respond immediatly!").format(self.name, page_link)
-        create_notification_log(subject, message, [self.onboarding_officer], self)
+    def before_cancel(self):
+        employee = self.get_onload('employee')
+        if employee:
+            frappe.throw(_("Not Allowed to Reject the Job Offer, it is linked with Employee {0}".format(employee)))
+
+def assign_to_onboarding_officer(self):
+	try:
+		description = f'''
+			<p>Here is to inform you that the following { self.doctype }({ self.name }) requires your attention/action.
+			<br>
+			The details of the request are as follows:<br>
+			</p>
+			<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+				<thead>
+					<tr>
+						<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+						<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td style="padding: 10px;">Job Applicant</td>
+						<td style="padding: 10px;">{self.job_applicant}</td>
+					</tr>
+					<tr>
+						<td style="padding: 10px;">Applicant Name</td>
+						<td style="padding: 10px;">{self.applicant_name}</td>
+					</tr>
+					<tr>
+						<td style="padding: 10px;">Offer Date</td>
+						<td style="padding: 10px;">{self.offer_date}</td>
+					</tr>
+					<tr>
+						<td style="padding: 10px;">Designation</td>
+						<td style="padding: 10px;">{self.designation}</td>
+					</tr>
+					<tr>
+						<td style="padding: 10px;">Reports To</td>
+						<td style="padding: 10px;">{self.reports_to}</td>
+					</tr>
+				</tbody>
+			</table>
+		'''
+		add_assignment({
+			'doctype': self.doctype,
+			'name': self.name,
+			'assign_to': [self.onboarding_officer],
+			'description': _(description)
+		})
+		self.add_comment("Comment", _("Assign to Onboarding Officer {0} to process the request".format(self.onboarding_officer)))
+	except DuplicateToDoError:
+		frappe.message_log.pop()
+		pass

@@ -572,7 +572,7 @@ def create_onboarding_from_job_offer(job_offer):
                 'description': _('Employee Onboarding'),
             }
             assign_to.add(args)
-
+            assign_to.close_all_assignments(job_offer.doctype, job_offer.name)
 
 @frappe.whitelist()
 def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
