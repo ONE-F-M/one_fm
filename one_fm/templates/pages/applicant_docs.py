@@ -246,8 +246,6 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
 def get_passport_text():
     try:
         result = {}
-        x = dict(frappe.form_dict)
-        for k, v in x.items():print(k, '\n\n')
         #initialize google vision client library
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()
@@ -262,6 +260,7 @@ def get_passport_text():
         return result
 
     except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Passport Reader")
         frappe.throw(e)
 
 
