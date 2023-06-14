@@ -1,4 +1,4 @@
-import frappe
+import frappe, os
 from one_fm.utils import production_domain
 
 def comment_timesheet_in_hrms():
@@ -82,3 +82,11 @@ def before_migrate():
     frappe.db.sql("""
         DELETE FROM `tabCustom Field` WHERE name='Salary Structure Assignment-column_break_20'
     """)
+
+def set_files_directories():
+    """
+        Set files and directories if not exists
+    """
+    user_files_path = frappe.utils.get_bench_path()+'/sites/'+frappe.utils.get_site_base_path().replace('./', '')+'/private/files/user'
+    if not os.path.exists(user_files_path):
+        os.mkdir(user_files_path)

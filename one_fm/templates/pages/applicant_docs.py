@@ -1,12 +1,9 @@
 from google.cloud import vision
-import os, io
-import frappe
+import os, io, base64, datetime, hashlib, frappe, json
 from frappe.utils import cstr
-import json
 import frappe.sessions
-import base64
-import datetime
-import hashlib
+from mindee import Client, documents
+
 
 from dateutil.parser import parse
 from frappe import _
@@ -249,27 +246,52 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
 def get_passport_text():
     try:
         result = {}
-
+        x = dict(frappe.form_dict)
+        for k, v in x.items():print(k, '\n\n')
         #initialize google vision client library
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
         client = vision.ImageAnnotatorClient()
-
-        front_passport = frappe.local.form_dict['front_passport']
-        back_passport = frappe.local.form_dict['back_passport']
-
-        front_image_path = upload_image(front_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
-        back_image_path = upload_image(back_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
-
-        front_text = get_passport_front_text(front_image_path, client)
-        back_text = get_passport_back_text(back_image_path, client)
+        front_passport = frappe.form_dict.front_passport
+        back_passport = frappe.form_dict.back_passport
+        if front_passport:
+            front_text = get_passport_data(upload_image(front_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest()))
+        else:
+            front_text = {}
 
         result.update({'front_text': front_text})
-        result.update({'back_text': back_text})
-
         return result
 
     except Exception as e:
         frappe.throw(e)
+
+
+def get_passport_data(image_path):
+    # Init a new client
+    mindee_client = Client(api_key=frappe.local.conf.mindee_passport_api)
+    # Load a file from disk
+    input_doc = mindee_client.doc_from_path(image_path)
+    # Parse the Passport by passing the appropriate type
+    result = input_doc.parse(documents.TypePassportV1)
+    # Print a brief summary of the parsed data
+    doc = result.document
+    result_dict = frappe._dict(dict(
+        birth_place=doc.birth_place.value,
+        expiry_date=doc.expiry_date.value,
+        full_name=doc.full_name.value,
+        given_names=[i.value for i in doc.given_names],
+        is_expired=doc.is_expired(),
+        mrz=doc.mrz.value,
+        mrz1=doc.mrz1.value,
+        mrz2=doc.mrz2.value,
+        type=doc.type,
+        birth_date=doc.birth_date.value,
+        country=doc.country.value,
+        gender=doc.gender.value,
+        id_number=doc.id_number.value,
+        issuance_date=doc.issuance_date.value,
+        surname=doc.surname.value
+    ))
+    return result_dict
 
 def get_passport_front_text(image_path, client):
     with io.open(image_path, 'rb') as image_file:
@@ -278,9 +300,11 @@ def get_passport_front_text(image_path, client):
     image = vision.Image(content=content)
 
     response = client.text_detection(image=image)  # returns TextAnnotation
-
+    f = open("demofilesg.txt", "a")
+    f.write(str(response))
+    f.close()
     texts = response.text_annotations
-
+    
     result = {}
     assemble = {}
     index = 0
@@ -315,9 +339,9 @@ def get_passport_back_text(image_path, client):
     image = vision.Image(content=content)
 
     response = client.text_detection(image=image)  # returns TextAnnotation
+    
 
     texts = response.text_annotations
-
     result = {}
     assemble = {}
     index = 0
@@ -359,10 +383,12 @@ def upload_image(image, filename):
     Returns:
         str: Path to uploaded image
     """
+    if not image:
+        frappe.throw("Empty")
     content = base64.b64decode(image)
     image_path = cstr(frappe.local.site)+"/private/files/user/"+filename + ".png"
-
     with open(image_path, "wb") as fh:
+        print("encoding")
         fh.write(content)
 
     return image_path
@@ -443,3 +469,5 @@ def get_uploaded_data(data: dict=None):
         pass
 
     return list_of_keys
+
+

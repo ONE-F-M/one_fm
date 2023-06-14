@@ -89,6 +89,7 @@ marshmallow-enum==1.5.1
 matplotlib-inline==0.1.6
 maxminddb==2.2.0
 maxminddb-geolite2==2018.703
+mindee
 monotonic==1.6
 msgpack==1.0.4
 multidict==6.0.4
