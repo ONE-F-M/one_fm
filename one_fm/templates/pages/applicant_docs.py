@@ -67,10 +67,11 @@ def get_civil_id_text():
         front_civil = frappe.local.form_dict['front_civil']
         back_civil = frappe.local.form_dict['back_civil']
         is_kuwaiti = frappe.local.form_dict['is_kuwaiti']
+        magic_link = frappe.form_dict.magic_link
 
         # Load images
-        front_image_path = upload_image(front_civil, hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
-        back_image_path = upload_image(back_civil, hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest())
+        front_image_path = upload_image(front_civil, "front_civil-"+hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest(), magic_link)
+        back_image_path = upload_image(back_civil, "back_civil-"+hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest(), magic_link)
 
         front_text = get_front_side_civil_id_text(front_image_path, client, is_kuwaiti)
         back_text = get_back_side_civil_id_text(back_image_path, client, is_kuwaiti)
@@ -246,13 +247,11 @@ def get_back_side_civil_id_text(image_path, client, is_kuwaiti):
 def get_passport_text():
     try:
         result = {}
-        #initialize google vision client library
-        # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
-        # client = vision.ImageAnnotatorClient()
+        magic_link = frappe.form_dict.magic_link
         front_passport = frappe.form_dict.front_passport
         # back_passport = frappe.form_dict.back_passport
         if front_passport:
-            front_text = get_passport_data(upload_image(front_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest()))
+            front_text = get_passport_data(upload_image(front_passport, "passport-"+hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest(), magic_link))
         else:
             front_text = {}
 
@@ -378,7 +377,7 @@ def is_date(string, fuzzy=False):
     except ValueError:
         return False
 
-def upload_image(image, filename):
+def upload_image(image, filename, magic_link):
     """ This method writes a file to a server directory
     Args:
         image (str): Base64 encoded image
@@ -389,12 +388,29 @@ def upload_image(image, filename):
     if not image:
         frappe.throw("Empty")
     content = base64.b64decode(image)
-    image_path = cstr(frappe.local.site)+"/private/files/user/"+filename + ".png"
+    file_path = "/private/files/user/"+filename + ".png"
+    image_path = cstr(frappe.local.site)+file_path
     with open(image_path, "wb") as fh:
-        print("encoding")
         fh.write(content)
 
+    frappe.enqueue(attached_uploaded_image_to_job_applicant, file_path=file_path, magic_link=magic_link)
     return image_path
+
+def attached_uploaded_image_to_job_applicant(file_path, magic_link):
+    decrypted_magic_link = frappe.utils.password.decrypt(magic_link)
+    if decrypted_magic_link:
+        # Find Job Applicant from the magic link
+        job_applicant = frappe.db.get_values('Magic Link', decrypted_magic_link, ['reference_docname', 'reference_doctype'], as_dict=1)
+        if job_applicant:
+            job_applicant = job_applicant[0]
+            doc = frappe.get_doc({
+                "doctype":"File", 
+                "file_url":file_path, 
+                "attached_to_doctype":job_applicant.reference_doctype, 
+                "attached_to_name":job_applicant.reference_docname
+            }).insert(ignore_permissions=True)
+            frappe.db.commit()
+
 
 @frappe.whitelist()
 def send_applicant_doc_magic_link(job_applicant, applicant_name, designation):
