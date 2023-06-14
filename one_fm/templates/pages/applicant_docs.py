@@ -247,10 +247,10 @@ def get_passport_text():
     try:
         result = {}
         #initialize google vision client library
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
-        client = vision.ImageAnnotatorClient()
+        # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = cstr(frappe.local.site) + frappe.local.conf.google_application_credentials
+        # client = vision.ImageAnnotatorClient()
         front_passport = frappe.form_dict.front_passport
-        back_passport = frappe.form_dict.back_passport
+        # back_passport = frappe.form_dict.back_passport
         if front_passport:
             front_text = get_passport_data(upload_image(front_passport,hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest()))
         else:
