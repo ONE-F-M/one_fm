@@ -422,7 +422,7 @@ function Submit(){
   var applicant_details = get_details_from_form();
   
   if($('#First_Name').attr("data")){
-    frappe.freeze();
+    // frappe.freeze();
 		frappe.confirm('Are you sure you want to Submit?, On Submit the link will be expired!',
     () => {
 
@@ -483,7 +483,7 @@ function Save(){
       var applicant_details = get_details_from_form();
 
       if($('#First_Name').attr("data")){
-        frappe.freeze();
+        // frappe.freeze();
         frappe.call({
           type: "POST",
           method: "one_fm.templates.pages.applicant_docs.save_as_draft",
