@@ -266,31 +266,35 @@ def get_passport_text():
 
 
 def get_passport_data(image_path):
-    # Init a new client
-    mindee_client = Client(api_key=frappe.local.conf.mindee_passport_api)
-    # Load a file from disk
-    input_doc = mindee_client.doc_from_path(image_path)
-    # Parse the Passport by passing the appropriate type
-    result = input_doc.parse(documents.TypePassportV1)
-    # Print a brief summary of the parsed data
-    doc = result.document
-    result_dict = frappe._dict(dict(
-        birth_place=doc.birth_place.value,
-        expiry_date=doc.expiry_date.value,
-        full_name=doc.full_name.value,
-        given_names=[i.value for i in doc.given_names],
-        is_expired=doc.is_expired(),
-        mrz=doc.mrz.value,
-        mrz1=doc.mrz1.value,
-        mrz2=doc.mrz2.value,
-        type=doc.type,
-        birth_date=doc.birth_date.value,
-        country=doc.country.value,
-        gender=doc.gender.value,
-        id_number=doc.id_number.value,
-        issuance_date=doc.issuance_date.value,
-        surname=doc.surname.value
-    ))
+    try:
+        # Init a new client
+        mindee_client = Client(api_key=frappe.local.conf.mindee_passport_api)
+        # Load a file from disk
+        input_doc = mindee_client.doc_from_path(image_path)
+        # Parse the Passport by passing the appropriate type
+        result = input_doc.parse(documents.TypePassportV1)
+        # Print a brief summary of the parsed data
+        doc = result.document
+        result_dict = frappe._dict(dict(
+            birth_place=doc.birth_place.value,
+            expiry_date=doc.expiry_date.value,
+            full_name=doc.full_name.value,
+            given_names=[i.value for i in doc.given_names],
+            is_expired=doc.is_expired(),
+            mrz=doc.mrz.value,
+            mrz1=doc.mrz1.value,
+            mrz2=doc.mrz2.value,
+            type=doc.type,
+            birth_date=doc.birth_date.value,
+            country=doc.country.value,
+            gender=doc.gender.value,
+            id_number=doc.id_number.value,
+            issuance_date=doc.issuance_date.value,
+            surname=doc.surname.value
+        ))
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Mindee")
+        return frappe._dict({})
     return result_dict
 
 def get_passport_front_text(image_path, client):
