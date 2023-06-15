@@ -62,8 +62,7 @@ class WorkContract(Document):
 			frappe.throw(_("Please Attach "+ ', '.join(str(x) for x in document_required)+" in Applicant Document!"))
 
 	def validate_authorized_signatory(self):
-		if not self.select_authorised_signatory_signed_work_contract:
-			frappe.throw(_("Please select Authorized Signatory!"))
+		pass
 
 	def on_cancel(self):
 		if self.workflow_state == 'Applicant not Signed':

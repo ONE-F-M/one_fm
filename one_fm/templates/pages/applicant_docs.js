@@ -171,8 +171,12 @@ function fetchNationality(code){
 
 function send_request(method, data, token, type){
 
-  var request = new XMLHttpRequest();
-  // POST to httpbin which returns the POST data as JSON
+    // for (var pair of data.entries()) {
+    //   console.log(pair[0]); 
+    // } 
+    // frappe.throw('');
+    var request = new XMLHttpRequest();
+    // POST to httpbin which returns the POST data as JSON
     request.open('POST', method ,true);
     request.setRequestHeader("X-Frappe-CSRF-Token", token );
     request.setRequestHeader("Accept", "application/json");
@@ -225,6 +229,11 @@ function upload(){
   // else{
   civil_id_image = new FormData();
   passport_image = new FormData();
+  // get job applicant
+  const urlParams = new URLSearchParams(window.location.search);
+  const magic_link = urlParams.get('magic_link');
+  civil_id_image.append('magic_link', magic_link)
+  passport_image.append('magic_link', magic_link)
   extract_image();
 
   var method_map = {
@@ -298,28 +307,8 @@ function fill_form(data, type,token){
       total_fill_counter += (front_side_cid_filled_fields_count + back_side_cid_filled_fields_count);
     }
     else if(type == "Passport"){
-      // front_passport_filepath = input_filepath(data, 'front_text', 'Passport_Front',token)
-      // back_passport_filepath = input_filepath(data, 'back_text', 'Passport_Back',token)
-
       function_set_passport_data(data)
-      // input_data(data,'front_text','Passport_Number');
-      // input_data(data,'front_text','Passport_Date_of_Issue');
-      // input_data(data,'front_text','Passport_Date_of_Expiry');
-      // input_data(data,'back_text','Passport_Place_of_Issue');
-
-      // let front_side_pp_filled_fields_count = count_filled_fields(data, 'front_text', PASSPORT_FRONT_TEXT_FIELDS);
-      // let back_side_pp_filled_fields_count = count_filled_fields(data, 'back_text', PASSPORT_BACK_TEXT_FIELDS);
-
-      // total_fill_counter += (front_side_pp_filled_fields_count + back_side_pp_filled_fields_count);
-    }
-
-    // if (total_fill_counter < TOTAL_FORM_FIELDS){
-    //   frappe.msgprint({
-    //     title: __("Could not obtain all information"),
-    //     indicator: "orange",
-    //     message: __("Some fields in the below form may be empty. Please fill them out correctly."),
-    //   });
-    // }
+      }
 
   }
 };
@@ -356,7 +345,6 @@ function sentenceCase (str) {
 
 
 function function_set_passport_data(data){
-  console.log(data);
   let doc = data.front_text;
   if(doc.surname){
     $('#Last_Name').val(doc.surname);
@@ -396,11 +384,9 @@ function function_set_passport_data(data){
   }
 
   // end
+  get_uploaded_data(data);
   $("#cover-spin").hide();
   $('#finalForm').css('display', 'block');
-  get_uploaded_data(data);
-  
-  
   
 }
 
@@ -422,7 +408,7 @@ function Submit(){
   var applicant_details = get_details_from_form();
   
   if($('#First_Name').attr("data")){
-    frappe.freeze();
+    // frappe.freeze();
 		frappe.confirm('Are you sure you want to Submit?, On Submit the link will be expired!',
     () => {
 
@@ -483,7 +469,7 @@ function Save(){
       var applicant_details = get_details_from_form();
 
       if($('#First_Name').attr("data")){
-        frappe.freeze();
+        // frappe.freeze();
         frappe.call({
           type: "POST",
           method: "one_fm.templates.pages.applicant_docs.save_as_draft",
