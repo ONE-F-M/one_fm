@@ -18,29 +18,45 @@
     cursor: default;
     background: rgba(59, 66, 59, 0.1)
     }
+
+    #stickypane {
+        position: sticky;
+        width: auto;
+        top: 5;
+        left: 0;
+        
+        background-color: #fff;
+        z-index: 999;
+      }
+
+
+
     .spl_form-control {
     border: 1px solid;
     font-size: var(--text-md);
     position: relative;
     }
+
+
+
 </style>
 <div class="spinner" id="spinner" style="display:block; position: fixed; top: 50%; left: 50%;"></div>
 <div id="OKR-APP">
     <div class="container-fluid" id="app-container" style="display:none; background-color: transparent;">
     <div class="row">
-        <div class="col-md-9 scroll-box" style="height:1000px;">
-            <div class="special-card border-dark mb-3">
-                <div class="card-body">
+        <div class="col-md-9 scroll-box"  id = "stickyrow" style="height:1000px;">
+            <div class="special-card border-dark mb-3" >
+                <div class="card-body" >
                     <div class="row">
-                        <div class="col-md-12">
-                            <div class="special-card border-dark mb-3">
-                                <div class="card-body special-card">
-                                    <table class="table table-bordered text-dark">
+                        <div class="col-md-12" id = "stickypane">
+                            <div class="special-card border-dark mb-3" >
+                                <div class="card-body special-card" >
+                                    <table class="table table-bordered text-dark" >
                                     <tbody>
-                                        <tr class="table-primary">
+                                        <tr class="table-primary" >
                                             <td>The Goal: <b>[% company_goal %]</b></td>
                                         </tr>
-                                        <tr class="table-success">
+                                        <tr class="table-success" >
                                             <td>Company Objective: <b>[% company_objective %]</b></td>
                                         </tr>
                                         <tr class="table-warning">
