@@ -112,6 +112,7 @@ doctype_list_js = {
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
 	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
+	"Wiki Page": "public/js/doctype_list_js/wiki_page_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
