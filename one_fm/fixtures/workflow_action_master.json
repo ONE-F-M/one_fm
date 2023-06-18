@@ -2,13 +2,6 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
-  "modified": "2023-06-14 10:23:56.523528",
-  "name": "Return",
-  "workflow_action_name": "Return"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow Action Master",
   "modified": "2023-05-22 13:17:38.784574",
   "name": "Submit to Purchase Officer",
   "workflow_action_name": "Submit to Purchase Officer"
