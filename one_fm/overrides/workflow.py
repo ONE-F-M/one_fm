@@ -206,7 +206,6 @@ def filter_allowed_users(users, doc, transition):
 	"""Filters list of users by checking if user has access to doc and
 	if the user satisfies 'workflow transision self approval' condition
 	"""
-	print(transition)
 	send_email_alert = frappe.db.get_value(transition.parenttype, transition.parent, 'send_email_alert')
 
 	from frappe.permissions import has_permission
@@ -223,8 +222,10 @@ def filter_allowed_users(users, doc, transition):
 			dict(doc = doc))
 		if not success:
 			return filtered_users
-	if send_email_alert:users = get_specific_user(transition, doc)
-	else:users=[]
+	if send_email_alert:
+		users = get_specific_user(transition, doc)
+	else:
+		users=[]
 
 	doc_history = get_doc_history(doc, transition) if users else None
 	for user in users:
