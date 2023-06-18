@@ -2,7 +2,16 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Onboard Employee', {
+	employment_type:function(frm){
+		hide_fields(frm)
+	},
+
+	
 	refresh: function(frm) {
+		if((frm.doc.workflow_state == "Open") && (frm.doc.employment_type == "Service Provider")){
+			frappe.show_alert("Please submit this record to conclude the process")
+		}
+		hide_fields(frm)
 		set_progress_html(frm);
 		if (frm.doc.employee) {
 			frm.add_custom_button(__('Employee'), function() {
@@ -144,6 +153,18 @@ frappe.ui.form.on('Onboard Employee', {
 		btn_create_loan_action(frm);
 	}
 });
+
+
+
+var hide_fields = function(frm){
+	let value = null
+	frm.doc.employment_type == "Service Provider" ? value = 1 : value = 0
+	frm.set_df_property('visa_and_residency_section','hidden',value)
+	frm.set_df_property('g2g_and_residency_section','hidden',value)
+	frm.set_df_property('uniform_measurements_section','hidden',value)
+	frm.set_df_property('work_contract_section','hidden',value)
+	frm.set_df_property('tools_for_work_section','hidden',value)
+}
 
 var calculate_g2g_and_residency_total = function(frm) {
 	var g2g_fee_amount = 0;
