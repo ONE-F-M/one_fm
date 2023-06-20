@@ -5,10 +5,6 @@ frappe.ui.form.on('Onboard Employee', {
 	
 	
 	refresh: function(frm) {
-		if((frm.doc.workflow_state == "Open") && (frm.doc.employment_type == "Service Provider")){
-			frappe.show_alert("Please submit this record to conclude the process")
-		}
-		
 		set_progress_html(frm);
 		if (frm.doc.employee) {
 			frm.add_custom_button(__('Employee'), function() {
