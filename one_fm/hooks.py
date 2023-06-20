@@ -451,6 +451,7 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
+    # {"from_route": "/job_applicant_magic_link/<path:app_path>", "to_route": "job_applicant_magic_link"},
 
 ]
 
