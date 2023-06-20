@@ -23,12 +23,9 @@
         position: sticky;
         width: auto;
         top: 0;
-        left: 0;
+        
         background-color: #fff;
-        z-index: 1;
-      }
-
-
+        z-index: 1;}
 
     .spl_form-control {
     border: 1px solid;
@@ -38,38 +35,42 @@
 
 
 
+
+
 </style>
+
+
 <div class="spinner" id="spinner" style="display:block; position: fixed; top: 50%; left: 50%;"></div>
 <div id="OKR-APP">
     <div class="container-fluid" id="app-container" style="display:none; background-color: transparent;">
+        <div class="col-md-12" id = "stickypane">
+            <div class="special-card border-dark mb-3" >
+                <div class="card-body special-card" >
+                    <table class="table table-bordered text-dark" >
+                    <tbody>
+                        <tr class="table-primary" >
+                            <td>The Goal: <b>[% company_goal %]</b></td>
+                        </tr>
+                        <tr class="table-success" >
+                            <td>Company Objective: <b>[% company_objective %]</b></td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td>Company Objective Quarter: <b>[% company_objective_quarter %]</b></td>
+                        </tr>
+                        <tr class="table-danger">
+                            <td>My Objective: <b>[% my_objective %]</b></td>
+                        </tr>
+                    </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     <div class="row">
         <div class="col-md-9 scroll-box"  id = "stickyrow" style="height:1000px;">
-            <div class="special-card border-dark mb-3" >
-                <div class="card-body" >
+            <div class="special-card border-dark mb-3">
+                <div class="card-body">
                     <div class="row">
-                        <div class="col-md-12" id = "stickypane">
-                            <div class="special-card border-dark mb-3" >
-                                <div class="card-body special-card" >
-                                    <table class="table table-bordered text-dark" >
-                                    <tbody>
-                                        <tr class="table-primary" >
-                                            <td>The Goal: <b>[% company_goal %]</b></td>
-                                        </tr>
-                                        <tr class="table-success" >
-                                            <td>Company Objective: <b>[% company_objective %]</b></td>
-                                        </tr>
-                                        <tr class="table-warning">
-                                            <td>Company Objective Quarter: <b>[% company_objective_quarter %]</b></td>
-                                        </tr>
-                                        <tr class="table-danger">
-                                            <td>My Objective: <b>[% my_objective %]</b></td>
-                                        </tr>
-                                    </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
+                        
                         <div class="col-md-12">
                             <div class="special-card border-dark mb-3">
                                 <div class="card-body special-card">
@@ -136,8 +137,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-
                                 </div>
                             </div>
                         </div>
