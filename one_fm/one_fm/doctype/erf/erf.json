@@ -119,6 +119,8 @@
   "pam_file_number",
   "pam_designation",
   "amended_from",
+  "job_description_section",
+  "description",
   "close_with_section",
   "erf_employee"
  ],
@@ -900,11 +902,22 @@
    "fieldtype": "Check",
    "label": "Attendance by Timesheet",
    "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "job_description_section",
+   "fieldtype": "Section Break",
+   "label": "Job Description"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Description"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-04-11 21:23:41.243901",
+ "modified": "2023-06-19 02:38:25.996754",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

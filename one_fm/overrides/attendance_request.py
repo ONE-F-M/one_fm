@@ -6,7 +6,9 @@ from erpnext.setup.doctype.employee.employee import is_holiday
 from hrms.hr.utils import validate_active_employee, validate_dates
 from hrms.hr.doctype.attendance_request.attendance_request import AttendanceRequest
 from frappe.model.workflow import apply_workflow
-from one_fm.utils import send_workflow_action_email, get_holiday_today, workflow_approve_reject
+from one_fm.utils import (
+	send_workflow_action_email, get_holiday_today, workflow_approve_reject, get_approver
+)
 
 
 class AttendanceRequestOverride(AttendanceRequest):
@@ -16,6 +18,13 @@ class AttendanceRequestOverride(AttendanceRequest):
 		if self.half_day:
 			if not getdate(self.from_date) <= getdate(self.half_day_date) <= getdate(self.to_date):
 				frappe.throw(_("Half day date should be in between from date and to date"))
+		self.set_approver()
+
+	def set_approver(self):
+		if not self.approver:
+			self.approver = get_approver(self.employee)
+		if not self.approver_user:
+			self.approver_user = frappe.db.get_value("Employee", self.approver, 'user_id')
 
 	def on_submit(self):
 		reports_to = self.reports_to()
