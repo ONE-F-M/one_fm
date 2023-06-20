@@ -66,8 +66,9 @@ class AttendanceCheck(Document):
 			if att.shift_assignment and att.status=='Present':
 				att.working_hours = frappe.db.get_value("Operations Shift", 
 					frappe.db.get_value("Shift Assignment", att.shift_assignment, 'shift'), 'duration')
-			if not att.working_hours:
-				att.working_hours = 8 if self.attendance_status == 'Present' else 0
+			if not att.status in ['Holiday', 'Day Off']:
+				if not att.working_hours:
+					att.working_hours = 8 if self.attendance_status == 'Present' else 0
 			att.insert(ignore_permissions=True)
 			att.submit()
 			for i in logs:
