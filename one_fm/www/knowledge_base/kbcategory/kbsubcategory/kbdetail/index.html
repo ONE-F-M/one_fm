@@ -1,4 +1,4 @@
-{% extends 'www/knowledge-base/base.html' %}
+{% extends 'www/knowledge_base/base.html' %}
 
 {% block title %}{{doc.title}}{% endblock %}
 
@@ -12,8 +12,8 @@
                 <div class="text">
                     <div class="post_tag">
                         <a href="#">{{doc.creation.date()}}</a>
-                        <a href="/knowledge-base/{{doc.category.lower().replace(' ', '-')}}">{{doc.category}}</a>
-                        <a class="c_blue" href="/knowledge-base/{{doc.category.lower().replace(' ', '-')}}/{{doc.subcategory.lower().replace(' ', '-')}}">{{doc.subcategory}}</a>
+                        <a href="/knowledge_base/{{doc.category.lower().replace(' ', '-')}}">{{doc.category}}</a>
+                        <a class="c_blue" href="/knowledge_base/{{doc.category.lower().replace(' ', '-')}}/{{doc.subcategory.lower().replace(' ', '-')}}">{{doc.subcategory}}</a>
                     </div>
                 </div>
             </div>
@@ -32,7 +32,7 @@
                     <div class="scroll">
                         <ul class="list-unstyled nav-sidebar">
                             <li class="nav-item active">
-                                <a href="/knowledge-base" class="nav-link active"><img src="/assets/one_fm/faq/img/side-nav/home.png" alt="">Home</a>
+                                <a href="/knowledge_base" class="nav-link active"><img src="/assets/one_fm/faq/img/side-nav/home.png" alt="">Home</a>
                             </li>
                             {% for k, v in categories.items() %}
                             <li class="nav-item{% if v.info.name==doc.category %} active{% endif %}">
@@ -75,8 +75,8 @@
                                     <!-- <img src="/assets/one_fm/faq/img/blog-grid/blog_grid_post2.jpg" alt=""> -->
                                     <div class="grid_post_content">
                                         <div class="post_tag">
-                                            <a href="/knowledge-base/{{i.category.lower().replace(' ', '-')}}">{{i.category}}</a>
-                                            <a class="cat-Docy" href="/knowledge-base/{{i.category.lower().replace(' ', '-')}}/{{i.subcategory.lower().replace(' ', '-')}}">{{i.subcategory}}</a>
+                                            <a href="/knowledge_base/{{i.category.lower().replace(' ', '-')}}">{{i.category}}</a>
+                                            <a class="cat-Docy" href="/knowledge_base/{{i.category.lower().replace(' ', '-')}}/{{i.subcategory.lower().replace(' ', '-')}}">{{i.subcategory}}</a>
                                         </div>
                                         <a href="{{i.route}}">
                                             <h4 class="b_title">{{i.title}}</h4>
