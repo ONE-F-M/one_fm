@@ -5,12 +5,16 @@ aiohttp==3.8.4
 aiohttp-retry==2.8.3
 aioitertools==0.11.0
 aiosignal==1.3.1
+alabaster==0.7.13
 aleph-alpha-client==2.17.0
 asttokens==2.0.8
 async-timeout==4.0.2
+attrs==22.2.0
+autoapi==2.0.1
 attrs==23.1.0
 Babel==2.9.1
 backcall==0.2.0
+backoff==2.2.1
 beautifulsoup4==4.9.3
 bleach==3.3.1
 bleach-allowlist==1.0.3
@@ -39,6 +43,7 @@ defusedxml==0.7.1
 deprecation==2.1.0
 dill==0.3.6
 docopt==0.6.2
+docutils==0.19
 dropbox==11.7.0
 email-reply-parser==0.5.12
 entrypoints==0.4
@@ -86,6 +91,9 @@ httplib2==0.20.4
 huggingface-hub==0.15.1
 humbug==0.3.1
 idna==3.4
+imagesize==1.4.1
+install==1.3.5
+ipinfo==4.4.2
 ipython==8.4.0
 isodate==0.6.1
 jedi==0.18.1
@@ -99,6 +107,7 @@ ldap3==2.9.1
 llama-index==0.6.27
 -e git+https://github.com/frappe/lms.git@3b1b375d5bfcb943ae6bea8cb3e6be825f2e2154#egg=lms
 lxml==4.9.1
+Mako==1.2.4
 Markdown==3.4.3
 markdown2==2.4.5
 markdownify==0.11.6
@@ -109,6 +118,7 @@ matplotlib-inline==0.1.6
 maxminddb==2.2.0
 maxminddb-geolite2==2018.703
 mindee==3.9.1
+monotonic==1.6
 msgpack==1.0.4
 multidict==6.0.4
 multiprocess==0.70.14
@@ -136,6 +146,7 @@ pathos==0.3.0
 paytmchecksum==1.7.0
 pbr==5.10.0
 pdfkit==1.0.0
+pdoc3==0.10.0
 pexpect==4.8.0
 phonenumbers==8.12.40
 pickleshare==0.7.5
@@ -143,12 +154,14 @@ pikepdf==6.2.9
 Pillow==9.3.0
 plaid-python==7.2.1
 ply==3.11
+posthog==3.0.1
 pox==0.3.2
 ppft==1.7.6.6
 premailer==3.8.0
 prompt-toolkit==3.0.31
 proto-plus==1.22.1
 protobuf==3.20.3
+prun==0.3.1
 psutil==5.9.2
 psycopg2-binary==2.9.4
 ptyprocess==0.7.0
@@ -159,6 +172,7 @@ pycares==4.3.0
 pycountry==20.7.3
 pycparser==2.21
 pycryptodome==3.10.4
+pygls==0.10.2
 pydantic==1.10.9
 Pygments==2.13.0
 PyJWT==2.4.0
@@ -197,7 +211,15 @@ scipy==1.9.1
 semantic-version==2.10.0
 six==1.16.0
 smmap==5.0.0
+snowballstemmer==2.2.0
 soupsieve==2.3.2.post1
+Sphinx==6.1.3
+sphinxcontrib-applehelp==1.0.4
+sphinxcontrib-devhelp==1.0.2
+sphinxcontrib-htmlhelp==2.0.1
+sphinxcontrib-jsmath==1.0.1
+sphinxcontrib-qthelp==1.0.3
+sphinxcontrib-serializinghtml==1.1.5
 SQLAlchemy==1.4.48
 sqlparse==0.4.3
 stack-data==0.5.1
@@ -216,6 +238,7 @@ traitlets==5.4.0
 transformers==4.30.2
 tweepy==3.10.0
 twilio==6.44.2
+typeguard==2.13.3
 -e git+https://github.com/frappe/twilio-integration.git@cb474c54d794c3a58a8c5287d387cf3d41e5ed0a#egg=twilio_integration
 typing-inspect==0.8.0
 typing_extensions==4.5.0
