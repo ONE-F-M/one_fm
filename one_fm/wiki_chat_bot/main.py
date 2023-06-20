@@ -1,36 +1,5 @@
-# import os
-#
-#
-# import frappe
-# from llama_index import SimpleDirectoryReader, GPTListIndex, LLMPredictor, PromptHelper, GPTVectorStoreIndex
-# from langchain.agents import initialize_agent, Tool
-# from langchain.llms import OpenAI
-# from langchain.chains.conversation.memory import ConversationBufferMemory
-#
-# api_key = frappe.local.conf.get("OPENAI_API_KEY")
-#
-# os.environ["OPENAI_API_KEY"] = api_key
-#
-#
-# def create_vector_index(path: str):
-#     max_input = 4096
-#     tokens = 256
-#     chunk_size = 600
-#     max_chunk_overlap = 0.5
-#     prompt_helper = PromptHelper(max_input, tokens, max_chunk_overlap, chunk_size_limit=chunk_size)
-#     llm_predictor = LLMPredictor(OpenAI(temperature=0.5, model_name="text-ada-001", max_tokens=tokens))
-#     docs = SimpleDirectoryReader(path, recursive=True, exclude_hidden=True).load_data()
-#     vector_index = GPTVectorStoreIndex.from_documents(docs)
-#     print(type(vector_index))
-#
-#     from pickle import dump
-#     vector_index.core_bpe = None
-#     with open("vector_index.pkl", "wb") as f:
-#         dump(vector_index, f)
-#
-#     return vector_index
-
 import os
+import json
 
 import frappe
 from gpt_index import SimpleDirectoryReader, GPTListIndex, GPTSimpleVectorIndex, LLMPredictor, PromptHelper
@@ -38,11 +7,14 @@ from langchain import OpenAI
 
 from one_fm.api.v1.utils import response
 
-os.environ["OPENAI_API_KEY"] = frappe.local.conf.get("OPENAI_API_KEY")
+api_integration = frappe.get_doc("API Integration", "ChatGPT")
+
+os.environ["OPENAI_API_KEY"] = api_integration.get_password('api_key')
+
 folder_path = "../apps/one_fm/one_fm/wiki_chat_bot/knowledge/"
 
 
-def create_vector_index(path: str):
+def create_vector_index(path: str = folder_path):
     try:
         max_input = 4096
         tokens = 256
@@ -58,25 +30,28 @@ def create_vector_index(path: str):
         frappe.log_error(frappe.get_traceback(), "Error while adding to bot memory(Chat-BOT)")
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=1)
 def ask_question(question: str = None):
     try:
         if not question:
             return response("Bad Request !", 400, error="Question can not be empty")
         index = GPTSimpleVectorIndex.load_from_disk("vector_index.json")
-        # last_token_usage = index.llm_predictor.last_token_usage
-        # print(last_token_usage)
         answer = index.query(question)
-        return response(message="Success", status_code=200, data={"answer": answer})
+        return response(message="Success", status_code=200, data={"question": question ,"answer": answer.response})
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error while generating answer(Chat-BOT)")
         return response(e, 500, {}, False, )
 
 
+@frappe.whitelist()
+def queue_fetch_wiki_and_add_to_bot_memory():
+    frappe.enqueue(fetch_wiki_and_add_to_bot_memory, queue='long')
+
+
 def fetch_wiki_and_add_to_bot_memory():
     try:
-        wiki_page_list = frappe.db.get_list("Wiki Page", fields=["name", "content"])
-        wiki_page_dict = {item["name"]: item["content"] for item in wiki_page_list}
+        wiki_page_list = frappe.db.get_list("Wiki Page", fields=["name", "content", "title"])
+        wiki_page_dict = {item["name"]: item["title"] + "\n" + item["content"] for item in wiki_page_list}
         for k, v in wiki_page_dict.items():
             with open(f"{folder_path}{k}.txt", "w") as x:
                 x.write(v)
@@ -95,13 +70,21 @@ def after_insert_wiki_page(doc, method):
     frappe.enqueue(add_wiki_page_to_bot_memory, doc=doc, queue='long')
 
 
+@frappe.whitelist()
 def add_wiki_page_to_bot_memory(doc):
-    with open(f"{folder_path}{doc.name}.txt", "w") as x:
-        x.write(doc.content)
+    try:
+        doc = json.loads(doc)
+        with open(f"{folder_path}{doc.get('name')}.txt", "w") as x:
+            x.write(doc.get("title") + "\n" + doc.get("content"))
 
-    create_vector_index(path=folder_path)
+        create_vector_index(path=folder_path)
 
-    queue_delete_all_uploaded_files()
+        queue_delete_all_uploaded_files()
+        return True
+    except Exception as e:
+        print(e)
+        frappe.log_error(frappe.get_traceback(), "Error while adding to bot memory")
+        return False
 
 
 def queue_delete_all_uploaded_files():

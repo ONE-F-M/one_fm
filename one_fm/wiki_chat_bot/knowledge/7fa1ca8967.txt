@@ -1,0 +1,62 @@
+Bug Buster Process
+Bug buster is responsible for identifying, documenting, and resolving bugs in a system. A member of the development team is rostered as a Bug buster for the week, that takes part in resolving issues in the system. He/She won't be taking part in any other features/chores of the sprint. But, rather focus on debugging all the errors.
+
+Bug sources:
+------------
+
+The Bug Buster could fetch all the weekly issues from the following sources
+
+### Issue Log
+
+The [issue doc](https://one-fm.com/app/issue?status=Open) is a list of errors found by the user. A user could be facing issues or come across bugs, while using a doctype, causing work delays. They send an email to [support@one-fm.com](mailto:support@one-fm.com), and that gets registered into the issue doc.
+
+### Frappe Desk
+
+It is similar to the Issue doc.
+
+### Error Log
+
+So the issue might not be visible to the employee/user, but gets thrown by a system which then gets recorded in Error Log.
+
+### RQ Job
+
+This consists of all the Background jobs running in the system. Some of the could fail. Bug Buster needs to record them, and fix them.
+
+### Scheduled Job Log
+
+Schedule Jobs are cron jobs that run on background on a daily, hourly, or minute basis. The one that failed needs to be fixed by Bug buster.
+
+The process for bug fixing involves the following steps:
+--------------------------------------------------------
+
+### Fetching Bugs from Sources
+
+Bugs can be fetched from various sources such as the issue log, Frappe Desk, error logs, RQ job, and scheduled job logs. These sources should be monitored hourly or daily to identify new bugs. (Hourly because of possibilities of ‘Shit On Fire🔥’). By following these steps, the bug buster can effectively identify, document, and resolve bugs in a system. Regular monitoring of various sources and clear documentation of bugs can help in the smooth functioning of the system.
+
+### Defining Priority:
+
+Bug Buster needs to accept the issue and define the priority, communicate to the issuer that the issue is accepted with time for resolution. The range of Priority is based on the number of people that have been affected by the bug. i.e. if it's Checkin/Checkout Issue, with affects nearly everyone from the company, then it's of higher priority(Shit On Fire). More details on the priority are listed in [Issue Management Document](https://one-fm.com/issue-management).
+
+### Communication with Issuer:
+
+Bug buster needs to communicate with the issuer by email via ERPNext and confirms the problem, solution, and request and respond with time confirmation. Communicate with the issuer when resolved, if no response within x hours/days, the issue auto close.
+
+### Documenting Bugs
+
+Once a bug is identified, it needs to be documented in detail on pivotal Tracker. The documentation should include clear requirements and any other relevant information such as steps to reproduce the bug, screenshots, and error messages. If S/he is unclear about the problem, they are required to contact the issuer, through Google Meet.
+
+### Resolving Bugs
+
+The bug buster should work on resolving the bug as per the documented requirements. Once the issue has been recorded on Pivotal Tracker, the bug buster needs to create a branch from the pivotal tracker ID. The branch has be to based on priority. That is, if the issue is Urgent(Shit On Fire ), the branch should be based on master, if not then from staging. They should test the fix to ensure that the bug has been resolved.
+
+### Updating Status
+
+Once the bug has been resolved, the issuer needs to be informed to test out the fixes. Once the issuer confirms the issue is resolved, the bug should then be closed and any related documentation should be updated.
+
+### Testing
+
+It's important to test the bug fix to ensure that it hasn't introduced any new bugs or issues. This should be done before closing the bug.
+
+### Knowledge Sharing
+
+The bug Buster could either document the solution or explain to the team member the solution found, through the meeting. This would help the future Bug Buster to tackle the bugs that could be of a similar kind.
