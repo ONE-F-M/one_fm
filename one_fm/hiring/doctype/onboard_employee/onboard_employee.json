@@ -495,7 +495,6 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.employment_type != \"Service Provider\"",
    "fieldname": "visa_and_residency_section",
    "fieldtype": "Section Break",
    "label": "Visa and Residency"
@@ -532,7 +531,6 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.employment_type != \"Service Provider\"",
    "fieldname": "uniform_measurements_section",
    "fieldtype": "Section Break",
    "label": "Uniform Measurements"
@@ -601,7 +599,7 @@
    "label": "Employee Name in Arabic"
   },
   {
-   "depends_on": "eval:doc.docstatus > 0 && doc.employment_type != \"Service Provider\"",
+   "depends_on": "eval:doc.docstatus > 0",
    "fieldname": "work_contract_section",
    "fieldtype": "Section Break",
    "label": "Work Contract"
@@ -1089,7 +1087,7 @@
    "label": "Uniform for Work"
   },
   {
-   "depends_on": "eval:doc.docstatus > 0 && doc.employee && doc.employment_type != \"Service Provider\"",
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee ",
    "fieldname": "tools_for_work_section",
    "fieldtype": "Section Break",
    "label": "Tools for Work"
@@ -1216,7 +1214,6 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.employment_type != \"Service Provider\"",
    "fieldname": "g2g_and_residency_section",
    "fieldtype": "Section Break",
    "label": "G2G and Residency"
@@ -1506,7 +1503,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-06-19 11:51:14.196587",
+ "modified": "2023-06-20 21:48:07.319621",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

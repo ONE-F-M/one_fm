@@ -10,6 +10,23 @@ frappe.ui.form.on('Wiki Page', {
         slugify = slugify.replace(/[\s_-]+/g, '-')
         slugify = slugify.replace(/^-+|-+$/g, '');
         frm.set_value('route', 'wiki/'+slugify);
+    },
+    refresh(frm){
+        frm.add_custom_button(__('Charge Lumina !'), function () {
+            frappe.call({
+                method: "one_fm.wiki_chat_bot.main.add_wiki_page_to_bot_memory",
+                args: {"doc": cur_frm.doc},
+                callback: function (r) {
+                    if (r.message) {
+                        frappe.show_alert({
+                            message: __("Lumina memory turbocharged !"),
+                            indicator: "blue",
+                        });
+                    }
+                },
+            });
+        }
+      ).addClass('btn-success');
     }
   });
   
