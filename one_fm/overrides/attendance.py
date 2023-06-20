@@ -520,7 +520,7 @@ def mark_daily_attendance(start_date, end_date):
         
         for i in basic_shift_assignments:
             emp = employees_dict.get(i.employee)
-            name = f"HR-ATT_{i.employee}_Basic"
+            name = f"HR-ATT-{start_date}_{i.employee}_Basic"
             query_body+= f"""
             (
                 "{name}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
@@ -630,7 +630,7 @@ def mark_daily_attendance(start_date, end_date):
         
         for i in ot_shift_assignments:
             emp = employees_dict.get(i.employee)
-            name = f"HR-ATT_{i.employee}_Basic"
+            name = f"HR-ATT-{start_date}_{i.employee}_Basic"
             query_body+= f"""
             (
                 "{name}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
