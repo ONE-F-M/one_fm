@@ -75,8 +75,7 @@ def update_ops_post(projects):
     try:
         for each in posts:
             doc = frappe.get_doc("Operations Post",each)
-            if doc.project == 'Al-Khorayef':
-                pass
+            
             create_post_schedule_for_operations_post(doc)
             frappe.db.commit()
     except:
