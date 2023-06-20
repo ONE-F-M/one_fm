@@ -2850,7 +2850,11 @@ def get_approver(employee):
     if employee=="HR-EMP-00001":return "HR-EMP-00001" # for Abdullah
     operations_site, operations_shift = '', ''
     if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
-    emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site'], as_dict=1)
+    emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
+    # Get for IT - ONEFM
+    if emp_data.department=='IT - ONEFM':
+         return emp_data.reports_to
+    
     if emp_data.shift:
         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
     elif emp_data.site:
