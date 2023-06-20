@@ -1,4 +1,4 @@
-{% extends 'www/knowledge-base/base.html' %}
+{% extends 'www/knowledge_base/base.html' %}
 
 {% block title %}{{title|title}}{% endblock %}
 
@@ -13,7 +13,7 @@
         <div class="tab-content" id="myTabContent">
             <div class="tab-pane doc_tab_pane fade show active" id="or" role="tabpanel" aria-labelledby="or-tab">
                 <div class="row">
-                  {% for i in subcategory %}
+                  {% for i in articles %}
                     <div class="col-sm-4">
                         <div class="media documentation_item wow fadeInUp">
                             <div class="icon">
@@ -21,9 +21,9 @@
                             </div>
                             <div class="media-body">
                                 <a href="{{i.route}}">
-                                    <h5>{{i.category_name|title}}</h5>
+                                    <h5>{{i.title|title}}</h5>
                                 </a>
-                                <p>{{i.category_description}}</p>
+                                <p>{{i.content}}</p>
                             </div>
                         </div>
                     </div>

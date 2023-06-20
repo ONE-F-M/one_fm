@@ -1,4 +1,4 @@
-{% extends 'www/knowledge-base/base.html' %}
+{% extends 'www/knowledge_base/base.html' %}
 
 {% block title %}Search{% endblock %}
 
@@ -12,7 +12,7 @@
                     <div class="col-sm-7">
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb">
-                                <li class="breadcrumb-item"><a href="/knowledge-base">Home</a></li>
+                                <li class="breadcrumb-item"><a href="/knowledge_base">Home</a></li>
                                 <!-- <li class="breadcrumb-item"><a href="#">Docs</a></li> -->
                                 <!-- <li class="breadcrumb-item active" aria-current="page">Docy WordPress Theme</li> -->
                             </ol>
@@ -38,7 +38,7 @@
                           <div class="scroll">
                               <ul class="list-unstyled nav-sidebar">
                                   <li class="nav-item active">
-                                      <a href="/knowledge-base" class="nav-link active"><img src="/assets/one_fm/faq/img/side-nav/home.png" alt="">Home</a>
+                                      <a href="/knowledge_base" class="nav-link active"><img src="/assets/one_fm/faq/img/side-nav/home.png" alt="">Home</a>
                                   </li>
                                   {% for k, v in categories.items() %}
                                   <li class="nav-item">
@@ -69,8 +69,8 @@
                             <div class="b_top_post_content">
                                 <div class="post_tag">
                                     <a href="#">{{i.creation}}</a>
-                                    <a href="/knowledge-base/{{i.category.lower().replace(' ', '-')}}">{{i.category}}</a>
-                                    <a class="orange" href="/knowledge-base/{{i.category.lower().replace(' ', '-')}}/{{i.subcategory.lower().replace(' ', '-')}}">{{i.subcategory}}</a>
+                                    <a href="/knowledge_base/{{i.category.lower().replace(' ', '-')}}">{{i.category}}</a>
+                                    <a class="orange" href="/knowledge_base/{{i.category.lower().replace(' ', '-')}}/{{i.subcategory.lower().replace(' ', '-')}}">{{i.subcategory}}</a>
                                 </div>
                                 <a href="{{i.route}}">
                                     <h3>{{i.title|safe}}</h3>
@@ -101,10 +101,10 @@
                         <nav class="navigation pagination">
                             <div class="nav-links">
                                   {% if search_data.prev  %}
-                                  <a class="btn btn-primary" href="/knowledge-base/search?q={{search_data.q}}&page={{search_data.prev}}"><i class="arrow_carrot-left"></i>Previous</a>
+                                  <a class="btn btn-primary" href="/knowledge_base/search?q={{search_data.q}}&page={{search_data.prev}}"><i class="arrow_carrot-left"></i>Previous</a>
                                   {% endif %}
                                   {% if search_data.next %}
-                                  <a class="btn btn-primary" href="/knowledge-base/search?q={{search_data.q}}&page={{search_data.next}}">Next<i class="arrow_carrot-right"></i></a>
+                                  <a class="btn btn-primary" href="/knowledge_base/search?q={{search_data.q}}&page={{search_data.next}}">Next<i class="arrow_carrot-right"></i></a>
                                   {% endif %}
                             </div>
                         </nav>

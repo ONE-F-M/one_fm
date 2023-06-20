@@ -6302,6 +6302,21 @@
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
     "state": "Mobile App Enrolment"
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Onboarding Officer",
+    "allowed_user_field": null,
+    "allowed_user_id": null,
+    "condition": null,
+    "next_state": "Cancelled",
+    "parent": "Onboard Employee",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "skip_creation_of_workflow_action": 1,
+    "skip_multiple_action": 0,
+    "state": "Completed"
    }
   ],
   "workflow_name": "Onboard Employee",
@@ -7190,6 +7205,7 @@
     "allowed_user_field": null,
     "allowed_user_id": null,
     "condition": "frappe.session.user in [doc.approver_user_id]",
+     
     "next_state": "Rejected",
     "parent": "Employee Checkin Issue",
     "parentfield": "transitions",
