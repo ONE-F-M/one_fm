@@ -12,7 +12,7 @@ frappe.listview_settings["Wiki Page"] = {
                     }
                 },
             });
-		
+
 		});
 	},
 

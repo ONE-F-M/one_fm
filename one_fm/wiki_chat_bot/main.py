@@ -11,7 +11,10 @@ api_integration = frappe.get_doc("API Integration", "ChatGPT")
 
 os.environ["OPENAI_API_KEY"] = api_integration.get_password('api_key')
 
-folder_path = "../apps/one_fm/one_fm/wiki_chat_bot/knowledge/"
+api_parameter = frappe.get_doc("API Parameter", {"parenttype": api_integration.doctype, "parent": api_integration.name,
+                                                 "parameter": "Folder Path"})
+
+folder_path = api_parameter.get_password("value") if api_parameter else ""
 
 
 def create_vector_index(path: str = folder_path):
@@ -30,14 +33,14 @@ def create_vector_index(path: str = folder_path):
         frappe.log_error(frappe.get_traceback(), "Error while adding to bot memory(Chat-BOT)")
 
 
-@frappe.whitelist(allow_guest=1)
+@frappe.whitelist()
 def ask_question(question: str = None):
     try:
         if not question:
             return response("Bad Request !", 400, error="Question can not be empty")
         index = GPTSimpleVectorIndex.load_from_disk("vector_index.json")
         answer = index.query(question)
-        return response(message="Success", status_code=200, data={"question": question ,"answer": answer.response})
+        return response(message="Success", status_code=200, data={"question": question, "answer": answer.response})
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error while generating answer(Chat-BOT)")
         return response(e, 500, {}, False, )
