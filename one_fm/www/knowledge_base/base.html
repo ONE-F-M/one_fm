@@ -18,7 +18,18 @@
     <link rel="stylesheet" href="/assets/one_fm/faq/assets/mcustomscrollbar/jquery.mCustomScrollbar.min.css">
     <link rel="stylesheet" href="/assets/one_fm/faq/css/style-main.css">
     <link rel="stylesheet" href="/assets/one_fm/faq/css/responsive.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" /> 
     <title>{% block title %}{% endblock %}</title>
+    <script>
+        window.frappe = {};
+        frappe.ready_events = [];
+        frappe.ready = function (fn) {
+            frappe.ready_events.push(fn);
+        }
+        window.dev_server = {{ dev_server }};
+        window.socketio_port = {{ frappe.socketio_port }};
+
+    </script>
 </head>
 
 <body data-scroll-animation="true">
@@ -116,6 +127,34 @@
             </div>
         </section>
 
+        <div id="chatbot-container" style="display: none">
+            <div id="chatbot-interface">
+              <div id="chatbot-header">
+                <p>Want to know something? - Let's chat</p>
+              </div>
+              <div id="chatbot-chat">
+                <div class="chatbot-messages chatbot-received-messages">
+                  <p>With what can I help you today?</p>
+                </div>
+                <div class="chatbot-messages chatbot-received-messages">
+                  <p>Hello! I am Salwa, OneFM's chatbot</p>
+                </div>
+              </div>
+              <div id="chatbot-footer">
+                <div id="chatbot-input-container">
+                  <input type="text" id="chatbot-input" name="chatbot-input" placeholder="Type a command here...">
+                </div>
+                <div id="chatbot-new-message-send-button">
+                  <i class="material-icons" id="send-icon">send</i>
+                </div>
+              </div>
+            </div>
+          </div> 
+          <div id="chatbot-open-container">
+            <span class="material-symbols-outlined">chat</span>
+            <span class="material-symbols-outlined" style="display: none">close </span>
+          </div>
+
         {% block content %}
 
         {% endblock %}
@@ -153,7 +192,10 @@
     <script src="/assets/one_fm/faq/js/plugins.js"></script>
     <script src="https://unpkg.com/ionicons@5.4.0/dist/ionicons.js"></script>
     <script src="/assets/one_fm/faq/js/main.js"></script>
-    <script>
+    <script src="/assets/one_fm/faq/js/chatgpt.js"></script>
+    <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
+    <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
+
       document.addEventListener("DOMContentLoaded", (event)=>{
         // Add knowledge base to help button
         let urlParams = new URLSearchParams(window.location.search);
