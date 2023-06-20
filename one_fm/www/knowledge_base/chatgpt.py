@@ -5,27 +5,25 @@ import time
 import requests
 import frappe
 
-API_KEY = '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'
-API_ENDPOINT = 'https://api.openai.com/v1/chat/completions'
-
 @frappe.whitelist()
 def get_completion(prompt):
     try:
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {API_KEY}'
-        }
+        default_api_integration = frappe.get_doc("Default API Integration")
 
-        data = {
-            'messages': [{'role': 'system', 'content': 'You are a helpful assistant.'},
-                        {'role': 'user', 'content': prompt}],
-        }
+        chatgpt = frappe.get_doc("API Integration",
+            [i for i in default_api_integration.integration_setting
+                if i.app_name=='ChatGPT'][0].app_name)
+        openai.api_key = chatgpt.get_password('api_key')
 
-        response = requests.post(API_ENDPOINT, headers=headers, json=data)
-        response_json = response.json()
+        completion = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
+                )
 
-        if response_json:
-            return response_json['choices'][0]['message']['content']
+        response = completion.choices[0].message.content
+
+        if response:
+            return response
         else:
             return None
     except:
