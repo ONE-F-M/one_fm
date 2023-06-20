@@ -35,8 +35,8 @@ frappe.ui.form.on("Leave Application", {
         $.each(frm.fields_dict, function(fieldname, field) {
           field.df.onchange = frm =>{
             if (cur_frm.doc.employee && cur_frm.doc.leave_type == "Sick Leave"){
-                frappe.db.get_value("Employee", cur_frm.doc.employee, "non_kuwaiti_residents").then(res=>{ 
-                    if (res.message.non_kuwaiti_residents){
+                frappe.db.get_value("Employee", cur_frm.doc.employee, "is_in_kuwait").then(res=>{ 
+                    if (!res.message.non_kuwaiti_residents){
                         cur_frm.set_value("is_proof_document_required", 0)
                         cur_frm.refresh_field("is_proof_document_required")
                         

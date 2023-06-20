@@ -175,8 +175,8 @@ def validate_leave_proof_document_requirement(doc, method):
         Function to validate Is Proof Document Required Flag in Leave Application
         Triger form Validate hook of Leave Application
     '''
-    check_status = frappe.db.get_value("Employee", doc.employee, "non_kuwaiti_residents")
-    if not check_status:
+    check_status = frappe.db.get_value("Employee", doc.employee, "is_in_kuwait")
+    if check_status:
         if doc.leave_type and doc.status in ['Open', 'Approved'] and not doc.is_new():
             doc.is_proof_document_required = frappe.db.get_value('Leave Type', doc.leave_type, 'is_proof_document_required')
             if doc.is_proof_document_required and not doc.proof_documents:
