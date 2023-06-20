@@ -24,7 +24,6 @@ function newInput(){
   }
 }
 
-
 function addMessage(type, text){
   let messageDiv = document.createElement("div");
   let responseText = document.createElement("p");
@@ -40,11 +39,7 @@ function addMessage(type, text){
   chat.prepend(messageDiv);
 }
 
-
-
-
 function generateResponse(prompt){
-  console.log(prompt)
   // Here you can add your answer-generating code
   if(prompt){
     frappe.call({
