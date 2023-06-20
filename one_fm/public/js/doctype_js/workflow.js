@@ -63,7 +63,7 @@ enhancements.set_required_fields = function(event, doc){
 
 enhancements.set_docfields = function(){
 	var doctype = locals[cur_frm.doctype][cur_frm.docname].document_type
-	console.log(doctype)
+	
 	if (!doctype) return false;
 	
 	frappe.call({
@@ -72,7 +72,7 @@ enhancements.set_docfields = function(){
 		callback: function(r){
 			if (r.message){
 				var fields_=[]
-				console.log(r.message)
+				
 				for(var i of r.message){
 					fields_.push(i.value) || ""
 				}

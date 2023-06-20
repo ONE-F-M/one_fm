@@ -2847,16 +2847,16 @@ def get_approver(employee):
         Get document approver for employee by
         reports_to, shift_approver, site_approver
     """
+    if employee=="HR-EMP-00001":return "HR-EMP-00001" # for Abdullah
     operations_site, operations_shift = '', ''
     if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
     emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site'], as_dict=1)
-    if emp_data.reports_to:
-        return emp_data.reports_to
-    elif emp_data.shift:
+    if emp_data.shift:
         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
     elif emp_data.site:
         operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
-
+    elif emp_data.reports_to:
+        return emp_data.reports_to
     if operations_site:return operations_site
     if operations_shift:return operations_shift
     if not (operations_shift and operations_site and operations_shift):

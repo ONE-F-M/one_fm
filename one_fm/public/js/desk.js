@@ -60,7 +60,7 @@ let knowledgeBase = () => {
 //  let faq = document.createElement('a');
 //  faq.id="faq";
 //  faq.className = "dropdown-item";
-//  faq.href="/knowledge-base";
+//  faq.href="/knowledge_base";
 //  faq.innerText = "knowledge Base";
 //  helpbtn.appendChild(faq);
 }

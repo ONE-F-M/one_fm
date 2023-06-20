@@ -87,6 +87,18 @@ frappe.ui.form.on('PIFSS Monthly Deduction', {
 			}
 	}
 
+	// validate employees in deductions
+	frm.trigger('validate_deduction_employees')
+
+	},
+	validate_deduction_employees: function(frm){
+		if (!frm.is_new()){
+			frm.doc.deductions.forEach(item=>{
+				if (!item.employee){
+					frm.set_intro(`No employee found for Civil ID ${item.civil_id} in row ${item.idx}`, 'yellow');
+				}
+			})
+		}
 	},
 	remaining_amount: function(frm){
 		//  `remaining_amount` is the amount being paid by the company and it is fixed to be 828.98KWD

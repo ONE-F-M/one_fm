@@ -112,6 +112,7 @@ doctype_list_js = {
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
 	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
+	"Wiki Page": "public/js/doctype_list_js/wiki_page_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -399,6 +400,9 @@ doc_events = {
 	"ToDo": {
 		"validate": "one_fm.overrides.todo.validate_todo"
 	},
+	"Wiki Page": {
+		"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -424,20 +428,20 @@ website_route_rules = [
 		}
 	},
 	 {
-		"from_route": "/knowledge-base/search",
-		"to_route": "knowledge-base/search"
+		"from_route": "/knowledge_base/search",
+		"to_route": "knowledge_base/search"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>",
-		"to_route": "knowledge-base/kbcategory"
+		"from_route": "/knowledge_base/<path:category>",
+		"to_route": "knowledge_base/kbcategory"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory"
+		"from_route": "/knowledge_base/<path:category>/<path:subcategory>",
+		"to_route": "knowledge_base/kbcategory/kbsubcategory"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
+		"from_route": "/knowledge_base/<path:category>/<path:subcategory>/<path:article>",
+		"to_route": "knowledge_base/kbcategory/kbsubcategory/kbdetail"
 	},
 	{
 		"from_route": "/careers/opening/<path:job_id>",
