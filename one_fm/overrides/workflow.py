@@ -67,7 +67,7 @@ def get_transitions(doc, workflow=None, user=None):
 			specific_users = get_specific_user(transition, doc)
 			if specific_users and frappe.session.user not in specific_users:
 				continue
-			
+
 			transitions.append(transition.as_dict())
 
 	return transitions
@@ -79,24 +79,24 @@ def get_specific_user(transition, doc):
 		transition = frappe.get_doc('Workflow Transition', {
 					'parent': workflow, 'allowed': transition.allowed,
 					'action': transition.action,'state': transition.state})
-	
+
 	if transition.allowed_user_id:
 		# return the user as list
 		return [transition.allowed_user_id]
-	
+
 	if transition.allowed_user_field:
 		dt = doc.doctype
 		field = transition.allowed_user_field
 		linked_doctype = frappe.get_meta(dt).get_field(field)
-		
+
 		if linked_doctype and linked_doctype.fieldtype != 'Link':
 			# Could be a Dynamic Link
 			opt_field = (linked_doctype.options or '').split('.')[0]
 			linked_doctype = frappe.get_meta(dt).get_field(opt_field)
-		
+
 		# Assign to the actual doctype set in Options
 		linked_doctype = linked_doctype.options if linked_doctype else None
-		
+
 		if linked_doctype and linked_doctype != 'User':
 			# Check if this is an a Document such as Employee
 			# For now, only search only for User
@@ -107,13 +107,15 @@ def get_specific_user(transition, doc):
 				return
 			docname = doc.get(field)
 			return [frappe.get_value(linked_doctype, docname, user_field)]
-		
+
 		elif linked_doctype and linked_doctype == 'Role':
 			# return all Users for the Role
 			return get_users_with_role(doc.get(field))
-		
+
 		# return the user as list
 		return [doc.get(field)]
+
+	return []
 
 @frappe.whitelist()
 def apply_workflow(doc, action):
@@ -210,7 +212,7 @@ def filter_allowed_users(users, doc, transition):
 
 	from frappe.permissions import has_permission
 	filtered_users = []
-	
+
 	if transition.condition:
 		# if condition, evaluate
 		# access to frappe.db.get_value and frappe.db.get_list
@@ -281,12 +283,12 @@ def skip_to_next_workflow_transition(doc, current_transition):
 
 
 def can_skip(transition):
-	skip = [i.skip_multiple_action for i in 
+	skip = [i.skip_multiple_action for i in
 					frappe.get_all('Workflow Transition',{
 						'parent':transition.parent,
 						'state':transition.state,
 					},'skip_multiple_action')]
-	
+
 	if not skip or not all(skip):
 		return
 
@@ -328,7 +330,7 @@ def docfield_query(doctype, txt, searchfield, start, page_len, filters):
 # searches for transaction doctypes
 def voucher_type_query(doctype, txt, searchfield, start, page_len, filters):
 	conditions = []
-	query = """select distinct df.parent, dt.module 
+	query = """select distinct df.parent, dt.module
 		from tabDocField df join tabDocField df1 join tabDocField df2 join tabDocType dt
 		on dt.name = df.parent and df.parent = df1.parent and df1.parent = df2.parent
 		where (df.fieldname in ('grand_total','net_total', 'rounded_total')
@@ -382,7 +384,7 @@ def get_docfields(doctype):
 	meta = frappe.get_meta(doctype)
 	links = [i.name for i in frappe.get_all('Party Type')]
 	links += ['User','Role']
-	
+
 	opts = {df.fieldname for df in meta.fields for d in links if d in (df.options or '')}
 	links += list(opts)
 	return ['',{'label':'Owner','value':'owner'}] + \
@@ -405,7 +407,7 @@ def export_query():
 	file_format_type = frappe.local.form_dict.file_format_type
 	filters = json.loads(frappe.local.form_dict.filters or '{}')
 	visible_idx = json.loads(frappe.local.form_dict.visible_idx or '[]')
-	
+
 	if file_format_type == "Excel":
 		data = run(report_name, filters)
 		result = [row for row in data.get('result',[]) if \
