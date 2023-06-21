@@ -39,4 +39,6 @@ def get_magic_link():
         frappe.log_error(frappe.get_traceback(), 'Magic Link')
         return result
 
-    
+@frappe.whitelist(allow_guest=True)
+def upload_image():
+    print(frappe.form_dict)

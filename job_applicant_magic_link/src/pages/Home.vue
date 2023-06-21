@@ -9,8 +9,10 @@ export default {
       styleConfig: {
         showPage: 'none'
       },
+      imageFiles: {},
       showDialog: false,
       magicLink: '',
+      job_applicant: ''
     }
   },
   resources: {
@@ -50,21 +52,61 @@ export default {
             )
           } else {
             this.styleConfig.showPage = 'block'
+            this.job_applicant = data.name
           }
         })       
       }
     },
     // Preview Image
     previewImage(e){
-      var uploaded_pics = `
-      <div class="col-md-6">
-        <h4>Passport</h4>
-        <img src="" alt="Front Page Of Passport" id="${e.target.id}-preview" class="form-control" style="height: 350px;">
-      </div>
+      let el = document.querySelector(`#${e.target.id}-preview`);
+      if (!el){
+        var preview_el = document.createElement("div");
+        preview_el.classList="col-md-6"
+        preview_el.innerHTML = `
+          <h4>${e.target.placeholder}</h4>
+            <img src="" alt="${e.target.placeholder}" id="${e.target.id}-preview" class="form-control" style="height: 350px;">
+          </div>
         `;
-
-      document.getElementById("image_preview").innerHTML = uploaded_pics;
-      document.getElementById('passport-front').src = window.URL.createObjectURL(e.target.files[0]);
+        document.getElementById("image_preview").appendChild(preview_el);
+        document.getElementById(`${e.target.id}-preview`).src = window.URL.createObjectURL(e.target.files[0]);
+      } else {
+        document.getElementById(`${e.target.id}-preview`).src = window.URL.createObjectURL(e.target.files[0]);
+      }
+      // extract image
+      this.extract_image_file(e.target);
+    },
+    // Extract image file from form
+    extract_image_file(el){
+      let me = this;
+      if(el){
+        if (el.files){
+          let reader = new FileReader();
+          reader.readAsDataURL(el.files[0]);
+          reader.onload = function() {
+            let result = reader.result;
+            result = result.replace(/^data:image\/\w+;base64,/, "");
+            me.imageFiles[el.id]=result
+          };
+        }
+        
+      }
+    },
+    // Process image upload
+    async upload(){
+      let me = this
+      console.log(me.imageFiles)
+      // if any image was found and process, upload it
+      let uploadImage = createResource({
+        url: '/api/method/one_fm.www.job_applicant_magic_link.index.upload_image',
+        params: me.imageFiles,
+        method: 'POST',
+        onSuccess(data) {
+          console.log(data)
+        },
+      })
+      uploadImage.fetch()
+      console.log(uploadImage)
     }
   }
 }
@@ -118,43 +160,32 @@ export default {
                                         <label  for="file">International Passport Data Page</label>
                                         <input class="form-control" type="file" id="passport_data_page" placeholder="Passport Data"  name="passport_data_page"  accept="image/png, image/jpeg" :onchange="previewImage">
                                     </div>
-                                    <div class="form-group col-md-6" style="display:none;">
-                                        <label  for="file">Passport Back Side</label>
-                                        <input class="form-control" type="file" id="Passport_Back" placeholder="Back Passport"  name="file"  accept="image/png, image/jpeg" onchange="preview_back(this)">
-                                        <br>
-                                    </div>
                             </div>
-                                <div class="row">
-                                    <div class="form-group col-md-6">
-                                        <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
-                                        <input class="form-control" type="file" id="Civil_ID_Front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg">
-                                        <span id="tooltiptext1">* Please Upload Your Civil ID</span>
-                                    </div>
-                                    <div class="form-group col-md-6">
-                                        <label class="form-label" for="file" >Civil ID Back Side</label> <span class="required_indicator" style="color: red;">*</span>
-                                        <input class="form-control" type="file" id="Civil_ID_Back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg">
-                                        <span id="tooltiptext2">* Please Upload Your Civil ID</span>
-                                        <br>
-                                    </div>
-                                </div>
-                            
-
-
                             <div class="row">
-                                <div id="image_preview">
-
+                                <div class="form-group col-md-6">
+                                    <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                    <input class="form-control" type="file" id="civil_id_front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg" :onchange="previewImage">
+                                    <span id="tooltiptext1">* Please Upload Your Civil ID</span>
                                 </div>
+                                <div class="form-group col-md-6">
+                                    <label class="form-label" for="file" >Civil ID Back Side</label> <span class="required_indicator" style="color: red;">*</span>
+                                    <input class="form-control" type="file" id="civil_id_back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg" :onchange="previewImage">
+                                    <span id="tooltiptext2">* Please Upload Your Civil ID</span>
+                                    <br>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="row col-md-12">
+                                <div id="image_preview"></div>
                             </div>
 
 
                             <div style="margin-top: 30px; display: flex; justify-content: end">
-                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" onclick="upload()">Get Passport Details and Upload</button>
+                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" @click.prevent="upload">Get Passport Details and Upload</button>
                             </div>
-
-
                         </form>
-
-
                       </div>
                     </section>
                 </div>
