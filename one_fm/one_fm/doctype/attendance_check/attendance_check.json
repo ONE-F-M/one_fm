@@ -409,7 +409,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2023-06-20 22:40:33.293764",
+ "modified": "2023-06-21 15:20:00.632576",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
@@ -449,6 +449,30 @@
    "read": 1,
    "report": 1,
    "role": "Site Supervisor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
    "share": 1,
    "submit": 1,
    "write": 1
