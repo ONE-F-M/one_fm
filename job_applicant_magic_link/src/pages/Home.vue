@@ -12,7 +12,10 @@ export default {
       imageFiles: {},
       showDialog: false,
       magicLink: '',
-      job_applicant: ''
+      job_applicant: {},
+      nationalities: {},
+      religions: {},
+      genders: {},
     }
   },
   resources: {
@@ -44,6 +47,7 @@ export default {
           },
         })
         fetchMagicLink.fetch().then((data)=>{
+          console.log(data)
           if (Object.keys(data).length === 0){
             Swal.fire(
               'Error',
@@ -51,8 +55,12 @@ export default {
               'warning'
             )
           } else {
-            this.styleConfig.showPage = 'block'
-            this.job_applicant = data.name
+            this.styleConfig.showPage = 'block';
+            this.job_applicant = data.job_applicant;
+            this.nationalities = data.nationalities;
+            this.countries = data.countries;
+            this.genders = data.genders;
+            this.religions = data.religions;
           }
         })       
       }
@@ -95,9 +103,17 @@ export default {
     // Process image upload
     async upload(){
       let me = this
-      console.log(me.imageFiles)
-      // if any image was found and process, upload it
-      let uploadImage = createResource({
+      if (Object.keys(me.imageFiles).length === 0){
+        Swal.fire(
+          'Error',
+          'No image for upload found.',
+          'warning'
+        )
+      } else {
+        me.imageFiles.reference_doctype = this.job_applicant.doctype;
+        me.imageFiles.reference_docname = this.job_applicant.name;
+        console.log(me.imageFiles)
+        let uploadImage = createResource({
         url: '/api/method/one_fm.www.job_applicant_magic_link.index.upload_image',
         params: me.imageFiles,
         method: 'POST',
@@ -107,7 +123,37 @@ export default {
       })
       uploadImage.fetch()
       console.log(uploadImage)
+      }
+      // if any image was found and process, upload it
+    },
+    putField(e){ // update field on change
+      if(e.target.value){
+        // update job applicant
+        let params = {}
+        params[e.target.name] = e.target.value
+        console.log(`/api/resource/Job Applicant/${this.job_applicant.name}`)
+        let job_applicant = createResource({
+          url: `/api/resource/Job Applicant/${this.job_applicant.name}`,
+          params: params,
+          method: 'PUT',
+        })
+        job_applicant.fetch()
+
+      } else {
+        if (e.target.required){
+          Swal.fire(
+          'Error',
+          `All * fields in red must be filled, please fill it.`,
+          'warning'
+        )
+        }
+      }
     }
+  },
+  watch: {
+      "job_applicant.one_fm_nationality":function(val) { // Set country code if nationality changes
+        
+      }
   }
 }
 </script>
@@ -208,54 +254,53 @@ export default {
                                     <!-- Name section -->
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="first_name">First Name *</label>
-                                            <input class="form-control input" type="text" id="first_name" name="first_name">
+                                            <label class="form-label text-danger" for="first_name">First Name *</label>
+                                            <input class="form-control input" type="text" id="one_fm_first_name" name="one_fm_first_name" v-model="job_applicant.one_fm_first_name" :onchange="putField">
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label" for="second_name">Second Name</label>
-                                            <input class="form-control input" type="text" id="second_name" name="second_name">
+                                            <input class="form-control input" type="text" id="one_fm_second_name" name="one_fm_second_name" v-model="job_applicant.one_fm_second_name" :onchange="putField">
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label" for="third_name">Third Name</label>
-                                            <input class="form-control input" type="text" id="third_name" name="third_name">
+                                            <input class="form-control input" type="text" id="one_fm_third_name" name="one_fm_third_name" v-model="job_applicant.one_fm_third_name" :onchange="putField">
                                         </div>
                                         <div class="form-group">
-                                            <label class="form-label" for="last_name">Last Name *</label>
-                                            <input class="form-control input" type="text" id="last_name" name="last_name">
+                                            <label class="form-label text-danger" for="last_name">Last Name *</label>
+                                            <input class="form-control input" type="text" id="one_fm_last_name" name="one_fm_last_name" v-model="job_applicant.one_fm_last_name" :onchange="putField">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                       <div class="form-group">
                                           <label  class="form-label">First Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="first_ar_name" name="first_ar_name">
+                                          <input class="form-control input" type="text" id="one_fm_first_name_in_arabic" name="one_fm_first_name_in_arabic" v-model="job_applicant.one_fm_first_name_in_arabic" :onchange="putField">
                                       </div>
                                       <div class="form-group">
                                           <label  class="form-label">Second Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="second_ar_name" name="second_ar_name">
+                                          <input class="form-control input" type="text" id="one_fm_second_name_in_arabic" name="one_fm_second_name_in_arabic" v-model="job_applicant.one_fm_second_name_in_arabic" :onchange="putField">
                                       </div>
                                       <div class="form-group">
                                           <label  class="form-label">Third Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="third_ar_name" name="third_ar_name">
+                                          <input class="form-control input" type="text" id="one_fm_third_name_in_arabic" name="one_fm_third_name_in_arabic" v-model="job_applicant.one_fm_third_name_in_arabic" :onchange="putField">
                                       </div>
                                       <div class="form-group">
                                           <label  class="form-label">Last Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="last_ar_name" name="last_ar_name">
+                                          <input class="form-control input" type="text" id="one_fm_last_name_in_arabic" name="one_fm_last_name_in_arabic" v-model="job_applicant.one_fm_last_name_in_arabic" :onchange="putField">
                                       </div>
                                     </div>
                                     <!-- End name section -->
                                     <!-- Gender, marital, DoB and Religion -->
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label" for="gender">Gender *</label>
-                                          <select class="form-control input" id="gender" name="gender" aria-placeholder="Gender">
-                                              <option value="select" selected disabled></option>
-                                              <option value="Male">Male</option>
-                                              <option value="Female">Female</option>
+                                          <label class="form-label text-danger" for="one_fm_gender">Gender *</label>
+                                          <select class="form-control input" placeholder="Religion" id="one_fm_gender" aria-placeholder="Gender" name="one_fm_gender" v-model="job_applicant.one_fm_gender" :onchange="putField">
+                                              <option value=""></option>
+                                              <option :value="gender" v-for="gender in genders">{{gender}}</option>
                                           </select>
                                       </div>
                                       <div class="form-group">
-                                          <label class="form-label" for="marital_status">Marital Status *</label>
-                                          <select class="form-control input" id="marital_status" name="marital_status" aria-placeholder="Marital Status" required=1>
+                                          <label class="form-label text-danger" for="one_fm_marital_status">Marital Status *</label>
+                                          <select class="form-control input" id="one_fm_marital_status" aria-placeholder="Marital Status" required=1  name="one_fm_marital_status" v-model="job_applicant.one_fm_marital_status" :onchange="putField">
                                               <option value="select" selected disabled></option>
                                               <option value="Unmarried">Unmarried</option>
                                               <option value="Married">Married</option>
@@ -265,18 +310,14 @@ export default {
                                           </select>
                                       </div>
                                       <div class="form-group">
-                                          <label class="form-label" for="dob">Date Of Birth *</label>
-                                          <input class="form-control input" type="date" id="dob" onchange="test(this)" name="dob" size="50" required=1>
+                                          <label class="form-label text-danger" for="one_fm_date_of_birth">Date Of Birth *</label>
+                                          <input class="form-control input" type="date" id="one_fm_date_of_birth" size="50" required=1 name="one_fm_date_of_birth" v-model="job_applicant.one_fm_date_of_birth" :onchange="putField">
                                       </div>
                                       <div class="form-group">
-                                        <label class="form-label" for="religion">Religion *</label>
-                                        <select class="form-control input" id="religion" name="religion" aria-placeholder="Religion"  required=1>
-                                            <option value="select" disabled></option>
-                                            <option value="Muslim">Muslim</option>
-                                            <option value="Christian">Christian</option>
-                                            <option value="Hindu">Hindu</option>
-                                            <option value="Buddhist">Buddhist</option>
-                                            <option value="Unknown">Unknown</option>
+                                        <label class="form-label text-danger" for="one_fm_religion">Religion *</label>
+                                        <select class="form-control input" id="one_fm_religion" aria-placeholder="Religion"  required=1 name="one_fm_religion" v-model="job_applicant.one_fm_religion" :onchange="putField">
+                                            <option value=""></option>
+                                            <option :value="religion" v-for="religion in religions">{{religion}}</option>
                                         </select>
                                       </div>
                                     </div>
@@ -287,8 +328,9 @@ export default {
                                   <div class="row">
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label" for="educational_qualification">Highest Educational Qualification *</label>
-                                          <select class="form-control input" id="educational_qualification" name="educational_qualification" aria-placeholder="Select Your Highest Educational Qualification"  required=1>
+                                          <label class="form-label text-danger" for="one_fm_educational_qualification">Highest Educational Qualification *</label>
+                                          <select class="form-control input" id="one_fm_educational_qualification" name="one_fm_educational_qualification" 
+                                            aria-placeholder="Select Your Highest Educational Qualification"  required=1 v-model="job_applicant.one_fm_educational_qualification" :onchange="putField">
                                               <option value="select" selected disabled></option>
                                               <option value="Post Graduate">Post Graduate</option>
                                               <option value="Masters">Masters</option>
@@ -299,27 +341,27 @@ export default {
                                           </select>      
                                       </div>
                                       <div class="form-group">
-                                          <label  for="university">University / School *</label>
-                                          <input class="form-control input" type="text" id="university" name="university" required=1>
+                                          <label  class="form-label text-danger" for="one_fm_university">University / School *</label>
+                                          <input class="form-control input" type="text" id="one_fm_university" name="one_fm_university" required=1 v-model="job_applicant.one_fm_university" :onchange="putField">
                                       </div>
                                     </div>
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label" for="nationality">Nationality *</label>
-                                          <select class="form-control input2" id="nationality" name="nationality" aria-placeholder="Select Your Nationality"  required=1>
-                                              <option value="select" selected disabled></option>
-                                            
+                                          <label class="form-label text-danger" for="one_fm_nationality">Nationality *</label>
+                                          <select class="form-control input2" id="one_fm_nationality" name="one_fm_nationality" aria-placeholder="Select Your Nationality"  required=1 v-model="job_applicant.one_fm_nationality" :onchange="putField">
+                                              <option value=""></option>
+                                              <option :value="nationality.nationality" v-for="nationality in nationalities">{{nationality.nationality}}</option>
                                           </select>
                                       </div>
                                       <div class="form-group">
-                                          <label class="form-label" for="country_code">Country Code</label>
-                                          <input class="form-control input2" type="text" id="country_code" name="country_code" onchange="fetchNationality(this)" size="50">
+                                          <label class="form-label" for="one_fm_country_code">Country Dial Code</label>
+                                          <input class="form-control input2" type="text" id="one_fm_country_code" name="one_fm_country_code" size="50" v-model="job_applicant.one_fm_country_code" :onchange="putField">
                                       </div>
                                     </div>
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label" for="sponsor">Sponsor</label>
-                                          <input class="form-control input"  type="text" id="sponsor" name="sponsor">
+                                          <label class="form-label" for="one_fm_sponsor">Sponsor</label>
+                                          <input class="form-control input"  type="text" id="one_fm_sponsor" name="one_fm_sponsor" v-model="job_applicant.one_fm_sponsor" :onchange="putField">
                                       </div>
                                     </div>
                                   </div>
@@ -329,20 +371,20 @@ export default {
                                   <div class="row">
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label for="civilid">Civil ID Number</label>
-                                          <input class="form-control input" type="text" id="civilid" name="civilid" size="50">
+                                          <label for="one_fm_cid_number">Civil ID Number</label>
+                                          <input class="form-control input" type="text" id="one_fm_cid_number" name="one_fm_cid_number" size="50" v-model="job_applicant.one_fm_cid_number" :onchange="putField">
                                       </div>
                                     </div>
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label" for="civil_expiry_date">Civil ID Expiry Date</label>
-                                          <input class="form-control input" type="date" id="civil_expiry_date" name="civil_expiry_date" size="50">
+                                          <label class="form-label" for="one_fm_cid_expire">Civil ID Expiry Date</label>
+                                          <input class="form-control input" type="date" id="one_fm_cid_expire" name="one_fm_cid_expire" size="50" v-model="job_applicant.one_fm_cid_expire" :onchange="putField">
                                       </div>
                                     </div>
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label" for="paci_no">PACI Number</label>
-                                          <input class="form-control input" type="text" id="paci_no" name="paci_no">
+                                          <label class="form-label" for="one_fm_paci_no">PACI Number</label>
+                                          <input class="form-control input" type="text" id="one_fm_paci_no" name="one_fm_paci_no" v-model="job_applicant.one_fm_paci_no" :onchange="putField">
                                       </div>
                                     </div>
                                   </div>
@@ -352,12 +394,12 @@ export default {
                                   <div class="row">
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label" for="passport_no">Passport Number *</label>
-                                          <input class="form-control input" type="text" id="passport_no" name="passport_no" required=1>
+                                          <label class="form-label text-danger" for="one_fm_passport_number">Passport Number *</label>
+                                          <input class="form-control input" type="text" id="one_fm_passport_number" name="one_fm_passport_number" required=1 v-model="job_applicant.one_fm_passport_number" :onchange="putField">
                                       </div>
                                       <div class="form-group">
-                                          <label class="form-label" for="passport_type">Passport Type</label>
-                                          <select class="form-control input" id="passport_type" name="passport_type" aria-placeholder="Select Passport Type">
+                                          <label class="form-label" for="one_fm_passport_type">Passport Type</label>
+                                          <select class="form-control input" id="one_fm_passport_type" name="one_fm_passport_type" aria-placeholder="Select Passport Type" v-model="job_applicant.one_fm_passport_type" :onchange="putField">
                                               <option value="select" selected disabled></option>
                                               <option value="Normal">Normal</option>
                                               <option value="Diplomat">Diplomat</option>
@@ -367,25 +409,27 @@ export default {
                                     </div>
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label" for="passport_date_of_issue">Passport Date of Issue *</label>
-                                          <input class="form-control input2" type="date" id="passport_date_of_issue" name="passport_date_of_issue" required=1>
+                                          <label class="form-label text-danger" for="one_fm_passport_issued">Passport Date of Issue *</label>
+                                          <input class="form-control input2" type="date" id="one_fm_passport_issued" name="one_fm_passport_issued" required=1 v-model="job_applicant.one_fm_passport_issued" :onchange="putField">
                                       </div>
                                       <div class="form-group">
-                                          <label class="form-label" for="passport_expiry_date">Passport Expiry Date *</label>
-                                          <input class="form-control input2" type="date" id="passport_expiry_date" name="passport_expiry_date" required=1>
+                                          <label class="form-label text-danger" for="one_fm_passport_expire">Passport Expiry Date *</label>
+                                          <input class="form-control input2" type="date" id="one_fm_passport_expire" name="one_fm_passport_expire" required=1 v-model="job_applicant.one_fm_passport_expire" :onchange="putField">
                                       </div>
                                     </div>
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label" for="birth_place">Place of Birth *</label>
-                                          <select class="form-control input2" id="birth_place" name="birth_place" aria-placeholder="Select Your Birth Place"  required=1>
-                                            <option value="select" selected disabled></option>
+                                          <label class="form-label text-danger" for="one_fm_place_of_birth">Place of Birth *</label>
+                                          <select class="form-control input2" id="one_fm_place_of_birth" name="one_fm_place_of_birth" aria-placeholder="Select Your Birth Place" required=1 v-model="job_applicant.one_fm_place_of_birth" :onchange="putField">
+                                            <option value=""></option>
+                                            <option :value="country" v-for="country in countries">{{country.name}}</option>
                                           </select>
                                       </div>
                                       <div class="form-group">
-                                          <label class="form-label" for="passport_place_of_issue">Passport Place of Issue *</label>
-                                          <select class="form-control input2" id="passport_place_of_issue" name="passport_place_of_issue" aria-placeholder="Select Place of Issue" required=1>
-                                              <option value="" selected disabled></option>
+                                          <label class="form-label text-danger" for="one_fm_passport_holder_of">Passport Place of Issue *</label>
+                                          <select class="form-control input2" id="one_fm_passport_holder_of" name="one_fm_passport_holder_of" aria-placeholder="Select Place of Issue" required=1 v-model="job_applicant.one_fm_passport_holder_of" :onchange="putField">
+                                            <option value=""></option>
+                                            <option :value="country" v-for="country in countries">{{country.name}}</option>
                                           </select>
                                       </div>
                                     </div>
@@ -400,7 +444,7 @@ export default {
                                   </div>
                                   <br>
                                   <div>
-                                      <button class="btn btn-dark" type="button" href="json.json" value="save" id="saveForm" onclick="Save()" >Save</button>
+                                      <!-- <button class="btn btn-dark" type="button" href="json.json" value="save" id="saveForm" onclick="Save()" >Save</button> -->
                                       <button class="btn btn-dark" type="button" href="json.json" value="submit" id="submitForm" onclick="Submit()" disabled="disabled" >Submit</button>
                                   </div>
                                 </form>

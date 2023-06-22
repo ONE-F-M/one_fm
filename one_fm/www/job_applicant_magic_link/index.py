@@ -28,7 +28,24 @@ def get_magic_link():
                     result = {}
                 else:
                     job_applicant = frappe.get_doc('Job Applicant', magic_link.reference_docname)
-                    result = job_applicant
+                    # get other required data like nationality, gender, ...
+                    nationalities = frappe.get_all("Nationality", fields=["name as nationality", "nationality_arabic", "country"])
+                    nationalities_dict = {}
+                    for i in nationalities:
+                        nationalities_dict[i.country] = i
+                    countries = frappe.get_all("Country", fields=["name", "code", "code_alpha3", "country_name", "one_fm_country_name_arabic",
+                        "time_zones"])
+                    countries_dict = {}
+                    for i in countries:
+                        countries_dict[i.name] = i
+                        if nationalities_dict.get(i.name):
+                           countries_dict[i.name] = {**countries_dict[i.name], **nationalities_dict.get(i.name)} 
+
+                    result['job_applicant'] = job_applicant
+                    result['nationalities'] = nationalities_dict
+                    result['countries'] = countries_dict
+                    result['genders'] = [i.name for i in frappe.get_all("Gender")]
+                    result['religions'] = [i.name for i in frappe.get_all("Religion")]
             else:
                 result = {}
         else:
@@ -42,3 +59,5 @@ def get_magic_link():
 @frappe.whitelist(allow_guest=True)
 def upload_image():
     print(frappe.form_dict)
+
+    return {}
