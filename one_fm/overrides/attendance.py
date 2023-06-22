@@ -505,9 +505,10 @@ def mark_daily_attendance(start_date, end_date):
                 working_hours = (i.shift_actual_end - i.time).total_seconds() / (60 * 60)
                 status = 'Present'
                 comment = 'No checkout record found.'
+                
             if not emp:
-	    	emp = frappe._dict({})
-	    query_body+= f"""
+                emp = frappe._dict({})
+            query_body+= f"""
             (
                 "{name}", "{i.employee}", "{emp.employee_name or ''}", {working_hours}, "{status}", '{i.shift_type}', '{i.time}',
                 '{out_time}', "{i.shift_assignment}", "{i.operations_shift}", "{i.operations_site}", "{i.project}", "{start_date}", "{i.company}",
