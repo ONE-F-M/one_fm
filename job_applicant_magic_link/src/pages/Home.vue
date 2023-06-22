@@ -152,7 +152,10 @@ export default {
   },
   watch: {
       "job_applicant.one_fm_nationality":function(val) { // Set country code if nationality changes
-        
+        // console.log(val)
+      },
+      "job_applicant.one_fm_gender":function(val) { // Set country code if nationality changes
+        // console.log(val)
       }
   }
 }
