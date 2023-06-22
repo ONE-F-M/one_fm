@@ -237,6 +237,8 @@ def generate_employee_id(doc):
 	try:
 		if doc.one_fm_nationality=='No Nationality':
 			country = 'XX'
+		elif doc.one_fm_nationality == 'Non Kuwaiti':
+			country = 'NK'
 		elif doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
 			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
 		else:
