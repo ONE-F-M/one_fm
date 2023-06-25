@@ -34,15 +34,6 @@ export default defineConfig({
         entryFileNames: `assets/[name].js`,
         chunkFileNames: `assets/[name].js`,
         assetFileNames: `assets/[name].[ext]`,
-        // manualChunks(id) {
-        //   if (id.includes("node_modules")) {
-        //     return id
-        //       .toString()
-        //       .split("node_modules/")[1]
-        //       .split("/")[0]
-        //       .toString();
-        //   }
-        // },
       },
     },
     outDir: `../${path.basename(path.resolve(".."))}/public/job_applicant_magic_link`,
