@@ -1263,7 +1263,7 @@ def scrub_options_list(ol):
 @frappe.whitelist(allow_guest=True)
 def item_naming_series(doc, method):
     doc.name = doc.item_code
-    
+
 
 @frappe.whitelist()
 def before_insert_warehouse(doc, method):
@@ -2268,15 +2268,23 @@ def notify_on_close(doc, method):
         This Method is used to notify the issuer, when the issue is closed.
     '''
 
-    #Form Subject and Message
-    subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
-    msg = """Hello user,<br>
-        Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing
-    the issue you may reply back to this email and we will do our best to help.
-    """.format(issue_id = doc.name, url= doc.get_url())
-
     if doc.status == "Closed":
-        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False)
+        #Form Subject and Message
+        subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
+        user_full_name = doc.raised_by
+        if frappe.db.exists('User', {'email_id': doc.raised_by}):
+            user_full_name = frappe.db.get_value('User', {'email_id': doc.raised_by}, 'full_name')
+        msg = """
+            Hello {user},<br/>
+            Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing
+            the issue you may reply back to this email and we will do our best to help.
+            <br/><br/><br/>
+            <b>Issue Subject:</b> {subject}<br/>
+            <b>Issue Description:</b><br/>{description}
+        """.format(user = user_full_name, issue_id = doc.name, url= doc.get_url(), subject=doc.subject, description=doc.description)
+
+        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False, is_external_mail=True)
+
 
 def assign_issue(doc, method):
     '''
@@ -2651,7 +2659,7 @@ def create_message_with_details(message, mandatory_field, labels):
                         <td style="padding: 10px;">{ mandatory_field[m] }</td>
                         </tr>
                         """
-            
+
         message += """
                 </tbody>
                 </table>"""
@@ -2870,7 +2878,7 @@ def get_approver(employee):
     # Get for IT - ONEFM
     if emp_data.department=='IT - ONEFM':
          return emp_data.reports_to
-    
+
     if emp_data.shift:
         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
     elif emp_data.site:
