@@ -36,13 +36,15 @@ from frappe.workflow.doctype.workflow_action import workflow_action
 from one_fm.utils import override_frappe_send_workflow_action_email
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from  one_fm.overrides.payment_entry import add_party_gl_entries_
+from  one_fm.overrides.stock_ledger import get_valuation_rate_
+from erpnext.stock import stock_ledger
 from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 
 __version__ = '14.4.2'
 
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_
 workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
-
+stock_ledger.get_valuation_rate = get_valuation_rate_
 SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
 workflow_action.filter_allowed_users = filter_allowed_users
 workflow_action.get_next_possible_transitions = get_next_possible_transitions
