@@ -714,6 +714,9 @@ def assign_am_shift():
 				SELECT name from `tabShift Type` st
 				WHERE st.start_time >= '01:00:00'
 				AND  st.start_time < '13:00:00')
+			AND ES.employee IN(
+				SELECT name from `tabEmployee` e
+				WHERE e.status = "Active")
 	""".format(date=cstr(date)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "AM")
@@ -735,6 +738,9 @@ def assign_pm_shift():
 				SELECT name from `tabShift Type` st
 				WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
 				)
+			AND ES.employee IN(
+				SELECT name from `tabEmployee` e
+				WHERE e.status = "Active")
 	""".format(date=cstr(date)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "PM")
