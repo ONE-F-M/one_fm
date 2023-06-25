@@ -71,9 +71,7 @@ def create_roster_post_actions():
     This function creates a Roster Post Actions document that issues actions to supervisors to fill post types that are not filled for a given date range.
     """
     # clear existing
-    from time import time
-    t1 = time()
-    
+
     op_shift = frappe.db.sql(f""" 
     	SELECT supervisor, name FROM `tabOperations Shift` 
         WHERE
@@ -199,7 +197,5 @@ def create_roster_post_actions():
                 frappe.db.commit()
         except:
             frappe.log_error(frappe.get_traceback(), "Error while creating post actions")
+            
         del check_list
-        
-    t2 = time()
-    print(t2 - t1, "\n\n\n\n\n\n\n")
