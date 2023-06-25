@@ -27,7 +27,7 @@ from frappe.workflow.doctype.workflow_action import workflow_action
 from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 from one_fm.api.notification import after_insert
 from one_fm.one_fm.payroll_utils import add_tax_components
-from one_fm.utils import post_login, validate_reports_to, custom_validate_nestedset_loop
+from one_fm.utils import post_login, validate_reports_to, custom_validate_nestedset_loop, get_existing_leave_count
 from hrms.overrides.employee_master import EmployeeMaster,validate_onboarding_process
 from one_fm.overrides.employee import EmployeeOverride
 from frappe.email.doctype.email_queue.email_queue import QueueBuilder,SendMailContext
@@ -36,7 +36,7 @@ from frappe.workflow.doctype.workflow_action import workflow_action
 from one_fm.utils import override_frappe_send_workflow_action_email
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from  one_fm.overrides.payment_entry import add_party_gl_entries_
-
+from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 
 __version__ = '14.4.2'
 
@@ -71,7 +71,7 @@ ItemPrice.validate = validate
 ItemPrice.check_duplicates = check_duplicates
 LeaveApplication.notify_leave_approver = notify_leave_approver
 calculate_taxes_and_totals.calculate_item_values = calculate_item_values
-
+LeaveAllocation.get_existing_leave_count = get_existing_leave_count
 
 NotificationLog.after_insert = after_insert
 Employee.validate_reports_to = validate_reports_to
