@@ -47,7 +47,9 @@ function generateResponse(prompt){
       args: {'prompt': prompt},
       callback: function(r) {
         console.log(r)
+        $('.typing_gif').show();
         if(r.message != 'None') {
+          $('.typing_gif').hide();
           addMessage("received", r.message);
         }
         else{

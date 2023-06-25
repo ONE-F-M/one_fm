@@ -3103,7 +3103,15 @@
   z-index: 1000;
   font-size:20px
 }
+.typing_gif {
+  height: 30px;
+  padding: 0 20px;
+  display: none;
+}
 
+.typing_gif img {
+  height: 25px;
+}
 #send-icon {
   color: white;
 }
