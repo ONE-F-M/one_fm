@@ -797,6 +797,22 @@ def get_leave_type_details():
         leave_type_details.setdefault(d.name, d)
     return leave_type_details
 
+def get_existing_leave_count(doc):
+    ledger_entries = frappe.get_all(
+        "Leave Ledger Entry",
+        filters={
+            "transaction_type": "Leave Allocation",
+            "transaction_name": doc.name,
+            "employee": doc.employee,
+            "company": doc.company,
+            "leave_type": doc.leave_type,
+            "is_carry_forward": 0,
+            "docstatus": 1,
+        },
+        fields=["SUM(leaves) as total_leaves"],
+    )
+    return ledger_entries[0].total_leaves if ledger_entries[0].total_leaves else 0
+
 def create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date):
 	''' Creates leave allocation for the given employee in the provided leave policy '''
 	leave_type = policy_detail.leave_type
@@ -937,7 +953,7 @@ def get_paid_annual_leave_allocation_list(date=False):
         return: List of Leave Allocation
     '''
     if not date:
-        date = getdate(nowdate())
+        date = add_to_date(getdate(nowdate()),days=2)
     # Get List of Paid Annual Leave Allocation for a date of a Leave Type (having Is Paid Annual Leave marekd True)
     query = """
         select
@@ -959,11 +975,11 @@ def is_employee_allowed_to_avail_increment_existing_allocation(allocation, leave
         return: Boolean
     '''
     allow_allocation = True
-
+    date = add_to_date(getdate(nowdate()),days=-1)
     # Check if employee absent today then not allow annual leave allocation for today
     is_absent = frappe.db.sql("""select name, status from `tabAttendance` where employee = %s and
         attendance_date = %s and docstatus = 1 and status = 'Absent' """,
-        (allocation.employee, getdate(nowdate())), as_dict=True)
+        (allocation.employee, date), as_dict=True)
     if is_absent and len(is_absent) > 0:
         allow_allocation = False
 
@@ -976,7 +992,7 @@ def is_employee_allowed_to_avail_increment_existing_allocation(allocation, leave
         where
             employee = %s and (%s between from_date and to_date) and docstatus = 1
     """
-    leave_application = frappe.db.sql(query, (allocation.employee, getdate(nowdate())), as_dict=True)
+    leave_application = frappe.db.sql(query, (allocation.employee, date), as_dict=True)
 
     '''
         If Leave Application exist for today,

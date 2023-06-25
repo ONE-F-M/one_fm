@@ -20,6 +20,9 @@ class AttendanceRequestOverride(AttendanceRequest):
 				frappe.throw(_("Half day date should be in between from date and to date"))
 		self.set_approver()
 
+	def before_insert(self):
+		check_for_attendance(self)
+
 	def set_approver(self):
 		if not self.approver:
 			self.approver = get_approver(self.employee)
@@ -94,7 +97,28 @@ class AttendanceRequestOverride(AttendanceRequest):
 						"attendance_request": self.name, 
 						"working_hours": working_hours,
 						"reference_doctype":"Attendance Request",
-						"reference_name":self.name})
+						"reference_docname":self.name})
+					text = _("Changed the status from {0} to {1} via Attendance Request").format(
+						frappe.bold(old_status), frappe.bold(status)
+					)
+					doc.add_comment(comment_type="Info", text=text)
+
+					frappe.msgprint(
+						_("Updated status from {0} to {1} for date {2} in the attendance record {3}").format(
+							frappe.bold(old_status),
+							frappe.bold(status),
+							frappe.bold(format_date(attendance_date)),
+							get_link_to_form("Attendance", doc.name),
+						),
+						title=_("Attendance Updated"),
+					)
+				elif old_status == 'Present' and status == "Work From Home":
+					doc.db_set({
+						"status": status, 
+						"attendance_request": self.name, 
+						"working_hours": working_hours,
+						"reference_doctype":"Attendance Request",
+						"reference_docname":self.name})
 					text = _("Changed the status from {0} to {1} via Attendance Request").format(
 						frappe.bold(old_status), frappe.bold(status)
 					)
@@ -174,6 +198,10 @@ class AttendanceRequestOverride(AttendanceRequest):
 			return False
 		return True
 
+def check_for_attendance(doc):
+	att = frappe.get_list("Attendance", {"employee": doc.employee, "attendance_date":["between", [doc.from_date, doc.to_date]]}, ['status'])
+	if att:
+		frappe.msgprint("Your attendance is marked for today as "+ att[0].status )
 
 def validate_future_dates(doc, from_date, to_date):
 	date_of_joining, relieving_date = frappe.db.get_value(

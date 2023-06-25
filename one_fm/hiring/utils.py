@@ -237,6 +237,8 @@ def generate_employee_id(doc):
 	try:
 		if doc.one_fm_nationality=='No Nationality':
 			country = 'XX'
+		elif doc.one_fm_nationality == 'Non Kuwaiti':
+			country = 'NK'
 		elif doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
 			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
 		else:
@@ -280,8 +282,8 @@ def create_leave_policy_assignment(doc):
         assignment.effective_from = doc.date_of_joining
         # effective_to is an year of addition to effective_from
         assignment.effective_to = getdate(add_days(add_years(doc.date_of_joining, 1), -1))
-        assignment.carry_forward = True
-        assignment.leaves_allocated = False
+        assignment.carry_forward = 1
+        assignment.leaves_allocated = 0
         assignment.save()
         assignment.submit()
 
