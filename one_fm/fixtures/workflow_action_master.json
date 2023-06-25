@@ -383,5 +383,12 @@
   "modified": "2023-06-18 20:06:00.344618",
   "name": "Return",
   "workflow_action_name": "Return"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-06-25 23:04:41.498093",
+  "name": "Change Request",
+  "workflow_action_name": "Change Request"
  }
 ]
