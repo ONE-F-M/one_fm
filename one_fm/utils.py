@@ -8,13 +8,7 @@ from frappe import _
 import frappe, os, erpnext, json, math, itertools, pymysql, requests
 from frappe.model.document import Document
 from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
-from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils.csvutils import read_csv_content
-from frappe.utils import (
-    cint, cstr, flt, rounded,  nowdate, comma_and, date_diff, getdate,
-    formatdate ,get_url, get_datetime, add_to_date, time_diff, get_time,
-    time_diff_in_hours, get_url_to_form
-)
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
@@ -26,7 +20,8 @@ from dateutil.relativedelta import relativedelta
 from frappe.utils import (
     cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
     comma_or, get_fullname, add_years, add_months, add_days,
-    nowdate,get_first_day,get_last_day, today, now_datetime
+    nowdate,get_first_day,get_last_day, today, now_datetime, rounded, get_url,
+    get_datetime, add_to_date, time_diff, get_time, get_url_to_form, strip_html
 )
 import datetime
 from datetime import datetime, time
@@ -2274,14 +2269,19 @@ def notify_on_close(doc, method):
         user_full_name = doc.raised_by
         if frappe.db.exists('User', {'email_id': doc.raised_by}):
             user_full_name = frappe.db.get_value('User', {'email_id': doc.raised_by}, 'full_name')
-        msg = """
+        msg_html = """
             Hello {user},<br/>
             Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing
             the issue you may reply back to this email and we will do our best to help.
             <br/><br/><br/>
             <b>Issue Subject:</b> {subject}<br/>
-            <b>Issue Description:</b><br/>{description}
-        """.format(user = user_full_name, issue_id = doc.name, url= doc.get_url(), subject=doc.subject, description=doc.description)
+        """
+
+        if strip_html(doc.description):
+            # striphtml is used to get data without html tags, text editor will have a Defualt html <div class="ql-editor read-mode"><p><br></p></div>
+            msg_html += f"<b>Issue Description:</b><br/>{doc.description}"
+
+        msg = msg_html.format(user = user_full_name, issue_id = doc.name, url= doc.get_url(), subject=doc.subject)
 
         sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False, is_external_mail=True)
 
