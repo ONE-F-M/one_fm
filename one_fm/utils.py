@@ -48,6 +48,7 @@ from frappe.core.doctype.doctype.doctype import validate_series
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from frappe.desk.form.linked_with import get_linked_fields
+from frappe.model.workflow import apply_workflow
 
 
 def get_common_email_args(doc):
@@ -1263,7 +1264,7 @@ def scrub_options_list(ol):
 @frappe.whitelist(allow_guest=True)
 def item_naming_series(doc, method):
     doc.name = doc.item_code
-    
+
 
 @frappe.whitelist()
 def before_insert_warehouse(doc, method):
@@ -1309,6 +1310,7 @@ def validate_item(doc, method):
     if not doc.parent_item_group:
         doc.parent_item_group = "All Item Groups"
     doc.description = final_description
+    doc.change_request = False
     item_approval_workflow_notification(doc)
 
 def item_approval_workflow_notification(doc):
@@ -2651,7 +2653,7 @@ def create_message_with_details(message, mandatory_field, labels):
                         <td style="padding: 10px;">{ mandatory_field[m] }</td>
                         </tr>
                         """
-            
+
         message += """
                 </tbody>
                 </table>"""
@@ -2870,7 +2872,7 @@ def get_approver(employee):
     # Get for IT - ONEFM
     if emp_data.department=='IT - ONEFM':
          return emp_data.reports_to
-    
+
     if emp_data.shift:
         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
     elif emp_data.site:
@@ -3056,3 +3058,15 @@ def get_assignment_rule_description(doctype):
 		message_html += '</tbody></table>'
 	message_html += '</p>'
 	return message_html
+
+@frappe.whitelist()
+def change_item_details(item, item_name=False, description=False):
+    if not item_name and  not description:
+        return
+    item_obj = frappe.get_doc('Item', item)
+    if item_name:
+        item_obj.db_set("item_name", item_name)
+    if description:
+        item_obj.db_set("description", description)
+    item_obj.db_set("change_request", True)
+    apply_workflow(item_obj, "Change Request")
