@@ -12,6 +12,7 @@ from frappe import _
 from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
 from one_fm.api.notification import create_notification_log
 from one_fm.processor import sendemail
+from one_fm.utils import validate_mandatory_fields, get_mandatory_fields, create_message_with_details
 
 class ERF(Document):
 	def onload(self):
@@ -376,7 +377,12 @@ def get_job_openig_description_template():
 
 def send_email(doc, recipients):
 	page_link = get_url(doc.get_url())
-	message = "<p>Please Review the ERF <a href='{0}'>{1}</a> and take action.</p>".format(page_link, doc.name)
+	message = "<p>Here is the ERF <a href='{0}'>{1}</a> requested by {2}. Please Review it and take action.</p>".format(page_link, doc.name,doc.erf_requested_by_name)
+	mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
+
+	if mandatory_field and labels:
+		message = create_message_with_details(message, mandatory_field, labels)
+
 	if doc.status == 'Declined' and doc.reason_for_decline:
 		message = "<p>ERF <a href='{0}'>{1}</a> is Declined due to {2}</p>".format(page_link, doc.name, doc.reason_for_decline)
 	sendemail(
