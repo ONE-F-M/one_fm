@@ -7,6 +7,7 @@ frappe.listview_settings['Job Applicant'] = {
 		reject_applicat_directly(listview);
 		send_magic_link_to_selected_applicants(listview, 'Career History')
 		send_magic_link_to_selected_applicants(listview, 'Applicant Doc')
+		$('.btn.btn-primary.btn-sm.primary-action').hide();
 	}
 };
 
