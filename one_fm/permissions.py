@@ -526,6 +526,8 @@ def leave_application_list(user):
 	except AttributeError:
 		employee = frappe.get_value("Employee",{'user_id':frappe.session.user})
 		if employee:
+			
+			frappe.cache().set_value(frappe.session.user,frappe._dict({'employee':employee}))
 			roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
 			has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', employee, 'user_id'))])
 			if has_roles:
