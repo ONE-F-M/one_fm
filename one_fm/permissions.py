@@ -515,10 +515,23 @@ def leave_application_list(user):
 	"""
 	if frappe.session.user in ["Administrator", "abdullah@one-fm.com"]:
 		return
-	if not user: user = frappe.seesion.user
-	supervisor = frappe.cache().get_value(frappe.session.user).employee
-	roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
-	has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', supervisor, 'user_id'))])
-	if has_roles:
-		return
-	return "(employee = '{supervisor}')".format(supervisor=supervisor)
+	if not user: user = frappe.session.user
+	try:
+		supervisor = frappe.cache().get_value(frappe.session.user).employee
+		roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+		has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', supervisor, 'user_id'))])
+		if has_roles:
+			return
+		return "(employee = '{supervisor}')".format(supervisor=supervisor)
+	except AttributeError:
+		employee = frappe.get_value("Employee",{'user_id':frappe.session.user})
+		if employee:
+			
+			frappe.cache().set_value(frappe.session.user,frappe._dict({'employee':employee}))
+			roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+			has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', employee, 'user_id'))])
+			if has_roles:
+				return
+			return "(employee = '{employee}')".format(employee=employee)
+			
+		
