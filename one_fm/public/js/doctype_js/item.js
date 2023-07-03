@@ -1,6 +1,7 @@
 frappe.ui.form.on('Item', {
 	refresh(frm) {
 		set_item_field_property(frm);
+		set_change_request_btn(frm);
 		frm.set_query("subitem_group", function() {
 			return {
 				filters: [
@@ -325,3 +326,58 @@ function get_item_code(frm){
 		}
 	});
 }
+
+function set_change_request_btn(frm) {
+	if(frm.doc.workflow_state == 'Approved' && !frm.doc.change_request){
+		if(frappe.user.has_role('Accounts Manager')){
+			frm.add_custom_button(__('Edit Item Name and Description'), function() {
+				change_request(frm);
+			}, "Actions");
+		}
+	}
+};
+
+function change_request(frm) {
+	var dialog = new frappe.ui.Dialog({
+		title: 'Change Item Name and Description',
+		fields: [
+			{fieldtype: "Data", label: "Item Name", fieldname: "item_name"},
+			{fieldtype: "Small Text", label: "Description", fieldname: "description"},
+		],
+		primary_action_label: __("Update"),
+		primary_action : function(){
+			if(dialog.get_value('item_name') || dialog.get_value('description')){
+				frappe.confirm(
+					__('Are you sure to proceed?'),
+					function(){
+						// Yes
+						frappe.call({
+							method: 'one_fm.utils.change_item_details',
+							args: {
+								item: frm.doc.name,
+								item_name: dialog.get_value('item_name'),
+								description: dialog.get_value('description'),
+							},
+							callback: function(r) {
+								if(!r.exc) {
+									frm.reload_doc();
+								}
+							},
+							freaze: true,
+							freaze_message: __("Update Request ..")
+						});
+						dialog.hide();
+					},
+					function(){
+						// No
+						dialog.hide();
+					}
+				);
+			}
+			else{
+				frappe.throw("Please provide Item Name or Description to Update")
+			}
+		}
+	});
+	dialog.show();
+};
