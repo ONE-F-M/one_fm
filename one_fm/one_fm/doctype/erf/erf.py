@@ -44,7 +44,7 @@ class ERF(Document):
 	def validate_attendance_by_timesheet(self):
 		if self.attendance_by_timesheet:
 			self.shift_working = False
-			slef.operations_shift = ''
+			self.operations_shift = ''
 			self.default_shift = ''
 
 	@frappe.whitelist()
