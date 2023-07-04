@@ -53,8 +53,8 @@ function set_options_for_permission_type(frm) {
 };
 
 function get_shift_assignment(frm){
-	let {employee, emp_name, start_date} = frm.doc;
-	if(employee != undefined && !frm.doc.assigned_shift){
+	let {employee, emp_name} = frm.doc;
+	if(employee != undefined){
 		frappe.call({
             method: 'one_fm.operations.doctype.shift_permission.shift_permission.fetch_approver',
             args:{
