@@ -38,7 +38,7 @@ from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from  one_fm.overrides.payment_entry import add_party_gl_entries_
 
 
-__version__ = '14.4.2'
+__version__ = '14.4.3'
 
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_
 workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
