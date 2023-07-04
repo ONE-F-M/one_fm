@@ -81,8 +81,10 @@
   "interview_round",
   "column_break_56",
   "recruiter_assigned",
+  "recruiter_assigned_name",
   "need_to_assign_more_recruiter",
   "secondary_recruiter_assigned",
+  "secondary_recruiter_assigned_name",
   "create_project_for_recruiter",
   "project_for_recruiter",
   "salary_compensation_budget_section",
@@ -913,11 +915,30 @@
    "fieldname": "description",
    "fieldtype": "Text",
    "label": "Description"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "recruiter_assigned.full_name",
+   "fieldname": "recruiter_assigned_name",
+   "fieldtype": "Data",
+   "label": "Recruiter Name",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "need_to_assign_more_recruiter",
+   "fetch_from": "secondary_recruiter_assigned.full_name",
+   "fieldname": "secondary_recruiter_assigned_name",
+   "fieldtype": "Data",
+   "label": "Secondary Recruiter Name",
+   "permlevel": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-06-19 02:38:25.996754",
+ "modified": "2023-06-25 22:24:35.468885",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

@@ -405,7 +405,7 @@
   "doctype": "Workflow",
   "document_type": "Item",
   "is_active": 1,
-  "modified": "2023-05-16 20:50:35.995938",
+  "modified": "2023-06-25 23:24:26.801940",
   "name": "Item",
   "override_status": 1,
   "send_email_alert": 0,
@@ -590,6 +590,21 @@
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
     "state": "Pending Approval"
+   },
+   {
+    "action": "Change Request",
+    "allow_self_approval": 1,
+    "allowed": "Accounts User",
+    "allowed_user_field": null,
+    "allowed_user_id": null,
+    "condition": "doc.change_request",
+    "next_state": "Pending Approval",
+    "parent": "Item",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "skip_creation_of_workflow_action": 0,
+    "skip_multiple_action": 0,
+    "state": "Approved"
    }
   ],
   "workflow_name": "Item",
@@ -6312,7 +6327,7 @@
   "doctype": "Workflow",
   "document_type": "Contracts",
   "is_active": 1,
-  "modified": "2023-06-13 15:04:13.469660",
+  "modified": "2023-06-25 22:49:58.263338",
   "name": "Contracts",
   "override_status": 0,
   "send_email_alert": 0,
@@ -7190,7 +7205,6 @@
     "allowed_user_field": null,
     "allowed_user_id": null,
     "condition": "frappe.session.user in [doc.approver_user_id]",
-     
     "next_state": "Rejected",
     "parent": "Employee Checkin Issue",
     "parentfield": "transitions",
