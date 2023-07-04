@@ -82,7 +82,6 @@ var set_field_property_for_documents = function(frm) {
 	}
 };
 
-
 var hide_subscription_section = function(frm) {
 	frm.set_df_property('subscription_section', 'hidden', true);
 };

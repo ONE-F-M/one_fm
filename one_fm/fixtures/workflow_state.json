@@ -898,5 +898,14 @@
   "name": "Pending Stock Approval",
   "style": "",
   "workflow_state_name": "Pending Stock Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-05-22 12:48:06.013410",
+  "name": "Submit to Purchase Officer",
+  "style": "",
+  "workflow_state_name": "Submit to Purchase Officer"
  }
 ]

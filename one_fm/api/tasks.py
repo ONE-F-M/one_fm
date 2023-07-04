@@ -1935,3 +1935,10 @@ def run_checkin_reminder():
 		frappe.log_error(frappe.get_traceback(), 'Checkin Notification')
   
   
+def mark_open_timesheet_and_create_attendance():
+    the_timesheet_list = frappe.db.get_list("Timesheet", filters={"workflow_state": "Open"}, pluck="name")
+    for name in the_timesheet_list:
+        frappe.db.set_value("Timesheet", name, "workflow_state", "Approved")
+        frappe.db.set_value("Timesheet", name, "docstatus", 1)
+        doc = frappe.get_doc("Timesheet", name )
+        doc.create_attendance()
