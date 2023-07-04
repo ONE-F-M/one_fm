@@ -1674,7 +1674,7 @@ def fetch_employees_not_in_checkin():
 		holiday_list_employees = [i.name for i in frappe.db.get_list("Employee", filters={
 			'name': ['IN', employees_yet_to_checkin],
 			'status':'Active',
-			'holiday_list': ['IN', employees_yet_to_checkin]
+			'holiday_list': ['IN', holiday_list]
 		})]
 		employees_yet_to_checkin = [i for i in employees_yet_to_checkin if not i in holiday_list_employees]
 
