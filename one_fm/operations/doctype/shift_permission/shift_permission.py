@@ -189,12 +189,15 @@ def create_checkin(shift_permission):
 	shift_assignment = frappe.get_doc("Shift Assignment", shift_permission.assigned_shift)
 	start_time = shift_assignment.start_datetime
 	end_time = shift_assignment.end_datetime
+
+	#get the last checkin log ordered by time.
 	log = frappe.db.sql(f""" SELECT * FROM `tabEmployee Checkin`
 						WHERE employee='{shift_permission.employee}'
 						AND time between '{start_time}' AND '{end_time}'
 						ORDER BY time DESC LIMIT 1;	
 	""",as_dict=1)
-
+	#If log exists and the last checkin log type is same as the shift permission logtype, 
+	# create checkin log opposite to it.
 	if log and log[0].log_type == shift_permission.log_type:
 		ec = frappe.new_doc('Employee Checkin')
 		ec.employee = shift_permission.employee
