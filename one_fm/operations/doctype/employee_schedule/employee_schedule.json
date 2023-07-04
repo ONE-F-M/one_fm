@@ -147,11 +147,12 @@
    "default": "0",
    "fieldname": "day_off_ot",
    "fieldtype": "Check",
+   "in_standard_filter": 1,
    "label": "Day Off OT"
   }
  ],
  "links": [],
- "modified": "2023-01-03 11:30:46.448108",
+ "modified": "2023-06-21 19:40:28.805319",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",

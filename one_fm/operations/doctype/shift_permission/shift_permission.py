@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import getdate, get_datetime, add_to_date, format_date
+from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
@@ -148,7 +148,7 @@ def create_employee_checkin_for_shift_permission(shift_permission):
 			if not shift_permission.log_type:
 				return False
 			# Get shift details for the employee
-			create_checkin(shift_permission.name)
+			create_checkin(shift_permission)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Shift Permission")
 
@@ -176,33 +176,57 @@ def approve_open_shift_permission(start_date, end_date):
 		error_list = """"""
 		for i in shift_permissions:
 			try:
-				create_checkin(i.name)
+				shift_permission = frappe.get_doc("Shift Permission", i.name)
+				create_checkin(shift_permission)
 			except Exception as e:
 				error_list += str(e)+'\n\n'
 		if error_list:frappe.log_error(error_list, 'Shift Permission')
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Shift Permission')
 
-def create_checkin(name):
+def create_checkin(shift_permission):
 	# create checkin from shift permission
+	shift_assignment = frappe.get_doc("Shift Assignment", shift_permission.assigned_shift)
+	start_time = shift_assignment.start_datetime
+	end_time = shift_assignment.end_datetime
+
+	#get the last checkin log ordered by time.
+	log = frappe.db.sql(f""" SELECT * FROM `tabEmployee Checkin`
+						WHERE employee='{shift_permission.employee}'
+						AND time between '{start_time}' AND '{end_time}'
+						ORDER BY time DESC LIMIT 1;	
+	""",as_dict=1)
+	#If log exists and the last checkin log type is same as the shift permission logtype, 
+	# create checkin log opposite to it.
+	if log and log[0].log_type == shift_permission.log_type:
+		ec = frappe.new_doc('Employee Checkin')
+		ec.employee = shift_permission.employee
+		ec.log_type = "IN" if shift_permission.log_type == "OUT" else "OUT"
+		ec.skip_auto_attendance = 0
+		ec.time = log[0].time
+		ec.date = shift_assignment.start_date if shift_permission.log_type=='OUT' else shift_assignment.end_datetime
+		ec.early_exit = 0
+		ec.late_entry = 0
+		ec.flags.ignore_validate = True
+		ec.save(ignore_permissions=True)
+		frappe.db.commit()
+		
 	if not frappe.db.exists("Employee Checkin", {
-		'shift_permission':name
+		'shift_permission':shift_permission.name
 		}):
-		sp = frappe.get_doc("Shift Permission", name)
-		if not sp.workflow_state == 'Approved':
-			sp.db_set('Workflow_state', 'Approved')
-			sp.db_set('docstatus', 1)
-			sp.reload()
-		# Get shift details for the employee shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
+		if not shift_permission.workflow_state == 'Approved':
+			shift_permission.db_set('Workflow_state', 'Approved')
+			shift_permission.db_set('docstatus', 1)
+			shift_permission.reload()
+		# Get shift details for the employee shift_assignment = frappe.get_doc("Shift Assignment", shift_permission.assigned_shift)
 		employee_checkin = frappe.new_doc('Employee Checkin')
-		shift_assignment = frappe.get_doc("Shift Assignment", sp.assigned_shift)
-		employee_checkin.employee = sp.employee
-		employee_checkin.log_type = sp.log_type
-		employee_checkin.time = shift_assignment.start_datetime if sp.log_type == "IN" else shift_assignment.end_datetime
-		employee_checkin.date = shift_assignment.start_date if sp.log_type=='IN' else shift_assignment.end_datetime
+		employee_checkin.employee = shift_permission.employee
+		employee_checkin.log_type = shift_permission.log_type
+		employee_checkin.time = shift_assignment.start_datetime if shift_permission.log_type == "IN" else shift_assignment.end_datetime
+		employee_checkin.date = shift_assignment.start_date if shift_permission.log_type=='IN' else shift_assignment.end_datetime
 		employee_checkin.skip_auto_attendance = 0
-		employee_checkin.shift_assignment = sp.assigned_shift
-		employee_checkin.shift_permission = sp.name
+		employee_checkin.shift_assignment = shift_permission.assigned_shift
+		employee_checkin.shift_permission = shift_permission.name
 		employee_checkin.operations_shift = shift_assignment.shift
 		employee_checkin.shift_type = shift_assignment.shift_type
 		employee_checkin.shift_actual_start = shift_assignment.start_datetime

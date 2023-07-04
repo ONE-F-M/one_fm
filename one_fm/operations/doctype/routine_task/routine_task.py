@@ -100,7 +100,7 @@ class RoutineTask(Document):
 			task.save(ignore_permissions=True)
 			self.db_set('task_reference', task.name)
 			return task.name
-		return task_reference
+		return self.task_reference
 
 
 @frappe.whitelist()
