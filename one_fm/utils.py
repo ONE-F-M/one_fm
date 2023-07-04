@@ -2867,7 +2867,6 @@ def get_today_leaves(cur_date):
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
 
-
 def get_approver(employee):
     """
         Get document approver for employee by
@@ -2891,6 +2890,39 @@ def get_approver(employee):
     if operations_shift:return operations_shift
     if not (operations_shift and operations_site and operations_shift):
         frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
+
+  
+# def get_approver(employee):
+#     """
+#         Get document approver for employee by
+#         reports_to, shift_approver, site_approver
+#     """
+#     if employee=="HR-EMP-00001":return "HR-EMP-00001" # for Abdullah
+#     operations_site, operations_shift = '', ''
+#     if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
+#     emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
+#     # Get for IT - ONEFM
+#     if emp_data.department=='IT - ONEFM':
+# <<<<<<< staging
+#         return emp_data.reports_to
+    
+#     if emp_data.site:
+# =======
+#          return emp_data.reports_to
+
+#     if emp_data.shift:
+#         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
+#     elif emp_data.site:
+# >>>>>>> master-14
+#         operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
+#     elif emp_data.shift:
+#         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
+#     elif emp_data.reports_to:
+#         return emp_data.reports_to
+#     if operations_site:return operations_site
+#     if operations_shift:return operations_shift
+#     if not (operations_shift and operations_site and operations_shift):
+#         frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
 
 
 def get_approver_for_many_employees(supervisor=None):
