@@ -99,8 +99,11 @@ doctype_js = {
 	"Leave Application" : "public/js/doctype_js/leave_application.js",
 	"Salary Structure Assignment" :  "public/js/doctype_js/salary_structure_assignment.js",
 	"Attendance" :  "public/js/doctype_js/attendance.js",
-    "Wiki Page": "public/js/doctype_js/wiki_page.js",
-    "Error Log": "public/js/doctype_js/error_log.js",
+	"Wiki Page": "public/js/doctype_js/wiki_page.js",
+	"Error Log": "public/js/doctype_js/error_log.js",
+	"Assignment Rule": "public/js/doctype_js/assignment_rule.js",
+    "Workflow": "public/js/doctype_js/workflow.js",
+    "Stock Entry": "public/js/doctype_js/stock_entry.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -109,6 +112,7 @@ doctype_list_js = {
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
 	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
+	"Wiki Page": "public/js/doctype_list_js/wiki_page_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -270,6 +274,7 @@ doc_events = {
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
 		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
+		"validate": "one_fm.purchase.utils.validate_store_keeper_project_supervisor"
 	},
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
@@ -277,7 +282,7 @@ doc_events = {
 	"Project": {
 		"validate": [
 			"one_fm.one_fm.project_custom.validate_poc_list",
-			"one_fm.one_fm.project_custom.validate_project"
+			"one_fm.one_fm.project_custom.validate_project",
 		],
 		"onload": "one_fm.one_fm.project_custom.get_depreciation_expense_amount",
 		"on_update": "one_fm.api.doc_events.on_project_update_switch_shift_site_post_to_inactive"
@@ -295,6 +300,8 @@ doc_events = {
 	},
 	"Sales Invoice":{
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice",
+		"on_submit":"one_fm.one_fm.sales_invoice_custom.submit_sales_invoice",
+		"before_cancel":'one_fm.one_fm.sales_invoice_custom.cancel_sales_invoice',
 		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
 		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
@@ -384,6 +391,7 @@ doc_events = {
 		"after_insert":"one_fm.events.email_queue.after_insert",
 	},
 	"Stock Entry": {
+		"validate": "one_fm.api.doc_methods.stock_entry.validate_stock_entry_items",
 		"on_submit": "one_fm.api.doc_methods.stock_entry.validate_budget"
 	},
 	"Communication": {
@@ -391,6 +399,9 @@ doc_events = {
 	},
 	"ToDo": {
 		"validate": "one_fm.overrides.todo.validate_todo"
+	},
+	"Wiki Page": {
+		"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
@@ -417,20 +428,20 @@ website_route_rules = [
 		}
 	},
 	 {
-		"from_route": "/knowledge-base/search",
-		"to_route": "knowledge-base/search"
+		"from_route": "/knowledge_base/search",
+		"to_route": "knowledge_base/search"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>",
-		"to_route": "knowledge-base/kbcategory"
+		"from_route": "/knowledge_base/<path:category>",
+		"to_route": "knowledge_base/kbcategory"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory"
+		"from_route": "/knowledge_base/<path:category>/<path:subcategory>",
+		"to_route": "knowledge_base/kbcategory/kbsubcategory"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
+		"from_route": "/knowledge_base/<path:category>/<path:subcategory>/<path:article>",
+		"to_route": "knowledge_base/kbcategory/kbsubcategory/kbdetail"
 	},
 	{
 		"from_route": "/careers/opening/<path:job_id>",
@@ -634,6 +645,12 @@ scheduler_events = {
 		"45 1 * * *": [ # validate shift assignment
 			'one_fm.api.tasks.validate_am_shift_assignment'
 		],
+		"15 13 * * *":[ # Attendance Check
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check'
+		],
+		"07 13 * * *":[ # Auto approve attendance check
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.approve_attendance_check'
+		],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
 		],
@@ -641,10 +658,10 @@ scheduler_events = {
 			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
 		"25 0 * * *": [ # mark day attendance 11:15 pm
-			'one_fm.api.tasks.mark_day_attendance'
+			'one_fm.overrides.attendance.mark_day_attendance'
 		],
 		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
-			'one_fm.api.tasks.mark_night_attendance'
+			'one_fm.overrides.attendance.mark_night_attendance'
 		],
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
@@ -694,6 +711,13 @@ scheduler_events = {
 # ]
 
 fixtures = [
+	# {
+	# 	"dt": "Custom Field",
+	# 	'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
+	# },
+	{
+		"dt": "Property Setter"
+	},
 	{
 		"dt": "Workflow State"
 	},
@@ -706,6 +730,15 @@ fixtures = [
 	{
 		"dt": "Role",
 		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
+	{
+		"dt": "Assignment Rule",
+		"filters": [["name", "in",
+			[
+				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
+				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor"
+			]
+		]]
 	},
 	{
 		"dt": "Email Template"
@@ -727,8 +760,10 @@ fixtures = [
 # ------------------------------
 #
 override_whitelisted_methods = {
+    "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
+	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-	"erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry":'one_fm.one_fm.hr_utils.create_invoice_payment_entry',
+
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
@@ -751,10 +786,12 @@ jenv = {
 after_migrate = [
     "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.disable_workflow_emails",
+    "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
 ]
 
 before_migrate = [
-    "one_fm.after_migrate.execute.before_migrate"
+    "one_fm.after_migrate.execute.before_migrate",
+    "one_fm.after_migrate.execute.set_files_directories",
 ]
 
 # add more info to session on boot

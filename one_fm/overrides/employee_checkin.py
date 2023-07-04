@@ -33,9 +33,9 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			try:			
 				existing_perm = None
 				checkin_time = get_datetime(self.time)
-				curr_shift = get_current_shift_checkin(self.employee)
+				curr_shift = get_current_shift(self.employee)
 				if curr_shift:
-					curr_shift = curr_shift[0]
+					curr_shift = curr_shift
 					start_date = curr_shift["start_date"].strftime("%Y-%m-%d")
 					existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{start_date}' and employee = '{self.employee}' and permission_type = '{perm_map[self.log_type]}' and workflow_state = 'Approved' """, as_dict=1)
 					self.shift_assignment = curr_shift["name"]
@@ -110,6 +110,8 @@ def after_insert_background(self):
 				shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
 				shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
 				late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}', 
+				operations_site="{curr_shift.site}", post_abbrv="{curr_shift.post_abbrv}", project="{curr_shift.project}",
+				company="{curr_shift.company}", operations_role="{curr_shift.operations_role}",
 				roster_type='{curr_shift.roster_type}'
 				WHERE name="{self.name}"
 			"""

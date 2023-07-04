@@ -16,17 +16,22 @@ var set_custom_buttons = function(frm) {
 var remove_task_and_auto_repeat = function(frm) {
 	if (frm.doc.task_reference || frm.doc.auto_repeat_reference){
 		frm.add_custom_button(__("Remove Task and Auto Repeat"), function() {
-			frappe.call({
-				method: "remove_task_and_auto_repeat",
-				doc: frm.doc,
-				callback: function(r){
-					if(!r.exc){
-						frm.reload_doc()
-					}
-				},
-				freeze: true,
-				freeze_message: __('Remove Task and Auto Repeat')
-			});
+			if(frm.is_dirty()){
+				frappe.throw(__('Please Save the Document and Continue .!'))
+			}
+			else{
+				frappe.call({
+					method: "remove_task_and_auto_repeat",
+					doc: frm.doc,
+					callback: function(r){
+						if(!r.exc){
+							frm.reload_doc()
+						}
+					},
+					freeze: true,
+					freeze_message: __('Remove Task and Auto Repeat')
+				});
+			}
 		});
 	}
 };
@@ -34,17 +39,22 @@ var remove_task_and_auto_repeat = function(frm) {
 var set_task_and_auto_repeat = function(frm) {
 	if (!frm.doc.task_reference && !frm.doc.auto_repeat_reference){
 		frm.add_custom_button(__("Set Task and Auto Repeat"), function() {
-			frappe.call({
-				method: "set_task_and_auto_repeat",
-				doc: frm.doc,
-				callback: function(r){
-					if(!r.exc){
-						frm.reload_doc()
-					}
-				},
-				freeze: true,
-				freeze_message: __('Setting up Task and Auto Repeat')
-			});
+			if(frm.is_dirty()){
+				frappe.throw(__('Please Save the Document and Continue .!'))
+			}
+			else{
+				frappe.call({
+					method: "set_task_and_auto_repeat",
+					doc: frm.doc,
+					callback: function(r){
+						if(!r.exc){
+							frm.reload_doc()
+						}
+					},
+					freeze: true,
+					freeze_message: __('Setting up Task and Auto Repeat')
+				});
+			}
 		});
 	}
 };

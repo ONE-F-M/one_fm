@@ -9,7 +9,9 @@
   "collection_settings_section",
   "assign_collection_officer_to_sales_invoice_on_workflow_state",
   "sales_invoice_workflow_sate_to_assign_collection_officer",
-  "create_collection_officer_role"
+  "create_collection_officer_role",
+  "column_break_uadzg",
+  "customer_advance_account"
  ],
  "fields": [
   {
@@ -36,12 +38,23 @@
    "fieldtype": "Button",
    "hidden": 1,
    "label": "Create Collection Officer Role"
+  },
+  {
+   "description": "All unallocated payments in the Payment Entry doctype for sales will be posted to this account",
+   "fieldname": "customer_advance_account",
+   "fieldtype": "Link",
+   "label": "Customer Advance Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "column_break_uadzg",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2022-02-18 13:01:57.246390",
+ "modified": "2023-05-27 02:57:33.064036",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Accounts Additional Settings",
@@ -59,5 +72,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }

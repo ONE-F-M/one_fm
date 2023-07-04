@@ -39,6 +39,11 @@ class OperationsShift(Document):
 			self.set_operation_role_inactive()
 		self.validate_operations_site_status()
 		self.validate_operations_shift_link_to_employees()
+		self.validate_duration()
+
+	def validate_duration(self):
+		if self.shift_type:
+			self.duration = frappe.db.get_value("Shift Type", self.shift_type, 'duration')
 
 	def update_post_status(self):
 		if frappe.db.exists("Operations Post", {'site_shift':self.name}):

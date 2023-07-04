@@ -233,10 +233,6 @@ frappe.ui.form.on('Contracts', {
             }
         }
         frm.refresh_field("assets");
-		if(frm.doc.items){
-			days = frappe.meta.get_docfield("Contract Item","days", frm.doc.name);
-			days.hidden = 1;
-		}
 		set_hide_management_fee_fields(frm);
 
 	},
@@ -346,51 +342,18 @@ function set_contact(doc){
 }
 
 frappe.ui.form.on('Contract Item', {
-	uom: (frm, cdt, cdn)=>{
-		// check uom agains Service item
-		let row = locals[cdt][cdn];
-//		if(row.subitem_group=='Service' &&
-//			!['Hourly', 'Daily', 'Monthly'].includes(row.uom)){
-//				row.uom = null;
-//				frm.refresh_field('items');
-//				frappe.throw("Item of subgroup 'Service' UOM must be <b>Hourly, Daily or Monthly'</b>.");
-//			}
-	},
 	item_code: function(frm, cdt, cdn) {
 		let d = locals[cdt][cdn];
 		if(d.item_code){
-			frappe.call({
-				method: 'frappe.client.get_value',
-				args:{
-					'doctype':'Item',
-					'filters':{
-						'item_code': d.item_code,
-						'disabled': 0,
-					},
-					'fieldname':[
-						'description'
-					]
-				},
-				callback:function(s){
-					if (!s.exc) {
-						if(s.message){
-							frappe.model.set_value(d.doctype, d.name, "item_name", s.message.description);
-							frm.refresh_field("items");
-						}
-					}
-				}
-			});
 			frappe.model.set_value(d.doctype, d.name, "item_price", null);
-			// frappe.model.set_value(d.doctype, d.name, "uom", null);
 			frappe.model.set_value(d.doctype, d.name, "price_list_rate", 0);
 			frappe.model.set_value(d.doctype, d.name, "rate", 0);
-			if(d.subitem_group=="Service"){
-				frappe.model.set_value(d.doctype, d.name, "gender", null);
-//				frappe.model.set_value(d.doctype, d.name, "shift_hours", 0);
-//				frappe.model.set_value(d.doctype, d.name, "days_off", 0);
-			}
 		}
-
+		set_item_price(frm, d);
+	},
+	rate_type: function(frm, cdt, cdn) {
+		let child = locals[cdt][cdn];
+		set_item_price(frm, child);
 	},
 	management_fee_percentage: function(frm, cdt, cdn){
 		let d = locals[cdt][cdn];
@@ -399,105 +362,39 @@ frappe.ui.form.on('Contract Item', {
 		frappe.model.set_value(d.doctype, d.name, "rate", d.price_list_rate + management_fee);
 		frm.refresh_field("items");
 	}
-})
-frappe.ui.form.on('Contract Asset', {
-	item_code: function(frm, cdt, cdn) {
-		let d = locals[cdt][cdn];
-		if(d.item_code){
-			frappe.call({
-				method: 'frappe.client.get_value',
-				args:{
-					'doctype':'Item',
-					'filters':{
-						'item_code': d.item_code,
-						'disabled': 0,
-					},
-					'fieldname':[
-						'stock_uom',
-						'sales_uom'
-					]
-				},
-				callback:function(s){
-					if (!s.exc) {
-						if(s.message){
-							if(s.message.sales_uom != undefined){
-								frappe.model.set_value(d.doctype, d.name, "uom", s.message.sales_uom);
-							}
-							else{
-								frappe.model.set_value(d.doctype, d.name, "uom", s.message.stock_uom);
-							}
-							frm.refresh_field("assets");
-						}
-					}
-				}
-			});
-		}
-		if(d.item_code && d.uom){
-			frappe.call({
-				method: 'frappe.client.get_value',
-				args:{
-					'doctype':'Item Price',
-					'filters':{
-						'item_code': d.item_code,
-						'price_list': frm.doc.price_list,
-						'customer': frm.doc.client,
-						'uom': d.uom,
-						'selling': 1
-					},
-					'fieldname':[
-						'price_list_rate'
-					]
-				},
-				callback:function(s){
-					if (!s.exc) {
-						if(s.message){
-							frappe.model.set_value(d.doctype, d.name, "unit_rate", s.message.price_list_rate);
-							frm.refresh_field("assets");
-						}
-						else{
-							frappe.model.set_value(d.doctype, d.name, "unit_rate", 0);
-							frappe.msgprint("Rate not found for item" + d.item_code)
-						}
-					}
-				}
-			});
-		}
+});
 
-	},
-	uom: function(frm, cdt, cdn){
-		let d = locals[cdt][cdn];
-		if(d.item_code && d.uom){
-			frappe.call({
-				method: 'frappe.client.get_value',
-				args:{
-					'doctype':'Item Price',
-					'filters':{
-						'item_code': d.item_code,
-						'price_list': frm.doc.price_list,
-						'customer': frm.doc.client,
-						'uom': d.uom,
-						'selling': 1
-					},
-					'fieldname':[
-						'price_list_rate'
-					]
-				},
-				callback:function(s){
-					if (!s.exc) {
-						if(s.message){
-							frappe.model.set_value(d.doctype, d.name, "unit_rate", s.message.price_list_rate);
-							frm.refresh_field("assets");
-						}
-						else{
-							frappe.model.set_value(d.doctype, d.name, "unit_rate", 0);
-							frappe.msgprint("Rate not found for item" + d.item_code)
-						}
-					}
+var set_item_price = function(frm, row) {
+	if(row.item_code && row.rate_type){
+		frappe.call({
+			method: 'frappe.client.get',
+			args:{
+				'doctype':'Item Price',
+				'filters':{
+					'item_code': row.item_code,
+					'price_list': frm.doc.price_list,
+					'customer': frm.doc.client,
+					'uom': row.rate_type,
+					'selling': 1
 				}
-			});
-		}
+			},
+			callback:function(r){
+				if(r.message){
+					frappe.model.set_value(row.doctype, row.name, "item_price", r.message.name);
+					frappe.model.set_value(row.doctype, row.name, "price_list_rate", r.message.price_list_rate);
+					frappe.model.set_value(row.doctype, row.name, "rate", r.message.price_list_rate);
+				}
+				else{
+					frappe.model.set_value(row.doctype, row.name, "item_price", '');
+					frappe.model.set_value(row.doctype, row.name, "price_list_rate", 0);
+					frappe.model.set_value(row.doctype, row.name, "rate", 0);
+					frappe.msgprint("Rate not found for item" + row.item_code)
+				}
+				frm.refresh_field("items");
+			}
+		});
 	}
-})
+};
 
 frappe.ui.form.on('Contract Addendum', {
 	end_date: function(frm, cdt, cdn) {
@@ -512,7 +409,6 @@ frappe.ui.form.on('Contract Addendum', {
 		}
 	}
 })
-
 
 // create delivery note
 let create_delivery_note = frm => {

@@ -176,40 +176,6 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
         return frappe.utils.response.report_error(e.http_status_code)
 
 
-# @frappe.whitelist()
-# def edit_post(operations_role, shift, post_status, date_list, paid=0, repeat=None):
-# 	"""
-# 		post_status: Post Off/Suspend Post/Cancel Post
-# 		date_list: List of dates
-# 		paid: 1/0 if the changes are paid/unpaid
-# 		repeat: If changes are to be repeated. List of dates when to repeat this.
-# 	"""
-# 	try:
-# 		date_list = json.loads(date_list)
-# 		for date in date_list:
-# 			if frappe.db.exists("Post Schedule", {"date": date, "operations_role": operations_role, "shift": shift}):
-# 				post_schedule = frappe.get_doc("Post Schedule", {"date": date, "operations_role": operations_role, "shift": shift})
-# 			else:
-# 				post_schedule = frappe.new_doc("Post Schedule")
-# 				post_schedule.post = operations_role
-# 				post_schedule.date = date
-# 			post_schedule.post_status = post_status
-# 			if cint(paid):
-# 				print("81",post_schedule.paid,post_schedule.unpaid)
-# 				post_schedule.paid = 1
-# 				post_schedule.unpaid = 0
-# 			else:
-# 				print("85",post_schedule.paid,post_schedule.unpaid)
-# 				post_schedule.unpaid = 1
-# 				post_schedule.paid = 0
-# 			post_schedule.save(ignore_permissions=True)
-# 			# print(post_schedule.as_dict())
-# 		print(post_status, date_list, type(date_list))
-# 		frappe.db.commit()
-
-# 	except Exception as e:
-# 		return frappe.utils.response.report_error(e.http_status_code)
-
 @frappe.whitelist()
 def edit_post(post, post_status, start_date, end_date, paid=0, never_end=0, repeat=0, repeat_freq=None):
     try:
@@ -251,9 +217,9 @@ def create_edit_post(date, post, post_status, paid):
     post_schedule.post_status = post_status
     if cint(paid):
         post_schedule.paid = 1
-        post_schedule.unpaid = 0
+        
     else:
-        post_schedule.unpaid = 1
+        
         post_schedule.paid = 0
     post_schedule.save(ignore_permissions=True)
 

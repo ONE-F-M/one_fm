@@ -1,4 +1,4 @@
-import frappe
+import frappe, os
 from one_fm.utils import production_domain
 
 def comment_timesheet_in_hrms():
@@ -34,6 +34,30 @@ def comment_timesheet_in_hrms():
         except:
             print(field, "Does not exist in custom field")
 
+
+
+def comment_payment_entry_in_hrms():
+    """
+        HRMS overrides Payment Entry, this restricts the overide in ONE_FM
+    """
+ 
+    app_path = frappe.utils.get_bench_path()+"/apps/hrms/hrms/"
+    f = open(app_path+"hooks.py",'r')
+    filedata = f.read()
+    f.close()
+
+    if not filedata.find('#"Payment Entry": "hrms.overrides.employee_payment_entry.EmployeePaymentEntry",') > 0:
+        newdata = filedata.replace(
+                '"Payment Entry": "hrms.overrides.employee_payment_entry.EmployeePaymentEntry",',
+                '#"Payment Entry": "hrms.overrides.employee_payment_entry.EmployeePaymentEntry",'
+        )
+
+        f = open(app_path+"hooks.py",'w')
+        f.write(newdata)
+        f.close()
+
+   
+
 def disable_workflow_emails():
     """
         This disables workflow emails on workflow doctype if not on production server.
@@ -58,3 +82,11 @@ def before_migrate():
     frappe.db.sql("""
         DELETE FROM `tabCustom Field` WHERE name='Salary Structure Assignment-column_break_20'
     """)
+
+def set_files_directories():
+    """
+        Set files and directories if not exists
+    """
+    user_files_path = frappe.utils.get_bench_path()+'/sites/'+frappe.utils.get_site_base_path().replace('./', '')+'/private/files/user'
+    if not os.path.exists(user_files_path):
+        os.mkdir(user_files_path)

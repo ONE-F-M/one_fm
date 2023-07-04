@@ -2,6 +2,13 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2023-05-22 13:17:38.784574",
+  "name": "Submit to Purchase Officer",
+  "workflow_action_name": "Submit to Purchase Officer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2022-11-22 15:52:19.536115",
   "name": "Attached Proof Document",
   "workflow_action_name": "Attached Proof Document"
@@ -369,6 +376,13 @@
   "modified": "2022-09-07 11:49:10.373503",
   "name": "Submit",
   "workflow_action_name": "Submit"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-06-18 20:06:00.344618",
+  "name": "Return",
+  "workflow_action_name": "Return"
  },
  {
   "docstatus": 0,

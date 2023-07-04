@@ -12,7 +12,7 @@ from frappe.modules import scrub
 from frappe import _
 from frappe.desk.form import assign_to
 from one_fm.processor import sendemail
-from one_fm.utils import validate_mandatory_fields
+from one_fm.utils import validate_mandatory_fields, get_mandatory_fields, create_message_with_details
 from one_fm.templates.pages.career_history import send_career_history_magic_link
 from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 from one_fm.one_fm.doctype.erf.erf import (
@@ -46,7 +46,7 @@ def after_insert_job_applicant(doc, method):
     notify_recruiter_and_requester_from_job_applicant(doc, method)
 
 def notify_recruiter_and_requester_from_job_applicant(doc, method):
-    if doc.one_fm_erf:
+    if doc.one_fm_erf and doc.one_fm_hiring_method == "A la carte Recruitment":
         recipients = []
         erf_details = frappe.db.get_values('ERF', filters={'name': doc.one_fm_erf},
         fieldname=["erf_requested_by", "recruiter_assigned", "secondary_recruiter_assigned"], as_dict=True)
@@ -58,8 +58,23 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
             if erf_details[0].secondary_recruiter_assigned:
                 recipients.append(erf_details[0].secondary_recruiter_assigned)
         designation = frappe.db.get_value('Job Opening', doc.job_title, 'designation')
-        page_link = get_url(doc.get_url())
-        message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
+        context = {
+            "designation": designation,
+            "status": doc.status,
+            "applicant_name": doc.applicant_name,
+            "cv": frappe.utils.get_url(doc.resume_attachment) if doc.resume_attachment else None,
+            "passport_type": doc.one_fm_passport_type,
+            "job_applicant": get_url(doc.get_url()),
+            "contact_email": doc.one_fm_email_id
+        }
+
+        message = frappe.render_template('one_fm/templates/emails/job_application_notification.html', context=context)
+        # page_link = get_url(doc.get_url())
+        # mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
+        # message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
+
+        # if mandatory_field and labels:
+            # message = create_message_with_details(message, mandatory_field, labels, cv=cv_link)
 
         if recipients:
             sendemail(
@@ -67,7 +82,7 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
                 subject='Job Application created for {0}'.format(designation),
                 message=message,
                 reference_doctype=doc.doctype,
-                reference_name=doc.name
+                reference_name=doc.name,
             )
 
 @frappe.whitelist()
@@ -222,6 +237,8 @@ def generate_employee_id(doc):
 	try:
 		if doc.one_fm_nationality=='No Nationality':
 			country = 'XX'
+		elif doc.one_fm_nationality == 'Non Kuwaiti':
+			country = 'NK'
 		elif doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
 			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
 		else:
@@ -265,8 +282,8 @@ def create_leave_policy_assignment(doc):
         assignment.effective_from = doc.date_of_joining
         # effective_to is an year of addition to effective_from
         assignment.effective_to = getdate(add_days(add_years(doc.date_of_joining, 1), -1))
-        assignment.carry_forward = True
-        assignment.leaves_allocated = False
+        assignment.carry_forward = 1
+        assignment.leaves_allocated = 0
         assignment.save()
         assignment.submit()
 
@@ -557,7 +574,7 @@ def create_onboarding_from_job_offer(job_offer):
                 'description': _('Employee Onboarding'),
             }
             assign_to.add(args)
-
+            assign_to.close_all_assignments(job_offer.doctype, job_offer.name)
 
 @frappe.whitelist()
 def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
@@ -826,6 +843,10 @@ def change_applicant_erf(job_applicant, old_erf, new_erf):
 		job_applicant_obj.one_fm_hiring_method = new_erf_obj.hiring_method
 		job_applicant_obj.interview_round = new_erf_obj.interview_round
 		job_applicant_obj.save(ignore_permissions=True)
+		job_offer = frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]})
+		if job_offer:
+			job_offer_obj = frappe.get_doc('Job Offer', job_offer)
+			job_offer_obj.save(ignore_permissions=True)
 
 @frappe.whitelist()
 def send_magic_link_to_applicant_based_on_link_for(name, link_for):

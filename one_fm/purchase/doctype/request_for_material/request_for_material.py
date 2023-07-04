@@ -15,16 +15,10 @@ from one_fm.purchase.doctype.item_reservation.item_reservation import get_item_b
 from one_fm.utils import fetch_employee_signature
 from one_fm.processor import sendemail
 from one_fm.api.doc_events import get_employee_user_id
-from one_fm.utils import send_workflow_action_email
-from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment
+from one_fm.utils import get_users_with_role_permitted_to_doctype
+from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, remove as remove_assignment, close_all_assignments
 
 class RequestforMaterial(BuyingController):
-	def on_submit(self):
-		if self.workflow_state == 'Pending Approval':
-			send_workflow_action_email(self, [self.request_for_material_approver])
-			subject = '{0}: Request for Material by {1}'.format(self.workflow_state, get_fullname(self.requested_by))
-			create_notification_log(subject, subject, [self.request_for_material_approver], self)
-
 	@frappe.whitelist()
 	def get_default_warehouse(self):
 		return frappe.db.get_single_value('Stock Settings', 'default_warehouse')
@@ -159,20 +153,18 @@ class RequestforMaterial(BuyingController):
 		if self.workflow_state == 'Rejected' and frappe.session.user == self.request_for_material_approver:
 			self.notify_material_requester()
 
-	def on_update_after_submit(self):
+	def on_submit(self):
 		self.validate_item_qty()
 		self.assign_for_technical_verification()
 		if self.workflow_state == 'Approved' and frappe.session.user == self.request_for_material_approver:
 			self.notify_material_requester()
 			self.assign_to_warehouse_supervisor()
+		if self.per_received == 100:
+			close_all_assignments(self.doctype, self.name)
 
 	def assign_to_warehouse_supervisor(self):
 		try:
-			users = get_users_with_role('Warehouse Supervisor')
-			filtered_users = []
-			for user in users:
-				if has_permission(doctype=self.doctype, user=user):
-					filtered_users.append(user)
+			filtered_users = get_users_with_role_permitted_to_doctype('Warehouse Supervisor', self.doctype)
 			if filtered_users and len(filtered_users) > 0:
 				add_assignment({
 					'doctype': self.doctype,

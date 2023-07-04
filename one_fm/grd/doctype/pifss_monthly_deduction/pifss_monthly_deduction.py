@@ -156,6 +156,8 @@ class PIFSSMonthlyDeduction(Document):
 
 	def create_additional_salary(self):
 		for row in self.deductions:
+			if (not row.employee):
+				frappe.throw(f"No employee found  for Civil ID {row.civil_id} in deductions row {row.idx}")
 			try:
 				if not frappe.db.exists("Additional Salary", {'pifss_monthly_deduction':row.parent, 'employee':row.employee}):
 					additional_salary = frappe.new_doc("Additional Salary")

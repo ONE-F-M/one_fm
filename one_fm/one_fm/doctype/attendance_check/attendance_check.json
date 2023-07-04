@@ -1,0 +1,486 @@
+{
+ "actions": [],
+ "autoname": "format:HR-AC-{employee}_{date}_{roster_type}",
+ "creation": "2023-05-31 11:09:42.081247",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "department",
+  "roster_type",
+  "column_break_1",
+  "date",
+  "reports_to",
+  "reports_to_user",
+  "report_to_name",
+  "site_supervisor",
+  "site_supervisor_name",
+  "site_supervisor_user",
+  "shift_supervisor",
+  "shift_supervisor_name",
+  "shift_supervisor_user",
+  "justification_section",
+  "justification",
+  "column_break_wtkg0",
+  "attendance_status",
+  "employee_checkin_details_section",
+  "has_checkin_record",
+  "has_checkout_record",
+  "section_break_o6yav",
+  "checkin_record",
+  "column_break_k9wny",
+  "checkout_record",
+  "shift_assignment_details_section",
+  "has_shift_assignment",
+  "section_break_nirwm",
+  "shift_assignment",
+  "column_break_2",
+  "start_time",
+  "column_break_3",
+  "end_time",
+  "section_break_pidnl",
+  "has_shift_pemission",
+  "shift_permission",
+  "attendance_details_section",
+  "attendance_marked",
+  "section_break_qe614",
+  "attendance",
+  "attendance_comment",
+  "column_break_ujiag",
+  "marked_attendance_status",
+  "section_break_xzkb1",
+  "has_attendance_request",
+  "attendance_request",
+  "comment",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.reports_to",
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Reports To",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "site_supervisor",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Site Supervisor",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shift_supervisor",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Shift Supervisor",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "justification",
+   "fieldtype": "Select",
+   "label": "Justification",
+   "options": "\nInvalid media content\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nNo valid reason\nSuddenly, the App stop working!\nEmployees insist that he/she did check in or out\nApproved by Administrator"
+  },
+  {
+   "fieldname": "attendance_status",
+   "fieldtype": "Select",
+   "label": "Attendance Status",
+   "options": "\nPresent\nAbsent\nDay Off\nHoliday"
+  },
+  {
+   "fieldname": "shift_assignment_details_section",
+   "fieldtype": "Section Break",
+   "hide_border": 1,
+   "label": "Shift Assignment Details"
+  },
+  {
+   "default": "0",
+   "fieldname": "has_shift_assignment",
+   "fieldtype": "Check",
+   "label": "Has Shift Assignment?",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shift_assignment",
+   "fieldtype": "Link",
+   "label": "Shift Assignment",
+   "options": "Shift Assignment",
+   "read_only": 1
+  },
+  {
+   "fieldname": "start_time",
+   "fieldtype": "Datetime",
+   "label": "Start Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "end_time",
+   "fieldtype": "Datetime",
+   "label": "End Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Attendance Check",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "has_shift_pemission",
+   "fieldtype": "Check",
+   "label": "Has Shift Pemission?",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.has_shift_pemission==1;",
+   "fieldname": "shift_permission",
+   "fieldtype": "Link",
+   "label": "Shift Permission",
+   "options": "Shift Permission",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attendance_details_section",
+   "fieldtype": "Section Break",
+   "hide_border": 1,
+   "label": "Attendance Details"
+  },
+  {
+   "fetch_from": "attendance.status",
+   "fieldname": "marked_attendance_status",
+   "fieldtype": "Data",
+   "label": "Marked Attendance Status",
+   "read_only": 1
+  },
+  {
+   "fetch_if_empty": 1,
+   "fieldname": "attendance",
+   "fieldtype": "Link",
+   "label": "Attendance",
+   "options": "Attendance",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "has_attendance_request",
+   "fieldtype": "Check",
+   "label": "Has Attendance Request?",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.has_attendance_request==1;",
+   "fieldname": "attendance_request",
+   "fieldtype": "Link",
+   "label": "Attendance Request",
+   "options": "Attendance Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee_checkin_details_section",
+   "fieldtype": "Section Break",
+   "hide_border": 1,
+   "label": "Employee Checkin Details"
+  },
+  {
+   "fieldname": "checkin_record",
+   "fieldtype": "Link",
+   "label": "Checkin Record",
+   "options": "Employee Checkin",
+   "read_only": 1
+  },
+  {
+   "fieldname": "checkout_record",
+   "fieldtype": "Link",
+   "label": "Checkout Record",
+   "options": "Employee Checkin",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.has_shift_assignment == 1;",
+   "fieldname": "section_break_nirwm",
+   "fieldtype": "Section Break",
+   "hide_border": 1
+  },
+  {
+   "fieldname": "section_break_pidnl",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_wtkg0",
+   "fieldtype": "Column Break",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.attendance_marked==1;",
+   "fieldname": "section_break_qe614",
+   "fieldtype": "Section Break",
+   "hide_border": 1
+  },
+  {
+   "fieldname": "column_break_ujiag",
+   "fieldtype": "Column Break",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_xzkb1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "has_checkin_record",
+   "fieldtype": "Check",
+   "label": "Has Checkin Record?",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.has_checkin_record==1 || doc.has_checkout_record==1",
+   "fieldname": "section_break_o6yav",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_k9wny",
+   "fieldtype": "Column Break",
+   "read_only": 1
+  },
+  {
+   "fieldname": "justification_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fetch_from": "reports_to.user_id",
+   "fieldname": "reports_to_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "ignore_user_permissions": 1,
+   "label": "Reports To User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "site_supervisor.user_id",
+   "fieldname": "site_supervisor_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "ignore_user_permissions": 1,
+   "label": "Site Supervisor User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift_supervisor.user_id",
+   "fieldname": "shift_supervisor_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "ignore_user_permissions": 1,
+   "label": "Shift Supervisor User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "attendance_marked",
+   "fieldtype": "Check",
+   "label": "Attendance marked?",
+   "read_only": 1
+  },
+  {
+   "default": "Basic",
+   "fieldname": "roster_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Roster Type",
+   "options": "Basic\nOver-Time",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "has_checkout_record",
+   "fieldtype": "Check",
+   "label": "Has Checkout Record",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "attendance.comment",
+   "fetch_if_empty": 1,
+   "fieldname": "attendance_comment",
+   "fieldtype": "Data",
+   "label": "Attendance Comment",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "reports_to.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "report_to_name",
+   "fieldtype": "Data",
+   "label": "Report to Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "site_supervisor.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "site_supervisor_name",
+   "fieldtype": "Data",
+   "label": "Site Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift_supervisor.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "shift_supervisor_name",
+   "fieldtype": "Data",
+   "label": "Shift Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Small Text",
+   "label": "Comment"
+  }
+ ],
+ "in_create": 1,
+ "is_submittable": 1,
+ "links": [
+  {
+   "link_doctype": "Attendance",
+   "link_fieldname": "reference_docname"
+  }
+ ],
+ "modified": "2023-06-21 15:20:00.632576",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Attendance Check",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Shift Supervisor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Site Supervisor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "employee_name",
+ "track_changes": 1
+}

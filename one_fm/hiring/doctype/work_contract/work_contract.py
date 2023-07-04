@@ -62,8 +62,7 @@ class WorkContract(Document):
 			frappe.throw(_("Please Attach "+ ', '.join(str(x) for x in document_required)+" in Applicant Document!"))
 
 	def validate_authorized_signatory(self):
-		if not self.select_authorised_signatory_signed_work_contract:
-			frappe.throw(_("Please select Authorized Signatory!"))
+		pass
 
 	def on_cancel(self):
 		if self.workflow_state == 'Applicant not Signed':
@@ -90,7 +89,10 @@ class WorkContract(Document):
 			for auth_sign in pam_auth_sign["authorized_signatory"]:
 				authorize_signatory.append(auth_sign["authorized_signatory_name_english"])
 		else:
-			frappe.msgprint(_("Please select a PAM File in ERF({0}) to get Authorised Signatory").format(self.erf))
+			if self.erf:
+				for_remote_working = frappe.db.get_value("ERF", self.erf, "for_remote_working")
+				if not for_remote_working:
+					frappe.msgprint(_("Please select a PAM File in ERF({0}) to get Authorised Signatory").format(self.erf))
 		return authorize_signatory
 
 	@frappe.whitelist()

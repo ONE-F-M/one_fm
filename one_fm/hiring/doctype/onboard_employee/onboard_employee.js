@@ -2,6 +2,8 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Onboard Employee', {
+	
+	
 	refresh: function(frm) {
 		set_progress_html(frm);
 		if (frm.doc.employee) {
@@ -144,6 +146,9 @@ frappe.ui.form.on('Onboard Employee', {
 		btn_create_loan_action(frm);
 	}
 });
+
+
+
 
 var calculate_g2g_and_residency_total = function(frm) {
 	var g2g_fee_amount = 0;

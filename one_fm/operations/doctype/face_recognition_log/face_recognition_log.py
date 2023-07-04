@@ -11,6 +11,14 @@ class FaceRecognitionLog(Document):
 		self.date = _date[0]
 		self.time = _date[1]
 
+	@staticmethod
+	def clear_old_logs(days=30):
+		from frappe.query_builder import Interval
+		from frappe.query_builder.functions import Now
+
+		table = frappe.qb.DocType("Face Recognition Log")
+		frappe.db.delete(table, filters=(table.modified < (Now() - Interval(days=days))))
+
 
 def create_face_recognition_log(data):
 	"""

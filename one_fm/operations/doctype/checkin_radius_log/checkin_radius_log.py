@@ -24,6 +24,13 @@ class CheckinRadiusLog(Document):
 		except Exception as e:
 			frappe.log_error(str(e), 'Log checkin raius')
 
+	@staticmethod
+	def clear_old_logs(days=30):
+		from frappe.query_builder import Interval
+		from frappe.query_builder.functions import Now
+
+		table = frappe.qb.DocType("Checkin Radius Log")
+		frappe.db.delete(table, filters=(table.modified < (Now() - Interval(days=days))))
 
 def create_checkin_radius_log(data):
 	"""

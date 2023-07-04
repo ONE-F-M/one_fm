@@ -19,6 +19,6 @@ def before_insert(doc, method):
     """
     # set route
     if (doc.is_subcategory and doc.category):
-        doc.route = f"/knowledge-base/{slugify(doc.category, allow_unicode=True)}/{slugify(doc.category_name, allow_unicode=True)}"
+        doc.route = f"/knowledge_base/{slugify(doc.category, allow_unicode=True)}/{slugify(doc.category_name, allow_unicode=True)}"
     else:
-        doc.route = f"/knowledge-base/{slugify(doc.category_name, allow_unicode=True)}"
+        doc.route = f"/knowledge_base/{slugify(doc.category_name, allow_unicode=True)}"

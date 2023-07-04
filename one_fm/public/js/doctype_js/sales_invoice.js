@@ -1,34 +1,34 @@
 $.extend(frappe.meta, {
-    get_print_formats: function(doctype) {
-        var print_format_list = ["Standard"];
-        var default_print_format = locals.DocType[doctype].default_print_format;
-        let enable_raw_printing = frappe.model.get_doc(":Print Settings", "Print Settings").enable_raw_printing;
-        var print_formats = frappe.get_list("Print Format", {doc_type: doctype})
-            .sort(function(a, b) { return (a > b) ? 1 : -1; });
-        $.each(print_formats, function(i, d) {
-            if (
-                !in_list(print_format_list, d.name)
-                && d.print_format_type !== 'JS'
-                && (cint(enable_raw_printing) || !d.raw_printing)
-            ) {
-                print_format_list.push(d.name);
-            }
-        });
+    // get_print_formats: function(doctype) {
+    //     var print_format_list = ["Standard"];
+    //     var default_print_format = locals.DocType[doctype].default_print_format;
+    //     let enable_raw_printing = frappe.model.get_doc(":Print Settings", "Print Settings").enable_raw_printing;
+    //     var print_formats = frappe.get_list("Print Format", {doc_type: doctype})
+    //         .sort(function(a, b) { return (a > b) ? 1 : -1; });
+    //     $.each(print_formats, function(i, d) {
+    //         if (
+    //             !in_list(print_format_list, d.name)
+    //             && d.print_format_type !== 'JS'
+    //             && (cint(enable_raw_printing) || !d.raw_printing)
+    //         ) {
+    //             print_format_list.push(d.name);
+    //         }
+    //     });
 
-        if(default_print_format && default_print_format != "Standard") {
-            var index = print_format_list.indexOf(default_print_format);
-            print_format_list.splice(index, 1).sort();
-            print_format_list.unshift(default_print_format);
-        }
+    //     if(default_print_format && default_print_format != "Standard") {
+    //         var index = print_format_list.indexOf(default_print_format);
+    //         print_format_list.splice(index, 1).sort();
+    //         print_format_list.unshift(default_print_format);
+    //     }
 
-        if(cur_frm.doc.format){ //newly added if condition
-            var index = print_format_list.indexOf(cur_frm.doc.format);
-            print_format_list.splice(index, 1).sort();
-            print_format_list.unshift(cur_frm.doc.format);
-        }
+    //     if(cur_frm.doc.format){ //newly added if condition
+    //         var index = print_format_list.indexOf(cur_frm.doc.format);
+    //         print_format_list.splice(index, 1).sort();
+    //         print_format_list.unshift(cur_frm.doc.format);
+    //     }
 
-        return print_format_list;
-    },
+    //     return print_format_list;
+    // },
 });
 frappe.ui.form.on('Sales Invoice', {
     validate: function(frm){
@@ -37,36 +37,10 @@ frappe.ui.form.on('Sales Invoice', {
                 // set_income_account_and_cost_center(frm);
             }
         }
+        
     },
 	refresh(frm) {
-        // frm.cscript.delivery_note_btn = function() {
-        //     var me = this;
-        //     this.$delivery_note_btn = this.frm.add_custom_button(__('Delivery Note'),
-        //         function() {
-        //             erpnext.utils.map_current_doc({
-        //                 method: "erpnext.stock.doctype.delivery_note.delivery_note.make_sales_invoice",
-        //                 source_doctype: "Delivery Note",
-        //                 target: me.frm,
-        //                 date_field: "posting_date",
-        //                 setters: {
-        //                     customer: me.frm.doc.customer || undefined,
-        //                     project: me.frm.doc.project || undefined
-        //                 },
-        //                 get_query: function() {
-        //                     var filters = {
-        //                         docstatus: 1,
-        //                         company: me.frm.doc.company,
-        //                         is_return: 0
-        //                     };
-        //                     if(me.frm.doc.customer) filters["customer"] = me.frm.doc.customer;
-        //                     return {
-        //                         query: "one_fm.one_fm.delivery_note_custom.get_delivery_notes_to_be_billed",
-        //                         filters: filters
-        //                     };
-        //                 }
-        //             });
-        //         }, __("Get items from"));
-        // }
+        
 
         if(frm.doc.customer){
             frm.set_query("project", function() {
@@ -78,17 +52,51 @@ frappe.ui.form.on('Sales Invoice', {
             });
             frm.refresh_field("project");
         }
-        // frm.fields_dict['items'].grid.get_field('income_account').get_query = function() {
-        //     return {
-        //         filters:{
-        //             root_type:'Income',
-        //             is_group: 0
-        //         }
-        //     }
-        // }
-        // frm.refresh_field("items");
+        if(frm.doc.automatic_settlement == "Yes"){
+            frm.set_df_property('settlement_amount', 'hidden', false);
+            frm.refresh_fields()
+        }
     },
     customer: function(frm){
+        
+        
+        if(frm.doc.customer){
+            frappe.call({
+                method: 'one_fm.one_fm.sales_invoice_custom.get_customer_advance_balance',
+                args:{
+                    'customer':frm.doc.customer,
+                },
+                callback:function(s){
+                    if (!s.exc) {
+                        frm.doc.balance_in_advance_account = s.message
+                        frm.doc.automatic_settlement = ""
+                        frm.doc.settlement_amount = ""
+                        frm.refresh_field('balance_in_advance_account')
+                        frm.refresh_field('settlement_amount')
+                        if((frm.doc.balance_in_advance_account> 1) && (frm.doc.automatic_settlement == "")  && !(frm.doc.active_modal)){
+                            frm.doc.active_modal = 1
+                            frappe.confirm(`${frm.doc.customer} has ${cur_frm.doc.currency}${cur_frm.doc.balance_in_advance_account} in their advance account.\nDo you wish to use it in this invoice?`,
+                                    () => {
+                                        frm.doc.automatic_settlement = "Yes"
+                                        frm.set_df_property('settlement_amount', 'hidden', false);
+                                        frm.refresh_field('settlement_amount')
+                                        frm.refresh_field('automatic_settlement')
+                                        frm.doc.active_modal = 0
+                                    }, () => {
+                                        frm.doc.automatic_settlement = "No"
+                                        frm.set_df_property('settlement_amount', 'hidden', true);
+                                        frm.refresh_field('settlement_amount')
+                                        frm.refresh_field('automatic_settlement')
+                                        frm.doc.active_modal = 0
+                                 }
+                                
+                                
+                                 )
+                        }
+                    }
+                }
+            });
+        }
         if(frm.doc.project){
             frappe.call({
                 method: 'frappe.client.get_value',
@@ -147,7 +155,7 @@ frappe.ui.form.on('Sales Invoice', {
                 },
                 callback:function(s){
                     if (!s.exc) {
-                        //console.log(s.message);
+                        
                         if(frm.doc.selling_price_list == null){
                             if(s.message){
                                 var selling_price_list = s.message.name;
@@ -175,7 +183,7 @@ frappe.ui.form.on('Sales Invoice', {
                 },
                 callback:function(s){
                     if (!s.exc) {
-                        //console.log(s.message);
+                        
                         if(s.message){
                             var contracts = s.message.name;
                             frm.set_value("contracts",contracts);
@@ -230,7 +238,7 @@ frappe.ui.form.on('Sales Invoice', {
 //     }
 // });
 var set_income_account_and_cost_center = function(frm){
-    console.log('set_income_account_and_cost_center');
+    
     frappe.call({
         method: 'frappe.client.get_value',
         args:{
@@ -256,7 +264,7 @@ var set_income_account_and_cost_center = function(frm){
 };
 //Add timesheet amount
 var add_timesheet_rate = function(frm){
-    console.log('add_timesheet_rate.........event');
+    
     $.each(frm.doc.items || [], function(i, v) {
         var amount = 0;
         $.each(frm.doc.timesheets || [], function(i, d) {
@@ -280,7 +288,7 @@ var get_timesheet_details =  function(frm,item) {
         },
         callback:function(s){
             if (!s.exc) {
-                console.log(s.message);
+                
                 if(s.message != undefined && s.message.length > 0){
                     add_timesheet_data(frm,s.message,item);
                 }
@@ -301,7 +309,7 @@ var add_timesheet_data = function(frm,timesheet_data,item_code){
     }
 };
 var get_contracts_asset_items = function(frm){
-    console.log('get_contracts_asset_items');
+    
     frappe.call({
         method: "one_fm.operations.doctype.contracts.contracts.get_contracts_asset_items",
         args:{
@@ -310,7 +318,7 @@ var get_contracts_asset_items = function(frm){
         callback:function(s){
             if(!s.exc){
                 if(s.message != undefined){
-                    console.log(s.message);
+                   
                     for (var i=0; i<s.message.length; i++){
                         var d = frm.add_child("items");
                         var item = s.message[i];
@@ -340,16 +348,7 @@ var get_contracts_items = function(frm){
             if(!s.exc){
                 if(s.message != undefined){
                     
-                    frm.set_query("item_code", "items", function(frm, cdt, cdn) {
-                        var d = locals[cdt][cdn];
-                        console.log(frm)
-                        return {
-                            query: "one_fm.operations.doctype.contracts.contracts.get_si_contracts_items",
-                            filters: {
-                                contracts: frm.contracts
-                            }
-                        }
-                    });
+                    
                     $.each(s.message, function(i, d) {
                         var row = frappe.model.add_child(frm.doc, "Sales Invoice Item", "items");
                         frappe.model.set_value(row.doctype, row.name, "item_code", d.item_code)

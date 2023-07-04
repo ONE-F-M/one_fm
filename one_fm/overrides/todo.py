@@ -4,6 +4,10 @@ from frappe.utils import get_fullname
 from one_fm.processor import is_user_id_company_prefred_email_in_employee
 
 def validate_todo(doc, method):
+	notify_todo_status_change(doc)
+	set_todo_type_from_refernce_doc(doc)
+
+def notify_todo_status_change(doc):
 	if doc.is_new():
 		return
 	status_in_db = frappe.db.get_value(doc.doctype, doc.name, 'status')
@@ -30,3 +34,10 @@ def send_notification_alert_only(user):
 	if not is_user_id_company_prefred_email_in_employee(user):
 		return True
 	return False
+
+def set_todo_type_from_refernce_doc(doc):
+	if doc.reference_type and doc.reference_name:
+		if doc.reference_type in ['Project', 'Task'] and frappe.get_meta(doc.reference_type).has_field('type'):
+			doc.type = frappe.db.get_value(doc.reference_type, doc.reference_name, 'type')
+		else:
+			doc.type = "Action"

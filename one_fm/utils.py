@@ -797,6 +797,22 @@ def get_leave_type_details():
         leave_type_details.setdefault(d.name, d)
     return leave_type_details
 
+def get_existing_leave_count(doc):
+    ledger_entries = frappe.get_all(
+        "Leave Ledger Entry",
+        filters={
+            "transaction_type": "Leave Allocation",
+            "transaction_name": doc.name,
+            "employee": doc.employee,
+            "company": doc.company,
+            "leave_type": doc.leave_type,
+            "is_carry_forward": 0,
+            "docstatus": 1,
+        },
+        fields=["SUM(leaves) as total_leaves"],
+    )
+    return ledger_entries[0].total_leaves if ledger_entries[0].total_leaves else 0
+
 def create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date):
 	''' Creates leave allocation for the given employee in the provided leave policy '''
 	leave_type = policy_detail.leave_type
@@ -937,7 +953,7 @@ def get_paid_annual_leave_allocation_list(date=False):
         return: List of Leave Allocation
     '''
     if not date:
-        date = getdate(nowdate())
+        date = add_to_date(getdate(nowdate()),days=2)
     # Get List of Paid Annual Leave Allocation for a date of a Leave Type (having Is Paid Annual Leave marekd True)
     query = """
         select
@@ -959,11 +975,11 @@ def is_employee_allowed_to_avail_increment_existing_allocation(allocation, leave
         return: Boolean
     '''
     allow_allocation = True
-
+    date = add_to_date(getdate(nowdate()),days=-1)
     # Check if employee absent today then not allow annual leave allocation for today
     is_absent = frappe.db.sql("""select name, status from `tabAttendance` where employee = %s and
         attendance_date = %s and docstatus = 1 and status = 'Absent' """,
-        (allocation.employee, getdate(nowdate())), as_dict=True)
+        (allocation.employee, date), as_dict=True)
     if is_absent and len(is_absent) > 0:
         allow_allocation = False
 
@@ -976,7 +992,7 @@ def is_employee_allowed_to_avail_increment_existing_allocation(allocation, leave
         where
             employee = %s and (%s between from_date and to_date) and docstatus = 1
     """
-    leave_application = frappe.db.sql(query, (allocation.employee, getdate(nowdate())), as_dict=True)
+    leave_application = frappe.db.sql(query, (allocation.employee, date), as_dict=True)
 
     '''
         If Leave Application exist for today,
@@ -1247,7 +1263,7 @@ def scrub_options_list(ol):
 @frappe.whitelist(allow_guest=True)
 def item_naming_series(doc, method):
     doc.name = doc.item_code
-    doc.item_name = doc.item_code
+    
 
 @frappe.whitelist()
 def before_insert_warehouse(doc, method):
@@ -1427,7 +1443,7 @@ def validate_job_applicant(doc, method):
     # update night shift
     if doc.one_fm_night_shift:
         frappe.db.set_value("Job Applicant", doc.name, "one_fm_night_shift", doc.one_fm_night_shift)
-
+    doc.applicant_name = doc.one_fm_first_name + " " +doc.one_fm_last_name or ''
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     # validate_pam_file_number_and_pam_designation(doc, method)
@@ -1592,7 +1608,8 @@ def get_mandatory_fields_work_details(doc):
         if erf.travel_required:
             if erf.type_of_travel:
                 field_list.append({'Type of Travel': 'one_fm_type_of_travel'})
-            field_list.append({'Type of Driving License': 'one_fm_type_of_driving_license'})
+            if erf.driving_license_required:
+                field_list.append({'Type of Driving License': 'one_fm_type_of_driving_license'})
     return field_list
 
 def get_mandatory_fields_contact_details(doc):
@@ -2576,7 +2593,21 @@ def workflow_approve_reject(doc, recipients=None):
     }
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
+@frappe.whitelist()
 def get_mandatory_fields(doctype, doc_name):
+	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doctype)
+
+	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
+
+	for employee_field in employee_fields:
+		if doc[employee_field]:
+			employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
+			if employee_details.employee_name and  employee_details.employee_id:
+				doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
+
+	return doc, labels
+
+def get_doctype_mandatory_fields(doctype):
 	meta = frappe.get_meta(doctype)
 	mandatory_fields = []
 	labels = {}
@@ -2598,13 +2629,33 @@ def get_mandatory_fields(doctype, doc_name):
 		mandatory_fields = ['name']
 		labels['name'] = 'Document Name'
 
-	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
+	return mandatory_fields, employee_fields, labels
 
-	for employee_field in employee_fields:
-		employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
-		doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
-
-	return doc, labels
+@frappe.whitelist()
+def create_message_with_details(message, mandatory_field, labels):
+    if mandatory_field and labels:
+        message += """The details of the request are as follows:
+                    <br>
+                    <table cellpadding="0" cellspacing="0" border="1" style="border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+                                <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+                            </tr>
+                        </thead>
+                    <tbody>
+                    """
+        for m in mandatory_field:
+            message += f"""<tr>
+                        <td style="padding: 10px;">{ labels[m] }</td>
+                        <td style="padding: 10px;">{ mandatory_field[m] }</td>
+                        </tr>
+                        """
+            
+        message += """
+                </tbody>
+                </table>"""
+    return message
 
 @frappe.whitelist()
 def notify_live_user(company, message, users=False):
@@ -2812,16 +2863,20 @@ def get_approver(employee):
         Get document approver for employee by
         reports_to, shift_approver, site_approver
     """
+    if employee=="HR-EMP-00001":return "HR-EMP-00001" # for Abdullah
     operations_site, operations_shift = '', ''
     if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
-    emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site'], as_dict=1)
-    if emp_data.reports_to:
-        return emp_data.reports_to
-    elif emp_data.shift:
+    emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
+    # Get for IT - ONEFM
+    if emp_data.department=='IT - ONEFM':
+         return emp_data.reports_to
+    
+    if emp_data.shift:
         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
     elif emp_data.site:
         operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
-
+    elif emp_data.reports_to:
+        return emp_data.reports_to
     if operations_site:return operations_site
     if operations_shift:return operations_shift
     if not (operations_shift and operations_site and operations_shift):
@@ -2973,3 +3028,31 @@ def get_users_with_role_permitted_to_doctype(role, doctype=False):
 	if filtered_users and len(filtered_users) > 0:
 		return filtered_users
 	return False
+
+@frappe.whitelist()
+def get_assignment_rule_description(doctype):
+	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doctype)
+	message_html = '<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.'
+	if mandatory_fields:
+		message_html += '''
+			<br/>
+			The details of the request are as follows:<br/>
+			<table cellpadding="0" cellspacing="0" border="1" style="border-collapse: collapse;">
+				<thead>
+					<tr>
+						<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+						<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+					</tr>
+				</thead>
+				<tbody>
+		'''
+		for mandatory_field in mandatory_fields:
+			message_html += '''
+				<tr>
+					<td style="padding: 10px;">'''+labels[mandatory_field]+'''</td>
+					<td style="padding: 10px;">{{'''+mandatory_field+'''}}</td>
+				</tr>
+			'''
+		message_html += '</tbody></table>'
+	message_html += '</p>'
+	return message_html

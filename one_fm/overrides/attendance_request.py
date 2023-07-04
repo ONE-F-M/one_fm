@@ -1,12 +1,14 @@
 import frappe, pandas as pd
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_days, date_diff, getdate, nowdate
+from frappe.utils import add_days, date_diff, getdate, nowdate, get_link_to_form, format_date
 from erpnext.setup.doctype.employee.employee import is_holiday
 from hrms.hr.utils import validate_active_employee, validate_dates
 from hrms.hr.doctype.attendance_request.attendance_request import AttendanceRequest
 from frappe.model.workflow import apply_workflow
-from one_fm.utils import send_workflow_action_email, get_holiday_today, workflow_approve_reject
+from one_fm.utils import (
+	send_workflow_action_email, get_holiday_today, workflow_approve_reject, get_approver
+)
 
 
 class AttendanceRequestOverride(AttendanceRequest):
@@ -16,6 +18,16 @@ class AttendanceRequestOverride(AttendanceRequest):
 		if self.half_day:
 			if not getdate(self.from_date) <= getdate(self.half_day_date) <= getdate(self.to_date):
 				frappe.throw(_("Half day date should be in between from date and to date"))
+		self.set_approver()
+
+	def before_insert(self):
+		check_for_attendance(self)
+
+	def set_approver(self):
+		if not self.approver:
+			self.approver = get_approver(self.employee)
+		if not self.approver_user:
+			self.approver_user = frappe.db.get_value("Employee", self.approver, 'user_id')
 
 	def on_submit(self):
 		reports_to = self.reports_to()
@@ -46,7 +58,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 			if self.workflow_state == 'Update Request':
 				self.cancel_requested_attendance()
 
-	def check_shift_assignment(self, attendance_date):
+	def get_shift_assignment(self, attendance_date):
 		"""
 			Check if shift exist for employee
 		"""
@@ -55,15 +67,6 @@ class AttendanceRequestOverride(AttendanceRequest):
 			shift_assignment = frappe.db.get_list("Shift Assignment",
 				{'employee':self.employee, 'docstatus':1, 'status':'Active', 'start_date':attendance_date})
 			return frappe.get_doc("Shift Assignment", shift_assignment[0].name)
-		return False
-
-	def check_attendance(self, attendance_date):
-		"""check if attendance exist"""
-		attendance = frappe.db.exists("Attendance",
-			{'employee':self.employee, 'docstatus':1, 'attendance_date':attendance_date}
-		)
-		if attendance:
-			return frappe.get_doc("Attendance", attendance)
 		return False
 
 	def create_attendance(self):
@@ -78,64 +81,76 @@ class AttendanceRequestOverride(AttendanceRequest):
 	def mark_attendance(self, attendance_date):
 		try:
 			employee = self.get_employee()
-			status = False
-			employee_availability = frappe.db.get_value("Employee Schedule", {"employee": self.employee, "date":attendance_date}, "employee_availability")
-			if employee_availability == 'Day Off':
-					status = 'Day Off'
+			shift_assignment = self.get_shift_assignment(attendance_date)
+			working_hours = frappe.db.get_value('Shift Type', shift_assignment.shift_type, 'duration')  if shift_assignment  else 8
+			# check if attendance exists
+			attendance_name = super(AttendanceRequestOverride, self).get_attendance_record(attendance_date)
+			status = super(AttendanceRequestOverride, self).get_attendance_status(attendance_date)
+			if attendance_name:
+				# update existing attendance, change the status
+				doc = frappe.get_doc("Attendance", attendance_name)
+				old_status = doc.status
 
-			check_shift_assignment = self.check_shift_assignment(attendance_date)
-			if check_shift_assignment:
-				holiday_today = get_holiday_today(attendance_date).get(employee.holiday_list)
-				
-				if holiday_today:
-					status = 'Holiday'
-				elif frappe.db.sql(f"""
-						SELECT name, employee FROM `tabLeave Application` 
-						WHERE employee='{employee}' AND status='Open' AND '{attendance_date}' BETWEEN from_date AND to_date;
-					""", as_dict=1):
-					status = False
-				else:
-					status = 'Work From Home'
-				
-			working_hours = frappe.db.get_value('Shift Type', check_shift_assignment.shift_type, 'duration')  if (check_shift_assignment and not status in ['Holiday', 'Day Off', 'Absent']) else 0
-			# check if attendance exists	
-			check_attendance = self.check_attendance(attendance_date)		
-			if check_attendance:
-				if not check_attendance.status in ['Work From Home', 'Present', 'Holiday', 'On Leave'] and status:
-					check_attendance.db_set('Status', status)
-					check_attendance.db_set('working_hours', working_hours)
-					check_attendance.db_set('attendance_request', self.name)
-					check_attendance.reload()
+				if old_status != 'Present':
+					doc.db_set({
+						"status": status, 
+						"attendance_request": self.name, 
+						"working_hours": working_hours,
+						"reference_doctype":"Attendance Request",
+						"reference_docname":self.name})
+					text = _("Changed the status from {0} to {1} via Attendance Request").format(
+						frappe.bold(old_status), frappe.bold(status)
+					)
+					doc.add_comment(comment_type="Info", text=text)
+
+					frappe.msgprint(
+						_("Updated status from {0} to {1} for date {2} in the attendance record {3}").format(
+							frappe.bold(old_status),
+							frappe.bold(status),
+							frappe.bold(format_date(attendance_date)),
+							get_link_to_form("Attendance", doc.name),
+						),
+						title=_("Attendance Updated"),
+					)
+				elif old_status == 'Present' and status == "Work From Home":
+					doc.db_set({
+						"status": status, 
+						"attendance_request": self.name, 
+						"working_hours": working_hours,
+						"reference_doctype":"Attendance Request",
+						"reference_docname":self.name})
+					text = _("Changed the status from {0} to {1} via Attendance Request").format(
+						frappe.bold(old_status), frappe.bold(status)
+					)
+					doc.add_comment(comment_type="Info", text=text)
+
+					frappe.msgprint(
+						_("Updated status from {0} to {1} for date {2} in the attendance record {3}").format(
+							frappe.bold(old_status),
+							frappe.bold(status),
+							frappe.bold(format_date(attendance_date)),
+							get_link_to_form("Attendance", doc.name),
+						),
+						title=_("Attendance Updated"),
+					)
 			else:
-				if status:
-					attendance = frappe.new_doc("Attendance")
-					attendance.employee = self.employee
-					attendance.employee_name = self.employee_name
-					if self.half_day and date_diff(getdate(self.half_day_date), getdate(attendance_date)) == 0:
-						attendance.status = "Half Day"
-					elif self.reason == "Work From Home":
-						attendance.status = "Work From Home"
-					else:
-						attendance.status = "Present"
-					if employee_availability == "Day Off":
-						attendance.status = "Day Off"
-					attendance.attendance_date = attendance_date
-					attendance.company = self.company
-					attendance.working_hours = working_hours
-					attendance.attendance_request = self.name
-					attendance.operations_shift = check_shift_assignment.shift if check_shift_assignment else ''
-					attendance.roster_type = check_shift_assignment.roster_type if check_shift_assignment else ''
-					attendance.shift = check_shift_assignment.shift_type if check_shift_assignment else ''
-					attendance.project = check_shift_assignment.project if check_shift_assignment else ''
-					attendance.site = check_shift_assignment.site if check_shift_assignment else ''
-					attendance.operations_role = check_shift_assignment.operations_role if check_shift_assignment else ''
-					attendance.save(ignore_permissions=True)
-					if attendance.status in ['Holiday', 'Day Off']:
-						attendance.db_set('docstatus', 1)
-					else:
-						attendance.submit()
+				attendance = frappe.new_doc("Attendance")
+				attendance.employee = self.employee
+				attendance.status = status
+				attendance.attendance_date = attendance_date
+				attendance.working_hours = working_hours
+				attendance.attendance_request = self.name
+				attendance.operations_shift = shift_assignment.shift if shift_assignment else ''
+				attendance.roster_type = shift_assignment.roster_type if shift_assignment else ''
+				attendance.shift = shift_assignment.shift_type if shift_assignment else ''
+				attendance.project = shift_assignment.project if shift_assignment else ''
+				attendance.site = shift_assignment.site if shift_assignment else ''
+				attendance.operations_role = shift_assignment.operations_role if shift_assignment else ''
+				attendance.reference_doctype = "Attendance Request"
+				attendance.reference_docname = self.name
+				attendance.save(ignore_permissions=True)
+				attendance.submit()
 		except Exception as e:
-			print(frappe.get_traceback())
 			frappe.log_error(str(frappe.get_traceback()), 'Attendance Request')
 
 
@@ -183,6 +198,10 @@ class AttendanceRequestOverride(AttendanceRequest):
 			return False
 		return True
 
+def check_for_attendance(doc):
+	att = frappe.get_list("Attendance", {"employee": doc.employee, "attendance_date":["between", [doc.from_date, doc.to_date]]}, ['status'])
+	if att:
+		frappe.msgprint("Your attendance is marked for today as "+ att[0].status )
 
 def validate_future_dates(doc, from_date, to_date):
 	date_of_joining, relieving_date = frappe.db.get_value(
@@ -224,4 +243,3 @@ def mark_future_attendance_request():
             frappe.get_doc("Attendance Request", row.name).mark_attendance(str(getdate()))
         except Exception as e:
             frappe.log_error(str(e), 'Attendance Request')
-
