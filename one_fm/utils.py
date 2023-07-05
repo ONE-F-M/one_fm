@@ -2527,8 +2527,7 @@ def override_frappe_send_workflow_action_email(users_data, doc):
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
-    queue_send_workflow_action_email(doc,recipients)
-    # frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
+    frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
 
 
 def queue_send_workflow_action_email(doc, recipients):
