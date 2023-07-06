@@ -2267,7 +2267,7 @@ def notify_on_close(doc, method):
 
     if doc.status == "Closed":
         if not doc.description:
-            frappe.throw("Kindly add a summary of the issue as the description !")x
+            frappe.throw("Kindly add a summary of the issue as the description !")
         #Form Subject and Message
         subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
         user_full_name = doc.raised_by
