@@ -2266,6 +2266,8 @@ def notify_on_close(doc, method):
     '''
 
     if doc.status == "Closed":
+        if not doc.description:
+            frappe.throw("Kindly add a summary of the issue as the description !")x
         #Form Subject and Message
         subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
         user_full_name = doc.raised_by
@@ -2278,7 +2280,7 @@ def notify_on_close(doc, method):
             <br/><br/><br/>
             <b>Issue Subject:</b> {subject}<br/>
         """
-
+        
         if strip_html(doc.description):
             # striphtml is used to get data without html tags, text editor will have a Defualt html <div class="ql-editor read-mode"><p><br></p></div>
             msg_html += f"<b>Issue Description:</b><br/>{doc.description}"
