@@ -608,7 +608,8 @@ def set_employee_name(doc,method):
     This method for getting the arabic full name and fetching children details from job applicant to employee record
     """
     doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_forth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
-
+    if doc.employment_type == "Full-time":
+        doc.is_in_kuwait = 1
     if doc.job_applicant:
         applicant = frappe.get_doc('Job Applicant',doc.job_applicant) # Fetching the children table from job applicant to Employee doctype
         if applicant.one_fm_number_of_kids > 0:

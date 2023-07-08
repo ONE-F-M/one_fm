@@ -40,7 +40,7 @@ from  one_fm.overrides.stock_ledger import get_valuation_rate_
 from erpnext.stock import stock_ledger
 from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 
-__version__ = '14.4.2'
+__version__ = '14.4.3'
 
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_
 workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email

@@ -8,13 +8,7 @@ from frappe import _
 import frappe, os, erpnext, json, math, itertools, pymysql, requests
 from frappe.model.document import Document
 from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
-from frappe.utils.data import flt, nowdate, getdate, cint
 from frappe.utils.csvutils import read_csv_content
-from frappe.utils import (
-    cint, cstr, flt, rounded,  nowdate, comma_and, date_diff, getdate,
-    formatdate ,get_url, get_datetime, add_to_date, time_diff, get_time,
-    time_diff_in_hours, get_url_to_form
-)
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
 from datetime import date
@@ -26,7 +20,8 @@ from dateutil.relativedelta import relativedelta
 from frappe.utils import (
     cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
     comma_or, get_fullname, add_years, add_months, add_days,
-    nowdate,get_first_day,get_last_day, today, now_datetime
+    nowdate,get_first_day,get_last_day, today, now_datetime, rounded, get_url,
+    get_datetime, add_to_date, time_diff, get_time, get_url_to_form, strip_html
 )
 import datetime
 from datetime import datetime, time
@@ -2270,15 +2265,28 @@ def notify_on_close(doc, method):
         This Method is used to notify the issuer, when the issue is closed.
     '''
 
-    #Form Subject and Message
-    subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
-    msg = """Hello user,<br>
-        Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing
-    the issue you may reply back to this email and we will do our best to help.
-    """.format(issue_id = doc.name, url= doc.get_url())
-
     if doc.status == "Closed":
-        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False)
+        #Form Subject and Message
+        subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
+        user_full_name = doc.raised_by
+        if frappe.db.exists('User', {'email_id': doc.raised_by}):
+            user_full_name = frappe.db.get_value('User', {'email_id': doc.raised_by}, 'full_name')
+        msg_html = """
+            Hello {user},<br/>
+            Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing
+            the issue you may reply back to this email and we will do our best to help.
+            <br/><br/><br/>
+            <b>Issue Subject:</b> {subject}<br/>
+        """
+
+        if strip_html(doc.description):
+            # striphtml is used to get data without html tags, text editor will have a Defualt html <div class="ql-editor read-mode"><p><br></p></div>
+            msg_html += f"<b>Issue Description:</b><br/>{doc.description}"
+
+        msg = msg_html.format(user = user_full_name, issue_id = doc.name, url= doc.get_url(), subject=doc.subject)
+
+        sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False, is_external_mail=True)
+
 
 def assign_issue(doc, method):
     '''
@@ -2543,7 +2551,6 @@ def queue_send_workflow_action_email(doc, recipients):
     common_args.pop('attachments')
 
     mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
-
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.name)
@@ -2600,14 +2607,13 @@ def get_mandatory_fields(doctype, doc_name):
 	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doctype)
 
 	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
-
-	for employee_field in employee_fields:
-		if doc[employee_field]:
-			employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
-			if employee_details.employee_name and  employee_details.employee_id:
-				doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
-
-	return doc, labels
+	if doc:
+		for employee_field in employee_fields:
+			if doc[employee_field]:
+				employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
+				if employee_details.employee_name and  employee_details.employee_id:
+					doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
+		return doc, labels
 
 def get_doctype_mandatory_fields(doctype):
 	meta = frappe.get_meta(doctype)
@@ -2859,7 +2865,6 @@ def get_today_leaves(cur_date):
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
 
-
 def get_approver(employee):
     """
         Get document approver for employee by
@@ -2877,14 +2882,45 @@ def get_approver(employee):
         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
     elif emp_data.site:
         operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
-    elif emp_data.shift:
-        operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
     elif emp_data.reports_to:
         return emp_data.reports_to
     if operations_site:return operations_site
     if operations_shift:return operations_shift
     if not (operations_shift and operations_site and operations_shift):
         frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
+
+  
+# def get_approver(employee):
+#     """
+#         Get document approver for employee by
+#         reports_to, shift_approver, site_approver
+#     """
+#     if employee=="HR-EMP-00001":return "HR-EMP-00001" # for Abdullah
+#     operations_site, operations_shift = '', ''
+#     if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
+#     emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
+#     # Get for IT - ONEFM
+#     if emp_data.department=='IT - ONEFM':
+# <<<<<<< staging
+#         return emp_data.reports_to
+    
+#     if emp_data.site:
+# =======
+#          return emp_data.reports_to
+
+#     if emp_data.shift:
+#         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
+#     elif emp_data.site:
+# >>>>>>> master-14
+#         operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
+#     elif emp_data.shift:
+#         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
+#     elif emp_data.reports_to:
+#         return emp_data.reports_to
+#     if operations_site:return operations_site
+#     if operations_shift:return operations_shift
+#     if not (operations_shift and operations_site and operations_shift):
+#         frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
 
 
 def get_approver_for_many_employees(supervisor=None):
