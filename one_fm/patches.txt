@@ -39,7 +39,8 @@ one_fm.patches.v14_0.update_sales_invoice_workflow
 one_fm.patches.v14_0.set_shift_permission_roster_type
 one_fm.patches.v14_0._update_non_kuwaiti_residents_in_employee__
 #one_fm.patches.v14_0.update_employee_checkin_record
-one_fm.patches.v14_0.employee_id_arabic_name.execute #2023-06-25
+one_fm.patches.v14_0.employee_id_arabic_name #2023-06-25
 one_fm.patches.v14_0.leave_policy_carry_forward #2023-06-22
 one_fm.patches.v14_0.leave_policy_carry_forward #2023-06-22
 one_fm.patches.v14_0.update_recruiter_name_in_erf
+one_fm.patches.v14_0.update_job_offer_status

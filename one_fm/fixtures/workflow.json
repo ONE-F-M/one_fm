@@ -3305,7 +3305,7 @@
   "doctype": "Workflow",
   "document_type": "Job Offer",
   "is_active": 1,
-  "modified": "2022-04-21 16:04:57.683090",
+  "modified": "2023-07-08 19:51:20.664351",
   "name": "Job Offer",
   "override_status": 0,
   "send_email_alert": 0,
@@ -3320,8 +3320,8 @@
     "parentfield": "states",
     "parenttype": "Workflow",
     "state": "Open",
-    "update_field": "status",
-    "update_value": "Awaiting Response"
+    "update_field": "",
+    "update_value": ""
    },
    {
     "allow_edit": "Recruiter",
@@ -3333,8 +3333,8 @@
     "parentfield": "states",
     "parenttype": "Workflow",
     "state": "Open",
-    "update_field": "status",
-    "update_value": "Awaiting Response"
+    "update_field": "",
+    "update_value": ""
    },
    {
     "allow_edit": "Senior Recruiter",
@@ -6674,7 +6674,7 @@
   "doctype": "Workflow",
   "document_type": "Contracts",
   "is_active": 1,
-  "modified": "2023-07-03 14:26:30.566453",
+  "modified": "2023-07-06 18:11:26.913843",
   "name": "Contracts",
   "override_status": 0,
   "send_email_alert": 0,

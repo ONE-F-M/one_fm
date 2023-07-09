@@ -25,7 +25,17 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	def set_approver(self):
 		if not self.approver:
-			self.approver = get_approver(self.employee)
+			approver_id = frappe.db.get_value("Employee", {'name':self.employee}, ['reports_to'])
+			if approver_id:
+				self.approver = approver_id
+				approver = frappe.db.get_value("Employee", {'name':approver_id}, ['user_id', 'employee_name'], as_dict=1)
+				self.approver_user = approver.user_id
+				self.approver_name = approver.employee_name
+			else:
+				self.approver = get_approver(self.employee)
+				approver = frappe.db.get_value("Employee", {'name':self.approver}, ['user_id', 'employee_name'], as_dict=1)
+				self.approver_user = approver.user_id
+				self.approver_name = approver.employee_name
 		if not self.approver_user:
 			self.approver_user = frappe.db.get_value("Employee", self.approver, 'user_id')
 
@@ -156,7 +166,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	def send_notification(self):
 		if self.workflow_state in ['Pending Approval']:
-			send_workflow_action_email(self, [self.get_reports_to()])
+			send_workflow_action_email(self, self.approver_user)
 		if self.workflow_state in ['Rejected', 'Approved', 'Update Request', 'Cancelled']:
 			workflow_approve_reject(self, recipients=None)
 

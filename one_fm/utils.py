@@ -2279,7 +2279,7 @@ def notify_on_close(doc, method):
             <b>Issue Subject:</b> {subject}<br/>
         """
 
-        if strip_html(doc.description):
+        if doc.description and strip_html(doc.description):
             # striphtml is used to get data without html tags, text editor will have a Defualt html <div class="ql-editor read-mode"><p><br></p></div>
             msg_html += f"<b>Issue Description:</b><br/>{doc.description}"
 
@@ -2889,7 +2889,7 @@ def get_approver(employee):
     if not (operations_shift and operations_site and operations_shift):
         frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
 
-  
+
 # def get_approver(employee):
 #     """
 #         Get document approver for employee by
@@ -2903,7 +2903,7 @@ def get_approver(employee):
 #     if emp_data.department=='IT - ONEFM':
 # <<<<<<< staging
 #         return emp_data.reports_to
-    
+
 #     if emp_data.site:
 # =======
 #          return emp_data.reports_to
