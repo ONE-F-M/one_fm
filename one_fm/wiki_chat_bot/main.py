@@ -7,15 +7,19 @@ from langchain import OpenAI
 
 from one_fm.api.v1.utils import response
 
-api_integration = frappe.get_doc("API Integration", "ChatGPT")
 
-os.environ["OPENAI_API_KEY"] = api_integration.get_password('api_key')
+the_conf = frappe.conf
+print(the_conf, "\n\n\n\n\n\n\n\n\n")
+# API_KEY = the_conf.CHATGPT_APIKEY    
+# os.environ["OPENAI_API_KEY"] = frappe.client.get_password("API Integration", "ChatGPT", "api_key")
+# os.environ["OPENAI_API_KEY"] = API_KEY
 
-api_parameter = frappe.get_doc("API Parameter", {"parenttype": api_integration.doctype, "parent": api_integration.name,
-                                                 "parameter": "Folder Path"})
+# param_name = frappe.db.get_value("API Parameter", {"parent": "ChatGPT", "parameter": "Folder Path"}, ["name"])
 
-folder_path = api_parameter.get_password("value") if api_parameter else ""
+# folder_path = frappe.client.get_password("API Parameter", param_name, "value") if param_name else ""
 
+folder_path = frappe.conf.get("CHATGPT_FOLDER_PATH", None)
+print(folder_path, "\n\n\n\n\n\n\n\n")
 
 def create_vector_index(path: str = folder_path):
     try:
