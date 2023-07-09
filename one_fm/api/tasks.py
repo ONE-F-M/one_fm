@@ -701,6 +701,7 @@ def fetch_non_shift(date, s_type):
 
 	return roster
 
+
 def assign_am_shift():
 	date = cstr(getdate())
 	end_previous_shifts("AM")
@@ -724,6 +725,7 @@ def assign_am_shift():
 		roster.extend(non_shift)
 
 	create_shift_assignment(roster, date, 'AM')
+
 
 def assign_pm_shift():
 	date = cstr(getdate())
@@ -763,9 +765,9 @@ def end_previous_shifts(time):
 
 def get_shift_type(time):
 	if time == "AM":
-		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "00:00"], "start_time": ["<", "12:00"]},['name'], pluck='name')
+		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "01:00"], "start_time": ["<", "13:00"]},['name'], pluck='name')
 	else:
-		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "12:00"]},['name'], pluck='name')
+		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "13:00"]},['name'], pluck='name')
 	return shift_type
 
 def create_shift_assignment(roster, date, time):

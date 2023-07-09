@@ -12,6 +12,24 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
+  "modified": "2023-07-03 11:42:40.708321",
+  "name": "Cancellation Requested",
+  "style": "",
+  "workflow_state_name": "Cancellation Requested"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-07-03 12:34:09.523139",
+  "name": "Published",
+  "style": "",
+  "workflow_state_name": "Published"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
   "modified": "2023-05-13 00:19:36.362855",
   "name": "Pending By PAM Operator",
   "style": "",
