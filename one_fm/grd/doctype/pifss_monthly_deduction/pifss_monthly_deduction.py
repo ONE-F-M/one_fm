@@ -349,3 +349,12 @@ def import_deduction_data(doc_name):
 	# 		employee.update({
 	# 			'additional_deduction':additional_table.get(employee['civil_id'])
 	# 		})
+
+
+
+def let_test_it():
+	email = "a.adekunle@one-fm.com"
+	subject = _("PIFSS Monthly Deduction Payments for {0}").format("47")
+	message = _("Kindly, prepare Total Payment Required Amount and transfer it to GRD account.<br>Please transfer it within 2 days.")
+	reference_doc = frappe.get_doc("Employee", "HR-EMP-02460")
+	create_notification_log(subject, message, [email], reference_doc)

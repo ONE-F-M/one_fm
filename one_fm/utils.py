@@ -32,7 +32,7 @@ from one_fm.processor import sendemail
 from frappe.desk.form import assign_to
 from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from frappe.desk.notifications import extract_mentions
-from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
+from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html, get_email_header
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_email_template, deduplicate_actions, get_next_possible_transitions,
@@ -3110,3 +3110,5 @@ def change_item_details(item, item_name=False, description=False):
         item_obj.db_set("description", description)
     item_obj.db_set("change_request", True)
     apply_workflow(item_obj, "Change Request")
+
+

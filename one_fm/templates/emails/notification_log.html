@@ -1,0 +1,67 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, .late_arrival td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      width: 30%;
+      text-align: left;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #ddd;
+    }
+    
+    </style>
+    
+    
+    <table>
+      <tbody class="late_arrival">
+        <tr>
+          <th>Document Namre</th>
+          <td>{{ document_name }}</td>
+        </tr>
+        <tr>
+          <th>Shift</th>
+          <td>{{ shift.shift_classification }}-{{ shift.shift_number }}</td>
+        </tr>
+        <tr>
+          <th>Site</th>
+          <td>{% if shift.site_location %}{{ shift.site_location }}{% else %}{{ shift.site }}{% endif %}</td>
+        </tr>
+        <tr>
+          <th>Start Time (Shift)</th>
+          <td>{{ shift.start_time }}</td>
+        </tr>
+        <tr>
+          <th>End Time (Shift)</th>
+          <td>{{ shift.end_time }}</td>
+        </tr>
+        <tr>
+          <th>Roster Type</th>
+          <td>{{ roster_type }}</td>
+        </tr>
+        <tr>
+          <th>Time of arrival</th>
+          <td>{{ time_of_arrival }}</td>
+        </tr>
+        <tr>
+          <th>Document Link</th>
+          <td>{{ doc_link }}</td>
+        </tr>
+      </tbody>
+    </table>
+    
