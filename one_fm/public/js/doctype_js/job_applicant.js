@@ -65,23 +65,13 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__('Send Applicant Doc'), function() {
 				send_magic_link(frm, 'one_fm.templates.pages.applicant_docs.send_applicant_doc_magic_link');
 				},'Action');
-			frm.add_custom_button(__(''), function() {
-				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-
 			frm.add_custom_button(__('Create Career History'), function() {
 				create_career_history(frm);
 				},'Action');
 
-			frm.add_custom_button(__(''), function() {
-			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-
-			frm.add_custom_button(__(''), function() {
-			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			frm.add_custom_button(__('Best Reference'), function() {
 				    view_best_reference(frm);
 				  },'Action');
-			frm.add_custom_button(__(''), function() {
-			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
 				frm.add_custom_button(__('Select Applicant'), function() {
@@ -101,8 +91,6 @@ frappe.ui.form.on('Job Applicant', {
 					}
 				},'Action');
 			}
-			frm.add_custom_button(__(''), function() {
-			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			if(frm.doc.status != 'Rejected'){
 				if (frappe.user.has_role("Job Applicant ERF Changer")){
 					frm.add_custom_button(__('Change ERF'), function() {
