@@ -1,5 +1,6 @@
 import frappe
 from frappe.desk.doctype.notification_log.notification_log import *
+from frappe.utils.data import get_url_to_form, strip_html
 
 from one_fm.processor import sendemail
 
@@ -33,26 +34,13 @@ def custom_send_notification_email(doc):
 			"document_type": doc.document_type,
 			"document_name": doc.document_name,
 			"doc_link": doc_link,
-		},
+            "header": header
+		}
     
     msg = frappe.render_template('one_fm/templates/emails/notification_log.html', context=context)
 
-    sendemail(recipients=email,
-            content=msg, subject=email_subject, header=header)
-    # frappe.sendmail(
-    #     recipients=email,
-    #     subject=email_subject,
-    #     template="new_notification",
-    #     args={
-    #         "body_content": doc.subject,
-    #         "description": doc.email_content,
-    #         "document_type": doc.document_type,
-    #         "document_name": doc.document_name,
-    #         "doc_link": doc_link,
-    #     },
-    #     header=[header, "orange"],
-    #     now=frappe.flags.in_test,
-    # )
+    sendemail(recipients=email,content=msg, subject=email_subject)
+   
     
 	
 

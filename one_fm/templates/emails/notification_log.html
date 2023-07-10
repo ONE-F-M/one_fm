@@ -5,7 +5,7 @@
       width: 100%;
     }
     
-    th, .late_arrival td {
+    th, .notification_log td {
       border: 1px solid #ddd;
       padding: 8px;
     }
@@ -27,36 +27,24 @@
     
     </style>
     
-    
+    <h3>{{ header }}</h3>
     <table>
-      <tbody class="late_arrival">
+      <tbody class="notification_log">
         <tr>
-          <th>Document Namre</th>
+          <th>Document Name</th>
           <td>{{ document_name }}</td>
         </tr>
         <tr>
-          <th>Shift</th>
-          <td>{{ shift.shift_classification }}-{{ shift.shift_number }}</td>
+          <th>Document Type</th>
+          <td>{{ document_type }}</td>
         </tr>
         <tr>
-          <th>Site</th>
-          <td>{% if shift.site_location %}{{ shift.site_location }}{% else %}{{ shift.site }}{% endif %}</td>
+          <th>Description</th>
+          <td>{{ description }}</td>
         </tr>
         <tr>
-          <th>Start Time (Shift)</th>
-          <td>{{ shift.start_time }}</td>
-        </tr>
-        <tr>
-          <th>End Time (Shift)</th>
-          <td>{{ shift.end_time }}</td>
-        </tr>
-        <tr>
-          <th>Roster Type</th>
-          <td>{{ roster_type }}</td>
-        </tr>
-        <tr>
-          <th>Time of arrival</th>
-          <td>{{ time_of_arrival }}</td>
+          <th>Content</th>
+          <td>{{ body_content }}</td>
         </tr>
         <tr>
           <th>Document Link</th>
