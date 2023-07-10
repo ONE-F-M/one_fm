@@ -40,9 +40,3 @@ def custom_send_notification_email(doc):
     msg = frappe.render_template('one_fm/templates/emails/notification_log.html', context=context)
 
     sendemail(recipients=email,content=msg, subject=email_subject)
-   
-    
-	
-
-
-

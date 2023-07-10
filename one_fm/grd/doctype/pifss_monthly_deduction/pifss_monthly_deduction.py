@@ -349,4 +349,3 @@ def import_deduction_data(doc_name):
 	# 		employee.update({
 	# 			'additional_deduction':additional_table.get(employee['civil_id'])
 	# 		})
-
