@@ -8,7 +8,8 @@
   "key_result",
   "column_break_2",
   "objective",
-  "target_to_be_achieved_by"
+  "target_to_be_achieved_by",
+  "matched_row"
  ],
  "fields": [
   {
@@ -37,16 +38,23 @@
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "matched_row",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Matched Row"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2022-10-16 16:08:28.340128",
+ "modified": "2023-07-10 10:48:44.335813",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "OKR Performance Profile Key Result",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }
