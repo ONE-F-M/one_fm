@@ -224,8 +224,10 @@ def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
             'docstatus':0,
             'workflow_state':'Pending'
         })
-        for i in shift_permissions:
-            approve_shift_permission(i.name)
+        if shift_permissions:
+            for i in shift_permissions:
+                idoc = frappe.get_doc("Shift Permission", i.name)
+                approve_shift_permission(idoc)
 
         status = 'Absent'
         comment = 'No checkin records found'

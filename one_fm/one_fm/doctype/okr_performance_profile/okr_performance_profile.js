@@ -7,6 +7,7 @@ frappe.ui.form.on('OKR Performance Profile', {
 			frm.set_df_property('okr_title_section', 'hidden', true);
 		}
     set_objective_option_to_kr(frm);
+	
 		set_objectoves_description(frm);
 	},
 	description: function(frm) {
@@ -20,8 +21,10 @@ var set_objectoves_description = function(frm) {
 };
 
 frappe.ui.form.on('OKR Performance Profile Objective', {
-	objective: function(frm) {
-    set_objective_option_to_kr(frm);
+	objective: function(frm,cdt,cdn) {
+		set_objective_option_to_kr(frm);
+		
+		update_existing_values(frm,cdt,cdn)
 	},
 	from_date: function(frm, cdt, cdn) {
 		calculate_time_frame(frm, cdt, cdn);
@@ -39,11 +42,29 @@ var calculate_time_frame = function(frm, cdt, cdn) {
 	frm.refresh_field('objectives');
 };
 
+var update_existing_values = function(frm,cdt,cdn){
+	
+	
+	var child = locals[cdt][cdn];
+	let id = child.name
+	
+	if(!id.includes('new')){
+		frm.doc.key_results.forEach((item,index,arr)=>{
+			
+			if(item.matched_row == id){
+				item.objective = child.objective
+			}
+		})
+		frm.refresh_fields()
+	}
+
+}
 var set_objective_option_to_kr = function(frm) {
   var options = [''];
   frm.doc.objectives.forEach((item, i) => {
     options[i+1] = item.objective
   });
-  frappe.meta.get_docfield("OKR Performance Profile Key Result", "objective", frm.doc.name).options = options;
+
+  frm.fields_dict.key_results.grid.update_docfield_property('objective','options',options);
   frm.refresh_field('key_results');
 };

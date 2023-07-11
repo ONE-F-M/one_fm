@@ -477,6 +477,7 @@ override_doctype_class = {
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
     "Job Offer": "one_fm.overrides.job_offer.JobOfferOverride",
+    "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride"
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
