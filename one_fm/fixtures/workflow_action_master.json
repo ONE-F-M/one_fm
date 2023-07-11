@@ -2,6 +2,27 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2023-07-03 11:27:33.950047",
+  "name": "Post as Draft",
+  "workflow_action_name": "Post as Draft"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-07-03 11:41:25.533758",
+  "name": "Publish",
+  "workflow_action_name": "Publish"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-07-03 11:51:26.039133",
+  "name": "Request Cancel",
+  "workflow_action_name": "Request Cancel"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2023-05-22 13:17:38.784574",
   "name": "Submit to Purchase Officer",
   "workflow_action_name": "Submit to Purchase Officer"

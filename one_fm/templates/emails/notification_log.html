@@ -1,0 +1,55 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, .notification_log td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      width: 30%;
+      text-align: left;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #ddd;
+    }
+    
+    </style>
+    
+    <h3>{{ header }}</h3>
+    <table>
+      <tbody class="notification_log">
+        <tr>
+          <th>Document Name</th>
+          <td>{{ document_name }}</td>
+        </tr>
+        <tr>
+          <th>Document Type</th>
+          <td>{{ document_type }}</td>
+        </tr>
+        <tr>
+          <th>Description</th>
+          <td>{{ description }}</td>
+        </tr>
+        <tr>
+          <th>Content</th>
+          <td>{{ body_content }}</td>
+        </tr>
+        <tr>
+          <th>Document Link</th>
+          <td>{{ doc_link }}</td>
+        </tr>
+      </tbody>
+    </table>
+    
