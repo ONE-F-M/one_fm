@@ -3,7 +3,7 @@ import frappe
 def execute():
 	query = """
 		update
-			`tabTodo` as t,
+			`tabToDo` as t,
 			`tabShift Permission` as sp
 		set
 			t.status = 'Closed'
