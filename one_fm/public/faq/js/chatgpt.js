@@ -1,4 +1,4 @@
-const chat = document.getElementById("chatbot-chat");
+const chat = document.getElementById("chat-intro");
 
 
 $("#chatbot-open-container").click(function(){
@@ -20,6 +20,7 @@ function newInput(){
   if (newText != ""){
     document.getElementById("chatbot-input").value = "";
     addMessage("sent", newText);
+    $('#chat-bubble').show();
     generateResponse(newText);
   }
 }
@@ -48,9 +49,11 @@ function generateResponse(prompt){
       callback: function(r) {
         console.log(r)
         if(r.message != 'None') {
+          $('#chat-bubble').hide();
           addMessage("received", r.message);
         }
         else{
+          $('#chat-bubble').hide();
           addMessage("received", "I'm Sorry! I didnt get that");
         }
       },
@@ -58,6 +61,7 @@ function generateResponse(prompt){
   
   }
   else{
+    $('#chat-bubble').hide();
     addMessage("received", "I'm Sorry! I didnt get that");
   }
   
