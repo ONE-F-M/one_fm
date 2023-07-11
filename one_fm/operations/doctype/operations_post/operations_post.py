@@ -166,20 +166,20 @@ def queue_create_post_schedule_for_operations_post(operations_post, contracts, e
         post_abbrv = frappe.db.get_value("Operations Role", operations_post.post_template, ["post_abbrv"])
         naming_series = NamingSeries('PS-')
         ps_name_idx = previous_series = naming_series.get_current_value()
-        last_doc_name = get_last_id()
+        doc_id_template = "-".join(["PS",str(datetime.datetime.now().microsecond),operations_post.name[0:5].upper(),post_abbrv.upper()])
         #The previous series value from frappe is wrong in some cases
-        ps_name_idx = last_doc_name if last_doc_name > ps_name_idx else ps_name_idx
+        
         for date in	pd.date_range(start=start_date, end=contracts.end_date):
             schedule_exists = False
             if exists_schedule_in_between:
-                if not frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": operations_post.name}):
+                if  frappe.db.exists("Post Schedule", {"date": cstr(date.date()),'operations_role': operations_post.post_template, "post": operations_post.name}):
                     schedule_exists = True
             if not schedule_exists:
                 ps_name_idx += 1
                 ps_name = 'PS-'+str(ps_name_idx).zfill(5)
                 query += f"""
                     (
-                        "{ps_name}", "{operations_post.name}", "{operations_post.post_template}", "{post_abbrv}",
+                        "{doc_id_template}", "{operations_post.name}", "{operations_post.post_template}", "{post_abbrv}",
                         "{operations_post.site_shift}", "{operations_post.site}", "{operations_post.project}",
                         '{cstr(date.date())}', 'Planned', "{owner}", "{owner}", "{creation}", "{creation}", '0'
                     ),"""
