@@ -704,10 +704,6 @@ def fetch_non_shift(date, s_type):
 def assign_am_shift():
 	date = cstr(getdate())
 	end_previous_shifts("AM")
-	non_shift = fetch_non_shift(date, "AM")
-	if non_shift:
-		create_shift_assignment(non_shift, date, 'AM')
-
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
@@ -722,16 +718,16 @@ def assign_am_shift():
 				SELECT name from `tabEmployee` e
 				WHERE e.status = "Active")
 	""".format(date=cstr(date)), as_dict=1)
+
+	non_shift = fetch_non_shift(date, "AM")
+	if non_shift:
+		roster.extend(non_shift)
+
 	create_shift_assignment(roster, date, 'AM')
 
 def assign_pm_shift():
 	date = cstr(getdate())
 	end_previous_shifts("PM")
-	
-	non_shift = fetch_non_shift(date, "PM")
-	if non_shift:
-		create_shift_assignment(non_shift, date, 'PM')
-
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
@@ -746,6 +742,11 @@ def assign_pm_shift():
 				SELECT name from `tabEmployee` e
 				WHERE e.status = "Active")
 	""".format(date=cstr(date)), as_dict=1)
+
+	non_shift = fetch_non_shift(date, "PM")
+	if non_shift:
+		roster.extend(non_shift)
+
 	create_shift_assignment(roster, date, 'PM')
 
 
