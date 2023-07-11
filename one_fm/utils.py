@@ -2281,7 +2281,7 @@ def notify_on_close(doc, method):
 
         if doc.description and strip_html(doc.description):
             # striphtml is used to get data without html tags, text editor will have a Defualt html <div class="ql-editor read-mode"><p><br></p></div>
-            msg_html += f"<b>Issue Description:</b><br/>{doc.description}"
+            msg_html += f"""<b>Issue Description:</b><br/>{doc.description}"""
 
         msg = msg_html.format(user = user_full_name, issue_id = doc.name, url= doc.get_url(), subject=doc.subject)
 
