@@ -136,7 +136,7 @@ def get_post_schedules(project, post, first_day, last_day):
 			"date": ['BETWEEN', [first_day, last_day]],
 			"project": project,
 			"post": post.name,
-			# 'post_status': 'Planned'
+			'post_status': 'Planned'
 		}
 	)
 
