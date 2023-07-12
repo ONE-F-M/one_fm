@@ -1,8 +1,9 @@
 from datetime import timedelta, datetime
+import random
 from dateutil.parser import parse
 import frappe
 from frappe import _
-from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days, now
+from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days, now, today
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
@@ -292,3 +293,19 @@ def calculate_time_diffrence_for_checkin(shift_time, checkin_time):
 	if the_diff[0] < 1:
 		return [the_diff[1]]
 	return list(the_diff)
+
+
+def auto_generate_checkin():
+	date = today()
+	start_date = datetime.now()
+	print(date)
+	employee_list = frappe.db.sql(f"""SELECT e.auto_attendance, e. sa.start_datetime, sa.end_datetime 
+									from `tabEmployee` as e, `tabShift Assignment` as sa
+									WHERE sa.start_date = '{date}'
+					""", as_dict=1)
+	print(employee_list)
+
+	end_date = start_date + timedelta(minutes=60)
+
+	random_date = start_date + (end_date - start_date) * random.random()
+	print(random_date)
