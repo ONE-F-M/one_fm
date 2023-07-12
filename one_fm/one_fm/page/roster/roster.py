@@ -1,7 +1,7 @@
 from pandas.core.indexes.datetimes import date_range
 from datetime import datetime
 from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
-from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, get_datetime
+from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, get_datetime, today
 import pandas as pd, numpy as np
 from frappe import _
 import json, multiprocessing, os, time, itertools, frappe
@@ -941,13 +941,14 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
         if cint(selected_dates):
             for employee in json.loads(employees):
                 date = employee['date']
-                name = f"{date}_{employee['employee']}_{roster_type}"
-                id_list.append(name)
-                querycontent += f"""(
-                    "{name}", "{employee["employee"]}", "{date}", "", "", "", 
-                    '', "Day Off", "", "", "Basic", 
-                    0, "{owner}", "{owner}", "{creation}", "{creation}"
-                ),"""
+                if getdate(date)>getdate(today()):
+                    name = f"{date}_{employee['employee']}_{roster_type}"
+                    id_list.append(name)
+                    querycontent += f"""(
+                        "{name}", "{employee["employee"]}", "{date}", "", "", "", 
+                        '', "Day Off", "", "", "Basic", 
+                        0, "{owner}", "{owner}", "{creation}", "{creation}"
+                    ),"""
         else:
             if repeat and repeat_freq in ["Daily", "Weekly", "Monthly", "Yearly"]:
                 end_date = None
@@ -965,13 +966,14 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             else:
                                 frappe.throw(_("No contract linked with project {project}".format(project=project)))
                         for date in	pd.date_range(start=employee["date"], end=end_date):
-                            name = f"{date.date()}_{employee['employee']}_{roster_type}"
-                            id_list.append(name)
-                            querycontent += f"""(
-                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                '', "Day Off", "", "", "Basic", 
-                                0, "{owner}", "{owner}", "{creation}", "{creation}"
-                            ),"""
+                            if getdate(date)>getdate(today()):
+                                name = f"{date.date()}_{employee['employee']}_{roster_type}"
+                                id_list.append(name)
+                                querycontent += f"""(
+                                    "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
+                                    '', "Day Off", "", "", "Basic", 
+                                    0, "{owner}", "{owner}", "{creation}", "{creation}"
+                                ),"""
 
                 elif repeat_freq == "Weekly":
                     for employee in json.loads(employees):
@@ -984,7 +986,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             else:
                                 frappe.throw(_("No contract linked with project {project}".format(project=project)))
                         for date in	pd.date_range(start=employee["date"], end=end_date):
-                            if getdate(date).strftime('%A') in week_days:
+                            if getdate(date).strftime('%A') in week_days and getdate(date)>getdate(today()):
                                 name = f"{date.date()}_{employee['employee']}_{roster_type}"
                                 id_list.append(name)
                                 querycontent += f"""(
@@ -1004,13 +1006,14 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             else:
                                 frappe.throw(_("No contract linked with project {project}".format(project=project)))
                         for date in	month_range(employee["date"], end_date):
-                            name = f"{date.date()}_{employee['employee']}_{roster_type}"
-                            id_list.append(name)
-                            querycontent += f"""(
-                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                '', "Day Off", "", "", "Basic", 
-                                0, "{owner}", "{owner}", "{creation}", "{creation}"
-                            ),"""
+                            if getdate(date)>getdate(today()):
+                                name = f"{date.date()}_{employee['employee']}_{roster_type}"
+                                id_list.append(name)
+                                querycontent += f"""(
+                                    "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
+                                    '', "Day Off", "", "", "Basic", 
+                                    0, "{owner}", "{owner}", "{creation}", "{creation}"
+                                ),"""
 
                 elif repeat_freq == "Yearly":
                     for employee in json.loads(employees):
@@ -1023,13 +1026,14 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             else:
                                 frappe.throw(_("No contract linked with project {project}".format(project=project)))
                         for date in	pd.date_range(start=employee["date"], end=end_date, freq=pd.DateOffset(years=1)):
-                            name = f"{date.date()}_{employee['employee']}_{roster_type}"
-                            id_list.append(name)
-                            querycontent += f"""(
-                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                '', "Day Off", "", "", "Basic", 
-                                0, "{owner}", "{owner}", "{creation}", "{creation}"
-                            ),"""
+                            if getdate(date)>getdate(today()):
+                                name = f"{date.date()}_{employee['employee']}_{roster_type}"
+                                id_list.append(name)
+                                querycontent += f"""(
+                                    "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
+                                    '', "Day Off", "", "", "Basic", 
+                                    0, "{owner}", "{owner}", "{creation}", "{creation}"
+                                ),"""
 
         if querycontent:
             querycontent = querycontent[:-1]
