@@ -1,4 +1,5 @@
 import frappe, os
+from frappe.utils import cstr
 from one_fm.utils import production_domain
 
 def comment_timesheet_in_hrms():
@@ -87,6 +88,11 @@ def set_files_directories():
     """
         Set files and directories if not exists
     """
-    user_files_path = frappe.utils.get_bench_path()+'/sites/'+frappe.utils.get_site_base_path().replace('./', '')+'/private/files/user'
-    if not os.path.exists(user_files_path):
-        os.mkdir(user_files_path)
+    bench_path = frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/'
+    private = "private/"
+    public = "public/"
+    user_files_path = "private/files/user"
+    user_magic_link = "private/files/user/magic_link"
+    for i in [user_files_path, user_magic_link]:
+        if not os.path.exists(bench_path+i):
+            os.mkdir(bench_path+i)

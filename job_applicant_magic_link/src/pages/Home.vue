@@ -1,5 +1,5 @@
 <script>
-import { Dialog, createResource } from 'frappe-ui'
+import { Dialog, createResource, frappeRequest } from 'frappe-ui'
 import Swal from 'sweetalert2'
 
 export default {
@@ -94,7 +94,7 @@ export default {
           reader.onload = function() {
             let result = reader.result;
             result = result.replace(/^data:image\/\w+;base64,/, "");
-            me.imageFiles[el.id]=result
+            me.imageFiles[el.id]={data:result, name:el.files[0].name, type:el.files[0].type, size:el.files[0].size}
           };
         }
         
@@ -119,6 +119,16 @@ export default {
         method: 'POST',
         onSuccess(data) {
           console.log(data)
+          if(data.mindee){
+            // update dom with mindee
+            Swal.fire(
+              'Passport Uploaded',
+              `Your passport data has been uploaded, complete the form below to fill any missing/incorrect data.\n
+              All * fields in red must be filled, please fill it.`,
+              'success'
+            )
+            me.loadContent();
+          }
         },
       })
       uploadImage.fetch()
@@ -127,11 +137,12 @@ export default {
       // if any image was found and process, upload it
     },
     putField(e){ // update field on change
+      console.log(e)
       if(e.target.value){
         // update job applicant
         let params = {}
         params[e.target.name] = e.target.value
-        console.log(`/api/resource/Job Applicant/${this.job_applicant.name}`)
+        console.log(`/api/resource/Job Applicant/${this.job_applicant.name}`, params)
         let job_applicant = createResource({
           url: `/api/resource/Job Applicant/${this.job_applicant.name}`,
           params: params,
@@ -205,10 +216,10 @@ export default {
                             </h2>
                             <hr>
                             <div class="row">
-                                    <div class="form-group col-md-12">
-                                        <label  for="file">International Passport Data Page</label>
-                                        <input class="form-control" type="file" id="passport_data_page" placeholder="Passport Data"  name="passport_data_page"  accept="image/png, image/jpeg" :onchange="previewImage">
-                                    </div>
+                                  <div class="form-group col-md-12">
+                                      <label  for="file">International Passport Data Page</label>
+                                      <input class="form-control" type="file" id="passport_data_page" placeholder="Passport Data"  name="passport_data_page"  accept="image/png, image/jpeg" :onchange="previewImage">
+                                  </div>
                             </div>
                             <div class="row">
                                 <div class="form-group col-md-6">
@@ -349,6 +360,13 @@ export default {
                                       </div>
                                     </div>
                                     <div class="col-md-4">
+                                      <div class="form-group">
+                                          <label class="form-label text-danger" for="country">Country *</label>
+                                          <select class="form-control input2" id="country" name="country" aria-placeholder="Select Your Country"  required=1 v-model="job_applicant.country" :onchange="putField">
+                                              <option value=""></option>
+                                              <option :value="country.name" v-for="country in countries">{{country.name}}</option>
+                                          </select>
+                                      </div>
                                       <div class="form-group">
                                           <label class="form-label text-danger" for="one_fm_nationality">Nationality *</label>
                                           <select class="form-control input2" id="one_fm_nationality" name="one_fm_nationality" aria-placeholder="Select Your Nationality"  required=1 v-model="job_applicant.one_fm_nationality" :onchange="putField">
