@@ -769,6 +769,13 @@
     "parenttype": "DocType Layout"
    },
    {
+    "fieldname": "auto_attendance",
+    "label": "Auto Attendance_1",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
     "fieldname": "shift_working_html",
     "label": "Shift Working Html",
     "parent": "Employee",
@@ -1446,9 +1453,16 @@
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
+   },
+   {
+    "fieldname": "non_kuwaiti_residents",
+    "label": "Non Kuwaiti Resident",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
    }
   ],
-  "modified": "2023-03-21 10:36:26.733046",
+  "modified": "2023-07-12 16:21:32.248507",
   "name": "Employee",
   "route": "app/employee/"
  }
