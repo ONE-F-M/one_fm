@@ -294,10 +294,10 @@ def calculate_time_diffrence_for_checkin(shift_time, checkin_time):
 		return [the_diff[1]]
 	return list(the_diff)
 
-
+@frappe.whitelist()
 def auto_generate_checkin():
 	date = today()
-	employee_list = frappe.db.sql(f"""SELECT e.name as ename, sa.name as sname, sa.start_datetime, sa.end_datetime
+	employee_list = frappe.db.sql(f"""SELECT e.name as ename, sa.name as sname, sa.start_datetime, sa.end_datetime, sa.start_date
 									from `tabEmployee` as e, `tabShift Assignment` as sa
 									WHERE e.auto_attendance = 1
 									AND sa.employee = e.name
@@ -305,20 +305,23 @@ def auto_generate_checkin():
 					""", as_dict=1)
 	
 	if employee_list:
-		for e in employee_list:
-			checkin_time = e.start_datetime + (e.start_datetime + timedelta(minutes=60) - e.start_datetime) * random.random()
-			checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=60) - e.end_datetime) * random.random()
-			create_checkin_record(e.ename, "IN", checkin_time,checkout_time)
-			create_checkin_record(e.ename, "OUT", checkin_time,checkout_time)
+		frappe.enqueue(proecess_list, employee_list=employee_list, is_async=True, queue='long')
 
-def create_checkin_record(employee, log_type, checkin_time, checkout_time):
+def proecess_list(employee_list):
+	for e in employee_list:
+		checkin_time = e.start_datetime + (e.start_datetime + timedelta(minutes=60) - e.start_datetime) * random.random()
+		checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=60) - e.end_datetime) * random.random()
+		create_checkin_record(e.ename, "IN", checkin_time)
+		create_checkin_record(e.ename, "OUT", checkout_time)
+
+def create_checkin_record(employee, log_type, time):
 	employee_checkin = frappe.new_doc('Employee Checkin')
 	employee_checkin.employee = employee
 	employee_checkin.log_type = log_type
-	employee_checkin.time = checkin_time if log_type == "IN" else checkout_time
+	employee_checkin.time = time
 	employee_checkin.flags.ignore_validate = True
 	employee_checkin.save(ignore_permissions=True)
-	employee_checkin.db_set('creation', str(checkin_time) if employee_checkin.log_type == "IN" else str(checkout_time))
-	employee_checkin.db_set('actual_time', str(checkin_time) if employee_checkin.log_type == "IN" else str(checkout_time))
+	employee_checkin.db_set('creation', str(time))
+	employee_checkin.db_set('actual_time', str(time))
 	frappe.db.commit()
 		
