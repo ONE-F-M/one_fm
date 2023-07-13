@@ -100,7 +100,30 @@ frappe.ui.form.on('Contracts', {
 	},
 	refresh:function(frm){
 		// create delivery note and reroute to the form in draft mode
+		
+		if (frm.doc.workflow_state == "Active" && frappe.user_roles.includes("Operations Manager")){
 
+			//  Amend contract
+			frm.add_custom_button(__("Create Missing Post Schedules"), function() {
+				frappe.call({
+						
+						method: 'one_fm.operations.doctype.operations_post.operations_post.create_new_schedule_for_project',
+						args: {proj:frm.doc.project},
+						callback: function(r) {
+							if(!r.exc){
+								frappe.show_alert({
+										message:__('Post Schedules are being created in the background.'),
+										indicator:'green'
+								}, 5);
+								
+							}
+						},
+						
+					})
+			});
+
+		}
+		
 
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
 
