@@ -305,9 +305,10 @@ def auto_generate_checkin():
 					""", as_dict=1)
 	
 	if employee_list:
-		frappe.enqueue(proecess_list, employee_list=employee_list, is_async=True, queue='long')
+		process_list(employee_list)
+		# frappe.enqueue(proecess_list, employee_list=employee_list, is_async=True, queue='long')
 
-def proecess_list(employee_list):
+def process_list(employee_list):
 	for e in employee_list:
 		checkin_time = e.start_datetime + (e.start_datetime + timedelta(minutes=60) - e.start_datetime) * random.random()
 		checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=60) - e.end_datetime) * random.random()
