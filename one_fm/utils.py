@@ -45,6 +45,8 @@ from frappe.permissions import has_permission
 from frappe.desk.form.linked_with import get_linked_fields
 from frappe.model.workflow import apply_workflow
 
+from deep_translator import GoogleTranslator
+
 
 def get_common_email_args(doc):
 	doctype = doc.get("doctype")
@@ -1662,17 +1664,17 @@ def create_job_offer_from_job_applicant(job_applicant):
         job_offer.offer_date = today()
         if job_app.one_fm_erf:
             erf = frappe.get_doc('ERF', job_app.one_fm_erf)
-            set_erf_details(job_offer, erf)
+            set_erf_details(job_offer, erf, job_app)
         job_offer.save(ignore_permissions = True)
 
-def set_erf_details(job_offer, erf):
+def set_erf_details(job_offer, erf, job_app):
     job_offer.erf = erf.name
     if not job_offer.designation:
         job_offer.designation = erf.designation
     job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
     job_offer.one_fm_provide_transportation_by_company = erf.provide_transportation_by_company
     set_salary_details(job_offer, erf)
-    set_other_benefits_to_terms(job_offer, erf)
+    set_other_benefits_to_terms(job_offer, erf, job_app)
 
 def set_salary_details(job_offer, erf):
     job_offer.one_fm_provide_salary_advance = erf.provide_salary_advance
@@ -1685,7 +1687,7 @@ def set_salary_details(job_offer, erf):
         salary_details.amount = salary.amount
     job_offer.one_fm_job_offer_total_salary = total_amount
 
-def set_other_benefits_to_terms(job_offer, erf):
+def set_other_benefits_to_terms(job_offer, erf, job_app):
     # if erf.other_benefits:
     #     for benefit in erf.other_benefits:
     #         terms = job_offer.append('offer_terms')
@@ -1710,7 +1712,7 @@ def set_other_benefits_to_terms(job_offer, erf):
     vacation_days = erf.vacation_days if erf.vacation_days else 30
     terms = job_offer.append('offer_terms')
     terms.offer_term = 'Working Hours'
-    terms.value = str(hours)+' hours a day, (Subject to Operational Requirements), '+str(erf.number_of_days_off)+' days off per '+str(erf.day_off_category)
+    terms.value = str(hours)+' hours a day, (Subject to Operational Requirements), '+str(job_app.number_of_days_off)+' days off per '+str(job_app.day_off_category)
     terms = job_offer.append('offer_terms')
     terms.offer_term = 'Annual Leave'
     terms.value = '('+str(vacation_days)+') days paid leave, as per Kuwait Labor Law (Private Sector)'
@@ -3108,3 +3110,14 @@ def change_item_details(item, item_name=False, description=False):
         item_obj.db_set("description", description)
     item_obj.db_set("change_request", True)
     apply_workflow(item_obj, "Change Request")
+
+
+def translate_words(word: str, target_language_code: str="ar") -> str:
+    if word:
+        try:
+            translated = GoogleTranslator(source='auto', target=target_language_code).translate(word)
+            return translated
+        except:
+            frappe.log_error(frappe.get_traceback(), "Error while translating word")
+            return word
+    return word
