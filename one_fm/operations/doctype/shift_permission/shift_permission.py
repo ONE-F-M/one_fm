@@ -108,7 +108,7 @@ class ShiftPermission(Document):
 
 	def validate_approver(self):
 		if self.workflow_state in ["Approved", "Rejected"]:
-			if frappe.session.user not in [self.approver_user_id, 'abdullah@one-fm.com']:
+			if frappe.session.user not in [self.approver_user_id, 'abdullah@one-fm.com', 'administrator', 'Administrator']:
 				frappe.throw(_("This document can only be approved/rejected by the approver."))
 
 	def on_submit(self):
