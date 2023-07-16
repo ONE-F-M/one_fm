@@ -20,7 +20,7 @@ def get_magic_link():
     """
     result = {}
     try:
-        
+        url = 'http://localhost:8003' #frappe.utils.get_url()
         if frappe.form_dict.magic_link:
             decrypted_magic_link = decrypt(frappe.form_dict.magic_link)
             if (frappe.db.exists("Magic Link", {'name':decrypted_magic_link})):
@@ -47,6 +47,34 @@ def get_magic_link():
                     result['countries'] = countries_dict
                     result['genders'] = [i.name for i in frappe.get_all("Gender")]
                     result['religions'] = [i.name for i in frappe.get_all("Religion")]
+                    attachments = [i for i in 
+                        frappe.db.get_all("File", {'attached_to_doctype':job_applicant.doctype, 
+                                'attached_to_name':job_applicant.name}, "*") 
+                        if (i.file_name.startswith('passport-') or i.file_name.startswith('civil_id_'))
+                    ]
+                    result['attachments'] = []
+                    for i in attachments:
+                        if i.file_name.startswith("passport-"):
+                            result['attachments'].append({
+                                'name':i.file_name,
+                                'image':url+i.file_url,
+                                'id':'passport_data_page',
+                                'placeholder':'Passport Data Page'
+                            })
+                        elif i.file_name.startswith("civil_id_front-"):
+                            result['attachments'].append({
+                                'name':i.file_name,
+                                'image':url+i.file_url,
+                                'id':'civil_id_front',
+                                'placeholder':'Civil ID Front'
+                            })
+                        elif i.file_name.startswith("civil_id_back-"):
+                            result['attachments'].append({
+                                'name':i.file_name,
+                                'image':url+i.file_url,
+                                'id':'civil_id_back',
+                                'placeholder':'Civil ID Back'
+                            })
             else:
                 result = {}
         else:
@@ -125,6 +153,7 @@ def upload_image():
                     frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_gender', v)
                 if(k=="surname" and v):
                     frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_last_name', v)
+                    frappe.db.set_value(reference_doctype, reference_docname, 'applicant_name', frappe.db.get_value(reference_doctype, reference_docname, 'one_fm_first_name') + ' ' + v)
                 if(k=="birth_date" and v):
                     frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_date_of_birth', v)
                 if(k=="id_number" and v):
@@ -150,3 +179,17 @@ def upload_image():
         
 
     return {}
+
+@frappe.whitelist(allow_guest=True)
+def update_job_applicant():
+    try:
+        data = frappe.form_dict
+        frappe.db.set_value(data.doctype, data.docname, data.field, data.value)
+        if data.field=='one_fm_last_name':
+            frappe.db.set_value(data.doctype, data.docname, 'applicant_name', frappe.db.get_value(data.doctype, data.docname, 'one_fm_first_name') + ' ' + data.value)
+        if data.field=='one_fm_first_name':
+            frappe.db.set_value(data.doctype, data.docname, 'applicant_name', data.value+' '+frappe.db.get_value(data.doctype, data.docname, 'one_fm_first_name'))
+    except Exception as e:
+        return {'error':str(e)}
+
+    return {'msg':'success'}

@@ -61,6 +61,24 @@ export default {
             this.countries = data.countries;
             this.genders = data.genders;
             this.religions = data.religions;
+            if (data.attachments.length){
+              document.getElementById("image_preview").innerHTML = null; // clear image preview
+              data.attachments.forEach(d => {
+                var preview_el = document.createElement("div");
+                preview_el.classList="col-md-6"
+                preview_el.innerHTML = `
+                  <h4>${d.placeholder}</h4>
+                  <img src="" alt="${d.id}" id="${d.id}-preview"style="height: 350px;">
+                `;
+                document.getElementById("image_preview").appendChild(preview_el);
+                document.getElementById(`${d.id}-preview`).src = d.image;
+                if (d.name.startsWith('passport-')){
+                  document.querySelector('#'+d.id).parentNode.parentNode.style.display = 'none';
+                } else if (d.name.startsWith('civil_id_')){
+                  document.querySelector('#'+d.id).parentNode.style.display = 'none';
+                }
+              });
+            }
           }
         })       
       }
@@ -73,8 +91,7 @@ export default {
         preview_el.classList="col-md-6"
         preview_el.innerHTML = `
           <h4>${e.target.placeholder}</h4>
-            <img src="" alt="${e.target.placeholder}" id="${e.target.id}-preview" class="form-control" style="height: 350px;">
-          </div>
+          <img src="" alt="${e.target.placeholder}" id="${e.target.id}-preview" style="height: 350px;">
         `;
         document.getElementById("image_preview").appendChild(preview_el);
         document.getElementById(`${e.target.id}-preview`).src = window.URL.createObjectURL(e.target.files[0]);
@@ -132,33 +149,44 @@ export default {
         },
       })
       uploadImage.fetch()
-      console.log(uploadImage)
+        console.log(uploadImage)
       }
       // if any image was found and process, upload it
     },
     putField(e){ // update field on change
-      console.log(e)
+      let me = this;
       if(e.target.value){
         // update job applicant
-        let params = {}
-        params[e.target.name] = e.target.value
-        console.log(`/api/resource/Job Applicant/${this.job_applicant.name}`, params)
+        let params = {field:e.target.name, value:e.target.value, doctype:me.job_applicant.doctype,
+          docname:me.job_applicant.name
+        }
         let job_applicant = createResource({
-          url: `/api/resource/Job Applicant/${this.job_applicant.name}`,
+          url: '/api/method/one_fm.www.job_applicant_magic_link.index.update_job_applicant',
           params: params,
-          method: 'PUT',
+          method: 'POST',
         })
-        job_applicant.fetch()
+        job_applicant.fetch().then(res=>{
+          if(res.error){
+            Swal.fire(
+              'Error',
+              res.error,
+              'warning'
+            )
+          }
+        })
 
       } else {
         if (e.target.required){
           Swal.fire(
-          'Error',
-          `All * fields in red must be filled, please fill it.`,
-          'warning'
-        )
+            'Error',
+            `All * fields in red must be filled, please fill it.`,
+            'warning'
+          )
         }
       }
+    },
+    submitForm(e){
+      console.log(e)
     }
   },
   watch: {
@@ -221,7 +249,7 @@ export default {
                                       <input class="form-control" type="file" id="passport_data_page" placeholder="Passport Data"  name="passport_data_page"  accept="image/png, image/jpeg" :onchange="previewImage">
                                   </div>
                             </div>
-                            <div class="row">
+                            <div class="row" :style="job_applicant.civil_id_reqd ? 'display:block':'display:none'">
                                 <div class="form-group col-md-6">
                                     <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
                                     <input class="form-control" type="file" id="civil_id_front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg" :onchange="previewImage">
@@ -261,7 +289,7 @@ export default {
                             </div>
 
                             <div class="form-container">
-                                <form class="form" id="perdonal-detail">
+                                <form class="form" id="perdonal-detail" @submit.prevent="submitForm">
                                     <h2>Personal Details</h2>
                                     <hr>
                                   <div class="row">
@@ -466,8 +494,9 @@ export default {
                                   <br>
                                   <div>
                                       <!-- <button class="btn btn-dark" type="button" href="json.json" value="save" id="saveForm" onclick="Save()" >Save</button> -->
-                                      <button class="btn btn-dark" type="button" href="json.json" value="submit" id="submitForm" onclick="Submit()" disabled="disabled" >Submit</button>
+                                      <button class="btn btn-dark" id="submitForm" type="submit" disabled="disabled" >Submit</button>
                                   </div>
+                                  <hr>
                                 </form>
 
                             </div>
