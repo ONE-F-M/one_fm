@@ -305,8 +305,7 @@ def auto_generate_checkin():
 					""", as_dict=1)
 	
 	if employee_list:
-		process_list(employee_list)
-		# frappe.enqueue(proecess_list, employee_list=employee_list, is_async=True, queue='long')
+		frappe.enqueue(process_list, employee_list=employee_list, is_async=True, queue='long')
 
 def process_list(employee_list):
 	for e in employee_list:
