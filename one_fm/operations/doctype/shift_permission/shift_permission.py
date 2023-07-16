@@ -215,7 +215,7 @@ def create_checkin(shift_permission):
 		'shift_permission':shift_permission.name
 		}):
 		if not shift_permission.workflow_state == 'Approved':
-			shift_permission.db.set('workflow_state', "Approved")
+			shift_permission.db_set('workflow_state', "Approved")
 			shift_permission.reload()
 			frappe.db.commit()
 		# Get shift details for the employee shift_assignment = frappe.get_doc("Shift Assignment", shift_permission.assigned_shift)
