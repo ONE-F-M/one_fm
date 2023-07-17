@@ -3750,6 +3750,7 @@
   "doctype": "Property Setter",
   "doctype_or_field": "DocField",
   "field_name": "status",
+  "allow_on_submit":1,
   "is_system_generated": 0,
   "modified": "2023-02-01 18:16:03.017012",
   "module": "One Fm",
@@ -3757,7 +3758,7 @@
   "property": "options",
   "property_type": "Select",
   "row_name": null,
-  "value": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nHoliday"
+  "value": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nHoliday\nOn Hold"
  },
  {
   "default_value": null,
@@ -3910,6 +3911,7 @@
   "doctype": "Property Setter",
   "doctype_or_field": "DocField",
   "field_name": "working_hours",
+  "allow_on_submit":1,
   "is_system_generated": 0,
   "modified": "2023-02-04 18:29:58.997619",
   "module": null,
