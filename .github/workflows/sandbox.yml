@@ -28,7 +28,7 @@ jobs:
           git fetch upstream sandbox
           git reset --hard FETCH_HEAD
           cd /home/frappe/frappe-bench
-          bench setup requirements
+          #bench setup requirements
           bench migrate # sync database
           bench restart # we remove any unused dependencies
           bench doctor
