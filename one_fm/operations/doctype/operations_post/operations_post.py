@@ -97,8 +97,8 @@ class OperationsPost(Document):
         if not self.site_shift:
             frappe.throw("Shift cannot be empty.")
 
-        if(frappe.db.get_value('Operations Role', self.post_template, 'shift') != self.site_shift):
-            frappe.throw(f"Operations Role ({self.post_template}) does not belong to selected shift ({self.site_shift})")
+        # if(frappe.db.get_value('Operations Role', self.post_template, 'shift') != self.site_shift):
+        #     frappe.throw(f"Operations Role ({self.post_template}) does not belong to selected shift ({self.site_shift})")
 
         self.validate_operations_role_status()
         # check if operations site inactive
