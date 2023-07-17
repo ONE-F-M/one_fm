@@ -146,7 +146,7 @@ class LeaveApplicationOverride(LeaveApplication):
                 return
             email_template = frappe.get_doc("Email Template", template)
             message = frappe.render_template(email_template.response_html, args)
-            print(message)
+        
             if self.proof_documents:
                 proof_doc = self.proof_documents
                 for p in proof_doc:
