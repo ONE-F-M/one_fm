@@ -93,6 +93,8 @@ def set_files_directories():
     public = "public/"
     user_files_path = "private/files/user"
     user_magic_link = "private/files/user/magic_link"
+    user_files_path = "public/files/user"
+    user_magic_link = "public/files/user/magic_link"
     for i in [user_files_path, user_magic_link]:
         if not os.path.exists(bench_path+i):
             os.mkdir(bench_path+i)

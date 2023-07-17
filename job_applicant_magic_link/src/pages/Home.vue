@@ -471,14 +471,14 @@ export default {
                                           <label class="form-label text-danger" for="one_fm_place_of_birth">Place of Birth *</label>
                                           <select class="form-control input2" id="one_fm_place_of_birth" name="one_fm_place_of_birth" aria-placeholder="Select Your Birth Place" required=1 v-model="job_applicant.one_fm_place_of_birth" :onchange="putField">
                                             <option value=""></option>
-                                            <option :value="country" v-for="country in countries">{{country.name}}</option>
+                                            <option :value="country.name" v-for="country in countries">{{country.name}}</option>
                                           </select>
                                       </div>
                                       <div class="form-group">
                                           <label class="form-label text-danger" for="one_fm_passport_holder_of">Passport Place of Issue *</label>
                                           <select class="form-control input2" id="one_fm_passport_holder_of" name="one_fm_passport_holder_of" aria-placeholder="Select Place of Issue" required=1 v-model="job_applicant.one_fm_passport_holder_of" :onchange="putField">
                                             <option value=""></option>
-                                            <option :value="country" v-for="country in countries">{{country.name}}</option>
+                                            <option :value="country.name" v-for="country in countries">{{country.name}}</option>
                                           </select>
                                       </div>
                                     </div>

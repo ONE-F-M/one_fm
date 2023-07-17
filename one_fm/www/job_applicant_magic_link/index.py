@@ -47,34 +47,28 @@ def get_magic_link():
                     result['countries'] = countries_dict
                     result['genders'] = [i.name for i in frappe.get_all("Gender")]
                     result['religions'] = [i.name for i in frappe.get_all("Religion")]
-                    attachments = [i for i in 
-                        frappe.db.get_all("File", {'attached_to_doctype':job_applicant.doctype, 
-                                'attached_to_name':job_applicant.name}, "*") 
-                        if (i.file_name.startswith('passport-') or i.file_name.startswith('civil_id_'))
-                    ]
                     result['attachments'] = []
-                    for i in attachments:
-                        if i.file_name.startswith("passport-"):
-                            result['attachments'].append({
-                                'name':i.file_name,
-                                'image':url+i.file_url,
-                                'id':'passport_data_page',
-                                'placeholder':'Passport Data Page'
-                            })
-                        elif i.file_name.startswith("civil_id_front-"):
-                            result['attachments'].append({
-                                'name':i.file_name,
-                                'image':url+i.file_url,
-                                'id':'civil_id_front',
-                                'placeholder':'Civil ID Front'
-                            })
-                        elif i.file_name.startswith("civil_id_back-"):
-                            result['attachments'].append({
-                                'name':i.file_name,
-                                'image':url+i.file_url,
-                                'id':'civil_id_back',
-                                'placeholder':'Civil ID Back'
-                            })
+                    if job_applicant.passport_data_page:
+                        result['attachments'].append({
+                            'name':job_applicant.passport_data_page.split('/files/')[-1],
+                            'image':url+job_applicant.passport_data_page,
+                            'id':'passport_data_page',
+                            'placeholder':'Passport Data Page'
+                        })
+                    if job_applicant.civil_id_front:
+                        result['attachments'].append({
+                            'name':i.job_applicant.civil_id_front.split('/files/')[-1],
+                            'image':url+job_applicant.civil_id_front,
+                            'id':'civil_id_front',
+                            'placeholder':'Civil ID Front'
+                        })
+                    if job_applicant.civil_id_back:
+                        result['attachments'].append({
+                            'name':i.job_applicant.civil_id_back.split('/files/')[-1],
+                            'image':url+job_applicant.civil_id_back,
+                            'id':'civil_id_front',
+                            'placeholder':'Civil ID Back'
+                        })
             else:
                 result = {}
         else:
@@ -88,28 +82,31 @@ def get_magic_link():
 @frappe.whitelist(allow_guest=True)
 def upload_image():
     bench_path = frappe.utils.get_bench_path()
-    file_path = cstr(frappe.local.site)+"/private/files/user/magic_link/"
+    file_path = cstr(frappe.local.site)+"/public/files/user/magic_link/"
     full_path = bench_path+'/sites/'+file_path
-
+    applicant_name = frappe.db.get_value(frappe.form_dict.reference_doctype, frappe.form_dict.reference_docname, 'applicant_name')
     # process passport
     if frappe.form_dict.passport_data_page:
         data_content = frappe._dict(frappe.form_dict.passport_data_page)
         reference_doctype = frappe.form_dict.reference_doctype
         reference_docname = frappe.form_dict.reference_docname
         data = data_content.data
-        filename = "passport-"+hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest()+"-"+data_content.name
-        # content = base64.b64decode(data)
-        # with open(full_path+filename, "wb") as fh:
-        #     fh.write(content)
-        # # append to File doctype
-        # filedoc = frappe.get_doc({
-        #     "doctype":"File", 
-        #     "is_private":1,
-        #     "file_url":"/private/files/user/magic_link/"+filename, 
-        #     "attached_to_doctype":frappe.form_dict.reference_doctype, 
-        #     "attached_to_name":frappe.form_dict.reference_docname
-        # }).insert(ignore_permissions=True)
-        # frappe.db.commit()
+        filename = "passport-"+applicant_name+"_"+hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest()[:5]+"-"+data_content.name
+        content = base64.b64decode(data)
+        with open(full_path+filename, "wb") as fh:
+            fh.write(content)
+        # append to File doctype
+        file_url = "/files/user/magic_link/"+filename
+        filedoc = frappe.get_doc({
+            "doctype":"File", 
+            "is_private":0,
+            "file_url":"/files/user/magic_link/"+filename, 
+            "attached_to_doctype":frappe.form_dict.reference_doctype, 
+            "attached_to_name":frappe.form_dict.reference_docname
+        }).insert(ignore_permissions=True)
+        frappe.db.set_value(reference_doctype, reference_docname, 'passport_data_page', file_url)
+        frappe.db.commit()
+        os.remove(bench_path+'/sites/'+cstr(frappe.local.site)+'/public/files/'+filename)
         # get data from mindee
         try:
             # mindee_client = Client(api_key=frappe.local.conf.mindee_passport_api)
