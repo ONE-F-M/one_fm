@@ -501,7 +501,6 @@ scheduler_events = {
 		'one_fm.operations.doctype.mom_followup.mom_followup.mom_followup_reminder',
 		'one_fm.one_fm.depreciation_custom.post_depreciation_entries',
 		'one_fm.operations.doctype.contracts.contracts.auto_renew_contracts',
-		'one_fm.hiring.utils.update_leave_policy_assignments_expires_today',
 		'one_fm.tasks.execute.daily',
 		"one_fm.one_fm.utils.attach_abbreviation_to_roles",
   		"one_fm.api.v2.zenquotes.set_cached_quote",
@@ -645,6 +644,9 @@ scheduler_events = {
 		],
 		"45 1 * * *": [ # validate shift assignment
 			'one_fm.api.tasks.validate_am_shift_assignment'
+		],
+		"15 00 * * *": [
+			'one_fm.hiring.utils.update_leave_policy_assignments_expires_today'
 		],
 		"15 13 * * *":[ # Attendance Check
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check'
