@@ -23,14 +23,12 @@ jobs:
         key: ${{ secrets.SANDBOX_KEY }}
         port: 22
         script: |
-          cd /home/frappe/frappe-bench
-          rm -rf /apps/one_fm # we move into our app's folder
-          bench get-app --branch=sandbox https://github.com/ONE-F-M/One-FM
+          cd /home/frappe/frappe-bench/apps/one_fm
           #git pull upstream sandbox # we pull any changes from git
-          #cd /home/frappe/frappe-bench
-          #bench setup requirements
-          #cd /home/frappe/frappe-bench/apps/one_fm
-          #find . -name "*.pyc" -delete
+          git fetch upstream sandbox
+          git reset --hard FETCH_HEAD
+          cd /home/frappe/frappe-bench
+          bench setup requirements
           bench migrate # sync database
           bench restart # we remove any unused dependencies
           bench doctor
