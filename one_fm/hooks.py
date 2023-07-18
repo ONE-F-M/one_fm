@@ -659,6 +659,9 @@ scheduler_events = {
 		"45 13 * * *": [ # validate shift assignmet
 			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
+		"15 3 * * *": [ # create shift assignment
+			'one_fm.overrides.employee_checkin.auto_generate_checkin'
+		],
 		"25 0 * * *": [ # mark day attendance 11:15 pm
 			'one_fm.overrides.attendance.mark_day_attendance'
 		],
