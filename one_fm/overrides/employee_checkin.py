@@ -310,7 +310,7 @@ def auto_generate_checkin():
 def process_list(employee_list):
 	for e in employee_list:
 		checkin_time = e.start_datetime + (e.start_datetime + timedelta(minutes=60) - e.start_datetime) * random.random()
-		checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=60) - e.end_datetime) * random.random()
+		checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=30) - e.end_datetime) * random.random()
 		create_checkin_record(e.ename, "IN", checkin_time)
 		create_checkin_record(e.ename, "OUT", checkout_time)
 
