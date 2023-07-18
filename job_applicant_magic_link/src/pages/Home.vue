@@ -127,6 +127,7 @@ export default {
           'warning'
         )
       } else {
+        document.querySelector('#cover-spin').style.display = 'block';
         me.imageFiles.reference_doctype = this.job_applicant.doctype;
         me.imageFiles.reference_docname = this.job_applicant.name;
         console.log(me.imageFiles)
@@ -145,6 +146,7 @@ export default {
               'success'
             )
             me.loadContent();
+            document.querySelector('#cover-spin').style.display = 'none';
           }
         },
       })
@@ -172,6 +174,8 @@ export default {
               res.error,
               'warning'
             )
+          } else {
+
           }
         })
 
@@ -201,11 +205,12 @@ export default {
 </script>
 
 <template>
+  <div id="cover-spin"><div style="display: grid; height: 100%; width: 100%; place-items: center;"><span>We are extracting your information from the image...Please wait !</span></div></div>
+  
   <div class="container-fluid">
     <div class="jumbotron">
       <div class="row" :style="'display:'+styleConfig.showPage">
         <div class="col-md-12">
-          <div id="cover-spin"><div style="display: grid; height: 100%; width: 100%; place-items: center;"><span>We are extracting your information from the image...Please wait !</span></div></div>
             <main>
                 <div
                     class="p-5 text-center bg-image"
@@ -613,5 +618,5 @@ export default {
 	border-radius: 50%;
 	-webkit-animation: spin 0.8s linear infinite;
 	animation: spin 0.8s linear infinite;
-  }
+}
 </style>
