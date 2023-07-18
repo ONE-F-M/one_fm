@@ -406,8 +406,7 @@ def mark_day_attendance():
 	approve_open_shift_permission(str(start_date), str(end_date))
 	approve_open_employee_checkin_issue(str(start_date), str(end_date))
 	frappe.enqueue(mark_open_timesheet_and_create_attendance)
-	mark_daily_attendance(start_date, end_date)
-	# frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
+	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 
 def mark_night_attendance():
@@ -465,7 +464,6 @@ def mark_daily_attendance(start_date, end_date):
                                 AND o.attendance_by_client = 1
                                 """, as_dict=1)
         on_hold_employees = [i for i in on_hold_employees if not i.employee in basic_attendance_employees]
-        print(on_hold_employees)
 
         basic_shift_assignments = frappe.get_all("Shift Assignment", filters={
             'start_date':start_date, 
