@@ -3757,7 +3757,7 @@
   "property": "options",
   "property_type": "Select",
   "row_name": null,
-  "value": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nHoliday"
+  "value": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nHoliday\nOn Hold"
  },
  {
   "default_value": null,
