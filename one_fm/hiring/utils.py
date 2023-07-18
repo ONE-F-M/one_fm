@@ -644,7 +644,7 @@ def create_new_work_permit(work_permit):
     wp.save(ignore_permissions=True)
     return wp
 
-ddef update_leave_policy_assignments_expires_today():
+def update_leave_policy_assignments_expires_today():
     '''
         Method to create Leave Policy Assignment when existing one expires today
     '''
