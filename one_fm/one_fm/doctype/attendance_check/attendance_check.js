@@ -4,7 +4,7 @@
 frappe.ui.form.on('Attendance Check', {
 	refresh: function(frm){
 		if (frm.doc.docstatus==0){
-			frm.toggle_reqd(['justification', 'attendance_status'], 1);
+			frm.toggle_reqd(['attendance_status'], 1);
 		}
 	},
 	before_workflow_action: function(frm){
