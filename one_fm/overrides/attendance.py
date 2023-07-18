@@ -10,7 +10,7 @@ from hrms.hr.utils import  validate_active_employee, get_holidays_for_employee
 from one_fm.utils import get_holiday_today
 from one_fm.operations.doctype.shift_permission.shift_permission import create_checkin as approve_shift_permission
 from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import approve_open_employee_checkin_issue
-
+from frappe.model import table_fields
 
 def get_duplicate_attendance_record(employee, attendance_date, shift, roster_type, name=None):
     overlapping_attendance = frappe.db.get_list("Attendance", filters={
@@ -100,6 +100,44 @@ class AttendanceOverride(Attendance):
             'Holiday', 'Day Off', 'Absent'
             ]:
             self.working_hours = frappe.db.get_value("Shift Type", self.shift_type, 'duration')
+
+    def validate_update_after_submit(self):
+        db_values = frappe.get_doc(self.doctype, self.name).as_dict()
+
+        for key in self.as_dict():
+            df = self.meta.get_field(key)
+            db_value = db_values.get(key)
+            if key in ["status","working_hours"] and "Payroll Operator" in frappe.get_roles():
+                df.allow_on_submit = 1
+
+            if df and not df.allow_on_submit and (self.get(key) or db_value):
+                if df.fieldtype in table_fields:
+                    # just check if the table size has changed
+                    # individual fields will be checked in the loop for children
+                    self_value = len(self.get(key))
+                    db_value = len(db_value)
+
+                else:
+                    self_value = self.get_value(key)
+                # Postgres stores values as `datetime.time`, MariaDB as `timedelta`
+                if isinstance(self_value, datetime.timedelta) and isinstance(db_value, datetime.time):
+                    db_value = datetime.timedelta(
+                        hours=db_value.hour,
+                        minutes=db_value.minute,
+                        seconds=db_value.second,
+                        microseconds=db_value.microsecond,
+                    )
+                if self_value != db_value:
+                    frappe.throw(
+                        _("{0} Not allowed to change {1} after submission from {2} to {3}").format(
+                            f"Row #{self.idx}:" if self.get("parent") else "",
+                            frappe.bold(_(df.label)),
+                            frappe.bold(db_value),
+                            frappe.bold(self_value),
+                        ),
+                        frappe.UpdateAfterSubmitError,
+                        title=_("Cannot Update After Submit"),
+                    )
 
     def on_submit(self):
         self.update_shift_details_in_attendance()
@@ -469,7 +507,7 @@ def mark_daily_attendance(start_date, end_date):
         # create On Hold Attendance 
         if on_hold_employees:
             for i in on_hold_employees:
-                name = f"HR-ATT_{i.employee}_Basic"
+                name = f"HR-ATT_{start_date}_{i.employee}_Basic"
                 emp = employees_dict.get(i.employee)
                 query_body+= f"""
                     (
