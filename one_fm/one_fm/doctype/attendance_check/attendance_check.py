@@ -37,7 +37,7 @@ class AttendanceCheck(Document):
 			att.roster_type = self.roster_type
 			att.reference_doctype = "Attendance Check"
 			att.reference_docname = self.name
-			att.comment = f"Created from Attendance Check\n{self.justification}\n{self.comment or ''}\n{comment or ''}"
+			att.comment = f"Created from Attendance Check\n{self.justification or ''}\n{self.comment or ''}"
 			if not self.attendance_status in ['Day Off', 'Holiday']:
 				if self.shift_assignment:
 					att.shift_assignment = self.shift_assignment
@@ -77,12 +77,8 @@ class AttendanceCheck(Document):
 
 
 	def validate_justification_and_attendance_status(self):
-		if self.workflow_state in ['Approved', 'Rejected']:
-			message = 'Justification' if not self.justification else False
-			if not self.attendance_status:
-				message = message + ' and Attendance Status' if message else 'Attendance Status'
-			if message:
-				frappe.throw(_('To Approve or Reject the Record set {0}'.format(message)))
+		if not self.attendance_status:
+			frappe.throw(_('To Approve the record set Attendance Status'))
 
 def create_attendance_check(attendance_date=None):
 	if production_domain():
