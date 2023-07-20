@@ -83,12 +83,26 @@ frappe.ui.form.on('Job Applicant', {
 					}
 				},"Action");
 				frm.add_custom_button(__('Reject Applicant'), function() {
-					if (frm.doc.__onload && frm.doc.__onload.job_offer) {
-						update_job_offer_from_applicant(frm, 'Rejected');
-					}
-					else{
-						change_applicant_status(frm, 'status', 'Rejected');
-					}
+					frappe.confirm('Are you sure you want to proceed?',
+					() => {
+						// action to perform if Yes is selected
+						frappe.prompt({
+							label: 'Reason for Rejection',
+							fieldname: 'Small Text',
+							fieldtype: 'reason_for_rejection'
+						}, (values) => {
+							console.log(values.date);
+						})
+					}, () => {
+						// action to perform if No is selected
+						frappe.msgprint("Rejection cancelled.")
+					})
+					// if (frm.doc.__onload && frm.doc.__onload.job_offer) {
+					// 	update_job_offer_from_applicant(frm, 'Rejected');
+					// }
+					// else{
+					// 	change_applicant_status(frm, 'status', 'Rejected');
+					// }
 				},'Action');
 			}
 			if(frm.doc.status != 'Rejected'){
