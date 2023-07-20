@@ -108,7 +108,7 @@ class ShiftPermission(Document):
 
 	def validate_approver(self):
 		if self.workflow_state in ["Approved", "Rejected"]:
-			if frappe.session.user not in [self.approver_user_id, 'abdullah@one-fm.com']:
+			if frappe.session.user not in [self.approver_user_id, 'abdullah@one-fm.com', 'administrator', 'Administrator']:
 				frappe.throw(_("This document can only be approved/rejected by the approver."))
 
 	def on_submit(self):
@@ -215,8 +215,8 @@ def create_checkin(shift_permission):
 		'shift_permission':shift_permission.name
 		}):
 		if not shift_permission.workflow_state == 'Approved':
-			shift_permission.workflow_state="Approved"
-			shift_permission.save()
+			shift_permission.db_set('workflow_state', "Approved")
+			shift_permission.reload()
 			frappe.db.commit()
 		# Get shift details for the employee shift_assignment = frappe.get_doc("Shift Assignment", shift_permission.assigned_shift)
 		employee_checkin = frappe.new_doc('Employee Checkin')
