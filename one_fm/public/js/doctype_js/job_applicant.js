@@ -76,7 +76,14 @@ frappe.ui.form.on('Job Applicant', {
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
 				frm.add_custom_button(__('Select Applicant'), function() {
 					if(frm.doc.day_off_category && frm.doc.number_of_days_off && frm.doc.number_of_days_off > 0){
-						change_applicant_status(frm, 'one_fm_applicant_status', 'Selected');
+						frappe.confirm('Are you sure you want to select this applicant?',
+						() => {
+							// action to perform if Yes is selected
+							change_applicant_status(frm, 'one_fm_applicant_status', 'Selected');
+						}, () => {
+							// action to perform if No is selected
+							frappe.msgprint("Selection cancelled.")
+						})
 					}
 					else{
 						frappe.throw(__("Please Update Day off Details to Proceed !!"));
@@ -101,7 +108,7 @@ frappe.ui.form.on('Job Applicant', {
 						})
 					}, () => {
 						// action to perform if No is selected
-						frappe.msgprint("Rejection cancelled.")
+						frappe.msgprint("Rejection cancelled.");
 					})
 				},'Action');
 			}
@@ -822,27 +829,17 @@ var confirm_erf_change = function(frm, dialog) {
 }
 
 var change_applicant_status = function(frm, status_field, status, reason_for_rejection) {
-	let msg = __('Do you really want to {0} the applicant?', [status])
-	frappe.confirm(
-		msg,
-		function(){
-			// Yes
-			frappe.call({
-				method: 'one_fm.hiring.utils.update_job_applicant_status',
-				args: {'applicant': frm.doc.name, 'status_field': status_field, 'status': status, 'reason_for_rejection':reason_for_rejection},
-				callback: function(r) {
-					if(!r.exc){
-						frm.reload_doc();
-					}
-				},
-				freeze: true,
-				freeze_message: __("Updating .....")
-			});
+	frappe.call({
+		method: 'one_fm.hiring.utils.update_job_applicant_status',
+		args: {'applicant': frm.doc.name, 'status_field': status_field, 'status': status, 'reason_for_rejection':reason_for_rejection},
+		callback: function(r) {
+			if(!r.exc){
+				frm.reload_doc();
+			}
 		},
-		function(){
-			// No
-		}
-	);
+		freeze: true,
+		freeze_message: __("Updating .....")
+	});
 };
 
 var update_job_offer_from_applicant = function(frm, status, reason_for_rejection) {
