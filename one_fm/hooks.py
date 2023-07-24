@@ -15,10 +15,16 @@ app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "omar.ja93@gmail.com"
 app_license = "MIT"
-
+app_logo_url = "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png"
 # Includes in <head>
 # ------------------
 
+website_context = {
+	"favicon": "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png",
+	"splash_image": "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png",
+}
+
+email_brand_image = "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
