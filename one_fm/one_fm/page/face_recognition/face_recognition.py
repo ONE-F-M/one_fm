@@ -45,6 +45,7 @@ def enrollment():
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
 		res = enroll(employee_id, video_content)
+		frappe.log_error(res)
 		# # Setup channel
 		# face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
 		# channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
@@ -100,7 +101,7 @@ def verify():
 		video_content = content_base64_bytes.decode('ascii')
 		# print(employee_id, video_content, log_type, shift_assignment, skip_attendance, latitude, longitude)
 		res = verify_checkin_checkout(employee_id, video_content, log_type, shift_assignment, skip_attendance, latitude, longitude)
-		print(res)
+		frappe.log_error(res)
 		# #  setup channel
 		# face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 		# channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
