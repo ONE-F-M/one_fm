@@ -65,8 +65,9 @@ class OnboardEmployee(Document):
 				self.create_bank_account()
 
 	def validate_on_complete(self):
-		if self.workflow_state == 'Completed' and not frappe.db.get_value('Employee', self.employee, 'enrolled'):
-			frappe.throw(_("Employee has not yet registered/enrolled in the mobile app"))
+		if self.employment_type!='Service Provider':
+			if self.workflow_state == 'Completed' and not frappe.db.get_value('Employee', self.employee, 'enrolled'):
+				frappe.throw(_("Employee has not yet registered/enrolled in the mobile app"))
 
 	def validate_employee_creation(self):
 		if self.docstatus != 1:
@@ -113,7 +114,8 @@ class OnboardEmployee(Document):
 
 	@frappe.whitelist()
 	def create_duty_commencement(self):
-		if self.work_contract_status in ["Applicant Signed", "Submitted to Legal", "Send to Authorised Signatory", "Awaiting Employee Received Copy", "Completed"]:
+		if self.work_contract_status in ["Applicant Signed", "Submitted to Legal", "Send to Authorised Signatory", "Awaiting Employee Received Copy", "Completed"]\
+      		or self.employment_type == "Service Provider":
 			duty_commencement = frappe.new_doc('Duty Commencement')
 			duty_commencement.onboard_employee = self.name
 			duty_commencement.workflow_state = 'Open'
@@ -125,7 +127,7 @@ class OnboardEmployee(Document):
 
 	@frappe.whitelist()
 	def create_employee(self):
-		if self.duty_commencement_status == 'Applicant Signed and Uploaded' and not self.employee:
+		if self.duty_commencement_status == 'Applicant Signed and Uploaded' or self.employment_type == 'Service Provider' and not self.employee:
 			if not self.leave_policy:
 				frappe.throw(_("Select Leave Policy before Creating Employee!"))
 			if not self.reports_to:
@@ -178,10 +180,11 @@ class OnboardEmployee(Document):
 				self.update_duty_commencement()
 
 	def update_duty_commencement(self):
-		duty_commencement = frappe.get_doc("Duty Commencement", self.duty_commencement)
-		duty_commencement.employee = self.employee
-		duty_commencement.save(ignore_permissions=True)
-		duty_commencement.auto_checkin_candidate()
+		if self.employment_type != "Service Provider":
+			duty_commencement = frappe.get_doc("Duty Commencement", self.duty_commencement)
+			duty_commencement.employee = self.employee
+			duty_commencement.save(ignore_permissions=True)
+			duty_commencement.auto_checkin_candidate()
 
 	def validate_orientation(self):
 		if not self.informed_applicant:
