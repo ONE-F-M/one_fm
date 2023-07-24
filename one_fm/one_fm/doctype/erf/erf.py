@@ -7,6 +7,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from frappe.utils import today, get_url, getdate
+from frappe.utils.data import get_url_to_form
 from frappe.utils.user import get_user_fullname, get_users_with_role
 from frappe import _
 from one_fm.one_fm.calendar_event.meetFunc import CalendarEvent
@@ -150,12 +151,35 @@ class ERF(Document):
 
 	def on_submit(self):
 		self.validate_total_required_candidates()
-		self.validate_submit_to_hr()
-		if not self.hiring_method:
-			frappe.throw(_("Please set Hiring Method in HR section"))
 		self.erf_finalized = today()
-		self.validate_recruiter_assigned()
-		self.notify_approver()
+		# self.notify_recruitment_manager()
+		# self.notify_approver()
+  
+	def notify_recruitment_manager(self):
+		try:
+			role_profile = frappe.db.get_value("Role Profile", {"role_profile": "Recruitment Manager"}, "name")
+			if role_profile:
+				manager_emails = frappe.db.get_list("User", {"role_profile_name": role_profile}, pluck="name")
+				if manager_emails:
+					title = f"Urgent Notification: {self.name} Requires Your Immediate Review"
+					context = {
+						"erf_name" : self.name,
+						"designation": self.designation,
+						"requester": self.erf_requested_by_name,
+						"reason_for_request": self.reason_for_request,
+						"doc_link": get_url_to_form(self.doctype, self.name),
+						"project": self.project,
+						"department": self.department,
+						"date_of_deployment": self.expected_date_of_deployment
+					}
+					msg = frappe.render_template('one_fm/templates/emails/notify_recruitment_manager.html', context=context)
+					sendemail(recipients=manager_emails, subject=title, content=msg)	
+		except:
+			frappe.log_error(frappe.get_traceback(), "Error while sending mail to recruitment manager(ERF) ")
+      		
+		
+
+
 
 	@frappe.whitelist()
 	def job_opening_status(self):
@@ -182,9 +206,16 @@ class ERF(Document):
 		erf_approver = get_erf_approver(self.reason_for_request)
 		if erf_approver and len(erf_approver) > 0:
 			send_email(self, erf_approver)
-			frappe.msgprint(_('ERF Approver Will Notified By Email.'))
+			frappe.msgprint(_('Recruitment Manager Will Notified By Email.'))
 
 	def on_update_after_submit(self):
+		self.validate_total_required_candidates()
+		if self.workflow_state == "Accepted":
+			self.validate_submit_to_hr()
+			if not self.hiring_method:
+				frappe.throw(_("Please set Hiring Method in HR section"))
+			self.validate_recruiter_assigned()
+			self.accept_or_decline(status=self.workflow_state)
 		if frappe.db.get_value('Hiring Settings', None, 'close_erf_automatically'):
 			if self.erf_employee and len(self.erf_employee) == self.number_of_candidates_required:
 				self.db_set('status', 'Closed')
@@ -209,7 +240,7 @@ class ERF(Document):
 			frappe.msgprint(_('Finance Department Will be Notified By Email.'))
 
 	def notify_recruiter_and_requester(self):
-		if self.status in ['Accepted', 'Declined']:
+		if self.status in ['Accepted', 'Rejected']:
 			recipients = [self.erf_requested_by, self.recruiter_assigned]
 			do_not_notify_requester = frappe.db.get_value('Hiring Settings', None, 'do_not_notify_requester')
 			if do_not_notify_requester == '1':
@@ -286,7 +317,7 @@ class ERF(Document):
 		location= 'Hawally'
 		description= 'Employee Requisition meeting'
 		erf_requester_email='{}'.format(self.erf_requested_by)
-		secondary_hr_manager_email = 'u.zariwala@armor-services.com'
+		secondary_hr_manager_email = 'y.alluqman@one-fm.com'
 		hr_manager_email= '{}'.format(self.okr_workshop_with)
 
 		CalendarEvent(user).create_event(start_time, summary, location, description, erf_requester_email, hr_manager_email, secondary_hr_manager_email)
@@ -296,9 +327,9 @@ class ERF(Document):
 
 	@frappe.whitelist() #adding permission while Accepting
 	def accept_or_decline(self, status, reason_for_decline=None):
-		self.status = status
-		self.reason_for_decline = reason_for_decline
-		self.save()
+		# self.status = status
+		# self.reason_for_decline = reason_for_decline
+		# self.save()
 		self.notify_recruiter_and_requester()
 		if self.status == 'Accepted':
 			assign_recruiter_to_project_task(self)
@@ -308,6 +339,8 @@ class ERF(Document):
 				self.notify_finance_department()
 			create_job_opening_from_erf(self)
 		self.reload()
+        
+        
 
 def get_erf_approver(reason_for_request):
 	erf_approver_role = 'Unplanned ERF Approver' if reason_for_request == 'UnPlanned' else 'ERF Approver'
@@ -475,3 +508,10 @@ def set_event_for_okr_workshop(doc):
 @frappe.whitelist()
 def set_user_fullname(user):
 	return get_user_fullname(user)
+
+@frappe.whitelist()
+def recruitment_manager_check(user: str):
+	role_profile = frappe.db.get_value('Role Profile', {"role_profile": "Recruitment Manager"}, "name")
+	if role_profile:
+		return frappe.db.exists('User', {"role_profile_name": role_profile, "name": user})
+	return False

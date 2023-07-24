@@ -142,6 +142,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "number_of_candidates_required",
    "fieldtype": "Int",
    "label": "Number of Candidates Required",
@@ -188,7 +189,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
-   "options": "\nDraft\nAccepted\nDeclined\nClosed\nCancelled",
+   "options": "\nOpen\nAccepted\nRejected\nHold\nCancelled",
    "read_only": 1
   },
   {
@@ -296,6 +297,7 @@
    "label": "Is Height Mandatory"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "gender_height_requirement",
    "fieldtype": "Table",
    "options": "ERF Gender Height Requirement"
@@ -938,7 +940,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-06-25 22:24:35.468885",
+ "modified": "2023-07-24 11:20:27.969512",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

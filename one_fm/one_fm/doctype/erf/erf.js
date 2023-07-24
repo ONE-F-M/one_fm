@@ -56,12 +56,12 @@ frappe.ui.form.on('ERF', {
 			frm.set_df_property('schedule_for_okr_workshop_with_recruiter', 'label',
 				__('Set a Date With {0} For a Quick Workshop',[frm.doc.__onload.okr_workshop_with_full_name]))
 		}
-		if (frm.doc.docstatus == 1 && frm.doc.__onload && 'erf_approver' in frm.doc.__onload){
-			if(frm.doc.__onload.erf_approver.includes(frappe.session.user) && !['Accepted', 'Declined', 'Closed', 'Cancelled'].includes(frm.doc.status)){
-				frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_decline_erf(frm, 'Accepted', false)).addClass('btn-primary');
-				frm.add_custom_button(__('Decline'), () => frm.events.decline_erf(frm, 'Declined')).addClass('btn-danger');
-			}
-		}
+		// if (frm.doc.docstatus == 1 && frm.doc.__onload && 'erf_approver' in frm.doc.__onload){
+		// 	if(frm.doc.__onload.erf_approver.includes(frappe.session.user) && !['Accepted', 'Declined', 'Closed', 'Cancelled'].includes(frm.doc.status)){
+		// 		frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_decline_erf(frm, 'Accepted', false)).addClass('btn-primary');
+		// 		frm.add_custom_button(__('Decline'), () => frm.events.decline_erf(frm, 'Declined')).addClass('btn-danger');
+		// 	}
+		// }
 		if (frm.doc.docstatus == 1 && frm.doc.status == "Accepted"){
 			const is_senior_recruiter = frappe.user.has_role('Senior Recruiter');
 			if (is_senior_recruiter || [frm.doc.erf_requested_by, frm.doc.recruiter_assigned, frm.doc.secondary_recruiter_assigned].includes(frappe.session.user)) {
@@ -71,10 +71,10 @@ frappe.ui.form.on('ERF', {
 		if (!frm.is_new() && frm.doc.docstatus == 0 && frm.doc.amended_from && frm.doc.status == "Cancelled"){
 			frm.set_value('draft_erf_to_hrm', 0);
 		}
-		if (!frm.is_new() && frm.doc.docstatus == 0 && !frm.doc.draft_erf_to_hrm){
-			frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
+		// if (!frm.is_new() && frm.doc.docstatus == 0 && !frm.doc.draft_erf_to_hrm){
+		// 	frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
 
-		}
+		// }
 	},
 	attendance_by_timesheet: function(frm) {
 		if(frm.doc.attendance_by_timesheet){
@@ -196,6 +196,7 @@ frappe.ui.form.on('ERF', {
 	},
 	onload: function(frm) {
 		set_performance_profile_html(frm);
+		allow_recruitment_manager(frm);
 		// set_other_benefits(frm);
 	},
 	number_of_candidates_required: function(frm) {
@@ -274,8 +275,32 @@ frappe.ui.form.on('ERF', {
 	},
 	provide_salary_advance: function(frm) {
 		manage_provide_salary_advance(frm);
-	}
+	},
 });
+
+
+var allow_recruitment_manager = function(frm){
+	if (frm.doc.docstatus === 1){
+		frappe.call({
+			method: 'one_fm.one_fm.doctype.erf.erf.recruitment_manager_check',
+			args: {"user": frappe.session.user},
+			callback: function(r){
+				if (!r.message){
+					frm.set_df_property('number_of_candidates_required', 'read_only', !r.message);
+					frm.set_df_property('gender_height_requirement', 'read_only', !r.message);
+					frm.page.clear_actions_menu();
+					frappe.ui.form.on('ERF Gender Height Requirement', {
+						form_render: function(frm, cdt, cdn){
+							const row = locals[cdt][cdn];
+							var current_row = frm.fields_dict["candidates_required_section"].fields_dict.gender_height_requirement.grid.grid_rows_by_docname[row.name]
+							current_row.toggle_editable("number", r.message)
+						}
+					});
+				}
+			}
+		})
+	}
+}
 
 var set_performance_profile_resource_btn = function(frm) {
 	if(!frm.is_new() && frm.doc.docstatus<1){
@@ -767,7 +792,20 @@ frappe.ui.form.on('ERF Gender Height Requirement', {
 	},
 	maximum_age: function(frm, cdt, cdn) {
 		validate_age_range(frm, cdt, cdn);
-	}
+	},
+	// form_render: function(frm, cdt, cdn){
+	// 	frappe.call({
+	// 		method: 'one_fm.one_fm.doctype.erf.erf.recruitment_manager_check',
+	// 		args: {"user": frappe.session.user},
+	// 		callback: function(r){
+	// 			if (!r.message){
+	// 				console.log(92222234444444444)
+	// 				cur_frm.set_df_property('number', 'reqd', 0);
+	// 			}
+	// 		}
+	// 	})
+
+	// }
 
 });
 
@@ -1059,3 +1097,4 @@ const filterDefaultShift = (frm) => {
         }
     })
 }
+
