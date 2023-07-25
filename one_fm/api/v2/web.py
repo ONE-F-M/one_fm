@@ -7,7 +7,7 @@ from frappe.utils import (
 	now_datetime, cstr, nowdate, cint , getdate, get_first_day, get_last_day
 )
 import numpy as np
-import datetime
+import datetime, random
 from json import JSONEncoder
 # import cv2, os
 # import face_recognition
@@ -18,7 +18,16 @@ from one_fm.api.v2.roster import get_current_shift
 from one_fm.api.v2.utils import response
 from one_fm.api.v2.face_recognition import create_checkin_log
 
+# setup channel for face recognition
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+channels = [
+    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+]
 
+# setup stub for face recognition
+stubs = [
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+]
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -59,7 +68,7 @@ def enroll():
 			user_encoded_video = video_content,
 		)
 
-		res = stub.FaceRecognitionEnroll(req)
+		res = random.choice(stubs).FaceRecognition(req)
 
 		if res.enrollment == "FAILED":
 			msg = res.message
