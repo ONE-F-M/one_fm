@@ -16,6 +16,19 @@ from one_fm.api.v1.roster import get_current_shift
 from one_fm.one_fm.page.face_recognition.utils import check_existing, update_onboarding_employee
 from one_fm.api.v2.face_recognition import verify_checkin_checkout, enroll
 
+
+# setup channel for face recognition
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+channels = [
+    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+]
+
+# setup stub for face recognition
+stubs = [
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+]
+
+
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
@@ -44,31 +57,34 @@ def enrollment():
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
-		res = enroll(employee_id, video_content)
-		frappe.log_error(res)
-		# # Setup channel
+
+		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+		# Setup channel
 		# face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
 		# channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
-		# # setup stub
+		# setup stub
+
 		# stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
-		# 	# request body
-		# req = enroll_pb2.EnrollRequest(
-		# 	username = frappe.session.user,
-		# 	user_encoded_video = video_content,
-		# )
+		# request body
+		req = enroll_pb2.EnrollRequest(
+			username = frappe.session.user,
+			user_encoded_video = video_content,
+		)
 
-		# res = stub.FaceRecognitionEnroll(req)
+		res = stub.FaceRecognitionEnroll(req)
 
-		if res.status_code == 400:
-			msg = res.message
-			data = res.data
-			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
+		data = {'employee':doc.name, 'log_type':'Enrollment', 'verification':res.enrollment,
+				'message':res.message, 'data':res.data, 'source': 'Enroll'}
+		#frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
 		
-		# doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
-		# doc.enrolled = 1
-		# doc.save(ignore_permissions=True)
-		# update_onboarding_employee(doc)
-		# frappe.db.commit()
+		if res.enrollment == "FAILED":
+			return response(res.message, 400, None, res.data)
+
+		doc.enrolled = 1
+		doc.save(ignore_permissions=True)
+		update_onboarding_employee(doc)
+		frappe.db.commit()
+
 		return _("Successfully Enrolled!")
 
 	except Exception as exc:
@@ -89,41 +105,69 @@ def verify():
 		# timestamp = frappe.local.form_dict['timestamp']
 		files = frappe.request.files
 		file = files['file']
-
-		employee_id = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["employee_id"])
-
-		# if not user_within_site_geofence(employee, log_type, latitude, longitude):
-		# 	frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
-
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
-		# print(employee_id, video_content, log_type, shift_assignment, skip_attendance, latitude, longitude)
-		res = verify_checkin_checkout(employee_id, video_content, log_type, shift_assignment, skip_attendance, latitude, longitude)
-		frappe.log_error(res)
-		# #  setup channel
-		# face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-		# channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-		# # setup stub
-		# stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
-		# # request body
-		# req = facial_recognition_pb2.FaceRecognitionRequest(
-		# 	username = frappe.session.user,
-		# 	media_type = "video",
-		# 	media_content = video_content,
-		# )
-		# # Call service stub and get response
-		# res = stub.FaceRecognition(req)
+		employee_id = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["employee_id"])
 
-		if res.message == "Bad request":
-			msg = res.message
-			data = res.data
-			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
-		elif res.message == "Success":
-			frappe.msgprint("Checkin Sucessfull!")
-			return check_in(log_type, skip_attendance, latitude, longitude)
+		if not employee:
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+
+        right_now = now_datetime() 
+
+        if log_type == "IN":
+            shift_type = frappe.db.sql(f""" select shift_type from `tabShift Assignment` where employee = '{employee}' order by creation desc limit 1 """, as_dict=1)[0]
+            val_in_shift_type = frappe.db.sql(f""" select begin_check_in_before_shift_start_time, start_time, late_entry_grace_period, working_hours_threshold_for_absent from `tabShift Type` where name = '{shift_type["shift_type"]}' """, as_dict=1)[0]
+            time_threshold = datetime.strptime(str(val_in_shift_type["start_time"] - timedelta(minutes=val_in_shift_type["begin_check_in_before_shift_start_time"])), "%H:%M:%S").time()
+
+            if right_now.time() < time_threshold:
+                return response("Bad Request", 400, None, f" Oops! You can't check in right now. Your check-in time is {val_in_shift_type['begin_check_in_before_shift_start_time']} minutes before you start your shift." + "\U0001F612")
+
+            existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{right_now.date()}' and employee = '{employee}' and permission_type = '{log_type}' and workflow_state = 'Approved' """, as_dict=1)
+            if not existing_perm and (right_now.time() >  datetime.strptime(str(val_in_shift_type["start_time"] + + timedelta(hours=int(val_in_shift_type['working_hours_threshold_for_absent']))), "%H:%M:%S").time()):
+                return response("Bad Request", 400, None, f"Oops! You are late beyond the  {int(val_in_shift_type['working_hours_threshold_for_absent'])} - hour time mark and you are marked absent !" + "\U0001F612")       
+ 
+        req = facial_recognition_pb2.FaceRecognitionRequest(
+            username = frappe.session.user,
+            media_type = "video",
+            media_content = video
+        )
+        # Call service stub and get response
+        
+        res = random.choice(stubs).FaceRecognition(req)
+
+        if res.verification == "FAILED" and 'Invalid media content' in res.data:
+            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+            **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
+                'message':res.message, 'data':res.data, 'source': 'Checkin'}})
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            if log_type == "IN":
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" +  "\U0001F612"})
+                    return _("Success", 201, doc, None)
+            return _("Success")
+        elif res.verification == "FAILED":
+            msg = res.message
+            data = res.data
+            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+            **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
+                'message':res.message, 'data':res.data, 'source': 'Checkin'}})
+            return _(msg)
+        elif res.verification == "OK":
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            if log_type == "IN":
+                check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
+                if check:
+                    doc.update({"message": "You Checked in, but you were late, try to checkin early next time !" +  "\U0001F612"})
+                    return _("Success")
+            quote = fetch_quote(direct_response=True)
+            return _("Success")
+
+        else:
+            return _("Success")
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		raise exc
