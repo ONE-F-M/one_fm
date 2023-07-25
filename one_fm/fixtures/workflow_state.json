@@ -3,6 +3,42 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
+  "modified": "2023-07-20 12:22:53.962390",
+  "name": "Submit to Recruitment Manager",
+  "style": "Primary",
+  "workflow_state_name": "Submit to Recruitment Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-07-21 18:24:20.276132",
+  "name": "Accepted by Recruitment Manager",
+  "style": "",
+  "workflow_state_name": "Accepted by Recruitment Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-07-21 18:25:12.678731",
+  "name": "Rejected by Recruitment Manager",
+  "style": "",
+  "workflow_state_name": "Rejected by Recruitment Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-07-22 17:53:37.933740",
+  "name": "Hold",
+  "style": "",
+  "workflow_state_name": "Hold"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
   "modified": "2023-06-20 15:49:51.401864",
   "name": "Change Request",
   "style": "",
