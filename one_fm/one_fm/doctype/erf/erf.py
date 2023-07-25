@@ -152,7 +152,7 @@ class ERF(Document):
 	def on_submit(self):
 		self.validate_total_required_candidates()
 		self.erf_finalized = today()
-		# self.notify_recruitment_manager()
+		self.notify_recruitment_manager()
 		# self.notify_approver()
   
 	def notify_recruitment_manager(self):
@@ -211,7 +211,7 @@ class ERF(Document):
 	def on_update_after_submit(self):
 		self.validate_total_required_candidates()
 		if self.workflow_state == "Accepted":
-			self.validate_submit_to_hr()
+			# self.validate_submit_to_hr()
 			if not self.hiring_method:
 				frappe.throw(_("Please set Hiring Method in HR section"))
 			self.validate_recruiter_assigned()

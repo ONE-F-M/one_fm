@@ -304,6 +304,7 @@ var allow_recruitment_manager = function(frm){
 	}
 }
 
+
 var set_performance_profile_resource_btn = function(frm) {
 	if(!frm.is_new() && frm.doc.docstatus<1){
 		frm.add_custom_button(__('Get Hand book'), function(){
@@ -795,20 +796,6 @@ frappe.ui.form.on('ERF Gender Height Requirement', {
 	maximum_age: function(frm, cdt, cdn) {
 		validate_age_range(frm, cdt, cdn);
 	},
-	// form_render: function(frm, cdt, cdn){
-	// 	frappe.call({
-	// 		method: 'one_fm.one_fm.doctype.erf.erf.recruitment_manager_check',
-	// 		args: {"user": frappe.session.user},
-	// 		callback: function(r){
-	// 			if (!r.message){
-	// 				console.log(92222234444444444)
-	// 				cur_frm.set_df_property('number', 'reqd', 0);
-	// 			}
-	// 		}
-	// 	})
-
-	// }
-
 });
 
 var validate_age_range = function(frm, cdt, cdn) {
