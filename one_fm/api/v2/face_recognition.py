@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 import frappe, ast, base64, time, grpc, json, random
 from frappe import _
-from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
+from one_fm.one_fm.page.face_recognition.utils import update_onboarding_employee, check_existing
 from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.v1.utils import response
 from one_fm.api.v2.zenquotes import fetch_quote
@@ -182,6 +182,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         # Call service stub and get response
         
         res = random.choice(stubs).FaceRecognition(req)
+        print(res)
 
         if res.verification == "FAILED" and 'Invalid media content' in res.data:
             frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',

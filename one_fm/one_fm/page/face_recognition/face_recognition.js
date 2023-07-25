@@ -279,7 +279,7 @@ function addYourLocationButton (map, marker){
 
 
 function check_existing(page){
-	frappe.xcall('one_fm.one_fm.page.face_recognition.face_recognition.check_existing')
+	frappe.xcall('one_fm.one_fm.page.face_recognition.utils.check_existing')
 	.then(r =>{
 		if (!r.exc) {
 			// code snippet
@@ -349,7 +349,7 @@ function send_log(log_type, skip_attendance){
 
 function upload_file(file, method, log_type, skip_attendance){
 	let method_map = {
-		'enroll': '/api/method/one_fm.one_fm.page.face_recognition.face_recognition.enroll',
+		'enroll': '/api/method/one_fm.one_fm.page.face_recognition.face_recognition.enrollment',
 		'verify': '/api/method/one_fm.one_fm.page.face_recognition.face_recognition.verify'
 	}
 
