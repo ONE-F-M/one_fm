@@ -78,10 +78,6 @@ frappe.ui.form.on('Job Offer', {
       }
     }
     set_filters(frm);
-    // set into
-		if (!frm.is_new() && frm.doc.status=='Rejected' && frm.doc.reason_for_rejection){
-			frm.set_intro('<span class="text-danger"><b>Reason for Rejection</b></span><br>'+frm.doc.reason_for_rejection, 'yellow');
-		}
   },
   attendance_by_timesheet: function(frm) {
     if(frm.doc.attendance_by_timesheet){

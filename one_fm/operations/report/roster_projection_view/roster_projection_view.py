@@ -305,21 +305,7 @@ def get_columns():
 			'fieldname': 'days_off_cat',
 			'label': _('Days Of Category'),
 			'fieldtype': 'Data',
-			'width': 150,
-			'default': ''
-		},
-		{
-			'fieldname': 'no_of_days_off',
-			'label': _('Number Of Days Off'),
-			'fieldtype': 'Data',
-			'width': 150,
-			'default': ''
-		},
-		{
-			'fieldname': 'rate_type_off',
-			'label': _('Rate Type(Day Off)'),
-			'fieldtype': 'Data',
-			'width': 150,
+			'width': 100,
 			'default': ''
 		},
 	]

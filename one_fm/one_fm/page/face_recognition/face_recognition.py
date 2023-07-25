@@ -13,8 +13,7 @@ import json
 # from imutils import face_utils, paths
 from one_fm.api.doc_events import haversine
 from one_fm.api.v1.roster import get_current_shift
-from one_fm.one_fm.page.face_recognition.utils import check_existing, update_onboarding_employee
-from one_fm.api.v2.face_recognition import verify_checkin_checkout, enroll
+
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -34,41 +33,39 @@ def setup_directories():
 	Path(frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/").mkdir(parents=True, exist_ok=True)
 
 @frappe.whitelist()
-def enrollment():
+def enroll():
 	try:
 		files = frappe.request.files
 		file = files['file']
-		employee_id = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["employee_id"])
-
+		
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
-		res = enroll(employee_id, video_content)
-		frappe.log_error(res)
-		# # Setup channel
-		# face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
-		# channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
-		# # setup stub
-		# stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
-		# 	# request body
-		# req = enroll_pb2.EnrollRequest(
-		# 	username = frappe.session.user,
-		# 	user_encoded_video = video_content,
-		# )
 
-		# res = stub.FaceRecognitionEnroll(req)
+		# Setup channel
+		face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
+		channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
+		# setup stub
+		stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
+			# request body
+		req = enroll_pb2.EnrollRequest(
+			username = frappe.session.user,
+			user_encoded_video = video_content,
+		)
 
-		if res.status_code == 400:
+		res = stub.FaceRecognitionEnroll(req)
+
+		if res.enrollment == "FAILED":
 			msg = res.message
 			data = res.data
 			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
 		
-		# doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
-		# doc.enrolled = 1
-		# doc.save(ignore_permissions=True)
-		# update_onboarding_employee(doc)
-		# frappe.db.commit()
+		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+		doc.enrolled = 1
+		doc.save(ignore_permissions=True)
+		update_onboarding_employee(doc)
+		frappe.db.commit()
 		return _("Successfully Enrolled!")
 
 	except Exception as exc:
@@ -80,17 +77,16 @@ def enrollment():
 @frappe.whitelist()
 def verify():
 	try:
+
 		log_type = frappe.local.form_dict['log_type']
 		skip_attendance = frappe.local.form_dict['skip_attendance']
 		latitude = frappe.local.form_dict['latitude']
 		longitude = frappe.local.form_dict['longitude']
-		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
-		shift_assignment = get_current_shift(employee)
 		# timestamp = frappe.local.form_dict['timestamp']
 		files = frappe.request.files
 		file = files['file']
 
-		employee_id = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["employee_id"])
+		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
 
 		# if not user_within_site_geofence(employee, log_type, latitude, longitude):
 		# 	frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
@@ -99,31 +95,28 @@ def verify():
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
-		# print(employee_id, video_content, log_type, shift_assignment, skip_attendance, latitude, longitude)
-		res = verify_checkin_checkout(employee_id, video_content, log_type, shift_assignment, skip_attendance, latitude, longitude)
-		frappe.log_error(res)
-		# #  setup channel
-		# face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-		# channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-		# # setup stub
-		# stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
-		# # request body
-		# req = facial_recognition_pb2.FaceRecognitionRequest(
-		# 	username = frappe.session.user,
-		# 	media_type = "video",
-		# 	media_content = video_content,
-		# )
-		# # Call service stub and get response
-		# res = stub.FaceRecognition(req)
+		# setup channel
+		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+		channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+		# setup stub
+		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
-		if res.message == "Bad request":
+		# request body
+		req = facial_recognition_pb2.FaceRecognitionRequest(
+			username = frappe.session.user,
+			media_type = "video",
+			media_content = video_content,
+		)
+		# Call service stub and get response
+		res = stub.FaceRecognition(req)
+
+		if res.verification == "FAILED":
 			msg = res.message
 			data = res.data
 			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
-		elif res.message == "Success":
-			frappe.msgprint("Checkin Sucessfull!")
-			return check_in(log_type, skip_attendance, latitude, longitude)
+
+		return check_in(log_type, skip_attendance, latitude, longitude)
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		raise exc
@@ -186,6 +179,14 @@ def forced_checkin(employee, log_type, time):
 	frappe.db.commit()
 	return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
 
+def update_onboarding_employee(employee):
+    onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
+    if onboard_employee_exist:
+        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
+        onboard_employee.enrolled = True
+        onboard_employee.enrolled_on = now_datetime()
+        onboard_employee.save(ignore_permissions=True)
+        frappe.db.commit()
 
 # def create_dataset(video):
 # 	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"
@@ -210,6 +211,14 @@ def forced_checkin(employee, log_type, time):
 # 	doc.save(ignore_permissions=True)
 # 	frappe.db.commit()
 
+def update_onboarding_employee(employee):
+    onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
+    if onboard_employee_exist:
+        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist)
+        onboard_employee.enrolled = True
+        onboard_employee.enrolled_on = now_datetime()
+        onboard_employee.save(ignore_permissions=True)
+        frappe.db.commit()
 
 # def create_encodings(directory, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
 # 	"""

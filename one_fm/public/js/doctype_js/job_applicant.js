@@ -76,40 +76,33 @@ frappe.ui.form.on('Job Applicant', {
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
 				frm.add_custom_button(__('Select Applicant'), function() {
 					if(frm.doc.day_off_category && frm.doc.number_of_days_off && frm.doc.number_of_days_off > 0){
-						frappe.confirm('Are you sure you want to select this applicant?',
-						() => {
-							// action to perform if Yes is selected
-							change_applicant_status(frm, 'one_fm_applicant_status', 'Selected');
-						}, () => {
-							// action to perform if No is selected
-							frappe.msgprint("Selection cancelled.")
-						})
+						change_applicant_status(frm, 'one_fm_applicant_status', 'Selected');
 					}
 					else{
 						frappe.throw(__("Please Update Day off Details to Proceed !!"));
 					}
 				},"Action");
 				frm.add_custom_button(__('Reject Applicant'), function() {
-					frappe.confirm('Are you sure you want to reject this applicant?',
+					frappe.confirm('Are you sure you want to proceed?',
 					() => {
 						// action to perform if Yes is selected
 						frappe.prompt({
 							label: 'Reason for Rejection',
-							descption: 'Optional',
-							fieldname: 'reason_for_rejection',
-							fieldtype: 'Small Text'
+							fieldname: 'Small Text',
+							fieldtype: 'reason_for_rejection'
 						}, (values) => {
-							if (frm.doc.__onload && frm.doc.__onload.job_offer) {
-								update_job_offer_from_applicant(frm, 'Rejected', values.reason_for_rejection);
-							}
-							else{
-								change_applicant_status(frm, 'status', 'Rejected', values.reason_for_rejection);
-							}
+							console.log(values.date);
 						})
 					}, () => {
 						// action to perform if No is selected
-						frappe.msgprint("Rejection cancelled.");
+						frappe.msgprint("Rejection cancelled.")
 					})
+					// if (frm.doc.__onload && frm.doc.__onload.job_offer) {
+					// 	update_job_offer_from_applicant(frm, 'Rejected');
+					// }
+					// else{
+					// 	change_applicant_status(frm, 'status', 'Rejected');
+					// }
 				},'Action');
 			}
 			if(frm.doc.status != 'Rejected'){
@@ -119,11 +112,6 @@ frappe.ui.form.on('Job Applicant', {
 					},"Action");
 				}
 			}
-		}
-
-		// set into
-		if (!frm.is_new() && frm.doc.status=='Rejected' && frm.doc.one_fm_reason_for_rejection){
-			frm.set_intro('<span class="text-danger"><b>Reason for Rejection</b></span><br>'+frm.doc.one_fm_reason_for_rejection, 'yellow');
 		}
 
 	},
@@ -828,21 +816,31 @@ var confirm_erf_change = function(frm, dialog) {
 	);
 }
 
-var change_applicant_status = function(frm, status_field, status, reason_for_rejection) {
-	frappe.call({
-		method: 'one_fm.hiring.utils.update_job_applicant_status',
-		args: {'applicant': frm.doc.name, 'status_field': status_field, 'status': status, 'reason_for_rejection':reason_for_rejection},
-		callback: function(r) {
-			if(!r.exc){
-				frm.reload_doc();
-			}
+var change_applicant_status = function(frm, status_field, status) {
+	let msg = __('Do you really want to make {0} the applicant?', [status])
+	frappe.confirm(
+		msg,
+		function(){
+			// Yes
+			frappe.call({
+				method: 'one_fm.hiring.utils.update_job_applicant_status',
+				args: {'applicant': frm.doc.name, 'status_field': status_field, 'status': status},
+				callback: function(r) {
+					if(!r.exc){
+						frm.reload_doc();
+					}
+				},
+				freeze: true,
+				freeze_message: __("Updating .....")
+			});
 		},
-		freeze: true,
-		freeze_message: __("Updating .....")
-	});
+		function(){
+			// No
+		}
+	);
 };
 
-var update_job_offer_from_applicant = function(frm, status, reason_for_rejection) {
+var update_job_offer_from_applicant = function(frm, status) {
 	let msg = __('Job Offer {0} ?', [status])
 	frappe.confirm(
 		msg,
@@ -850,7 +848,7 @@ var update_job_offer_from_applicant = function(frm, status, reason_for_rejection
 			// Yes
 			frappe.call({
 				method: 'one_fm.hiring.utils.update_job_offer_from_applicant',
-				args: {'jo': frm.doc.__onload.job_offer, 'status': status, 'reason_for_rejection':reason_for_rejection},
+				args: {'jo': frm.doc.__onload.job_offer, 'status': status},
 				callback: function(r) {
 					if(!r.exc){
 						frm.reload_doc();
