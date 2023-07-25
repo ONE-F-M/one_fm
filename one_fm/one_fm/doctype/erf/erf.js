@@ -289,6 +289,8 @@ var allow_recruitment_manager = function(frm){
 					frm.set_df_property('number_of_candidates_required', 'read_only', !r.message);
 					frm.set_df_property('gender_height_requirement', 'read_only', !r.message);
 					frm.page.clear_actions_menu();
+					frm.toggle_display("hr_section", r.message)
+					frm.toggle_display("salary_compensation_budget_section", r.message)
 					frappe.ui.form.on('ERF Gender Height Requirement', {
 						form_render: function(frm, cdt, cdn){
 							const row = locals[cdt][cdn];
