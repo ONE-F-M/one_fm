@@ -69,7 +69,7 @@ def enroll():
 		)
 
 		res = random.choice(stubs).FaceRecognition(req)
-
+		
 		if res.enrollment == "FAILED":
 			msg = res.message
 			data = res.data
@@ -108,12 +108,7 @@ def verify():
         content_bytes = file.stream.read()
         content_base64_bytes = base64.b64encode(content_bytes)
         video_content = content_base64_bytes.decode('ascii')
-
-        # setup channel
-        face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-        channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-        # setup stub
-        stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+		
 
         # request body
         req = facial_recognition_pb2.FaceRecognitionRequest(
@@ -122,8 +117,7 @@ def verify():
             media_content = video_content,
         )
         # Call service stub and get response
-        res = stub.FaceRecognition(req)
-
+        res = random.choice(stubs).FaceRecognition(req)
         if res.verification == "FAILED":
             msg = res.message
             data = res.data
