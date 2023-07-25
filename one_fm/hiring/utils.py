@@ -334,10 +334,9 @@ def create_salary_structure_assignment(doc, method):
         assignment.submit()
 
 @frappe.whitelist()
-def update_job_offer_from_applicant(jo, status, reason_for_rejection=None):
+def update_job_offer_from_applicant(jo, status):
     job_offer = frappe.get_doc('Job Offer', jo)
     job_offer.status = status
-    if reason_for_rejection:job_offer.reason_for_rejection = reason_for_rejection
     job_offer.save()
 
 @frappe.whitelist()
