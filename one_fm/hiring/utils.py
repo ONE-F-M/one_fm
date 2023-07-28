@@ -209,25 +209,29 @@ def create_employee_user_from_employee_id(doc):
 		frappe.log_error(str(e), 'CREATE USER')
 
 def create_employee_user(doc, email):
-	try:
-		user = frappe.get_doc({
-			'doctype':'User',
-			'email': email,
-			'first_name':doc.first_name,
-			'last_name':doc.last_name,
-			'gender':doc.gender,
-			'date_of_birth':doc.date_of_birth,
-			'send_welcome_email': 0,
-			'enabled':1,
-			'role_profile_name': "Only Employee",
-			'user_type':"System User",
-		})
-		user.insert(ignore_permissions=True)
-		doc.db_set("user_id", user.name)
-		doc.db_set("create_user_permission", 1)
-		doc.reload()
-	except Exception as e:
-		frappe.log_error(str(e), 'CREATE USER')
+    try:
+        r_prof =  None
+        if doc.designation:
+            r_prof = frappe.db.get_value("Designation", doc.designation, "role_profile")
+                  
+        user = frappe.get_doc({
+            'doctype':'User',
+            'email': email,
+            'first_name':doc.first_name,
+            'last_name':doc.last_name,
+            'gender':doc.gender,
+            'date_of_birth':doc.date_of_birth,
+            'send_welcome_email': 0,
+            'enabled':1,
+            'role_profile_name': "Only Employee" if not r_prof else r_prof ,
+            'user_type':"System User",
+        })
+        user.insert(ignore_permissions=True)
+        doc.db_set("user_id", user.name)
+        doc.db_set("create_user_permission", 1)
+        doc.reload()
+    except Exception as e:
+        frappe.log_error(str(e), 'CREATE USER')
 
 
 def generate_employee_id(doc):
