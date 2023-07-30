@@ -228,8 +228,11 @@ doc_events = {
 		],
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"before_insert": "one_fm.hiring.utils.employee_before_insert",
-		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
-		"on_update": "one_fm.events.employee.on_update",
+		"on_update":[
+      		"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
+        	"one_fm.events.employee.on_update",
+         ],
+		"before_save": "one_fm.events.employee.assign_role_profile_based_on_designation",
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
