@@ -372,18 +372,32 @@ function upload_file(file, method, log_type, skip_attendance){
         }
 		xhr.onreadystatechange = () => {
 			if (xhr.readyState == XMLHttpRequest.DONE) {
-			  	$('#cover-spin').hide();
+				console.log(xhr)
 			  	if (xhr.status === 200) {
-				let r = null;
+				// let r = null;
 				try {
-					r = JSON.parse(xhr.responseText);
-					console.log(r);
-					frappe.msgprint(__(r.message), __("Successful"));
-					window.location.reload();
+					frappe.msgprint({
+						title: __("Successfull"),
+						indicator: "red",
+						message: "Sucessfully Checked-"+log_type.toLowerCase()+"!",
+					  });
+					$('#cover-spin').hide();
+					
+					
 				} catch (e) {
 					r = xhr.responseText;
 				}
-			  } else if (xhr.status === 403) {
+			  } else if (xhr.status ===417){
+				let response = JSON.parse(xhr.responseText);
+				frappe.msgprint({
+				  title: __("Failed"),
+				  indicator: "red",
+				  message: "Face Recognition Failed. Please try again.",
+				});
+				$('#cover-spin').hide();
+
+			  }
+			  else if (xhr.status === 403) {
 				let response = JSON.parse(xhr.responseText);
 				frappe.msgprint({
 				  title: __("Not permitted"),

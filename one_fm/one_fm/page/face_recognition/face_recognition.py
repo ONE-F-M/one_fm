@@ -1,11 +1,12 @@
 import base64
 import grpc
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
-import frappe
+import frappe, ast, base64, time, grpc, json, random
 from frappe import _
 from frappe.utils import now_datetime, cstr, nowdate, cint , getdate
 import numpy as np
 import datetime
+from datetime import timedelta, datetime
 from json import JSONEncoder
 # import cv2, os
 # import face_recognition
@@ -14,12 +15,28 @@ import json
 from one_fm.api.doc_events import haversine
 from one_fm.api.v1.roster import get_current_shift
 
+from one_fm.one_fm.page.face_recognition.utils import check_existing, update_onboarding_employee
+from one_fm.api.v2.face_recognition import late_checkin_checker
+from one_fm.api.v2.zenquotes import fetch_quote
+
+# setup channel for face recognition
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+channels = [
+	grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+]
+
+# setup stub for face recognition
+stubs = [
+	facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+]
+
+
 
 class NumpyArrayEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return JSONEncoder.default(self, obj)
+	def default(self, obj):
+		if isinstance(obj, np.ndarray):
+			return obj.tolist()
+		return JSONEncoder.default(self, obj)
 
 def setup_directories():
 	"""
@@ -43,12 +60,16 @@ def enroll():
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
 
+
+		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
 		# Setup channel
 		face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
 		channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
 		# setup stub
+
+
 		stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
-			# request body
+		# request body
 		req = enroll_pb2.EnrollRequest(
 			username = frappe.session.user,
 			user_encoded_video = video_content,
@@ -62,10 +83,12 @@ def enroll():
 			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
 		
 		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+
 		doc.enrolled = 1
 		doc.save(ignore_permissions=True)
 		update_onboarding_employee(doc)
 		frappe.db.commit()
+
 		return _("Successfully Enrolled!")
 
 	except Exception as exc:
@@ -91,10 +114,12 @@ def verify():
 		# if not user_within_site_geofence(employee, log_type, latitude, longitude):
 		# 	frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
 
+
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
+
 
 		# setup channel
 		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
@@ -117,6 +142,7 @@ def verify():
 			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
 
 		return check_in(log_type, skip_attendance, latitude, longitude)
+
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		raise exc
@@ -153,7 +179,7 @@ def user_within_site_geofence(employee, log_type, user_latitude, user_longitude)
 				return True
 	return False
 
-def check_in(log_type, skip_attendance, latitude, longitude):
+def check_in( log_type, skip_attendance, latitude, longitude):
 	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
 	checkin = frappe.new_doc("Employee Checkin")
 	checkin.employee = employee
