@@ -91,11 +91,11 @@ def enroll():
 @frappe.whitelist()
 def verify():
     try:
-        log_type = frappe.local.form_dict['log_type']
-        skip_attendance = frappe.local.form_dict['skip_attendance']
-        latitude = frappe.local.form_dict['latitude']
-        longitude = frappe.local.form_dict['longitude']
-        # timestamp = frappe.local.form_dict['timestamp']
+        log_type = frappe.local.form_dict.log_type
+        skip_attendance = frappe.local.form_dict.skip_attendance
+        latitude = frappe.local.form_dict.latitude
+        longitude = frappe.local.form_dict.longitude
+        # timestamp = frappe.local.form_dict.timestamp
         files = frappe.request.files
         file = files['file']
 
@@ -125,7 +125,7 @@ def verify():
 		# create_checkin_log()
         response("Success", 200, check_in(log_type, skip_attendance, latitude, longitude))        
     except Exception as exc:
-        frappe.log_error(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback() + '\n\n\n' + str(frappe.form_dict))
         response("Error", 500, None, frappe.get_traceback())  
 
 @frappe.whitelist()

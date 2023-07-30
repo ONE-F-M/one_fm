@@ -15,10 +15,16 @@ app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "omar.ja93@gmail.com"
 app_license = "MIT"
-
+app_logo_url = "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png"
 # Includes in <head>
 # ------------------
 
+website_context = {
+	"favicon": "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png",
+	"splash_image": "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png",
+}
+
+email_brand_image = "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
@@ -478,7 +484,8 @@ override_doctype_class = {
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
     "Job Offer": "one_fm.overrides.job_offer.JobOfferOverride",
-    "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride"
+    "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride",
+    "Job Applicant": "one_fm.overrides.job_applicant.JobApplicantOverride",
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 

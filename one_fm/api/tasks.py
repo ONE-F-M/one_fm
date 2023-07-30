@@ -333,7 +333,6 @@ def checkin_checkout_query(date, shift_type, log_type):
 					FROM `tabShift Assignment` tSA, `tabEmployee` emp
 					WHERE
 						tSA.employee=emp.name
-					AND emp.auto_attendance = 0
 					AND tSA.start_date='{date}'
 					AND tSA.shift_type='{shift_type}'
 					AND tSA.docstatus=1

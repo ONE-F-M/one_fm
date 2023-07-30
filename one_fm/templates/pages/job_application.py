@@ -336,7 +336,7 @@ def parse_names(input_string: str) -> tuple:
         elif num_names == 4:
             second_name = names[1]
             third_name = names[2]
-        else:
+        elif num_names > 4:
             second_name = names[1]
             third_name = names[2]
             fourth_name = names[3]
