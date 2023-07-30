@@ -358,3 +358,27 @@ const filterDefaultShift = (frm) => {
         }
     })
 }
+
+
+frappe.ui.form.on('Job Offer Term', {
+  offer_term(frm, cdt, cdn) { 
+      let row = locals[cdt][cdn]
+      if(row.offer_term == "Accommodation"){
+        frm.set_value("one_fm_provide_accommodation_by_company", 1)
+        frm.refresh_field("one_fm_provide_accommodation_by_company")
+      }else if (row.offer_term == "Transportation")
+        frm.set_value("one_fm_provide_transportation_by_company", 1)
+        frm.refresh_field("one_fm_provide_transportation_by_company")
+  },
+  before_offer_terms_remove(frm, cdt, cdn){
+    let row = locals[cdt][cdn]
+    if(row.offer_term == "Accommodation"){
+      frm.set_value("one_fm_provide_accommodation_by_company", 0)
+      frm.refresh_field("one_fm_provide_accommodation_by_company")
+    }else if (row.offer_term == "Transportation")
+      frm.set_value("one_fm_provide_transportation_by_company", 0)
+      frm.refresh_field("one_fm_provide_transportation_by_company")
+  },
+  
+
+});
