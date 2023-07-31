@@ -76,14 +76,22 @@ frappe.ui.form.on('ERF', {
 
 		// }
 
-		frm.set_query('recruiter_assigned',"roles", function() {
-            return {
-                filters: {
-                    'role': ['Recruiter']
-                }
-            };
+		frm.set_query('recruiter_assigned', function() {
+            return{
+				filters: [["Has Role","role","=", "Recruiter"]],
+				query: "one_fm.hiring.utils.fetch_recruiters"
+			}
         });
+
+		frm.set_query('secondary_recruiter_assigned', function() {
+            return{
+				filters: [["Has Role","role","=", "Recruiter"]],
+				query: "one_fm.hiring.utils.fetch_recruiters"
+			}
+        });
+
 	},
+	
 	attendance_by_timesheet: function(frm) {
 		if(frm.doc.attendance_by_timesheet){
 			frm.set_value('shift_working', false);
@@ -299,7 +307,6 @@ var allow_recruitment_manager = function(frm){
 					frm.page.clear_actions_menu();
 					frm.toggle_display("hr_section", r.message)
 					frm.toggle_display("salary_compensation_budget_section", r.message)
-					// frm.toggle_display("performance_profile_section", r.message)
 					frappe.ui.form.on('ERF Gender Height Requirement', {
 						form_render: function(frm, cdt, cdn){
 							const row = locals[cdt][cdn];

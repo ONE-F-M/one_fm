@@ -869,4 +869,23 @@ def send_magic_link_to_applicant_based_on_link_for(name, link_for):
 
 @frappe.whitelist()
 def fetch_recruiters(doctype, txt, searchfield, start, page_len, filters):
-    return frappe.db.get_all("Has Role", {"role": "Recruiter"}, ["name", "full_name"])
+	filter_list = []
+	fields = frappe.get_value('DocType',doctype,'search_fields') or ''
+	fields = [i.strip() for i in fields.split(',')]
+	fields.insert(0, 'name')
+
+	if isinstance(filters, dict):
+		for key, val in filters.items():
+			if isinstance(val, (list, tuple)):
+				filter_list.append([doctype, key, val[0], val[1]])
+			else:
+				filter_list.append([doctype, key, "=", val])
+	elif isinstance(filters, list):
+		filter_list.extend(filters)
+
+	if searchfield and txt:
+		filter_list.append([doctype, searchfield, "like", "%%%s%%" % txt])
+
+	return frappe.desk.reportview.execute(doctype, filters = filter_list,
+		fields = fields,limit_start=start,
+		limit_page_length=page_len, as_list=True,ignore_permissions=1)

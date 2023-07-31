@@ -154,12 +154,13 @@ class ERF(Document):
 		self.erf_finalized = today()
 		self.notify_recruitment_manager()
 		# self.notify_approver()
+		self.reload()
   
 	def notify_recruitment_manager(self):
 		try:
-			role_profile = frappe.db.get_value("Role Profile", {"role_profile": "Recruitment Manager"}, "name")
+			role_profile = frappe.db.get_list("Role Profile", {"role_profile": ["IN", ["Recruitment Manager", "Director"]]}, pluck="name")
 			if role_profile:
-				manager_emails = frappe.db.get_list("User", {"role_profile_name": role_profile}, pluck="name")
+				manager_emails = frappe.db.get_list("User", {"role_profile_name": ["IN", role_profile]}, pluck="name")
 				if manager_emails:
 					title = f"Urgent Notification: {self.name} Requires Your Immediate Review"
 					context = {
@@ -173,7 +174,8 @@ class ERF(Document):
 						"date_of_deployment": self.expected_date_of_deployment
 					}
 					msg = frappe.render_template('one_fm/templates/emails/notify_recruitment_manager.html', context=context)
-					sendemail(recipients=manager_emails, subject=title, content=msg)	
+					frappe.enqueue(sendemail, recipients=manager_emails, subject=title, content=msg, at_front=True, is_async=True)
+					frappe.msgprint(_('Recruitment Manager Will Notified By Email.'))	
 		except:
 			frappe.log_error(frappe.get_traceback(), "Error while sending mail to recruitment manager(ERF) ")
       		

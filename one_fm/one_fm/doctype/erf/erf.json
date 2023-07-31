@@ -569,7 +569,6 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.docstatus==0",
    "fieldname": "performance_profile_section",
    "fieldtype": "Section Break",
    "label": "Performance Profile"
@@ -968,7 +967,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-07-31 20:43:44.359337",
+ "modified": "2023-07-31 23:08:41.739415",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
