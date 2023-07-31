@@ -379,6 +379,9 @@ frappe.ui.form.on('Job Offer Term', {
       frm.set_value("one_fm_provide_transportation_by_company", 0)
       frm.refresh_field("one_fm_provide_transportation_by_company")
   },
-  
-
 });
+
+
+var set_offer_table_via_template = (frm) => {
+  
+}
