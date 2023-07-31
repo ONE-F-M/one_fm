@@ -12,6 +12,7 @@ from frappe.model.document import Document
 from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
 from one_fm.utils import set_expire_magic_link
 
+# initialize mindee
 
 @frappe.whitelist(allow_guest=True)
 def get_magic_link():
@@ -30,6 +31,9 @@ def get_magic_link():
                 else:
                     job_applicant = frappe.get_doc('Job Applicant', magic_link.reference_docname)
                     # get other required data like nationality, gender, ...
+                    civil_id_required = True if job_applicant.one_fm_nationality=='Kuwaiti' else False
+                    civil_id_required = True if job_applicant.one_fm_have_a_valid_visa_in_kuwait else False 
+                    result['civil_id_required'] = civil_id_required
                     nationalities = frappe.get_all("Nationality", fields=["name as nationality", "nationality_arabic", "country"])
                     nationalities_dict = {}
                     for i in nationalities:
@@ -50,21 +54,21 @@ def get_magic_link():
                     result['attachments'] = []
                     if job_applicant.passport_data_page:
                         result['attachments'].append({
-                            'name':job_applicant.passport_data_page.split('/files/')[-1],
+                            'name':job_applicant.passport_data_page,
                             'image':url+job_applicant.passport_data_page,
                             'id':'passport_data_page',
                             'placeholder':'Passport Data Page'
                         })
                     if job_applicant.civil_id_front:
                         result['attachments'].append({
-                            'name':i.job_applicant.civil_id_front.split('/files/')[-1],
-                            'image':url+job_applicant.civil_id_front,
+                            'name':job_applicant.civil_id_front,
+                            'image':url+job_applicant.civil_id_front if job_applicant.civil_id_front else '',
                             'id':'civil_id_front',
                             'placeholder':'Civil ID Front'
                         })
                     if job_applicant.civil_id_back:
                         result['attachments'].append({
-                            'name':i.job_applicant.civil_id_back.split('/files/')[-1],
+                            'name':job_applicant.civil_id_back,
                             'image':url+job_applicant.civil_id_back,
                             'id':'civil_id_front',
                             'placeholder':'Civil ID Back'
@@ -73,7 +77,6 @@ def get_magic_link():
                 result = {}
         else:
             result = {}
-
         return result
     except:
         frappe.log_error(frappe.get_traceback(), 'Magic Link')
@@ -85,7 +88,10 @@ def upload_image():
     file_path = cstr(frappe.local.site)+"/public/files/user/magic_link/"
     full_path = bench_path+'/sites/'+file_path
     applicant_name = frappe.db.get_value(frappe.form_dict.reference_doctype, frappe.form_dict.reference_docname, 'applicant_name')
+    response_data = {}
+    errors = []
     # process passport
+    # print(frappe.form_dict)
     if frappe.form_dict.passport_data_page:
         data_content = frappe._dict(frappe.form_dict.passport_data_page)
         reference_doctype = frappe.form_dict.reference_doctype
@@ -104,34 +110,37 @@ def upload_image():
             "attached_to_doctype":frappe.form_dict.reference_doctype, 
             "attached_to_name":frappe.form_dict.reference_docname
         }).insert(ignore_permissions=True)
+        filedoc.db_set('file_url', file_url)
         frappe.db.set_value(reference_doctype, reference_docname, 'passport_data_page', file_url)
         frappe.db.commit()
-        os.remove(bench_path+'/sites/'+cstr(frappe.local.site)+'/public/files/'+filename)
+        absolute_path = bench_path+'/sites/'+cstr(frappe.local.site)+'/public/files/'+filename
+        if os.path.isfile(absolute_path):
+            os.remove(absolute_path)
         # get data from mindee
         try:
-            # mindee_client = Client(api_key=frappe.local.conf.mindee_passport_api)
-            # input_doc = mindee_client.doc_from_path(full_path+filename)
-            # result = input_doc.parse(documents.TypePassportV1)
-            # # Print a brief summary of the parsed data
-            # mindee_doc = result.document
-            # result_dict = frappe._dict(dict(
-            #     birth_place=mindee_doc.birth_place.value,
-            #     expiry_date=mindee_doc.expiry_date.value,
-            #     full_name=mindee_doc.full_name.value,
-            #     given_names=[i.value for i in mindee_doc.given_names],
-            #     is_expired=mindee_doc.is_expired(),
-            #     mrz=mindee_doc.mrz.value,
-            #     mrz1=mindee_doc.mrz1.value,
-            #     mrz2=mindee_doc.mrz2.value,
-            #     type=mindee_doc.type,
-            #     birth_date=mindee_doc.birth_date.value,
-            #     country=mindee_doc.country.value,
-            #     gender=mindee_doc.gender.value,
-            #     id_number=mindee_doc.id_number.value,
-            #     issuance_date=mindee_doc.issuance_date.value,
-            #     surname=mindee_doc.surname.value
-            # ))
-            result_dict = frappe._dict({'birth_place': 'ORAIFITE', 'expiry_date': '2033-02-06', 'full_name': 'EMMANUEL ANTHONY', 'given_names': ['EMMANUEL', 'CHIEMEKA'], 'is_expired': False, 'mrz': 'P<NGAANTHONY<<EMMANUEL<CHIEMEKA<<<<<<<<<<<<<B504093262NGA9303070M330206070324917405<<<46', 'mrz1': 'P<NGAANTHONY<<EMMANUEL<CHIEMEKA<<<<<<<<<<<<<', 'mrz2': 'B504093262NGA9303070M330206070324917405<<<46', 'type': 'passport', 'birth_date': '1993-03-07', 'country': 'NGA', 'gender': 'M', 'id_number': 'B50409326', 'issuance_date': '2023-02-07', 'surname': 'ANTHONY'})
+            mindee_client = Client(api_key=frappe.local.conf.mindee_passport_api)
+            input_doc = mindee_client.doc_from_path(full_path+filename)
+            result = input_doc.parse(documents.TypePassportV1)
+            # Print a brief summary of the parsed data
+            mindee_doc = result.document
+            result_dict = frappe._dict(dict(
+                birth_place=mindee_doc.birth_place.value,
+                expiry_date=mindee_doc.expiry_date.value,
+                full_name=mindee_doc.full_name.value,
+                given_names=[i.value for i in mindee_doc.given_names],
+                is_expired=mindee_doc.is_expired(),
+                mrz=mindee_doc.mrz.value,
+                mrz1=mindee_doc.mrz1.value,
+                mrz2=mindee_doc.mrz2.value,
+                type=mindee_doc.type,
+                birth_date=mindee_doc.birth_date.value,
+                country=mindee_doc.country.value,
+                gender=mindee_doc.gender.value,
+                id_number=mindee_doc.id_number.value,
+                issuance_date=mindee_doc.issuance_date.value,
+                surname=mindee_doc.surname.value
+            ))
+            # result_dict = frappe._dict({'birth_place': 'ORAIFITE', 'expiry_date': '2033-02-06', 'full_name': 'EMMANUEL ANTHONY', 'given_names': ['EMMANUEL', 'CHIEMEKA'], 'is_expired': False, 'mrz': 'P<NGAANTHONY<<EMMANUEL<CHIEMEKA<<<<<<<<<<<<<B504093262NGA9303070M330206070324917405<<<46', 'mrz1': 'P<NGAANTHONY<<EMMANUEL<CHIEMEKA<<<<<<<<<<<<<', 'mrz2': 'B504093262NGA9303070M330206070324917405<<<46', 'type': 'passport', 'birth_date': '1993-03-07', 'country': 'NGA', 'gender': 'M', 'id_number': 'B50409326', 'issuance_date': '2023-02-07', 'surname': 'ANTHONY'})
             country_code = frappe.db.get_value("Country", {'code_alpha3':result_dict.country}, 'name')
             if not country_code:
                 country_code = frappe.db.get_value("Country", {'code':result_dict.country}, 'name')
@@ -169,13 +178,78 @@ def upload_image():
                             frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_third_name', j)
                         if i==3:
                             frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_forth_name', j)
-            return frappe._dict({'mindee':result_dict})
+            response_data['passport']=result_dict
+            # return frappe._dict()
         except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "Mindee")
-            return frappe._dict({})
+            frappe.log_error(frappe.get_traceback(), "Mindee-Passport")
+            errors.append("We could not process your passport document.")
         
+    # civil id front
+    if frappe.form_dict.civil_id_front:
+        data_content = frappe._dict(frappe.form_dict.civil_id_front)
+        reference_doctype = frappe.form_dict.reference_doctype
+        reference_docname = frappe.form_dict.reference_docname
+        data = data_content.data
+        filename = "civil_id_front-"+applicant_name+"_"+hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest()[:5]+"-"+data_content.name
+        content = base64.b64decode(data)
+        with open(full_path+filename, "wb") as fh:
+            fh.write(content)
+        # append to File doctype
+        file_url = "/files/user/magic_link/"+filename
+        filedoc = frappe.get_doc({
+            "doctype":"File", 
+            "is_private":0,
+            "file_url":"/files/user/magic_link/"+filename, 
+            "attached_to_doctype":frappe.form_dict.reference_doctype, 
+            "attached_to_name":frappe.form_dict.reference_docname
+        }).insert(ignore_permissions=True)
+        filedoc.db_set('file_url', file_url)
+        frappe.db.set_value(reference_doctype, reference_docname, 'civil_id_front', file_url)
+        frappe.db.commit()
+        absolute_path = frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/public/files/'+filename
+        if os.path.isfile(absolute_path):
+            os.remove(absolute_path)
+        # process file detection
+        try:
+            # Init a new client and add your custom endpoint (document)
+            mindee_client = Client(api_key=frappe.local.conf.mindee_passport_api).add_endpoint(
+                account_name="onefm",
+                endpoint_name="kuwait_civil_id_front",
+            )
 
-    return {}
+            # Load a file from disk and parse it.
+            # The endpoint name must be specified since it cannot be determined from the class.
+            result = mindee_client.doc_from_path(
+                frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/public/'+file_url
+            ).parse(documents.TypeCustomV1, endpoint_name="kuwait_civil_id_front")
+
+            civil_id_front = {}
+            # Iterate over all the fields in the document
+            for field_name, field_values in result.document.fields.items():
+                civil_id_front[field_name] = str(field_values)
+            response_data['civil_id_front']=civil_id_front
+            print(response_data, type(civil_id_front))
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Mindee-Civil ID")
+            errors.append("We could not process your Civil ID document.")
+
+    return frappe._dict({**response_data, **{'errors':errors}})
+
+       
+def is_date(string, fuzzy=False):
+    """
+    Return whether the string can be interpreted as a date.
+
+    :param string: str, string to check for date
+    :param fuzzy: bool, ignore unknown tokens in string if True
+    """
+    try:
+        parse(string, fuzzy=fuzzy)
+        return True
+
+    except ValueError:
+        return False
+
 
 @frappe.whitelist(allow_guest=True)
 def update_job_applicant():
@@ -190,3 +264,12 @@ def update_job_applicant():
         return {'error':str(e)}
 
     return {'msg':'success'}
+
+
+@frappe.whitelist(allow_guest=True)
+def submit_job_applicant(job_applicant):
+    try:
+        # set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
+        return {'msg':'Your application has been successfully submitted, we will be intouch soonest.'}
+    except Exception as e:
+        return {'error':e}

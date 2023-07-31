@@ -61,34 +61,43 @@ export default {
             this.countries = data.countries;
             this.genders = data.genders;
             this.religions = data.religions;
+            this.civil_id_required = data.civil_id_required;
+            // set upload fields
+            if (data.civil_id_required){
+              $('#civil_id_front').parent().show();
+              $('#civil_id_back').parent().show();
+            }
+            
             if (data.attachments.length){
               document.getElementById("image_preview").innerHTML = null; // clear image preview
               data.attachments.forEach(d => {
-                var preview_el = document.createElement("div");
-                preview_el.classList="col-md-6"
+                var preview_el = document.createElement("span");
+                preview_el.classList="col-md-4 col-xl-4"
                 preview_el.innerHTML = `
                   <h4>${d.placeholder}</h4>
                   <img src="" alt="${d.id}" id="${d.id}-preview"style="height: 350px;">
+                  <i class="btn btn-warning" id="${d.id}-update" onclick="document.querySelector('#${d.id}').parentNode.style.display='block';document.querySelector('#${d.id}-update').style.display='none';">Change Image</i>
                 `;
                 document.getElementById("image_preview").appendChild(preview_el);
                 document.getElementById(`${d.id}-preview`).src = d.image;
-                if (d.name.startsWith('passport-')){
-                  document.querySelector('#'+d.id).parentNode.parentNode.style.display = 'none';
-                } else if (d.name.startsWith('civil_id_')){
-                  document.querySelector('#'+d.id).parentNode.style.display = 'none';
-                }
+                // hide the upload field
+                $('#'+d.id).parent().hide()
               });
             }
           }
         })       
       }
     },
+    // update Image
+    updateImage(id){
+      document.querySelector(`#${id}`).style.display='block;'
+    },
     // Preview Image
     previewImage(e){
       let el = document.querySelector(`#${e.target.id}-preview`);
       if (!el){
         var preview_el = document.createElement("div");
-        preview_el.classList="col-md-6"
+        preview_el.classList="col-md-4 col-xl-4"
         preview_el.innerHTML = `
           <h4>${e.target.placeholder}</h4>
           <img src="" alt="${e.target.placeholder}" id="${e.target.id}-preview" style="height: 350px;">
@@ -136,12 +145,12 @@ export default {
         params: me.imageFiles,
         method: 'POST',
         onSuccess(data) {
-          console.log(data)
-          if(data.mindee){
+          // console.log(data)
+          if(data.passport || data.civil_id_front || data.civil_id_back){
             // update dom with mindee
             Swal.fire(
-              'Passport Uploaded',
-              `Your passport data has been uploaded, complete the form below to fill any missing/incorrect data.\n
+              'Passport/Civil ID Uploaded',
+              `Your passport/Civil ID data has been uploaded, complete the form below to fill any missing/incorrect data.\n
               All * fields in red must be filled, please fill it.`,
               'success'
             )
@@ -175,7 +184,8 @@ export default {
               'warning'
             )
           } else {
-
+            // success
+            me.launchToast(`${e.target.previousSibling.textContent} updated.`);
           }
         })
 
@@ -190,7 +200,50 @@ export default {
       }
     },
     submitForm(e){
-      console.log(e)
+      let me = this;
+      document.querySelectorAll('#personal-detail input:required').forEach(function(e) {
+        if(!e.value){
+          Swal.fire(
+            'Error',
+            `${e.previousSibling.textContent} must be filled before submission.`,
+            'warning'
+          )
+        } 
+      });
+      // submit to api
+      document.querySelector('#cover-spin').style.display = 'block';
+      let complete = createResource({
+          url: '/api/method/one_fm.www.job_applicant_magic_link.index.submit_job_applicant',
+          params: {job_applicant:me.job_applicant.name},
+          method: 'POST',
+        })
+        complete.fetch().then(res=>{
+          if(res.error){
+            Swal.fire(
+              'Error',
+              res.error,
+              'warning'
+            )
+          } else {
+            // success
+            Swal.fire(
+              'Success',
+              res.msg,
+              'success'
+            )
+          }
+          document.querySelector('#cover-spin').style.display = 'none';
+        })
+
+    },
+    launchToast(desc) {
+        var x = document.getElementById("toast")
+        x.querySelector('#toast-desc').innerText = desc;
+        x.className = "show";
+        setTimeout(function(){
+          x.className = x.className.replace("show", ""); 
+          x.querySelector('#toast-desc').innerText = '';
+        }, 5000);
     }
   },
   watch: {
@@ -249,29 +302,31 @@ export default {
                             </h2>
                             <hr>
                             <div class="row">
-                                  <div class="form-group col-md-12">
-                                      <label  for="file">International Passport Data Page</label>
-                                      <input class="form-control" type="file" id="passport_data_page" placeholder="Passport Data"  name="passport_data_page"  accept="image/png, image/jpeg" :onchange="previewImage">
-                                  </div>
+                                <div class="form-group col-md-12">
+                                    <label  for="file">International Passport Data Page</label>
+                                    <input class="form-control" type="file" id="passport_data_page" placeholder="Passport Data"  name="passport_data_page"  accept="image/png, image/jpeg" :onchange="previewImage">
+                                </div>
                             </div>
-                            <div class="row" :style="job_applicant.civil_id_reqd ? 'display:block':'display:none'">
-                                <div class="form-group col-md-6">
+                            <div class="row">
+                                <div class="form-group col-md-6" style="display:none;">
                                     <label class="form-label" for="file" >Civil ID Front Side</label> <span class="required_indicator" style="color: red;">*</span>
                                     <input class="form-control" type="file" id="civil_id_front" placeholder="Front Civil ID" name="file"  accept="image/png, image/jpeg" :onchange="previewImage">
-                                    <span id="tooltiptext1">* Please Upload Your Civil ID</span>
+                                    <span id="tooltiptext1">* Please Upload Your Civil ID Front</span>
                                 </div>
-                                <div class="form-group col-md-6">
+                                <div class="form-group col-md-6" style="display:none;">
                                     <label class="form-label" for="file" >Civil ID Back Side</label> <span class="required_indicator" style="color: red;">*</span>
                                     <input class="form-control" type="file" id="civil_id_back" placeholder="Back Civil ID"  name="file"  accept="image/png, image/jpeg" :onchange="previewImage">
-                                    <span id="tooltiptext2">* Please Upload Your Civil ID</span>
+                                    <span id="tooltiptext2">* Please Upload Your Civil ID Back</span>
                                     <br>
                                 </div>
                             </div>
                             
                             <hr>
                             
-                            <div class="row col-md-12">
+                            <div class="row">
+                              <div class="col-md-12">
                                 <div id="image_preview"></div>
+                              </div>
                             </div>
 
 
@@ -294,7 +349,7 @@ export default {
                             </div>
 
                             <div class="form-container">
-                                <form class="form" id="perdonal-detail" @submit.prevent="submitForm">
+                                <form class="form" id="personal-detail" @submit.prevent="submitForm">
                                     <h2>Personal Details</h2>
                                     <hr>
                                   <div class="row">
@@ -302,7 +357,7 @@ export default {
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label class="form-label text-danger" for="first_name">First Name *</label>
-                                            <input class="form-control input" type="text" id="one_fm_first_name" name="one_fm_first_name" v-model="job_applicant.one_fm_first_name" :onchange="putField">
+                                            <input class="form-control input" type="text" id="one_fm_first_name" name="one_fm_first_name" v-model="job_applicant.one_fm_first_name" :onchange="putField" required>
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label" for="second_name">Second Name</label>
@@ -314,7 +369,7 @@ export default {
                                         </div>
                                         <div class="form-group">
                                             <label class="form-label text-danger" for="last_name">Last Name *</label>
-                                            <input class="form-control input" type="text" id="one_fm_last_name" name="one_fm_last_name" v-model="job_applicant.one_fm_last_name" :onchange="putField">
+                                            <input class="form-control input" type="text" id="one_fm_last_name" name="one_fm_last_name" v-model="job_applicant.one_fm_last_name" :onchange="putField" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -340,7 +395,7 @@ export default {
                                     <div class="col-md-4">
                                       <div class="form-group">
                                           <label class="form-label text-danger" for="one_fm_gender">Gender *</label>
-                                          <select class="form-control input" placeholder="Religion" id="one_fm_gender" aria-placeholder="Gender" name="one_fm_gender" v-model="job_applicant.one_fm_gender" :onchange="putField">
+                                          <select class="form-control input" placeholder="Religion" id="one_fm_gender" aria-placeholder="Gender" name="one_fm_gender" v-model="job_applicant.one_fm_gender" :onchange="putField" required=1>
                                               <option value=""></option>
                                               <option :value="gender" v-for="gender in genders">{{gender}}</option>
                                           </select>
@@ -511,6 +566,7 @@ export default {
                 </div>
 
               </article>
+              <div id="toast"><div id="toast-img"><i class="bi bi-arrow-repeat"></i></div><div id="toast-desc"></div></div>
             </main>
         </div>
       </div>
@@ -618,5 +674,104 @@ export default {
 	border-radius: 50%;
 	-webkit-animation: spin 0.8s linear infinite;
 	animation: spin 0.8s linear infinite;
+}
+
+
+#toast {
+    visibility: hidden;
+    max-width: 50px;
+    height: 50px;
+    /*margin-left: -125px;*/
+    margin: auto;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 2px;
+
+    position: fixed;
+    z-index: 1;
+    left: 0;right:0;
+    bottom: 30px;
+    font-size: 17px;
+    white-space: nowrap;
+}
+#toast #toast-img{
+	width: 50px;
+	height: 50px;
+    
+    float: left;
+    
+    padding-top: 16px;
+    padding-bottom: 16px;
+    
+    box-sizing: border-box;
+
+    
+    background-color: #111;
+    color: #fff;
+}
+#toast #toast-desc{
+
+    
+    color: #fff;
+   
+    padding: 16px;
+    
+    overflow: hidden;
+	white-space: nowrap;
+}
+
+#toast.show {
+    visibility: visible;
+    -webkit-animation: fadein 0.5s, expand 0.5s 0.5s,stay 3s 1s, shrink 0.5s 2s, fadeout 0.5s 2.5s;
+    animation: fadein 0.5s, expand 0.5s 0.5s,stay 3s 1s, shrink 0.5s 4s, fadeout 0.5s 4.5s;
+}
+
+@-webkit-keyframes fadein {
+    from {bottom: 0; opacity: 0;} 
+    to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+    from {bottom: 0; opacity: 0;}
+    to {bottom: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes expand {
+    from {min-width: 50px} 
+    to {min-width: 350px}
+}
+
+@keyframes expand {
+    from {min-width: 50px}
+    to {min-width: 350px}
+}
+@-webkit-keyframes stay {
+    from {min-width: 350px} 
+    to {min-width: 350px}
+}
+
+@keyframes stay {
+    from {min-width: 350px}
+    to {min-width: 350px}
+}
+@-webkit-keyframes shrink {
+    from {min-width: 350px;} 
+    to {min-width: 50px;}
+}
+
+@keyframes shrink {
+    from {min-width: 350px;} 
+    to {min-width: 50px;}
+}
+
+@-webkit-keyframes fadeout {
+    from {bottom: 30px; opacity: 1;} 
+    to {bottom: 60px; opacity: 0;}
+}
+
+@keyframes fadeout {
+    from {bottom: 30px; opacity: 1;}
+    to {bottom: 60px; opacity: 0;}
 }
 </style>
