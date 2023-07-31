@@ -482,13 +482,16 @@ def email_login(usr, pwd):
 		if(user.api_key and user.api_secret):
 			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
 		else:
+			user = frappe.session.user
+			frappe.set_user('Administrator')
 			generate_keys(user.name)
 			user.reload()
 			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
+			frappe.set_user(user)
 		response("success", 200, msg)
 	except frappe.exceptions.AuthenticationError:
 		print('auth eror')
 		response("error", 401, None, frappe.local.response.message)
 	except Exception as e:
-		print(frappe.get_traceback())
+		print(frappe.get_traceback(), 'Email Login')
 		response("error", 500, None, str(e))
