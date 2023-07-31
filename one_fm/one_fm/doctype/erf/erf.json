@@ -422,6 +422,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "salary_per_person",
    "fieldtype": "Currency",
    "label": "Salary Per Person",
@@ -429,6 +430,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "total_cost_in_salary",
    "fieldtype": "Currency",
    "label": "Total Cost in Salary",
@@ -960,7 +962,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-07-31 13:45:53.118718",
+ "modified": "2023-07-31 14:09:42.174877",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
