@@ -866,3 +866,7 @@ def send_magic_link_to_applicant_based_on_link_for(name, link_for):
             send_career_history_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
         elif link_for == 'Job Applicant':
             send_applicant_doc_magic_link(name, applicant_data[0].applicant_name, applicant_data[0].designation)
+
+@frappe.whitelist()
+def fetch_recruiters(doctype, txt, searchfield, start, page_len, filters):
+    return frappe.db.get_all("Has Role", {"role": "Recruiter"}, ["name", "full_name"])
