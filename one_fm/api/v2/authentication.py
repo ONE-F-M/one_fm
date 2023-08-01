@@ -482,7 +482,6 @@ def email_login(usr, pwd):
 		if(user.api_key and user.api_secret):
 			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
 		else:
-			user = frappe.session.user
 			frappe.set_user('Administrator')
 			generate_keys(user.name)
 			user.reload()
