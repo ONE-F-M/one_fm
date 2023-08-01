@@ -15,8 +15,7 @@ import json
 from one_fm.api.doc_events import haversine
 from one_fm.api.v1.roster import get_current_shift
 
-from one_fm.one_fm.page.face_recognition.utils import check_existing, update_onboarding_employee
-from one_fm.api.v2.face_recognition import late_checkin_checker
+from one_fm.one_fm.page.face_recognition.utils import check_existing, update_onboarding_employee, late_checkin_checker
 from one_fm.api.v2.zenquotes import fetch_quote
 
 # setup channel for face recognition
@@ -29,7 +28,6 @@ channels = [
 stubs = [
 	facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
 ]
-
 
 
 class NumpyArrayEncoder(JSONEncoder):
@@ -122,19 +120,19 @@ def verify():
 
 
 		# setup channel
-		face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-		channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-		# setup stub
-		stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+		# face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+		# channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
+		# # setup stub
+		# stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
 
 		# request body
 		req = facial_recognition_pb2.FaceRecognitionRequest(
 			username = frappe.session.user,
 			media_type = "video",
-			media_content = video_content,
+			media_content = video_content
 		)
 		# Call service stub and get response
-		res = stub.FaceRecognition(req)
+		res = random.choice(stubs).FaceRecognition(req)
 
 		if res.verification == "FAILED":
 			msg = res.message
@@ -312,7 +310,7 @@ def check_existing():
 	
 	# get current and previous day date.
 	today = nowdate()
-	prev_date = ((datetime.datetime.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).split(" ")[0]
+	prev_date = ((datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).split(" ")[0]
 
 	#get Employee Schedule
 	last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee},order_by='creation desc',limit_page_length=1)

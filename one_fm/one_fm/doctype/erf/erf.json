@@ -162,7 +162,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Department",
-   "options": "Department"
+   "options": "Department",
+   "reqd": 1
   },
   {
    "fieldname": "designation",
