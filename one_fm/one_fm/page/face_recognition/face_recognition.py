@@ -5,6 +5,7 @@ import frappe, ast, base64, time, grpc, json, random
 from frappe import _
 from frappe.utils import now_datetime, cstr, nowdate, cint , getdate
 import numpy as np
+import datetime
 from datetime import timedelta, datetime
 from json import JSONEncoder
 # import cv2, os
@@ -57,12 +58,16 @@ def enroll():
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
 
+
+		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
 		# Setup channel
 		face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
 		channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
 		# setup stub
+
+
 		stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
-			# request body
+		# request body
 		req = enroll_pb2.EnrollRequest(
 			username = frappe.session.user,
 			user_encoded_video = video_content,
@@ -76,10 +81,12 @@ def enroll():
 			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
 		
 		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+
 		doc.enrolled = 1
 		doc.save(ignore_permissions=True)
 		update_onboarding_employee(doc)
 		frappe.db.commit()
+
 		return _("Successfully Enrolled!")
 
 	except Exception as exc:
@@ -105,10 +112,12 @@ def verify():
 		# if not user_within_site_geofence(employee, log_type, latitude, longitude):
 		# 	frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
 
+
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
+
 
 		# setup channel
 		# face_recognition_service_url = frappe.local.conf.face_recognition_service_url
@@ -131,6 +140,7 @@ def verify():
 			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
 
 		return check_in(log_type, skip_attendance, latitude, longitude)
+
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		raise exc

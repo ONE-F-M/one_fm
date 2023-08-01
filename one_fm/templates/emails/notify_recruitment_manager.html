@@ -1,0 +1,67 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, .notify_recruitment_manager td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      width: 30%;
+      text-align: left;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #ddd;
+    }
+    
+    </style>
+    
+    
+    <table>
+      <tbody class="notify_recruitment_manager">
+        <tr>
+          <th>ERF Name</th>
+          <td>{{ erf_name }}</td>
+        </tr>
+        <tr>
+          <th>Project</th>
+          <td>{{ project }}</td>
+        </tr>
+        <tr>
+          <th>Department</th>
+          <td>{{ department }}</td>
+        </tr>
+        <tr>
+            <th>Designation</th>
+            <td>{{ designation }}</td>
+        </tr>
+        <tr>
+          <th>Requester</th>
+          <td>{{ requester }}</td>
+        </tr>
+        <tr>
+          <th>Reason For Request</th>
+          <td>{{ reason_for_request }}</td>
+        </tr>
+        <tr>
+          <th>Expected Date of Deployment</th>
+          <td>{{ date_of_deployment }}</td>
+        </tr>
+        <tr>
+          <th>Link to document</th>
+          <td><a href={{doc_link}}>Doc Link</a></td>
+        </tr>
+      </tbody>
+    </table>
+    
