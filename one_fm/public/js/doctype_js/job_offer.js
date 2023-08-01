@@ -129,22 +129,21 @@ frappe.ui.form.on('Job Offer', {
     set_filters(frm);
   },
   offer_term_templates: function(frm){
-    if (cur_frm.doc.one_fm_erf){
+    if (frm.doc.offer_term_templates){
       frappe.call({
         method: 'frappe.client.get',
         args: {
-          doctype: 'ERF',
-          filters: {'name': frm.one_fm_erf}
+          doctype: 'Job Offer Templates',
+          filters: {'name': frm.doc.offer_term_templates}
         },
         callback: function(r) {
           if(r && r.message){
-            var erf = r.message;
-            set_offer_table_via_template(frm, erf)
+            var temp = r.message;
+            set_offer_terms_(frm, temp.offer_terms_table)
           }
         }
       });
     }
-    
   } 
 });
 
@@ -335,14 +334,6 @@ var set_offer_terms = function(frm, terms_list) {
     frappe.model.set_value(offer_term.doctype, offer_term.name, 'offer_term', item['offer_term']);
     frappe.model.set_value(offer_term.doctype, offer_term.name, 'value', item['value']);
 
-    if(item["offer_term"] == "Accommodation"){
-      frm.set_value("one_fm_provide_accommodation_by_company", 1)
-      frm.refresh_field("one_fm_provide_accommodation_by_company")
-    }else if (item["offer_term"] == "Transportation"){
-      frm.set_value("one_fm_provide_transportation_by_company", 1)
-      frm.refresh_field("one_fm_provide_transportation_by_company")
-    }
-
   });
   frm.refresh_field('offer_terms');
 }
@@ -410,26 +401,22 @@ frappe.ui.form.on('Job Offer Term', {
 });
 
 
-var set_offer_table_via_template = (frm, erf) => {
-  if (cur_frm.doc.offer_term_templates == "Standard"){
-    var terms_list = set_standard_offer_terms(frm, erf)
-    set_offer_terms(frm, terms_list)
-  }
-}
 
+var set_offer_terms_ = function(frm, terms_list) {
+  frm.clear_table('offer_terms');
+  terms_list.forEach((item) => {
+    let offer_term = frappe.model.add_child(frm.doc, 'Job Offer Term', 'offer_terms');
+    frappe.model.set_value(offer_term.doctype, offer_term.name, 'offer_term', item['offer_terms']);
+    frappe.model.set_value(offer_term.doctype, offer_term.name, 'value', item['valuedescription']);
 
-var set_standard_offer_terms = (frm, erf) => {
-  var terms_list = []
-  var constant_terms = ["Accommodation", "Transportation"]
-  constant_terms.forEach((item) => {
-    terms_list.push({'offer_term': item, 'value': 'Borne By The Company'});
+    if(item["offer_terms"] == "Accommodation"){
+      frm.set_value("one_fm_provide_accommodation_by_company", 1)
+      frm.refresh_field("one_fm_provide_accommodation_by_company")
+    }else if (item["offer_terms"] == "Transportation"){
+      frm.set_value("one_fm_provide_transportation_by_company", 1)
+      frm.refresh_field("one_fm_provide_transportation_by_company")
+    }
+
   });
-
-  var hours = erf.shift_hours?erf.shift_hours:9;
-  let vacation_days = erf.vacation_days?erf.vacation_days:30;
-  terms_list.push({'offer_term': 'Working Hours', 'value': hours+' hours a day, (Subject to Operational Requirements) from Sunday to Thursday'});
-  terms_list.push({'offer_term': 'Annual Leave', 'value': '('+vacation_days+') days paid leave, as per Kuwait Labor Law (Private Sector)'});
-  terms_list.push({'offer_term': 'Probation Period', 'value': '(100) working days'});
-  
-  return terms_list
+  frm.refresh_field('offer_terms');
 }
