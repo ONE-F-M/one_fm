@@ -142,6 +142,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "number_of_candidates_required",
    "fieldtype": "Int",
    "label": "Number of Candidates Required",
@@ -188,7 +189,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
-   "options": "\nDraft\nAccepted\nDeclined\nClosed\nCancelled",
+   "options": "\nOpen\nAccepted\nRejected\nHold\nCancelled",
    "read_only": 1
   },
   {
@@ -296,6 +297,7 @@
    "label": "Is Height Mandatory"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "gender_height_requirement",
    "fieldtype": "Table",
    "options": "ERF Gender Height Requirement"
@@ -360,6 +362,7 @@
    "options": "Designation Skill"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "performance_profile",
    "fieldtype": "Link",
    "label": "Performance Profile",
@@ -367,6 +370,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "hiring_method",
    "fieldtype": "Select",
    "label": "Hiring Method",
@@ -393,6 +397,7 @@
    "label": "Is Uniform Needed for This Job"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "grade",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -401,6 +406,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "salary_structure",
    "fieldtype": "Link",
    "label": "Salary Structure",
@@ -408,6 +414,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "salary_details",
    "fieldtype": "Table",
    "label": "Salary Details",
@@ -415,6 +422,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "salary_per_person",
    "fieldtype": "Currency",
    "label": "Salary Per Person",
@@ -422,6 +430,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "total_cost_in_salary",
    "fieldtype": "Currency",
    "label": "Total Cost in Salary",
@@ -435,6 +444,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "recruiter_assigned",
    "fieldtype": "Link",
    "label": "Recruiter Assigned",
@@ -443,6 +453,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "0",
    "fieldname": "need_to_assign_more_recruiter",
    "fieldtype": "Check",
@@ -450,6 +461,7 @@
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "need_to_assign_more_recruiter",
    "fieldname": "secondary_recruiter_assigned",
    "fieldtype": "Link",
@@ -534,8 +546,8 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval: doc.draft_erf_to_hrm && doc.docstatus == 0",
-   "depends_on": "draft_erf_to_hrm",
+   "collapsible_depends_on": "eval: doc.docstatus == 1",
+   "depends_on": "eval: doc.docstatus == 1",
    "fieldname": "hr_section",
    "fieldtype": "Section Break",
    "label": "HR",
@@ -543,8 +555,8 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval: doc.draft_erf_to_hrm && doc.docstatus == 0",
-   "depends_on": "draft_erf_to_hrm",
+   "collapsible_depends_on": "eval: doc.docstatus == 1",
+   "depends_on": "eval: doc.docstatus == 1",
    "fieldname": "salary_compensation_budget_section",
    "fieldtype": "Section Break",
    "label": "Salary Compensation Budget",
@@ -587,6 +599,7 @@
    "options": "User"
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: !doc.project_for_recruiter && doc.recruiter_assigned",
    "fieldname": "create_project_for_recruiter",
    "fieldtype": "Button",
@@ -667,12 +680,14 @@
    "label": "Provide Company Insurance"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "provide_company_insurance_html",
    "fieldtype": "HTML",
    "label": "Provide Company Insurance HTML",
    "permlevel": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "provide_health_insurance_html",
    "fieldtype": "HTML",
    "label": "Provide Health Insurance HTML",
@@ -686,6 +701,7 @@
    "label": "Provide Health Insurance"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "provide_mobile_with_line_html",
    "fieldtype": "HTML",
    "label": "Provide Mobile with Line HTML"
@@ -712,6 +728,7 @@
    "label": "Amount in Advance"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "provide_salary_advance_html",
    "fieldtype": "HTML",
    "label": "Provide Salary Advance HTML"
@@ -749,6 +766,7 @@
    "label": "Provide Accommodation by Company"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "provide_accommodation_by_company_html",
    "fieldtype": "HTML",
    "label": "Provide Accommodation by Company HTML"
@@ -770,6 +788,7 @@
    "options": "ERF Employee"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "provide_transportation_by_company_html",
    "fieldtype": "HTML",
    "label": "Provide Transportation by Company HTML"
@@ -782,6 +801,7 @@
    "label": "Provide Transportation by Company"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "provide_vehicle_by_company_html",
    "fieldtype": "HTML",
    "label": "Provide Vehicle by Company HTML"
@@ -794,6 +814,7 @@
    "label": "Provide Vehicle by Company"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "provide_laptop_by_company_html",
    "fieldtype": "HTML",
    "label": "Provide Laptop by Company HTML"
@@ -806,6 +827,7 @@
    "label": "Provide Laptop by Company"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "email_access_needed_html",
    "fieldtype": "HTML",
    "label": "Email Access Needed HTML"
@@ -843,6 +865,7 @@
    "label": "For Remote Working"
   },
   {
+   "allow_on_submit": 1,
    "description": "The total amount of salary per person",
    "fieldname": "base",
    "fieldtype": "Currency",
@@ -875,6 +898,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
    "fieldname": "interview_round",
    "fieldtype": "Link",
@@ -938,7 +962,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-06-25 22:24:35.468885",
+ "modified": "2023-07-31 14:09:42.174877",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

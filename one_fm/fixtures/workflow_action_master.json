@@ -2,6 +2,20 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2023-07-20 12:20:02.155489",
+  "name": "Submit to Recruitment Manager",
+  "workflow_action_name": "Submit to Recruitment Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-07-22 17:55:09.157047",
+  "name": "Hold",
+  "workflow_action_name": "Hold"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2023-07-03 11:27:33.950047",
   "name": "Post as Draft",
   "workflow_action_name": "Post as Draft"
