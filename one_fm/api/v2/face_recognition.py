@@ -187,7 +187,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
             **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
                 'message':res.message, 'data':res.data, 'source': 'Checkin'}})
-            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment, "Mobile Web")
             if log_type == "IN":
                 check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
                 if check:
@@ -202,7 +202,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
                 'message':res.message, 'data':res.data, 'source': 'Checkin'}})
             return response(msg, 400, None, data)
         elif res.verification == "OK":
-            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment)
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment, "Mobile Web")
             if log_type == "IN":
                 check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
                 if check:
@@ -217,13 +217,14 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         return response("Internal Server Error", 500, None, error)
 
 
-def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float, shift_assignment: str) -> dict:
+def create_checkin_log(employee: str, log_type: str, skip_attendance: int, latitude: float, longitude: float, shift_assignment: str, source: str) -> dict:
     checkin = frappe.new_doc("Employee Checkin")
     checkin.employee = employee
     checkin.log_type = log_type
     checkin.device_id = frappe.utils.cstr(latitude)+","+frappe.utils.cstr(longitude)
     checkin.skip_auto_attendance = 0 #skip_attendance
     checkin.shift_assignment = shift_assignment
+    checkin.source = source
     checkin.save()
     frappe.db.commit()
     return checkin.as_dict()

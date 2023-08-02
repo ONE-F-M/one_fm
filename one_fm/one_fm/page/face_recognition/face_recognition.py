@@ -139,7 +139,7 @@ def verify():
 			data = res.data
 			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
 
-		return check_in(log_type, skip_attendance, latitude, longitude)
+		return check_in(log_type, skip_attendance, latitude, longitude, "Frappe Page")
 
 	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
@@ -177,13 +177,14 @@ def user_within_site_geofence(employee, log_type, user_latitude, user_longitude)
 				return True
 	return False
 
-def check_in( log_type, skip_attendance, latitude, longitude):
+def check_in( log_type, skip_attendance, latitude, longitude, source):
 	employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
 	checkin = frappe.new_doc("Employee Checkin")
 	checkin.employee = employee
 	checkin.log_type = log_type
 	checkin.device_id = cstr(latitude)+","+cstr(longitude)
 	checkin.skip_auto_attendance = cint(skip_attendance)
+	checkin.source = source
 	# checkin.time = now_datetime()
 	# checkin.actual_time = now_datetime()
 	checkin.save()
