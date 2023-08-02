@@ -331,13 +331,18 @@ class ERF(Document):
 		# self.reason_for_decline = reason_for_decline
 		# self.save()
 		self.notify_recruiter_and_requester()
-		if self.status == 'Accepted':
+		if status == "Closed":
+			self.workflow_state = "Closed"
+			self.status = "Closed"
+			self.save()
+		elif self.status == 'Accepted':
 			assign_recruiter_to_project_task(self)
 			self.notify_grd_supervisor()
 			self.notify_gsd_department()
 			if self.provide_salary_advance:
 				self.notify_finance_department()
-			create_job_opening_from_erf(self)
+			if not frappe.db.exists("Job Opening", {'one_fm_erf':self.name}):
+				create_job_opening_from_erf(self)
 		self.reload()
         
         

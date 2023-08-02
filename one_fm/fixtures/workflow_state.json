@@ -961,5 +961,14 @@
   "name": "Pending Stock Approval",
   "style": "",
   "workflow_state_name": "Pending Stock Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-08-02 13:13:20.289822",
+  "name": "Close",
+  "style": "",
+  "workflow_state_name": "Closed"
  }
 ]

@@ -3,6 +3,8 @@
 
 frappe.ui.form.on('ERF', {
 	refresh: function(frm) {
+		// 
+		
 		if(frm.is_new()){
 			frm.set_value('erf_requested_by', frappe.session.user);
 		}
@@ -114,6 +116,7 @@ frappe.ui.form.on('ERF', {
 						args: {status: 'Closed'},
 						callback(r) {
 							if (!r.exc) {
+								frm.set_value('status', 'Close');
 								frm.reload_doc();
 							}
 						},
