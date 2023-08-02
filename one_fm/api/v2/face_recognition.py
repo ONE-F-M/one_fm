@@ -187,7 +187,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
             **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
                 'message':res.message, 'data':res.data, 'source': 'Checkin'}})
-            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment, "Mobile Web")
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment, "Mobile App")
             if log_type == "IN":
                 check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
                 if check:
@@ -202,7 +202,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
                 'message':res.message, 'data':res.data, 'source': 'Checkin'}})
             return response(msg, 400, None, data)
         elif res.verification == "OK":
-            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment, "Mobile Web")
+            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, shift_assignment, "Mobile App")
             if log_type == "IN":
                 check = late_checkin_checker(doc, val_in_shift_type, existing_perm )
                 if check:
