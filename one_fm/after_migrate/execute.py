@@ -1,4 +1,5 @@
 import frappe, os, shutil
+from frappe.utils import cstr
 from one_fm.utils import production_domain
 
 def comment_timesheet_in_hrms():
@@ -99,3 +100,13 @@ def replace_job_opening():
     app_path = frappe.utils.get_bench_path()+"/apps/hrms/hrms/templates/generators"
     os.remove(app_path+'/job_opening.html')
     shutil.copy(frappe.utils.get_bench_path()+"/apps/one_fm/one_fm/templates/generators/job_opening.html", app_path+'/job_opening.html')
+    bench_path = frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/'
+    private = "private/"
+    public = "public/"
+    user_files_path = "private/files/user"
+    user_magic_link = "private/files/user/magic_link"
+    user_files_path = "public/files/user"
+    user_magic_link = "public/files/user/magic_link"
+    for i in [user_files_path, user_magic_link]:
+        if not os.path.exists(bench_path+i):
+            os.mkdir(bench_path+i)
