@@ -20,6 +20,7 @@
   "erf",
   "employment_type",
   "attendance_by_timesheet",
+  "auto_attendance",
   "shift_working_html",
   "shift_working",
   "operations_shift",
@@ -1087,7 +1088,7 @@
    "label": "Uniform for Work"
   },
   {
-   "depends_on": "eval:doc.docstatus > 0 && doc.employee",
+   "depends_on": "eval:doc.docstatus > 0 && doc.employee ",
    "fieldname": "tools_for_work_section",
    "fieldtype": "Section Break",
    "label": "Tools for Work"
@@ -1498,12 +1499,19 @@
    "fieldtype": "Check",
    "label": "Attendance by Timesheet",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "auto_attendance",
+   "fieldtype": "Check",
+   "label": "Auto Attendance"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-04-11 21:26:38.455441",
+ "modified": "2023-07-13 14:27:21.486819",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

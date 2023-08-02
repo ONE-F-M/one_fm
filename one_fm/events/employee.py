@@ -30,4 +30,20 @@ def clear_schedules(doc):
             Employee Schedule cleared for {doc.employee_name} starting from {add_days(doc.relieving_date, 1)} 
         """)
 
-
+def assign_role_profile_based_on_designation(doc, method=None):
+    if doc.designation:
+        if doc.is_new:
+            if doc.user_id:
+                designation = doc.designation
+            else:
+                return
+        else:
+            if doc.designation != doc.get_doc_before_save().designation:
+                designation = doc.designation
+            else:
+                return
+        r_prof = frappe.db.get_value("Designation", designation, "role_profile")
+        if r_prof:
+            user = frappe.get_doc("User", doc.user_id)
+            user.role_profile_name = r_prof
+            user.save()

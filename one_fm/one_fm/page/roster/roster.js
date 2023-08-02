@@ -1133,6 +1133,7 @@ let attendancemap = {
 	'Work From Home': 'greenboxcolor',
 	'Half Day': 'greenboxcolor',
 	'On Leave': 'purplebox',
+	"Holiday":"greyboxcolor",
 	
 };
 let attendance_abbr_map = {
@@ -1140,7 +1141,7 @@ let attendance_abbr_map = {
 	'Absent': 'A',
 	'Work From Home': 'WFH',
 	'Half Day': 'HD',
-	
+	"Holiday":"H",
 	'On Leave': 'OL'
 };
 // Renders on get_roster_data function

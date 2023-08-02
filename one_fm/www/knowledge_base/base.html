@@ -18,7 +18,18 @@
     <link rel="stylesheet" href="/assets/one_fm/faq/assets/mcustomscrollbar/jquery.mCustomScrollbar.min.css">
     <link rel="stylesheet" href="/assets/one_fm/faq/css/style-main.css">
     <link rel="stylesheet" href="/assets/one_fm/faq/css/responsive.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" /> 
     <title>{% block title %}{% endblock %}</title>
+    <script>
+        window.frappe = {};
+        frappe.ready_events = [];
+        frappe.ready = function (fn) {
+            frappe.ready_events.push(fn);
+        }
+        window.dev_server = {{ dev_server }};
+        window.socketio_port = {{ frappe.socketio_port }};
+
+    </script>
 </head>
 
 <body data-scroll-animation="true">
@@ -66,7 +77,7 @@
                             <a href="/jobs" class="nav-link" style="">Jobs</a>
                         </li>
                         <li class="nav-item dropdown submenu mega_menu tab-demo">
-                            <a href="/knowledge-base" class="nav-link" style="">Knowledge Base</a>
+                            <a href="/knowledge_base" class="nav-link" style="">Knowledge Base</a>
                         </li>
                         <li class="nav-item dropdown submenu">
                             <a class="nav-link" href="/login" style="">Login</a>
@@ -95,7 +106,7 @@
           </ul> -->
             <div class="container">
                 <div class="doc_banner_content">
-                    <form action="/knowledge-base/search" class="header_search_form" method="GET">
+                    <form action="/knowledge_base/search" class="header_search_form" method="GET">
                       <h3 class="wow fadeInUp" data-wow-delay="0.2s" style="color:gold">Knowledge Base and Help Center</h3>
                         <div class="header_search_form_info">
                             <div class="form-group">
@@ -115,6 +126,49 @@
                 </div>
             </div>
         </section>
+
+        <div id="chatbot-container" style="display: none">
+            <div id="chatbot-interface">
+              <div id="chatbot-header">
+                <p>Want to know something? - Let's chat</p>
+              </div>
+              
+              <div id="chatbot-chat">
+                <div id="chat-bubble" class="chatbot-messages chatbot-received-messages" >
+                    <div class="typing">
+                      <div class="dot"></div>
+                      <div class="dot"></div>
+                      <div class="dot"></div>
+                    </div>
+                </div>
+
+                <div id="chat-intro">
+                    <div class="chatbot-messages chatbot-received-messages">
+                        <p>With what can I help you today?</p>
+                    </div>
+                    <div class="chatbot-messages chatbot-received-messages">
+                        <p>Hello! I am Lumina, OneFM's chatbot</p>
+                    </div>
+                </div>
+               
+                
+                
+              </div>
+              
+              <div id="chatbot-footer">
+                <div id="chatbot-input-container">
+                  <input type="text" id="chatbot-input" name="chatbot-input" placeholder="Type your question here...">
+                </div>
+                <div id="chatbot-new-message-send-button">
+                  <i class="material-icons" id="send-icon">send</i>
+                </div>
+              </div>
+            </div>
+          </div> 
+          <div id="chatbot-open-container">
+            <span class="material-symbols-outlined">chat</span>
+            <span class="material-symbols-outlined" style="display: none">close </span>
+          </div>
 
         {% block content %}
 
@@ -153,6 +207,9 @@
     <script src="/assets/one_fm/faq/js/plugins.js"></script>
     <script src="https://unpkg.com/ionicons@5.4.0/dist/ionicons.js"></script>
     <script src="/assets/one_fm/faq/js/main.js"></script>
+    <script src="/assets/one_fm/faq/js/chatgpt.js"></script>
+    <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
+    <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", (event)=>{
         // Add knowledge base to help button

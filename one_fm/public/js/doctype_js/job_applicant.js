@@ -24,6 +24,7 @@ frappe.ui.form.on('Job Applicant', {
 		// }
 		// document.querySelectorAll("[data-fieldname='one_fm_change_pam_file_number']")[1].style.margin ='1.6em';
 		// document.querySelectorAll("[data-fieldname='one_fm_change_pam_designation']")[1].style.marginLeft ='2em';
+		
 		frm.set_df_property('status', 'label', 'Final Status');
 		frm.remove_custom_button("Job Offer");
 		set_country_field_empty_on_load(frm);
@@ -65,44 +66,53 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__('Send Applicant Doc'), function() {
 				send_magic_link(frm, 'one_fm.templates.pages.applicant_docs.send_applicant_doc_magic_link');
 				},'Action');
-			frm.add_custom_button(__(''), function() {
-				},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-
 			frm.add_custom_button(__('Create Career History'), function() {
 				create_career_history(frm);
 				},'Action');
 
-			frm.add_custom_button(__(''), function() {
-			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
-
-			frm.add_custom_button(__(''), function() {
-			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			frm.add_custom_button(__('Best Reference'), function() {
 				    view_best_reference(frm);
 				  },'Action');
-			frm.add_custom_button(__(''), function() {
-			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
 				frm.add_custom_button(__('Select Applicant'), function() {
 					if(frm.doc.day_off_category && frm.doc.number_of_days_off && frm.doc.number_of_days_off > 0){
-						change_applicant_status(frm, 'one_fm_applicant_status', 'Selected');
+						frappe.confirm('Are you sure you want to select this applicant?',
+						() => {
+							// action to perform if Yes is selected
+							change_applicant_status(frm, 'one_fm_applicant_status', 'Selected');
+						}, () => {
+							// action to perform if No is selected
+							frappe.msgprint("Selection cancelled.")
+						})
 					}
 					else{
 						frappe.throw(__("Please Update Day off Details to Proceed !!"));
 					}
 				},"Action");
 				frm.add_custom_button(__('Reject Applicant'), function() {
-					if (frm.doc.__onload && frm.doc.__onload.job_offer) {
-						update_job_offer_from_applicant(frm, 'Rejected');
-					}
-					else{
-						change_applicant_status(frm, 'status', 'Rejected');
-					}
+					frappe.confirm('Are you sure you want to reject this applicant?',
+					() => {
+						// action to perform if Yes is selected
+						frappe.prompt({
+							label: 'Reason for Rejection',
+							descption: 'Optional',
+							fieldname: 'reason_for_rejection',
+							fieldtype: 'Small Text'
+						}, (values) => {
+							if (frm.doc.__onload && frm.doc.__onload.job_offer) {
+								update_job_offer_from_applicant(frm, 'Rejected', values.reason_for_rejection);
+							}
+							else{
+								change_applicant_status(frm, 'status', 'Rejected', values.reason_for_rejection);
+							}
+						})
+					}, () => {
+						// action to perform if No is selected
+						frappe.msgprint("Rejection cancelled.");
+					})
 				},'Action');
 			}
-			frm.add_custom_button(__(''), function() {
-			},'Action').css({"padding": "0.01rem", "background-color":"gray"});
 			if(frm.doc.status != 'Rejected'){
 				if (frappe.user.has_role("Job Applicant ERF Changer")){
 					frm.add_custom_button(__('Change ERF'), function() {
@@ -125,6 +135,11 @@ frappe.ui.form.on('Job Applicant', {
 					window.open(frm.doc.career_history_link, '_blank')
 				}, 'Open Link')
 			}
+		}
+
+		// set into
+		if (!frm.is_new() && frm.doc.status=='Rejected' && frm.doc.one_fm_reason_for_rejection){
+			frm.set_intro('<span class="text-danger"><b>Reason for Rejection</b></span><br>'+frm.doc.one_fm_reason_for_rejection, 'yellow');
 		}
 
 	},
@@ -829,31 +844,21 @@ var confirm_erf_change = function(frm, dialog) {
 	);
 }
 
-var change_applicant_status = function(frm, status_field, status) {
-	let msg = __('Do you really want to make {0} the applicant?', [status])
-	frappe.confirm(
-		msg,
-		function(){
-			// Yes
-			frappe.call({
-				method: 'one_fm.hiring.utils.update_job_applicant_status',
-				args: {'applicant': frm.doc.name, 'status_field': status_field, 'status': status},
-				callback: function(r) {
-					if(!r.exc){
-						frm.reload_doc();
-					}
-				},
-				freeze: true,
-				freeze_message: __("Updating .....")
-			});
+var change_applicant_status = function(frm, status_field, status, reason_for_rejection) {
+	frappe.call({
+		method: 'one_fm.hiring.utils.update_job_applicant_status',
+		args: {'applicant': frm.doc.name, 'status_field': status_field, 'status': status, 'reason_for_rejection':reason_for_rejection},
+		callback: function(r) {
+			if(!r.exc){
+				frm.reload_doc();
+			}
 		},
-		function(){
-			// No
-		}
-	);
+		freeze: true,
+		freeze_message: __("Updating .....")
+	});
 };
 
-var update_job_offer_from_applicant = function(frm, status) {
+var update_job_offer_from_applicant = function(frm, status, reason_for_rejection) {
 	let msg = __('Job Offer {0} ?', [status])
 	frappe.confirm(
 		msg,
@@ -861,7 +866,7 @@ var update_job_offer_from_applicant = function(frm, status) {
 			// Yes
 			frappe.call({
 				method: 'one_fm.hiring.utils.update_job_offer_from_applicant',
-				args: {'jo': frm.doc.__onload.job_offer, 'status': status},
+				args: {'jo': frm.doc.__onload.job_offer, 'status': status, 'reason_for_rejection':reason_for_rejection},
 				callback: function(r) {
 					if(!r.exc){
 						frm.reload_doc();

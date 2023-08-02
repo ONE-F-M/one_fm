@@ -2994,3 +2994,210 @@
     width: 75%;
   }
 }
+
+#chatbot-container{
+  z-index: 999;
+  color: #f8f7f7;
+  position: fixed;
+  top: 0;
+  right: 25px;
+  width: 30vw;
+  height: 110vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: grayscale(0.8);
+}
+
+#chatbot-interface {
+  height: 70vh;
+  width: 25vw;
+  background-color: #2c2325;
+  border-radius: 1rem;
+}
+
+#chat-bubble {
+  background: #2c303a;
+  filter: grayscale(0.3);
+  padding:16px 28px;
+  -webkit-border-radius: 20px;
+  -webkit-border-bottom-left-radius: 0rem;
+  -moz-border-radius: 20px;
+  -moz-border-radius-bottomleft: 0rem;
+  border-radius: 20px;
+  border-bottom-left-radius: 0rem;
+  display: none;
+  width: fit-content;
+  margin-right: auto; 
+  margin-left: 0;
+  margin-bottom: 0;
+
+}
+#chat-bubble .typing {
+  align-items: center;
+  /* display: flex; */
+  height: 17px;
+}
+
+.typing .dot {
+  animation: mercuryTypingAnimation 1.8s infinite ease-in-out;
+  background-color: #6CAD96 ; /*rgba(20,105,69,.7);*/
+  border-radius: 50%;
+  height: 7px;
+  margin-right: 4px;
+  vertical-align: middle;
+  width: 7px;
+  display: inline-block;
+}
+.typing .dot:nth-child(1) {
+  animation-delay: 200ms;
+}
+.typing .dot:nth-child(2) {
+  animation-delay: 300ms;
+}
+.typing .dot:nth-child(3) {
+  animation-delay: 400ms;
+}
+.typing .dot:last-child {
+  margin-right: 0;
+}
+
+@keyframes mercuryTypingAnimation {
+  0% {
+    transform: translateY(0px);
+    background-color:#6CAD96; /* rgba(20,105,69,.7);*/
+  }
+  28% {
+    transform: translateY(-7px);
+    background-color:#9ECAB9; /* rgba(20,105,69,.4); */
+  }
+  44% {
+    transform: translateY(0px);
+    background-color: #B5D9CB; /* rgba(20,105,69,.2);*/
+  }
+}
+
+#chatbot-header {
+  font-weight: 600;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+  background: #2c303a;
+  padding: 0.2rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+#chatbot-chat{
+  height: calc(100% - 56.9px - 6rem);
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+  padding: 1rem;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column-reverse;
+}
+#chat-intro{
+  display: flex;
+  flex-direction: column-reverse;
+}
+.chatbot-messages {
+  padding: 1rem;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  border-radius: 1rem;
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+  width: fit-content;
+}
+
+.chatbot-received-messages {
+  background: #2c303a;
+  filter: grayscale(0.3);
+  border-top-left-radius: 0rem;
+}
+
+.chatbot-sent-messages {
+  color: white;
+  background-color: #99878c;
+  border-top-right-radius: 0rem;
+  margin-left: auto; 
+  margin-right: 0;
+}
+
+#chatbot-footer {
+  padding: 2rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-around;
+  align-items: center;
+}
+
+#chatbot-input-container{
+  width: calc(100%);
+}
+
+#chatbot-input {
+  width: calc(100% - 2rem);
+  padding: 0.5rem;
+  color: white;
+  background-color: #574449;
+  border: 0.1rem solid #574449;
+  border-radius: 1rem;
+}
+
+#chatbot-input:focus {
+  outline-offset: 0px !important;
+  outline: none !important;
+  border: 0.1rem solid #8A6E2F;
+  /*box-shadow: 0 0 5px #FDB931 !important;*/
+}
+
+#chatbot-new-message-send-button{
+  background: #3EB798;
+  color: #fff;
+  padding: 10px;
+  border-radius: 12%;
+  text-align: center;
+  cursor: pointer;
+  z-index: 1000;
+  font-size:20px
+}
+.typing_gif {
+  height: 30px;
+  padding: 0 20px;
+  display: none;
+}
+
+.typing_gif img {
+  height: 25px;
+}
+#send-icon {
+  color: white;
+}
+
+#chatbot-open-container {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: #3EB798;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 50%;
+  width: 3.5rem;
+  height: 3.5rem;
+  text-align: center;
+  cursor: pointer;
+  z-index: 1000;
+  font-size:24px
+}
+
+#chatbot-open-container i{
+  padding-top: 0.25rem;
+  font-size: 3rem;
+  color: #2c2325;
+}

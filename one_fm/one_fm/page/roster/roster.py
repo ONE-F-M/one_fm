@@ -1,7 +1,7 @@
 from pandas.core.indexes.datetimes import date_range
 from datetime import datetime
 from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
-from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, get_datetime
+from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, get_datetime, today
 import pandas as pd, numpy as np
 from frappe import _
 import json, multiprocessing, os, time, itertools, frappe
@@ -678,6 +678,7 @@ def edit_post(posts, values):
             frappe.throw(_("Please set an end date!"))
 
         frappe.enqueue(plan_post, posts=posts, args=args, is_async=True, queue='long')
+        
 
 
     elif args.post_status == "Cancel Post":
@@ -688,6 +689,8 @@ def edit_post(posts, values):
             frappe.throw(_("Please set an end date!"))
 
         frappe.enqueue(cancel_post,posts=posts, args=args, is_async=True, queue='long')
+        
+
 
 
     elif args.post_status == "Suspend Post":
@@ -698,6 +701,8 @@ def edit_post(posts, values):
             frappe.throw(_("Please set an end date!"))
 
         frappe.enqueue(suspend_post, posts=posts, args=args, is_async=True, queue='long')
+        
+
 
 
     elif args.post_status == "Post Off":
@@ -709,7 +714,7 @@ def edit_post(posts, values):
 
         if args.repeat == "Does not repeat" and cint(args.project_end_date):
             frappe.throw(_("Cannot set both project end date and choose 'Does not repeat' option!"))
-
+        
         frappe.enqueue(post_off, posts=posts, args=args, is_async=True, queue='long')
 
     frappe.enqueue(update_roster, key="staff_view", is_async=True, queue='long')
@@ -735,10 +740,11 @@ def plan_post(posts, args):
         for date in pd.date_range(start=args.plan_from_date, end=end_date):
             if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
                 doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
-            else:
-                doc = frappe.new_doc("Post Schedule")
-                doc.post = post["post"]
-                doc.date = cstr(date.date())
+                delete_existing_post_schedules(cstr(date.date()),post['post'])
+            
+            doc = frappe.new_doc("Post Schedule")
+            doc.post = post["post"]
+            doc.date = cstr(date.date())
             doc.post_status = "Planned"
             doc.save()
         frappe.db.commit()
@@ -747,7 +753,7 @@ def cancel_post(posts, args):
     end_date = None
 
     if args.cancel_end_date and not cint(args.project_end_date):
-        end_date = args.plan_end_date
+        end_date = args.cancel_end_date
 
     for post in json.loads(posts):
         if cint(args.project_end_date) and not args.cancel_end_date:
@@ -761,11 +767,12 @@ def cancel_post(posts, args):
 
         for date in	pd.date_range(start=args.cancel_from_date, end=end_date):
             if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
-                doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
-            else:
-                doc = frappe.new_doc("Post Schedule")
-                doc.post = post["post"]
-                doc.date = cstr(date.date())
+                # doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
+                delete_existing_post_schedules(cstr(date.date()),post['post'])
+            
+            doc = frappe.new_doc("Post Schedule")
+            doc.post = post["post"]
+            doc.date = cstr(date.date())
             doc.paid = args.suspend_paid
             
             doc.post_status = "Cancelled"
@@ -790,11 +797,11 @@ def suspend_post(posts, args):
 
         for date in	pd.date_range(start=args.suspend_from_date, end=end_date):
             if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
-                doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
-            else:
-                doc = frappe.new_doc("Post Schedule")
-                doc.post = post["post"]
-                doc.date = cstr(date.date())
+                delete_existing_post_schedules(cstr(date.date()),post['post'])
+            
+            doc = frappe.new_doc("Post Schedule")
+            doc.post = post["post"]
+            doc.date = cstr(date.date())
             doc.paid = args.suspend_paid
             
             doc.post_status = "Suspended"
@@ -882,15 +889,28 @@ def post_off(posts, args):
                         set_post_off(post["post"], cstr(date.date()), post_off_paid)
     frappe.db.commit()
 
+
+
+def delete_existing_post_schedules(date,post):
+    try:
+        sql_rs = frappe.db.sql(f"""DELETE from `tabPost Schedule` where date = '{date}' and post = '{post}' """)
+        
+        frappe.db.commit()
+    except:
+        frappe.log_error("Error Deleting Post Schedules",frappe.get_traceback())
+
+
 def set_post_off(post, date, post_off_paid):
     if frappe.db.exists("Post Schedule", {"date": date, "post": post}):
-        doc = frappe.get_doc("Post Schedule", {"date": date, "post": post})
-    else:
-        doc = frappe.new_doc("Post Schedule")
-        doc.post = post
-        doc.date = date
+        #Delete existing post schedules
+        # doc = frappe.get_doc("Post Schedule", {"date": date, "post": post})
+        delete_existing_post_schedules(date,post)
+ 
+    doc = frappe.new_doc("Post Schedule")
+    doc.post = post
+    doc.date = date
     doc.paid = post_off_paid
-    
+
     doc.post_status = "Post Off"
     doc.save()
 
@@ -921,13 +941,14 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
         if cint(selected_dates):
             for employee in json.loads(employees):
                 date = employee['date']
-                name = f"{date}_{employee['employee']}_{roster_type}"
-                id_list.append(name)
-                querycontent += f"""(
-                    "{name}", "{employee["employee"]}", "{date}", "", "", "", 
-                    '', "Day Off", "", "", "Basic", 
-                    0, "{owner}", "{owner}", "{creation}", "{creation}"
-                ),"""
+                if getdate(date)>getdate(today()):
+                    name = f"{date}_{employee['employee']}_{roster_type}"
+                    id_list.append(name)
+                    querycontent += f"""(
+                        "{name}", "{employee["employee"]}", "{date}", "", "", "", 
+                        '', "Day Off", "", "", "Basic", 
+                        0, "{owner}", "{owner}", "{creation}", "{creation}"
+                    ),"""
         else:
             if repeat and repeat_freq in ["Daily", "Weekly", "Monthly", "Yearly"]:
                 end_date = None
@@ -945,13 +966,14 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             else:
                                 frappe.throw(_("No contract linked with project {project}".format(project=project)))
                         for date in	pd.date_range(start=employee["date"], end=end_date):
-                            name = f"{date.date()}_{employee['employee']}_{roster_type}"
-                            id_list.append(name)
-                            querycontent += f"""(
-                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                '', "Day Off", "", "", "Basic", 
-                                0, "{owner}", "{owner}", "{creation}", "{creation}"
-                            ),"""
+                            if getdate(date)>getdate(today()):
+                                name = f"{date.date()}_{employee['employee']}_{roster_type}"
+                                id_list.append(name)
+                                querycontent += f"""(
+                                    "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
+                                    '', "Day Off", "", "", "Basic", 
+                                    0, "{owner}", "{owner}", "{creation}", "{creation}"
+                                ),"""
 
                 elif repeat_freq == "Weekly":
                     for employee in json.loads(employees):
@@ -964,7 +986,7 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             else:
                                 frappe.throw(_("No contract linked with project {project}".format(project=project)))
                         for date in	pd.date_range(start=employee["date"], end=end_date):
-                            if getdate(date).strftime('%A') in week_days:
+                            if getdate(date).strftime('%A') in week_days and getdate(date)>getdate(today()):
                                 name = f"{date.date()}_{employee['employee']}_{roster_type}"
                                 id_list.append(name)
                                 querycontent += f"""(
@@ -984,13 +1006,14 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             else:
                                 frappe.throw(_("No contract linked with project {project}".format(project=project)))
                         for date in	month_range(employee["date"], end_date):
-                            name = f"{date.date()}_{employee['employee']}_{roster_type}"
-                            id_list.append(name)
-                            querycontent += f"""(
-                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                '', "Day Off", "", "", "Basic", 
-                                0, "{owner}", "{owner}", "{creation}", "{creation}"
-                            ),"""
+                            if getdate(date)>getdate(today()):
+                                name = f"{date.date()}_{employee['employee']}_{roster_type}"
+                                id_list.append(name)
+                                querycontent += f"""(
+                                    "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
+                                    '', "Day Off", "", "", "Basic", 
+                                    0, "{owner}", "{owner}", "{creation}", "{creation}"
+                                ),"""
 
                 elif repeat_freq == "Yearly":
                     for employee in json.loads(employees):
@@ -1003,13 +1026,14 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             else:
                                 frappe.throw(_("No contract linked with project {project}".format(project=project)))
                         for date in	pd.date_range(start=employee["date"], end=end_date, freq=pd.DateOffset(years=1)):
-                            name = f"{date.date()}_{employee['employee']}_{roster_type}"
-                            id_list.append(name)
-                            querycontent += f"""(
-                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                '', "Day Off", "", "", "Basic", 
-                                0, "{owner}", "{owner}", "{creation}", "{creation}"
-                            ),"""
+                            if getdate(date)>getdate(today()):
+                                name = f"{date.date()}_{employee['employee']}_{roster_type}"
+                                id_list.append(name)
+                                querycontent += f"""(
+                                    "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
+                                    '', "Day Off", "", "", "Basic", 
+                                    0, "{owner}", "{owner}", "{creation}", "{creation}"
+                                ),"""
 
         if querycontent:
             querycontent = querycontent[:-1]

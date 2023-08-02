@@ -15,7 +15,8 @@
   "shift",
   "site",
   "column_break_9",
-  "project"
+  "project",
+  "attendance_by_client"
  ],
  "fields": [
   {
@@ -84,10 +85,16 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Active\nInactive"
+  },
+  {
+   "default": "0",
+   "fieldname": "attendance_by_client",
+   "fieldtype": "Check",
+   "label": "Attendance By Client"
   }
  ],
  "links": [],
- "modified": "2023-05-04 15:38:32.885043",
+ "modified": "2023-07-17 10:29:18.020108",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Role",

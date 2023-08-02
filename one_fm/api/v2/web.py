@@ -7,7 +7,7 @@ from frappe.utils import (
 	now_datetime, cstr, nowdate, cint , getdate, get_first_day, get_last_day
 )
 import numpy as np
-import datetime
+import datetime, random
 from json import JSONEncoder
 # import cv2, os
 # import face_recognition
@@ -18,7 +18,16 @@ from one_fm.api.v2.roster import get_current_shift
 from one_fm.api.v2.utils import response
 from one_fm.api.v2.face_recognition import create_checkin_log
 
+# setup channel for face recognition
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+channels = [
+    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+]
 
+# setup stub for face recognition
+stubs = [
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+]
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
@@ -59,8 +68,8 @@ def enroll():
 			user_encoded_video = video_content,
 		)
 
-		res = stub.FaceRecognitionEnroll(req)
-
+		res = random.choice(stubs).FaceRecognition(req)
+		
 		if res.enrollment == "FAILED":
 			msg = res.message
 			data = res.data
@@ -82,11 +91,11 @@ def enroll():
 @frappe.whitelist()
 def verify():
     try:
-        log_type = frappe.local.form_dict['log_type']
-        skip_attendance = frappe.local.form_dict['skip_attendance']
-        latitude = frappe.local.form_dict['latitude']
-        longitude = frappe.local.form_dict['longitude']
-        # timestamp = frappe.local.form_dict['timestamp']
+        log_type = frappe.local.form_dict.log_type
+        skip_attendance = frappe.local.form_dict.skip_attendance
+        latitude = frappe.local.form_dict.latitude
+        longitude = frappe.local.form_dict.longitude
+        # timestamp = frappe.local.form_dict.timestamp
         files = frappe.request.files
         file = files['file']
 
@@ -99,12 +108,7 @@ def verify():
         content_bytes = file.stream.read()
         content_base64_bytes = base64.b64encode(content_bytes)
         video_content = content_base64_bytes.decode('ascii')
-
-        # setup channel
-        face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-        channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-        # setup stub
-        stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
+		
 
         # request body
         req = facial_recognition_pb2.FaceRecognitionRequest(
@@ -113,8 +117,7 @@ def verify():
             media_content = video_content,
         )
         # Call service stub and get response
-        res = stub.FaceRecognition(req)
-
+        res = random.choice(stubs).FaceRecognition(req)
         if res.verification == "FAILED":
             msg = res.message
             data = res.data
@@ -122,7 +125,7 @@ def verify():
 		# create_checkin_log()
         response("Success", 200, check_in(log_type, skip_attendance, latitude, longitude))        
     except Exception as exc:
-        frappe.log_error(frappe.get_traceback())
+        frappe.log_error(frappe.get_traceback() + '\n\n\n' + str(frappe.form_dict))
         response("Error", 500, None, frappe.get_traceback())  
 
 @frappe.whitelist()

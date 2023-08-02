@@ -23,9 +23,9 @@
   "shift_supervisor_name",
   "shift_supervisor_user",
   "justification_section",
-  "justification",
-  "column_break_wtkg0",
   "attendance_status",
+  "column_break_wtkg0",
+  "justification",
   "employee_checkin_details_section",
   "has_checkin_record",
   "has_checkout_record",
@@ -120,16 +120,18 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.attendance_status=='Present'",
    "fieldname": "justification",
    "fieldtype": "Select",
    "label": "Justification",
+   "mandatory_depends_on": "eval:doc.attendance_status=='Present'",
    "options": "\nInvalid media content\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nNo valid reason\nSuddenly, the App stop working!\nEmployees insist that he/she did check in or out\nApproved by Administrator"
   },
   {
    "fieldname": "attendance_status",
    "fieldtype": "Select",
    "label": "Attendance Status",
-   "options": "\nPresent\nAbsent"
+   "options": "\nPresent\nAbsent\nDay Off\nHoliday"
   },
   {
    "fieldname": "shift_assignment_details_section",
@@ -409,7 +411,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2023-06-11 20:36:33.478749",
+ "modified": "2023-07-18 10:06:21.095793",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
@@ -449,6 +451,30 @@
    "read": 1,
    "report": 1,
    "role": "Site Supervisor",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Hiring Manager",
    "share": 1,
    "submit": 1,
    "write": 1

@@ -4,6 +4,9 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url
 from one_fm.processor import sendemail
+from one_fm.utils import translate_words
+
+
 
 def get_context(context):
 	context.parents = [{'route': 'jobs', 'title': _('All Jobs') }]
@@ -78,6 +81,15 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
     # Get Nationality from country given by the applicant
     nationality = frappe.db.exists('Nationality', {'country': country})
     # Create Job Applicant
+    applicant_name = applicant_name.title()
+    split_name = parse_names(applicant_name)
+    
+    first_name = split_name[0]
+    last_name = split_name[-1]
+    second_name = split_name[1]
+    third_name = split_name[2]
+    fourth_name = split_name[3]
+    
     job_applicant = frappe.new_doc('Job Applicant')
     job_applicant.job_title = job_opening
     job_applicant.applicant_name = applicant_name
@@ -87,10 +99,21 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
     job_applicant.one_fm_erf = frappe.db.get_value('Job Opening', job_opening, "one_fm_erf")
     job_applicant.one_fm_is_easy_apply = True
 
-    job_applicant.one_fm_first_name = applicant_name
-    job_applicant.one_fm_first_name_in_arabic = applicant_name
-    job_applicant.one_fm_last_name = applicant_name
-    job_applicant.one_fm_last_name_in_arabic = applicant_name
+    job_applicant.one_fm_first_name = first_name
+    job_applicant.one_fm_first_name_in_arabic = translate_words(word=first_name)
+    
+    job_applicant.one_fm_last_name = last_name
+    job_applicant.one_fm_last_name_in_arabic = translate_words(word=last_name)
+    
+    job_applicant.one_fm_second_name = second_name
+    job_applicant.one_fm_second_name_in_arabic = translate_words(word=second_name)
+    
+    job_applicant.one_fm_third_name = third_name
+    job_applicant.one_fm_third_name_in_arabic = translate_words(word=third_name)
+    
+    job_applicant.one_fm_forth_name = fourth_name
+    job_applicant.one_fm_forth_name_in_arabic = translate_words(word=fourth_name)
+    
     if rotation_shift:
         if rotation_shift == "yes":
             job_applicant.one_fm_rotation_shift = "Yes, I Will Work in Rotation Shift"
@@ -127,6 +150,7 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
             job_applicant.one_fm_in_kuwait_at_present = 1
         else:
             job_applicant.one_fm_in_kuwait_at_present = 0
+    
     job_applicant.save(ignore_permissions=True)
 
     # If files exisit, attach the file to Job Applicant created
@@ -287,4 +311,34 @@ def get_required_documents(job=None, visa_type=None, nationality=None, valid_kuw
     filters['source_of_hire'] = source_of_hire
 
     from one_fm.one_fm.doctype.recruitment_document_checklist.recruitment_document_checklist import get_recruitment_document_checklist
-    return get_recruitment_document_checklist(filters)
+    return get_recruitment_document_checklist(filters) 
+
+
+def parse_names(input_string: str) -> tuple:
+    first_name = ""
+    last_name = ""
+    second_name = ""
+    third_name = ""
+    fourth_name = ""
+    
+    if input_string:
+        names = input_string.split()
+        num_names = len(names)
+        
+        if num_names > 0:
+            first_name = names[0]
+            
+        if num_names > 1:
+            last_name = names[-1]    
+        
+        if num_names == 3:
+            second_name = names[1]  
+        elif num_names == 4:
+            second_name = names[1]
+            third_name = names[2]
+        elif num_names > 4:
+            second_name = names[1]
+            third_name = names[2]
+            fourth_name = names[3]
+            
+    return (first_name, second_name, third_name, fourth_name, last_name)

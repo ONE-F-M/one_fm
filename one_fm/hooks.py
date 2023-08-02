@@ -15,10 +15,16 @@ app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "omar.ja93@gmail.com"
 app_license = "MIT"
-
+app_logo_url = "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png"
 # Includes in <head>
 # ------------------
 
+website_context = {
+	"favicon": "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png",
+	"splash_image": "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png",
+}
+
+email_brand_image = "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
@@ -104,6 +110,7 @@ doctype_js = {
 	"Assignment Rule": "public/js/doctype_js/assignment_rule.js",
     "Workflow": "public/js/doctype_js/workflow.js",
     "Stock Entry": "public/js/doctype_js/stock_entry.js",
+    "Gratuity": "public/js/doctype_js/gratuity.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -112,6 +119,7 @@ doctype_list_js = {
 	"Employee Checkin" : "public/js/doctype_list_js/employee_checkin_list.js",
 	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
+	"Wiki Page": "public/js/doctype_list_js/wiki_page_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -220,8 +228,11 @@ doc_events = {
 		],
 		"after_insert": "one_fm.hiring.utils.employee_after_insert",
 		"before_insert": "one_fm.hiring.utils.employee_before_insert",
-		"on_update":"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
-		"on_update": "one_fm.events.employee.on_update",
+		"on_update":[
+      		"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
+        	"one_fm.events.employee.on_update",
+         ],
+		"before_save": "one_fm.events.employee.assign_role_profile_based_on_designation",
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -399,6 +410,9 @@ doc_events = {
 	"ToDo": {
 		"validate": "one_fm.overrides.todo.validate_todo"
 	},
+	"Wiki Page": {
+		"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -424,20 +438,20 @@ website_route_rules = [
 		}
 	},
 	 {
-		"from_route": "/knowledge-base/search",
-		"to_route": "knowledge-base/search"
+		"from_route": "/knowledge_base/search",
+		"to_route": "knowledge_base/search"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>",
-		"to_route": "knowledge-base/kbcategory"
+		"from_route": "/knowledge_base/<path:category>",
+		"to_route": "knowledge_base/kbcategory"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory"
+		"from_route": "/knowledge_base/<path:category>/<path:subcategory>",
+		"to_route": "knowledge_base/kbcategory/kbsubcategory"
 	},
 	{
-		"from_route": "/knowledge-base/<path:category>/<path:subcategory>/<path:article>",
-		"to_route": "knowledge-base/kbcategory/kbsubcategory/kbdetail"
+		"from_route": "/knowledge_base/<path:category>/<path:subcategory>/<path:article>",
+		"to_route": "knowledge_base/kbcategory/kbsubcategory/kbdetail"
 	},
 	{
 		"from_route": "/careers/opening/<path:job_id>",
@@ -474,6 +488,8 @@ override_doctype_class = {
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
     "Job Offer": "one_fm.overrides.job_offer.JobOfferOverride",
+    "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride",
+    "Job Applicant": "one_fm.overrides.job_applicant.JobApplicantOverride",
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
@@ -654,6 +670,9 @@ scheduler_events = {
 		"45 13 * * *": [ # validate shift assignmet
 			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
+		"15 3 * * *": [ # create shift assignment
+			'one_fm.overrides.employee_checkin.auto_generate_checkin'
+		],
 		"25 0 * * *": [ # mark day attendance 11:15 pm
 			'one_fm.overrides.attendance.mark_day_attendance'
 		],
@@ -789,6 +808,7 @@ after_migrate = [
 before_migrate = [
     "one_fm.after_migrate.execute.before_migrate",
     "one_fm.after_migrate.execute.set_files_directories",
+    "one_fm.after_migrate.execute.replace_job_opening"
 ]
 
 # add more info to session on boot

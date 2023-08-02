@@ -1,4 +1,4 @@
-import frappe, os
+import frappe, os, shutil
 from frappe.utils import cstr
 from one_fm.utils import production_domain
 
@@ -88,6 +88,18 @@ def set_files_directories():
     """
         Set files and directories if not exists
     """
+    user_files_path = frappe.utils.get_bench_path()+'/sites/'+frappe.utils.get_site_base_path().replace('./', '')+'/private/files/user'
+    if not os.path.exists(user_files_path):
+        os.mkdir(user_files_path)
+
+def replace_job_opening():
+    """
+        Replace job opening in HRMS
+    """
+    print("Replacing job_opening.html")
+    app_path = frappe.utils.get_bench_path()+"/apps/hrms/hrms/templates/generators"
+    os.remove(app_path+'/job_opening.html')
+    shutil.copy(frappe.utils.get_bench_path()+"/apps/one_fm/one_fm/templates/generators/job_opening.html", app_path+'/job_opening.html')
     bench_path = frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/'
     private = "private/"
     public = "public/"

@@ -2,7 +2,10 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Onboard Employee', {
+	
+	
 	refresh: function(frm) {
+		show_hide_fields(frm)
 		set_progress_html(frm);
 		if (frm.doc.employee) {
 			frm.add_custom_button(__('Employee'), function() {
@@ -145,6 +148,9 @@ frappe.ui.form.on('Onboard Employee', {
 	}
 });
 
+
+
+
 var calculate_g2g_and_residency_total = function(frm) {
 	var g2g_fee_amount = 0;
 	var residency_fine_amount = 0;
@@ -180,13 +186,13 @@ var create_custom_buttons = function(frm) {
 		if(!frm.doc.applicant_attended && frm.doc.informed_applicant){
 			btn_mark_applicant_attended(frm);
 		}
-		if(frm.doc.applicant_attended && !frm.doc.work_contract){
+		if(frm.doc.applicant_attended && !frm.doc.work_contract && frm.doc.employment_type !='Service Provider'){
 			custom_btn_and_action(frm, 'create_work_contract', 'Work Contract');
 		}
 		if(frm.doc.work_contract_status == "Applicant Signed" && !frm.doc.duty_commencement){
 			custom_btn_and_action(frm, 'create_duty_commencement', 'Duty Commencement');
 		}
-		if(frm.doc.duty_commencement_status == "Applicant Signed and Uploaded" && !frm.doc.employee){
+		if(frm.doc.duty_commencement_status == "Applicant Signed and Uploaded" && !frm.doc.employee && frm.doc.employment_type !='Service Provider'){
 			custom_btn_and_action(frm, 'create_employee', 'Employee');
 		}
 		if(frm.doc.employee && !frm.doc.employee_id){
@@ -217,6 +223,9 @@ var create_custom_buttons = function(frm) {
 		}
 		if(frm.doc.employee && frm.doc.tools_needed_for_work && !frm.doc.request_for_material){
 			custom_btn_and_action(frm, 'create_rfm_from_eo', 'Request for Material');
+		}
+		if(frm.doc.docstatus == 1 && frm.doc.employment_type == 'Service Provider' && !frm.doc.employee){
+			custom_btn_and_action(frm, 'create_employee', 'Employee');
 		}
 	}
 };
@@ -306,6 +315,26 @@ var set_applicant_details = function(frm, applicant) {
 	}
 	// frm.set_value('applicant_name', applicant.applicant_name);
 };
+
+
+var show_hide_fields = function(frm){
+	if(frm.doc.employment_type == 'Service Provider'){
+		frm.set_df_property('visa_and_residency_section','hidden',1)
+		frm.set_df_property('uniform_measurements_section','hidden',1)
+		frm.set_df_property('g2g_and_residency_section','hidden',1)
+		frm.set_df_property('work_contract_section','hidden',1)
+		frm.set_df_property('tools_for_work_section','hidden',1)
+		
+	}
+	else{
+		frm.set_df_property('visa_and_residency_section','hidden',0)
+		frm.set_df_property('uniform_measurements_section','hidden',0)
+		frm.set_df_property('g2g_and_residency_section','hidden',0)
+		frm.set_df_property('work_contract_section','hidden',0)
+		frm.set_df_property('tools_for_work_section','hidden',0)
+		
+	}
+}
 
 var set_progress_html = function(frm) {
 	var $wrapper = frm.fields_dict['progress_html'].$wrapper;

@@ -9846,7 +9846,7 @@
    "docstatus": 0,
    "dt": "Job Applicant",
    "fetch_from": "one_fm_erf.day_off_category",
-   "fetch_if_empty": 1,
+   "fetch_if_empty": 0,
    "fieldname": "day_off_category",
    "fieldtype": "Select",
    "hidden": 0,

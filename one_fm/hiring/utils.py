@@ -209,25 +209,29 @@ def create_employee_user_from_employee_id(doc):
 		frappe.log_error(str(e), 'CREATE USER')
 
 def create_employee_user(doc, email):
-	try:
-		user = frappe.get_doc({
-			'doctype':'User',
-			'email': email,
-			'first_name':doc.first_name,
-			'last_name':doc.last_name,
-			'gender':doc.gender,
-			'date_of_birth':doc.date_of_birth,
-			'send_welcome_email': 0,
-			'enabled':1,
-			'role_profile_name': "Only Employee",
-			'user_type':"System User",
-		})
-		user.insert(ignore_permissions=True)
-		doc.db_set("user_id", user.name)
-		doc.db_set("create_user_permission", 1)
-		doc.reload()
-	except Exception as e:
-		frappe.log_error(str(e), 'CREATE USER')
+    try:
+        r_prof =  None
+        if doc.designation:
+            r_prof = frappe.db.get_value("Designation", doc.designation, "role_profile")
+                  
+        user = frappe.get_doc({
+            'doctype':'User',
+            'email': email,
+            'first_name':doc.first_name,
+            'last_name':doc.last_name,
+            'gender':doc.gender,
+            'date_of_birth':doc.date_of_birth,
+            'send_welcome_email': 0,
+            'enabled':1,
+            'role_profile_name': "Only Employee" if not r_prof else r_prof ,
+            'user_type':"System User",
+        })
+        user.insert(ignore_permissions=True)
+        doc.db_set("user_id", user.name)
+        doc.db_set("create_user_permission", 1)
+        doc.reload()
+    except Exception as e:
+        frappe.log_error(str(e), 'CREATE USER')
 
 
 def generate_employee_id(doc):
@@ -237,6 +241,8 @@ def generate_employee_id(doc):
 	try:
 		if doc.one_fm_nationality=='No Nationality':
 			country = 'XX'
+		elif doc.one_fm_nationality == 'Non Kuwaiti':
+			country = 'NK'
 		elif doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
 			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
 		else:
@@ -280,8 +286,8 @@ def create_leave_policy_assignment(doc):
         assignment.effective_from = doc.date_of_joining
         # effective_to is an year of addition to effective_from
         assignment.effective_to = getdate(add_days(add_years(doc.date_of_joining, 1), -1))
-        assignment.carry_forward = True
-        assignment.leaves_allocated = False
+        assignment.carry_forward = 1
+        assignment.leaves_allocated = 0
         assignment.save()
         assignment.submit()
 
@@ -606,7 +612,8 @@ def set_employee_name(doc,method):
     This method for getting the arabic full name and fetching children details from job applicant to employee record
     """
     doc.employee_name_in_arabic = ' '.join(filter(lambda x: x, [doc.one_fm_first_name_in_arabic, doc.one_fm_second_name_in_arabic,doc.one_fm_third_name_in_arabic,doc.one_fm_forth_name_in_arabic,doc.one_fm_last_name_in_arabic]))
-
+    if doc.employment_type == "Full-time":
+        doc.is_in_kuwait = 1
     if doc.job_applicant:
         applicant = frappe.get_doc('Job Applicant',doc.job_applicant) # Fetching the children table from job applicant to Employee doctype
         if applicant.one_fm_number_of_kids > 0:
@@ -647,14 +654,19 @@ def update_leave_policy_assignments_expires_today():
     '''
     # Get Active Leave Policy Assignment List thats ends today
     leave_policy_assignments = frappe.db.get_list('Leave Policy Assignment', {'effective_to': getdate(today())})
+    frappe.enqueue(create_leave_policy,leave_policy_assignments=leave_policy_assignments, is_async=True, queue='long')
+
+def create_leave_policy(leave_policy_assignments):
     for policy_assignment in leave_policy_assignments:
         doc = frappe.get_doc('Leave Policy Assignment', policy_assignment.name)
+        effective_from = add_days(getdate(doc.effective_to), 1)
+        effective_to = add_days(add_years(effective_from, 1), -1)
         # Check if the employee status not Left
-        if frappe.db.get_value('Employee', doc.employee, 'status') not in ['Left']:
+        if frappe.db.get_value('Employee', doc.employee, 'status') not in ['Left'] and not frappe.db.exists("Leave Policy Assignment", {'employee':doc.employee, 'effective_from':effective_from, 'effective_to':effective_to}):
             leave_policy_assignment = frappe.new_doc('Leave Policy Assignment')
             leave_policy_assignment.employee = doc.employee
-            leave_policy_assignment.effective_from = add_days(getdate(doc.effective_to), 1)
-            leave_policy_assignment.effective_to = add_days(add_years(leave_policy_assignment.effective_from, 1), -1)
+            leave_policy_assignment.effective_from = effective_from
+            leave_policy_assignment.effective_to = effective_to
             leave_policy_assignment.leave_policy = doc.leave_policy
             leave_policy_assignment.carry_forward = doc.carry_forward
             leave_policy_assignment.leaves_allocated = False

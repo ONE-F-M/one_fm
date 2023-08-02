@@ -25,6 +25,7 @@
   "gender",
   "rate_type",
   "rate_type_off",
+  "is_yearly_month",
   "days_off_category",
   "no_of_days_off",
   "include_actual_hour",
@@ -131,10 +132,8 @@
    "fetch_if_empty": 1,
    "fieldname": "uom",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "UOM",
-   "options": "UOM",
-   "reqd": 1
+   "options": "UOM"
   },
   {
    "fetch_from": "item_price.price_list_rate",
@@ -196,8 +195,10 @@
   {
    "fieldname": "rate_type",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Rate Type",
-   "options": "Monthly\nHourly\nDaily"
+   "options": "Monthly\nHourly\nDaily",
+   "reqd": 1
   },
   {
    "default": "Full Month",
@@ -227,11 +228,19 @@
    "fieldname": "include_actual_hour",
    "fieldtype": "Check",
    "label": "Include Actual Hour"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.rate_type_off == 'Full Month'",
+   "description": "If Yearly Month is checked then the invoice will calculate based on the factor 30.4166.",
+   "fieldname": "is_yearly_month",
+   "fieldtype": "Check",
+   "label": "Is Yearly Month"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2023-06-13 11:04:43.785579",
+ "modified": "2023-06-25 12:01:58.783215",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",

@@ -2,9 +2,37 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
-  "modified": "2023-06-14 10:23:56.523528",
-  "name": "Return",
-  "workflow_action_name": "Return"
+  "modified": "2023-07-20 12:20:02.155489",
+  "name": "Submit to Recruitment Manager",
+  "workflow_action_name": "Submit to Recruitment Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-07-22 17:55:09.157047",
+  "name": "Hold",
+  "workflow_action_name": "Hold"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-07-03 11:27:33.950047",
+  "name": "Post as Draft",
+  "workflow_action_name": "Post as Draft"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-07-03 11:41:25.533758",
+  "name": "Publish",
+  "workflow_action_name": "Publish"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-07-03 11:51:26.039133",
+  "name": "Request Cancel",
+  "workflow_action_name": "Request Cancel"
  },
  {
   "docstatus": 0,
@@ -383,5 +411,19 @@
   "modified": "2022-09-07 11:49:10.373503",
   "name": "Submit",
   "workflow_action_name": "Submit"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-06-18 20:06:00.344618",
+  "name": "Return",
+  "workflow_action_name": "Return"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-06-25 23:04:41.498093",
+  "name": "Change Request",
+  "workflow_action_name": "Change Request"
  }
 ]

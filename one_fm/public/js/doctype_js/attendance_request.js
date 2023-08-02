@@ -13,7 +13,19 @@ frappe.ui.form.on('Attendance Request', {
           }
         })
       }
-    }
+    },
+	employee: (frm)=>{
+		// fetch approver
+		if(frm.doc.employee){
+			frappe.db.get_value("Employee", {'name':frm.doc.employee}, ['reports_to']).then(res=>{
+				if(res.message.reports_to){
+					frm.set_value('approver', res.message.reports_to)
+				} else {
+					frm.set_value('approver', '')
+				}
+			})
+		}
+	}
 });
 
 function set_update_request_btn(frm) {

@@ -54,7 +54,7 @@
    "read_only": 1
   },
   {
-   "fetch_from": "employee.one_fm_first_name_in_arabic",
+   "fetch_from": "employee.employee_name_in_arabic",
    "fieldname": "employee_name_in_arabic",
    "fieldtype": "Data",
    "label": "Employee Name in Arabic",
@@ -242,7 +242,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-04-03 15:12:03.872056",
+ "modified": "2023-06-25 15:56:59.865748",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Employee ID",
