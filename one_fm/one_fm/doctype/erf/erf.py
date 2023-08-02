@@ -331,7 +331,11 @@ class ERF(Document):
 		# self.reason_for_decline = reason_for_decline
 		# self.save()
 		self.notify_recruiter_and_requester()
-		if self.status == 'Accepted':
+		if status == "Closed":
+			self.workflow_state = "Closed"
+			self.status = "Closed"
+			self.save()
+		elif self.status == 'Accepted':
 			assign_recruiter_to_project_task(self)
 			self.notify_grd_supervisor()
 			self.notify_gsd_department()
