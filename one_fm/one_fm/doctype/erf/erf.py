@@ -337,7 +337,8 @@ class ERF(Document):
 			self.notify_gsd_department()
 			if self.provide_salary_advance:
 				self.notify_finance_department()
-			create_job_opening_from_erf(self)
+			if not frappe.db.exists("Job Opening", {'one_fm_erf':self.name}):
+				create_job_opening_from_erf(self)
 		self.reload()
         
         
