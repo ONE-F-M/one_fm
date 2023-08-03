@@ -75,7 +75,23 @@ frappe.ui.form.on('ERF', {
 		// 	frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
 
 		// }
+
+		frm.set_query('recruiter_assigned', function() {
+            return{
+				filters: [["Has Role","role","=", "Recruiter"]],
+				query: "one_fm.hiring.utils.fetch_recruiters"
+			}
+        });
+
+		frm.set_query('secondary_recruiter_assigned', function() {
+            return{
+				filters: [["Has Role","role","=", "Recruiter"]],
+				query: "one_fm.hiring.utils.fetch_recruiters"
+			}
+        });
+
 	},
+	
 	attendance_by_timesheet: function(frm) {
 		if(frm.doc.attendance_by_timesheet){
 			frm.set_value('shift_working', false);
@@ -298,6 +314,11 @@ var allow_recruitment_manager = function(frm){
 							current_row.toggle_editable("number", r.message)
 						}
 					});
+				}else {
+					frm.toggle_reqd('performance_profile', r.message);
+					frm.toggle_reqd('grade', r.message);
+					frm.toggle_reqd('hiring_method', r.message);
+					frm.toggle_reqd('recruiter_assigned', r.message);
 				}
 			}
 		})
