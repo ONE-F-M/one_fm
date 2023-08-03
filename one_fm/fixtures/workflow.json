@@ -4,7 +4,7 @@
   "doctype": "Workflow",
   "document_type": "ERF",
   "is_active": 1,
-  "modified": "2023-07-22 18:43:18.700905",
+  "modified": "2023-08-02 13:19:20.210955",
   "name": "ERF",
   "override_status": 0,
   "send_email_alert": 1,
@@ -125,6 +125,19 @@
     "state": "Cancelled",
     "update_field": "status",
     "update_value": "Cancelled"
+   },
+   {
+    "allow_edit": "Senior Recruiter",
+    "doc_status": "1",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "ERF",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Closed",
+    "update_field": "status",
+    "update_value": "Closed"
    }
   ],
   "transitions": [
@@ -6927,7 +6940,7 @@
   "doctype": "Workflow",
   "document_type": "Contracts",
   "is_active": 1,
-  "modified": "2023-07-24 13:13:55.370079",
+  "modified": "2023-08-02 08:58:45.081482",
   "name": "Contracts",
   "override_status": 0,
   "send_email_alert": 0,

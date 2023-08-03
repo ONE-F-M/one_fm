@@ -1,6 +1,7 @@
 import frappe
 from frappe.desk.doctype.notification_log.notification_log import *
 from frappe.utils.data import get_url_to_form, strip_html
+from frappe import _
 
 from one_fm.processor import sendemail
 

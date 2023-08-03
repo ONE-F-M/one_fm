@@ -11,12 +11,24 @@ def comment_timesheet_in_hrms():
     filedata = f.read()
     f.close()
 
+    newdata = ""
+    found = False
     if not filedata.find('#"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",') > 0:
         newdata = filedata.replace(
-                '"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",',
-                '#"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",'
+            '"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",',
+            '#"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",'
         )
+        filedata = newdata
+        found = True
 
+    if not filedata.find('#"Employee": "hrms.overrides.employee_master.EmployeeMaster",') > 0:
+        newdata = filedata.replace(
+            '"Employee": "hrms.overrides.employee_master.EmployeeMaster",',
+            '#"Employee": "hrms.overrides.employee_master.EmployeeMaster",',
+        )
+        found = True
+    
+    if found:
         f = open(app_path+"hooks.py",'w')
         f.write(newdata)
         f.close()

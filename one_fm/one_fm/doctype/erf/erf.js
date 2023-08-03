@@ -3,6 +3,8 @@
 
 frappe.ui.form.on('ERF', {
 	refresh: function(frm) {
+		// 
+		
 		if(frm.is_new()){
 			frm.set_value('erf_requested_by', frappe.session.user);
 		}
@@ -75,6 +77,10 @@ frappe.ui.form.on('ERF', {
 		// 	frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
 
 		// }
+
+		if (!frm.is_new()){
+			frm.set_intro(__("STATUS: "+frm.doc.status), 'green');
+		}
 	},
 	attendance_by_timesheet: function(frm) {
 		if(frm.doc.attendance_by_timesheet){
@@ -114,6 +120,7 @@ frappe.ui.form.on('ERF', {
 						args: {status: 'Closed'},
 						callback(r) {
 							if (!r.exc) {
+								frm.set_value('status', 'Close');
 								frm.reload_doc();
 							}
 						},
