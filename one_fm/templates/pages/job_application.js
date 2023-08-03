@@ -214,16 +214,23 @@ job_application = Class.extend({
   },
   submit_job_application: function() {
     // Submit Job Application
-    $('.btn-submit-application').click(function(){
-      var file_data = {};
+    $('.btn-submit-application').click(async function(){
+      // var file_data = {};
       // Read file data
-      $("[type='file']").each(function(i){
-        file_data[$(this).attr("id")] = $('#'+$(this).attr("id")).prop('filedata');
-      });
+      // $("[type='file']").each(function(i){
+      //   file_data[$(this).attr("id")] = $('#'+$(this).attr("id")).prop('filedata');
+      // });
+
+      var cv = document.getElementById("cv").files[0]
+
       // POST Job Application if all the conditions are satisfied
       
-      if ($(".applicant_name").val() && $(".country_list").val() && $(".contact_email").val() && $(".contact_number").val() && file_data.cv){
+      if ($(".applicant_name").val() && $(".country_list").val() && $(".contact_email").val() && $(".contact_number").val() && cv){
         frappe.freeze();
+        var response = await upload_image_to_server(cv)
+        var url = (response && response.message) ? response.message.file_url : "";
+        var name_of_file = (response && response.message) ? response.message.name : ""; 
+
         frappe.call({
           type: "POST",
           method: "one_fm.templates.pages.job_application.create_job_applicant_from_job_portal",
@@ -233,7 +240,7 @@ job_application = Class.extend({
             applicant_email: $(".contact_email").val(),
             applicant_mobile: $(".contact_number").val(),
             job_opening: $('#job_opening').attr("data"),
-            files: file_data,
+            resume_attachment_url: url,
             rotation_shift: $("#rotation_shift input[type='radio']:checked").val(),
             night_shift: $("#night_shift input[type='radio']:checked").val(),
             travel: $("#travel input[type='radio']:checked").val(),
@@ -243,6 +250,7 @@ job_application = Class.extend({
             visa: $("#visa input[type='radio']:checked").val(),
             visa_type: $(".visa_type").val(),
             in_kuwait: $("#in_kuwait input[type='radio']:checked").val(),
+            name_of_file: name_of_file
           },
           btn: this,
           callback: function(r){
@@ -262,3 +270,39 @@ job_application = Class.extend({
     });
   }
 });
+
+
+async function upload_image_to_server(file) {
+  return new Promise((resolve, reject) => {
+    var xhr = new XMLHttpRequest();
+    let form_data = new FormData();
+
+    xhr.open('POST', '/api/method/upload_file', true);
+
+    xhr.setRequestHeader("X-Frappe-CSRF-Token", frappe.csrf_token);
+    xhr.setRequestHeader("Accept", "application/json");
+
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          // File uploaded successfully, and the server responded with status 200
+          var response = JSON.parse(xhr.responseText);
+          resolve(response);
+        } else {
+          // File upload failed or server responded with an error status
+          reject(new Error("File upload failed. Status: " + xhr.status));
+        }
+      }
+    };
+
+    xhr.onerror = function () {
+      // Network error or other issues with the XMLHttpRequest
+      reject(new Error("Network error occurred."));
+    };
+
+    form_data.append('file', file);
+    form_data.append('is_private', true);
+    xhr.send(form_data);
+  });
+}
+
