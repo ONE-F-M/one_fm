@@ -336,6 +336,8 @@ def checkin_checkout_query(date, shift_type, log_type):
 					AND tSA.start_date='{date}'
 					AND tSA.shift_type='{shift_type}'
 					AND tSA.docstatus=1
+					AND emp.auto_attendance = 0
+					and emp.status = "Active"
 					AND tSA.start_date NOT IN
 					(SELECT holiday_date from `tabHoliday` h
 					WHERE
@@ -676,7 +678,9 @@ def fetch_non_shift(date, s_type):
 	if s_type == "AM":
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,
 				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0 AND E.status='Active' AND E.attendance_by_timesheet != 1
+				WHERE E.shift_working = 0
+				AND E.status='Active'
+				AND E.attendance_by_timesheet != 1
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time >= '01:00:00'
@@ -688,7 +692,9 @@ def fetch_non_shift(date, s_type):
 		""".format(date=cstr(date)), as_dict=1)
 	else:
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0 AND E.attendance_by_timesheet != 1
+				WHERE E.shift_working = 0 
+				AND E.status='Active' 
+				AND E.attendance_by_timesheet != 1
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
 					WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
@@ -698,7 +704,7 @@ def fetch_non_shift(date, s_type):
 						h.parent = E.holiday_list
 					AND h.holiday_date = '{date}')
 		""".format(date=cstr(date)), as_dict=1)
-
+	print(roster)
 	return roster
 
 
@@ -716,8 +722,8 @@ def assign_am_shift():
 				WHERE st.start_time >= '01:00:00'
 				AND  st.start_time < '13:00:00')
 			AND ES.employee IN(
-				SELECT name from `tabEmployee` e
-				WHERE e.status = "Active")
+				SELECT name from `tabEmployee`
+				WHERE status = "Active")
 	""".format(date=cstr(date)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "AM")
@@ -741,8 +747,8 @@ def assign_pm_shift():
 				WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
 				)
 			AND ES.employee IN(
-				SELECT name from `tabEmployee` e
-				WHERE e.status = "Active")
+				SELECT name from `tabEmployee` 
+				WHERE status = "Active")
 	""".format(date=cstr(date)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "PM")
