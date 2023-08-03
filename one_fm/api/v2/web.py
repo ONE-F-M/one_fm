@@ -123,7 +123,7 @@ def verify():
             data = res.data
             #response("Bad Request", 400, None, _("{msg}: {data}".format(msg=msg, data=data)))
 		# create_checkin_log()
-        response("Success", 200, check_in(log_type, skip_attendance, latitude, longitude))        
+        response("Success", 200, check_in(log_type, skip_attendance, latitude, longitude, "Mobile Web"))        
     except Exception as exc:
         frappe.log_error(frappe.get_traceback() + '\n\n\n' + str(frappe.form_dict))
         response("Error", 500, None, frappe.get_traceback())  
@@ -160,7 +160,7 @@ def user_within_site_geofence(employee, log_type, user_latitude, user_longitude)
 				return True
 	return False
 
-def check_in(log_type, skip_attendance, latitude, longitude):
+def check_in(log_type, skip_attendance, latitude, longitude, source):
 	try:
 		employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
 		checkin = frappe.new_doc("Employee Checkin")
@@ -168,6 +168,7 @@ def check_in(log_type, skip_attendance, latitude, longitude):
 		checkin.log_type = log_type
 		checkin.device_id = cstr(latitude)+","+cstr(longitude)
 		checkin.skip_auto_attendance = cint(skip_attendance)
+		checkin.source = source
 		# checkin.shift_assignment = get_current_shift(employee)
 		# checkin.time = now_datetime()
 		# checkin.actual_time = now_datetime()
