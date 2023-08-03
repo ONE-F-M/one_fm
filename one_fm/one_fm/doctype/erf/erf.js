@@ -75,6 +75,10 @@ frappe.ui.form.on('ERF', {
 		// 	frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
 
 		// }
+
+		if (!frm.is_new()){
+			frm.set_intro(__("STATUS: "+frm.doc.status), 'green');
+		}
 	},
 	attendance_by_timesheet: function(frm) {
 		if(frm.doc.attendance_by_timesheet){

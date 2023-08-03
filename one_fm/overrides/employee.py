@@ -25,5 +25,8 @@ class EmployeeOverride(EmployeeMaster):
                 remove_user_permission(
                     "Employee", self.name, existing_user_id)
 
+    def before_save(self):
+        pass
+
     def validate_onboarding_process(self):
         validate_onboarding_process(self)

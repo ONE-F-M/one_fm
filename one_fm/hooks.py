@@ -358,9 +358,6 @@ doc_events = {
 		],
     "on_update": "one_fm.utils.notify_on_close",
 	},
-	"Job Opening": {
-		"validate": "one_fm.hiring.utils.set_job_opening_erf_missing_values"
-	},
 	"Comment": {
 		"after_insert": "one_fm.utils.notify_issue_responder_or_assignee_on_comment_in_issue"
 	},
@@ -490,6 +487,7 @@ override_doctype_class = {
     "Job Offer": "one_fm.overrides.job_offer.JobOfferOverride",
     "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride",
     "Job Applicant": "one_fm.overrides.job_applicant.JobApplicantOverride",
+    "Job Opening": "one_fm.overrides.job_opening.JobOpeningOverride"
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
