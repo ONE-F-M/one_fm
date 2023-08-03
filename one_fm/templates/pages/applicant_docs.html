@@ -48,7 +48,7 @@
         <div
             class="p-5 text-center bg-image"
             style="
-            background-image:  linear-gradient( rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) ), url('assets/one_fm/assets/img/job-application/ja-banner.png'); height: 300px; ">
+            background-image:  linear-gradient( rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3) ), url('/assets/one_fm/assets/img/job-application/ja-banner.png'); height: 300px; ">
             <div class="d-flex justify-content-center align-items-center">
                 <h1 style="color:#ffff; line-height: 100px;" class="mb-3">Applicant Documents</h1>
             </div>
@@ -134,8 +134,6 @@
 
                         </form>
 
-
-
                     </div>
 
 
@@ -143,10 +141,9 @@
 
                 </section>
             </div>
-                <br><br>
+            <br><br>
 
-                <div  class="m-auto p-auto">
-
+            <div  class="m-auto p-auto">
                 <div>
                     <section class="form-wrapper" id="finalForm" style="display:none;">
                         <div class="message-block-head d-flex">
@@ -297,10 +294,10 @@
                                     <div class="form-group col-md-4">
                                         <label class="form-label" for="Birth_Place">Place of Birth *</label>
                                         <select class="form-control input2" id="Birth_Place" name="birth_place" aria-placeholder="Select Your Birth Place"  required=1>
-																					<option value="select" selected disabled></option>
-																					{% if job_applicant.one_fm_nationality != None %}
-																							<option value="{{ job_applicant.one_fm_place_of_birth }}" selected>{{ job_applicant.one_fm_place_of_birth }}</option>
-																					{% endif %}>
+                                                                                    <option value="select" selected disabled></option>
+                                                                                    {% if job_applicant.one_fm_nationality != None %}
+                                                                                            <option value="{{ job_applicant.one_fm_place_of_birth }}" selected>{{ job_applicant.one_fm_place_of_birth }}</option>
+                                                                                    {% endif %}>
                                         </select>
                                     </div>
 
@@ -357,7 +354,7 @@
                                 <div class="form-check" id="declare-div">
                                     <input class="form-check-input" type="checkbox" value="" id="confirmData" onchange="document.getElementById('submitForm').disabled = !this.checked;">
                                     <label class="form-check-label" for="confirmData">
-                                      </span>I hereby confirm that the above information is correct <span style="color:red">*</span>
+                                        </span>I hereby confirm that the above information is correct <span style="color:red">*</span>
                                     </label>
                                 </div>
                                 <br>

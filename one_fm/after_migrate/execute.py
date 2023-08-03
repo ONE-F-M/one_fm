@@ -1,4 +1,5 @@
 import frappe, os, shutil
+from frappe.utils import cstr
 from one_fm.utils import production_domain
 
 def comment_timesheet_in_hrms():
@@ -10,12 +11,24 @@ def comment_timesheet_in_hrms():
     filedata = f.read()
     f.close()
 
+    newdata = ""
+    found = False
     if not filedata.find('#"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",') > 0:
         newdata = filedata.replace(
-                '"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",',
-                '#"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",'
+            '"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",',
+            '#"Timesheet": "hrms.overrides.employee_timesheet.EmployeeTimesheet",'
         )
+        filedata = newdata
+        found = True
 
+    if not filedata.find('#"Employee": "hrms.overrides.employee_master.EmployeeMaster",') > 0:
+        newdata = filedata.replace(
+            '"Employee": "hrms.overrides.employee_master.EmployeeMaster",',
+            '#"Employee": "hrms.overrides.employee_master.EmployeeMaster",',
+        )
+        found = True
+    
+    if found:
         f = open(app_path+"hooks.py",'w')
         f.write(newdata)
         f.close()
@@ -99,3 +112,13 @@ def replace_job_opening():
     app_path = frappe.utils.get_bench_path()+"/apps/hrms/hrms/templates/generators"
     os.remove(app_path+'/job_opening.html')
     shutil.copy(frappe.utils.get_bench_path()+"/apps/one_fm/one_fm/templates/generators/job_opening.html", app_path+'/job_opening.html')
+    bench_path = frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/'
+    private = "private/"
+    public = "public/"
+    user_files_path = "private/files/user"
+    user_magic_link = "private/files/user/magic_link"
+    user_files_path = "public/files/user"
+    user_magic_link = "public/files/user/magic_link"
+    for i in [user_files_path, user_magic_link]:
+        if not os.path.exists(bench_path+i):
+            os.mkdir(bench_path+i)
