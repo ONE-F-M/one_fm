@@ -21,7 +21,7 @@ def get_magic_link():
     """
     result = {}
     try:
-        url = 'http://localhost:8003' #frappe.utils.get_url()
+        url = frappe.utils.get_url()
         if frappe.form_dict.magic_link:
             decrypted_magic_link = decrypt(frappe.form_dict.magic_link)
             if (frappe.db.exists("Magic Link", {'name':decrypted_magic_link})):
