@@ -35,8 +35,8 @@ from one_fm.overrides.email_queue import prepare_email_content as email_content,
 from frappe.workflow.doctype.workflow_action import workflow_action
 from one_fm.utils import override_frappe_send_workflow_action_email
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
-from  one_fm.overrides.payment_entry import add_party_gl_entries_
-from  one_fm.overrides.stock_ledger import get_valuation_rate_
+from one_fm.overrides.payment_entry import add_party_gl_entries_
+from one_fm.overrides.stock_ledger import get_valuation_rate_
 from erpnext.stock import stock_ledger
 from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 

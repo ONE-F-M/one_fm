@@ -604,7 +604,7 @@ def set_mandatory_feilds_in_employee_for_Kuwaiti(doc,method):
             frappe.throw(message)
 
 @frappe.whitelist()
-def set_employee_name(doc,method):
+def set_employee_name(doc, method):
     """
     runs: `validate` of employee record
     doc: employee object

@@ -221,19 +221,6 @@ doc_events = {
 	"Leave Type": {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
-	"Employee": {
-		"validate":[
-			"one_fm.hiring.utils.set_employee_name",
-			"one_fm.hiring.utils.employee_validate_attendance_by_timesheet"
-		],
-		"after_insert": "one_fm.hiring.utils.employee_after_insert",
-		"before_insert": "one_fm.hiring.utils.employee_before_insert",
-		"on_update":[
-      		"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
-        	"one_fm.events.employee.on_update",
-         ],
-		"before_save": "one_fm.events.employee.assign_role_profile_based_on_designation",
-	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
 	},
