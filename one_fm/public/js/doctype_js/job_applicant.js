@@ -67,7 +67,7 @@ frappe.ui.form.on('Job Applicant', {
 				frm.call('send_applicant_doc_magic_link', {
 					job_applicant:frm.doc.name, applicant_name:frm.doc.applicant_name, designation:frm.doc.designation
 				}).then((res)=>{
-					frm.refresh();
+					reload_doc();
 				});
 			},'Action');
 			frm.add_custom_button(__('Create Career History'), function() {
