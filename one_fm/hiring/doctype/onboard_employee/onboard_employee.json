@@ -1490,7 +1490,8 @@
    "fieldname": "employment_type",
    "fieldtype": "Link",
    "label": "Employment Type",
-   "options": "Employment Type"
+   "options": "Employment Type",
+   "reqd": 1
   },
   {
    "default": "0",
@@ -1511,7 +1512,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-07-13 14:27:21.486819",
+ "modified": "2023-08-06 06:20:10.814327",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

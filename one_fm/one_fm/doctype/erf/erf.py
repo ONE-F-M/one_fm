@@ -175,7 +175,7 @@ class ERF(Document):
 					}
 					msg = frappe.render_template('one_fm/templates/emails/notify_recruitment_manager.html', context=context)
 					frappe.enqueue(sendemail, recipients=manager_emails, subject=title, content=msg, at_front=True, is_async=True)
-					frappe.msgprint(_('Recruitment manager will be notified by email.'))	
+					frappe.msgprint(_('Recruitment manager will be notified by email.'))
 		except:
 			frappe.log_error(frappe.get_traceback(), "Error while sending mail to recruitment manager(ERF) ")
       		
@@ -357,6 +357,7 @@ def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
 	job_opening.job_title = erf.erf_code+'-'+erf.designation+(('-'+erf.department) if erf.department else '')
 	job_opening.designation = erf.designation
+	job_opening.employment_type = erf.employment_type
 	job_opening.department = erf.department
 	job_opening.one_fm_erf = erf.name
 	employee = frappe.db.exists("Employee", {"user_id": erf.owner})
