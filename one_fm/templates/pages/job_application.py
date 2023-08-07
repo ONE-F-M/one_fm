@@ -6,8 +6,6 @@ from frappe.utils import get_url
 from one_fm.processor import sendemail
 from one_fm.utils import translate_words
 
-from one_fm.hiring.utils import notify_recruiter_and_requester_from_job_applicant
-
 
 
 def get_context(context):
