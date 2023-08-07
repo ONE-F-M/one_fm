@@ -3125,7 +3125,7 @@ def translate_words(word: str, target_language_code: str="ar") -> str:
 def send_shift_request_mail(doc, method=None):
     if doc.workflow_state == 'Pending Approval':
         try:
-            title = f"Urgent Notification: {doc.name} Requires Your Immediate Review"
+            title = f"Urgent Notification: {doc.doctype} Requires Your Immediate Review"
             context = dict(
                 employee_name=doc.employee_name,
                 from_date=doc.from_date,
