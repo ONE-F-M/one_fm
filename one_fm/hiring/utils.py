@@ -62,7 +62,7 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
             "designation": designation,
             "status": doc.status,
             "applicant_name": doc.applicant_name,
-            "cv": frappe.utils.get_url(doc.resume_attachment),
+            "cv": frappe.utils.get_url(doc.resume_attachment) if doc.resume_attachment else None,
             "passport_type": doc.one_fm_passport_type,
             "job_applicant": get_url(doc.get_url()),
             "contact_email": doc.one_fm_email_id
