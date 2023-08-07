@@ -78,7 +78,7 @@ def notify_recruiter_and_requester_from_job_applicant(doc, method):
 
         if recipients:
             sendemail(
-                recipients= recipients,
+                recipients=recipients,
                 subject='Job Application created for {0}'.format(designation),
                 message=message,
                 reference_doctype=doc.doctype,
