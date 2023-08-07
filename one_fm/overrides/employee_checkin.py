@@ -88,7 +88,7 @@ def after_insert_background(self):
 	self = frappe.get_doc("Employee Checkin", self)
 	try:
 		# update shift if not exists
-		curr_shift = get_shift_from_checkin(self)
+		curr_shift = get_current_shift(self.employee)
 		if curr_shift:
 			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
 			# calculate entry
