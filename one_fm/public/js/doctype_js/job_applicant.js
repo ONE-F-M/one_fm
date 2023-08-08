@@ -121,6 +121,21 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			}
 		}
+		// show magic and career history copy button
+		if (!frm.is_new()){
+			if (frm.doc.magic_link){
+				frm.add_custom_button('Magic Link', ()=>{
+					window.open(frm.doc.magic_link, '_blank')
+				}, 'Open Link')
+			}
+		}
+		if (!frm.is_new()){
+			if (frm.doc.career_history_link){
+				frm.add_custom_button('Career History Link', ()=>{
+					window.open(frm.doc.career_history_link, '_blank')
+				}, 'Open Link')
+			}
+		}
 
 		// set into
 		if (!frm.is_new() && frm.doc.status=='Rejected' && frm.doc.one_fm_reason_for_rejection){
@@ -946,6 +961,7 @@ var send_magic_link = function(frm, method) {
 		callback: function(r) {
 			if(r && r.message){
 				frappe.msgprint(__("Succesfully Send the Magic Link"));
+				frm.refresh();
 			}
 		},
 		freeze: true,

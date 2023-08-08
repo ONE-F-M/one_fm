@@ -822,6 +822,10 @@ def create_shift_assignment(roster, date, time):
 
 		# remove employees with approved leaves
 		todays_leaves = get_today_leaves(str(date))
+		employees_on_vacation = [i.name for i in frappe.db.get_list("Employee", {'status':'Vacation'})]
+		for i in employees_on_vacation:
+			if not i in todays_leaves:
+				todays_leaves.append(i)
 		roster = [i for i in roster if not i.employee in todays_leaves]
 		if roster:
 			query = """
@@ -914,7 +918,7 @@ def validate_am_shift_assignment():
 			NOT IN (Select employee from `tabEmployee` E
 			WHERE
 				E.name = ES.employee
-				AND E.status = "Left")
+				AND E.status IN ("Left", "Vacation", "Court Case"))
 	""".format(date=cstr(date)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "PM")
@@ -958,7 +962,7 @@ def validate_pm_shift_assignment():
 			NOT IN (Select employee from `tabEmployee` E
 			WHERE
 				E.name = ES.employee
-				AND E.status = "Left")
+				AND E.status IN ("Left", "Vacation", "Court Case"))
 	""".format(date=cstr(date)), as_dict=1)
 	non_shift = fetch_non_shift(date, "PM")
 	if non_shift:

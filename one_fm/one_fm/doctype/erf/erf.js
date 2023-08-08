@@ -3,6 +3,8 @@
 
 frappe.ui.form.on('ERF', {
 	refresh: function(frm) {
+		// 
+		
 		if(frm.is_new()){
 			frm.set_value('erf_requested_by', frappe.session.user);
 		}
@@ -76,6 +78,9 @@ frappe.ui.form.on('ERF', {
 
 		// }
 
+		if (!frm.is_new()){
+			frm.set_intro(__("STATUS: "+frm.doc.status), 'green');
+		}
 		frm.set_query('recruiter_assigned', function() {
             return{
 				filters: [["Has Role","role","=", "Recruiter"]],
@@ -89,7 +94,6 @@ frappe.ui.form.on('ERF', {
 				query: "one_fm.hiring.utils.fetch_recruiters"
 			}
         });
-
 	},
 	
 	attendance_by_timesheet: function(frm) {
@@ -130,6 +134,7 @@ frappe.ui.form.on('ERF', {
 						args: {status: 'Closed'},
 						callback(r) {
 							if (!r.exc) {
+								frm.set_value('status', 'Close');
 								frm.reload_doc();
 							}
 						},

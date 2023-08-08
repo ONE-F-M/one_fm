@@ -189,7 +189,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
-   "options": "\nOpen\nAccepted\nRejected\nHold\nCancelled",
+   "options": "\nOpen\nAccepted\nRejected\nHold\nCancelled\nClosed",
    "read_only": 1
   },
   {

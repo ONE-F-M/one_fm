@@ -425,5 +425,12 @@
   "modified": "2023-06-25 23:04:41.498093",
   "name": "Change Request",
   "workflow_action_name": "Change Request"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-08-02 15:18:45.824598",
+  "name": "Close",
+  "workflow_action_name": "Close"
  }
 ]

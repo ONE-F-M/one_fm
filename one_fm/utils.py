@@ -3121,3 +3121,21 @@ def translate_words(word: str, target_language_code: str="ar") -> str:
             frappe.log_error(frappe.get_traceback(), "Error while translating word")
             return word
     return word
+
+def send_shift_request_mail(doc, method=None):
+    if doc.workflow_state == 'Pending Approval':
+        try:
+            title = f"Urgent Notification: {doc.name} Requires Your Immediate Review"
+            context = dict(
+                employee_name=doc.employee_name,
+                from_date=doc.from_date,
+                to_date=doc.to_date,
+                department=doc.department,
+                checkin_site=doc.check_in_site,
+                checkout_site=doc.check_out_site,
+                doc_link=get_url_to_form(doc.doctype, doc.name)
+            )
+            msg = frappe.render_template('one_fm/templates/emails/shift_request_notification.html', context=context)
+            frappe.enqueue(sendemail, recipients=doc.shift_approver, subject=title, content=msg, at_front=True, is_async=True)
+        except:
+            frappe.log_error(frappe.get_traceback(), "Error while sending shift request notification")

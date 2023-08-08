@@ -221,19 +221,6 @@ doc_events = {
 	"Leave Type": {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
-	"Employee": {
-		"validate":[
-			"one_fm.hiring.utils.set_employee_name",
-			"one_fm.hiring.utils.employee_validate_attendance_by_timesheet"
-		],
-		"after_insert": "one_fm.hiring.utils.employee_after_insert",
-		"before_insert": "one_fm.hiring.utils.employee_before_insert",
-		"on_update":[
-      		"one_fm.hiring.utils.set_mandatory_feilds_in_employee_for_Kuwaiti",
-        	"one_fm.events.employee.on_update",
-         ],
-		"before_save": "one_fm.events.employee.assign_role_profile_based_on_designation",
-	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
 	},
@@ -245,10 +232,6 @@ doc_events = {
 		"onload": "one_fm.utils.validate_pam_file_number_and_pam_designation",
 		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
-	},
-	"Shift Type": {
-		"autoname": "one_fm.api.doc_events.naming_series",
-		"validate": "one_fm.overrides.shift_type.validate_shift_type"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -358,9 +341,6 @@ doc_events = {
 		],
     "on_update": "one_fm.utils.notify_on_close",
 	},
-	"Job Opening": {
-		"validate": "one_fm.hiring.utils.set_job_opening_erf_missing_values"
-	},
 	"Comment": {
 		"after_insert": "one_fm.utils.notify_issue_responder_or_assignee_on_comment_in_issue"
 	},
@@ -377,6 +357,7 @@ doc_events = {
 	"Shift Request":{
 		"before_save":[
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
+			"one_fm.utils.send_shift_request_mail"
 		],
 		"on_update_after_submit":[
 			"one_fm.api.doc_methods.shift_request.on_update_after_submit",
@@ -465,6 +446,7 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
+    # {"from_route": "/job_applicant_magic_link/<path:app_path>", "to_route": "job_applicant_magic_link"},
 
 ]
 
@@ -489,6 +471,7 @@ override_doctype_class = {
     "Job Offer": "one_fm.overrides.job_offer.JobOfferOverride",
     "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride",
     "Job Applicant": "one_fm.overrides.job_applicant.JobApplicantOverride",
+    "Job Opening": "one_fm.overrides.job_opening.JobOpeningOverride"
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
