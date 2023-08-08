@@ -13,12 +13,23 @@ from translate import Translator
 class DutyCommencement(Document):
 	
 	
-	def on_submit(self):
+	def translate_fields(self):
 		#Translate the required fields into arabic
-		fields = {}
+		try:
+			fields_dict ={'employee_name':'name_in_arabic','nationality':'nationality_in_arabic','project':'project_in_arabic','designation':'position_in_arabic'}
+			for each in fields_dict.keys():
+				if not self.get(fields_dict[each]):
+					translator= Translator(to_lang="ar")
+					translated_value = translator.translate(self.get(each))
+					self.db_set(fields_dict[each],translated_value)
+     
+		except:
+			frappe.log_error("Error Translating Duty Commencement fields",frappe.get_traceback())
+			frappe.msgprint("Error Occured while translating page",alert=1)
 	
 	
 	def validate(self):
+		self.translate_fields()
 		if not self.posting_date:
 			self.posting_date = today()
 
