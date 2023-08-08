@@ -338,7 +338,6 @@ def employee_leave_status():
     The method is called as a cron job before  assigning shift.
     """
     today = getdate()
-    # print(type(getdate()))
     tomorrow = add_to_date(today, days=1)
 
     start_leave = frappe.get_list("Leave Application", {'from_date': tomorrow,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
