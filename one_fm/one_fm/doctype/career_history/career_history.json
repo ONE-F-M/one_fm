@@ -124,7 +124,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval: doc.career_history_score < 2.99 && doc.hiring_method != 'Bulk Recruitment' && doc.career_history_score != 0",
+   "depends_on": "eval: doc.career_history_score < 2.99 && doc.hiring_method != 'Buffet Recruitment' && doc.career_history_score != 0",
    "fieldname": "pass_to_next_interview",
    "fieldtype": "Select",
    "label": "Pass to Next Interview or Reject Applicant",
