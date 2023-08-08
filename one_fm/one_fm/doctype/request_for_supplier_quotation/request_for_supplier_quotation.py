@@ -87,7 +87,7 @@ class RequestforSupplierQuotation(Document):
             if rec != None and supplier.send_email:
                 try:
                     sendemail(sender=sender, recipients= rec, cc= rec_cc,
-                        content=msg, subject="Request for Quotation - {0}".format(self.name))
+                        content=msg, subject="Request for Quotation - {0}".format(self.name), is_external_mail=True)
                     supplier.email_sent = 1
                     self.save()
                     frappe.msgprint(_("Email sent to supplier {0}").format(supplier.supplier))
