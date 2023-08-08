@@ -8,8 +8,16 @@ from frappe.model.document import Document
 from one_fm.hiring.utils import update_onboarding_doc, make_employee_from_job_offer, update_onboarding_doc_workflow_sate
 from frappe.utils import today, getdate, cstr
 from frappe import _
+from translate import Translator
 
 class DutyCommencement(Document):
+	
+	
+	def on_submit(self):
+		#Translate the required fields into arabic
+		fields = {}
+	
+	
 	def validate(self):
 		if not self.posting_date:
 			self.posting_date = today()
