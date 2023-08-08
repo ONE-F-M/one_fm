@@ -66,7 +66,7 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
         return 0
 
 @frappe.whitelist(allow_guest=True)
-def create_job_applicant_from_job_portal(applicant_name, country, applicant_email, applicant_mobile, job_opening, files, rotation_shift=None, night_shift=None, travel=None, travel_type=None, driving_license=None,license_type=None, visa=None, visa_type=None, in_kuwait=None):
+def create_job_applicant_from_job_portal(applicant_name, country, applicant_email, applicant_mobile, job_opening, name_of_file, resume_attachment_url="", rotation_shift=None, night_shift=None, travel=None, travel_type=None, driving_license=None,license_type=None, visa=None, visa_type=None, in_kuwait=None):
     '''
         Method to create Job Applicant from Portal
         args:
@@ -114,6 +114,8 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
     job_applicant.one_fm_forth_name = fourth_name
     job_applicant.one_fm_forth_name_in_arabic = translate_words(word=fourth_name)
     
+    job_applicant.resume_attachment = resume_attachment_url
+    
     if rotation_shift:
         if rotation_shift == "yes":
             job_applicant.one_fm_rotation_shift = "Yes, I Will Work in Rotation Shift"
@@ -152,15 +154,17 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
             job_applicant.one_fm_in_kuwait_at_present = 0
     
     job_applicant.save(ignore_permissions=True)
+    if name_of_file:
+        frappe.enqueue(update_file_name, dt=job_applicant.doctype, dn=job_applicant.name, fn=name_of_file, at_front=True, is_async=True)
 
     # If files exisit, attach the file to Job Applicant created
-    if files:
-        files_json = json.loads(files)
-        files_obj = frappe._dict(files_json)
-        for file in files_obj:
-            # Attach the file to Job Applicant created
-            attach_file_to_job_applicant(files_obj[file]['files_data'], job_applicant)
-        job_applicant.save(ignore_permissions=True)
+    # if files:
+    #     files_json = json.loads(files)
+    #     files_obj = frappe._dict(files_json)
+    #     for file in files_obj:
+    #         # Attach the file to Job Applicant created
+    #         attach_file_to_job_applicant(files_obj[file]['files_data'], job_applicant)
+    # job_applicant.save(ignore_permissions=True)
     return True
 
 @frappe.whitelist()
@@ -171,13 +175,17 @@ def attach_file_to_job_applicant(filedata, job_applicant):
             filedata: filedata
             job_applicant: Object of Job Applicant
     '''
-    from frappe.utils.file_manager import save_file
-    if filedata:
-        for fd in filedata:
-            # Save file and attach to Job Applicant
-            filedoc = save_file(fd["filename"], fd["dataurl"], "Job Applicant", job_applicant.name, decode=True, is_private=0)
-            # Set resume_attachment as url of the file stored
-            job_applicant.resume_attachment = filedoc.file_url
+    try:
+        from frappe.utils.file_manager import save_file
+        if filedata:
+            for fd in filedata:
+                # Save file and attach to Job Applicant
+                filedoc = save_file(fd["filename"], fd["dataurl"], "Job Applicant", job_applicant.name, decode=True, is_private=0)
+                # Set resume_attachment as url of the file stored
+                job_applicant.resume_attachment = filedoc.file_url
+    except:
+        frappe.log_error(frappe.get_traceback(), "Error while uploading file (Easy Apply)")
+            
 
 def create_job_applicant_for_easy_apply(applicant_name, first_name, second_name, third_name, last_name, nationality,
         civil_id, applicant_email, applicant_mobile, cover_letter, job_opening, first_name_arabic, last_name_arabic, files=None):
@@ -342,3 +350,10 @@ def parse_names(input_string: str) -> tuple:
             fourth_name = names[3]
             
     return (first_name, second_name, third_name, fourth_name, last_name)
+
+
+def update_file_name(dt, dn, fn):
+    check = frappe.db.exists("File", fn)
+    if check:
+        query = f"UPDATE `tabFile` SET attached_to_doctype = '{dt}', attached_to_name = '{dn}' WHERE name = '{fn}' "
+        frappe.db.sql(query)

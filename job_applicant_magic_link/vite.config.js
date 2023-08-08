@@ -36,7 +36,7 @@ export default defineConfig({
         assetFileNames: `assets/[name].[ext]`,
       },
     },
-    outDir: `../${path.basename(path.resolve(".."))}/public/job_applicant_magic_link`,
+    outDir: `../${path.basename(path.resolve(".."))}/public/magic_link`,
     emptyOutDir: true,
     target: "es2015",
     commonjsOptions: {

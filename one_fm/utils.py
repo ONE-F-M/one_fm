@@ -1657,6 +1657,7 @@ def create_job_offer_from_job_applicant(job_applicant):
             frappe.throw(_("Number of days off cannot be more than a Month!"))
         job_offer = frappe.new_doc('Job Offer')
         job_offer.job_applicant = job_app.name
+        job_offer.employment_type = job_app.employment_type
         job_offer.applicant_name = job_app.applicant_name
         job_offer.day_off_category = job_app.day_off_category
         job_offer.number_of_days_off = job_app.number_of_days_off
@@ -3125,7 +3126,7 @@ def translate_words(word: str, target_language_code: str="ar") -> str:
 def send_shift_request_mail(doc, method=None):
     if doc.workflow_state == 'Pending Approval':
         try:
-            title = f"Urgent Notification: {doc.name} Requires Your Immediate Review"
+            title = f"Urgent Notification: {doc.doctype} Requires Your Immediate Review"
             context = dict(
                 employee_name=doc.employee_name,
                 from_date=doc.from_date,

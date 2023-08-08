@@ -231,6 +231,9 @@ export default {
               res.msg,
               'success'
             )
+            setTimeout(()=>{
+              window.location.href='/'
+            }, 5000);
           }
           document.querySelector('#cover-spin').style.display = 'none';
         })
@@ -284,13 +287,21 @@ export default {
 
                 <article class="main-container m-auto p-auto">
                   <div>
-                    <div class="row col-lg-12 col-md-12 mb-12">
-                        <h6>Dear {{applicant_name}}, greetings from One Facilities Management!</h6>
+                    <div class="row col-lg-12 col-md-12 mb-12 text-primary">
+                        <h6>Dear {{job_applicant.applicant_name}},<br>Greetings from One Facilities Management!</h6>
                         <h6>As a part of the onboarding process for the {{applicant_designation}} role, we request you to provide us with the following documents and complete the below form.</h6>
                         <ul>
-                            <li><h6>Passport - front and back side</h6></li>
-                            <li><h6>Civil ID - front and back side</h6></li>
+                            <li><h6>1. Passport - Data Page (If available)</h6></li>
+                            <li><h6>2. Kuwait Civil ID - front and back side (if available)</h6></li>
                         </ul>
+                        <h5>Instructions:</h5>
+                        <ol>
+                            <li><h6>1. Upload a picture/photo of the above listed documents if availabe.</h6></li>
+                            <li><h6>2. Click 'Upload Document' button.</h6></li>
+                            <li><h6>3. Cross check form if the information uploaded is correct/fill it properly.</h6></li>
+                            <li><h6>4. Click the checkbux before submit and click submit at the end of the page.</h6></li>
+                        </ol>
+                        <h6>NOTE: All fields in red (*) must be filled before submission and only images (JPG, JPEG, PNG) allowed.</h6>
                     </div>
                     <section class="form-wrapper">
                         <div class="form-container">
@@ -331,7 +342,7 @@ export default {
 
 
                             <div style="margin-top: 30px; display: flex; justify-content: end">
-                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" @click.prevent="upload">Get Passport Details and Upload</button>
+                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" @click.prevent="upload">Upload Document</button>
                             </div>
                         </form>
                       </div>
@@ -467,12 +478,12 @@ export default {
                                           <input class="form-control input2" type="text" id="one_fm_country_code" name="one_fm_country_code" size="50" v-model="job_applicant.one_fm_country_code" :onchange="putField">
                                       </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <!-- <div class="col-md-4">
                                       <div class="form-group">
                                           <label class="form-label" for="one_fm_sponsor">Sponsor</label>
                                           <input class="form-control input"  type="text" id="one_fm_sponsor" name="one_fm_sponsor" v-model="job_applicant.one_fm_sponsor" :onchange="putField">
                                       </div>
-                                    </div>
+                                    </div> -->
                                   </div>
                                   <!-- End QUalification, Nationality -->
                                   <hr>
@@ -490,12 +501,12 @@ export default {
                                           <input class="form-control input" type="date" id="one_fm_cid_expire" name="one_fm_cid_expire" size="50" v-model="job_applicant.one_fm_cid_expire" :onchange="putField">
                                       </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <!-- <div class="col-md-4">
                                       <div class="form-group">
                                           <label class="form-label" for="one_fm_paci_no">PACI Number</label>
                                           <input class="form-control input" type="text" id="one_fm_paci_no" name="one_fm_paci_no" v-model="job_applicant.one_fm_paci_no" :onchange="putField">
                                       </div>
-                                    </div>
+                                    </div> -->
                                   </div>
                                   <!-- End Civil -->
                                   <hr>

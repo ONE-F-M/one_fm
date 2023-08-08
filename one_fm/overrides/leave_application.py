@@ -1,6 +1,6 @@
 import frappe,json
 from frappe import _
-from frappe.utils import get_fullname,nowdate
+from frappe.utils import get_fullname, nowdate, add_to_date
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
 from frappe.desk.form.assign_to import add
@@ -271,6 +271,11 @@ class LeaveApplicationOverride(LeaveApplication):
                 frappe.log_error(frappe.get_traceback(),"Error Sending Notification")
 
     def on_cancel(self):
+        if self.status == "Cancelled"  and self.leave_type == 'Annual Leave' and getdate(self.from_date) <= getdate() <= getdate(self.to_date):
+            emp = frappe.get_doc("Employee", self.employee)
+            emp.status = "Active"
+            emp.save()
+            frappe.db.commit()
         self.create_leave_ledger_entry(submit=False)
 		# notify leave applier about cancellation
         self.cancel_attendance()
@@ -303,6 +308,12 @@ class LeaveApplicationOverride(LeaveApplication):
                         }).submit()
 
                     frappe.db.commit()
+        if self.status == "Approved":
+            if getdate(self.from_date) <= getdate() <= getdate(self.to_date) and self.leave_type == 'Annual Leave':
+                emp = frappe.get_doc("Employee", self.employee)
+                emp.status = "Vacation"
+                emp.save()
+                frappe.db.commit()
 
 @frappe.whitelist()
 def get_leave_approver(employee):
@@ -318,3 +329,29 @@ def get_leave_approver(employee):
         )
 
     return leave_approver
+
+@frappe.whitelist()
+def employee_leave_status():
+    """
+    This method is to change the status of employee Doc from Active to Vacation, when Leave starts.
+    It also changes it back to Active when the leave ends. 
+    The method is called as a cron job before  assigning shift.
+    """
+    today = getdate()
+    tomorrow = add_to_date(today, days=1)
+
+    start_leave = frappe.get_list("Leave Application", {'from_date': tomorrow,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
+    end_leave = frappe.get_list("Leave Application", {'to_date': today,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
+
+    frappe.enqueue(process_change,start_leave=start_leave,end_leave=end_leave, is_async=True, queue="long")
+    
+def process_change(start_leave, end_leave):
+    change_employee_status(start_leave, "Vacation")
+    change_employee_status(end_leave, "Active")
+
+def change_employee_status(employee_list, status):
+    for e in employee_list:
+        emp = frappe.get_doc("Employee", e.employee)
+        emp.status = status
+        emp.save()
+    frappe.db.commit()

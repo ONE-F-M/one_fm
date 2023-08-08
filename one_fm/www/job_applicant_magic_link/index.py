@@ -21,7 +21,7 @@ def get_magic_link():
     """
     result = {}
     try:
-        url = 'http://localhost:8003' #frappe.utils.get_url()
+        url = frappe.utils.get_url()
         if frappe.form_dict.magic_link:
             decrypted_magic_link = decrypt(frappe.form_dict.magic_link)
             if (frappe.db.exists("Magic Link", {'name':decrypted_magic_link})):
@@ -70,7 +70,7 @@ def get_magic_link():
                         result['attachments'].append({
                             'name':job_applicant.civil_id_back,
                             'image':url+job_applicant.civil_id_back,
-                            'id':'civil_id_front',
+                            'id':'civil_id_back',
                             'placeholder':'Civil ID Back'
                         })
             else:
@@ -91,11 +91,10 @@ def upload_image():
     response_data = {}
     errors = []
     # process passport
-    # print(frappe.form_dict)
+    reference_doctype = frappe.form_dict.reference_doctype
+    reference_docname = frappe.form_dict.reference_docname
     if frappe.form_dict.passport_data_page:
         data_content = frappe._dict(frappe.form_dict.passport_data_page)
-        reference_doctype = frappe.form_dict.reference_doctype
-        reference_docname = frappe.form_dict.reference_docname
         data = data_content.data
         filename = "passport-"+applicant_name+"_"+hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest()[:5]+"-"+data_content.name
         content = base64.b64decode(data)
@@ -223,15 +222,69 @@ def upload_image():
                 frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/public/'+file_url
             ).parse(documents.TypeCustomV1, endpoint_name="kuwait_civil_id_front")
 
-            civil_id_front = {}
+            civil_id_front = {} #{'birth_date': '1999-12-28', 'civil_id_no': '299122801358', 'expiry_date': '2028-01-30', 'name': 'ALI', 'nationality': 'KWT', 'passport_number': '', 'sex': ''}
             # Iterate over all the fields in the document
             for field_name, field_values in result.document.fields.items():
                 civil_id_front[field_name] = str(field_values)
             response_data['civil_id_front']=civil_id_front
-            print(response_data, type(civil_id_front))
+            # update record
+            job_applicant = frappe.get_doc(reference_doctype, reference_docname)
+            if civil_id_front.get('birth_date'):job_applicant.db_set('one_fm_date_of_birth', civil_id_front.get('birth_date'))
+            if civil_id_front.get('civil_id_no'):job_applicant.db_set('one_fm_cid_number', civil_id_front.get('civil_id_no'))
+            if civil_id_front.get('expiry_date'):job_applicant.db_set('one_fm_cid_expire', civil_id_front.get('expiry_date'))
+            if civil_id_front.get('name'):job_applicant.db_set('applicant_name', civil_id_front.get('name'))
+            if civil_id_front.get('passport_number'):job_applicant.db_set('one_fm_passport_number', civil_id_front.get('passport_number'))
+            if civil_id_front.get('sex'):
+                if civil_id_front.get('sex')=='M':sex="Male"
+                elif civil_id_front.get('sex')=="F":sex="Female"
+                else:sex="Other"
+                job_applicant.db_set('one_fm_gender', sex)
+            if civil_id_front.get('nationality'):
+                country_code = civil_id_front.get('nationality')
+                country = frappe.db.get_value("Country", {'code_alpha3':country_code}, 'name')
+                if not country:
+                    country = frappe.db.get_value("Country", {'code':country_code}, 'name')
+                if country:
+                    if country=='Kuwait':
+                        nationality = 'Kuwaiti'
+                    else:
+                        nationality = frappe.db.get_value("Nationality", {'country':country}, 'name')
+                    job_applicant.db_set('one_fm_nationality', nationality)
+                    job_applicant.db_set('country', country)
+
+            frappe.db.commit()
+
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Mindee-Civil ID")
             errors.append("We could not process your Civil ID document.")
+
+    # civil id Back
+    if frappe.form_dict.civil_id_back:
+        data_content = frappe._dict(frappe.form_dict.civil_id_back)
+        reference_doctype = frappe.form_dict.reference_doctype
+        reference_docname = frappe.form_dict.reference_docname
+        data = data_content.data
+        filename = "civil_id_back-"+applicant_name+"_"+hashlib.md5(str(datetime.datetime.now()).encode('utf-8')).hexdigest()[:5]+"-"+data_content.name
+        content = base64.b64decode(data)
+        with open(full_path+filename, "wb") as fh:
+            fh.write(content)
+        # append to File doctype
+        file_url = "/files/user/magic_link/"+filename
+        filedoc = frappe.get_doc({
+            "doctype":"File", 
+            "is_private":0,
+            "file_url":"/files/user/magic_link/"+filename, 
+            "attached_to_doctype":frappe.form_dict.reference_doctype, 
+            "attached_to_name":frappe.form_dict.reference_docname
+        }).insert(ignore_permissions=True)
+        filedoc.db_set('file_url', file_url)
+        frappe.db.set_value(reference_doctype, reference_docname, 'civil_id_back', file_url)
+        frappe.db.commit()
+        absolute_path = frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/public/files/'+filename
+        if os.path.isfile(absolute_path):
+            os.remove(absolute_path)
+        # process file detection
+        response_data['civil_id_back']={'done':True} #fake response
 
     return frappe._dict({**response_data, **{'errors':errors}})
 
@@ -269,7 +322,7 @@ def update_job_applicant():
 @frappe.whitelist(allow_guest=True)
 def submit_job_applicant(job_applicant):
     try:
-        # set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
+        set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
         return {'msg':'Your application has been successfully submitted, we will be intouch soonest.'}
     except Exception as e:
         return {'error':e}

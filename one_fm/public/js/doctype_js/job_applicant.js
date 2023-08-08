@@ -36,7 +36,7 @@ frappe.ui.form.on('Job Applicant', {
 		set_field_properties_on_agency_applying(frm);
 		set_mandatory_fields_for_current_employment(frm);
 
-		if(frm.doc.one_fm_hiring_method == 'Bulk Recruitment' && frm.doc.interview_round){
+		if(frm.doc.one_fm_hiring_method == 'Buffet Recruitment' && frm.doc.interview_round){
 			if(frm.doc.bulk_interview){
 				frappe.db.get_value('Interview', frm.doc.bulk_interview, 'docstatus', function(r) {
 					var interview_exists = true;
@@ -63,9 +63,13 @@ frappe.ui.form.on('Job Applicant', {
 			frm.add_custom_button(__('Send Career History'), function() {
 					send_magic_link(frm, 'one_fm.templates.pages.career_history.send_career_history_magic_link');
 					},'Action');
-			frm.add_custom_button(__('Send Applicant Doc'), function() {
-				send_magic_link(frm, 'one_fm.templates.pages.applicant_docs.send_applicant_doc_magic_link');
-				},'Action');
+			frm.add_custom_button(__('Send Magic Link'), function() {
+				frm.call('send_applicant_doc_magic_link', {
+					job_applicant:frm.doc.name, applicant_name:frm.doc.applicant_name, designation:frm.doc.designation
+				}).then((res)=>{
+					reload_doc();
+				});
+			},'Action');
 			frm.add_custom_button(__('Create Career History'), function() {
 				create_career_history(frm);
 				},'Action');
@@ -141,7 +145,10 @@ frappe.ui.form.on('Job Applicant', {
 		if (!frm.is_new() && frm.doc.status=='Rejected' && frm.doc.one_fm_reason_for_rejection){
 			frm.set_intro('<span class="text-danger"><b>Reason for Rejection</b></span><br>'+frm.doc.one_fm_reason_for_rejection, 'yellow');
 		}
-
+		// show magic link
+		if (!frm.is_new() && frm.doc.magic_link){
+			frm.set_intro(`Magic Link: <a target="_blank" href="${frm.doc.magic_link}">${frm.doc.magic_link}</a>`, 'blue');
+		}
 	},
 	one_fm_change_pam_file_number: function(frm){
 		// on the change of pam designation change the button color and set the flag value
