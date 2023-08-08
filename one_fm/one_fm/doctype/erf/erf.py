@@ -355,7 +355,7 @@ def get_erf_approver(reason_for_request):
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
-	job_opening.job_title = erf.erf_code+'-'+erf.designation+(('-'+erf.department) if erf.department else '')
+	job_opening.job_title = erf.job_title
 	job_opening.designation = erf.designation
 	job_opening.department = erf.department
 	job_opening.one_fm_erf = erf.name
