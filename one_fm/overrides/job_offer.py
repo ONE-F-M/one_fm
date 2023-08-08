@@ -92,7 +92,7 @@ class JobOfferOverride(JobOffer):
     def validate_job_offer_mandatory_fields(self):
         if self.workflow_state == 'Submit for Candidate Response':
             mandatory_field_required = False
-            fields = ['Project', 'Base', 'Salary Structure', 'Project']
+            fields = ['Project', 'Base', 'Salary Structure'] if not self.attendance_by_timesheet else ['Base', 'Salary Structure']
             if not self.shift_working and not self.reports_to:
                 fields.append("Reports to")
             if not self.attendance_by_timesheet:
