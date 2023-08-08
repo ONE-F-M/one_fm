@@ -31,6 +31,7 @@ class EmployeeOverride(EmployeeMaster):
                 remove_user_permission(
                     "Employee", self.name, existing_user_id)
         employee_validate_attendance_by_timesheet(self, method=None)
+        self.validate_leaves()
         
 
     def before_save(self):
@@ -93,3 +94,12 @@ class EmployeeOverride(EmployeeMaster):
             frappe.msgprint(f"""
                 Employee Schedule cleared for {doc.employee_name} starting from {add_days(doc.relieving_date, 1)} 
             """)
+
+    def validate_leaves(self):
+        if self.status=='Vacation':
+            if not frappe.db.sql(f"""
+                    SELECT name FROM `tabLeave Application` WHERE employee="{self.name}" AND docstatus IN (0,1)
+                    AND
+                    '{getdate()}' BETWEEN from_date AND to_date
+                """, as_dict=1):
+                frappe.throw(f"Status cannot be 'Vacation' when no Leave Application exists for {self.employee_name} today {getdate()}.")
