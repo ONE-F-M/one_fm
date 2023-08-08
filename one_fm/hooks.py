@@ -673,6 +673,9 @@ scheduler_events = {
 		],
 		"45 23 23 * *": [ #approve all the open leave application
 		'one_fm.api.doc_methods.payroll_entry.close_all_leave_application'
+		],
+		"30 23 * * *":[
+			'one_fm.overrides.leave_application.employee_leave_status'
 		]
 	}
 }
