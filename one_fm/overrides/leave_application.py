@@ -271,7 +271,7 @@ class LeaveApplicationOverride(LeaveApplication):
                 frappe.log_error(frappe.get_traceback(),"Error Sending Notification")
 
     def on_cancel(self):
-        if self.status == "Cancelled"  and self.leave_type == 'Annual Leave' and self.from_date <= nowdate() <= self.to_date:
+        if self.status == "Cancelled"  and self.leave_type == 'Annual Leave' and getdate(self.from_date) <= getdate() <= getdate(self.to_date):
             emp = frappe.get_doc("Employee", self.employee)
             emp.status = "Active"
             emp.save()
@@ -309,7 +309,7 @@ class LeaveApplicationOverride(LeaveApplication):
 
                     frappe.db.commit()
         if self.status == "Approved":
-            if self.from_date <= nowdate() <= self.to_date and self.leave_type == 'Annual Leave':
+            if getdate(self.from_date) <= getdate() <= getdate(self.to_date) and self.leave_type == 'Annual Leave':
                 emp = frappe.get_doc("Employee", self.employee)
                 emp.status = "Vacation"
                 emp.save()
@@ -337,8 +337,9 @@ def employee_leave_status():
     It also changes it back to Active when the leave ends. 
     The method is called as a cron job before  assigning shift.
     """
-    today = nowdate()
-    tomorrow = add_to_date(today, days=1).split(" ")[0]
+    today = getdate()
+    # print(type(getdate()))
+    tomorrow = add_to_date(today, days=1)
 
     start_leave = frappe.get_list("Leave Application", {'from_date': tomorrow,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
     end_leave = frappe.get_list("Leave Application", {'to_date': today,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
