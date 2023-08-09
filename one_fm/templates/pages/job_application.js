@@ -222,6 +222,9 @@ job_application = Class.extend({
       // });
 
       var cv = document.getElementById("cv").files[0]
+      if (cv && !cv.type.includes(["application/pdf"])){
+        return frappe.msgprint(frappe._("CV must be in PDF format !"));      
+      }
 
       // POST Job Application if all the conditions are satisfied
       
