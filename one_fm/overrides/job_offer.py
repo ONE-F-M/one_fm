@@ -74,6 +74,12 @@ class JobOfferOverride(JobOffer):
             self.one_fm_job_offer_total_salary = total_amount
         if frappe.db.exists('Letter Head', 'ONE FM - Job Offer') and not self.letter_head:
             self.letter_head = 'ONE FM - Job Offer'
+        # update terms and consitions
+        if self.docstatus==0:
+            terms = frappe.db.get_value("Terms and Conditions", "Job Offer Acceptance", "terms")
+            self.terms = frappe.render_template(terms, {
+                'applicant_name':self.applicant_name, 'designation':self.designation, 'company':self.company}
+            )
 
     def on_update_after_submit(self):
         self.validate_job_offer_mandatory_fields()
