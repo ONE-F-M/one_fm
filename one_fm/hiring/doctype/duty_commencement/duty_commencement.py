@@ -16,14 +16,15 @@ class DutyCommencement(Document):
 	def translate_fields(self):
 		#Translate the required fields into arabic
 		try:
-			fields_dict ={'employee_name':'name_in_arabic','nationality':'nationality_in_arabic','project':'project_in_arabic','designation':'position_in_arabic'}
-			for each in fields_dict.keys():
-				if not self.get(fields_dict[each]):
-					translator= Translator(to_lang="ar")
-					translated_value = translator.translate(self.get(each))
-					self.db_set(fields_dict[each],translated_value)
-     
-		except:
+			emp_name_in_ar = frappe.db.get_value("Onboard Employee",self.onboard_employee,'employee_name_in_arabic') or ""
+			nationality_arr = frappe.db.get_value("Nationality",self.nationality,'nationality_arabic') or ""
+			position_arr = frappe.db.get_value("Designation",self.designation,'designation_in_arabic') or ""
+			project_arr =  frappe.db.get_value("Project",self.project,'project_name_in_arabic') or ""
+			self.name_in_arabic = emp_name_in_ar
+			self.nationality_in_arabic = nationality_arr
+			self.project_in_arabic = project_arr
+			self.position_in_arabic = position_arr
+		except: 
 			frappe.log_error("Error Translating Duty Commencement fields",frappe.get_traceback())
 			frappe.msgprint("Error Occured while translating page",alert=1)
 	
