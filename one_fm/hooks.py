@@ -752,7 +752,7 @@ fixtures = [
 				)
 			)
 		}
-	},
+	}
 ]
 
 # before_tests = "one_fm.install.before_tests"
