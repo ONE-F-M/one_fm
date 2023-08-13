@@ -187,6 +187,7 @@ class CreateMap():
         self.employee_details = list(map(self.create_employee_schedule,self.employee_set))
         #Create the attendance iterable for each employee using python map
         self.att_map=list(map(self.create_attendance_map,filters))
+        print(self.att_map, "\n\n\n\n\n\n\n")
         #Create the schedule iterable for each employee using python map
         self.sch_map = list(map(self.create_schedule_map,filters))
         #Combine both the attenance and schedule maps,
