@@ -64,6 +64,8 @@ def create_shift_assignment_from_request(shift_request, submit=True):
 	assignment_doc.shift_request = shift_request.name
 	assignment_doc.check_in_site = shift_request.check_in_site
 	assignment_doc.check_out_site = shift_request.check_out_site
+	if shift_request.operations_role:
+		assignment_doc.operations_role = shift_request.operations_role
 	assignment_doc.insert()
 	if submit:
 		assignment_doc.submit()
