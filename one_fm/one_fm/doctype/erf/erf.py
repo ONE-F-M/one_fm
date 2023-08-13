@@ -155,7 +155,7 @@ class ERF(Document):
 		self.notify_recruitment_manager()
 		# self.notify_approver()
 		self.reload()
-  
+
 	def notify_recruitment_manager(self):
 		try:
 			role_profile = frappe.db.get_list("Role Profile", {"role_profile": ["IN", ["Recruitment Manager", "Director"]]}, pluck="name")
@@ -178,8 +178,8 @@ class ERF(Document):
 					frappe.msgprint(_('Recruitment manager will be notified by email.'))
 		except:
 			frappe.log_error(frappe.get_traceback(), "Error while sending mail to recruitment manager(ERF) ")
-      		
-		
+
+
 
 
 
@@ -346,8 +346,8 @@ class ERF(Document):
 			if not frappe.db.exists("Job Opening", {'one_fm_erf':self.name}):
 				create_job_opening_from_erf(self)
 		self.reload()
-        
-        
+
+
 
 def get_erf_approver(reason_for_request):
 	erf_approver_role = 'Unplanned ERF Approver' if reason_for_request == 'UnPlanned' else 'ERF Approver'
@@ -355,6 +355,8 @@ def get_erf_approver(reason_for_request):
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
+	# TODO: job_title needs to be unique,
+	# since job_title will be set a route in Job Opening and the route is set as name in Job Opening
 	job_opening.job_title = erf.job_title
 	job_opening.designation = erf.designation
 	job_opening.employment_type = erf.employment_type
