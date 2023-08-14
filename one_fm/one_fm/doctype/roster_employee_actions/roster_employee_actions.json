@@ -57,7 +57,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Action Type",
-   "options": "Roster Employee\nReview Roster For Employee"
+   "options": "Roster Employee\nReview Roster For Employee\nAnnual Leave\nSuspended\nSick Leave\nEx-Employee"
   },
   {
    "fieldname": "supervisor",
@@ -118,7 +118,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-04-25 08:24:30.276897",
+ "modified": "2023-08-14 15:53:59.124311",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Employee Actions",
