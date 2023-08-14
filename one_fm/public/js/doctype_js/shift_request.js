@@ -52,6 +52,19 @@ frappe.ui.form.on('Shift Request', {
 	check_out_site:function(frm){
 		loadGoogleMap(frm, "OUT");
 	},
+	operations_shift : function(frm) {
+		let {operations_shift} = frm.doc;
+		if(operations_shift){
+			console.log(operations_shift)
+			frm.set_query("operations_role", function() {
+				return {
+					query: "one_fm.api.doc_methods.shift_request.get_operations_posts",
+					filters: {operations_shift}
+				};
+			});
+
+		}
+	}
 });
 
 function set_update_request_btn(frm) {
