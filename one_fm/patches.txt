@@ -47,3 +47,4 @@ one_fm.patches.v14_0.close_shift_perm_todo #2023-07-06
 one_fm.patches.v14_0.update_job_offer_status
 one_fm.patches.v14_0.update_erf_with_hiring_method
 one_fm.patches.v14_0.update_job_application_with_hiring_method
+one_fm.patches.v14_0.update_erf_with_job_title
