@@ -1146,7 +1146,6 @@ let attendance_abbr_map = {
 };
 // Renders on get_roster_data function
 function render_roster(res, page, isOt) {
-
 	let { operations_roles_data, employees_data, total } = res;
 	page.pagination.total = total;
 	let b1 = performance.now();
@@ -1554,29 +1553,29 @@ function get_roster_week_data(page, isOt) {
 					};
 					let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift } = employees_data[employee_key][i];
 
-					// if (employee_availability && post_abbrv) {
-					// 	j++;
-					// 	sch = `
-					// <td>
-					// 	<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-					// 		data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}</div>
-					// </td>`;
-					// } else if (employee_availability && !post_abbrv) {
-					// 	sch = `
-					// <td>
-					// 	<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-					// 		data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
-					// </td>`;
-					// } else {
-					// 	sch = `
-					// <td>
-					// 	<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
-					// 		data-selectid="${employee + "|" + date}"></div>
-					// </td>`;
-					// }
-					// i++;
-					// start_date.add(1, 'days');
-					// $rosterWeek.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
+					if (employee_availability && post_abbrv) {
+						j++;
+						sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}</div>
+					</td>`;
+					} else if (employee_availability && !post_abbrv) {
+						sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
+							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
+					</td>`;
+					} else {
+						sch = `
+					<td>
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
+							data-selectid="${employee + "|" + date}"></div>
+					</td>`;
+					}
+					i++;
+					start_date.add(1, 'days');
+					$rosterWeek.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
 				}
 				$rosterWeek.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i - 1]['employee_name']}"]`).append(`<td>${j}</td>`);
 				// $('.rosterMonth').find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(`<td></td>`);
