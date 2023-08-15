@@ -34,7 +34,7 @@ frappe.ui.form.on('Shift Request', {
 			console.log(operations_shift)
 			frm.set_query("operations_role", function() {
 				return {
-					query: "one_fm.api.doc_methods.shift_request.get_operations_posts",
+					query: "one_fm.api.doc_methods.shift_request.get_operations_role",
 					filters: {operations_shift}
 				};
 			});
