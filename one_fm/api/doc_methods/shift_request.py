@@ -64,6 +64,8 @@ def create_shift_assignment_from_request(shift_request, submit=True):
 	assignment_doc.shift_request = shift_request.name
 	assignment_doc.check_in_site = shift_request.check_in_site
 	assignment_doc.check_out_site = shift_request.check_out_site
+	if shift_request.operations_role:
+		assignment_doc.operations_role = shift_request.operations_role
 	assignment_doc.insert()
 	if submit:
 		assignment_doc.submit()
@@ -169,3 +171,13 @@ def update_request(shift_request, from_date, to_date):
 	shift_request_obj.db_set("update_request", True)
 	shift_request_obj.db_set("status", 'Draft')
 	apply_workflow(shift_request_obj, "Update Request")
+
+@frappe.whitelist()
+def get_operations_role(doctype, txt, searchfield, start, page_len, filters):
+	shift = filters.get('operations_shift')
+	operations_roles = frappe.db.sql("""
+		SELECT DISTINCT name
+		FROM `tabOperations Role`
+		WHERE shift="{shift}"
+	""".format(shift=shift))
+	return operations_roles

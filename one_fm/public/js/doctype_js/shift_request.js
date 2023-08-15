@@ -9,32 +9,8 @@ frappe.ui.form.on('Shift Request', {
 		window.markers = [];
 		window.circles = [];
 		// JS API is loaded and available
-		console.log("Called")
-		const in_map = new google.maps.Map(document.getElementById('in_map'), {
-			center: {lat: 29.338394, lng: 48.005958},
-			zoom: 17
-		});
-		const out_map  = new google.maps.Map(document.getElementById('out_map'), {
-			center: {lat: 29.338394, lng: 48.005958},
-			zoom: 17
-		});
-		loadGoogleMap(frm, "IN");
-		loadGoogleMap(frm, "OUT");
-
-
-		// Configure the click listener.
-		in_map.addListener('click', function(mapsMouseEvent) {
-			clearMarkers();
-			clearCircles();
-			frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'checkin_latitude', mapsMouseEvent.latLng.lat());
-			frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'checkin_longitude',mapsMouseEvent.latLng.lng());
-		});
-		out_map.addListener('click', function(mapsMouseEvent) {
-			clearMarkers();
-			clearCircles();
-			frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'checkout_latitude', mapsMouseEvent.latLng.lat());
-			frappe.model.set_value(frm.doc.doctype, frm.doc.name, 'checkout_longitude',mapsMouseEvent.latLng.lng());
-		});
+		clearMarkers();
+		clearCircles();
 
 	},
 	refresh: function(frm) {
@@ -52,6 +28,19 @@ frappe.ui.form.on('Shift Request', {
 	check_out_site:function(frm){
 		loadGoogleMap(frm, "OUT");
 	},
+	operations_shift : function(frm) {
+		let {operations_shift} = frm.doc;
+		if(operations_shift){
+			console.log(operations_shift)
+			frm.set_query("operations_role", function() {
+				return {
+					query: "one_fm.api.doc_methods.shift_request.get_operations_role",
+					filters: {operations_shift}
+				};
+			});
+
+		}
+	}
 });
 
 function set_update_request_btn(frm) {
@@ -132,45 +121,38 @@ function set_approver(frm){
 }
 
 function loadGoogleMap(frm, log_type){
-	var lat, lng, radius, title;
+	var latitude, longitude, geofence_radius, map, title;
 	if(log_type == "IN"){
-		lat = frm.doc.checkin_latitude;
-		lng = frm.doc.checkin_longitude;
-		radius = frm.doc.checkin_radius;
+		latitude = frm.doc.checkin_latitude;
+		longitude = frm.doc.checkin_longitude;
+		geofence_radius = frm.doc.checkin_radius;
 		title = frm.doc.check_in_site
+		map = new google.maps.Map(document.getElementById('in_map'), {
+			center: {lat: latitude, lng: longitude},
+			zoom: 17
+		});
 	}
 	else{
-		lat = frm.doc.checkout_latitude;
-		lng = frm.doc.checkout_longitude;
-		radius = frm.doc.checkout_radius;
+		latitude = frm.doc.checkout_latitude;
+		longitude = frm.doc.checkout_longitude;
+		geofence_radius = frm.doc.checkout_radius;
 		title = frm.doc.check_out_site
+		map  = new google.maps.Map(document.getElementById('out_map'), {
+			center: {lat: latitude, lng: longitude},
+			zoom: 17
+		});
 	}
 	
-	if(lat !== undefined && lng !== undefined){
-		let marker = new google.maps.Marker({
-			position: {lat, lng},
-			map: map,
-			title: title
-		});
-		marker.setMap(map);
-		map.setCenter({lat, lng});
-		markers.push(marker);
-
-		if(radius){
-			let geofence_circle = new google.maps.Circle({
-				strokeColor: '#FF0000',
-				strokeOpacity: 0.8,
-				strokeWeight: 2,
-				fillColor: '#FF0000',
-				fillOpacity: 0.35,
-				map: map,
-				center: {lat, lng},
-				radius: radius,
-				clickable: false
-			});
-			circles.push(geofence_circle);
-		}
-		}
+	
+	let locationMarker = new google.maps.Circle({
+		map: map,
+		animation: google.maps.Animation.DROP,
+		fillColor: "red",
+		center: {lat: latitude, lng: longitude},
+		radius: geofence_radius
+	});
+	markers.push(locationMarker);
+	// this.addYourLocationButton(map, locationMarker);
 			
 } 
 

@@ -1111,7 +1111,7 @@ function get_roster_data(page, isOt) {
 	}
 }
 // Function responsible for Rendering the Table
-let classmap = {
+let classmap = { 
 	'Working': 'bluebox',
 	'Day Off': 'greyboxcolor',
 	'Sick Leave': 'purplebox',
@@ -1134,7 +1134,7 @@ let attendancemap = {
 	'Half Day': 'greenboxcolor',
 	'On Leave': 'purplebox',
 	"Holiday":"greyboxcolor",
-	
+	"On Hold": "orangeboxcolor"
 };
 let attendance_abbr_map = {
 	'Present': 'P',
@@ -1142,7 +1142,8 @@ let attendance_abbr_map = {
 	'Work From Home': 'WFH',
 	'Half Day': 'HD',
 	"Holiday":"H",
-	'On Leave': 'OL'
+	'On Leave': 'OL',
+	'On Hold': 'OH'
 };
 // Renders on get_roster_data function
 function render_roster(res, page, isOt) {
@@ -1371,12 +1372,31 @@ function render_roster(res, page, isOt) {
 					</td>`;
 					}
 					else{
-						if (attendance == 'Present') { j++; }
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
-					</td>`;
+						if (attendance == 'Present') { 
+								sch = `
+						<td>
+							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+								data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
+						</td>`;
+							j++; 
+
+						}
+						else if (attendance == "On Leave"){
+							sch = `
+						<td>
+							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+								data-selectid="${employee + "|" + date + "|" + attendance}">${leavemap[leave_type]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
+						</td>`;
+							
+						}
+						else{
+							sch = `
+						<td>
+							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+								data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
+						</td>`;
+
+						}
 					}
 					
 					
