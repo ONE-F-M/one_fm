@@ -424,7 +424,7 @@ def create_attendance_check(attendance_date=None):
 			""")
 		# Enable workflow
 		workflow = frappe.get_doc("Workflow", "Attendance Check")
-		workflow. is_active = 1
+		workflow.is_active = 1
 		workflow.save()
 		frappe.db.commit()
 

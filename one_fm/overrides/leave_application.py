@@ -79,9 +79,6 @@ class LeaveApplicationOverride(LeaveApplication):
 
     def on_submit(self):
         self.close_todo()
-        if self.docstatus == 1:
-            self.notify_employee()
-
         return super().on_submit()
 
     def notify_employee(self):
@@ -146,7 +143,7 @@ class LeaveApplicationOverride(LeaveApplication):
                 return
             email_template = frappe.get_doc("Email Template", template)
             message = frappe.render_template(email_template.response_html, args)
-        
+
             if self.proof_documents:
                 proof_doc = self.proof_documents
                 for p in proof_doc:
@@ -334,7 +331,7 @@ def get_leave_approver(employee):
 def employee_leave_status():
     """
     This method is to change the status of employee Doc from Active to Vacation, when Leave starts.
-    It also changes it back to Active when the leave ends. 
+    It also changes it back to Active when the leave ends.
     The method is called as a cron job before  assigning shift.
     """
     today = getdate()
@@ -344,7 +341,7 @@ def employee_leave_status():
     end_leave = frappe.get_list("Leave Application", {'to_date': today,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
 
     frappe.enqueue(process_change,start_leave=start_leave,end_leave=end_leave, is_async=True, queue="long")
-    
+
 def process_change(start_leave, end_leave):
     change_employee_status(start_leave, "Vacation")
     change_employee_status(end_leave, "Active")

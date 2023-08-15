@@ -26,6 +26,24 @@ frappe.ui.form.on('Item Group', {
 				}
 			});
 		}
+	},
+	one_fm_item_group_abbr: function(frm) {
+		var description = "";
+		if(frm.doc.one_fm_item_group_abbr){
+			// check if abbreviation exists
+			frappe.db.get_value(
+				"Item Group", {"one_fm_item_group_abbr": frm.doc.one_fm_item_group_abbr}, "one_fm_item_group_abbr",
+				(val) => {
+					if (val && val.one_fm_item_group_abbr) {
+						description = __("{0} already exists. Select another abbreviation", [val.one_fm_item_group_abbr])
+					}
+					frm.set_df_property("one_fm_item_group_abbr", "description", description);
+				}
+			);
+		}
+		else{
+			frm.set_df_property("one_fm_item_group_abbr", "description", description);
+		}
 	}
 });
 
