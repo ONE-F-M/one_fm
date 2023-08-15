@@ -173,12 +173,11 @@ def update_request(shift_request, from_date, to_date):
 	apply_workflow(shift_request_obj, "Update Request")
 
 @frappe.whitelist()
-def get_operations_posts(doctype, txt, searchfield, start, page_len, filters):
+def get_operations_role(doctype, txt, searchfield, start, page_len, filters):
 	shift = filters.get('operations_shift')
 	operations_roles = frappe.db.sql("""
 		SELECT DISTINCT name
-		FROM `tabOperations Post`
-		WHERE site_shift="{shift}"
+		FROM `tabOperations Role`
+		WHERE shift="{shift}"
 	""".format(shift=shift))
-	print(operations_roles)
 	return operations_roles
