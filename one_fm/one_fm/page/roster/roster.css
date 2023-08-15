@@ -160,6 +160,10 @@ body[data-route="roster"] .bgyellow {
   background-color: yellow;
   color: black;
 }
+body[data-route="roster"] .bgorange {
+  background-color: orange;
+  color: black;
+}
 
 body[data-route="roster"] .search-employee {
   padding: 5px;

@@ -12,8 +12,7 @@ frappe.listview_settings["Attendance"] = {
             return [__(doc.status), "blue", "status,=," + doc.status];
         }else if (doc.status == "Holiday"){
             return [__(doc.status), "blue", "status,=," + doc.status];
-        }
-		else if (doc.status == "On Hold"){
+        }else if (doc.status == "On Hold"){
             return [__(doc.status), "yellow", "status,=," + doc.status];
         }
 	},
