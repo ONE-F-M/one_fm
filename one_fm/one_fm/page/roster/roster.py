@@ -1,7 +1,7 @@
 from pandas.core.indexes.datetimes import date_range
 from datetime import datetime
 from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
-from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, get_datetime, today
+from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, get_datetime, today, add_days
 import pandas as pd, numpy as np
 from frappe import _
 import json, multiprocessing, os, time, itertools, frappe
@@ -283,7 +283,7 @@ def get_current_user_details():
 
 
 @frappe.whitelist()
-def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None):
+def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None, selected_days_only=0):
     try:
         _start_date = getdate(start_date)
         
@@ -320,7 +320,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
                 for day in list_of_date:
                     employees.append({"employee": obj, "date": str(day.date())})
 
-        elif not cint(project_end_date) and not end_date:
+        elif not cint(project_end_date) and not end_date and not selected_days_only:
             validation_logs.append("Please set an end date for scheduling the staff.")
 
         elif cint(project_end_date) and end_date:
@@ -371,7 +371,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
         return
     creation = now()
     owner = frappe.session.user
-    # date_range = [i.date() for i in pd.date_range(start=start_date, end=end_date)]
+    start_time, end_time = frappe.db.get_value("Shift Type", frappe.db.get_value("Operations Shift", shift, "shift_type"), ['start_time', 'end_time'])
     operations_shift = frappe.get_doc("Operations Shift", shift, ignore_permissions=True)
     operations_role = frappe.get_doc("Operations Role", operations_role, ignore_permissions=True)
     day_off_ot = cint(day_off_ot)
@@ -419,13 +419,53 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
     for i in employees_list:
         employees_dict[i.name] = i
     
+    print(employees, '\n')
+    # make data structure for the roster
+    shift_start, shift_end = frappe.db.get_value("Operations Shift", shift, ["start_time", "end_time"])
+    next_day = False
+    if shift_start>shift_end:
+        next_day = True
+    employees_date_dict = {}
+    for i in employees:
+        if employees_date_dict.get(i['employee']):
+            employees_date_dict[i['employee']].append({'date':i['date'], 'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')})
+        else:
+            employees_date_dict[i['employee']] =[{'date':i['date'], 'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')}]
+    # check for intersection schedules
+    error_msg = """"""
+    checklist = []
+    shift_start, shift_end = frappe.db.get_value("Operations Shift", shift, ["start_time", "end_time"])
+    for emp, dates in employees_date_dict.items():
+        datelist = [i['date'] for i in dates]
+        if (len(datelist)==1):datelist.append(datelist[0])
+        intersect_query = frappe.db.sql(f"""
+            SELECT DISTINCT name, date, start_datetime, end_datetime, shift_type, employee_availability, roster_type 
+            FROM 
+            `tabEmployee Schedule` WHERE employee='{emp}' AND date IN {tuple(datelist)}
+            AND NOT roster_type="{roster_type}"
+        """, as_dict=1)
+        if intersect_query:
+            for iq in intersect_query:
+                if not iq.name in checklist:
+                    if iq.employee_availability=='Working':
+                        for d in dates:
+                            if d['date'] == str(iq.date):
+                                if (d['start_datetime'] >= iq.start_datetime and iq.end_datetime <= d['end_datetime']) or (
+                                        d['start_datetime'] <= iq.start_datetime and iq.end_datetime <= d['end_datetime']
+                                    ) or (d['start_datetime'] >= iq.start_datetime and iq.end_datetime >= d['end_datetime']):
+                                    error_msg += f"{emp} - {iq.date}. Requested: <b>{d['start_datetime']} to {d['end_datetime']}</b>, Existing: <b>{iq.start_datetime} to {iq.end_datetime} ({iq.roster_type})</b><hr>\n"
+                    checklist.append(iq.name)
+    print(checklist)
+    if error_msg:
+        frappe.throw(f"<b>Schedule Time: {shift_start} - {shift_end}</b><hr>"+error_msg)
+    return
     if not cint(request_employee_schedule):
     # 	"""
     # 		USE DIRECT SQL TO CREATE ROSTER SCHEDULE.
     # 	"""
         query = """
             INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `employee_name`, `department`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`, 
-            `operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `owner`, `modified_by`, `creation`, `modified`)
+            `operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `start_datetime`, `end_datetime`, `owner`, `modified_by`, `creation`, `modified`)
             VALUES 
         """
         if not cint(keep_days_off):
