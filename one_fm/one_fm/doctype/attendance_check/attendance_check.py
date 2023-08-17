@@ -89,7 +89,11 @@ def create_attendance_check(attendance_date=None):
 			'attendance_date':attendance_date}, fields="*")
 		all_attendance_employee = [i.employee for i in all_attendance]
 		
-		employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':attendance_date, 'employee_availability':'Working'}, fields="*")
+		# employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':attendance_date, 'employee_availability':'Working'}, fields="*")
+		employee_schedules = frappe.db.sql(f"""SELECT * from `tabEmployee Schedule` 
+								WHERE date = '{attendance_date}'
+								AND employee_availability = 'Working'
+								AND employee in (SELECT name from `tabEmployee` WHERE status = 'Active')""", as_dict=1)
 		employee_schedules_basic = [i for i in employee_schedules if i.roster_type=='Basic']
 		employee_schedules_ot = [i for i in employee_schedules if i.roster_type=='Over-Time']
 		shift_assignments = frappe.db.get_list("Shift Assignment", filters={'start_date':attendance_date}, fields="*")
