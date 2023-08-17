@@ -11,7 +11,7 @@ def execute():
     operations_shift = frappe.get_list("Shift Type", fields=["name", "start_time", "end_time"])
     for count, os in enumerate(operations_shift):
         schedules = frappe.get_list("Employee Schedule", filters={'employee_availability':'Working',
-            'shift_type':os.name}, fields=['name', 'date'])
+            'shift_type':os.name, 'start_datetime': '', 'end_datetime':''}, fields=['name', 'date'])
         print(count+1, 'of', len(operations_shift))
         for sc in schedules:
             if sc.date:
