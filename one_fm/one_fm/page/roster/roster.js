@@ -3072,6 +3072,30 @@ function schedule_change_post(page) {
 			},
 			{ 'fieldname': 'cb1', 'fieldtype': 'Section Break' },
 			{
+				'label': 'Selected Days Only', 'fieldname': 'selected_days_only', 'fieldtype': 'Check', 'default': 0, onchange: function () {
+					if (d.get_value('selected_days_only')==1) {
+						// Set the date to null and refresh the field
+						d.fields_dict.end_date.df.read_only  = 1;
+						d.fields_dict.start_date.df.read_only  = 1;
+						d.fields_dict.project_end_date.df.read_only  = 1;
+						d.fields_dict.project_end_date.df.hidden  = 1;
+						d.fields_dict.project_end_date.value  = '';
+						d.fields_dict.end_date.refresh()
+						d.fields_dict.start_date.refresh()
+						d.fields_dict.project_end_date.refresh()	
+					} else {
+						d.fields_dict.end_date.df.read_only  = 0;
+						d.fields_dict.start_date.df.read_only  = 0;
+						d.fields_dict.project_end_date.df.read_only  = 0;
+						d.fields_dict.project_end_date.df.hidden  = 0;
+						d.fields_dict.end_date.refresh()
+						d.fields_dict.start_date.refresh()
+						d.fields_dict.project_end_date.refresh()
+					}
+				}
+			},
+			{ 'fieldname': 'cb2', 'fieldtype': 'Section Break' },
+			{
 				'label': 'From Date', 'fieldname': 'start_date', 'fieldtype': 'Date', 'default': date, onchange: function () {
 					let start_date = d.get_value('start_date');
 					let end_date = d.get_value('end_date');
@@ -3091,13 +3115,13 @@ function schedule_change_post(page) {
 					}
 				}
 			},
-			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
-			{ 'label': 'Keep Days Off', 'fieldname': 'keep_days_off', 'fieldtype': 'Check', 'hidden': hide_keep_days_off_check },
+			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check', default:0 },
+			{ 'label': 'Keep Days Off', 'fieldname': 'keep_days_off', 'fieldtype': 'Check', default: 0, 'hidden': hide_keep_days_off_check },
 			{ 'label': 'Request Employee Schedule', 'fieldname': 'request_employee_schedule', 'fieldtype': 'Check' },
 			{ 'label': 'Day Off OT', 'fieldname': 'day_off_ot', 'fieldtype': 'Check' , 'hidden': hide_day_off_ot_check},
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
 			{
-				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:doc.project_end_date==0', onchange: function () {
+				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:doc.project_end_date==0', default: 0, onchange: function () {
 					let end_date = d.get_value('end_date');
 					let start_date = d.get_value('start_date');
 					if (end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
@@ -3116,37 +3140,31 @@ function schedule_change_post(page) {
 			},
 		],
 		primary_action: function () {
-
-			let { shift, site, operations_role, project, start_date, project_end_date, keep_days_off, day_off_ot, end_date, request_employee_schedule } = d.get_values();
+			let { shift, site, operations_role, project, start_date, project_end_date, keep_days_off, day_off_ot, end_date, request_employee_schedule, selected_days_only } = d.get_values();
+			let data = d.get_values();
 			$('#cover-spin').show(0);
 			let element = get_wrapper_element();
 			if (element == ".rosterOtMonth") {
-				otRoster = true;
+				data.otRoster = true;
 			} else if (element == ".rosterMonth") {
-				otRoster = false;
+				data.otRoster = false;
 			}
 
 			if (!employees){
 			    frappe.throw(__('Please select employees to roster.'))
 			}
+			// update fields
+			if(!data.project_end_date){data.project_end_date=0}
+			if(!data.end_date){data.end_date=''}
+			data.employees = employees;
 			frappe.call({
 				method: "one_fm.one_fm.page.roster.roster.schedule_staff",
 				type: "POST",
-				args: { employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off, 
-					request_employee_schedule, day_off_ot, end_date },
+				args: data,
 				callback: function(res) {
 					// code snippet
 					d.hide();
 					error_handler(res);
-					// if(res.data && res.data.employees.length > 1){
-					// 	res.data.employees.forEach((emp, i) => {
-					// 		res[1].forEach((date, i) => {
-					// 			let selectid = emp.name+'|'+date.slice(0, 10)
-					// 			$("[data-selectid='"+selectid+"']").addClass('bg-info')
-					// 			$("[data-selectid='"+selectid+"']").removeClass('selectclass')
-					// 		});
-					// 	});
-					// }
 					let element = get_wrapper_element().slice(1);
 					update_roster_view(element, page);
 					$(".filterhideshow").addClass("d-none");
