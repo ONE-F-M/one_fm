@@ -58,6 +58,7 @@ def create_shift_assignment_from_request(shift_request, submit=True):
 	assignment_doc = frappe.new_doc("Shift Assignment")
 	assignment_doc.company = shift_request.company
 	assignment_doc.shift = shift_request.operations_shift
+	assignment_doc.roster_type = shift_request.roster_type
 	assignment_doc.shift_type = shift_request.shift_type
 	assignment_doc.employee = shift_request.employee
 	assignment_doc.start_date = shift_request.from_date
