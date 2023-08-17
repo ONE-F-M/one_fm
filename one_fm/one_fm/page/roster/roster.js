@@ -3073,12 +3073,12 @@ function schedule_change_post(page) {
 			{ 'fieldname': 'cb1', 'fieldtype': 'Section Break' },
 			{
 				'label': 'Selected Days Only', 'fieldname': 'selected_days_only', 'fieldtype': 'Check', 'default': 0, onchange: function () {
-					console.log(d.fields_dict)
 					if (d.get_value('selected_days_only')==1) {
 						// Set the date to null and refresh the field
 						d.fields_dict.end_date.df.read_only  = 1;
 						d.fields_dict.start_date.df.read_only  = 1;
 						d.fields_dict.project_end_date.df.read_only  = 1;
+						d.fields_dict.project_end_date.df.hidden  = 1;
 						d.fields_dict.project_end_date.value  = '';
 						d.fields_dict.end_date.refresh()
 						d.fields_dict.start_date.refresh()
@@ -3087,6 +3087,7 @@ function schedule_change_post(page) {
 						d.fields_dict.end_date.df.read_only  = 0;
 						d.fields_dict.start_date.df.read_only  = 0;
 						d.fields_dict.project_end_date.df.read_only  = 0;
+						d.fields_dict.project_end_date.df.hidden  = 0;
 						d.fields_dict.end_date.refresh()
 						d.fields_dict.start_date.refresh()
 						d.fields_dict.project_end_date.refresh()

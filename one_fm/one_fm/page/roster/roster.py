@@ -419,7 +419,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
     for i in employees_list:
         employees_dict[i.name] = i
     
-    print(employees, '\n')
     # make data structure for the roster
     shift_start, shift_end = frappe.db.get_value("Operations Shift", shift, ["start_time", "end_time"])
     next_day = False
@@ -428,7 +427,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
     employees_date_dict = {}
     for i in employees:
         if employees_date_dict.get(i['employee']):
-            employees_date_dict[i['employee']].append({'date':i['date'], 'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')})
+            employees_date_dict[i['employee']].append({'date':i['date'], 
+                'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')})
         else:
             employees_date_dict[i['employee']] =[{'date':i['date'], 'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')}]
     # check for intersection schedules
@@ -453,12 +453,16 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                                 if (d['start_datetime'] >= iq.start_datetime and iq.end_datetime <= d['end_datetime']) or (
                                         d['start_datetime'] <= iq.start_datetime and iq.end_datetime <= d['end_datetime']
                                     ) or (d['start_datetime'] >= iq.start_datetime and iq.end_datetime >= d['end_datetime']):
-                                    error_msg += f"{emp} - {iq.date}. Requested: <b>{d['start_datetime']} to {d['end_datetime']}</b>, Existing: <b>{iq.start_datetime} to {iq.end_datetime} ({iq.roster_type})</b><hr>\n"
+                                    error_msg += f"{emp}, {iq.date}, Requested: <b>{d['start_datetime']} to {d['end_datetime']}</b>, Existing: <b>{iq.start_datetime} to {iq.end_datetime} ({iq.roster_type})</b><hr>\n"
                     checklist.append(iq.name)
-    print(checklist)
     if error_msg:
-        frappe.throw(f"<b>Schedule Time: {shift_start} - {shift_end}</b><hr>"+error_msg)
-    return
+        error_head = f"""
+            Some of the schedules you requested with shift <b>{shift}: {shift_start} - {shift_end}</b> intersect with existing schedule shift time.<br>
+            Below list shows: Employee, Date, Requested Schedule and Existing Schedule.
+            <hr>
+        """
+        frappe.throw(error_head+error_msg)
+
     if not cint(request_employee_schedule):
     # 	"""
     # 		USE DIRECT SQL TO CREATE ROSTER SCHEDULE.
@@ -470,17 +474,19 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
         """
         if not cint(keep_days_off):
             id_list = [] #store for schedules list
-            for employee in employees:
-                employee_doc = employees_dict.get(employee['employee'])
-                name = f"{employee['date']}_{employee['employee']}_{roster_type}"
-                id_list.append(name)
-                query += f"""
-                    (
-                        "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
-                        "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
-                        "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
-                        {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
-                    ),"""
+            
+            for employee, date_values in employees_date_dict.items():
+                for datevalue in date_values:
+                    employee_doc = employees_dict.get(employee)
+                    name = f"{datevalue['date']}_{employee}_{roster_type}"
+                    id_list.append(name)
+                    query += f"""
+                        (
+                            "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{datevalue['date']}", "{operations_shift.name}", 
+                            "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
+                            "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+                            {day_off_ot}, "{datevalue.get('start_datetime')}", "{datevalue.get('end_datetime')}", "{owner}", "{owner}", "{creation}", "{creation}"
+                        ),"""
 
             query = query[:-1]
 
@@ -496,23 +502,26 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 site = VALUES(site),
                 shift_type = VALUES(shift_type),
                 day_off_ot = VALUES(day_off_ot),
-                employee_availability = "Working"
+                employee_availability = "Working",
+                start_datetime= VALUES(start_datetime),
+                end_datetime= VALUES(end_datetime)
             """
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
         else:
             id_list = [] #store for schedules list
-            for employee in employees:
-                employee_doc = employees_dict.get(employee['employee'])
-                name = f"{employee['date']}_{employee['employee']}_{roster_type}"
-                id_list.append(name)
-                query += f"""
-                    (
-                        "{name}", "{employee['employee']}", "{employee_doc.employee_name}", "{employee_doc.department}", "{employee['date']}", "{operations_shift.name}", 
-                        "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
-                        "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
-                        {day_off_ot}, "{owner}", "{owner}", "{creation}", "{creation}"
-                    ),"""
+            for employee, date_values in employees_date_dict.items():
+                for datevalue in date_values:
+                    employee_doc = employees_dict.get(employee)
+                    name = f"{datevalue['date']}_{employee}_{roster_type}"
+                    id_list.append(name)
+                    query += f"""
+                        (
+                            "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{datevalue['date']}", "{operations_shift.name}", 
+                            "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
+                            "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+                            {day_off_ot}, "{datevalue.get('start_datetime')}", "{datevalue.get('end_datetime')}", "{owner}", "{owner}", "{creation}", "{creation}"
+                        ),"""
 
             query = query[:-1]
 
@@ -528,7 +537,9 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 site = VALUES(site),
                 shift_type = VALUES(shift_type),
                 day_off_ot = VALUES(day_off_ot),
-                employee_availability = "Working"
+                employee_availability = "Working",
+                start_datetime= VALUES(start_datetime),
+                end_datetime= VALUES(end_datetime)
             """
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
