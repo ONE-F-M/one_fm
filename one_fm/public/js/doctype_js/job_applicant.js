@@ -94,6 +94,8 @@ frappe.ui.form.on('Job Applicant', {
 						frappe.throw(__("Please Update Day off Details to Proceed !!"));
 					}
 				},"Action");
+			}
+			if (frm.doc.status != 'Rejected' && frm.doc.docstatus==0){
 				frm.add_custom_button(__('Reject Applicant'), function() {
 					frappe.confirm('Are you sure you want to reject this applicant?',
 					() => {
