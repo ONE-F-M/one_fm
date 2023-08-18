@@ -912,6 +912,7 @@
    "options": "Operations Shift"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "employment_type",
    "fieldtype": "Link",
    "label": "Employment Type",
@@ -971,7 +972,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-08-14 14:32:30.593899",
+ "modified": "2023-08-18 11:36:38.875554",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

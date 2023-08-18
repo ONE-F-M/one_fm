@@ -313,14 +313,15 @@ def process_list(employee_list):
 	for e in employee_list:
 		checkin_time = e.start_datetime + (e.start_datetime + timedelta(minutes=60) - e.start_datetime) * random.random()
 		checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=30) - e.end_datetime) * random.random()
-		create_checkin_record(e.ename, "IN", checkin_time)
-		create_checkin_record(e.ename, "OUT", checkout_time)
+		create_checkin_record(e.ename, "IN", checkin_time, e.sname)
+		create_checkin_record(e.ename, "OUT", checkout_time, e.sname)
 
-def create_checkin_record(employee, log_type, time):
+def create_checkin_record(employee, log_type, time, shift_assignment):
 	employee_checkin = frappe.new_doc('Employee Checkin')
 	employee_checkin.employee = employee
 	employee_checkin.log_type = log_type
 	employee_checkin.time = time
+	employee_checkin.shift_assignment = shift_assignment
 	employee_checkin.flags.ignore_validate = True
 	employee_checkin.save(ignore_permissions=True)
 	employee_checkin.db_set('creation', str(time))
