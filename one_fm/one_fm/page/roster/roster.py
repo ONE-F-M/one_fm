@@ -431,6 +431,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')})
         else:
             employees_date_dict[i['employee']] =[{'date':i['date'], 'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')}]
+    
     # check for intersection schedules
     error_msg = """"""
     checklist = []
@@ -450,9 +451,10 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                     if iq.employee_availability=='Working':
                         for d in dates:
                             if d['date'] == str(iq.date):
-                                if (d['start_datetime'] >= iq.start_datetime and iq.end_datetime <= d['end_datetime']) or (
-                                        d['start_datetime'] <= iq.start_datetime and iq.end_datetime <= d['end_datetime']
-                                    ) or (d['start_datetime'] >= iq.start_datetime and iq.end_datetime >= d['end_datetime']):
+                                if (d['start_datetime'] <= iq.start_datetime and iq.end_datetime <= d['end_datetime'] and iq.end_datetime.date()==d['end_datetime'].date()) or (
+                                        iq.start_datetime >= d['start_datetime'] and  d['end_datetime'] <= iq.end_datetime and iq.end_datetime.date()==d['end_datetime'].date()
+                                    ) or (d['start_datetime'] >= iq.start_datetime and iq.end_datetime >= d['end_datetime'] 
+                                        and iq.end_datetime.date()==d['end_datetime'].date()):
                                     error_msg += f"{emp}, {iq.date}, Requested: <b>{d['start_datetime']} to {d['end_datetime']}</b>, Existing: <b>{iq.start_datetime} to {iq.end_datetime} ({iq.roster_type})</b><hr>\n"
                     checklist.append(iq.name)
     if error_msg:
