@@ -137,21 +137,30 @@ def validate_approver(self):
 @frappe.whitelist()
 def fetch_approver(employee):
 	if employee:
-		reports_to = frappe.get_value("Employee", employee,["reports_to"])
-		if reports_to:
-			return frappe.get_value("Employee", reports_to, "user_id")
-
-		shift, department = frappe.get_value("Employee", employee, ["shift","department"])
-		if shift:
-			shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")
-			return frappe.get_value("Employee", shift_supervisor, "user_id")
-		else:
+		department = frappe.get_value("Employee", employee,["department"])
+		if department == "Operations - ONEFM":
 			approvers = frappe.db.sql(
 				"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
 				(department),
 			)
 			approvers = [approver[0] for approver in approvers]
 			return approvers[0]
+		else:
+			reports_to = frappe.get_value("Employee", employee,["reports_to"])
+			if reports_to:
+				return frappe.get_value("Employee", reports_to, "user_id")
+
+			shift = frappe.get_value("Employee", employee, ["shift"])
+			if shift:
+				shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")
+				return frappe.get_value("Employee", shift_supervisor, "user_id")
+			else:
+				approvers = frappe.db.sql(
+					"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
+					(department),
+				)
+				approvers = [approver[0] for approver in approvers]
+				return approvers[0]
 
 def fill_to_date(doc, method):
 	if not doc.to_date:
