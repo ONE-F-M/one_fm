@@ -896,7 +896,10 @@ function bind_events(page) {
 					
 					let [employee, date] = $(v).attr('data-selectid').split('|');
 					classgrt.push($(v).attr('data-selectid'));
-					if (moment(date).isAfter(moment())) {
+					var r = Date.parse(date)
+					let roster_stop_date = new Date(r);
+					roster_stop_date.setDate(roster_stop_date.getDate() - parseInt(2))
+					if (moment(roster_stop_date).isAfter(moment())) {
 						$(v).addClass("selectclass");
 					}
 					
@@ -935,7 +938,11 @@ function bind_events(page) {
 				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
 					
 					let [employee, date] = $(v).attr('data-selectid').split('|');
+					var r = Date.parse(date)
+					let roster_stop_date = new Date(r);
+					roster_stop_date.setDate(roster_stop_date.getDate() - parseInt(2))
 					if (moment(date).isAfter(moment())) {
+						console.log("here Sel")
 						$(v).addClass("selectclass");
 					}
 				});
@@ -1078,6 +1085,7 @@ function bind_search_bar_event(page) {
 // Get data for Roster monthly view and render it
 // isOt Parms is passed for Roster OT
 function get_roster_data(page, isOt) {
+	console.log("here")
 	if (window.isOt) {isOt = true;}
 	classgrt = [];
 	classgrtw = [];
@@ -1147,6 +1155,7 @@ let attendance_abbr_map = {
 };
 // Renders on get_roster_data function
 function render_roster(res, page, isOt) {
+	console.log("here2")
 	let { operations_roles_data, employees_data, total } = res;
 	page.pagination.total = total;
 	let b1 = performance.now();
@@ -1206,7 +1215,6 @@ function render_roster(res, page, isOt) {
 		// let { employee_name, employee, date } = employees_data[employee_key];
 
 
-		
 		let employee = employees_data[employee_key][0]['employee']
 		let employee_id = employees_data[employee_key][0]['employee_id']
 		let employee_day_off = employees_data[employee_key][0]['day_off_category']
@@ -1245,14 +1253,16 @@ function render_roster(res, page, isOt) {
 			
 			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, actual_shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application,relieving_date } = employees_data[employee_key][i];
 			//OT schedule view
-
+			var r = Date.parse(date)
+			let roster_stop_date = new Date(r);
+			roster_stop_date.setDate(roster_stop_date.getDate() - parseInt(2))
 			
 			if (isOt) {
 				if ((actual_shift && shift) && (actual_shift!=shift) && roster_type == 'Over-Time' && day_off_ot==0) {
 					
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				} else if (post_abbrv && roster_type == 'Over-Time' && !asa && day_off_ot==0) {
@@ -1260,7 +1270,7 @@ function render_roster(res, page, isOt) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				} else if(post_abbrv && roster_type == 'Over-Time' && asa && day_off_ot==0){
@@ -1268,7 +1278,7 @@ function render_roster(res, page, isOt) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Over-Time' && day_off_ot==1){
@@ -1276,7 +1286,7 @@ function render_roster(res, page, isOt) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}
@@ -1284,7 +1294,7 @@ function render_roster(res, page, isOt) {
 					
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else if (attendance && !employee_availability) {
@@ -1292,7 +1302,7 @@ function render_roster(res, page, isOt) {
 					if (attendance == 'Present') { j++; }
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 					</td>`;
 				} else {
@@ -1301,7 +1311,7 @@ function render_roster(res, page, isOt) {
 						
 						sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">EX<span class="customtooltiptext">Exited</span></div>
 					</td>`;
 					}
@@ -1309,7 +1319,7 @@ function render_roster(res, page, isOt) {
 						
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
 							data-selectid="${employee + "|" + date}"></div>
 					</td>`;
 					}
@@ -1325,7 +1335,7 @@ function render_roster(res, page, isOt) {
 			 	if ((actual_shift && shift) && (actual_shift!=shift) && day_off_ot==0) {
 				sch = `
 				<td>
-					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
+					<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
 						data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 				</td>`;
 				} 
@@ -1334,7 +1344,7 @@ function render_roster(res, page, isOt) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				} 
@@ -1343,7 +1353,7 @@ function render_roster(res, page, isOt) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Basic' && day_off_ot==1){
@@ -1351,7 +1361,7 @@ function render_roster(res, page, isOt) {
 					j++;
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				}
@@ -1359,7 +1369,7 @@ function render_roster(res, page, isOt) {
 					
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else if (attendance && !employee_availability) {
@@ -1367,7 +1377,7 @@ function render_roster(res, page, isOt) {
 					if(day_off_ot){
 						sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkgreenbox d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkgreenbox d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 					</td>`;
 					}
@@ -1375,7 +1385,7 @@ function render_roster(res, page, isOt) {
 						if (attendance == 'Present') { 
 								sch = `
 						<td>
-							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+							<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
 								data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 						</td>`;
 							j++; 
@@ -1384,7 +1394,7 @@ function render_roster(res, page, isOt) {
 						else if (attendance == "On Leave"){
 							sch = `
 						<td>
-							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+							<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
 								data-selectid="${employee + "|" + date + "|" + attendance}">${leavemap[leave_type]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 						</td>`;
 							
@@ -1392,7 +1402,7 @@ function render_roster(res, page, isOt) {
 						else{
 							sch = `
 						<td>
-							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+							<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
 								data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 						</td>`;
 
@@ -1407,7 +1417,7 @@ function render_roster(res, page, isOt) {
 						
 						sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">EX<span class="customtooltiptext">Exited</span></div>
 					</td>`;
 					}
@@ -1415,7 +1425,7 @@ function render_roster(res, page, isOt) {
 						
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
 							data-selectid="${employee + "|" + date}"></div>
 					</td>`;
 					}
@@ -1753,7 +1763,7 @@ function get_post_week_data(page) {
 					else {
 						schedule = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
 							data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"
 							data-date="${start_date.format('YYYY-MM-DD')}"
 							data-post="${post_name}"
