@@ -28,6 +28,7 @@ class EmployeeSchedule(Document):
 				end_date = add_days(end_date, 1)
 			self.start_datetime = f"{self.date} {start_time}"
 			self.end_datetime = f"{end_date} {end_time}"
+			
 	def validate_offs(self):
 		"""
 		Validate if the employee is has exceeded weekly or monthly off schedule.

@@ -8,7 +8,7 @@ from frappe import _
 def execute(filters=None):
 	columns, data = get_columns(), get_data(filters)
 	return columns, data
-
+ 
 def get_columns():
     return [
 		_("ERF") + ":Link/ERF:120",
@@ -32,7 +32,7 @@ def get_data(filters):
 	for erf_name in erf_list:
 		erf = frappe.get_doc('ERF', erf_name.name)
 		total_no_of_applicants = frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code})
-		total_no_of_joined = frappe.db.count('Employee', {'one_fm_erf': erf.erf_code})
+		total_no_of_joined = frappe.db.sql( """SELECT COUNT(DISTINCT employee) FROM (SELECT employee FROM `tabERF Employee` WHERE parent = %s UNION SELECT employee FROM `tabEmployee` WHERE one_fm_erf = %s) AS joined_employees""", (erf.erf_code, erf.erf_code), as_dict=True)[0]['COUNT(DISTINCT employee)']
 		total_no_of_rejected = frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code, 'status':'Rejected'})
 		total_no_of_selected =  frappe.db.count('Job Applicant', {'one_fm_erf': erf.erf_code, 'one_fm_applicant_status':'Selected'})
 		total_no_of_no_action = frappe.db.count('Job Offer', {'one_fm_erf': erf.erf_code, 'status':'Awaiting Response'})
