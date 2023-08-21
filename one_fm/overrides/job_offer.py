@@ -3,7 +3,7 @@ from frappe import _
 from frappe.modules import scrub
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import (
-    cint, flt, get_link_to_form, get_url
+    cint, flt, get_link_to_form, get_url, nowdate
 )
 from hrms.hr.doctype.job_offer.job_offer import JobOffer
 from one_fm.utils import validate_mandatory_fields
@@ -94,6 +94,10 @@ class JobOfferOverride(JobOffer):
             assign_to_onboarding_officer(self)
         if self.workflow_state == 'Accepted' and self.get_onload('onboard_employee'):
             close_all_assignments(self.doctype, self.name)
+        # Set offer accepted date
+        if self.workflow_state == 'Submit to Onboarding Officer' and not self.one_fm_offer_accepted_date:
+            self.one_fm_offer_accepted_date = nowdate()
+            self.save(ignore_permissions=True)
 
     def validate_job_offer_mandatory_fields(self):
         if self.workflow_state == 'Submit for Candidate Response':
