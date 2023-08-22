@@ -809,6 +809,7 @@ def create_shift_assignment(roster, date, time):
 			'employee': ['IN', [i.employee for i in roster]],
 			'from_date': ['<=', date],
 			'to_date': ['>=', date],
+			'roster_type': "Basic",
 			'workflow_state': 'Approved'
 			},
 			fields=['name', 'employee', 'check_in_site', 'check_out_site']
@@ -994,9 +995,14 @@ def overtime_shift_assignment():
 	and proceeds with creating New shift Assignments with Roster Type OverTime.
 	"""
 	date = cstr(getdate())
-	now_time = now_datetime().strftime("%H:%M:00")
+	now_time = add_to_date(now_datetime(), hours=1).strftime("%H:%M:00")
 	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Over-Time"}, ["*"])
-	frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
+	shift_request = frappe.get_all("Shift Request",{'from_date': ['<=', date],'to_date': ['>=', date],'roster_type': 'Over-Time', 'workflow_state': 'Approved'},['*'])
+	if shift_request:
+		roster.extend(shift_request)
+	print(roster)
+	# frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
+	process_overtime_shift(roster, date, now_time)
 
 def process_overtime_shift(roster, date, time):
 	for schedule in roster:
@@ -1033,11 +1039,6 @@ def create_overtime_shift_assignment(schedule, date):
 			shift_assignment.post_abbrv = schedule.post_abbrv
 			shift_assignment.roster_type = schedule.roster_type
 			shift_assignment.site_location = schedule.checkin_location
-			if frappe.db.exists("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]}):
-				shift_request, check_in_site, check_out_site = frappe.get_value("Shift Request", {'employee':schedule.employee, 'from_date':['<=',date],'to_date':['>=',date]},["name","check_in_site","check_out_site"])
-				shift_assignment.shift_request = shift_request
-				shift_assignment.check_in_site = check_in_site
-				shift_assignment.check_out_site = check_out_site
 			shift_assignment.submit()
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
