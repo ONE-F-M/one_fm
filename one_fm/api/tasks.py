@@ -997,12 +997,13 @@ def overtime_shift_assignment():
 	date = cstr(getdate())
 	now_time = add_to_date(now_datetime(), hours=1).strftime("%H:%M:00")
 	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Over-Time"}, ["*"])
-	shift_request = frappe.get_all("Shift Request",{'from_date': ['<=', date],'to_date': ['>=', date],'roster_type': 'Over-Time', 'workflow_state': 'Approved'},['*'])
+	shift_request = frappe.db.sql(f"""SELECT sr.*, 'Shift Request' as doctype FROM `tabShift Request` sr 
+								WHERE '{date}' between  sr.from_date and sr.to_date
+								AND sr.roster_type = 'Over-Time' 
+								AND sr.workflow_state = 'Approved'""", as_dict=1)
 	if shift_request:
 		roster.extend(shift_request)
-	print(roster)
-	# frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
-	process_overtime_shift(roster, date, now_time)
+	frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
 
 def process_overtime_shift(roster, date, time):
 	for schedule in roster:
@@ -1039,9 +1040,14 @@ def create_overtime_shift_assignment(schedule, date):
 			shift_assignment.post_abbrv = schedule.post_abbrv
 			shift_assignment.roster_type = schedule.roster_type
 			shift_assignment.site_location = schedule.checkin_location
+			if schedule.doctype == 'Shift Request':
+				shift_assignment.shift_request = schedule.name
+				if schedule.check_in_site and schedule.check_out_site:
+					shift_assignment.check_in_site = check_in_site
+					shift_assignment.check_out_site = check_out_site
 			shift_assignment.submit()
 		except Exception:
-			frappe.log_error(frappe.get_traceback(), "Create Shift Assignment")
+			frappe.log_error(frappe.get_traceback(), "Create Overtime Shift Assignment")
 
 
 def update_shift_type():
