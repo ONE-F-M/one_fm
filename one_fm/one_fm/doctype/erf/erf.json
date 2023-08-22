@@ -376,7 +376,7 @@
    "fieldname": "hiring_method",
    "fieldtype": "Select",
    "label": "Hiring Method",
-   "options": "\nBulk Recruitment\nA la carte Recruitment",
+   "options": "\nBuffet Recruitment\nA la carte Recruitment",
    "permlevel": 1
   },
   {
