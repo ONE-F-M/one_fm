@@ -77,94 +77,98 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
             files: The CV attached
         Return True if Job Applicant created Succesfully
     '''
-    # Get Nationality from country given by the applicant
-    nationality = frappe.db.exists('Nationality', {'country': country})
-    # Create Job Applicant
-    applicant_name = applicant_name.title()
-    split_name = parse_names(applicant_name)
-    
-    first_name = split_name[0]
-    last_name = split_name[-1]
-    second_name = split_name[1]
-    third_name = split_name[2]
-    fourth_name = split_name[3]
-    
-    job_applicant = frappe.new_doc('Job Applicant')
-    job_applicant.job_title = job_opening
-    job_applicant.applicant_name = applicant_name
-    job_applicant.one_fm_nationality = nationality if nationality else ''
-    job_applicant.one_fm_email_id = applicant_email
-    job_applicant.one_fm_contact_number = applicant_mobile
-    job_applicant.one_fm_erf = frappe.db.get_value('Job Opening', job_opening, "one_fm_erf")
-    job_applicant.one_fm_is_easy_apply = True
+    try:
+        # Get Nationality from country given by the applicant
+        nationality = frappe.db.exists('Nationality', {'country': country})
+        # Create Job Applicant
+        applicant_name = applicant_name.title()
+        split_name = parse_names(applicant_name)
+        
+        first_name = split_name[0]
+        last_name = split_name[-1]
+        second_name = split_name[1]
+        third_name = split_name[2]
+        fourth_name = split_name[3]
+        
+        job_applicant = frappe.new_doc('Job Applicant')
+        job_applicant.job_title = job_opening
+        job_applicant.applicant_name = applicant_name
+        job_applicant.one_fm_nationality = nationality if nationality else ''
+        job_applicant.one_fm_email_id = applicant_email
+        job_applicant.one_fm_contact_number = applicant_mobile
+        job_applicant.one_fm_erf = frappe.db.get_value('Job Opening', job_opening, "one_fm_erf")
+        job_applicant.one_fm_is_easy_apply = True
 
-    job_applicant.one_fm_first_name = first_name
-    
-    
-    job_applicant.one_fm_last_name = last_name
-    
-    
-    job_applicant.one_fm_second_name = second_name
-    
-    
-    job_applicant.one_fm_third_name = third_name
-    
-    
-    job_applicant.one_fm_forth_name = fourth_name
-    
-    
-    job_applicant.resume_attachment = resume_attachment_url
-    
-    if rotation_shift:
-        if rotation_shift == "yes":
-            job_applicant.one_fm_rotation_shift = "Yes, I Will Work in Rotation Shift"
-        else:
-            job_applicant.one_fm_rotation_shift = "No, I Cant Work in Rotation Shift"
+        job_applicant.one_fm_first_name = first_name
+        
+        
+        job_applicant.one_fm_last_name = last_name
+        
+        
+        job_applicant.one_fm_second_name = second_name
+        
+        
+        job_applicant.one_fm_third_name = third_name
+        
+        
+        job_applicant.one_fm_forth_name = fourth_name
+        
+        
+        job_applicant.resume_attachment = resume_attachment_url
+        
+        if rotation_shift:
+            if rotation_shift == "yes":
+                job_applicant.one_fm_rotation_shift = "Yes, I Will Work in Rotation Shift"
+            else:
+                job_applicant.one_fm_rotation_shift = "No, I Cant Work in Rotation Shift"
 
-    if night_shift:
-        if night_shift == "yes":
-            job_applicant.one_fm_night_shift = "Yes, I Will Work in Night Shift"
-        else:
-            job_applicant.one_fm_night_shift = "No, I Cant Work in Night Shift"
+        if night_shift:
+            if night_shift == "yes":
+                job_applicant.one_fm_night_shift = "Yes, I Will Work in Night Shift"
+            else:
+                job_applicant.one_fm_night_shift = "No, I Cant Work in Night Shift"
 
-    if travel and travel_type:
-        if travel == "yes":
-            job_applicant.one_fm_type_of_travel = "I Will Travel "+str(travel_type)
-        else:
-            job_applicant.one_fm_type_of_travel = "I Cant Travel "+str(travel_type)
+        if travel and travel_type:
+            if travel == "yes":
+                job_applicant.one_fm_type_of_travel = "I Will Travel "+str(travel_type)
+            else:
+                job_applicant.one_fm_type_of_travel = "I Cant Travel "+str(travel_type)
 
-    if driving_license and license_type:
-        if driving_license == "yes":
-            job_applicant.one_fm_type_of_driving_license = str(license_type)
-        else:
-            job_applicant.one_fm_type_of_driving_license= "Not Available"
+        if driving_license and license_type:
+            if driving_license == "yes":
+                job_applicant.one_fm_type_of_driving_license = str(license_type)
+            else:
+                job_applicant.one_fm_type_of_driving_license= "Not Available"
 
-    if visa and visa_type:
-        if visa == "yes":
-            job_applicant.one_fm_have_a_valid_visa_in_kuwait = 1
-            job_applicant.one_fm_visa_type = visa_type
-        else:
-            job_applicant.one_fm_have_a_valid_visa_in_kuwait = 0
+        if visa and visa_type:
+            if visa == "yes":
+                job_applicant.one_fm_have_a_valid_visa_in_kuwait = 1
+                job_applicant.one_fm_visa_type = visa_type
+            else:
+                job_applicant.one_fm_have_a_valid_visa_in_kuwait = 0
 
-    if in_kuwait:
-        if in_kuwait == "yes":
-            job_applicant.one_fm_in_kuwait_at_present = 1
-        else:
-            job_applicant.one_fm_in_kuwait_at_present = 0
-    
-    job_applicant.save(ignore_permissions=True)
-    if name_of_file:
-        frappe.enqueue(update_file_name, dt=job_applicant.doctype, dn=job_applicant.name, fn=name_of_file, at_front=True, is_async=True)
+        if in_kuwait:
+            if in_kuwait == "yes":
+                job_applicant.one_fm_in_kuwait_at_present = 1
+            else:
+                job_applicant.one_fm_in_kuwait_at_present = 0
+        
+        job_applicant.save(ignore_permissions=True)
+        if name_of_file:
+            frappe.enqueue(update_file_name, dt=job_applicant.doctype, dn=job_applicant.name, fn=name_of_file, at_front=True, is_async=True)
 
-    # If files exisit, attach the file to Job Applicant created
-    # if files:
-    #     files_json = json.loads(files)
-    #     files_obj = frappe._dict(files_json)
-    #     for file in files_obj:
-    #         # Attach the file to Job Applicant created
-    #         attach_file_to_job_applicant(files_obj[file]['files_data'], job_applicant)
-    # job_applicant.save(ignore_permissions=True)
-    return True
+        # If files exisit, attach the file to Job Applicant created
+        # if files:
+        #     files_json = json.loads(files)
+        #     files_obj = frappe._dict(files_json)
+        #     for file in files_obj:
+        #         # Attach the file to Job Applicant created
+        #         attach_file_to_job_applicant(files_obj[file]['files_data'], job_applicant)
+        # job_applicant.save(ignore_permissions=True)
+        return True
+    except:
+        frappe.log_error(frappe.get_traceback(), "Error while uploading file (Easy Apply)")
+        frappe.throw("An Error Occured while submitting the job application")
 
 @frappe.whitelist()
 def attach_file_to_job_applicant(filedata, job_applicant):
