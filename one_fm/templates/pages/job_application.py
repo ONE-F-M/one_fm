@@ -4,7 +4,6 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url
 from one_fm.processor import sendemail
-from one_fm.utils import translate_words
 
 
 
@@ -100,19 +99,19 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
     job_applicant.one_fm_is_easy_apply = True
 
     job_applicant.one_fm_first_name = first_name
-    job_applicant.one_fm_first_name_in_arabic = translate_words(word=first_name)
+    
     
     job_applicant.one_fm_last_name = last_name
-    job_applicant.one_fm_last_name_in_arabic = translate_words(word=last_name)
+    
     
     job_applicant.one_fm_second_name = second_name
-    job_applicant.one_fm_second_name_in_arabic = translate_words(word=second_name)
+    
     
     job_applicant.one_fm_third_name = third_name
-    job_applicant.one_fm_third_name_in_arabic = translate_words(word=third_name)
+    
     
     job_applicant.one_fm_forth_name = fourth_name
-    job_applicant.one_fm_forth_name_in_arabic = translate_words(word=fourth_name)
+    
     
     job_applicant.resume_attachment = resume_attachment_url
     
