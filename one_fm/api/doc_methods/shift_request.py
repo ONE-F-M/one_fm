@@ -22,7 +22,7 @@ def shift_request_submit(self):
 		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date": self.from_date, "docstatus": 1}):
 			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date": self.from_date }, "status" , "Inactive")
 		if self.workflow_state == 'Approved':
-			create_shift_assignment_from_request(self)
+			process_shift_assignemnt(self)
 
 def validate_default_shift(self):
 	default_shift = frappe.get_value("Employee", self.employee, "default_shift")
