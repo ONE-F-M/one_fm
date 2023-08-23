@@ -300,8 +300,8 @@
    "fieldname": "project",
    "fieldtype": "Link",
    "label": "Project Allocation",
-   "options": "Project",
-   "reqd": 1
+   "mandatory_depends_on": "doc.employment_type in ['Full-time']",
+   "options": "Project"
   },
   {
    "fieldname": "amended_from",
@@ -1485,6 +1485,7 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "job_offer.employment_type",
    "fetch_if_empty": 1,
    "fieldname": "employment_type",
@@ -1512,7 +1513,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-08-06 06:20:10.814327",
+ "modified": "2023-08-22 01:08:18.885060",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

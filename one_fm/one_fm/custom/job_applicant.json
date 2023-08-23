@@ -863,7 +863,7 @@
    "name": "Job Applicant-one_fm_hiring_method",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "\nBuffet Recruitment\nA la carte Recruitment",
+   "options": "\nBulk Recruitment\nA la carte Recruitment",
    "owner": "Administrator",
    "parent": null,
    "parentfield": null,
