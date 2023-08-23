@@ -44,7 +44,7 @@ frappe.ui.form.on('Request for Material', {
 		if(!frm.doc.requested_by){
 			frm.set_value('requested_by', frappe.session.user);
 		}
-
+		set_t_warehouse_hidden(frm);
 		// set schedule_date
 		set_schedule_date(frm);
 		frm.fields_dict["items"].grid.get_field("t_warehouse").get_query = function(doc) {
@@ -318,6 +318,7 @@ frappe.ui.form.on('Request for Material', {
 		set_filters(frm);
 	},
 	project: function(frm) {
+		set_t_warehouse_hidden(frm);
 		set_warehouse_filters(frm);
 	},
 	department: function(frm) {
@@ -327,6 +328,15 @@ frappe.ui.form.on('Request for Material', {
 		set_warehouse_filters(frm);
 	}
 });
+
+var set_t_warehouse_hidden = function(frm) {
+	if(frm.doc.project){
+		frm.set_df_property('t_warehouse', 'hidden', false);
+	}
+	else {
+		frm.set_df_property('t_warehouse', 'hidden', true);
+	}
+}
 
 frappe.ui.form.on('Request for Material Item', { // The child table is defined in a DoctType called "Dynamic Link"
 	items_on_form_rendered: (frm) => {
@@ -475,7 +485,10 @@ var set_warehouse_filters = function(frm) {
 		wh_filters = {'is_group': 0, 'department': frm.doc.department};
 	}
 	if(frm.doc.type == 'Project'){
-		wh_filters = {'is_group': 0, 'one_fm_project': frm.doc.project, 'one_fm_site': frm.doc.site};
+		wh_filters = {'is_group': 0, 'one_fm_project': frm.doc.project};
+		if(frm.doc.site){
+			wh_filters['one_fm_site'] = frm.doc.site;
+		}
 	}
 	frm.set_query("t_warehouse", function() {
 		return {

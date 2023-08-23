@@ -1766,6 +1766,7 @@ def validate_applicant_overseas_transferable(applicant):
 
 @frappe.whitelist()
 def set_warehouse_contact_from_project(doc, method):
+    return
     if doc.one_fm_project and doc.one_fm_site:
         site = frappe.get_doc("Operations Site", doc.one_fm_site)
         # if site.site_poc:
@@ -1776,12 +1777,6 @@ def set_warehouse_contact_from_project(doc, method):
         #             links.link_doctype = doc.doctype
         #             links.link_name = doc.name
         #             contact.save(ignore_permissions=True)
-        if site.address:
-            address = frappe.get_doc('Address', site.address)
-            links = address.append('links')
-            links.link_doctype = doc.doctype
-            links.link_name = doc.name
-            address.save(ignore_permissions=True)
 
 def validate_iban_is_filled(doc, method):
     if not doc.iban and doc.workflow_state == 'Active Account':
@@ -2287,7 +2282,7 @@ def notify_on_close(doc, method):
             # striphtml is used to get data without html tags, text editor will have a Defualt html <div class="ql-editor read-mode"><p><br></p></div>
             msg += f"""<b>Issue Description:</b><br/>{doc.description}"""
 
-        
+
         sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False, is_external_mail=True)
 
 
