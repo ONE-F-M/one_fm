@@ -812,7 +812,7 @@ def create_shift_assignment(roster, date, time):
 			'roster_type': "Basic",
 			'workflow_state': 'Approved'
 			},
-			fields=['name', 'employee', 'check_in_site', 'check_out_site']
+			fields=['*']
 		)
 		shift_request_dict = {}
 		for i in shift_request:
@@ -846,20 +846,33 @@ def create_shift_assignment(roster, date, time):
 			has_rostered = []
 			for r in roster:
 				if not r.employee in existing_shift_list:
-					_shift_type = shift_types_dict.get(r.shift_type) or default_shift
-
-					query += f"""
-					(
-						"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}',
-						"{r.site or ''}", "{r.project or ''}", 'Active', "{_shift_type.shift_type}", "{sites_list_dict.get(r.site) or ''}", "{date}",
-						"{_shift_type.start_datetime or str(date)+' 08:00:00'}",
-						"{_shift_type.end_datetime or str(date)+' 17:00:00'}", "{r.department}", "{r.shift or ''}", "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}",
-						"{owner}", "{owner}", "{creation}", "{creation}" """
 					if shift_request_dict.get(r.employee):
 						_shift_request = shift_request_dict.get(r.employee)
-						query += f""", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}"), """
+						_shift_type = shift_types_dict.get(_shift_request.shift_type) or default_shift
+						_project_r = frappe.db.get_value("Operations Shift", {'name':_shift_request.operations_shift}, ['site', 'project'])
+						shift_r_start_time = date+ " " + str(_shift_type.start_time)
+						
+						if _shift_type.start_time > _shift_type.end_time:
+							shift_r_end_time = str(add_to_date(date, days=1))+ " " + str(_shift_type.end_time)
+						else:
+							shift_r_end_time = str(date)+ " " + str(_shift_type.end_time)
+
+						query += f"""
+						(
+							"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{_shift_request.shift_type}',
+							"{_shift_request.site or ''}", "{_project_r or ''}", 'Active', '{_shift_request.shift_type}', "{sites_list_dict.get(_shift_request.site) or ''}", "{date}",
+							"{shift_r_start_time or str(date)+' 08:00:00'}", "{shift_r_end_time or str(date)+' 17:00:00'}", "{r.department}", 
+							'{_shift_request.operations_shift or ''}', "{_shift_request.operations_role or ''}", "{r.post_abbrv or ''}", "{_shift_request.roster_type}",
+							"{owner}", "{owner}", "{creation}", "{creation}", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}"),"""
 					else:
-						query += """, '', '', ''),"""
+						_shift_type = shift_types_dict.get(r.shift_type) or default_shift
+						query += f"""
+						(
+							"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}',
+							"{r.site or ''}", "{r.project or ''}", 'Active', '{_shift_type.shift_type}', "{sites_list_dict.get(r.site) or ''}", "{date}",
+							"{_shift_type.start_datetime or str(date)+' 08:00:00'}",
+							"{_shift_type.end_datetime or str(date)+' 17:00:00'}", "{r.department}", '{r.shift or ''}', "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}",
+							"{owner}", "{owner}", "{creation}", "{creation}", '', '', ''),"""
 				else:
 					has_rostered.append(r.employee_name)
 			query = query[:-1]
