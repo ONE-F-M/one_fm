@@ -125,6 +125,7 @@ def cancel_shift_assignment_of_request(shift_request):
 		for shift in shift_assignment_list:
 			shift_assignment_doc = frappe.get_doc("Shift Assignment", shift["name"])
 			shift_assignment_doc.cancel()
+			shift_assignment_doc.delete()
 	if shift_request.from_date <= cstr(getdate()) <= shift_request.to_date and schedule_exists:
 		schedule = frappe.get_doc("Employee Schedule",{"employee":shift_request.employee, "date":cstr(getdate())})
 		if schedule:
