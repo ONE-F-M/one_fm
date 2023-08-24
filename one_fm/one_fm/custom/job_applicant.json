@@ -9967,7 +9967,7 @@
    "columns": 0,
    "creation": "2022-11-07 16:47:25.018215",
    "default": null,
-   "depends_on": "eval: doc.one_fm_hiring_method  == 'Buffet Recruitment'",
+   "depends_on": "eval: doc.one_fm_hiring_method  == 'Bulk Recruitment'",
    "description": null,
    "docstatus": 0,
    "dt": "Job Applicant",

@@ -266,7 +266,7 @@
    "label": "Hiring Method",
    "max_length": 0,
    "max_value": 0,
-   "options": "\nBuffet Recruitment\nA la carte Recruitment",
+   "options": "\nBulk Recruitment\nA la carte Recruitment",
    "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0

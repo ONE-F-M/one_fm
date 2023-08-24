@@ -895,11 +895,11 @@
   },
   {
    "allow_on_submit": 1,
-   "depends_on": "eval: doc.hiring_method == 'Buffet Recruitment'",
+   "depends_on": "eval: doc.hiring_method == 'Bulk Recruitment'",
    "fieldname": "interview_round",
    "fieldtype": "Link",
    "label": "Interview Round",
-   "mandatory_depends_on": "eval: doc.hiring_method == 'Buffet Recruitment' && doc.status == 'Draft'",
+   "mandatory_depends_on": "eval: doc.hiring_method == 'Bulk Recruitment' && doc.status == 'Draft'",
    "options": "Interview Round"
   },
   {
