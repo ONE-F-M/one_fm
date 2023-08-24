@@ -16,6 +16,7 @@ from frappe.model.naming import set_name_by_naming_series
 from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
     expire_allocation, create_leave_ledger_entry
 )
+from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
 from dateutil.relativedelta import relativedelta
 from frappe.utils import (
     cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
@@ -3135,3 +3136,14 @@ def send_shift_request_mail(doc, method=None):
             frappe.enqueue(sendemail, recipients=doc.shift_approver, subject=title, content=msg, at_front=True, is_async=True)
         except:
             frappe.log_error(frappe.get_traceback(), "Error while sending shift request notification")
+
+
+def custom_validate_interviewer(self):
+    if frappe.session.user != "Guest":
+        applicable_interviewers = get_applicable_interviewers(self.interview)
+        if self.interviewer not in applicable_interviewers:
+            frappe.throw(
+                _("{0} is not allowed to submit Interview Feedback for the Interview: {1}").format(
+                    frappe.bold(self.interviewer), frappe.bold(self.interview)
+                )
+            )
