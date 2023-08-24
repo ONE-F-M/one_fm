@@ -5421,7 +5421,7 @@
   "property": "mandatory_depends_on",
   "property_type": "Data",
   "row_name": null,
-  "value": "eval: doc.hiring_method == 'Buffet Recruitment' && doc.status == 'Draft'"
+  "value": "eval: doc.hiring_method == 'Bulk Recruitment' && doc.status == 'Draft'"
  },
  {
   "default_value": null,
