@@ -942,7 +942,6 @@ function bind_events(page) {
 					let roster_stop_date = new Date(r);
 					roster_stop_date.setDate(roster_stop_date.getDate() - parseInt(2))
 					if (moment(date).isAfter(moment())) {
-						console.log("here Sel")
 						$(v).addClass("selectclass");
 					}
 				});
@@ -1085,7 +1084,6 @@ function bind_search_bar_event(page) {
 // Get data for Roster monthly view and render it
 // isOt Parms is passed for Roster OT
 function get_roster_data(page, isOt) {
-	console.log("here")
 	if (window.isOt) {isOt = true;}
 	classgrt = [];
 	classgrtw = [];
