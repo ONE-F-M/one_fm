@@ -75,9 +75,11 @@ def on_update_after_submit(doc, method):
 
 def process_shift_assignemnt(doc):
 	if doc.roster_type == "Basic":
-		shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': from_date, 'roster_type':"Basic"}, ['name'])
+		shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"}, ['name'])
 		if shift_assignemnt:
-			frappe.delete_doc('Shift Assignment', shift_assignemnt)
+			s_doc = frappe.get_doc('Shift Assignment', shift_assignemnt)
+			s_doc.cancel()
+			s_doc.delete()
 			create_shift_assignment_from_request(doc)
 
 def create_shift_assignment_from_request(shift_request, submit=True):
