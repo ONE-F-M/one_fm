@@ -74,12 +74,15 @@ def on_update_after_submit(doc, method):
 			cancel_shift_assignment_of_request(doc)
 
 def process_shift_assignemnt(doc):
-	if doc.roster_type == "Basic":
-		shift_assignemnt = frappe.get_doc('Shift Assignment' ,{'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"})
-		if shift_assignemnt:
-			shift_assignemnt.cancel()
-			shift_assignemnt.delete()
-		create_shift_assignment_from_request(doc)
+	if doc.assign_day_off == 1:
+		assign_day_off(doc)
+	else:
+		if doc.roster_type == "Basic":
+			shift_assignemnt = frappe.get_doc('Shift Assignment' ,{'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"})
+			if shift_assignemnt:
+				shift_assignemnt.cancel()
+				shift_assignemnt.delete()
+			create_shift_assignment_from_request(doc)
 
 def create_shift_assignment_from_request(shift_request, submit=True):
 	'''
@@ -103,6 +106,33 @@ def create_shift_assignment_from_request(shift_request, submit=True):
 	assignment_doc.insert()
 	if submit:
 		assignment_doc.submit()
+	frappe.db.commit()
+
+def assign_day_off(shift_request):
+	shift_assignment = frappe.get_list('Shift Assignment' ,{'employee':shift_request.employee, 'start_date': shift_request.from_date}, ['name'])
+	if shift_assignment:
+		for s in shift_assignment:
+			shift = frappe.get_doc("Shift Assignment", s.name)
+			shift.cancel()
+			shift.delete()
+	
+	employee_schedule = frappe.get_list('Employee Schedule' ,{'employee':shift_request.employee, 'date': ["between",  (shift_request.from_date, shift_request.to_date)]}, ['name'])
+	if employee_schedule:
+		for es in employee_schedule:
+			schedule = frappe.get_doc("Employee Schedule", es.name)
+			schedule.employee_availability = 'Day Off'
+			schedule.save()
+	else:
+		start_date = datetime.datetime.strptime(shift_request.from_date, '%Y-%m-%d')
+		end_date = datetime.datetime.strptime(shift_request.to_date, '%Y-%m-%d')
+		delta = datetime.timedelta(days=1)
+		while start_date <= end_date:
+			schedule = frappe.new_doc("Employee Schedule")
+			schedule.employee = shift_request.employee
+			schedule.date = start_date
+			schedule.employee_availability = 'Day Off'
+			schedule.save()
+			start_date += delta
 	frappe.db.commit()
 
 def cancel_shift_assignment_of_request(shift_request):
@@ -229,8 +259,13 @@ def get_operations_role(doctype, txt, searchfield, start, page_len, filters):
 def has_overlap(shift1, shift2):
 	shift1 = frappe.get_doc("Shift Type", shift1)
 	shift2 = frappe.get_doc("Shift Type", shift2)
-	print(shift1, shift2)
 	if shift1.end_time <= shift2.start_time or shift1.start_time >= shift2.end_time:
 		return True #No Overlap
 	else:
 		return False #Overlap
+
+def daterange(start_date, end_date):
+    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
+    for n in range(int((end_date - start_date).days)):
+        yield start_date + datetime.timedelta(n)
