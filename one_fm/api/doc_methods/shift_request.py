@@ -1,15 +1,18 @@
 import frappe, json
+import datetime
 from frappe import _
 import pandas as pd
 from frappe.workflow.doctype.workflow_action.workflow_action import (
 	get_common_email_args, deduplicate_actions, get_next_possible_transitions,
 	get_doc_workflow_state, get_workflow_name, get_users_next_action_data
 )
-from frappe.utils import getdate, today, cstr
+from frappe.utils import getdate, today, cstr, add_to_date
 from frappe.model.workflow import apply_workflow
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 
+class OverlappingShiftError(frappe.ValidationError):
+	pass
 
 def shift_request_submit(self):
 	if self.workflow_state != 'Update Request':
@@ -19,7 +22,7 @@ def shift_request_submit(self):
 		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date": self.from_date, "docstatus": 1}):
 			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date": self.from_date }, "status" , "Inactive")
 		if self.workflow_state == 'Approved':
-			create_shift_assignment_from_request(self)
+			process_shift_assignemnt(self)
 
 def validate_default_shift(self):
 	default_shift = frappe.get_value("Employee", self.employee, "default_shift")
@@ -32,6 +35,28 @@ def on_update(doc, event):
 
 	if doc.workflow_state == 'Draft':
 		send_workflow_action_email(doc,[doc.approver])
+		validate_shift_overlap(doc)
+
+def validate_shift_overlap(doc):
+	curr_date = getdate()
+	shift_assignment = frappe.db.get_list("Shift Assignment", {'employee':doc.employee, 'start_date': doc.from_date, "roster_type": "Basic", 'status':'Active'}, ['shift','start_datetime', 'end_datetime'])
+	shift_type = frappe.db.get_list("Shift Type",{'name':doc.shift_type}, ['start_time', 'end_time'])
+
+	shift_start_time = datetime.datetime.combine(curr_date , (datetime.datetime.min + shift_type[0].start_time).time())
+	if shift_type[0].start_time > shift_type[0].end_time:
+		shift_end_time = datetime.datetime.combine(add_to_date(curr_date, days=1) , (datetime.datetime.min + shift_type[0].end_time).time())
+	else:
+		 shift_end_time = datetime.datetime.combine(curr_date , (datetime.datetime.min + shift_type[0].end_time).time())
+
+	if doc.roster_type == "Over-Time" and shift_assignment:
+		if shift_start_time < shift_assignment[0].end_datetime:
+			msg = _(
+				"Employee {0} already has an Basic Shift {1} that overlaps within this period."
+			).format(
+				frappe.bold(doc.employee),
+				frappe.bold(shift_assignment[0].shift),
+			)
+			frappe.throw(msg, title=_("Overlapping Shifts"), exc=OverlappingShiftError)
 
 def shift_request_cancel(self):
 	'''
@@ -43,10 +68,17 @@ def on_update_after_submit(doc, method):
 	if doc.update_request:
 		if doc.workflow_state == 'Approved':
 			doc.db_set("status", 'Approved')
-			create_shift_assignment_from_request(doc)
+			process_shift_assignemnt(doc)
 		if doc.workflow_state == 'Update Request':
 			doc.db_set("status", 'Draft')
 			cancel_shift_assignment_of_request(doc)
+
+def process_shift_assignemnt(doc):
+	if doc.roster_type == "Basic":
+		shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': from_date, 'roster_type':"Basic"}, ['name'])
+		if shift_assignemnt:
+			frappe.delete_doc('Shift Assignment', shift_assignemnt)
+			create_shift_assignment_from_request(doc)
 
 def create_shift_assignment_from_request(shift_request, submit=True):
 	'''
@@ -58,6 +90,7 @@ def create_shift_assignment_from_request(shift_request, submit=True):
 	assignment_doc = frappe.new_doc("Shift Assignment")
 	assignment_doc.company = shift_request.company
 	assignment_doc.shift = shift_request.operations_shift
+	assignment_doc.roster_type = shift_request.roster_type
 	assignment_doc.shift_type = shift_request.shift_type
 	assignment_doc.employee = shift_request.employee
 	assignment_doc.start_date = shift_request.from_date
@@ -92,6 +125,7 @@ def cancel_shift_assignment_of_request(shift_request):
 		for shift in shift_assignment_list:
 			shift_assignment_doc = frappe.get_doc("Shift Assignment", shift["name"])
 			shift_assignment_doc.cancel()
+			shift_assignment_doc.delete()
 	if shift_request.from_date <= cstr(getdate()) <= shift_request.to_date and schedule_exists:
 		schedule = frappe.get_doc("Employee Schedule",{"employee":shift_request.employee, "date":cstr(getdate())})
 		if schedule:
@@ -136,21 +170,30 @@ def validate_approver(self):
 @frappe.whitelist()
 def fetch_approver(employee):
 	if employee:
-		reports_to = frappe.get_value("Employee", employee,["reports_to"])
-		if reports_to:
-			return frappe.get_value("Employee", reports_to, "user_id")
-
-		shift, department = frappe.get_value("Employee", employee, ["shift","department"])
-		if shift:
-			shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")
-			return frappe.get_value("Employee", shift_supervisor, "user_id")
-		else:
+		department = frappe.get_value("Employee", employee,["department"])
+		if department == "Operations - ONEFM":
 			approvers = frappe.db.sql(
 				"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
 				(department),
 			)
 			approvers = [approver[0] for approver in approvers]
 			return approvers[0]
+		else:
+			reports_to = frappe.get_value("Employee", employee,["reports_to"])
+			if reports_to:
+				return frappe.get_value("Employee", reports_to, "user_id")
+
+			shift = frappe.get_value("Employee", employee, ["shift"])
+			if shift:
+				shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")
+				return frappe.get_value("Employee", shift_supervisor, "user_id")
+			else:
+				approvers = frappe.db.sql(
+					"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
+					(department),
+				)
+				approvers = [approver[0] for approver in approvers]
+				return approvers[0]
 
 def fill_to_date(doc, method):
 	if not doc.to_date:
@@ -181,3 +224,12 @@ def get_operations_role(doctype, txt, searchfield, start, page_len, filters):
 		WHERE shift="{shift}"
 	""".format(shift=shift))
 	return operations_roles
+
+def has_overlap(shift1, shift2):
+	shift1 = frappe.get_doc("Shift Type", shift1)
+	shift2 = frappe.get_doc("Shift Type", shift2)
+	print(shift1, shift2)
+	if shift1.end_time <= shift2.start_time or shift1.start_time >= shift2.end_time:
+		return True #No Overlap
+	else:
+		return False #Overlap
