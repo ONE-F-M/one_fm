@@ -1,7 +1,5 @@
-import base64
-import grpc
+import base64, grpc, frappe, requests
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
-import frappe
 from frappe import _
 from frappe.utils import (
 	now_datetime, cstr, nowdate, cint , getdate, get_first_day, get_last_day
@@ -49,41 +47,34 @@ def setup_directories():
 @frappe.whitelist()
 def enroll():
 	try:
+		channel = frappe.local.conf.face_recognition_channel
 		files = frappe.request.files
 		file = files['file']
-		
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
-
-		# Setup channel
-		face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
-		channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
-		# setup stub
-		stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
-			# request body
-		req = enroll_pb2.EnrollRequest(
-			username = frappe.session.user,
-			user_encoded_video = video_content,
-		)
-
-		res = random.choice(stubs).FaceRecognition(req)
-		
-		if res.enrollment == "FAILED":
-			msg = res.message
-			data = res.data
-			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
-		
-		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
-		doc.enrolled = 1
-		doc.save(ignore_permissions=True)
-		update_onboarding_employee(doc)
-		frappe.db.commit()
+		r = requests.post(channel, json={
+			'username': frappe.session.user, 
+			'video':video_content,
+			'filename':file.filename,
+			'filetype':file.content_type
+		}, timeout=10)
+		# RESPONSE {'error': False|True, 'message': 'success|error message'}
+		res_data = frappe._dict(r.json())
+		if res_data.error:
+			# process error
+			frappe.log_error(frappe.get_traceback(), 'Face Enrollment v3')
+			frappe.throw(_(res_data))
+		else:
+			doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+			doc.enrolled = 1
+			doc.save(ignore_permissions=True)
+			update_onboarding_employee(doc)
+			frappe.db.commit()
 		return _("Successfully Enrolled!")
 
 	except Exception as exc:
-		print(frappe.get_traceback())
 		frappe.log_error(frappe.get_traceback())
 		raise exc
 
