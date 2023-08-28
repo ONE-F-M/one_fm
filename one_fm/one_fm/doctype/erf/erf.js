@@ -3,8 +3,6 @@
 
 frappe.ui.form.on('ERF', {
 	refresh: function(frm) {
-		// 
-		
 		if(frm.is_new()){
 			frm.set_value('erf_requested_by', frappe.session.user);
 		}
@@ -29,7 +27,7 @@ frappe.ui.form.on('ERF', {
 			};
 		});
 
-        filterDefaultShift(frm);
+    filterDefaultShift(frm);
 		set_shift_working_btn(frm);
 		set_driving_license_required_btn(frm);
 		set_is_uniform_needed_for_this_job_btn(frm);
@@ -58,44 +56,30 @@ frappe.ui.form.on('ERF', {
 			frm.set_df_property('schedule_for_okr_workshop_with_recruiter', 'label',
 				__('Set a Date With {0} For a Quick Workshop',[frm.doc.__onload.okr_workshop_with_full_name]))
 		}
-		// if (frm.doc.docstatus == 1 && frm.doc.__onload && 'erf_approver' in frm.doc.__onload){
-		// 	if(frm.doc.__onload.erf_approver.includes(frappe.session.user) && !['Accepted', 'Declined', 'Closed', 'Cancelled'].includes(frm.doc.status)){
-		// 		frm.add_custom_button(__('Accept'), () => frm.events.confirm_accept_decline_erf(frm, 'Accepted', false)).addClass('btn-primary');
-		// 		frm.add_custom_button(__('Decline'), () => frm.events.decline_erf(frm, 'Declined')).addClass('btn-danger');
-		// 	}
-		// }
 		if (frm.doc.docstatus == 1 && frm.doc.status == "Accepted"){
 			const is_senior_recruiter = frappe.user.has_role('Senior Recruiter');
 			if (is_senior_recruiter || [frm.doc.erf_requested_by, frm.doc.recruiter_assigned, frm.doc.secondary_recruiter_assigned].includes(frappe.session.user)) {
 				frm.add_custom_button(__('Close ERF'), () => frm.events.close_erf(frm)).addClass('btn-primary');
 			}
 		}
-		if (!frm.is_new() && frm.doc.docstatus == 0 && frm.doc.amended_from && frm.doc.status == "Cancelled"){
-			frm.set_value('draft_erf_to_hrm', 0);
-		}
-		// if (!frm.is_new() && frm.doc.docstatus == 0 && !frm.doc.draft_erf_to_hrm){
-		// 	frm.add_custom_button(__('Submit to HR'), () => frm.events.draft_erf_to_hrm(frm)).addClass('btn-primary');
-
-		// }
-
 		if (!frm.is_new()){
 			frm.set_intro(__("STATUS: "+frm.doc.status), 'green');
 		}
 		frm.set_query('recruiter_assigned', function() {
-            return{
+			return{
 				filters: [["Has Role","role","=", "Recruiter"]],
 				query: "one_fm.hiring.utils.fetch_recruiters"
 			}
-        });
+    });
 
 		frm.set_query('secondary_recruiter_assigned', function() {
-            return{
+			return{
 				filters: [["Has Role","role","=", "Recruiter"]],
 				query: "one_fm.hiring.utils.fetch_recruiters"
 			}
-        });
+		});
 	},
-	
+
 	attendance_by_timesheet: function(frm) {
 		if(frm.doc.attendance_by_timesheet){
 			frm.set_value('shift_working', false);
@@ -169,26 +153,6 @@ frappe.ui.form.on('ERF', {
 					},
 					freeze: true,
 					freeze_message: __('Processing ..')
-				});
-			},
-			function(){} // No
-		);
-	},
-	draft_erf_to_hrm: function(frm) {
-		frappe.confirm(
-			__('Do You Want to Draft ERF to HR Manager for Submit'),
-			function(){
-				// Yes
-				frappe.call({
-					doc: frm.doc,
-					method: 'draft_erf_to_hrm_for_submit',
-					callback(r) {
-						if (!r.exc) {
-							frm.reload_doc();
-						}
-					},
-					freeze: true,
-					freeze_message: __('Draft ERF to HR Manager..')
 				});
 			},
 			function(){} // No
@@ -282,9 +246,6 @@ frappe.ui.form.on('ERF', {
 	},
 	okr_workshop_submit_to_hr: function(frm) {
 		create_event_for_okr_workshop(frm);
-		if(!frm.doc.draft_erf_to_hrm){
-			frm.events.draft_erf_to_hrm(frm);
-		}
 	},
 	recruiter_assigned: function(frm) {
 		if(frm.doc.recruiter_assigned && !frm.doc.project_for_recruiter){
@@ -1112,4 +1073,3 @@ const filterDefaultShift = (frm) => {
         }
     })
 }
-
