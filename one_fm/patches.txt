@@ -49,3 +49,4 @@ one_fm.patches.v14_0.update_erf_with_hiring_method
 one_fm.patches.v14_0.update_job_application_with_hiring_method
 one_fm.patches.v14_0.update_erf_with_job_title
 one_fm.patches.v14_0.removing_rfsq_workflow
+one_fm.patches.v14_0.update_exited_users
