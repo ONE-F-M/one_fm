@@ -1,6 +1,6 @@
 frappe.ui.form.on('Payroll Entry', {
     refresh: function(frm) {
-		if(!frm.is_new() && frm.doc.salary_slips_created == 1){
+		if(!frm.is_new()){
 			check_salary_slip_counts(frm)
 		}
 		if (frm.doc.status == "Pending Salary Slip"){
