@@ -13,13 +13,14 @@ class EmployeeOverride(EmployeeMaster):
         validate_status(self.status, ["Active", "Court Case", "Absconding", "Left","Vacation"])
 
         self.employee = self.name
-        # self.set_employee_name()
+        self.set_employee_name()
         set_employee_name(self, method=None)
         self.validate_date()
         self.validate_email()
         self.validate_status()
         self.validate_reports_to()
         self.validate_preferred_email()
+        self.update_user_doc()
         if self.job_applicant:
             self.validate_onboarding_process()
 
@@ -32,7 +33,24 @@ class EmployeeOverride(EmployeeMaster):
                     "Employee", self.name, existing_user_id)
         employee_validate_attendance_by_timesheet(self, method=None)
         self.validate_leaves()
-        
+    
+    def update_user_doc(self):
+        if not self.is_new():
+            old_self = self.get_doc_before_save().status
+            if self.status in ['Left','Absconding','Court Case'] and self.status not in [old_self] and self.user_id:
+                user_doc = frappe.get_doc('User',self.user_id)
+                if user_doc.enabled == 1:
+                    user_doc.enabled = 0
+                    user_doc.save()
+                    frappe.msgprint(f"User {self.user_id} disabled",alert=1)
+                    frappe.db.commit()
+            elif self.status == "Active" and self.status not in [old_self] and self.user_id:
+                user_doc = frappe.get_doc('User',self.user_id)
+                if user_doc.enabled == 0:
+                    user_doc.enabled = 1
+                    user_doc.save()
+                    frappe.msgprint(f"User {self.user_id} enabled",alert=1)
+                    frappe.db.commit()
 
     def before_save(self):
         self.assign_role_profile_based_on_designation()
