@@ -103,8 +103,7 @@ class EmployeeOverride(EmployeeMaster):
 
     def clear_schedules(doc):
         # clear future employee schedules
-        todays_date = getdate()
-        if doc.status == 'Left' and doc.relieving_date <= todays_date:
+        if doc.status == 'Left':
             frappe.db.sql(f"""
                 DELETE FROM `tabEmployee Schedule` WHERE employee='{doc.name}'
                 AND date>'{doc.relieving_date}'

@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe import _
-from frappe.utils import cstr
+from frappe.utils import cstr, add_days
 from one_fm.utils import get_week_start_end, get_month_start_end
 from one_fm.processor import sendemail
 
@@ -21,9 +21,14 @@ class EmployeeSchedule(Document):
 
 
 	def validate(self):
-		pass
-		#self.validate_offs()
-
+		if self.employee_availability=='Working':
+			start_time, end_time = frappe.db.get_value("Shift Type", self.shift_type, ['start_time', 'end_time'])
+			end_date = self.date
+			if start_time > end_time:
+				end_date = add_days(end_date, 1)
+			self.start_datetime = f"{self.date} {start_time}"
+			self.end_datetime = f"{end_date} {end_time}"
+			
 	def validate_offs(self):
 		"""
 		Validate if the employee is has exceeded weekly or monthly off schedule.
