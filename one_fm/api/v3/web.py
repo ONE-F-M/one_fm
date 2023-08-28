@@ -47,9 +47,11 @@ def setup_directories():
 @frappe.whitelist()
 def enroll():
 	try:
+		
 		channel = frappe.local.conf.face_recognition_channel
 		files = frappe.request.files
 		file = files['file']
+		print(frappe.form_dict, channel)
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
@@ -59,7 +61,7 @@ def enroll():
 			'video':video_content,
 			'filename':file.filename,
 			'filetype':file.content_type
-		}, timeout=10)
+		}, timeout=30)
 		# RESPONSE {'error': False|True, 'message': 'success|error message'}
 		res_data = frappe._dict(r.json())
 		if res_data.error:
@@ -75,7 +77,8 @@ def enroll():
 		return _("Successfully Enrolled!")
 
 	except Exception as exc:
-		frappe.log_error(frappe.get_traceback())
+		frappe.log_error(frappe.get_traceback(), 'Face enrol - mobile web')
+		frappe.db.commit()
 		raise exc
 
 
