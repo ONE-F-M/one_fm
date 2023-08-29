@@ -180,9 +180,22 @@ frappe.ui.form.on('ERF', {
 		}
 	},
 	onload: function(frm) {
+		frm.events.remove_designation_create_btn(frm);
 		set_performance_profile_html(frm);
 		allow_recruitment_manager(frm);
 		// set_other_benefits(frm);
+	},
+	remove_designation_create_btn: function(frm) {
+		frm.fields_dict.designation.$wrapper.on("keyup", () => {
+			setTimeout(()=>{
+				var list_tags = frm.fields_dict.designation.$wrapper.find('ul li')
+				for (let list_tag of list_tags) {
+					if (list_tag.innerText === __(" Create a new Designation")) {
+						list_tag.remove();
+					}
+				}
+			}, 500);
+		});
 	},
 	number_of_candidates_required: function(frm) {
     calculate_total_cost_in_salary(frm);
