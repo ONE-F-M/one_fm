@@ -26,7 +26,8 @@ channels = [
 stubs = [
     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
 ]
-channel = frappe.local.conf.face_recognition_channel
+channel = frappe.local.conf.face_recognition_channel.get('url')
+bucketpath = frappe.local.conf.face_recognition_channel.get('bucket')
 
 @frappe.whitelist()
 def enroll():
@@ -43,7 +44,8 @@ def enroll():
 			'username': frappe.session.user, 
 			'video':video_content,
 			'filename':file.filename,
-			'filetype':file.content_type
+			'filetype':file.content_type,
+			'bucketpath':bucketpath,
 		}, timeout=180)
 		# RESPONSE {'error': False|True, 'message': 'success|error message'}
 		res_data = frappe._dict(r.json())
@@ -91,7 +93,8 @@ def verify():
 			'username': frappe.session.user, 
 			'video':video_content,
 			'filename':file.filename,
-			'filetype':file.content_type
+			'filetype':file.content_type,
+			'bucketpath':bucketpath,
 		}, timeout=180)
 		# RESPONSE {'error': False|True, 'message': 'success|error message'}
 		res_data = frappe._dict(r.json())
