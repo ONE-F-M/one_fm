@@ -36,7 +36,7 @@ frappe.ui.form.on('Job Applicant', {
 		set_field_properties_on_agency_applying(frm);
 		set_mandatory_fields_for_current_employment(frm);
 
-		if(frm.doc.one_fm_hiring_method == 'Buffet Recruitment' && frm.doc.interview_round){
+		if(frm.doc.one_fm_hiring_method == 'Bulk Recruitment' && frm.doc.interview_round){
 			if(frm.doc.bulk_interview){
 				frappe.db.get_value('Interview', frm.doc.bulk_interview, 'docstatus', function(r) {
 					var interview_exists = true;

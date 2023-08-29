@@ -27,7 +27,7 @@ from frappe.workflow.doctype.workflow_action import workflow_action
 from frappe.desk.doctype.notification_log.notification_log import NotificationLog
 from one_fm.api.notification import after_insert
 from one_fm.one_fm.payroll_utils import add_tax_components
-from one_fm.utils import post_login, validate_reports_to, custom_validate_nestedset_loop, get_existing_leave_count
+from one_fm.utils import post_login, validate_reports_to, custom_validate_nestedset_loop, get_existing_leave_count, custom_validate_interviewer
 from hrms.overrides.employee_master import EmployeeMaster,validate_onboarding_process
 from one_fm.overrides.employee import EmployeeOverride
 from frappe.email.doctype.email_queue.email_queue import QueueBuilder,SendMailContext
@@ -41,6 +41,7 @@ from one_fm.overrides.interview import validate_interview_overlap
 from erpnext.stock import stock_ledger
 from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 from hrms.hr.doctype.interview.interview import Interview
+from hrms.hr.doctype.interview_feedback.interview_feedback import InterviewFeedback
 
 __version__ = '14.5.2'
 
@@ -81,3 +82,4 @@ LeaveAllocation.get_existing_leave_count = get_existing_leave_count
 NotificationLog.after_insert = after_insert
 Employee.validate_reports_to = validate_reports_to
 frappe.utils.nestedset.validate_loop = custom_validate_nestedset_loop
+InterviewFeedback.validate_interviewer = custom_validate_interviewer
