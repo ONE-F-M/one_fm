@@ -43,7 +43,7 @@ from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 from hrms.hr.doctype.interview.interview import Interview
 from hrms.hr.doctype.interview_feedback.interview_feedback import InterviewFeedback
 
-__version__ = '14.5.2'
+__version__ = '14.5.3'
 
 Interview.validate_overlap = validate_interview_overlap
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_
