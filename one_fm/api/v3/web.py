@@ -51,7 +51,7 @@ def enroll():
 		res_data = frappe._dict(r.json())
 		if res_data.error:
 			# process error
-			frappe.log_error(res_data.message, 'Face Enrollment v3')
+			frappe.log_error('Face Enrollment v3', res_data.message)
 			error = True
 			message = res_data.message
 		else:
@@ -62,7 +62,7 @@ def enroll():
 			frappe.db.commit()
 		return {'error':False, 'message':'Enrollment successfull.'}
 	except Exception as exc:
-		frappe.log_error(frappe.get_traceback(), 'Face Enrollment v3')
+		frappe.log_error('Face Enrollment v3', frappe.get_traceback())
 		frappe.db.commit()
 		return {'error':True, 'message':'Your enrollment could not be completed, please contact your supervisor.'}
 
@@ -81,14 +81,12 @@ def verify():
 
 		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
 
-		# if not user_within_site_geofence(employee, log_type, latitude, longitude):
-		# 	frappe.throw("Please check {log_type} at your site location.".format(log_type=log_type))
-
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
 
+		print(bucketpath, channel)
 		r = requests.post(channel+"/verify", json={
 			'username': frappe.session.user, 
 			'video':video_content,
@@ -97,10 +95,11 @@ def verify():
 			'bucketpath':bucketpath,
 		}, timeout=180)
 		# RESPONSE {'error': False|True, 'message': 'success|error message'}
+		print(r.status_code, r.text)
 		res_data = frappe._dict(r.json())
 		if res_data.error:
 			if not res_data.text:
-				frappe.log_error(res_data.message, 'Face Verify v3')
+				frappe.log_error('Face Verify v3', res_data.message)
 			else:
 				return {'error':True, 'message':res_data.text}
 		# create_checkin_log()
@@ -111,7 +110,7 @@ def verify():
 		frappe.db.commit()
 		return {'error':False, 'message':f'Check {log_type} Successful'}  
 	except Exception as exc:
-		frappe.log_error(frappe.get_traceback() + '\n\n\n' + str(frappe.form_dict))
+		frappe.log_error("Face Verify v3", frappe.get_traceback() + '\n\n\n' + str(frappe.form_dict))
 		return {'error':True, 'message':'Checkin failed, please contact your supervisor.'} 
 
 @frappe.whitelist()
@@ -162,7 +161,7 @@ def check_in(log_type, skip_attendance, latitude, longitude, source):
 		frappe.db.commit()
 		return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
 	except:
-		frappe.log_error(frappe.get_traceback(), 'Mobile Web Checkin')
+		frappe.log_error('Mobile Web Checkin', frappe.get_traceback())
 
 @frappe.whitelist()
 def forced_checkin(employee, log_type, time):
