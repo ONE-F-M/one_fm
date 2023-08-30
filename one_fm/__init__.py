@@ -42,6 +42,7 @@ from erpnext.stock import stock_ledger
 from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 from hrms.hr.doctype.interview.interview import Interview
 from hrms.hr.doctype.interview_feedback.interview_feedback import InterviewFeedback
+from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import LeavePolicyAssignment
 
 __version__ = '14.5.2'
 

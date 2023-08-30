@@ -1,4 +1,4 @@
-import frappe
+import frappe, os, json, requests
 
 
 def validate_sick_leave_attachment(doc):
@@ -49,3 +49,18 @@ def get_reports_to_employee_name(employee):
 
     if not reports_to:
         frappe.throw(f"Employee {employee} have no reports to.")
+
+@frappe.whitelist()
+def set_up_face_recognition_server_credentials():
+    try:
+        credpath = os.getcwd()+frappe.utils.get_site_base_path().replace('./', '/')+frappe.local.conf.google_application_credentials
+        with open(credpath, 'r') as f:
+            cred = json.loads(f.read())
+            res=requests.post(
+                frappe.local.conf.face_recognition_channel.get('url')+'/bigbang', 
+                json={'cred':cred, 'bucketpath':frappe.local.conf.face_recognition_channel.get('bucket')}, 
+                timeout=300)
+        return {'error':False, 'message':'Face Recognition Server credentials setup successfully.'}
+    except Exception as e:
+        frappe.log_error("Face Recognition Setup", frappe.get_traceback())
+        return {'error':True, 'message':e}

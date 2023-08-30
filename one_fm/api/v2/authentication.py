@@ -72,7 +72,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 
 	
 	try:
-		site = frappe.utils.cstr(frappe.local.conf.app_url)
+		site = frappe.utils.get_url()+'/'
 		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
 
 		if not username:
@@ -87,7 +87,6 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 		headers = {'Accept': 'application/json'}
 		session = requests.Session()
 		auth_api = site + "api/method/frappe.integrations.oauth2.get_token"
-		
 		auth_api_response = session.post(
             auth_api,
             data=args, headers=headers
@@ -115,6 +114,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 			return response("Bad Request", auth_api_response.status_code, None, json.loads(auth_api_response.content))
 
 	except Exception as error:
+		print(error)
 		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist(allow_guest=True)
