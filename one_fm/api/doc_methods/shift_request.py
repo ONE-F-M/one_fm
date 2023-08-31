@@ -18,9 +18,8 @@ def shift_request_submit(self):
 	if self.workflow_state != 'Update Request':
 		self.db_set("status", self.workflow_state)
 	
-	if self.from_date == cstr(getdate()):
-		if self.workflow_state == 'Approved':
-			process_shift_assignemnt(self)
+	if self.workflow_state == 'Approved':
+		process_shift_assignemnt(self)
 
 def validate_default_shift(self):
 	default_shift = frappe.get_value("Employee", self.employee, "default_shift")
