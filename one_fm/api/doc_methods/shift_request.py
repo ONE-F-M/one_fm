@@ -84,11 +84,13 @@ def process_shift_assignemnt(doc):
 
 def update_shift_assignment(shift_assignemnt,shift_request):
 	assignment_doc = frappe.get_doc('Shift Assignment', shift_assignemnt)
+	project = frappe.db.get_value("Operations Shift", {'name':shift_request.operations_shift}, ['project'])
 	assignment_doc.db_set("company" , shift_request.company)
 	assignment_doc.db_set("shift" , shift_request.operations_shift)
 	assignment_doc.db_set("roster_type" , shift_request.roster_type)
 	assignment_doc.db_set("shift_type" , shift_request.shift_type)
 	assignment_doc.db_set("site" , shift_request.site)
+	assignment_doc.db_set("project" , project)
 	assignment_doc.db_set("site_location" , shift_request.check_in_site)
 	assignment_doc.db_set("employee" , shift_request.employee)
 	assignment_doc.db_set("start_date" , shift_request.from_date)
