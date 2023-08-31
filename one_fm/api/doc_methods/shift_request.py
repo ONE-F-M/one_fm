@@ -19,8 +19,6 @@ def shift_request_submit(self):
 		self.db_set("status", self.workflow_state)
 	
 	if self.from_date == cstr(getdate()):
-		if frappe.db.exists("Shift Assignment", {"employee":self.employee, "start_date": self.from_date, "docstatus": 1}):
-			frappe.set_value("Shift Assignment", {"employee":self.employee, "start_date": self.from_date }, "status" , "Inactive")
 		if self.workflow_state == 'Approved':
 			process_shift_assignemnt(self)
 
@@ -78,12 +76,31 @@ def process_shift_assignemnt(doc):
 		assign_day_off(doc)
 	else:
 		if doc.roster_type == "Basic":
-			shift_assignemnt = frappe.get_doc('Shift Assignment' ,{'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"})
+			shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"}, ['name'])
 			if shift_assignemnt:
-				shift_assignemnt.cancel()
-				shift_assignemnt.delete()
-			create_shift_assignment_from_request(doc)
+				update_shift_assignment(shift_assignemnt, doc )
+			else:
+				create_shift_assignment_from_request(doc)
 
+def update_shift_assignment(shift_assignemnt,shift_request):
+	assignment_doc = frappe.get_doc('Shift Assignment', shift_assignemnt)
+	assignment_doc.db_set("company" , shift_request.company)
+	assignment_doc.db_set("shift" , shift_request.operations_shift)
+	assignment_doc.db_set("roster_type" , shift_request.roster_type)
+	assignment_doc.db_set("shift_type" , shift_request.shift_type)
+	assignment_doc.db_set("site" , shift_request.site)
+	assignment_doc.db_set("site_location" , shift_request.check_in_site)
+	assignment_doc.db_set("employee" , shift_request.employee)
+	assignment_doc.db_set("start_date" , shift_request.from_date)
+	assignment_doc.db_set("shift_request" , shift_request.name)
+	assignment_doc.db_set("check_in_site" , shift_request.check_in_site)
+	assignment_doc.db_set("check_out_site" , shift_request.check_out_site)
+	if shift_request.operations_role:
+		assignment_doc.db_set("operations_role" , shift_request.operations_role)
+	shift_request.reload()
+
+	frappe.db.commit()
+	
 def create_shift_assignment_from_request(shift_request, submit=True):
 	'''
 		Method used to create Shift Assignment from Shift Request
@@ -115,7 +132,7 @@ def assign_day_off(shift_request):
 			shift = frappe.get_doc("Shift Assignment", s.name)
 			shift.cancel()
 			shift.delete()
-	
+
 	employee_schedule = frappe.get_list('Employee Schedule' ,{'employee':shift_request.employee, 'date': ["between",  (shift_request.from_date, shift_request.to_date)]}, ['name'])
 	if employee_schedule:
 		for es in employee_schedule:
