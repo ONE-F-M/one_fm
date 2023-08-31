@@ -849,7 +849,7 @@ def create_shift_assignment(roster, date, time):
 					if shift_request_dict.get(r.employee):
 						_shift_request = shift_request_dict.get(r.employee)
 						_shift_type = shift_types_dict.get(_shift_request.shift_type) or default_shift
-						_project_r = frappe.db.get_value("Operations Shift", {'name':_shift_request.operations_shift}, ['site', 'project'])
+						_project_r = frappe.db.get_value("Operations Shift", {'name':_shift_request.operations_shift}, ['project'])
 						shift_r_start_time = date+ " " + str(_shift_type.start_time)
 						
 						if _shift_type.start_time > _shift_type.end_time:
