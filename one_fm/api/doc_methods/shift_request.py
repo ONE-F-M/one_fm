@@ -275,7 +275,6 @@ def get_operations_role(doctype, txt, searchfield, start, page_len, filters):
 def has_overlap(shift1, shift2):
 	shift1 = frappe.get_doc("Shift Type", shift1)
 	shift2 = frappe.get_doc("Shift Type", shift2)
-	print(shift1, shift2)
 	if shift1.end_time <= shift2.start_time or shift1.start_time >= shift2.end_time:
 		return True #No Overlap
 	else:
