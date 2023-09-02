@@ -106,6 +106,7 @@ def verify():
 		}, timeout=180)
 		# RESPONSE {'error': False|True, 'message': 'success|error message'}
 		res_data = frappe._dict(r.json())
+		print(res_data, 'verify\n\n')
 		if res_data.error:
 			if not res_data.text:
 				frappe.log_error('Face Verify v3', res_data.message)
