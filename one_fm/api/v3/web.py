@@ -15,6 +15,7 @@ from one_fm.api.doc_events import haversine
 from one_fm.api.v2.roster import get_current_shift
 from one_fm.api.v2.utils import response
 from one_fm.api.v2.face_recognition import create_checkin_log
+from one_fm.api.utils import set_up_face_recognition_server_credentials
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
@@ -40,6 +41,11 @@ def enroll():
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
+		# setup api endpoint
+		setup_credentials = set_up_face_recognition_server_credentials()
+		if setup_credentials.get('error'): #if error
+			return setup_credentials
+		
 		r = requests.post(channel+"/enroll", json={
 			'username': frappe.session.user, 
 			'video':video_content,
@@ -86,7 +92,11 @@ def verify():
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
 
-		print(bucketpath, channel)
+		# setup api endpoint
+		setup_credentials = set_up_face_recognition_server_credentials()
+		if setup_credentials.get('error'): #if error
+			return setup_credentials
+		
 		r = requests.post(channel+"/verify", json={
 			'username': frappe.session.user, 
 			'video':video_content,
@@ -95,13 +105,11 @@ def verify():
 			'bucketpath':bucketpath,
 		}, timeout=180)
 		# RESPONSE {'error': False|True, 'message': 'success|error message'}
-		print(r.status_code, r.text)
 		res_data = frappe._dict(r.json())
 		if res_data.error:
 			if not res_data.text:
 				frappe.log_error('Face Verify v3', res_data.message)
-			else:
-				return {'error':True, 'message':res_data.text}
+			return res_data
 		# create_checkin_log()
 		# frappe.enqueue(check_in, log_type=log_type, skip_attendance=skip_attendance, 
 		# 	latitude=latitude, longitude=longitude, source="Mobile Web")
