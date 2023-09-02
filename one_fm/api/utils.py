@@ -40,7 +40,7 @@ def get_reports_to_employee_name(employee):
             reports_to = frappe.db.get_value('Operations Site', site, 'account_supervisor')
             return reports_to
 
-    # if no site supervisor, get project manager
+    # if no site supervisor, get project manager 
     if not reports_to:
         project = frappe.db.get_value('Employee', employee, 'project')
         if project:
