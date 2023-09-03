@@ -1,10 +1,14 @@
 import frappe
-from frappe.utils import add_days
+from frappe.utils import add_days, now, today
 from datetime import datetime
 from hrms.hr.doctype.shift_assignment.shift_assignment import *
 
 
 class ShiftAssignmentOverride(ShiftAssignment):
+        
+    def validate(self):
+        self.set_datetime()
+        super(ShiftAssignmentOverride, self).validate()
 
     def validate_overlapping_shifts(self):
         overlapping_dates = self.get_overlapping_dates()
@@ -18,8 +22,11 @@ class ShiftAssignmentOverride(ShiftAssignment):
         """
             Before insert events to execute
         """
+        self.set_datetime()
         if not frappe.db.exists("Employee", {'name':self.employee, 'status':'Active'}):
             frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be assigned to a shift")
+        
+    def set_datetime(self):
         if self.shift_type:
             shift = frappe.get_doc("Shift Type", self.shift_type)
             self.start_datetime = datetime.strptime(f"{self.start_date} {(datetime.min + shift.start_time).time()}", '%Y-%m-%d %H:%M:%S')
@@ -33,6 +40,9 @@ def has_overlapping_timings(self) -> bool:
     """
     Accepts two shift types and checks whether their timings are overlapping
     """
+    if datetime.strptime(str(self.start_datetime), '%Y-%m-%d %H:%M:%S').date()>datetime.strptime(today(), '%Y-%m-%d').date():
+        frappe.throw("Shift cannot be created for date greater than today.")
+
     existing_shift = frappe.db.sql(f"""
         SELECT * FROM `tabShift Assignment` WHERE
         employee="{self.employee}" AND status='Active' AND docstatus=1 AND (
