@@ -19,7 +19,7 @@ One Facilities Management is a leader in the fields of commercial automation and
 - MariaDB 10.6 or above
 - Node V16
 - Redis
-- Local installation of Frappe, ERPNext, Wiki, Payments, Twilio Integration, Helpdesk, Frappe HR, One Fm Password Management, One Wiki
+- Local installation of Frappe, ERPNext, Helpdesk, Payments, Frappe HR, Twilio Integration, Wiki, One Fm Password Management, One Wiki
 
 ### Package installation
 Execute the following command on your terminal in the frapp-bench directory to get and install OneFm app
