@@ -75,7 +75,6 @@ def enroll():
 
 @frappe.whitelist()
 def verify():
-	# print(frappe.local.request.files)
 	try:
 		log_type = frappe.local.form_dict.log_type
 		skip_attendance = frappe.local.form_dict.skip_attendance
@@ -106,16 +105,15 @@ def verify():
 		}, timeout=180)
 		# RESPONSE {'error': False|True, 'message': 'success|error message'}
 		res_data = frappe._dict(r.json())
-		print(res_data, 'verify\n\n')
 		if res_data.error:
 			if not res_data.text:
 				frappe.log_error('Face Verify v3', res_data.message)
 			return res_data
 		# create_checkin_log()
-		# frappe.enqueue(check_in, log_type=log_type, skip_attendance=skip_attendance, 
-		# 	latitude=latitude, longitude=longitude, source="Mobile Web")
-		check_in(log_type=log_type, skip_attendance=skip_attendance, 
+		frappe.enqueue(check_in, log_type=log_type, skip_attendance=skip_attendance, 
 			latitude=latitude, longitude=longitude, source="Mobile Web")
+		# check_in(log_type=log_type, skip_attendance=skip_attendance, 
+		# 	latitude=latitude, longitude=longitude, source="Mobile Web")
 		frappe.db.commit()
 		return {'error':False, 'message':f'Check {log_type} Successful'}  
 	except Exception as exc:
