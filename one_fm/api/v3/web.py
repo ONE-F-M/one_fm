@@ -114,7 +114,7 @@ def verify():
 			latitude=latitude, longitude=longitude, source="Mobile Web")
 		# check_in(log_type=log_type, skip_attendance=skip_attendance, 
 		# 	latitude=latitude, longitude=longitude, source="Mobile Web")
-		frappe.db.commit()
+		# frappe.db.commit()
 		return {'error':False, 'message':f'Check {log_type} Successful'}  
 	except Exception as exc:
 		frappe.log_error("Face Verify v3", frappe.get_traceback() + '\n\n\n' + str(frappe.form_dict))
