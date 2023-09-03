@@ -42,9 +42,11 @@ from erpnext.stock import stock_ledger
 from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 from hrms.hr.doctype.interview.interview import Interview
 from hrms.hr.doctype.interview_feedback.interview_feedback import InterviewFeedback
+from hrms.hr.doctype.shift_assignment.shift_assignment import ShiftAssignment
+from one_fm.overrides.shift_assignment import ShiftAssignmentOverride
 from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import LeavePolicyAssignment
 
-__version__ = '14.5.2'
+__version__ = '14.5.3'
 
 Interview.validate_overlap = validate_interview_overlap
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_
@@ -84,3 +86,4 @@ NotificationLog.after_insert = after_insert
 Employee.validate_reports_to = validate_reports_to
 frappe.utils.nestedset.validate_loop = custom_validate_nestedset_loop
 InterviewFeedback.validate_interviewer = custom_validate_interviewer
+ShiftAssignment = ShiftAssignmentOverride
