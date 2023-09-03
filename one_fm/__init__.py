@@ -44,6 +44,7 @@ from hrms.hr.doctype.interview.interview import Interview
 from hrms.hr.doctype.interview_feedback.interview_feedback import InterviewFeedback
 from hrms.hr.doctype.shift_assignment.shift_assignment import ShiftAssignment
 from one_fm.overrides.shift_assignment import ShiftAssignmentOverride
+from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import LeavePolicyAssignment
 
 __version__ = '14.5.3'
 
