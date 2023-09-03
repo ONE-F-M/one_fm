@@ -74,7 +74,7 @@ def process_shift_assignemnt(doc):
 	if doc.assign_day_off == 1:
 		assign_day_off(doc)
 	else:
-		if doc.roster_type == "Basic":
+		if doc.roster_type == "Basic" and cstr(doc.from_date) == cstr(getdate()):
 			shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"}, ['name'])
 			if shift_assignemnt:
 				update_shift_assignment(shift_assignemnt, doc )
