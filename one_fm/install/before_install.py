@@ -1,8 +1,11 @@
 import frappe, requests, os
 
+from hooks import required_apps
+
 
 def execute():
     install_face_predictor()
+    install_required_apps()
 
 def install_face_predictor():
     # download facial predictor
@@ -25,3 +28,15 @@ def install_face_predictor():
                         os.fsync(f.fileno())
         else:  # HTTP status code 4XX/5XX
             print("Download failed: status code {}\n{}".format(r.status_code, r.text))
+    
+            
+def install_required_apps():
+    installed_apps = frappe.get_all_apps()
+    
+    if required_apps:
+        for app in required_apps:
+            if app not in installed_apps:
+                installed_apps.append(app)
+                
+        frappe.local.flags.in_install = True
+        frappe.flags.all_apps = installed_apps
