@@ -236,7 +236,7 @@ doc_events = {
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
 		"before_insert": "one_fm.utils.before_insert_warehouse",
-		"on_update": "one_fm.utils.set_warehouse_contact_from_project"
+		"on_update": "one_fm.utils.update_warehouse_contact"
 	},
 	"Vehicle": {
 		"autoname": "one_fm.fleet_management.utils.vehicle_naming_series",

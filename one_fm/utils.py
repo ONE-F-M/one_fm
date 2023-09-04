@@ -1766,18 +1766,58 @@ def validate_applicant_overseas_transferable(applicant):
             frappe.throw(_("Applicant is Not Transferable"))
 
 @frappe.whitelist()
-def set_warehouse_contact_from_project(doc, method):
-    return
+def update_warehouse_contact(doc, method):
+    update_store_keeper_warehouse_contact(doc)
+    update_project_warehouse_contact(doc)
+
+def update_store_keeper_warehouse_contact(doc):
+    '''
+        Method to set warehosue contact from employee
+        arsgs:
+            doc: object of Warehouse DocType
+        result: Link the user(linked with employee/store keeper) contact with the warehouse
+    '''
+    # Check if store keeper employee is set in warehouse
+    if doc.one_fm_store_keeper:
+        # Get store keeper user id
+        user = frappe.db.get_value("Employee", doc.one_fm_store_keeper, "user_id")
+        # Get the contacts linked to the user
+        contacts = frappe.get_list("Contact", {"user": 'j.poil@one-fm.com'})
+        # Link each contact to the warehouse
+        for contact in contacts:
+            link_contact_to_warehouse(doc.name, contact.name)
+
+def update_project_warehouse_contact(doc):
+    '''
+        Method to set warehosue contact from operations site of the given project
+        arsgs:
+            doc: object of Warehouse DocType
+        result: Link operations site POC contact with the warehouse
+    '''
     if doc.one_fm_project and doc.one_fm_site:
+        # Get the operations site linked with the warehouse
         site = frappe.get_doc("Operations Site", doc.one_fm_site)
-        # if site.site_poc:
-        #     for poc in site.site_poc:
-        #         if poc.poc:
-        #             contact = frappe.get_doc('Contact', poc.poc)
-        #             links = contact.append('links')
-        #             links.link_doctype = doc.doctype
-        #             links.link_name = doc.name
-        #             contact.save(ignore_permissions=True)
+        # Link each poc(contact) in the site to the warehouse
+        for poc in site.poc:
+            if poc.poc:
+                link_contact_to_warehouse(doc.name, poc.poc)
+
+
+def link_contact_to_warehouse(warehouse_name, contact_name):
+    '''
+        Method to link contact with warehouse
+        args:
+            warehouse_name: ID of warehouse doc
+            contact_name: ID of contact doc
+        result: Link contact with the given warehouse
+    '''
+    # Get contact object
+    contact = frappe.get_doc('Contact', contact_name)
+    # Link warehouse to the contact links
+    links = contact.append('links')
+    links.link_doctype = "Warehouse"
+    links.link_name = warehouse_name
+    contact.save(ignore_permissions=True)
 
 def validate_iban_is_filled(doc, method):
     if not doc.iban and doc.workflow_state == 'Active Account':
