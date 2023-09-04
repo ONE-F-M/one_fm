@@ -1,6 +1,6 @@
 import frappe, requests, os
 
-from hooks import required_apps
+from one_fm.hooks import required_apps
 
 
 def execute():
@@ -32,6 +32,8 @@ def install_face_predictor():
             
 def install_required_apps():
     installed_apps = frappe.get_all_apps()
+    print(installed_apps)
+    print(required_apps)
     
     if required_apps:
         for app in required_apps:
