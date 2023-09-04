@@ -3,7 +3,6 @@ import frappe, requests, os
 
 def execute():
     install_face_predictor()
-    install_required_apps()
 
 def install_face_predictor():
     # download facial predictor
