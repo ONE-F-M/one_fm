@@ -1811,13 +1811,20 @@ def link_contact_to_warehouse(warehouse_name, contact_name):
             contact_name: ID of contact doc
         result: Link contact with the given warehouse
     '''
-    # Get contact object
-    contact = frappe.get_doc('Contact', contact_name)
-    # Link warehouse to the contact links
-    links = contact.append('links')
-    links.link_doctype = "Warehouse"
-    links.link_name = warehouse_name
-    contact.save(ignore_permissions=True)
+    # Check if the warehouse already linked with the contact
+    linked = frappe.db.exists("Contact", [
+        ["Dynamic Link", "link_doctype", "=", "Warehouse"],
+        ["Dynamic Link", "link_name", "=", warehouse_name],
+        ["name", "=", contact_name],
+    ])
+    if not linked:
+        # Get contact object
+        contact = frappe.get_doc('Contact', contact_name)
+        # Link warehouse to the contact links
+        links = contact.append('links')
+        links.link_doctype = "Warehouse"
+        links.link_name = warehouse_name
+        contact.save(ignore_permissions=True)
 
 def validate_iban_is_filled(doc, method):
     if not doc.iban and doc.workflow_state == 'Active Account':
