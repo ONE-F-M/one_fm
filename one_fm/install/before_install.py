@@ -32,8 +32,6 @@ def install_face_predictor():
             
 def install_required_apps():
     installed_apps = frappe.get_all_apps()
-    print(installed_apps)
-    print(required_apps)
     
     if required_apps:
         for app in required_apps:
