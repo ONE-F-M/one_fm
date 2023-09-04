@@ -773,7 +773,7 @@ override_whitelisted_methods = {
 #ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation
-required_apps = ['frappe', 'erpnext', "Helpdesk", "Frappe HR", "Payments", "Twilio Integration", "Wiki", "One Wiki", "One Fm Password Management"]
+required_apps = ['frappe', 'erpnext', "helpdesk", "hrms", "payments", "wiki", "twilio-integration", "https://github.com/ONE-F-M/one_wiki.git", "https://github.com/ONE-F-M/password_management.git"]
 
 # jinja env
 jenv = {
