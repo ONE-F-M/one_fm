@@ -366,14 +366,6 @@ doc_events = {
 		],
 		"on_update": "one_fm.api.doc_methods.shift_request.on_update",
 	},
-	"Shift Assignment":{
-		"before_insert":[
-			"one_fm.tasks.erpnext.shift_assignment.before_insert"
-		],
-		"validate":[
-			"one_fm.tasks.erpnext.shift_assignment.validate"
-		],
-	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
@@ -473,7 +465,8 @@ override_doctype_class = {
     "Job Offer": "one_fm.overrides.job_offer.JobOfferOverride",
     "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride",
     "Job Applicant": "one_fm.overrides.job_applicant.JobApplicantOverride",
-    "Job Opening": "one_fm.overrides.job_opening.JobOpeningOverride"
+    "Job Opening": "one_fm.overrides.job_opening.JobOpeningOverride",
+    "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride"
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
@@ -790,6 +783,7 @@ after_migrate = [
     "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.disable_workflow_emails",
     "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
+    "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
 ]
 
 before_migrate = [

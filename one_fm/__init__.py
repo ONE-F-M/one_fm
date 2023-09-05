@@ -35,18 +35,22 @@ from one_fm.overrides.email_queue import prepare_email_content as email_content,
 from frappe.workflow.doctype.workflow_action import workflow_action
 from one_fm.utils import override_frappe_send_workflow_action_email
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
-from one_fm.overrides.payment_entry import add_party_gl_entries_
+from one_fm.overrides.payment_entry import add_party_gl_entries_,get_valid_reference_doctypes_
 from one_fm.overrides.stock_ledger import get_valuation_rate_
 from one_fm.overrides.interview import validate_interview_overlap
 from erpnext.stock import stock_ledger
 from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 from hrms.hr.doctype.interview.interview import Interview
 from hrms.hr.doctype.interview_feedback.interview_feedback import InterviewFeedback
+from hrms.hr.doctype.shift_assignment.shift_assignment import ShiftAssignment
+from one_fm.overrides.shift_assignment import ShiftAssignmentOverride
+from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import LeavePolicyAssignment
 
 __version__ = '14.5.3'
 
 Interview.validate_overlap = validate_interview_overlap
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_
+PaymentEntry.get_valid_reference_doctypes = get_valid_reference_doctypes_
 workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
 stock_ledger.get_valuation_rate = get_valuation_rate_
 SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
@@ -83,3 +87,4 @@ NotificationLog.after_insert = after_insert
 Employee.validate_reports_to = validate_reports_to
 frappe.utils.nestedset.validate_loop = custom_validate_nestedset_loop
 InterviewFeedback.validate_interviewer = custom_validate_interviewer
+ShiftAssignment = ShiftAssignmentOverride

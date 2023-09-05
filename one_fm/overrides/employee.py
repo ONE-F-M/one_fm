@@ -41,14 +41,14 @@ class EmployeeOverride(EmployeeMaster):
                 user_doc = frappe.get_doc('User',self.user_id)
                 if user_doc.enabled == 1:
                     user_doc.enabled = 0
-                    user_doc.save()
+                    user_doc.save(ignore_permissions=1)
                     frappe.msgprint(f"User {self.user_id} disabled",alert=1)
                     frappe.db.commit()
             elif self.status == "Active" and self.status not in [old_self] and self.user_id:
                 user_doc = frappe.get_doc('User',self.user_id)
                 if user_doc.enabled == 0:
                     user_doc.enabled = 1
-                    user_doc.save()
+                    user_doc.save(ignore_permissions=1)
                     frappe.msgprint(f"User {self.user_id} enabled",alert=1)
                     frappe.db.commit()
 
