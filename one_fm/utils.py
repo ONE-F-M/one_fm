@@ -22,7 +22,7 @@ from frappe.utils import (
     cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
     comma_or, get_fullname, add_years, add_months, add_days,
     nowdate,get_first_day,get_last_day, today, now_datetime, rounded, get_url,
-    get_datetime, add_to_date, time_diff, get_time, get_url_to_form, strip_html
+    get_datetime, add_to_date, time_diff, get_time, get_url_to_form, strip_html, now
 )
 import datetime
 from datetime import datetime, time
@@ -47,6 +47,8 @@ from frappe.desk.form.linked_with import get_linked_fields
 from frappe.model.workflow import apply_workflow
 
 from deep_translator import GoogleTranslator
+
+from frappe.model.naming import make_autoname
 
 
 def get_common_email_args(doc):
@@ -1779,13 +1781,26 @@ def update_store_keeper_warehouse_contact(doc):
     '''
     # Check if store keeper employee is set in warehouse
     if doc.one_fm_store_keeper:
-        # Get store keeper user id
-        user = frappe.db.get_value("Employee", doc.one_fm_store_keeper, "user_id")
-        # Get the contacts linked to the user
-        contacts = frappe.get_list("Contact", {"user": 'j.poil@one-fm.com'})
+        # Get the contacts linked to the store keeper
+        contacts = get_employee_user_contact(doc.one_fm_store_keeper)
         # Link each contact to the warehouse
         for contact in contacts:
             link_contact_to_warehouse(doc.name, contact.name)
+
+def get_employee_user_contact(employee):
+    '''
+        Method to get the contact linked with the user of the employee
+        args:
+            employee: name of the employee doc object
+        return: the list of contact linekd with the user in employee or empty list
+    '''
+    # Get employee user id
+    user = frappe.db.get_value("Employee", employee, "user_id")
+    if user:
+        # Get the contacts linked to the user an returns
+        return frappe.get_list("Contact", {"user": user})
+    return []
+
 
 def update_project_warehouse_contact(doc):
     '''
@@ -1803,28 +1818,80 @@ def update_project_warehouse_contact(doc):
                 link_contact_to_warehouse(doc.name, poc.poc)
 
 
-def link_contact_to_warehouse(warehouse_name, contact_name):
+def link_contact_to_warehouse(warehouse_name, contact_name, link=True):
     '''
         Method to link contact with warehouse
         args:
             warehouse_name: ID of warehouse doc
             contact_name: ID of contact doc
+            link: Boolean, True(Link the contact and warehouse), False(Unlink the contact and warehouse)
         result: Link contact with the given warehouse
     '''
-    # Check if the warehouse already linked with the contact
+    # Check if the warehouse linked with the contact
     linked = frappe.db.exists("Contact", [
         ["Dynamic Link", "link_doctype", "=", "Warehouse"],
         ["Dynamic Link", "link_name", "=", warehouse_name],
         ["name", "=", contact_name],
     ])
-    if not linked:
-        # Get contact object
-        contact = frappe.get_doc('Contact', contact_name)
+
+    if link and not linked:
         # Link warehouse to the contact links
-        links = contact.append('links')
-        links.link_doctype = "Warehouse"
-        links.link_name = warehouse_name
-        contact.save(ignore_permissions=True)
+        name = make_autoname("hash", "Dynamic Link") # Get the name for the Dynamic Link table
+        owner = frappe.session.user
+        creation = now()
+        query = f"""
+            Insert Into
+                `tabDynamic Link`
+                (
+                    `name`, `link_doctype`, `link_name`, `owner`, `modified_by`, `creation`, `modified`,
+                    `link_title`, `parent`, `parenttype`, `parentfield`
+                )
+            Values
+                (
+                    '{name}', 'Warehouse', '{warehouse_name}', '{owner}', '{owner}', '{creation}', '{creation}',
+                    '{warehouse_name}', '{contact_name}', 'Contact', 'links'
+                )
+        """
+        frappe.db.sql(query)
+
+    if not link and linked:
+        # Unlink the contact and warehouse
+        query = '''
+            delete from
+                `tabDynamic Link`
+            where
+                link_doctype="Warehouse" and link_name="{0}" and parent="{1}" and parenttype="Contact"
+        '''
+        frappe.db.sql(query.format(warehouse_name, contact_name))
+
+def validate_warehouse(doc, method):
+    if not doc.is_new():
+        # pass
+        unlink_warehouse_from_contact(doc)
+
+def unlink_warehouse_from_contact(doc):
+    '''
+        Method to unlink the contact from warehouse if there is change in store keeper or project site
+        args:
+            doc: object of Warehouse
+    '''
+    # Get the previous store keeper set in the warehouse
+    previous_store_keeper = frappe.db.get_value("Warehouse", doc.name, "one_fm_store_keeper")
+    if previous_store_keeper and previous_store_keeper != doc.one_fm_store_keeper:
+        contacts = get_employee_user_contact(previous_store_keeper)
+        # Unlink each contact from the warehouse
+        for contact in contacts:
+            link_contact_to_warehouse(doc.name, contact.name, False)
+
+    # Get the previous site set in the warehouse
+    previous_site = frappe.db.get_value("Warehouse", doc.name, "one_fm_site")
+    if previous_site and previous_site != doc.one_fm_site:
+        # Get the operations site linked with the warehouse
+        site = frappe.get_doc("Operations Site", previous_site)
+        # Unlink each poc(contact) in the site from the warehouse
+        for poc in site.poc:
+            if poc.poc:
+                link_contact_to_warehouse(doc.name, poc.poc, False)
 
 def validate_iban_is_filled(doc, method):
     if not doc.iban and doc.workflow_state == 'Active Account':
