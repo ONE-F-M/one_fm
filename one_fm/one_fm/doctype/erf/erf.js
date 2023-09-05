@@ -62,7 +62,7 @@ frappe.ui.form.on('ERF', {
 				frm.add_custom_button(__('Close ERF'), () => frm.events.close_erf(frm)).addClass('btn-primary');
 			}
 		}
-		if (!frm.is_new()){
+		if (!frm.is_new() && frm.doc.status){
 			frm.set_intro(__("STATUS: "+frm.doc.status), 'green');
 		}
 		frm.set_query('recruiter_assigned', function() {
@@ -194,7 +194,7 @@ frappe.ui.form.on('ERF', {
 						list_tag.remove();
 					}
 				}
-			}, 500);
+			}, 1000);
 		});
 	},
 	number_of_candidates_required: function(frm) {

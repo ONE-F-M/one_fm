@@ -236,7 +236,8 @@ doc_events = {
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
 		"before_insert": "one_fm.utils.before_insert_warehouse",
-		"on_update": "one_fm.utils.set_warehouse_contact_from_project"
+		"on_update": "one_fm.utils.update_warehouse_contact",
+		"validate": "one_fm.utils.validate_warehouse"
 	},
 	"Vehicle": {
 		"autoname": "one_fm.fleet_management.utils.vehicle_naming_series",
@@ -782,6 +783,7 @@ after_migrate = [
     "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.disable_workflow_emails",
     "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
+    "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
 ]
 
 before_migrate = [
