@@ -13,13 +13,27 @@ One Facilities Management is a leader in the fields of commercial automation and
 
 ## Getting started
 
+
+### Core Requirements
+Before you install this app, ensure that the following apps and their respective versions are installed:
+
+- Frappe Framework: v14.37.1 (version-14)
+- ERPNext: v14.26.0 (version-14)
+- Helpdesk: v0.8.4 (main)
+- Frappe HR: v14.4.1 (version-14)
+- One Fm Password Management: v0.0.1 (master)
+- One Wiki: v0.0.1 (master-14)
+- Payments: v0.0.1 (version-14)
+- Twilio Integration: v0.0.1 (master)
+- Wiki: v2.0.0 (version-14)
+
 #### Requirements
 
 - Python 3.10 or above
 - MariaDB 10.6 or above
 - Node V16
 - Redis
-- Local installation of Frappe and ERPNext
+
 
 ### Package installation
 Execute the following command on your terminal in the frapp-bench directory to get and install OneFm app
