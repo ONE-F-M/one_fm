@@ -14,8 +14,8 @@ One Facilities Management is a leader in the fields of commercial automation and
 ## Getting started
 
 
-## <span style="color:red">Core Requirements</span>
-Before you begin with this project, ensure that the following apps and their respective versions are installed:
+### Core Requirements
+Before you install this app, ensure that the following apps and their respective versions are installed:
 
 - Frappe Framework: v14.37.1 (version-14)
 - ERPNext: v14.26.0 (version-14)
