@@ -1,6 +1,17 @@
 import frappe,erpnext
 
 
+
+def get_valid_reference_doctypes_(self):
+		if self.party_type == "Customer":
+			return ("Sales Order", "Sales Invoice", "Journal Entry", "Dunning")
+		elif self.party_type == "Supplier":
+			return ("Purchase Order", "Purchase Invoice", "Journal Entry")
+		elif self.party_type == "Shareholder":
+			return ("Journal Entry",)
+		elif self.party_type == "Employee":
+			return ("Expense Claim", "Journal Entry", "Employee Advance", "Gratuity")
+
 def add_party_gl_entries_(self, gl_entries):
     if self.party_account:
         if self.payment_type == "Receive":
