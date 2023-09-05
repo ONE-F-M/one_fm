@@ -61,5 +61,11 @@ frappe.ui.form.on('Warehouse', {
         }
       })
     }
+  },
+  one_fm_is_project_warehouse: function(frm) {
+    if(!frm.doc.one_fm_is_project_warehouse){
+      frm.set_value('one_fm_project', '');
+      frm.set_value('one_fm_site', '');
+    }
   }
 });
