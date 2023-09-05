@@ -4,27 +4,10 @@
 frappe.ui.form.on('Preparation Record',{
 	//set total amunt per employee on the selection of the process
 	renewal_or_extend: function(frm, cdt, cdn){
-		var row = locals[cdt][cdn];
-		if(row.renewal_or_extend){
-			if(row.renewal_or_extend == 'Renewal' & !row.no_of_years){
-				frappe.model.set_value(row.doctype, row.name, "no_of_years", '1 Year');
-				frm.refresh_field('preparation_record');
-			}
-			frappe.call({
-				method: 'one_fm.grd.doctype.preparation.preparation.get_grd_renewal_extension_cost',
-				args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
-				callback: function(r) {
-					if(r.message){
-						var cost = r.message;
-						frappe.model.set_value(row.doctype, row.name, "work_permit_amount", cost.work_permit_amount);
-						frappe.model.set_value(row.doctype, row.name, "medical_insurance_amount", cost.medical_insurance_amount);
-						frappe.model.set_value(row.doctype, row.name, "residency_stamp_amount", cost.residency_stamp_amount);
-						frappe.model.set_value(row.doctype, row.name, "civil_id_amount", cost.civil_id_amount);
-						frm.refresh_field('preparation_record');
-					}
-				}
-			});
-		}
+		set_preparation_record_costing(frm, cdt, cdn);
+	},
+	no_of_years: function(frm, cdt, cdn){
+		set_preparation_record_costing(frm, cdt, cdn);
 	},
 	work_permit_amount: function(frm, cdt, cdn) {
 		var child = locals[cdt][cdn];
@@ -43,6 +26,31 @@ frappe.ui.form.on('Preparation Record',{
 		caclulate_renewal_extension_cost_total(frm, child);
 	}
 });
+
+var set_preparation_record_costing = function(frm, cdt, cdn) {
+	var row = locals[cdt][cdn];
+	if(row.renewal_or_extend){
+		if(row.renewal_or_extend == 'Renewal' & !row.no_of_years){
+			frappe.model.set_value(row.doctype, row.name, "no_of_years", '1 Year');
+			frm.refresh_field('preparation_record');
+		}
+		frappe.call({
+			method: 'one_fm.grd.doctype.preparation.preparation.get_grd_renewal_extension_cost',
+			args: {'renewal_or_extend': row.renewal_or_extend, 'no_of_years': row.no_of_years},
+			callback: function(r) {
+				if(r.message){
+					var cost = r.message;
+					frappe.model.set_value(row.doctype, row.name, "work_permit_amount", cost.work_permit_amount);
+					frappe.model.set_value(row.doctype, row.name, "medical_insurance_amount", cost.medical_insurance_amount);
+					frappe.model.set_value(row.doctype, row.name, "residency_stamp_amount", cost.residency_stamp_amount);
+					frappe.model.set_value(row.doctype, row.name, "civil_id_amount", cost.civil_id_amount);
+					frappe.model.set_value(row.doctype, row.name, "total_amount", cost.total_amount);
+					frm.refresh_field('preparation_record');
+				}
+			}
+		});
+	}
+};
 
 var caclulate_renewal_extension_cost_total = function(frm, child) {
 	var total_cost = 0;
@@ -65,18 +73,17 @@ var caclulate_renewal_extension_cost_total = function(frm, child) {
 //Set renewal for all employee to facilitate process
 frappe.ui.form.on("Preparation", {
 	set_renewal_for_all: function(frm) {
-		if(frm.doc.preparation_record && frm.doc.set_renewal_for_all == 1){
-			$.each(frm.doc.preparation_record || [], function(i, v) {
-				frappe.model.set_value(v.doctype, v.name, "renewal_or_extend", "Renewal")
-			});
-		}
-		else if (frm.doc.preparation_record && frm.doc.set_renewal_for_all == 0){
-			$.each(frm.doc.preparation_record || [], function(i, v) {
-				frappe.model.set_value(v.doctype, v.name, "renewal_or_extend", " ")
-			});
-		}
-	},//set total payment for the whole list on HR approval
+		frappe.call({
+			doc: frm.doc,
+			method: 'set_renewal_for_all_preparation_record',
+			args: {'renew_all': frm.doc.set_renewal_for_all},
+			callback: function(r) {
+				frm.refresh_field('preparation_record');
+			}
+		})
+	},
 	hr_approval: function(frm){
+		// Set total payment for the whole list on HR approval
 		if(frm.doc.hr_approval == "Yes"){
 			let total = 0;
 			$.each(frm.doc.preparation_record || [], function(i, v) {
