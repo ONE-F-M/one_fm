@@ -1,6 +1,7 @@
 frappe.ui.form.on('Stock Entry', {
   refresh(frm) {
     set_stock_entry_type_for_issuer(frm);
+    set_store_keeper_warehouses(frm);
   },
   onload(frm) {
     if(frappe.user.has_role('Stock Issuer')){
@@ -19,7 +20,41 @@ frappe.ui.form.on('Stock Entry', {
 			}, 1000);
 		});
 	},
+  stock_entry_type(frm){
+    set_store_keeper_warehouses(frm);
+  }
 })
+
+var set_store_keeper_warehouses = function(frm) {
+  frappe.call({
+    method: 'one_fm.overrides.stock_entry.get_store_keeper_warehouses',
+    callback: function(r) {
+      var warehouse_field = "from_warehouse";
+      if(frm.doc.stock_entry_type == "Material Reciept"){
+        warehouse_field = "to_warehouse";
+      }
+      frm.set_df_property(warehouse_field, "read_only", false);
+      if(r.message && r.message.length > 0){
+        if(r.message.length == 1){
+          frm.set_value(warehouse_field, r.message[0]);
+          frm.set_df_property(warehouse_field, "read_only", true);
+        }
+        set_warehouse_filter(frm, warehouse_field, r.message)
+      }
+    }
+  })
+};
+
+var set_warehouse_filter = function(frm, warehouse_field, warehouses) {
+  // warehouses should be a list of value
+  frm.set_query(warehouse_field, function() {
+      return {
+          filters:{
+              name: ['in', warehouses]
+          }
+      };
+  });
+}
 
 var set_stock_entry_type_for_issuer = function(frm) {
   if(frappe.user.has_role('Stock Issuer')){
