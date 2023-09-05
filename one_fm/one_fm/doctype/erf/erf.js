@@ -194,7 +194,7 @@ frappe.ui.form.on('ERF', {
 						list_tag.remove();
 					}
 				}
-			}, 500);
+			}, 1000);
 		});
 	},
 	number_of_candidates_required: function(frm) {
