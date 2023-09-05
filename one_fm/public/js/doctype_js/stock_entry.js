@@ -1,5 +1,6 @@
 frappe.ui.form.on('Stock Entry', {
   refresh(frm) {
+    set_items_fields_read_only(frm);
     set_stock_entry_type_for_issuer(frm);
     set_store_keeper_warehouses(frm);
   },
@@ -22,8 +23,36 @@ frappe.ui.form.on('Stock Entry', {
 	},
   stock_entry_type(frm){
     set_store_keeper_warehouses(frm);
+  },
+  project(frm) {
+    auto_fill_project(frm);
+  },
+  from_warehouse(frm){
+    frm.trigger("project");
   }
 })
+
+var set_items_fields_read_only = function(frm) {
+  var fields = ['basic_rate', 'basic_amount', 'amount']
+  fields.forEach((field, i) => {
+    frappe.meta.get_docfield("Stock Entry Detail", field, frm.doc.name).read_only = 1;
+  });
+};
+
+frappe.ui.form.on('Stock Entry Detail', {
+  items_add(doc, cdt, cdn) {
+    var row = frappe.get_doc(cdt, cdn);
+    doc.script_manager.copy_from_first_row("items", row, ["project"]);
+	}
+});
+
+var auto_fill_project = function(frm) {
+  if (frm.doc.project && frm.doc.items && frm.doc.items.length) {
+    $.each(frm.doc.items || [], function(i, item) {
+      frappe.model.set_value("Stock Entry Detail", item.name, "project", frm.doc.project);
+    });
+  }
+};
 
 var set_store_keeper_warehouses = function(frm) {
   frappe.call({
