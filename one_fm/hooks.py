@@ -782,6 +782,7 @@ after_migrate = [
     "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.disable_workflow_emails",
     "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
+    "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
 ]
 
 before_migrate = [
