@@ -28,6 +28,17 @@ class EmployeeSchedule(Document):
 				end_date = add_days(end_date, 1)
 			self.start_datetime = f"{self.date} {start_time}"
 			self.end_datetime = f"{end_date} {end_time}"
+
+		# clear record if Day Off
+		if self.employee_availability=='Day Off':
+			self.operations_role==''
+			self.post_abbrv = ''
+			self.site = ''
+			self.shift = ''
+			self.shift_type = ''
+			self.start_datetime = ''
+			self.end_datetime = ''
+			self.project = ''
 			
 	def validate_offs(self):
 		"""
