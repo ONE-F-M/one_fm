@@ -361,10 +361,17 @@ doc_events = {
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
 			"one_fm.utils.send_shift_request_mail"
 		],
-		"on_update_after_submit":[
-			"one_fm.api.doc_methods.shift_request.on_update_after_submit",
+		# "on_update_after_submit":[
+			# "one_fm.api.doc_methods.shift_request.on_update_after_submit",
+		# ],
+		"on_update": [
+            "one_fm.api.doc_methods.shift_request.on_update",
+        	# "one_fm.api.doc_methods.shift_request.process_shift_assignemnt",
 		],
-		"on_update": "one_fm.api.doc_methods.shift_request.on_update",
+        "validate": [
+            "one_fm.api.doc_methods.shift_request.validate",
+        ]
+        
 	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
