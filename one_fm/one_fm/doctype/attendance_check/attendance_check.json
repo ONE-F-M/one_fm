@@ -131,7 +131,7 @@
    "fieldname": "attendance_status",
    "fieldtype": "Select",
    "label": "Attendance Status",
-   "options": "\nPresent\nAbsent\nDay Off\nHoliday"
+   "options": "\nPresent\nAbsent\nDay Off"
   },
   {
    "fieldname": "shift_assignment_details_section",
@@ -411,7 +411,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2023-07-18 10:06:21.095793",
+ "modified": "2023-09-11 00:55:47.189349",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",

@@ -38,7 +38,7 @@ class AttendanceCheck(Document):
 			att.reference_doctype = "Attendance Check"
 			att.reference_docname = self.name
 			att.comment = f"Created from Attendance Check\n{self.justification or ''}\n{self.comment or ''}"
-			if not self.attendance_status in ['Day Off', 'Holiday']:
+			if self.attendance_status != 'Day Off':
 				if self.shift_assignment:
 					att.shift_assignment = self.shift_assignment
 				if not att.shift_assignment:
@@ -67,7 +67,7 @@ class AttendanceCheck(Document):
 			if att.shift_assignment and att.status=='Present':
 				att.working_hours = frappe.db.get_value("Operations Shift", 
 					frappe.db.get_value("Shift Assignment", att.shift_assignment, 'shift'), 'duration')
-			if not att.status in ['Holiday', 'Day Off']:
+			if att.status != 'Day Off':
 				if not att.working_hours:
 					att.working_hours = 8 if self.attendance_status == 'Present' else 0
 			att.insert(ignore_permissions=True)
