@@ -929,6 +929,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "default": "0",
    "fetch_from": "employment_type.attendance_by_timesheet",
    "fieldname": "attendance_by_timesheet",
@@ -981,7 +982,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-08-28 12:19:08.355196",
+ "modified": "2023-09-09 14:09:39.953837",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
