@@ -94,15 +94,27 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
-			"label": ("Public Holidays"),
-			"fieldname": "public_holidays",
-			"fieldtype": "Int",
+			"label": ("No. of Public holiday"),
+			"fieldname": "number_of_public_holiday",
+			"fieldtype": "Data",
 			"width": 120,
 		},
 		{
 			"label": ("Shift/Non-Shift Worker"),
 			"fieldname": "shift_work_type",
 			"fieldtype": "Data",
+			"width": 120,
+		},
+		{
+			"label": ("Attendance By TimeSheet"),
+			"fieldname": "att_by_timesheet",
+			"fieldtype": "Int",
+			"width": 120,
+		},
+		{
+			"label": ("Auto Attendance"),
+			"fieldname": "auto_attendance",
+			"fieldtype": "Int",
 			"width": 120,
 		},
 		{
@@ -130,7 +142,7 @@ def get_columns(filters):
 			"width": 120,
 		},
 		{
-			"label": ("Scheduled Working Days(Roster)"),
+			"label": ("Scheduled Working Days"),
 			"fieldname": "working_days",
 			"fieldtype": "Int",
 			"width": 120,
@@ -162,6 +174,12 @@ def get_columns(filters):
 			"fieldtype": "Int",
 			"default": 0,
 			"width": 180,
+		},
+		{
+			"label": ("Public Holidays(Attendance)"),
+			"fieldname": "att_public_holidays",
+			"fieldtype": "Int",
+			"width": 120,
 		},
 		{
 			"label": ("Present OT Days (Attendence)"),
@@ -218,7 +236,8 @@ def get_data(filters):
 	last_day_of_month = str(get_last_day(report_date))
 	query = frappe.db.sql(f"""
 		SELECT DISTINCT e.name as employee_id, e.employee_name, e.project, e.work_permit_salary, e.one_fm_civil_id, e.bank_ac_no,
-		e.day_off_category, e.shift_working as shift_work_type, e.holiday_list, e.number_of_days_off , e.pam_file_number as shoon_file, ssa.base, pe.start_date, pe.end_date
+		e.day_off_category, e.shift_working as shift_work_type, e.attendance_by_timesheet as att_by_timesheet, e.auto_attendance, 
+		e.holiday_list, e.number_of_days_off , e.pam_file_number as shoon_file, ssa.base, pe.start_date, pe.end_date
 		FROM `tabEmployee` e JOIN `tabSalary Structure Assignment` ssa ON e.name=ssa.employee
 			JOIN `tabPayroll Employee Detail` ped ON e.name=ped.employee
 			JOIN `tabPayroll Entry` pe ON pe.name=ped.parent
@@ -248,7 +267,8 @@ def get_data(filters):
 			i.al = att_project['al']
 			i.ol = att_project['ol']
 			i.ab = att_project['ab']
-			i.public_holidays = att_project['h']	
+			i.att_public_holidays = att_project['h']
+			i.number_of_public_holiday = att_project['ph']
 			if i.shift_work_type == 1:
 				i.shift_work_type = "Shift Worker"
 				i.do_roster = att_project['do_roster_se']
@@ -256,11 +276,11 @@ def get_data(filters):
 			else:
 				i.shift_work_type = "Non-Shift Worker"
 				i.do_roster = att_project['do_roster_nse']
-				i.working_days = i.days_in_period - i.do_roster - i.public_holidays
+				i.working_days = i.days_in_period - i.do_roster - i.att_public_holidays
 			
 		i.theoretical_days_off = theoretical_days_off(i.day_off_category, i.number_of_days_off, i.start_date, i.end_date)
 		i.theoretical_working_days = i.days_in_period - i.theoretical_days_off
-		i.total = i.present_days + i.do_att + i.sl + i.al + i.ol + i.ab + i.public_holidays
+		i.total = i.present_days + i.do_att + i.sl + i.al + i.ol + i.ab + i.att_public_holidays
 
 	if not query:
 		frappe.msgprint(("No Payroll Submitted or Salary Slip Created from the Payroll Entry this month!"), alert=True, indicator="Blue")
@@ -340,6 +360,12 @@ def get_attendance(employee_list):
 												WHERE e.name = '{employee}'
 												AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}' 
 	 											AND h.weekly_off = 1""", as_dict=1)
+		
+		ph = frappe.db.sql(f"""Select count(*) as holiday from `tabHoliday` h JOIN `tabEmployee` e ON e.holiday_list=h.parent
+												WHERE e.name = '{employee}'
+												AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}' 
+	 											AND h.weekly_off = 0""", as_dict=1)
+
 		attendance = frappe.db.sql(f"""SELECT 
 									COUNT(CASE WHEN at.status IN ("Present", "Work From Home") THEN 1 END) AS present_days,
 									COUNT(CASE WHEN at.status = "Absent" THEN 1 END) AS absent,
@@ -378,6 +404,7 @@ def get_attendance(employee_list):
 		attendance_dict[employee]['present_days_ot']  = present_list_ot[0].present_days_ot if present_list_ot else 0
 		attendance_dict[employee]['ab'] = attendance[0].absent if attendance else 0
 		attendance_dict[employee]['h'] = attendance[0].holiday if attendance else 0	
+		attendance_dict[employee]['ph'] = ph[0].holiday if attendance else 0	
 		for row in attendance_leave_details:
 			if row.leave_type == 'Sick Leave':
 				attendance_dict[employee]['sl'] = row.leave_count
