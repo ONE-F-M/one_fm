@@ -218,12 +218,15 @@ def validate_approver(self):
 
 @frappe.whitelist()
 def fetch_approver(employee):
+	project_list = frappe.db.get_all("Project List", {'parent':'Operation Settings'}, ['project'], pluck='project')
 	if employee:
-		reports_to = frappe.get_value("Employee", employee,["reports_to"])
-		department = frappe.get_value("Employee", employee,["department"])
+		employee_detail = frappe.get_all("Employee", {"employee":employee}, ["*"])
+		reports_to = employee_detail[0].reports_to
+		department = employee_detail[0].department
+		project_alloc = employee_detail[0].project
 		if reports_to:
 			return frappe.get_value("Employee", reports_to, "user_id")
-		elif department == "Operations - ONEFM":
+		elif project_alloc not in project_list and department == "Operations - ONEFM":
 			approvers = frappe.db.sql(
 				"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
 				(department),
@@ -231,17 +234,9 @@ def fetch_approver(employee):
 			approvers = [approver[0] for approver in approvers]
 			return approvers[0]
 		else:
-			shift = frappe.get_value("Employee", employee, ["shift"])
-			if shift:
-				shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")
-				return frappe.get_value("Employee", shift_supervisor, "user_id")
-			else:
-				approvers = frappe.db.sql(
-					"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
-					(department),
-				)
-				approvers = [approver[0] for approver in approvers]
-				return approvers[0]
+			project_manager = frappe.get_value("Project", project_alloc, ["account_manager"])
+			if project_manager:
+				return frappe.get_value("Employee", project_manager, "user_id")
 
 def fill_to_date(doc, method):
 	if not doc.to_date:
