@@ -5,6 +5,7 @@ from hrms.overrides.employee_master import *
 from one_fm.hiring.utils import (
     employee_after_insert, employee_before_insert, set_employee_name,
     employee_validate_attendance_by_timesheet, set_mandatory_feilds_in_employee_for_Kuwaiti,
+    generate_employee_id
 )
 
 class EmployeeOverride(EmployeeMaster):
@@ -56,7 +57,8 @@ class EmployeeOverride(EmployeeMaster):
         self.assign_role_profile_based_on_designation()
 
     def after_insert(self):
-        employee_after_insert(self, method=None)
+        if not self.employee_id:generate_employee_id(self) #generate the employee_id
+        employee_after_insert(self, method=None) # create user record
         self.assign_role_profile_based_on_designation()
     
     def before_insert(self):
