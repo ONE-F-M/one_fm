@@ -108,17 +108,18 @@ def process_shift_assignemnt(doc, event=None):
 			# create new schedule
 			new_date_range = [i for i in schedule_date_range if not i in found_schedules_date]
 			if new_date_range:
-				schedule = frappe.new_doc("Employee Schedule")
-				schedule.employee = doc.employee
-				schedule.date = d
-				schedule.shift = doc.operations_shift
-				schedule.shift_type = doc.shift_type
-				schedule.operations_role = doc.operations_role
-				schedule.employee_availability = 'Working'
-				schedule.roster_type = doc.roster_type
-				schedule.department = doc.department
-				schedule.site = doc.site
-				schedule.save(ignore_permissions=True)
+				for d in new_date_range:
+					schedule = frappe.new_doc("Employee Schedule")
+					schedule.employee = doc.employee
+					schedule.date = d
+					schedule.shift = doc.operations_shift
+					schedule.shift_type = doc.shift_type
+					schedule.operations_role = doc.operations_role
+					schedule.employee_availability = 'Working'
+					schedule.roster_type = doc.roster_type
+					schedule.department = doc.department
+					schedule.site = doc.site
+					schedule.save(ignore_permissions=True)
 			
 
 
