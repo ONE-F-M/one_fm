@@ -534,14 +534,3 @@ def mark_missing_attendance(attendance_checkin_found):
 				frappe.db.set_value("Employee Checkin", i.checkout_record, "attendance", attendance.name)
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), 'Attendance Remark')
-
-def create_att_check():
-	employee = frappe.get_doc("Employee", "HR-EMP-00001")
-	at_check = frappe._dict({
-		"doctype":"Attendance Check",
-		"employee": employee.name,
-		"employee_name":employee.employee_name,
-		"department":employee.department,
-		"date":str(today()),
-	})
-	frappe.get_doc(at_check).insert(ignore_permissions=1)
