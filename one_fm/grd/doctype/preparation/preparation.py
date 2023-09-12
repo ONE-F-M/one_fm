@@ -124,6 +124,20 @@ class Preparation(Document):
         frappe.db.set_value("GRD Settings", None, "last_preparation_record_created_on", self.creation)
         frappe.db.set_value("GRD Settings", None, "last_preparation_record_created_by", self.owner)
 
+    @frappe.whitelist()
+    def set_renewal_for_all_preparation_record(self, renew_all):
+        # Get costing of renewal for an year
+        costing  = get_grd_renewal_extension_cost("Renewal", "1 Year")
+        # Set the costing of renewal for an year in preparation record
+        for preparation in self.preparation_record:
+            preparation.renewal_or_extend = "Renewal" if renew_all else ""
+            preparation.no_of_years = "1 Year" if renew_all else ""
+            preparation.work_permit_amount = costing.work_permit_amount if renew_all else ""
+            preparation.medical_insurance_amount = costing.medical_insurance_amount if renew_all else ""
+            preparation.residency_stamp_amount = costing.residency_stamp_amount if renew_all else ""
+            preparation.civil_id_amount = costing.civil_id_amount if renew_all else ""
+            preparation.total_amount = costing.total_amount if renew_all else ""
+
 # Calculate the date of the next month (First & Last) (monthly cron in hooks)
 def auto_create_preparation_record():
     """

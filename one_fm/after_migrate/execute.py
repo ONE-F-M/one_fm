@@ -27,7 +27,7 @@ def comment_timesheet_in_hrms():
             '#"Employee": "hrms.overrides.employee_master.EmployeeMaster",',
         )
         found = True
-    
+
     if found:
         f = open(app_path+"hooks.py",'w')
         f.write(newdata)
@@ -53,7 +53,7 @@ def comment_payment_entry_in_hrms():
     """
         HRMS overrides Payment Entry, this restricts the overide in ONE_FM
     """
- 
+
     app_path = frappe.utils.get_bench_path()+"/apps/hrms/hrms/"
     f = open(app_path+"hooks.py",'r')
     filedata = f.read()
@@ -69,7 +69,28 @@ def comment_payment_entry_in_hrms():
         f.write(newdata)
         f.close()
 
-   
+
+def comment_process_expired_allocation_in_hrms():
+    """
+        Comment hrms scheduler to process_expired_allocation
+    """
+
+    app_path = frappe.utils.get_bench_path()+"/apps/hrms/hrms/"
+    f = open(app_path+"hooks.py",'r')
+    filedata = f.read()
+    f.close()
+
+    if not filedata.find('#"hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry.process_expired_allocation",') > 0:
+        newdata = filedata.replace(
+                '"hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry.process_expired_allocation",',
+                '#"hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry.process_expired_allocation",'
+        )
+
+        f = open(app_path+"hooks.py",'w')
+        f.write(newdata)
+        f.close()
+
+
 
 def disable_workflow_emails():
     """

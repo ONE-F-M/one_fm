@@ -25,3 +25,4 @@ def install_face_predictor():
                         os.fsync(f.fileno())
         else:  # HTTP status code 4XX/5XX
             print("Download failed: status code {}\n{}".format(r.status_code, r.text))
+    

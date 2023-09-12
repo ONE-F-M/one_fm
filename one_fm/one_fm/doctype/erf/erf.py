@@ -24,6 +24,8 @@ class ERF(Document):
 		self.set_onload('erf_approver', get_erf_approver(self.reason_for_request))
 
 	def validate(self):
+		if self.is_new():
+			self.status = "Open"
 		if not self.erf_requested_by:
 			self.erf_requested_by = frappe.session.user
 		if not self.erf_requested_by_name and self.erf_requested_by:
