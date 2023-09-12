@@ -34,6 +34,7 @@
   "site_allowance_additional_salary_component",
   "hr_notification_settings_section",
   "remind_employee_checkin_checkout",
+  "remind_open_leave_application",
   "column_break_17",
   "remind_supervisor_checkin_checkout",
   "attendance_settings_section",
@@ -268,12 +269,19 @@
    "label": "Site Allowance Additional Salary Component",
    "options": "Salary Component",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Notifiy Leave Approver about the open Leave.",
+   "fieldname": "remind_open_leave_application",
+   "fieldtype": "Check",
+   "label": "Remind Open Leave Application"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-03-20 18:18:57.559006",
+ "modified": "2023-09-12 08:23:32.436829",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",

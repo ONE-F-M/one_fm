@@ -22,6 +22,7 @@ from operator import itemgetter
 from one_fm.processor import sendemail
 from one_fm.overrides.leave_application import close_leaves
 from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
+from one_fm.utils import production_domain
 
 def validate_employee_attendance(self):
 	employees_to_mark_attendance = []
@@ -836,26 +837,31 @@ def seperate_salary_slip(employees, start_date, end_date):
 	return parm
 
 def notify_for_open_leave_application():
-	open_leave_application = {}
-	leave_list = frappe.get_all("Leave Application", {"workflow_state":"Open"}, ['*'])
-	# sort INFO data by 'leave_approver' key.
-	leave_list = sorted(leave_list, key=itemgetter('leave_approver'))
+	try:
+ 		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_open_leave_application') and not production_domain():
+				return
 
-	#group leave application by leave approver
-	for key, value in groupby(leave_list, itemgetter('leave_approver')):
-		open_leave_application[key] = []
-		for k in value:
-			open_leave_application[key].append(k.name)
+		open_leave_application = {}
+		leave_list = frappe.get_all("Leave Application", {"workflow_state":"Open"}, ['*'])
+		# sort INFO data by 'leave_approver' key.
+		leave_list = sorted(leave_list, key=itemgetter('leave_approver'))
 
-	for ola in open_leave_application:
-		recipient = [ola]
-		message = "<p>The Following Leave Application needs to be approved. Kindly, take action before midnight. </p><ul>"
-		for leave_id in open_leave_application[ola]:
-			doc_url = frappe.utils.get_link_to_form("Leave Application", leave_id)
-			message += "<li>"+doc_url+"</li>"
-		message += "</ul>"
+		#group leave application by leave approver
+		for key, value in groupby(leave_list, itemgetter('leave_approver')):
+			open_leave_application[key] = []
+			for k in value:
+				open_leave_application[key].append(k.name)
+		for ola in open_leave_application:
+			recipient = [ola]
+			message = "<p>The Following Leave Application needs to be approved. Kindly, take action before midnight. </p><ul>"
+			for leave_id in open_leave_application[ola]:
+				doc_url = frappe.utils.get_link_to_form("Leave Application", leave_id)
+				message += "<li>"+doc_url+"</li>"
+			message += "</ul>"
 
-		sendemail(recipients= recipient , subject="Leave Application need approval", message=message)
+			sendemail(recipients= recipient , subject="Leave Application need approval", message=message)
+	except Exception as error:
+		frappe.log_error(str(error), 'Open Leave Application reminder failed')
 
 def close_all_leave_application():
 	leave_list = frappe.get_list("Leave Application", {"workflow_state":"Open"}, ['*'])
