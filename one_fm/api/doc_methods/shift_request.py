@@ -238,7 +238,9 @@ def fetch_approver(employee):
 				return approvers[0]
 			else:
 				project_manager = frappe.get_value("Project", project_alloc, ["account_manager"])
-				if project_manager:
+				if reports_to:
+					return frappe.get_value("Employee", reports_to, "user_id")
+				elif project_manager:
 					return frappe.get_value("Employee", project_manager, "user_id")
 
 def fill_to_date(doc, method):
