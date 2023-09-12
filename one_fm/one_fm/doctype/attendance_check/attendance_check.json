@@ -24,8 +24,11 @@
   "shift_supervisor_user",
   "justification_section",
   "attendance_status",
-  "column_break_wtkg0",
   "justification",
+  "column_break_wtkg0",
+  "mobile_brand",
+  "mobile_model",
+  "screenshot",
   "employee_checkin_details_section",
   "has_checkin_record",
   "has_checkout_record",
@@ -401,6 +404,28 @@
    "fieldname": "comment",
    "fieldtype": "Small Text",
    "label": "Comment"
+  },
+  {
+   "depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\"",
+   "fieldname": "mobile_brand",
+   "fieldtype": "Data",
+   "label": "Mobile Brand",
+   "mandatory_depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\""
+  },
+  {
+   "depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\"",
+   "fieldname": "mobile_model",
+   "fieldtype": "Data",
+   "label": "Mobile Model",
+   "mandatory_depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\""
+  },
+  {
+   "depends_on": "eval:[\"Invalid media content\",\"Out-of-site location\", \"User not assigned to shift\", \"Suddenly, the App stop working!\"].includes(doc.justification)",
+   "description": "Upload screenshot with the same issue!",
+   "fieldname": "screenshot",
+   "fieldtype": "Attach",
+   "label": "Screenshot",
+   "mandatory_depends_on": "eval:[\"Invalid media content\",\"Out-of-site location\", \"User not assigned to shift\", \"Suddenly, the App stop working!\"].includes(doc.justification)"
   }
  ],
  "in_create": 1,
@@ -411,7 +436,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2023-09-11 00:55:47.189349",
+ "modified": "2023-09-12 10:22:14.491633",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
