@@ -224,19 +224,22 @@ def fetch_approver(employee):
 		reports_to = employee_detail[0].reports_to
 		department = employee_detail[0].department
 		project_alloc = employee_detail[0].project
-		if reports_to:
-			return frappe.get_value("Employee", reports_to, "user_id")
-		elif project_alloc not in project_list and department == "Operations - ONEFM":
-			approvers = frappe.db.sql(
-				"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
-				(department),
-			)
-			approvers = [approver[0] for approver in approvers]
-			return approvers[0]
-		else:
-			project_manager = frappe.get_value("Project", project_alloc, ["account_manager"])
-			if project_manager:
-				return frappe.get_value("Employee", project_manager, "user_id")
+		shift_worker = employee_detail[0].shift_working
+		if shift_worker == 0:
+			if reports_to:
+				return frappe.get_value("Employee", reports_to, "user_id")
+		else: 
+			if project_alloc not in project_list and department == "Operations - ONEFM":
+				approvers = frappe.db.sql(
+					"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
+					(department),
+				)
+				approvers = [approver[0] for approver in approvers]
+				return approvers[0]
+			else:
+				project_manager = frappe.get_value("Project", project_alloc, ["account_manager"])
+				if project_manager:
+					return frappe.get_value("Employee", project_manager, "user_id")
 
 def fill_to_date(doc, method):
 	if not doc.to_date:
