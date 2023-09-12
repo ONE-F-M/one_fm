@@ -839,7 +839,7 @@ def seperate_salary_slip(employees, start_date, end_date):
 def notify_for_open_leave_application():
 	try:
  		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_open_leave_application') and not production_domain():
-				return
+			return
 
 		open_leave_application = {}
 		leave_list = frappe.get_all("Leave Application", {"workflow_state":"Open"}, ['*'])
