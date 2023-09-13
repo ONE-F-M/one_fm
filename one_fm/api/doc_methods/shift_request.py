@@ -102,24 +102,43 @@ def process_shift_assignemnt(doc, event=None):
 						'employee_availability':'Working',
 						'roster_type':doc.roster_type,
 						'department':doc.department,
-						'site':doc.site
+						'site':doc.site,
+						'reference_doctype': doc.doctype,
+						'reference_docname': doc.name
 					})
 					found_schedules_date.append(str(es.date))
 			# create new schedule
 			new_date_range = [i for i in schedule_date_range if not i in found_schedules_date]
 			if new_date_range:
 				for d in new_date_range:
-					schedule = frappe.new_doc("Employee Schedule")
-					schedule.employee = doc.employee
-					schedule.date = d
-					schedule.shift = doc.operations_shift
-					schedule.shift_type = doc.shift_type
-					schedule.operations_role = doc.operations_role
-					schedule.employee_availability = 'Working'
-					schedule.roster_type = doc.roster_type
-					schedule.department = doc.department
-					schedule.site = doc.site
-					schedule.save(ignore_permissions=True)
+					if frappe.db.exists("Employee Schedule", {
+						'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'}):
+						frappe.db.set_value('Employee Schedule', es.name, {
+							'shift':doc.operations_shift,
+							'shift_type':doc.shift_type,
+							'operations_role':doc.operations_role,
+							'employee_availability':'Working',
+							'roster_type':doc.roster_type,
+							'department':doc.department,
+							'site':doc.site,
+							'reference_doctype': doc.doctype,
+							'reference_docname': doc.name
+							}
+						)
+					else:
+						schedule = frappe.new_doc("Employee Schedule")
+						schedule.employee = doc.employee
+						schedule.date = d
+						schedule.shift = doc.operations_shift
+						schedule.shift_type = doc.shift_type
+						schedule.operations_role = doc.operations_role
+						schedule.employee_availability = 'Working'
+						schedule.roster_type = doc.roster_type
+						schedule.department = doc.department
+						schedule.site = doc.site
+						schedule.reference_doctype = doc.doctype
+						schedule.reference_docname = doc.name
+						schedule.save(ignore_permissions=True)
 			
 
 
