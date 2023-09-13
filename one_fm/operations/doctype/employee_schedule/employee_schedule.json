@@ -25,7 +25,11 @@
   "attendance_status_section",
   "attended_status",
   "roster_type",
-  "day_off_ot"
+  "day_off_ot",
+  "section_break_kt56n",
+  "reference_doctype",
+  "column_break_d2pic",
+  "reference_docname"
  ],
  "fields": [
   {
@@ -163,10 +167,32 @@
    "fieldtype": "Datetime",
    "label": "End Datetime",
    "read_only": 1
+  },
+  {
+   "fieldname": "section_break_kt56n",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Doctype",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_docname",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Docname",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_d2pic",
+   "fieldtype": "Column Break"
   }
  ],
  "links": [],
- "modified": "2023-09-07 18:32:02.416144",
+ "modified": "2023-09-13 15:56:11.432867",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",
