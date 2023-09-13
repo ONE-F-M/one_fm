@@ -1031,6 +1031,7 @@ def process_overtime_shift(roster, date, time):
 				#check if the given shift has ended
 				# Set status inactive before creating new shift
 				if str(shift_end_time) == str(time):
+					frappe.set_value("Shift Assignment", shift_assignment.name,'end_date', date)
 					frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
 					create_overtime_shift_assignment(schedule, date)
 			else:
