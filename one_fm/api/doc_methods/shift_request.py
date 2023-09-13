@@ -111,8 +111,8 @@ def process_shift_assignemnt(doc, event=None):
 			new_date_range = [i for i in schedule_date_range if not i in found_schedules_date]
 			if new_date_range:
 				for d in new_date_range:
-					if frappe.db.exists("Employee Schedule", {
-						'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'}):
+					if frappe.db.exists("Employee Schedule", {'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'}):
+						es = frappe.get_doc("Employee Schedule", {'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'})
 						frappe.db.set_value('Employee Schedule', es.name, {
 							'shift':doc.operations_shift,
 							'shift_type':doc.shift_type,
