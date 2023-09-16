@@ -1,6 +1,5 @@
 frappe.ui.form.on('Stock Entry', {
   refresh(frm) {
-    set_items_fields_read_only(frm);
     set_stock_entry_type_for_issuer(frm);
     set_store_keeper_warehouses(frm);
   },
@@ -31,13 +30,6 @@ frappe.ui.form.on('Stock Entry', {
     frm.trigger("project");
   }
 })
-
-var set_items_fields_read_only = function(frm) {
-  var fields = ['basic_rate', 'basic_amount', 'amount']
-  fields.forEach((field, i) => {
-    frappe.meta.get_docfield("Stock Entry Detail", field, frm.doc.name).read_only = 1;
-  });
-};
 
 frappe.ui.form.on('Stock Entry Detail', {
   items_add(doc, cdt, cdn) {
