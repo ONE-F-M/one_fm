@@ -21,12 +21,17 @@ frappe.ui.form.on('Stock Entry', {
 		});
 	},
   stock_entry_type(frm){
+    frm.set_value('from_warehouse', '');
+    frm.set_value('to_warehouse', '');
     set_store_keeper_warehouses(frm);
   },
   project(frm) {
     auto_fill_project(frm);
   },
   from_warehouse(frm){
+    frm.trigger("project");
+  },
+  to_warehouse(frm){
     frm.trigger("project");
   }
 })
@@ -51,7 +56,7 @@ var set_store_keeper_warehouses = function(frm) {
     method: 'one_fm.overrides.stock_entry.get_store_keeper_warehouses',
     callback: function(r) {
       var warehouse_field = "from_warehouse";
-      if(frm.doc.stock_entry_type == "Material Reciept"){
+      if(frm.doc.stock_entry_type == "Material Receipt"){
         warehouse_field = "to_warehouse";
       }
       frm.set_df_property(warehouse_field, "read_only", false);
@@ -75,11 +80,25 @@ var set_warehouse_filter = function(frm, warehouse_field, warehouses) {
           }
       };
   });
+
+  // Set item line warehouse field
+  var items_warehouse_field = "s_warehouse";
+  if(warehouse_field == "to_warehouse"){
+    items_warehouse_field = "t_warehouse";
+  }
+  // Set warehouse filter in items line
+  frm.set_query(items_warehouse_field, "items", function() {
+      return {
+          filters:{
+              name: ['in', warehouses]
+          }
+      };
+  });
 }
 
 var set_stock_entry_type_for_issuer = function(frm) {
   if(frappe.user.has_role('Stock Issuer')){
-    set_stock_entry_type_filter(frm, ["Material Issue"]);
+    set_stock_entry_type_filter(frm, ["Material Issue", "Material Receipt"]);
     frappe.db.get_value("Stock Entry Type", {"purpose": "Material Issue"}, "name").then(res=>{
       if(res.message && res.message.name){
         frm.set_value('stock_entry_type', res.message.name);
