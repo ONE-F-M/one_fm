@@ -1060,8 +1060,8 @@ def create_overtime_shift_assignment(schedule, date):
 			if schedule.doctype == 'Shift Request':
 				shift_assignment.shift_request = schedule.name
 				if schedule.check_in_site and schedule.check_out_site:
-					shift_assignment.check_in_site = check_in_site
-					shift_assignment.check_out_site = check_out_site
+					shift_assignment.check_in_site = shift_assignment.check_in_site
+					shift_assignment.check_out_site = shift_assignment.check_out_site
 			shift_assignment.submit()
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "Create Overtime Shift Assignment")
