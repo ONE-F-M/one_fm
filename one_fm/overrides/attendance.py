@@ -405,10 +405,8 @@ def mark_day_attendance():
     start_date, end_date = add_days(getdate(), -1), add_days(getdate(), -1)
     approve_open_shift_permission(str(start_date), str(end_date))
     approve_open_employee_checkin_issue(str(start_date), str(end_date))
-    mark_open_timesheet_and_create_attendance()
-    mark_daily_attendance(start_date=start_date, end_date=end_date)
-	# frappe.enqueue(mark_open_timesheet_and_create_attendance)
-	# frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
+    frappe.enqueue(mark_open_timesheet_and_create_attendance)
+    frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 
 def mark_night_attendance():
