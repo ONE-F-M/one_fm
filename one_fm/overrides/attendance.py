@@ -401,12 +401,14 @@ def mark_overtime_attendance(from_date, to_date):
 
 
 def mark_day_attendance():
-	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
-	start_date, end_date = add_days(getdate(), -1), add_days(getdate(), -1)
-	approve_open_shift_permission(str(start_date), str(end_date))
-	approve_open_employee_checkin_issue(str(start_date), str(end_date))
-	frappe.enqueue(mark_open_timesheet_and_create_attendance)
-	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
+    from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
+    start_date, end_date = add_days(getdate(), -1), add_days(getdate(), -1)
+    approve_open_shift_permission(str(start_date), str(end_date))
+    approve_open_employee_checkin_issue(str(start_date), str(end_date))
+    mark_open_timesheet_and_create_attendance()
+    mark_daily_attendance(start_date=start_date, end_date=end_date)
+	# frappe.enqueue(mark_open_timesheet_and_create_attendance)
+	# frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 
 def mark_night_attendance():
@@ -589,7 +591,7 @@ def mark_daily_attendance(start_date, end_date):
             query_body+= f"""
             (
                 "{name}", "{naming_series}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
-                NULL, "{i.name}", "{i.shift}", "{i.site}", "{operations_shift_dict.get(i.shift).project}", "{start_date}", "{i.company}",
+                NULL, "{i.name}", "{i.operations_shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
                 "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
                 "{owner}", "{creation}", "{creation}", "No attendance record found"
             ),"""
@@ -699,7 +701,7 @@ def mark_daily_attendance(start_date, end_date):
             query_body+= f"""
             (
                 "{name}", "{naming_series}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
-                NULL, "{i.name}", "{i.shift}", "{i.site}", "{operations_shift_dict.get(i.shift).project}", "{start_date}", "{i.company}",
+                NULL, "{i.name}", "{i.operations_shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
                 "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
                 "{owner}", "{creation}", "{creation}", "No attendance record found"
             ),"""
