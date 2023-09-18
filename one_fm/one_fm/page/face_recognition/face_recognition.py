@@ -311,10 +311,10 @@ def check_existing():
 	
 	# get current and previous day date.
 	today = nowdate()
-	prev_date = ((datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).split(" ")[0]
+	# prev_date = ((datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).split(" ")[0]
 
-	#get Employee Schedule
-	last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee},order_by='creation desc',limit_page_length=1)
+	# #get Employee Schedule
+	# last_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee},order_by='creation desc',limit_page_length=1)
 
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
@@ -322,12 +322,10 @@ def check_existing():
 	shift = get_current_shift(employee)
 	#if employee schedule is linked with the previous Checkin doc
 
-	if shift and last_shift:
-		start_date = (shift.start_date).strftime("%Y-%m-%d")
-		if start_date == today or start_date == prev_date:
-			logs = frappe.db.sql("""
-				select log_type from `tabEmployee Checkin` where skip_auto_attendance=0 and employee="{employee}" and shift_assignment="{shift_assignment}"
-				""".format(employee=employee, shift_assignment=last_shift[0].name), as_dict=1)
+	if shift:
+		logs = frappe.db.sql("""
+			select log_type from `tabEmployee Checkin` where skip_auto_attendance=0 and employee="{employee}" and shift_assignment="{shift_assignment}"
+			""".format(employee=employee, shift_assignment=shift.name), as_dict=1)
 	else:
 		#get checkin log of today.
 		logs = frappe.db.sql("""
@@ -337,9 +335,11 @@ def check_existing():
 
 	#For Check IN
 	if not val or (val and val[-1] == "OUT"):
+		print("False")
 		return False
 	#For Check OUT
 	else:
+		print("True")
 		return True
 
 # def recognize_face(image):
