@@ -13,9 +13,9 @@ def rename_user(user_list):
     for user in user_list:
         old_user_id = str(user.user_id)
         new_user_id = old_user_id.split('@')[0] + "@one-fm.com"
-        print(old_user_id, new_user_id)
         if not frappe.db.exists("User", {'name':new_user_id}):
             frappe.rename_doc("User", old_user_id, new_user_id, merge=False, force=1)
+            frappe.db.set_value("Employee", user.employee_id, 'company_email', new_user_id)
         else:
             frappe.db.set_value("Employee", user.employee_id, 'user_id', new_user_id)
 
