@@ -35,7 +35,8 @@
   "column_break_bgvyf",
   "recommendation",
   "section_break_gkpu9",
-  "actions_taken"
+  "actions_taken",
+  "operation_manager"
  ],
  "fields": [
   {
@@ -233,12 +234,19 @@
    "fieldname": "section_break_gkpu9",
    "fieldtype": "Section Break",
    "hide_border": 1
+  },
+  {
+   "fieldname": "operation_manager",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Operation Manager",
+   "options": "User"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-09-16 22:15:09.052472",
+ "modified": "2023-09-18 14:01:26.331303",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Incident Form",
