@@ -335,11 +335,9 @@ def check_existing():
 
 	#For Check IN
 	if not val or (val and val[-1] == "OUT"):
-		print("False")
 		return False
 	#For Check OUT
 	else:
-		print("True")
 		return True
 
 # def recognize_face(image):
