@@ -319,7 +319,7 @@ class LeaveApplicationOverride(LeaveApplication):
 
                     frappe.db.commit()
         if self.status == "Approved":
-            if getdate(self.from_date) <= getdate() <= getdate(self.to_date) and self.leave_type == 'Annual Leave':
+            if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 emp = frappe.get_doc("Employee", self.employee)
                 emp.status = "Vacation"
                 emp.save()
@@ -350,8 +350,8 @@ def employee_leave_status():
     today = getdate()
     yesterday = add_to_date(today, days=-1)
 
-    start_leave = frappe.get_list("Leave Application", {'from_date': today,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
-    end_leave = frappe.get_list("Leave Application", {'to_date': yesterday,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
+    start_leave = frappe.get_list("Leave Application", {'from_date': today, 'status':'Approved'}, ['employee'])
+    end_leave = frappe.get_list("Leave Application", {'to_date': yesterday, 'status':'Approved'}, ['employee'])
 
     frappe.enqueue(process_change,start_leave=start_leave,end_leave=end_leave, is_async=True, queue="long")
 
