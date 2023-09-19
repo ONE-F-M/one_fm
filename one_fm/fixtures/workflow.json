@@ -6829,7 +6829,7 @@
   "doctype": "Workflow",
   "document_type": "Contracts",
   "is_active": 1,
-  "modified": "2023-09-18 08:12:03.204892",
+  "modified": "2023-09-19 14:22:36.625321",
   "name": "Contracts",
   "override_status": 0,
   "send_email_alert": 0,
@@ -7737,7 +7737,7 @@
   "doctype": "Workflow",
   "document_type": "Incident Form",
   "is_active": 1,
-  "modified": "2023-09-18 14:08:44.447803",
+  "modified": "2023-09-19 14:25:28.317095",
   "name": "Incident Form",
   "override_status": 0,
   "send_email_alert": 1,
@@ -7865,7 +7865,7 @@
     "parent": "Incident Form",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "skip_creation_of_workflow_action": 0,
+    "skip_creation_of_workflow_action": 1,
     "skip_multiple_action": 0,
     "state": "Approved"
    },
@@ -7880,7 +7880,7 @@
     "parent": "Incident Form",
     "parentfield": "transitions",
     "parenttype": "Workflow",
-    "skip_creation_of_workflow_action": 0,
+    "skip_creation_of_workflow_action": 1,
     "skip_multiple_action": 0,
     "state": "Rejected"
    }
