@@ -5,7 +5,7 @@ def execute():
                 left JOIN `tabEmployee` e on u.name=e.user_id
                 WHERE e.status in ('Active','Vacation')
                 AND e.user_id LIKE '%armor-services.com%'""", as_dict=1)
-    
+    print(user_list)
     rename_user(user_list)
     frappe.db.commit()
 
