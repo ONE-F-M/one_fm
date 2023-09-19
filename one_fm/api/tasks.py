@@ -1019,24 +1019,26 @@ def overtime_shift_assignment():
 								AND sr.workflow_state = 'Approved'""", as_dict=1)
 	if shift_request:
 		roster.extend(shift_request)
-	frappe.enqueue(process_overtime_shift,roster=roster, date=date, time=now_time, is_async=True, queue='long')
+	frappe.enqueue(process_overtime_shift, roster=roster, date=date, time=now_time, is_async=True, queue='long')
 
 def process_overtime_shift(roster, date, time):
 	for schedule in roster:
 		#Check for employee's shift assignment of the day, if he has any.
 		try:
-			shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
-			if shift_assignment:
-				shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
-				#check if the given shift has ended
-				# Set status inactive before creating new shift
-				if str(shift_end_time) == str(time):
-					frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
-					create_overtime_shift_assignment(schedule, date)
+			if frappe.db.exists("Shift Assignment", {"employee":schedule.employee, "start_date": date}):
+				shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
+				if shift_assignment:
+					shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
+					#check if the given shift has ended
+					# Set status inactive before creating new shift
+					if str(shift_end_time) == str(time):
+						frappe.set_value("Shift Assignment", shift_assignment.name,'end_date', date)
+						frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
+						create_overtime_shift_assignment(schedule, date)
 			else:
 				create_overtime_shift_assignment(schedule, date)
 		except Exception as e:
-			pass
+			frappe.log_error(frappe.get_traceback(), "Create Overtime Shift Assignment")
 
 def create_overtime_shift_assignment(schedule, date):
 	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":getdate(date), "status":"Active"}) and
@@ -1059,8 +1061,8 @@ def create_overtime_shift_assignment(schedule, date):
 			if schedule.doctype == 'Shift Request':
 				shift_assignment.shift_request = schedule.name
 				if schedule.check_in_site and schedule.check_out_site:
-					shift_assignment.check_in_site = check_in_site
-					shift_assignment.check_out_site = check_out_site
+					shift_assignment.check_in_site = shift_assignment.check_in_site
+					shift_assignment.check_out_site = shift_assignment.check_out_site
 			shift_assignment.submit()
 		except Exception:
 			frappe.log_error(frappe.get_traceback(), "Create Overtime Shift Assignment")

@@ -185,6 +185,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         else:
             return response("Success", 400, None, "No response from face recognition server")
     except Exception as error:
+        frappe.log_error(frappe.get_traceback(), 'Verify Checkin')
         return response("Internal Server Error", 500, None, error)
 
 
@@ -302,4 +303,5 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         return response("Success", 200, result)
 
     except Exception as error:
+        frappe.log_error(frappe.get_traceback(), 'Checkin -  Get site location')
         return response("Internal Server Error", 500, None, error)
