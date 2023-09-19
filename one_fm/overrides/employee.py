@@ -54,6 +54,8 @@ class EmployeeOverride(EmployeeMaster):
 
     def before_save(self):
         self.assign_role_profile_based_on_designation()
+        if self.under_company_residency=='1':
+            self.employee_id = get_new_employee_id(self.employee_id)
 
     def after_insert(self):
         employee_after_insert(self, method=None)
@@ -120,3 +122,11 @@ class EmployeeOverride(EmployeeMaster):
                     '{getdate()}' BETWEEN from_date AND to_date
                 """, as_dict=1):
                 frappe.throw(f"Status cannot be 'Vacation' when no Leave Application exists for {self.employee_name} today {getdate()}.")
+
+@frappe.whitelist()
+def get_new_employee_id(employee_id):
+    length = len(employee_id)
+    num = employee_id[length-3] #get the third-last character.
+    if num == '0':
+        new_emp_id = employee_id[:length-3] + '1' + employee_id[length-2:]
+        return new_emp_id
