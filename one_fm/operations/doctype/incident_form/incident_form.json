@@ -1,0 +1,305 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2023-09-16 15:31:53.081194",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "incident_type",
+  "date",
+  "column_break_zlt8z",
+  "company",
+  "time",
+  "amended_from",
+  "shift_details_section",
+  "shift",
+  "site",
+  "column_break_xtiz2",
+  "project",
+  "location",
+  "reporter_details_section",
+  "reporter",
+  "reporter_name",
+  "reporter_department",
+  "column_break_3nhk3",
+  "reporter_designation",
+  "reporter_user",
+  "reporter_mobile",
+  "employee_reference_section",
+  "employees",
+  "incident_details_section",
+  "incident_description",
+  "column_break_bgvyf",
+  "recommendation",
+  "section_break_gkpu9",
+  "actions_taken",
+  "operation_manager"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "INF-.YYYY.-"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "default": "Now",
+   "fieldname": "time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Incident Form",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "incident_type",
+   "fieldtype": "Select",
+   "label": "Incident Type",
+   "options": "\nSafety\nSecurity",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_zlt8z",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Link",
+   "label": "Shift",
+   "options": "Operations Shift",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "shift.site",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "fetch_from": "shift.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_standard_filter": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "shift.site_location",
+   "fieldname": "location",
+   "fieldtype": "Link",
+   "label": "Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "column_break_xtiz2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "is_new()",
+   "fieldname": "shift_details_section",
+   "fieldtype": "Section Break",
+   "label": "Shift Details"
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "is_new()",
+   "fieldname": "reporter_details_section",
+   "fieldtype": "Section Break",
+   "label": "Reporter Details"
+  },
+  {
+   "fieldname": "reporter",
+   "fieldtype": "Link",
+   "label": "Reporter",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "reporter.employee_name",
+   "fieldname": "reporter_name",
+   "fieldtype": "Data",
+   "label": "Reporter Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "reporter.department",
+   "fieldname": "reporter_department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "reporter.designation",
+   "fieldname": "reporter_designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "reporter.user_id",
+   "fieldname": "reporter_user",
+   "fieldtype": "Link",
+   "label": "User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3nhk3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "reporter.cell_number",
+   "fieldname": "reporter_mobile",
+   "fieldtype": "Data",
+   "label": "Mobile",
+   "options": "Phone",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "collapsible_depends_on": "is_new()",
+   "fieldname": "employee_reference_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Reference"
+  },
+  {
+   "fieldname": "employees",
+   "fieldtype": "Table",
+   "label": "Employees",
+   "options": "Incident Form Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "incident_details_section",
+   "fieldtype": "Section Break",
+   "hide_border": 1,
+   "label": "Incident Details"
+  },
+  {
+   "fieldname": "incident_description",
+   "fieldtype": "Small Text",
+   "label": "Incident Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "actions_taken",
+   "fieldtype": "Table",
+   "label": "Actions Taken",
+   "options": "Incident Action"
+  },
+  {
+   "fieldname": "recommendation",
+   "fieldtype": "Small Text",
+   "label": "Recommendation",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_bgvyf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_gkpu9",
+   "fieldtype": "Section Break",
+   "hide_border": 1
+  },
+  {
+   "fieldname": "operation_manager",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Operation Manager",
+   "options": "User"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2023-09-19 14:21:00.629246",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Incident Form",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Site Supervisor",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

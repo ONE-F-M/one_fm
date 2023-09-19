@@ -197,7 +197,14 @@ standard_queries = {
 
 doc_events = {
 	"Stock Entry": {
-		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty",
+		"validate": [
+			"one_fm.overrides.stock_entry.alert_item_multiple_entry",
+			"one_fm.api.doc_methods.stock_entry.validate_stock_entry_items"
+		],
+		"on_submit": [
+			"one_fm.api.doc_methods.stock_entry.validate_budget",
+			"one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty"
+		],
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_and_requested_qty"
 	},
 	"Purchase Order": {
@@ -371,7 +378,7 @@ doc_events = {
         "validate": [
             "one_fm.api.doc_methods.shift_request.validate",
         ]
-        
+
 	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
@@ -381,10 +388,6 @@ doc_events = {
 	},
 	"Email Queue": {
 		"after_insert":"one_fm.events.email_queue.after_insert",
-	},
-	"Stock Entry": {
-		"validate": "one_fm.api.doc_methods.stock_entry.validate_stock_entry_items",
-		"on_submit": "one_fm.api.doc_methods.stock_entry.validate_budget"
 	},
 	"Communication": {
 		"after_insert": "one_fm.one_fm.task_assignment_from_email.assign_task_to_user_from_communication_content"
@@ -672,7 +675,7 @@ scheduler_events = {
 		"45 23 23 * *": [ #approve all the open leave application
 		'one_fm.api.doc_methods.payroll_entry.close_all_leave_application'
 		],
-		"30 00 * * *":[
+		"05 00 * * *":[
 			'one_fm.overrides.leave_application.employee_leave_status'
 		]
 	}

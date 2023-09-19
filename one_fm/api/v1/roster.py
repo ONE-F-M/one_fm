@@ -584,7 +584,7 @@ def get_current_shift(employee):
         if len(shift) == 1:
             cur_shift = shift[0]
         elif len(shift) == 2: #2 shift colliding
-            if has_checkout(shift[0], employee, date): #
+            if has_checkout(shift[0], employee): #
                 cur_shift = shift[1]
             else:
                 cur_shift = shift[0]
@@ -593,15 +593,13 @@ def get_current_shift(employee):
         return cur_shift
             
     except Exception as e:
-        print(frappe.get_traceback())
         return frappe.utils.response.report_error(e.http_status_code)
 
-def has_checkout(shift, employee, date):
+def has_checkout(shift, employee):
     checkin = frappe.db.sql("""SELECT * FROM `tabEmployee Checkin` empChkin
-							WHERE date(empChkin.time)='{date}'
-                            AND shift_assignment = '{shift}'
+							WHERE shift_assignment = '{shift}'
                             AND employee ='{employee}'
-                            AND log_type = 'OUT'""".format(date=cstr(date), shift=shift.name, employee=employee), as_dict=1)
+                            AND log_type = 'OUT'""".format(shift=shift.name, employee=employee), as_dict=1)
     if checkin:
         return True
     else:

@@ -43,6 +43,9 @@ frappe.ui.form.on('Employee', {
         } else {
             frm.set_df_property("reports_to", "reqd", 1);
         }
+	},
+	under_company_residency: function(frm){
+		change_employee_id(frm);
 	}
 
 });
@@ -81,7 +84,22 @@ let toggle_required = (frm, state) => {
 	});
 }
 
-
+var change_employee_id = function(frm) {
+	if(frm.doc.under_company_residency == 1){
+		frappe.call({
+			method: 'one_fm.overrides.employee.get_new_employee_id',
+			args: {
+			employee_id:frm.doc.employee_id,
+			},
+			callback: function (r) {
+				if (r && r.message) {
+					frm.set_value('employee_id',  r.message)
+				}
+				
+			}
+		});
+	}
+}
 // Hide un-needed fields
 const hideFields = frm => {
     $("[data-doctype='Employee Checkin']").hide();
@@ -143,4 +161,9 @@ const TransferToNonShift = frm => {
             'site': '',
             'holiday_list': '',
         })
+}
+
+function setCharAt(str,index,chr) {
+    if(index > str.length-1) return str;
+    return str.substring(0,index) + chr + str.substring(index+1);
 }
