@@ -12,6 +12,7 @@
   {
    "fieldname": "project",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Project",
    "options": "Project"
   }
@@ -19,7 +20,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-09-12 14:59:30.231495",
+ "modified": "2023-09-18 08:24:42.458552",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Project List",
