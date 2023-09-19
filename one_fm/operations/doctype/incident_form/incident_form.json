@@ -202,7 +202,8 @@
    "fieldname": "employees",
    "fieldtype": "Table",
    "label": "Employees",
-   "options": "Incident Form Employee"
+   "options": "Incident Form Employee",
+   "reqd": 1
   },
   {
    "fieldname": "incident_details_section",
@@ -213,7 +214,8 @@
   {
    "fieldname": "incident_description",
    "fieldtype": "Small Text",
-   "label": "Incident Description"
+   "label": "Incident Description",
+   "reqd": 1
   },
   {
    "fieldname": "actions_taken",
@@ -224,7 +226,8 @@
   {
    "fieldname": "recommendation",
    "fieldtype": "Small Text",
-   "label": "Recommendation"
+   "label": "Recommendation",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_bgvyf",
@@ -246,7 +249,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-09-18 14:01:26.331303",
+ "modified": "2023-09-19 14:21:00.629246",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Incident Form",
