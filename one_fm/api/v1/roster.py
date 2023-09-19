@@ -595,7 +595,7 @@ def get_current_shift(employee):
     except Exception as e:
         return frappe.utils.response.report_error(e.http_status_code)
 
-def has_checkout(shift, employee, date):
+def has_checkout(shift, employee):
     checkin = frappe.db.sql("""SELECT * FROM `tabEmployee Checkin` empChkin
 							WHERE shift_assignment = '{shift}'
                             AND employee ='{employee}'
