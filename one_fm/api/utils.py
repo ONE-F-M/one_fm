@@ -26,6 +26,13 @@ def response(code, title, msg, data=None):
 def get_reports_to_employee_name(employee):
     reports_to = frappe.db.get_value('Employee', employee, 'reports_to')
     if reports_to: return reports_to
+    
+    if not reports_to:
+        site = frappe.db.get_value('Employee', employee, 'site')
+        if site:
+            reports_to = frappe.db.get_value('Operations Site', site, 'account_supervisor')
+            return reports_to
+
     if not reports_to:
         shift = frappe.db.get_list("Shift Assignment", filters={'employee':employee},
             fields=['shift'], order_by="start_date DESC", page_length=1)
@@ -34,11 +41,7 @@ def get_reports_to_employee_name(employee):
             return reports_to
 
     # when no shift supervisor or reports to in employee use site and project
-    if not reports_to:
-        site = frappe.db.get_value('Employee', employee, 'site')
-        if site:
-            reports_to = frappe.db.get_value('Operations Site', site, 'account_supervisor')
-            return reports_to
+    
 
     # if no site supervisor, get project manager 
     if not reports_to:
