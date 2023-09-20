@@ -168,6 +168,8 @@ class OnboardEmployee(Document):
 						employee.date_of_joining = getdate(date_of_joining)
 						self.date_of_joining = getdate(date_of_joining)
 					employee.company_email = self.company_email
+					if self.company_email:
+						employee.prefered_contact_email = 'Company Email'
 					employee.employment_type = self.employment_type
 					employee.attendance_by_timesheet = self.attendance_by_timesheet
 					employee.auto_attendance = self.auto_attendance

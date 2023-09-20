@@ -7,20 +7,39 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "general_settings_section",
+  "default_operation_manager",
+  "section_break_kzb5e",
   "exclude_project"
  ],
  "fields": [
   {
+   "description": "Projects exclude for fetching the Operation Manager as Shift Request Approver.",
    "fieldname": "exclude_project",
    "fieldtype": "Table",
    "label": "Exclude Project",
    "options": "Project List"
+  },
+  {
+   "fieldname": "general_settings_section",
+   "fieldtype": "Section Break",
+   "label": "General Settings"
+  },
+  {
+   "fieldname": "default_operation_manager",
+   "fieldtype": "Link",
+   "label": "Default Operation Manager",
+   "options": "User"
+  },
+  {
+   "fieldname": "section_break_kzb5e",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-09-12 15:01:27.190386",
+ "modified": "2023-09-18 11:36:25.783875",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Operation Settings",

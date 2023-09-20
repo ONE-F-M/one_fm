@@ -79,7 +79,20 @@ class LeaveApplicationOverride(LeaveApplication):
 
     def on_submit(self):
         self.close_todo()
+        self.close_shifts()
         return super().on_submit()
+
+
+    def close_shifts(self):
+        #delete the shifts if a leave application is approved
+        try:
+            if self.status == "Approved":
+                query =f"""DELETE from `tabShift Assignment` where employee = '{self.employee}' and start_date BETWEEN '{self.from_date}' and '{self.to_date}' and docstatus = 1 """
+                frappe.db.sql(query)
+                frappe.msgprint(msg = f"Shift Assignments for {self.employee_name} between {self.from_date} and {self.to_date} have been deleted",alert=1)
+        except:
+            frappe.log_error(frappe.get_traceback(),"Error Closing Shifts")
+        
 
     def notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
@@ -306,7 +319,7 @@ class LeaveApplicationOverride(LeaveApplication):
 
                     frappe.db.commit()
         if self.status == "Approved":
-            if getdate(self.from_date) <= getdate() <= getdate(self.to_date) and self.leave_type == 'Annual Leave':
+            if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 emp = frappe.get_doc("Employee", self.employee)
                 emp.status = "Vacation"
                 emp.save()
@@ -335,12 +348,15 @@ def employee_leave_status():
     The method is called as a cron job before  assigning shift.
     """
     today = getdate()
-    tomorrow = add_to_date(today, days=1)
+    yesterday = add_to_date(today, days=-1)
 
-    start_leave = frappe.get_list("Leave Application", {'from_date': tomorrow,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
-    end_leave = frappe.get_list("Leave Application", {'to_date': today,'leave_type':'Annual Leave', 'status':'Approved'}, ['employee'])
+    start_leave = frappe.get_list("Leave Application", {'from_date': today, 'status':'Approved'}, ['employee'])
+    end_leave = frappe.get_list("Leave Application", {'to_date': yesterday, 'status':'Approved'}, ['employee'])
 
     frappe.enqueue(process_change,start_leave=start_leave,end_leave=end_leave, is_async=True, queue="long")
+
+
+
 
 def process_change(start_leave, end_leave):
     change_employee_status(start_leave, "Vacation")
