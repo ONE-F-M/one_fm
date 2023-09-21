@@ -27,7 +27,7 @@ var set_issue_type_filter = frm => {
 
 let pivotal_tracker_button = frm => {
   // add a link in dashboard section if issue has been added to pivotal tracker
-  if(['Open', 'Replied', 'On Hold'].includes(frm.doc.status) && frappe.user.has_role('System Manager') && !frm.doc.pivotal_tracker){
+  if(['Open', 'Replied', 'On Hold'].includes(frm.doc.status) && (frappe.user.has_role('System Manager') || frappe.user.has_role('Issue User')) && !frm.doc.pivotal_tracker){
     frm.add_custom_button('Pivotal Tracker', () => {
       frappe.confirm('Are you sure you create Pivotal Tracker story?',
         () => {
