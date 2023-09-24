@@ -118,7 +118,7 @@ class AttendanceCheck(Document):
 			)
 
 def create_attendance_check(attendance_date=None):
-	if not production_domain():
+	if production_domain():
 		attendance_checkin_found = []
 		if not attendance_date:
 			attendance_date = add_days(today(), -1)
