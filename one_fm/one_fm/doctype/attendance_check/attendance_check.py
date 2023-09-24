@@ -99,7 +99,7 @@ class AttendanceCheck(Document):
 	def check_on_leave_record(self):
 		leave_record = frappe.db.sql(
 			"""
-			select leave_type, half_day, half_day_date
+			select leave_type
 			from `tabLeave Application`
 			where employee = %s
 				and %s between from_date and to_date
