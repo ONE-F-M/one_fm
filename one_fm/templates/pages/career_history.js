@@ -210,9 +210,32 @@ career_history = Class.extend({
 				<input type="text" class="form-control starting_job_title_company_${company_no}" placeholder="Enter the Job Title"/>
 			</div>
 
-		  	<div class="mt-5 promotion_section_${company_no}" style="width: 100%">
+			<div class="mt-5 promotion_section_${company_no}" style="width: 100%">
 
-		  	</div>
+			</div>
+
+			<div class="col-lg-12 col-md-12 mb-3">
+				<label>Tell us about contact person details from ${stringifyNumber(company_no)} company you worked!</label>
+			</div>
+			<div class="col-lg-6 col-md-6 mb-3">
+				<label>Full name</label>
+				<input type="text" class="form-control first_contact_name_${company_no}" placeholder="Full Name"/>
+			</div>
+			<div class="col-lg-6 col-md-6 mb-3">
+				<label>Email</label>
+				<input type="text" class="form-control first_contact_email_${company_no}" placeholder="Email"/>
+			</div>
+			<div class="col-lg-6 col-md-6 mb-3">
+				<label>Designation</label>
+				<input type="text" class="form-control first_contact_designation_${company_no}" placeholder="Designation"/>
+			</div>
+			<div class="col-lg-6 col-md-6 mb-3">
+				<label>Phone number with country code</label>
+				<input type="text" class="form-control first_contact_phone_${company_no}" placeholder="Phone number with country code"/>
+			</div>
+			<div class="col-lg-12 col-md-12 mb-3 add_more_contact_${company_no}">
+				<button class="btn btn-dark float-left btn_add_more_contact_${company_no}" type="button">{{ _(" + Add more contact person") }}</button>
+			</div>
 
 			<div class="col-lg-12 col-md-12 mb-3">
 				<label>Are you still working for the same company?</label>
@@ -223,11 +246,37 @@ career_history = Class.extend({
 				</select>
 			</div>
 	</div>
+
   </div>`;
     $(".main_section").append(company_section_html);
     TOTAL_COMPANY_NO += 1;
     this.set_promotion_section_html(company_no, 1);
     this.on_change_still_working_on_same_company(company_no);
+    this.on_click_add_more_contact_person(company_no);
+  },
+  on_click_add_more_contact_person: function(company_no) {
+    var company_contact_html = `
+      <div class="col-lg-6 col-md-6 mb-3">
+        <label>What is name of the second contact person?</label>
+        <input type="text" class="form-control second_contact_name_${company_no}" placeholder="Full Name"/>
+      </div>
+      <div class="col-lg-6 col-md-6 mb-3">
+        <label>What is the Email of the second contact person?</label>
+        <input type="text" class="form-control second_contact_email_${company_no}" placeholder="Email"/>
+      </div>
+      <div class="col-lg-6 col-md-6 mb-3">
+        <label>What is designation of the second contact person?</label>
+        <input type="text" class="form-control second_contact_designation_${company_no}" placeholder="Designation"/>
+      </div>
+      <div class="col-lg-6 col-md-6 mb-3">
+        <label>What is the phone number of the second contact person?</label>
+        <input type="text" class="form-control second_contact_phone_${company_no}" placeholder="Phone number with country code"/>
+      </div>
+    `
+    $(`.btn_add_more_contact_${company_no}`).click(function(){
+      $(`.btn_add_more_contact_${company_no}`).fadeOut();
+      $(company_contact_html).insertAfter(`.add_more_contact_${company_no}`);
+    });
   },
   next_career_history: function(company_no) {
     // Move to Next Career History
@@ -303,6 +352,16 @@ career_history = Class.extend({
       career_history['responsibility_two'] = $(`.responisbility_2_company${company_no}`).val();
       career_history['responsibility_three'] = $(`.responisbility_3_company${company_no}`).val();
       career_history['job_title'] = $(`.starting_job_title_company_${company_no}`).val();
+
+      career_history['first_contact_name'] = $(`.first_contact_name_${company_no}`).val();
+      career_history['first_contact_email'] = $(`.first_contact_email_${company_no}`).val();
+      career_history['first_contact_phone'] = $(`.first_contact_phone_${company_no}`).val();
+      career_history['first_contact_designation'] = $(`.first_contact_designation_${company_no}`).val();
+
+      career_history['second_contact_name'] = $(`.second_contact_name_${company_no}`).val();
+      career_history['second_contact_email'] = $(`.second_contact_email_${company_no}`).val();
+      career_history['second_contact_phone'] = $(`.second_contact_phone_${company_no}`).val();
+      career_history['second_contact_designation'] = $(`.second_contact_designation_${company_no}`).val();
 
       /*
         Still working in same company
