@@ -523,7 +523,7 @@ def set_user_fullname(user):
 
 @frappe.whitelist()
 def recruitment_manager_check(user: str):
-	role_profile = frappe.db.get_value('Role Profile', {"role_profile": "Recruitment Manager"}, "name")
+	role_profile = frappe.db.get_value('Role Profile', {"role_profile":["in",['Recruitment Team Leader',"Recruitment Manager"]]}, "name")
 	if role_profile:
 		return frappe.db.exists('User', {"role_profile_name": role_profile, "name": user})
 	return False
