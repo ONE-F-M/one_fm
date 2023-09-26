@@ -537,7 +537,7 @@ def mark_daily_attendance(start_date, end_date):
                     "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
                     "{owner}", "{creation}", "{creation}", "{i.description}"
                 ),"""
-            basic_attendance_employees.append(i.name)
+            basic_attendance_employees.append(i.employee)
     # create BASIC DAY OFF
     for i in basic_employee_schedules:
         if i.employee_availability == "Day Off" and getdate(start_date) == getdate(i.date):
