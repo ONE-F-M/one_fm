@@ -9,10 +9,20 @@
   "company_name",
   "job_title",
   "monthly_salary_in_kwd",
-  "country_of_employment",
   "column_break_4",
+  "country_of_employment",
   "start_date",
   "end_date",
+  "company_contact_details_section",
+  "first_contact_name",
+  "first_contact_email",
+  "first_contact_phone",
+  "first_contact_designation",
+  "column_break_jc0pn",
+  "second_contact_name",
+  "second_contact_email",
+  "second_contact_phone",
+  "second_contact_designation",
   "responsibilities_and_accomplishment_section",
   "responsibility_one",
   "responsibility_two",
@@ -44,6 +54,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "collapsible": 1,
    "fieldname": "responsibilities_and_accomplishment_section",
    "fieldtype": "Section Break",
    "label": "Responsibilities and Accomplishment"
@@ -133,16 +144,67 @@
   {
    "fieldname": "column_break_20",
    "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "company_contact_details_section",
+   "fieldtype": "Section Break",
+   "label": "Company Contact Details"
+  },
+  {
+   "fieldname": "first_contact_name",
+   "fieldtype": "Data",
+   "label": "First Contact Person Name"
+  },
+  {
+   "fieldname": "first_contact_email",
+   "fieldtype": "Data",
+   "label": "First Contact Email"
+  },
+  {
+   "fieldname": "first_contact_phone",
+   "fieldtype": "Data",
+   "label": "First Contact Phone"
+  },
+  {
+   "fieldname": "first_contact_designation",
+   "fieldtype": "Data",
+   "label": "First Contact Designation"
+  },
+  {
+   "fieldname": "column_break_jc0pn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "second_contact_name",
+   "fieldtype": "Data",
+   "label": "Second Contact Person Name"
+  },
+  {
+   "fieldname": "second_contact_email",
+   "fieldtype": "Data",
+   "label": "Second Contact Email"
+  },
+  {
+   "fieldname": "second_contact_phone",
+   "fieldtype": "Data",
+   "label": "Second Contact Phone"
+  },
+  {
+   "fieldname": "second_contact_designation",
+   "fieldtype": "Data",
+   "label": "Second Contact Designation"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2021-12-12 22:25:31.752203",
+ "modified": "2023-09-25 19:39:45.019662",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History Company",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }
