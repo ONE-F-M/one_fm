@@ -459,13 +459,21 @@ def mark_daily_attendance(start_date, end_date):
     print(basic_attendance_employees)
     basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
     
-        # Mark Holiday Attendance
+    # Mark Holiday Attendance
     holiday_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
                             INNER JOIN `tabHoliday` h ON h.parent = hl.name
                             WHERE e.holiday_list = hl.name 
                             AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}'
                             AND h.weekly_off=0""", as_dict=1)
     holiday_attendance_employee = [i for i in holiday_employee if not i.employee in basic_attendance_employees]
+
+    # Mark Holiday Attendance
+    day_off_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
+                            INNER JOIN `tabHoliday` h ON h.parent = hl.name
+                            WHERE e.holiday_list = hl.name 
+                            AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}'
+                            AND h.weekly_off=1""", as_dict=1)
+    day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
 
     on_hold_employees = frappe.db.sql(f""" SELECT es.* from `tabEmployee Schedule` es
                             INNER JOIN `tabOperations Role` o ON es.operations_role = o.name
@@ -538,6 +546,7 @@ def mark_daily_attendance(start_date, end_date):
                     "{owner}", "{creation}", "{creation}", "{i.description}"
                 ),"""
             basic_attendance_employees.append(i.employee)
+
     # create BASIC DAY OFF
     for i in basic_employee_schedules:
         if i.employee_availability == "Day Off" and getdate(start_date) == getdate(i.date):
@@ -550,6 +559,22 @@ def mark_daily_attendance(start_date, end_date):
                 "{owner}", "{creation}", "{creation}", "Employee Schedule - {i.name}"
             ),"""
             basic_attendance_employees.append(i.employee)
+    
+    # Day Off from Holiday list.
+    day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
+    if day_off_attendance_employee:
+        for i in day_off_attendance_employee:
+            name = f"HR-ATT_{start_date}_{i.name}_Basic"
+            emp = employees_dict.get(i.name)
+            query_body+= f"""
+                (
+                    "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Day Off", '', NULL,
+                    NULL, "", "", "", "", "{start_date}", "{emp.company}",
+                    "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
+                    "{owner}", "{creation}", "{creation}", "{i.description}"
+                ),"""
+            basic_attendance_employees.append(i.employee)
+
     # update employees schedule and assignment list
     basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees or i.employee_availability=='Working']
     basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
