@@ -470,8 +470,8 @@ def task_assign_to_recruiter(doc, recruiter_list, task_list):
 				add_assignment({
 					'doctype': 'Task',
 					'name': task.name,
-					'assign_to': recruiter,
-					'description': _('')
+					'assign_to': [recruiter],
+					'description': _('Please review the ERF')
 				})
 			except DuplicateToDoError:
 				frappe.message_log.pop()
