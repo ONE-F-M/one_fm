@@ -4,7 +4,7 @@
 from frappe.model.document import Document
 import frappe
 from frappe import _
-from frappe.utils import nowdate, add_to_date, cstr, add_days, today
+from frappe.utils import nowdate, add_to_date, cstr, add_days, today, format_date
 from one_fm.utils import production_domain
 
 class AttendanceCheck(Document):
@@ -24,6 +24,8 @@ class AttendanceCheck(Document):
 
 
 	def on_submit(self):
+		if self.attendance_status == "On Leave":
+			self.check_on_leave_record()
 		self.validate_justification_and_attendance_status()
 		self.mark_attendance()
 
@@ -93,6 +95,27 @@ class AttendanceCheck(Document):
 	def validate_justification_and_attendance_status(self):
 		if not self.attendance_status:
 			frappe.throw(_('To Approve the record set Attendance Status'))
+
+	def check_on_leave_record(self):
+		leave_record = frappe.db.sql(
+			"""
+			select leave_type
+			from `tabLeave Application`
+			where employee = %s
+				and %s between from_date and to_date
+				and status = 'Approved'
+				and docstatus = 1
+		""",
+			(self.employee, self.date),
+			as_dict=True,
+		)
+		
+		if not leave_record:
+			frappe.throw(
+				_("No leave record found for employee {0} on {1}").format(
+					self.employee, format_date(self.date)
+				)
+			)
 
 def create_attendance_check(attendance_date=None):
 	if production_domain():
