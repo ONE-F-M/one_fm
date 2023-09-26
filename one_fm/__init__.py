@@ -45,9 +45,12 @@ from hrms.hr.doctype.interview_feedback.interview_feedback import InterviewFeedb
 from hrms.hr.doctype.shift_assignment.shift_assignment import ShiftAssignment
 from one_fm.overrides.shift_assignment import ShiftAssignmentOverride
 from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import LeavePolicyAssignment
+from erpnext.controllers.stock_controller import StockController
+from one_fm.overrides.stock_controller import make_batches_with_supplier_batch_id
 
 __version__ = '14.5.5'
 
+StockController.make_batches = make_batches_with_supplier_batch_id
 Interview.validate_overlap = validate_interview_overlap
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_
 PaymentEntry.get_valid_reference_doctypes = get_valid_reference_doctypes_
