@@ -39,7 +39,6 @@ def get_reports_to_employee_name(employee):
             return frappe.db.get_value("Operations Shift", shift[0].shift, 'supervisor')
 
     # when no shift supervisor or reports to in employee use site and project
-    
 
     # if no site supervisor, get project manager 
     if not reports_to:
