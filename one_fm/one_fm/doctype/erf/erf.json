@@ -23,6 +23,7 @@
   "erf_code",
   "erf_initiation",
   "job_title",
+  "interview_round",
   "erf_finalized",
   "work_section",
   "day_off_category",
@@ -79,7 +80,6 @@
   "performance_profile",
   "grade",
   "hiring_method",
-  "interview_round",
   "column_break_56",
   "recruiter_assigned",
   "recruiter_assigned_name",
@@ -934,8 +934,7 @@
    "fetch_from": "employment_type.attendance_by_timesheet",
    "fieldname": "attendance_by_timesheet",
    "fieldtype": "Check",
-   "label": "Attendance by Timesheet",
-   "read_only": 1
+   "label": "Attendance by Timesheet"
   },
   {
    "collapsible": 1,
@@ -982,7 +981,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-09-09 14:09:39.953837",
+ "modified": "2023-09-25 01:31:26.664567",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

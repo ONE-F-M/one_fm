@@ -244,7 +244,7 @@ def cancel_shift_assignment_of_request(shift_request):
 			employee_name = schedule.employee_name,
 			department = schedule.department,
 			operations_role = schedule.operations_role,
-			shift = schedule.shift,
+			shift = schedule.operations_shift,
 			site = schedule.site,
 			project = schedule.project,
 			shift_type = schedule.shift_type,
