@@ -1041,7 +1041,7 @@ def process_overtime_shift(roster, date, time):
 			frappe.log_error(frappe.get_traceback(), "Create Overtime Shift Assignment")
 
 def create_overtime_shift_assignment(schedule, date):
-	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, "start_date":getdate(date), "status":"Active"}) and
+	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, 'docstatus':1, "start_date":getdate(date), "status":"Active"}) and
 			frappe.db.exists('Employee', {'employee':schedule.employee, 'status':'Active'})):
 		try:
 			shift_assignment = frappe.new_doc("Shift Assignment")
@@ -1050,7 +1050,7 @@ def create_overtime_shift_assignment(schedule, date):
 			shift_assignment.employee_name = schedule.employee_name
 			shift_assignment.department = schedule.department
 			shift_assignment.operations_role = schedule.operations_role
-			shift_assignment.shift = schedule.shift
+			shift_assignment.shift = schedule.shift if schedule.get('doctype') !="Shift Request" else schedule.get('operations_shift')
 			shift_assignment.site = schedule.site
 			shift_assignment.project = schedule.project
 			shift_assignment.shift_type = schedule.shift_type
