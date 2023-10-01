@@ -52,7 +52,23 @@ var back_cid_filepath = "";
 var front_passport_filepath = "";
 var back_passport_filepath = "";
 
+function getMagicLinkFromString(string) {
+  const startIndex = string.indexOf("magic_link=");
+  if (startIndex === -1) {
+    return "";
+  } else {
+    return string.substring(startIndex + "magic_link=".length);
+  }
+}
+
 window.onload = () => {
+
+  const current_url = window.location.href;
+  if (current_url.includes('/applicant_docs')) {
+    const magic_link = getMagicLinkFromString(current_url);
+    window.location.href = `/magic_link/?magic_link=${magic_link}`;
+  }
+
   $(".required_indicator").hide();
   $("#tooltiptext1").hide();
   $("#tooltiptext2").hide();
@@ -172,8 +188,8 @@ function fetchNationality(code){
 function send_request(method, data, token, type){
 
     // for (var pair of data.entries()) {
-    //   console.log(pair[0]); 
-    // } 
+    //   console.log(pair[0]);
+    // }
     // frappe.throw('');
     var request = new XMLHttpRequest();
     // POST to httpbin which returns the POST data as JSON
@@ -370,7 +386,7 @@ function function_set_passport_data(data){
         $('#Birth_Place').val(sentenceCase(doc.birth_place))
       }
     })
-    
+
   }
   if (doc.given_names.length){
     let fields = ["#First_Name", "#Second_Name", "#Third_Name"]
@@ -387,7 +403,7 @@ function function_set_passport_data(data){
   get_uploaded_data(data);
   $("#cover-spin").hide();
   $('#finalForm').css('display', 'block');
-  
+
 }
 
 function input_data(Data, key1, key2){
@@ -406,7 +422,7 @@ function input_data(Data, key1, key2){
 
 function Submit(){
   var applicant_details = get_details_from_form();
-  
+
   if($('#First_Name').attr("data")){
     // frappe.freeze();
 		frappe.confirm('Are you sure you want to Submit?, On Submit the link will be expired!',
@@ -489,7 +505,7 @@ function Save(){
       } else{
         frappe.msgprint(frappe._("Please, you need to fill some details before you can save "));
       }
-  
+
 }
 
 function get_details_from_form() {
@@ -518,11 +534,11 @@ function get_details_from_form() {
   applicant_details['one_fm_passport_expire'] = $('#Passport_Date_of_Expiry').val();
   applicant_details['one_fm_passport_holder_of'] = $('#Passport_Place_of_Issue').val();
   applicant_details['one_fm_country_code'] = $('#Country_Code').val();
-  
+
 
   applicant_details['applicant_doc']={}
 
-  
+
   get_filepath(applicant_details['applicant_doc'],front_cid_filepath, "Civil ID Front" )
   get_filepath(applicant_details['applicant_doc'],back_cid_filepath, "Civil ID Back" )
   //get_filepath(applicant_details['applicant_doc'],front_passport_filepath, "Passport Front" )

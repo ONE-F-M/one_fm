@@ -99,6 +99,7 @@ def process_shift_assignemnt(doc, event=None):
 						'shift':doc.operations_shift,
 						'shift_type':doc.shift_type,
 						'operations_role':doc.operations_role,
+						'post_abbrv': doc.post_abbrv,
 						'employee_availability':'Working',
 						'roster_type':doc.roster_type,
 						'department':doc.department,
@@ -117,6 +118,7 @@ def process_shift_assignemnt(doc, event=None):
 							'shift':doc.operations_shift,
 							'shift_type':doc.shift_type,
 							'operations_role':doc.operations_role,
+							'post_abbrv': doc.post_abbrv,
 							'employee_availability':'Working',
 							'roster_type':doc.roster_type,
 							'department':doc.department,
@@ -132,6 +134,7 @@ def process_shift_assignemnt(doc, event=None):
 						schedule.shift = doc.operations_shift
 						schedule.shift_type = doc.shift_type
 						schedule.operations_role = doc.operations_role
+						schedule.post_abbrv = doc.post_abbrv
 						schedule.employee_availability = 'Working'
 						schedule.roster_type = doc.roster_type
 						schedule.department = doc.department
@@ -139,8 +142,6 @@ def process_shift_assignemnt(doc, event=None):
 						schedule.reference_doctype = doc.doctype
 						schedule.reference_docname = doc.name
 						schedule.save(ignore_permissions=True)
-			
-
 
 def update_shift_assignment(shift_assignemnt,shift_request):
 	assignment_doc = frappe.get_doc('Shift Assignment', shift_assignemnt)
