@@ -260,10 +260,11 @@
                                             {% if job_applicant.one_fm_educational_qualification != None %}
                                                 <option value="{{ job_applicant.one_fm_educational_qualification}}" selected>{{ job_applicant.one_fm_educational_qualification }}</option>
                                             {% endif %}>
-                                    </div>
                                         </select>
-                                        <label id="OtherQualification" style="display:none;">Enter your Education.> <input></input>
-                                        </label>
+                                    </div>
+                                    <div class="form-group col-md-6" id="O_Qualification">
+                                            <label class="form-label" for="OtherQualification">Other Qualification</label>
+                                            <input class="form-control input" type="text" id="OtherQualification" name="OtherQualification" {% if job_applicant.other_education != None %} value="{{ job_applicant.other_education }}" {% endif %}>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label  for="University">University / School *</label>

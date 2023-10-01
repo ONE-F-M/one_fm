@@ -95,14 +95,16 @@ function extract_image(){
   extract(document.getElementById("Passport_Front").files[0],"Passport","front_passport")
   extract(document.getElementById("Passport_Back").files[0],"Passport","back_passport")
 }
+
 function otherEducation(){
-  if(document.getElementById("Nationality").value == 'Others'){
-    $('.OtherQualification').show();
+  if(document.getElementById("EducationalQualification").value == 'Others'){
+    $('.O_Qualification').show();
   }
   else{
-    $('.OtherQualification').hide();
+    $('.O_Qualification').hide();
   }
 }
+
 function upload_image(file, file_url, filename, token){
   var xhr = new XMLHttpRequest();
   let form_data = new FormData();
