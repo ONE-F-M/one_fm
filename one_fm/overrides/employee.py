@@ -20,7 +20,7 @@ class EmployeeOverride(EmployeeMaster):
         self.validate_status()
         self.validate_reports_to()
         self.validate_preferred_email()
-        self.update_user_doc()
+        update_user_doc(self)
         if self.job_applicant:
             self.validate_onboarding_process()
 
@@ -32,25 +32,25 @@ class EmployeeOverride(EmployeeMaster):
                 remove_user_permission(
                     "Employee", self.name, existing_user_id)
         employee_validate_attendance_by_timesheet(self, method=None)
-        self.validate_leaves()
+        validate_leaves(self)
     
-    def update_user_doc(self):
-        if not self.is_new():
-            old_self = self.get_doc_before_save().status
-            if self.status in ['Left','Absconding','Court Case'] and self.status not in [old_self] and self.user_id:
-                user_doc = frappe.get_doc('User',self.user_id)
-                if user_doc.enabled == 1:
-                    user_doc.enabled = 0
-                    user_doc.save(ignore_permissions=1)
-                    frappe.msgprint(f"User {self.user_id} disabled",alert=1)
-                    frappe.db.commit()
-            elif self.status == "Active" and self.status not in [old_self] and self.user_id:
-                user_doc = frappe.get_doc('User',self.user_id)
-                if user_doc.enabled == 0:
-                    user_doc.enabled = 1
-                    user_doc.save(ignore_permissions=1)
-                    frappe.msgprint(f"User {self.user_id} enabled",alert=1)
-                    frappe.db.commit()
+def update_user_doc(doc):
+    if not doc.is_new():
+        old_self = doc.get_doc_before_save().status
+        if doc.status in ['Left','Absconding','Court Case'] and doc.status not in [old_self] and doc.user_id:
+            user_doc = frappe.get_doc('User',doc.user_id)
+            if user_doc.enabled == 1:
+                user_doc.enabled = 0
+                user_doc.save(ignore_permissions=1)
+                frappe.msgprint(f"User {doc.user_id} disabled",alert=1)
+                frappe.db.commit()
+        elif doc.status == "Active" and doc.status not in [old_self] and doc.user_id:
+            user_doc = frappe.get_doc('User',doc.user_id)
+            if user_doc.enabled == 0:
+                user_doc.enabled = 1
+                user_doc.save(ignore_permissions=1)
+                frappe.msgprint(f"User {doc.user_id} enabled",alert=1)
+                frappe.db.commit()
 
     def before_save(self):
         self.assign_role_profile_based_on_designation()
@@ -114,14 +114,14 @@ class EmployeeOverride(EmployeeMaster):
                 Employee Schedule cleared for {doc.employee_name} starting from {add_days(doc.relieving_date, 1)} 
             """)
 
-    def validate_leaves(self):
-        if self.status=='Vacation':
-            if not frappe.db.sql(f"""
-                    SELECT name FROM `tabLeave Application` WHERE employee="{self.name}" AND docstatus IN (0,1)
-                    AND
-                    '{getdate()}' BETWEEN from_date AND to_date
-                """, as_dict=1):
-                frappe.throw(f"Status cannot be 'Vacation' when no Leave Application exists for {self.employee_name} today {getdate()}.")
+def validate_leaves(self):
+    if self.status=='Vacation':
+        if not frappe.db.sql(f"""
+                SELECT name FROM `tabLeave Application` WHERE employee="{self.name}" AND docstatus IN (0,1)
+                AND
+                '{getdate()}' BETWEEN from_date AND to_date
+            """, as_dict=1):
+            frappe.throw(f"Status cannot be 'Vacation' when no Leave Application exists for {self.employee_name} today {getdate()}.")
 
 @frappe.whitelist()
 def get_new_employee_id(employee_id):
