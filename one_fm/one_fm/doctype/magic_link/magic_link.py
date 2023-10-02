@@ -116,5 +116,12 @@ def send_magic_link(doctype, name, link_for, recipients, url_prefix, msg, subjec
 		msg += "<br/><a class='btn btn-primary' href='{0}'>Magic Link</a>".format(magic_link_url)
 		frappe.enqueue(sendemail, sender=sender, recipients=recipients, content=msg, subject=subject, is_external_mail=True)
 		frappe.msgprint(("Email has been sent to the {0} with the magic link <br/><b><a href='{1}' target='_blank'>Click here to see the magic link for {2}</a></b>".format(doctype, magic_link_url, link_for)), alert=True)
-		frappe.db.set_value(doctype, name, 'magic_link', magic_link_url)
+		if link_for == "Career History":
+			frappe.db.set_value(doctype, name, 'career_history_ml', magic_link)
+			frappe.db.set_value(doctype, name, 'career_history_ml_url', magic_link_url)
+			frappe.db.set_value(doctype, name, 'career_history_ml_expired', False)
 
+		if link_for == "Job Applicant":
+			frappe.db.set_value(doctype, name, 'applicant_doc_ml', magic_link)
+			frappe.db.set_value(doctype, name, 'applicant_doc_ml_url', magic_link_url)
+			frappe.db.set_value(doctype, name, 'applicant_doc_ml_expired', False)
