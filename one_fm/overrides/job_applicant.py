@@ -8,6 +8,27 @@ class JobApplicantOverride(JobApplicant):
 	def autoname(self):
 		pass
 
+	def validate(self):
+		super(JobApplicantOverride, self).validate()
+		self.set_interview_round_from_erf()
+
+	def set_interview_round_from_erf(self):
+		if self.one_fm_erf and not self.interview_rounds:
+			# Get interview rounds from ERF
+			erf_interview_rounds = frappe.get_all(
+				'ERF Interview Round',
+				fields = ['interview_round', 'interview_type', 'remarks'],
+			 	filters = {'parenttype': 'ERF', 'parent': self.one_fm_erf},
+				order_by="idx"
+			)
+
+			# Set interview rounds from ERF
+			for erf_interview_round in erf_interview_rounds:
+				interview_round = self.append('interview_rounds')
+				interview_round.interview_round = erf_interview_round.interview_round
+				interview_round.interview_type = erf_interview_round.interview_type
+				interview_round.remarks = erf_interview_round.remarks
+
 
 	@frappe.whitelist()
 	def send_applicant_doc_magic_link(self):
