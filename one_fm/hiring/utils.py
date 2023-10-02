@@ -213,7 +213,7 @@ def create_employee_user(doc, email):
         r_prof =  None
         if doc.designation:
             r_prof = frappe.db.get_value("Designation", doc.designation, "role_profile")
-                  
+
         user = frappe.get_doc({
             'doctype':'User',
             'email': email,
@@ -711,7 +711,7 @@ def get_interview_skill_and_question_set(interview_round, interviewer=False, int
 		return question, skill, False
 
 @frappe.whitelist()
-def create_interview_and_feedback(data, interview_round, interviewer, job_applicant, method='save', feedback_exists=False, interview_name=False):
+def create_interview_and_feedback(data, interview_round, interviewer, job_applicant, method='save', feedback_exists=False, interview_name=False, child_name=False):
 	if not feedback_exists:
 		interview = frappe.new_doc('Interview')
 		interview.interview_round = interview_round
@@ -731,6 +731,8 @@ def create_interview_and_feedback(data, interview_round, interviewer, job_applic
 			interview = frappe.get_doc('Interview', interview_name)
 			interview.status = data.result
 			interview.submit()
+		if child_name:
+			frappe.db.set_value('Job Applicant Interview Round', child_name, 'interview', interview_name)
 
 @frappe.whitelist()
 def create_interview_feedback(data, interview_name, interviewer, job_applicant, method='save', feedback_exists=False):
