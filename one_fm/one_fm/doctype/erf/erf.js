@@ -19,7 +19,7 @@ frappe.ui.form.on('ERF', {
 				}
 			};
 		});
-		frm.set_query('interview_round', function () {
+		frm.set_query('interview_round', 'interview_rounds', function () {
 			return {
 				filters: {
 					'designation': frm.doc.designation
@@ -271,6 +271,11 @@ frappe.ui.form.on('ERF', {
 	provide_salary_advance: function(frm) {
 		manage_provide_salary_advance(frm);
 	},
+	hiring_method: function(frm) {
+		if(frm.doc.hiring_method == 'Bulk Recruitment' && frm.doc.number_of_interview_rounds < 1) {
+			frm.set_value('number_of_interview_rounds', 1);
+		}
+	}
 });
 
 
