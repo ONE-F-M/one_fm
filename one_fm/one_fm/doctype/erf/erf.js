@@ -272,7 +272,7 @@ frappe.ui.form.on('ERF', {
 		manage_provide_salary_advance(frm);
 	},
 	hiring_method: function(frm) {
-		if(frm.doc.hiring_method == 'Bulk Recruitment' && frm.doc.number_of_interview_rounds < 1) {
+		if(frm.doc.hiring_method == 'Bulk Recruitment' && !frm.doc.number_of_interview_rounds) {
 			frm.set_value('number_of_interview_rounds', 1);
 		}
 	}
