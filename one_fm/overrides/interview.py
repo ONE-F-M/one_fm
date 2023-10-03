@@ -37,3 +37,9 @@ def validate_interview_overlap(self):
             get_link_to_form("Interview", overlaps[0][0])
         )
         frappe.throw(overlapping_details, title=_("Overlap"))
+
+def update_interview_rounds_in_job_applicant(doc, method):
+    if doc.interview_round_child_ref:
+        frappe.db.set_value('Job Applicant Interview Round', doc.interview_round_child_ref, 'interview', doc.name)
+    if not doc.interview_details:
+        doc.append('interview_details', {'interviewer': frappe.session.user})

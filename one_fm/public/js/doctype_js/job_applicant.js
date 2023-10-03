@@ -769,7 +769,11 @@ frappe.ui.form.on('Job Applicant Interview Round', {
 			})
 		}
 		else{
-			frm.events.submit_interview_and_feedback(frm, args, child.name)
+			frappe.new_doc("Interview", {
+				"job_applicant": frm.doc.name,
+				"interview_round": child.interview_round,
+				"interview_round_child_ref": child.name
+			});
 		}
   }
 });
