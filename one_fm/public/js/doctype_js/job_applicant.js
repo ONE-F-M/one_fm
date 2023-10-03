@@ -37,22 +37,21 @@ frappe.ui.form.on('Job Applicant', {
 		set_mandatory_fields_for_current_employment(frm);
 
 		if(frm.doc.one_fm_hiring_method == 'Bulk Recruitment' && frm.doc.interview_round){
+			args = {interview_round: frm.doc.interview_round}
 			if(frm.doc.bulk_interview){
 				frappe.db.get_value('Interview', frm.doc.bulk_interview, 'docstatus', function(r) {
-					var interview_exists = true;
-					if(r.docstatus == 2){
-						interview_exists = false;
-					}
-					if(r.docstatus != 1){
+					if(r.docstatus == 0){
+						args['interviewer'] = frappe.session.user
+						args['interview_name'] = frm.doc.bulk_interview
 						frm.add_custom_button(__('Submit Interview and Feedback'), function() {
-							frm.events.submit_interview_and_feedback(frm, interview_exists)
+							frm.events.submit_interview_and_feedback(frm, args)
 						});
 					}
 				})
 			}
 			else{
 				frm.add_custom_button(__('Submit Interview and Feedback'), function() {
-					frm.events.submit_interview_and_feedback(frm, false)
+					frm.events.submit_interview_and_feedback(frm, args)
 				});
 			}
 		}
@@ -579,18 +578,16 @@ frappe.ui.form.on('Job Applicant', {
 		);
 
 	},
-	submit_interview_and_feedback: function(frm, interview_exists) {
-		var args = {interview_round: frm.doc.interview_round}
-		if(frm.doc.bulk_interview && interview_exists){
-			args['interviewer'] = frappe.session.user
-			args['interview_name'] = frm.doc.bulk_interview
-		}
+	submit_interview_and_feedback: function(frm, args, child_name='') {
 		frappe.call({
 			method: 'one_fm.hiring.utils.get_interview_skill_and_question_set',
 			args: args,
 			callback: function (r) {
 				if(r.message){
-					frm.events.show_custom_feedback_dialog(frm, r.message[1], r.message[0], r.message[2]);
+					args['child_name'] = child_name;
+					args['feedback_exists'] = r.message[2] ? r.message[2] : '';
+					args['job_applicant'] = frm.doc.name;
+					frm.events.show_custom_feedback_dialog(frm, args, r.message[1], r.message[0]);
 				}
 				frm.refresh();
 			},
@@ -598,7 +595,7 @@ frappe.ui.form.on('Job Applicant', {
 			freeze_message: __("Fecth interview details..!")
 		});
 	},
-	show_custom_feedback_dialog: function (frm, data, question_data, feedback_exists) {
+	show_custom_feedback_dialog: function (frm, args, data, question_data) {
 		let fields = frm.events.get_fields_for_feedback();
 		fields.push({
 			fieldtype: 'Data',
@@ -659,12 +656,12 @@ frappe.ui.form.on('Job Applicant', {
 			minimizable: true,
 			primary_action_label: __("Save"),
 			primary_action: function(values) {
-				create_interview_feedback(frm, values, feedback_exists, 'save');
+				create_interview_feedback(frm, args, values, 'save');
 				d.hide();
 			},
 			secondary_action_label: __("Save and Submit"),
 			secondary_action: function() {
-				create_interview_feedback(frm, d.get_values(), feedback_exists, 'submit');
+				create_interview_feedback(frm, args, d.get_values(), 'submit');
 				d.hide();
 			}
 		});
@@ -726,18 +723,9 @@ frappe.ui.form.on('Job Applicant', {
 	},
 });
 
-var create_interview_feedback = function(frm, values, feedback_exists, save_submit) {
-	var args = {
-		data: values,
-		interview_round: frm.doc.interview_round,
-		interviewer: frappe.session.user,
-		job_applicant: frm.doc.name,
-		method: save_submit
-	}
-	if(feedback_exists){
-		args['feedback_exists'] = feedback_exists
-		args['interview_name'] = frm.doc.bulk_interview
-	}
+var create_interview_feedback = function(frm, args, values, save_submit) {
+	args['data'] = values,
+	args['method'] = save_submit
 	frappe.call({
 		method: 'one_fm.hiring.utils.create_interview_and_feedback',
 		args: args
@@ -760,6 +748,35 @@ var copy_to_clipboard = function(link_for, magic_link) {
 		indicator:'green'
 	});
 };
+
+frappe.ui.form.on('Job Applicant Interview Round', {
+	action: function(frm, cdt, cdn){
+		var child = locals[cdt][cdn];
+		var args = {
+			interview_round: child.interview_round,
+			interviewer: frappe.session.user
+		}
+		if(child.interview){
+			frappe.db.get_value('Interview', child.interview, 'docstatus', function(r) {
+				if(r.docstatus == 0){
+					args['interview_name'] = child.interview
+					frm.events.submit_interview_and_feedback(frm, args, child.name)
+				}
+				else if(r.docstatus == 1 ){
+					// Route to the interview form
+					frappe.set_route('Form', 'Interview', child.interview);
+				}
+			})
+		}
+		else{
+			frappe.new_doc("Interview", {
+				"job_applicant": frm.doc.name,
+				"interview_round": child.interview_round,
+				"interview_round_child_ref": child.name
+			});
+		}
+  }
+});
 
 var set_grd_field_properties = function(frm){
 	// Hide GRD section if transferable not selected yet

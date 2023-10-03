@@ -43,6 +43,14 @@ class ERF(Document):
 		# self.calculate_benefit_cost_to_company()
 		# self.calculate_total_cost_to_company()
 		self.validate_type_of_travel()
+		self.validate_interview_rounds()
+
+	def validate_interview_rounds(self):
+		if self.number_of_interview_rounds and self.number_of_interview_rounds != len(self.interview_rounds):
+			frappe.throw(_("Number of rows of the 'Intreview Rounds' must be equal to 'Number of Interview Rounds'!"))
+
+		if self.hiring_method == 'Bulk Recruitment' and self.number_of_interview_rounds < 1:
+			frappe.throw(_("Minimum one intreview rounds must be added for bulk recruitment!"))
 
 	def validate_attendance_by_timesheet(self):
 		if self.attendance_by_timesheet:
