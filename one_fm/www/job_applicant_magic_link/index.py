@@ -51,6 +51,8 @@ def get_magic_link():
                     result['countries'] = countries_dict
                     result['genders'] = [i.name for i in frappe.get_all("Gender")]
                     result['religions'] = [i.name for i in frappe.get_all("Religion")]
+                    educations = frappe.get_meta("Job Applicant").get_field("one_fm_educational_qualification").options
+                    result['education'] = list(educations.split("\n"))
                     result['attachments'] = []
                     if job_applicant.passport_data_page:
                         result['attachments'].append({
