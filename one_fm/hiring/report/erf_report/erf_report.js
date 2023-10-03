@@ -26,7 +26,7 @@ frappe.query_reports["ERF Report"] = {
 			"fieldname":"status",
 			"label": __("Status"),
 			"fieldtype": "Select",
-			"options": "\nDraft\nAccepted\nDeclined\nClosed",
+			"options": "\nOpen\nAccepted\nRejected\nHold\nCancelled\nClosed",
 			"default": 'Accepted'
 		}
 	]
