@@ -240,16 +240,11 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         date = cstr(getdate())
-        log = check_existing()
         shift = _get_current_shift(employee)
     
         site, location = None, None
         if shift:
-            log = _check_existing(shift)
-            if log == False:
-                log_type = "IN"
-            else:
-                log_type = "OUT"
+            log_type = _check_existing(shift)
             if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date], "status": "Approved"}):
                 check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date], "status": "Approved"},["check_in_site","check_out_site"])
                 if log_type == "IN":

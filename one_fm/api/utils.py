@@ -119,7 +119,7 @@ def _check_existing(shift):
 	
 	# #For Check IN
     if not checkin or checkin=='OUT':
-        return False
+        return "IN"
     #For Check OUT
     else:
-        return True
+        return "OUT"
