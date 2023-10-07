@@ -1,5 +1,7 @@
 import frappe, os, json, requests
-
+from datetime import datetime, timedelta
+from frappe.utils import now
+from frappe import _
 
 def validate_sick_leave_attachment(doc):
     """
@@ -63,3 +65,61 @@ def set_up_face_recognition_server_credentials():
     except Exception as e:
         frappe.log_error("Face Recognition Setup", frappe.get_traceback())
         return {'error':True, 'message':e}
+    
+@frappe.whitelist()
+def _get_current_shift(employee):
+    """
+        Get current shift employee should be logged into
+    """
+    sql = f"""
+        SELECT * FROM `tabShift Assignment`
+        WHERE employee="{employee}" AND status="Active" AND 
+        ('{now()}' BETWEEN start_datetime AND end_datetime)
+    """
+    shift = frappe.db.sql(sql, as_dict=1)
+    if shift: # shift was checked in between start and end time
+        return shift[0]
+    else: # we look right and left (right for next shift)
+        dt = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
+        curtime_plus_1 = dt + timedelta(hours=1)
+        sql = f"""
+            SELECT * FROM `tabShift Assignment`
+            WHERE employee="{employee}" AND status="Active" AND 
+            ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
+        """
+        shift = frappe.db.sql(sql, as_dict=1)
+        if shift: # shift was checked 1hr ahead
+            return shift[0]
+        else:
+            curtime_plus_1 = dt + timedelta(hours=-1)
+            sql = f"""
+                SELECT * FROM `tabShift Assignment`
+                WHERE employee="{employee}" AND status="Active" AND 
+                ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
+            """
+            shift = frappe.db.sql(sql, as_dict=1)
+            if shift: # shift was checked 1hr in the past
+                return shift[0]
+    return False
+
+@frappe.whitelist()
+def _check_existing(shift):
+    """API to determine the applicable Log type.
+    The api checks employee's last lcheckin log type. and determine what next log type needs to be
+    Returns:
+        True: The log in was "IN", so his next Log Type should be "OUT".
+        False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
+    """
+    checkin = frappe.db.get_value("Employee Checkin", {
+        'employee':shift.employee, 'shift_assignment':shift.name,
+        'shift_actual_start':shift.start_datetime,
+        'shift_actual_end':shift.end_datetime,
+        'roster_type':shift.roster_type
+    }, 'log_type')
+	
+	# #For Check IN
+    if not checkin or checkin=='OUT':
+        return False
+    #For Check OUT
+    else:
+        return True

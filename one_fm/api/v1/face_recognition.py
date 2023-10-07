@@ -6,6 +6,7 @@ from one_fm.api.v1.utils import response
 from frappe.utils import cstr, getdate,now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
+from one_fm.api.utils import _get_current_shift, _check_existing
 
 
 
@@ -235,20 +236,20 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
     try:
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
-        date = cstr(getdate())
-        log = check_existing()
-
-        if log == False:
-            log_type = "IN"
-        else:
-            log_type = "OUT"
-
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
-        shift = get_current_shift(employee)
+        date = cstr(getdate())
+        log = check_existing()
+        shift = _get_current_shift(employee)
+    
         site, location = None, None
         if shift:
+            log = _check_existing(shift)
+            if log == False:
+                log_type = "IN"
+            else:
+                log_type = "OUT"
             if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date], "status": "Approved"}):
                 check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date], "status": "Approved"},["check_in_site","check_out_site"])
                 if log_type == "IN":
