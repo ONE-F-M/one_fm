@@ -2,7 +2,8 @@
 # For license information, please see license.txt
 
 from frappe.model.document import Document
-import frappe
+import frappe,json
+from frappe.utils import get_url_to_form
 from frappe import _
 from frappe.utils import nowdate, add_to_date, cstr, add_days, today, format_date
 from one_fm.utils import production_domain
@@ -22,10 +23,21 @@ class AttendanceCheck(Document):
 		if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Suddenly, the App stop working!"]:
 			self.screenshot = ""
 
+	def check_day_off(self):
+		"""
+			Validates the existence of a shift request when the attendance status of the attendance
+			check is Day Off.
+		"""
+		pass
+
+
 
 	def on_submit(self):
+		
 		if self.attendance_status == "On Leave":
 			self.check_on_leave_record()
+		if self.attendance_status == "Day Off":
+			validate_day_off(self,convert=0)
 		self.validate_justification_and_attendance_status()
 		self.mark_attendance()
 
@@ -214,10 +226,10 @@ def create_attendance_check(attendance_date=None):
 
 		in_checkins_ot = frappe.db.sql(f"""
 			SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee,
-            employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance,
-            shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
-            roster_type, operations_site, project, company, operations_role, post_abbrv,
-            shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin`
+			employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance,
+			shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
+			roster_type, operations_site, project, company, operations_role, post_abbrv,
+			shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin`
 			WHERE
 			roster_type='Over-Time' AND log_type='IN' AND employee IN {checkin_ot_filter_tuple} AND
 			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59'
@@ -227,10 +239,10 @@ def create_attendance_check(attendance_date=None):
 
 		out_checkins_ot = frappe.db.sql(f"""
 			SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee,
-            employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance,
-            shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
-            roster_type, operations_site, project, company, operations_role, post_abbrv,
-            shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin`
+			employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance,
+			shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
+			roster_type, operations_site, project, company, operations_role, post_abbrv,
+			shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin`
 			WHERE
 			roster_type='Over-Time' AND log_type='OUT' AND employee IN {checkin_ot_filter_tuple} AND
 			shift_actual_start BETWEEN '{attendance_date} 00:00:00' AND '{attendance_date} 23:59:59'
@@ -553,6 +565,35 @@ def mark_missing_attendance(attendance_checkin_found):
 				att.submit()
 			frappe.db.set_value("Employee Checkin", i.checkin_record, "attendance", att.name)
 			if checkout_record:
-				frappe.db.set_value("Employee Checkin", i.checkout_record, "attendance", attendance.name)
+				frappe.db.set_value("Employee Checkin", i.checkout_record, "attendance", att.name)
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), 'Attendance Remark')
+   
+   
+   
+@frappe.whitelist()
+def validate_day_off(form,convert=1):
+	# Validates the existence of a shift request when the attendance status of the attendance
+	doc = json.loads(form) if convert else form
+	if doc.get('attendance_status') == "Day Off":
+		#check if shift request for that day exists
+		query = f"Select name from `tabShift Request` where docstatus = 1 and assign_day_off = 1 and  employee = '{doc.get('employee')}' and from_date <= '{doc.get('date')}'  and to_date >='{doc.get('date')}'"
+		submited_result_set = frappe.db.sql(query,as_dict=1)
+		if submited_result_set:
+			return 
+		else:
+			draft_query =  f"Select name,approver from `tabShift Request` where docstatus = 0 and assign_day_off = 1 and  employee = '{doc.get('employee')}' and from_date <= '{doc.get('date')}'  and to_date >='{doc.get('date')}'"
+			drafts_result_set = frappe.db.sql(draft_query,as_dict=1)
+			if drafts_result_set:
+				
+				
+				doc_url = get_url_to_form('Shift Request',drafts_result_set[0].get('name'))
+				
+				error_template = frappe.render_template('one_fm/templates/emails/attendance_check_alert.html',context={'current_user':frappe.session.user,'date':doc.date,'approver':drafts_result_set[0].get('approver'),'page_link':doc_url,'employee_name':doc.employee_name})
+				frappe.throw(error_template)
+			else:
+				#cancelled or shift request not created at all
+				frappe.throw(f"""
+				 <p>Please note that a Shift Request has not been created for <b>{doc.employee_name}</b> on <b>{doc.date}</b>. <a  class="btn btn-primary btn-sm" href="/app/shift-request/new" target="_blank">Click Here</a> to create one.</p>
+				 """)
+				
