@@ -23,14 +23,7 @@ class AttendanceCheck(Document):
 		if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Suddenly, the App stop working!"]:
 			self.screenshot = ""
 
-	def check_day_off(self):
-		"""
-			Validates the existence of a shift request when the attendance status of the attendance
-			check is Day Off.
-		"""
-		pass
-
-
+	
 
 	def on_submit(self):
 		
