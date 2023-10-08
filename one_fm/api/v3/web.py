@@ -1,14 +1,15 @@
-import base64, grpc, requests
+import base64, grpc, frappe, requests
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from frappe import _
 from frappe.utils import (
 	now_datetime, cstr, nowdate, cint , getdate, get_first_day, get_last_day
 )
 import numpy as np
-import datetime, random, json, frappe
+import datetime, random
 from json import JSONEncoder
 # import cv2, os
 # import face_recognition
+import json
 # from imutils import face_utils, paths
 from one_fm.api.doc_events import haversine
 from one_fm.api.v2.roster import get_current_shift
@@ -16,10 +17,8 @@ from one_fm.api.v2.utils import response
 from one_fm.api.v2.face_recognition import create_checkin_log
 from one_fm.api.utils import set_up_face_recognition_server_credentials
 
-with open(frappe.utils.get_bench_path()+'/sites'+frappe.utils.get_site_path()[1:]+'/site_config.json', 'r') as f:
-	site_conf = frappe._dict(json.loads(f.read()))
 # setup channel for face recognition
-face_recognition_service_url = site_conf.face_recognition_service_url
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channels = [
     grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
 ]
@@ -28,11 +27,8 @@ channels = [
 stubs = [
     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
 ]
-
-
-face_recognition_channel = site_conf.face_recognition_channel
-channel = face_recognition_channel.get('url')
-bucketpath = face_recognition_channel.get('bucket')
+channel = frappe.local.conf.face_recognition_channel.get('url')
+bucketpath = frappe.local.conf.face_recognition_channel.get('bucket')
 
 @frappe.whitelist()
 def enroll():
