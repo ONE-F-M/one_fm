@@ -6,6 +6,7 @@ from frappe import _
 from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days, now, today
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
 from one_fm.api.v1.roster import get_current_shift
+from one_fm.api.utils import _get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 from one_fm.api.doc_events import (
@@ -34,7 +35,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			try:			
 				existing_perm = None
 				checkin_time = get_datetime(self.time)
-				curr_shift = get_current_shift(self.employee)
+				curr_shift = _get_current_shift(self.employee)
 				if curr_shift:
 					curr_shift = curr_shift
 					start_date = curr_shift["start_date"].strftime("%Y-%m-%d")
@@ -88,7 +89,7 @@ def after_insert_background(self):
 	self = frappe.get_doc("Employee Checkin", self)
 	try:
 		# update shift if not exists
-		curr_shift = get_current_shift(self.employee)
+		curr_shift = _get_current_shift(self.employee)
 		if curr_shift:
 			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
 			# calculate entry

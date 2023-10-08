@@ -15,3 +15,5 @@ google-cloud-vision
 googlemaps
 firebase-admin
 redis-cli
+redis==4.6.0
+schedule
