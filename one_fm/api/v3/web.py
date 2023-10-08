@@ -18,8 +18,6 @@ from one_fm.api.v2.utils import response
 from one_fm.api.utils import set_up_face_recognition_server_credentials
 
 # setup channel for face recognition
-print(frappe.local.conf.face_recognition_service_url)
-frappe.log_error('conf', frappe.local.conf.face_recognition_service_url)
 # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 # channels = [
 #     grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
