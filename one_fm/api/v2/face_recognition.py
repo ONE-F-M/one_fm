@@ -13,7 +13,7 @@ from one_fm.utils import get_holiday_today
 
 
 # setup channel for face recognition
-face_recognition_service_url = frappe.conf.face_recognition_service_url
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channels = [
     grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
 ]
@@ -52,7 +52,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
     try:
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
         # Setup channel
-        face_recognition_enroll_service_url = frappe.conf.face_recognition_enroll_service_url
+        face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
         channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
         # setup stub
         stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
