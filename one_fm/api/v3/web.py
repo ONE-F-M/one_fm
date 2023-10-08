@@ -18,7 +18,6 @@ from one_fm.api.v2.face_recognition import create_checkin_log
 from one_fm.api.utils import set_up_face_recognition_server_credentials
 
 # setup channel for face recognition
-frappe.log_error(title='conf', message=frappe.local.conf)
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 channels = [
     grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
@@ -111,10 +110,10 @@ def verify():
 				frappe.log_error('Face Verify v3', res_data.message)
 			return res_data
 		# create_checkin_log()
-		frappe.enqueue(check_in, log_type=log_type, skip_attendance=skip_attendance, 
+		# frappe.enqueue(check_in, log_type=log_type, skip_attendance=skip_attendance, 
+			# latitude=latitude, longitude=longitude, source="Mobile Web")
+		check_in(log_type=log_type, skip_attendance=skip_attendance, 
 			latitude=latitude, longitude=longitude, source="Mobile Web")
-		# check_in(log_type=log_type, skip_attendance=skip_attendance, 
-		# 	latitude=latitude, longitude=longitude, source="Mobile Web")
 		# frappe.db.commit()
 		return {'error':False, 'message':f'Check {log_type} Successful'}  
 	except Exception as exc:
