@@ -110,16 +110,20 @@ def _check_existing(shift):
         True: The log in was "IN", so his next Log Type should be "OUT".
         False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
     """
-    checkin = frappe.db.get_value("Employee Checkin", {
+    checkin = frappe.db.get_list("Employee Checkin", filters{
         'employee':shift.employee, 'shift_assignment':shift.name,
         'shift_actual_start':shift.start_datetime,
         'shift_actual_end':shift.end_datetime,
         'roster_type':shift.roster_type
-    }, 'log_type')
-	
-	# #For Check IN
-    if not checkin or checkin=='OUT':
-        return "IN"
-    #For Check OUT
-    else:
-        return "OUT"
+        }, 
+        fields='log_type',
+        order_by="actual_time DESC"
+    )
+    if checkin:
+        # #For Check IN
+        if checkin[0].log_type=='OUT':
+            return "IN"
+        #For Check OUT
+        else:
+            return "OUT"
+    return "IN"
