@@ -11,9 +11,10 @@ from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, en
 from one_fm.api.doc_events import haversine
 from one_fm.utils import get_holiday_today
 
-
+with open(frappe.utils.get_bench_path()+'/sites'+frappe.utils.get_site_path()[1:]+'/site_config.json', 'r') as f:
+	site_conf = frappe._dict(json.loads(f.read()))
 # setup channel for face recognition
-face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+face_recognition_service_url = site_conf.face_recognition_service_url
 channels = [
     grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
 ]
@@ -52,7 +53,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
     try:
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
         # Setup channel
-        face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
+        face_recognition_enroll_service_url = site_conf.face_recognition_enroll_service_url
         channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
         # setup stub
         stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
