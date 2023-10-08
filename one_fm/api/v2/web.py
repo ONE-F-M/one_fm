@@ -226,7 +226,7 @@ def check_existing():
 	shift = _get_current_shift(employee)
 	if shift:
 		log_type = _check_existing(shift)
-		if log_type=='IN':
+		if log_type=='OUT':
 			return True
 		else:
 			return False
