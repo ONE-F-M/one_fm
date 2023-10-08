@@ -14,7 +14,7 @@ import json
 from one_fm.api.doc_events import haversine
 from one_fm.api.v2.roster import get_current_shift
 from one_fm.api.v2.utils import response
-from one_fm.api.v2.face_recognition import create_checkin_log
+# from one_fm.api.v2.face_recognition import create_checkin_log
 from one_fm.api.utils import set_up_face_recognition_server_credentials
 
 # setup channel for face recognition
