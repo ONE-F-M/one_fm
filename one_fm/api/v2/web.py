@@ -227,9 +227,9 @@ def check_existing():
 	if shift:
 		log_type = _check_existing(shift)
 		if log_type=='OUT':
-			return True
-		else:
 			return False
+		else:
+			return True
 	return frappe.throw("Shift not found.")
 
 
