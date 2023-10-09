@@ -1,7 +1,9 @@
 frappe.ui.form.on('Stock Entry', {
   refresh(frm) {
-    set_stock_entry_type_for_issuer(frm);
-    set_store_keeper_warehouses(frm);
+    if(frm.doc.docstatus < 1){
+      set_stock_entry_type_for_issuer(frm);
+      set_store_keeper_warehouses(frm);
+    }
   },
   onload(frm) {
     if(frappe.user.has_role('Stock Issuer')){
@@ -21,9 +23,11 @@ frappe.ui.form.on('Stock Entry', {
 		});
 	},
   stock_entry_type(frm){
-    frm.set_value('from_warehouse', '');
-    frm.set_value('to_warehouse', '');
-    set_store_keeper_warehouses(frm);
+    if(frm.doc.docstatus < 1){
+      frm.set_value('from_warehouse', '');
+      frm.set_value('to_warehouse', '');
+      set_store_keeper_warehouses(frm);
+    }
   },
   project(frm) {
     auto_fill_project(frm);
