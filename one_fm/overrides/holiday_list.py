@@ -8,6 +8,7 @@ import frappe
 from frappe import _, throw
 from frappe.model.document import Document
 from frappe.utils import cint, formatdate, getdate, today
+from erpnext.setup.doctype.holiday_list.holiday_list import *
 
 
 class OverlapError(frappe.ValidationError):
@@ -18,7 +19,19 @@ class HolidayListOverride(HolidayList):
 	def validate(self):
 		self.validate_days()
 		self.total_holidays = len(self.holidays)
-    
+	
+	def on_update(self):
+		# Get the previous version of the document
+		previous_doc = self.get_doc_before_save()
+		# Loop through the child table records
+		for idx, row in enumerate(self.holidays):
+			previous_row = previous_doc.get("holidays")[idx]
+			old_date = getdate(previous_row.holiday_date)
+			new_date = getdate(row.holiday_date)
+			# Compare the field in the current row with the previous version
+			if old_date != new_date:
+				self.validate_attendance(old_date, new_date)
+		
 
 	@frappe.whitelist()
 	def get_weekly_off_dates(self):
@@ -52,6 +65,11 @@ class HolidayListOverride(HolidayList):
 						formatdate(day.holiday_date)
 					)
 				)
+	def validate_attendance(self, old_date, new_date):
+		print(old_date, new_date)
+		attendance = frappe.get_list("Attendance",{'attendance_date':old_date, 'status':'Holiday'})
+		print(attendance)
+		
 
 	def get_weekly_off_date_list(self, start_date, end_date):
 		start_date, end_date = getdate(start_date), getdate(end_date)
