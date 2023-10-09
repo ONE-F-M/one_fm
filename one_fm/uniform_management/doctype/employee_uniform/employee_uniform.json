@@ -26,7 +26,8 @@
   "uniforms",
   "total_quantity",
   "pay_back_to_company",
-  "handover_form"
+  "handover_form",
+  "stock_entry"
  ],
  "fields": [
   {
@@ -165,14 +166,23 @@
    "fieldtype": "Int",
    "label": "Total Quantity",
    "read_only": 1
+  },
+  {
+   "fieldname": "stock_entry",
+   "fieldtype": "Link",
+   "label": "Stock Entry Reference",
+   "no_copy": 1,
+   "options": "Stock Entry",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-09-03 19:31:37.906993",
+ "modified": "2023-10-09 16:27:50.236905",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -193,5 +203,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
