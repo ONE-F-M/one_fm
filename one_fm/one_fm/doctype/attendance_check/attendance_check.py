@@ -102,7 +102,7 @@ class AttendanceCheck(Document):
 			frappe.throw(_('To Approve the record set Attendance Status'))
 
 	def check_on_leave_record(self):
-		leave_record = frappe.db.sql(
+		submited_leave_record = frappe.db.sql(
 			"""
 			select leave_type
 			from `tabLeave Application`
@@ -115,12 +115,29 @@ class AttendanceCheck(Document):
 			as_dict=True,
 		)
 		
-		if not leave_record:
-			frappe.throw(
-				_("No leave record found for employee {0} on {1}").format(
-					self.employee, format_date(self.date)
-				)
-			)
+		if  submited_leave_record:
+			return
+		else:
+			draft_leave_records = frappe.db.sql(
+							"""
+							select employee_name,leave_approver_name,name
+							from `tabLeave Application`
+							where employee = %s
+								and %s between from_date and to_date
+								and docstatus = 0
+							""",
+								(self.employee, self.date),
+								as_dict=True,
+							)
+			if draft_leave_records:
+				doc_url = get_url_to_form('Leave Application',draft_leave_records[0].get('name'))
+				error_template = frappe.render_template('one_fm/templates/emails/attendance_check_alert.html',context={'doctype':'Leave Application','current_user':frappe.session.user,'date':self.date,'approver':draft_leave_records[0].get('leave_approver_name'),'page_link':doc_url,'employee_name':self.employee_name})
+				frappe.throw(error_template)
+			else:
+				frappe.throw(f"""
+				 <p>Please note that a Leave Application has not been created for <b>{self.employee_name}</b>.<a  class="btn btn-primary btn-sm" href="/app/leave-application/new" target="_blank">Click Here</a> to create one.</p>
+				 """)
+				
 
 def create_attendance_check(attendance_date=None):
 	if production_domain():
@@ -581,8 +598,8 @@ def validate_day_off(form,convert=1):
 				
 				
 				doc_url = get_url_to_form('Shift Request',drafts_result_set[0].get('name'))
-				
-				error_template = frappe.render_template('one_fm/templates/emails/attendance_check_alert.html',context={'current_user':frappe.session.user,'date':doc.date,'approver':drafts_result_set[0].get('approver'),'page_link':doc_url,'employee_name':doc.employee_name})
+				approver_full_name = frappe.db.get_value("User",drafts_result_set[0].get('approver'),'full_name')
+				error_template = frappe.render_template('one_fm/templates/emails/attendance_check_alert.html',context={'doctype':'Shift Request','current_user':frappe.session.user,'date':doc.date,'approver':approver_full_name,'page_link':doc_url,'employee_name':doc.employee_name})
 				frappe.throw(error_template)
 			else:
 				#cancelled or shift request not created at all
