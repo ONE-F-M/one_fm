@@ -10,6 +10,7 @@
   "actual_quantity",
   "quantity",
   "uom",
+  "allow_zero_valuation_rate",
   "column_break_4",
   "issued_on",
   "expire_on",
@@ -90,16 +91,23 @@
    "fieldtype": "Float",
    "label": "Actual Quantity",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_zero_valuation_rate",
+   "fieldtype": "Check",
+   "label": "Allow Zero Valuation Rate"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2020-12-16 06:58:21.458870",
+ "modified": "2023-10-09 09:45:37.155248",
  "modified_by": "Administrator",
  "module": "Uniform Management",
  "name": "Employee Uniform Item",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }
