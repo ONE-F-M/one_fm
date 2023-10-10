@@ -12,13 +12,14 @@ def get_context(context):
     job_opening = frappe.get_doc("Job Opening", {'name': job_id})
 
     if job_opening:
+        opening.update({'name': job_opening.name})
         if lang == 'en':
-            opening.update({'name': job_opening.name})
+            opening.update({'job_title': job_opening.job_title})
             opening.update({'description': job_opening.description if job_opening.description else ""})
         else:
-            opening.update({'name': job_opening.job_title_in_arabic})
+            opening.update({'job_title': job_opening.job_title_in_arabic})
             opening.update({'description': job_opening.description_in_arabic if job_opening.description_in_arabic else ""})
-        opening.update({'job_title': job_opening.job_title})
+       
         opening.update({'designation': job_opening.designation})
 
 
