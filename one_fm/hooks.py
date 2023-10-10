@@ -442,7 +442,7 @@ website_route_rules = [
 		"to_route": "knowledge_base/kbcategory/kbsubcategory/kbdetail"
 	},
 	{
-		"from_route": "/careers/opening/<path:job_id>",
+		"from_route": "/careers/opening/<path:lang>/<path:job_id>/",
 		"to_route": "careers/opening"
 	},
 	{
