@@ -79,6 +79,7 @@ class HolidayListOverride(HolidayList):
 					att_doc.submit()
 				else:
 					frappe.delete_doc("Attendance", att.name)
+		
 		#Attendance For New Date
 		new_date_attendance = frappe.get_list("Attendance",{'attendance_date':new_date},['*'])
 		if new_date_attendance:
@@ -88,10 +89,7 @@ class HolidayListOverride(HolidayList):
 					doc.db_set("status",'Holiday')
 					doc.db_set('leave_type','')
 					doc.db_set('leave_application','')
-		frappe.db.commit()
-
-
-		
+		frappe.db.commit()	
 
 	def get_weekly_off_date_list(self, start_date, end_date):
 		start_date, end_date = getdate(start_date), getdate(end_date)
