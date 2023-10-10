@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from copy import copy
 from pathlib import Path
 from hrms.payroll.doctype.payroll_entry.payroll_entry import (
-	get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_salary_structure
+	get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_sal_struct
 )
 from one_fm.one_fm.doctype.hr_and_payroll_additional_settings.hr_and_payroll_additional_settings import get_projects_not_configured_in_payroll_cycle_but_linked_in_employee
 from itertools import groupby
@@ -136,7 +136,7 @@ def get_emp_list(self, project_list=False):
 			"payroll_frequency": self.payroll_frequency
 		}
 
-	sal_struct = get_salary_structure(
+	sal_struct = get_sal_struct(
 		self.company, self.currency, self.salary_slip_based_on_timesheet, condition
 	)
 	if sal_struct:
