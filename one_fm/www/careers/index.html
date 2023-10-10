@@ -28,9 +28,24 @@
 
     gtag('config', 'UA-179243156-1');
   </script>
+
 {% block content %}
 <body>
-
+    <li class="nav-item dropdown logged-in" id="website-post-login" data-label="website-post-login" style="">
+        <a href="#"  data-toggle="dropdown" aria-expanded="false">
+                        <span class="avatar avatar-medium filterable" title="Language:{{lang}}" data-filter="_assign,like,%null%">
+                        <div id = "lang_icon" class="avatar-frame standard-image" style="background-color: var(--green-avatar-bg); color: var(--green-avatar-color)">
+                                {{lang}}</div>
+                        </span>
+                    
+                </a>
+                <ul class = "dropdown-menu dropdown-menu-right" id = "language_selector">
+                    <ul class="dropdown-menu dropdown-menu-right show" role="menu">
+                        <button id="eng_lang" class="dropdown-item lang" value='en' rel="nofollow">English</button>
+                        <button id="ar_lang" class="dropdown-item lang" value='ar'  rel="nofollow">عربي</button>
+                    </ul>
+                </ul>
+            </li>
     <!-- Careers page banner -->
     <!-- <div class="p-5 text-center bg-image" style="
         background-image: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ), url('/assets/one_fm/careers/img/careers_bg.jpg');
@@ -47,7 +62,7 @@
         </div>
     </div> -->
     <!-- End careers page banner -->
-
+    
     <div class="d-flex justify-content-center align-items-center">
         <!-- Filters section -->
         <!-- <section id="sidebar" class="d-inline-block w-25 mt-10">
@@ -68,9 +83,9 @@
                 <div class="d-flex p-2">
                     <h2 class="text-secondary">Recent Openings</h2>
                 </div>
-
                 {% if recent_openings|length > 0 %}
                     {% for opening in recent_openings %}
+                        {%if lang =='en'%}
                         <div class="row">
                             <div class="col-xs-12 col-sm-10">
                                 <div class="card mb-5 p-2 shadow bg-white rounded">
@@ -81,7 +96,7 @@
                                         <p class="card-text">{{ opening.description }}</p>
                                         <p class="card-text float-left"><small><span class="text-muted"> {{ opening.department }}</span></small></p>
 
-                                            <a href="/careers/opening/{{opening.name}}"
+                                            <a href="/careers/opening/{{lang}}/{{opening.name}}"
                                             class="btn btn-dark float-right">View More</a>
 
                                         <div class="clearfix"></div>
@@ -89,6 +104,26 @@
                                 </div>
                             </div>
                         </div>
+                        {%else%}
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-10">
+                                    <div class="card mb-5 p-2 shadow bg-white rounded">
+                                        <div class="card-body">
+                                            <h5 class="card-title float-left">{{ opening.name_ar }}</h5>
+                                            <p class="card-text float-right"><small>Posted: {{ opening.posting_date }}</small></p>
+                                            <div class="clearfix"></div>
+                                            <p class="card-text">{{ opening.description_ar }}</p>
+                                            <p class="card-text float-left"><small><span class="text-muted"> {{ opening.department }}</span></small></p>
+
+                                                <a href="/careers/opening/{{lang}}/{{opening.name}}"
+                                                class="btn btn-dark float-right">View More</a>
+
+                                            <div class="clearfix"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
                     {% endfor %}
 
                 {% else %}
