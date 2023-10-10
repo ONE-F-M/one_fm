@@ -2,11 +2,11 @@
     <td style="font-family: 'Cairo', sans-serif;color:#4b4b4c;" mc:edit="tm2-04" valign="top" >
         <p>Dear  <b>{{current_user}}</b>,</p><br>
        
-        <p>Please note that <b>{{employee_name}}</b>'s {{doctype}} for <b>{{date}}</b> has not been approved by <b>{{approver}}. </b></p>
+        <p>Please note that <b>{{employee_name}}</b>'s {{doctype}}  for <b>{{date}}</b> has not been approved by <b>{{approver}}. </b></p>
         
         <p>You can open the document by clicking  <a class="btn btn-primary btn-sm" href="{{ page_link }}" >here</a> .</p>
 
-        <p>You can contact  <b>{{approver}}</b> to remind him/her to approve by clicking <a id = "contact_button" class="btn btn-primary btn-sm"  >here</a> .</p>
+        <p>You can contact the approver <b>{{approver}}</b> to remind him/her to approve by clicking <a id = "contact_button" class="btn btn-primary btn-sm"  >here</a> .</p>
 
         <br>
 
@@ -21,8 +21,8 @@
         
         $('.modal-content').hide()
         
-        //cur_frm.doc.contact_email = 'c.akeru@one-fm.com'
-        cur_frm.email_doc(`<p>Hello</p>  Please review and action the Attendance Check document of {{employee_name}}  `)
+        
+        cur_frm.email_doc(`<p>Hello</p>  Please review and action the <a href = {{ page_link }}> {{doctype}}</a> of {{employee_name}}  `)
 
     }
     )
