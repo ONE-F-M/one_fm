@@ -49,8 +49,8 @@ frappe.ui.form.on('ERF', {
 		// close erf
 		if(!frm.is_new()){
 			loadJobOpening(frm);
+			document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
 		}
-		document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
 		set_performance_profile_resource_btn(frm);
 		if(frm.doc.__onload && 'okr_workshop_with_full_name' in frm.doc.__onload){
 			frm.set_df_property('schedule_for_okr_workshop_with_recruiter', 'label',
@@ -834,7 +834,9 @@ var validate_height_range = function(frm, cdt, cdn) {
 
 frappe.ui.form.on('ERF Salary Detail', {
 	amount: function(frm, cdt, cdn){
-    calculate_salary_per_person(frm);
+		if(frm.doc.doctype=="ERF"){
+			calculate_salary_per_person(frm);
+		}
   }
 });
 
