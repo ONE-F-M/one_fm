@@ -66,9 +66,31 @@ class HolidayListOverride(HolidayList):
 					)
 				)
 	def validate_attendance(self, old_date, new_date):
-		print(old_date, new_date)
-		attendance = frappe.get_list("Attendance",{'attendance_date':old_date, 'status':'Holiday'})
-		print(attendance)
+		old_date_attendance = frappe.get_list("Attendance",{'attendance_date':old_date, 'status':'Holiday'},['*'])
+		if old_date_attendance:
+			for att in old_date_attendance:
+				#Attendance For Old Date.
+				leave_application = frappe.db.sql(f"""SELECT * FROM `tabLeave Application` WHERE '{old_date}' BETWEEN from_date AND to_date AND employee = '{att.employee}'""", as_dict=1)
+				if leave_application:
+					att_doc = frappe.get_doc("Attendance", att.name)
+					att_doc.db_set("status",'On Leave')
+					att_doc.db_set('leave_type',leave_application[0].leave_type)
+					att_doc.db_set('leave_application',leave_application[0].name)
+					att_doc.submit()
+				else:
+					frappe.delete_doc("Attendance", att.name)
+		#Attendance For New Date
+		new_date_attendance = frappe.get_list("Attendance",{'attendance_date':new_date},['*'])
+		if new_date_attendance:
+			for n_att in new_date_attendance:
+				if frappe.db.exists("Employee",{'name':n_att.employee, 'holiday_list':self.name}):
+					doc = frappe.get_doc("Attendance",n_att.name)
+					doc.db_set("status",'Holiday')
+					doc.db_set('leave_type','')
+					doc.db_set('leave_application','')
+		frappe.db.commit()
+
+
 		
 
 	def get_weekly_off_date_list(self, start_date, end_date):
