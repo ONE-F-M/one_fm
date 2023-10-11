@@ -342,6 +342,9 @@ doc_events = {
 	"Interview Feedback": {
 		"validate": "one_fm.hiring.utils.calculate_interview_feedback_average_rating",
 	},
+	"Interview": {
+		"validate": "one_fm.overrides.interview.update_interview_rounds_in_job_applicant",
+	},
 	"Issue": {
 		"after_insert": [
 			"one_fm.utils.assign_issue",
@@ -468,6 +471,7 @@ override_doctype_class = {
 	"Attendance": "one_fm.overrides.attendance.AttendanceOverride",
 	"Shift Type": "one_fm.overrides.shift_type.ShiftTypeOverride",
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
+	"Holiday List": "one_fm.overrides.holiday_list.HolidayListOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",

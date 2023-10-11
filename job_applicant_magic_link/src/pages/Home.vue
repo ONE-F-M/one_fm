@@ -15,6 +15,7 @@ export default {
       job_applicant: {},
       nationalities: {},
       religions: {},
+      education: {},
       genders: {},
     }
   },
@@ -61,6 +62,7 @@ export default {
             this.countries = data.countries;
             this.genders = data.genders;
             this.religions = data.religions;
+            this.education = data.education;
             this.civil_id_required = data.civil_id_required;
             // set upload fields
             if (data.civil_id_required){
@@ -441,16 +443,10 @@ export default {
                                   <div class="row">
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label text-danger" for="one_fm_educational_qualification">Highest Educational Qualification *</label>
+                                          <label class="form-label text-danger" for="one_fm_educational_qualification">Highest Educational Qualificat *</label>
                                           <select class="form-control input" id="one_fm_educational_qualification" name="one_fm_educational_qualification" 
                                             aria-placeholder="Select Your Highest Educational Qualification"  required=1 v-model="job_applicant.one_fm_educational_qualification" :onchange="putField">
-                                              <option value="select" selected disabled></option>
-                                              <option value="Post Graduate">Post Graduate</option>
-                                              <option value="Masters">Masters</option>
-                                              <option value="Graduate">Graduate</option>
-                                              <option value="Diploma">Diploma</option>
-                                              <option value="Under Graduate">Under Graduate</option>
-                                              <option value="High School">High School</option>
+                                            <option :value="ed" v-for="ed in education">{{ed}}</option>
                                           </select>      
                                       </div>
                                       <div class="form-group">
