@@ -2610,7 +2610,10 @@ def set_expire_magic_link(reference_doctype, reference_docname, link_for):
         'reference_docname': reference_docname, 'link_for': link_for, 'expired': False})
     if magic_link:
         frappe.db.set_value('Magic Link', magic_link, {'expired': True, "expired_on": now_datetime()})
-
+        expired_field = "applicant_doc_ml_expired"
+        if link_for == "Career History":
+            expired_field = "career_history_ml_expired"
+        frappe.db.set_value(reference_doctype, reference_docname, expired_field, True)
 
 def check_path(path):
     return os.path.isdir(path)

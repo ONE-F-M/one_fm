@@ -9,6 +9,7 @@ from frappe.utils import getdate
 import pandas as pd
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.processor import is_user_id_company_prefred_email_in_employee
+from hrms.hr.utils import get_holidays_for_employee
 
 def close_leaves(leave_ids, user=None):
     approved_leaves = leave_ids
@@ -80,6 +81,7 @@ class LeaveApplicationOverride(LeaveApplication):
     def on_submit(self):
         self.close_todo()
         self.close_shifts()
+        self.update_attendance()
         return super().on_submit()
 
 
@@ -132,6 +134,61 @@ class LeaveApplicationOverride(LeaveApplication):
             self.validate_optional_leave()
         self.validate_applicable_after()
 
+    def update_attendance(self):
+        if self.status != "Approved":
+            return
+
+        holiday_dates = []
+        if self.leave_type == 'Annual Leave' :
+            holidays = get_holidays_for_employee(employee=self.employee, start_date=self.from_date, end_date=self.to_date, only_non_weekly=True)
+            holiday_dates = [cstr(h.holiday_date) for h in holidays]
+            
+        for dt in daterange(getdate(self.from_date), getdate(self.to_date)):
+            date = dt.strftime("%Y-%m-%d")
+            attendance_name = frappe.db.exists(
+                "Attendance", dict(employee=self.employee, attendance_date=date, docstatus=("!=", 2))
+            )
+
+            # don't mark attendance for holidays
+            # if leave type does not include holidays within leaves as leaves
+            if date in holiday_dates:
+                if attendance_name:
+                    # cancel and delete existing attendance for holidays
+                    attendance = frappe.get_doc("Attendance", attendance_name)
+                    attendance.flags.ignore_permissions = True
+                    if attendance.docstatus == 1:
+                        print('True')
+                        attendance.db_set('status','Holiday')
+                        frappe.db.commit()
+                else:
+                    self.create_or_update_attendance(attendance_name, date, 'Holiday')
+            else:
+                self.create_or_update_attendance(attendance_name, date, 'On Leave')
+            
+
+    def create_or_update_attendance(self, attendance_name, date, status):
+        if attendance_name:
+            # update existing attendance, change absent to on leave
+            doc = frappe.get_doc("Attendance", attendance_name)
+            if doc.status != status and status == 'On Leave':
+                doc.db_set({"status": status, "leave_type": self.leave_type, "leave_application": self.name})
+            if doc.status != status and status == 'Holiday':
+                doc.db_set({"status": status})
+        else:
+            # make new attendance and submit it
+            doc = frappe.new_doc("Attendance")
+            doc.employee = self.employee
+            doc.employee_name = self.employee_name
+            doc.attendance_date = date
+            doc.company = self.company
+            if status == "On Leave":
+                doc.leave_type = self.leave_type
+                doc.leave_application = self.name
+            doc.status = status
+            doc.flags.ignore_validate = True
+            doc.insert(ignore_permissions=True)
+            doc.save()
+            doc.submit()
 
     @frappe.whitelist()
     def notify_leave_approver(self):

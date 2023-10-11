@@ -37,8 +37,25 @@ class EmployeeUniform(Document):
 		self.onboard_employee_update()
 		make_stock_entry(self)
 
-	# def on_cancel(self):
-	# 	self.onboard_employee_update(True)
+	def on_cancel(self):
+		# self.onboard_employee_update(True)
+		self.cancel_stock_entry()
+
+	def cancel_stock_entry(self):
+		'''
+			Method to cancel the stock entry linked to the Employee Uniform
+			args:
+				self: the object of Employee Uniform
+		'''
+		# Check if there is a Stock Entry reference in the Employee Uniform
+		if self.stock_entry:
+			# Get the Draft/Submitted Stock Entry linked to the Employee Uniform
+			se_exists = frappe.db.exists("Stock Entry", {"name": self.stock_entry, "docstatus": ["<", 2]})
+			# Cancel the linked stock entry
+			frappe.get_doc("Stock Entry", se_exists).cancel()
+			# Unlink the Stock Entry reference from the Employee Uniform
+			frappe.db.set_value("Employee Uniform", self.name, "stock_entry", "")
+			frappe.msgprint(_("Cancelled the Stock Entry {0} linked with this Employee Uniform".format(self.stock_entry)))
 
 	def onboard_employee_update(self, on_cancel=False):
 		if self.type == 'Issue':
@@ -205,6 +222,7 @@ def make_stock_entry(employee_uniform):
 
 	doclist.save(ignore_permissions=True)
 	doclist.submit()
+	frappe.db.set_value("Employee Uniform", employee_uniform.name, "stock_entry", doclist.name)
 
 def get_issued_item_quantity(item, employee):
 	issued_qty = 0

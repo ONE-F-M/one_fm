@@ -12,6 +12,9 @@ frappe.ui.form.on('Employee Uniform', {
 				filters: {'is_uniform_warehouse': true}
 			}
 		});
+		if(frm.is_new() && frm.doc.stock_entry){
+			frm.set_value("stock_entry", "");
+		}
 	},
 	employee: function(frm) {
 		set_uniform_details(frm);
