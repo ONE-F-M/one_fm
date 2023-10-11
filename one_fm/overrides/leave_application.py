@@ -140,9 +140,8 @@ class LeaveApplicationOverride(LeaveApplication):
 
         holiday_dates = []
         if self.leave_type == 'Annual Leave' :
-            holidays = get_holidays_for_employee(employee=self.employee, start_date=self.from_date, end_date=self.to_date, only_non_weekly=False)
+            holidays = get_holidays_for_employee(employee=self.employee, start_date=self.from_date, end_date=self.to_date, only_non_weekly=True)
             holiday_dates = [cstr(h.holiday_date) for h in holidays]
-            print(holiday_dates)
             
         for dt in daterange(getdate(self.from_date), getdate(self.to_date)):
             date = dt.strftime("%Y-%m-%d")
@@ -153,7 +152,6 @@ class LeaveApplicationOverride(LeaveApplication):
             # don't mark attendance for holidays
             # if leave type does not include holidays within leaves as leaves
             if date in holiday_dates:
-                print("holiday")
                 if attendance_name:
                     # cancel and delete existing attendance for holidays
                     attendance = frappe.get_doc("Attendance", attendance_name)
@@ -169,7 +167,6 @@ class LeaveApplicationOverride(LeaveApplication):
             
 
     def create_or_update_attendance(self, attendance_name, date, status):
-
         if attendance_name:
             # update existing attendance, change absent to on leave
             doc = frappe.get_doc("Attendance", attendance_name)
