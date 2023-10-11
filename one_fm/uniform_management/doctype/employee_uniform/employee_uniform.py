@@ -212,7 +212,8 @@ def make_stock_entry(employee_uniform):
 			"doctype": "Stock Entry Detail",
 			"field_map": {
 				"item": "item_code",
-				"quantity": "qty"
+				"quantity": "qty",
+				"allow_zero_valuation_rate": "allow_zero_valuation_rate"
 			},
 			"postprocess": update_item,
 			"condition": lambda doc: doc.item
