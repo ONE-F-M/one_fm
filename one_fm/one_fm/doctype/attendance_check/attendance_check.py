@@ -13,7 +13,7 @@ class AttendanceCheck(Document):
 
 	def validate_justification(self):
 		'''
-			The method is used to validate the justification and its dependend fields
+			The method is used to validate the justification and its dependent fields
 		'''
 		if self.justification != "Mobile isn't supporting the app":
 			self.mobile_brand = ""
@@ -21,7 +21,11 @@ class AttendanceCheck(Document):
 
 		if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Suddenly, the App stop working!"]:
 			self.screenshot = ""
-
+   
+		if self.justification == "Approved by Administrator":
+			if not check_attendance_manager(email=frappe.session.user):
+				frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
+	
 
 	def on_submit(self):
 		if self.attendance_status == "On Leave":
@@ -556,3 +560,7 @@ def mark_missing_attendance(attendance_checkin_found):
 				frappe.db.set_value("Employee Checkin", i.checkout_record, "attendance", attendance.name)
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), 'Attendance Remark')
+
+@frappe.whitelist()
+def check_attendance_manager(email: str) -> bool:
+    return frappe.db.get_value("Employee", {"user_id": email}) == frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
