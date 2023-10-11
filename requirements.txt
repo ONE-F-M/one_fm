@@ -2,7 +2,7 @@ datefinder
 mindee
 deep-translator==1.11.4
 gpt-index==0.4.15
-langchain==0.0.96
+langchain==0.0.312
 langchainplus-sdk==0.0.10
 grpcio
 grpcio-status
