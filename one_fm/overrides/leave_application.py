@@ -167,7 +167,6 @@ class LeaveApplicationOverride(LeaveApplication):
             
 
     def create_or_update_attendance(self, attendance_name, date, status):
-        print(attendance_name)
         if attendance_name:
             # update existing attendance, change absent to on leave
             doc = frappe.get_doc("Attendance", attendance_name)
