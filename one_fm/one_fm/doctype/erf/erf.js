@@ -712,16 +712,14 @@ var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
 	$wrapper
 		.html(field_html);
 	$wrapper.on('click', '.'+field_btn_html, function() {
-		if(frm.doc.docstatus == 1 || field_name == 'shift_working'){
-			var $btn = $(this);
-			$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
-			$btn.addClass('btn-primary');
-			if(field_name == 'open_to_different'){
-				frm.set_value(field_name, $btn.attr('data'));
-			}
-			else{
-				frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
-			}
+		var $btn = $(this);
+		$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
+		$btn.addClass('btn-primary');
+		if(field_name == 'open_to_different'){
+			frm.set_value(field_name, $btn.attr('data'));
+		}
+		else{
+			frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
 		}
 	});
 };
