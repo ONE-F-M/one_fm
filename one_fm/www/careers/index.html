@@ -28,7 +28,6 @@
     gtag('js', new Date());
 
     gtag('config', 'UA-179243156-1');
-    console.log("here")
     $('.navbar-nav').append(`
 			<li class="nav-item dropdown" id="website-post-login" data-label="website-post-login" style="">
 				<a href="#" class="nav-link nav-avatar" data-toggle="dropdown" aria-expanded="false">
@@ -48,7 +47,6 @@
 			</li>
     `)
             function change_lang(lang){
-                console.log(lang)
 			frappe.call({
 				method: "one_fm.www.careers.index.change_language",
 				args: {
