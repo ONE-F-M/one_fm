@@ -13,6 +13,10 @@ frappe.ui.form.on('Shift Request', {
 		clearCircles();
 
 	},
+	onload: function(frm){
+		prefillForm(frm);
+		
+	},
 	refresh: function(frm) {
 		frm.set_df_property('shift_type', 'hidden', 1);
 		frm.set_df_property('company', 'hidden', 1);
@@ -31,7 +35,6 @@ frappe.ui.form.on('Shift Request', {
 	operations_shift : function(frm) {
 		let {operations_shift} = frm.doc;
 		if(operations_shift){
-			console.log(operations_shift)
 			frm.set_query("operations_role", function() {
 				return {
 					query: "one_fm.api.doc_methods.shift_request.get_operations_role",
@@ -111,7 +114,6 @@ function set_approver(frm){
             },
             callback: function(r) {
                 if(r.message){
-					console.log(r.message)
                     frm.set_value("approver",r.message)
 					frm.set_value("shift_approver",r.message)
                 }
@@ -165,4 +167,34 @@ function clearCircles(){
     for (var i = 0; i < circles.length; i++) {
         circles[i].setMap(null);
       }
+}
+
+
+
+var prefillForm = frm =>{
+	const url = new URL(window.location.href);
+
+	const params = new URLSearchParams(url.search);
+
+	const doc_id = params.get('doc_id');
+	const doctype = params.get('doctype'); 
+
+	if (doctype == "Attendance Check"){
+		frappe.call({
+			method: 'frappe.client.get_value',
+			args: {
+				'doctype': doctype,
+				'filters': {'name': doc_id},
+				'fieldname': [
+					"employee"
+				]
+			},
+			callback: function(r) {
+				if (r.message) {
+					cur_frm.set_value("employee", r.message.employee)
+					
+				}
+			}
+		});
+	}
 }
