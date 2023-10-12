@@ -5,7 +5,6 @@ def get_context(context):
     no_cache = 1
     job_id = frappe.form_dict.job_id
     lang = frappe.form_dict.lang
-    print(lang)
 
     opening = {}
 
@@ -13,12 +12,12 @@ def get_context(context):
 
     if job_opening:
         opening.update({'name': job_opening.name})
-        if lang == 'en':
-            opening.update({'job_title': job_opening.job_title})
-            opening.update({'description': job_opening.description if job_opening.description else ""})
-        else:
-            opening.update({'job_title': job_opening.job_title_in_arabic})
-            opening.update({'description': job_opening.description_in_arabic if job_opening.description_in_arabic else ""})
+        
+        opening.update({'job_title': job_opening.job_title})
+        opening.update({'description': job_opening.description if job_opening.description else ""})
+    
+        opening.update({'job_title_ar': job_opening.job_title_in_arabic})
+        opening.update({'description_ar': job_opening.description_in_arabic if job_opening.description_in_arabic else ""})
        
         opening.update({'designation': job_opening.designation})
 

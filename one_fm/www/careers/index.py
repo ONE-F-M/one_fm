@@ -9,7 +9,7 @@ def get_context(context):
 
     # Get departments list
     context.department_list = get_department_list()
-    context.lang = 'ar'
+    context.lang = 'en' if not frappe.cache().get_value("job_opening_lang") else frappe.cache().get_value("job_opening_lang")
 
 
 def get_recent_openings():
@@ -43,3 +43,12 @@ def get_recent_openings():
         recent_openings.append(data)
 
     return recent_openings
+
+@frappe.whitelist(allow_guest=True)
+def change_language(lang):
+    old_lang = frappe.cache().get_value("job_opening_lang")
+    frappe.cache().set_value("job_opening_lang", lang)
+    if old_lang != lang:
+        return True
+    else:
+        return False

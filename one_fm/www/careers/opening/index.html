@@ -18,9 +18,11 @@
 
     <article class="mt-10 p-2">
         <div class="container">
+        {%if lang == 'en'%}
             {% if opening %}
-                <h2 class="text-secondary">{{ opening.job_title }}</h2>
-                <hr>
+                <div class="d-flex p-2" style="direction: rtl;">
+                    <h2 class="text-secondary float-left">{{ opening.job_title }}</h2>
+                </div>
                 <p class="text-dark">
                     {{ opening.description }}
                 </p>
@@ -32,7 +34,26 @@
             {% else %}
                 <h4 class="p-2 text-dark">Could not find job opening</h4>
             {% endif %}
+        {% else %}
+            {% if opening %}
+                <div style="direction: rtl;">
+                    <div class="d-flex p-2" style="direction: rtl;">
+                        <h2 class="text-secondary float-right">{{ opening.job_title_ar }}</h2>
+                    </div>
+                    <div class="float-right" style="direction: rtl; margin: 2vw;">
+                            {{ opening.description_ar }}
+                        <br>
+                        <a class='btn btn-dark'
+                            href='/job_application/{{ opening.name }}'>
+                            {{ "يُقدِّم" }}
+                        </a> 
+                    </div>   
+                {% else %}
+                    <h4 class="p-2 text-dark float-right">تعذر العثور على وظيفة مفتوحة</h4>
+                {% endif %}
+                </div>
         </div>
+        {% endif %}
     </article>
 
 </body>
