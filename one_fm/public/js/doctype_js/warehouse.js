@@ -15,6 +15,7 @@ frappe.ui.form.on('Warehouse', {
 				}
 			};
 		});
+    unsetCustomer(frm);    
   },
 	status: function(frm) {
 		if(frm.doc.status == 'Enable'){
@@ -67,5 +68,31 @@ frappe.ui.form.on('Warehouse', {
       frm.set_value('one_fm_project', '');
       frm.set_value('one_fm_site', '');
     }
+  },
+
+  customer: function(frm){
+    if (frm.doc.customer){
+      frm.set_query('one_fm_project', function () {
+        return {
+          filters: {
+            'customer': frm.doc.customer
+          }
+        };
+      });
+  } else {
+    unsetCustomer(frm);
   }
+  },
+
 });
+
+
+var unsetCustomer = frm => {
+  frm.set_query('one_fm_project', function () {
+    return {
+      filters: [
+        ['customer', 'in', ["", null]]
+      ]
+    };
+  });
+}
