@@ -17,12 +17,20 @@ class AttendanceCheck(Document):
 			The method is used to validate the justification and its dependent fields
 		'''
 		if self.attendance_status == 'Present':
+			if not self.justification:
+				frappe.throw("Please select Justification")
+
+			if self.justification != "Other":
+				self.other_reason = ""
+			
+			if self.justification == "Other":
+				if not self.other_reason:
+					frappe.throw("Please write the other Reason")
+		
 			if self.justification != "Mobile isn't supporting the app":
 				self.mobile_brand = ""
 				self.mobile_model = ""
 			
-			if not self.justification:
-				frappe.throw("Please select Justification")
 
 			if self.justification == "Mobile isn't supporting the app": 
 				if not self.mobile_brand:
