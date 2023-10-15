@@ -25,12 +25,14 @@ class HolidayListOverride(HolidayList):
 		previous_doc = self.get_doc_before_save()
 		# Loop through the child table records
 		for idx, row in enumerate(self.holidays):
-			previous_row = previous_doc.get("holidays")[idx]
-			old_date = getdate(previous_row.holiday_date)
-			new_date = getdate(row.holiday_date)
-			# Compare the field in the current row with the previous version
-			if old_date != new_date:
-				self.validate_attendance(old_date, new_date)
+			#only on update of existing Row
+			if len(previous_doc.get("holidays")) != idx:
+				previous_row = previous_doc.get("holidays")[idx]
+				old_date = getdate(previous_row.holiday_date)
+				new_date = getdate(row.holiday_date)
+				# Compare the field in the current row with the previous version
+				if old_date != new_date:
+					self.validate_attendance(old_date, new_date)
 		
 
 	@frappe.whitelist()
@@ -77,8 +79,6 @@ class HolidayListOverride(HolidayList):
 					att_doc.db_set('leave_type',leave_application[0].leave_type)
 					att_doc.db_set('leave_application',leave_application[0].name)
 					att_doc.submit()
-				else:
-					frappe.delete_doc("Attendance", att.name)
 		
 		#Attendance For New Date
 		new_date_attendance = frappe.get_list("Attendance",{'attendance_date':new_date},['*'])
