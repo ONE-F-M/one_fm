@@ -7,6 +7,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="assets/one_fm/assets_landing/css/fontawesome-all.css" rel="stylesheet">
     <title>Careers</title>
 </head>
 {% endblock %}
@@ -18,7 +19,7 @@
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
 <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
-{% endblock %}
+
 
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-179243156-1"></script>
 <script>
@@ -27,48 +28,82 @@
     gtag('js', new Date());
 
     gtag('config', 'UA-179243156-1');
+    $('.navbar-nav').append(`
+			<li class="nav-item dropdown" id="website-post-login" data-label="website-post-login" style="">
+				<a href="#" class="nav-link nav-avatar" data-toggle="dropdown" aria-expanded="false">
+                    <span class="user-image-wrapper">
+                        <span class="avatar avatar-medium filterable" title="Language:{{lang}}" data-filter="_assign,like,%null%">
+                        <div id = "lang_icon" class="avatar-frame standard-image" style="background-color: var(--green-avatar-bg); color: var(--green-avatar-color)">
+                                {{lang}}</div>
+                        </span>
+                    </span>
+				</a>
+					<ul class = "dropdown-menu dropdown-menu-right" id = "language_selector">
+                        <ul class="dropdown-menu dropdown-menu-right show" role="menu">
+                            <a id="eng_lang" class="dropdown-item" href="#" rel="nofollow" onclick="change_lang('en')">English</a>
+                            <a id="ar_lang" class="dropdown-item" href="#" rel="nofollow" onclick="change_lang('ar')">عربي</a>
+                        </ul>
+                    </ul>
+			</li>
+    `)
+            function change_lang(lang){
+			frappe.call({
+				method: "one_fm.www.careers.index.change_language",
+				args: {
+					lang: lang,
+				},
+				freeze: true,
+				callback: function(r) {
+                    if(r && r.message == true){
+                        window.location.reload();
+                    }
+					}
+			});
+		}  
   </script>
+{% endblock %}
 {% block content %}
 <body>
+    <!-- <div class="d-flex justify-content-center float-right ">
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="dropdown" aria-expanded="false">
+                <span>
+                    <span class="avatar avatar-small filterable" title="Language:{{lang}}" data-filter="_assign,like,%null%"> {{lang}}</span>
+                    <span class="icon icon-xs">
+                        <i class="fa-sharp fa-solid fa-caret-down"></i>
+                    </span>
+                </span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right" x-placement="bottom-end" role="menu" style="position: absolute; will-change: transform; top: 0px; left: 0px; transform: translate3d(345px, 30px, 0px);">
+                <button id="eng_lang" class="dropdown-item lang" value='en' rel="nofollow">English</button>
+                <button id="ar_lang" class="dropdown-item lang" value='ar'  rel="nofollow">عربي</button>
+            </ul> -->
 
-    <!-- Careers page banner -->
-    <!-- <div class="p-5 text-center bg-image" style="
-        background-image: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ), url('/assets/one_fm/careers/img/careers_bg.jpg');
-        height: 70%;
-    ">
-        <div class="d-flex justify-content-center align-items-center h-100">
-            <div class="container">
-                <h1 class="mb-3 text-white">Come Join Us</h1>
-                <h4 class="mt-10 mb-5 text-white">Search for open roles</h4>
-                <form action="/careers/search" class="justify-content-center align-items-center mt-2 form-inline" method="GET">
-                    <input class="form-control mr-sm-1 col-xs-8" type="search" placeholder="Type keywords and hit enter" aria-label="Type keywords and hit enter" name="keywords">
-                </form>
-            </div>
-        </div>
-    </div> -->
-    <!-- End careers page banner -->
-
+        <!-- <li class="nav-item dropdown logged-in" id="website-post-login" data-label="website-post-login"> -->
+                <!-- <a href="#"  data-toggle="dropdown" aria-expanded="false">
+                        <span class="avatar avatar-medium filterable" title="Language:{{lang}}" data-filter="_assign,like,%null%">
+                        <div id = "lang_icon" class="avatar-frame standard-image" style="background-color: var(--green-avatar-bg); color: var(--green-avatar-color)">
+                                {{lang}}</div>
+                        </span>
+                </a>
+                <ul class = "dropdown-menu dropdown-menu-right" id = "language_selector">
+                    <ul class="dropdown-menu dropdown-menu-right show" role="menu">
+                        <button id="eng_lang" class="dropdown-item lang" value='en' rel="nofollow">English</button>
+                        <button id="ar_lang" class="dropdown-item lang" value='ar'  rel="nofollow">عربي</button>
+                    </ul>
+                </ul> -->
+            <!-- </li> -->
+    <!-- </div> -->
+    
     <div class="d-flex justify-content-center align-items-center">
-        <!-- Filters section -->
-        <!-- <section id="sidebar" class="d-inline-block w-25 mt-10">
-            <div>
-                <h6 class="p-1 text-secondary border-bottom">Department</h6>
-                <ul class="list-unstyled pl-2">
-                    {% for department in department_list %}
-                        <li><a class="text-muted mt-2" href="#">{{ department }}</a></li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </section> -->
-        <!--End filters section -->
+        
 
         <!-- Recent Openings section -->
         <section id="openings" class="mt-10">
             <div class="container">
+                {%if lang =='en'%}
                 <div class="d-flex p-2">
-                    <h2 class="text-secondary">Recent Openings</h2>
+                    <h2 class="text-secondary ">Recent Openings</h2>
                 </div>
-
                 {% if recent_openings|length > 0 %}
                     {% for opening in recent_openings %}
                         <div class="row">
@@ -79,20 +114,46 @@
                                         <p class="card-text float-right"><small>Posted: {{ opening.posting_date }}</small></p>
                                         <div class="clearfix"></div>
                                         <p class="card-text">{{ opening.description }}</p>
-                                        <p class="card-text float-left"><small><span class="text-muted"> {{ opening.department }}</span></small></p>
-
-                                            <a href="/careers/opening/{{opening.name}}"
+                                        <p class="card-text float-right"><small><span class="text-muted"> {{ opening.department }}</span></small></p>
+                                            <a href="/careers/opening/{{lang}}/{{opening.name}}"
                                             class="btn btn-dark float-right">View More</a>
-
                                         <div class="clearfix"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     {% endfor %}
-
                 {% else %}
                     <h4 class="p-2 text-dark">Stay tuned!</h4>
+                {% endif %}
+                    {%else%}
+                        <div class="d-flex p-2" style="direction: rtl;">
+                            <h2 class="text-secondary float-left">الوظائف الشاغرة</h2>
+                        </div>
+                        {% if recent_openings|length > 0 %}
+                            {% for opening in recent_openings %}
+                                <div class="row" style="direction: rtl;">
+                                    <div class="col-xs-12 col-sm-10">
+                                        <div class="card mb-5 p-2 shadow bg-white rounded">
+                                            <div class="card-body">
+                                                <h5 class="card-title float-right">{{ opening.name_ar }}</h5>
+                                                <p class="card-text float-left"><small>Posted: {{ opening.posting_date }}</small></p>
+                                                <div class="clearfix"></div>
+                                                <p class="card-text">{{ opening.description_ar }}</p>
+                                                <p class="card-text float-right"><small><span class="text-muted"> {{ opening.department }}</span></small></p>
+
+                                                    <a href="/careers/opening/{{lang}}/{{opening.name}}"
+                                                    class="btn btn-dark float-left">عرض المزيد</a>
+
+                                                <div class="clearfix"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <h4 class="p-2 text-dark">Stay tuned!</h4>
+                        {% endif %}
                 {% endif %}
             </div>
         </section>
