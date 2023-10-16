@@ -58,7 +58,7 @@
         <input type="radio" id="work_shift_no" name="work_shift" value="no">
         <label for="work_shift_no">No</label>
     </div>
-    
+
     <div class="col-sm-12 night_shift hide" id="night_shift">
       <h5>Are you willing to work in night shifts?</h5>
         <input type="radio" id="night_shift_yes" name="night_shift" value="yes">
@@ -116,10 +116,68 @@
         <label for="in_kuwait_no">No</label>
     </div>
   </div>
-  
-  
-  
+
+
+
   <br/>
+  <!-- Language Section -->
+  {% if language_exists %}
+  <h5 class="languages_heading hide">Tell me about your language proficiency, so we can arrange the interview smoothly.</h5>
+  <div class="row languages_table_div hide" data="{{languages_list}}" id="languages_table_div">
+    <div class="col-sm-6">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:31%">Language</th>
+            <th style="width:23%">Read</th>
+            <th style="width:23%">Write</th>
+            <th style="width:23%">Speak</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for language in languages %}
+            <tr>
+              <td>{{ language.language_name }}</td>
+              <td>
+                <select class="form-control {{language.language}}_read">
+                  <option value="0.1">Select</option>
+                  <option value="0.2">1</option>
+                  <option value="0.4">2</option>
+                  <option value="0.6">3</option>
+                  <option value="0.8">4</option>
+                  <option value="1.0">5</option>
+                </select>
+              </td>
+              <td>
+                <select class="form-control {{language.language}}_write">
+                  <option value="0.1">Select</option>
+                  <option value="0.2">1</option>
+                  <option value="0.4">2</option>
+                  <option value="0.6">3</option>
+                  <option value="0.8">4</option>
+                  <option value="1.0">5</option>
+                </select>
+              </td>
+              <td>
+                <select class="form-control {{language.language}}_speak">
+                  <option value="0.1">Select</option>
+                  <option value="0.2">1</option>
+                  <option value="0.4">2</option>
+                  <option value="0.6">3</option>
+                  <option value="0.8">4</option>
+                  <option value="1.0">5</option>
+                </select>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <br/>
+
   <!-- CV Section -->
   <p style='margin-top: 30px' class="applicant_cv"></p>
 
@@ -129,7 +187,7 @@
     </div>
   </div>
   <br/>
-  
+
   <div class="col-sm-12">
     <button class="btn btn-dark btn-submit-application" type="button">{{ _("Submit") }}</button>
   </div>
