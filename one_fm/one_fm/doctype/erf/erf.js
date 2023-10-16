@@ -172,6 +172,11 @@ frappe.ui.form.on('ERF', {
 			});
 		}
 	},
+	before_workflow_action: function(frm) {
+		if(frm.doc.workflow_state == 'Open' && frm.doc.hiring_method == 'Bulk Recruitment' && (!frm.doc.number_of_interview_rounds || frm.doc.number_of_interview_rounds < 1)){
+			frm.scroll_to_field('number_of_interview_rounds');
+		}
+	},
 	validate: function(frm) {
 		if(frm.doc.gender_height_requirement){
 			frm.doc.gender_height_requirement.forEach((item, i) => {
