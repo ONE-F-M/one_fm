@@ -692,8 +692,8 @@ def fetch_non_shift(date, s_type):
 		""".format(date=cstr(date)), as_dict=1)
 	else:
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
-				WHERE E.shift_working = 0 
-				AND E.status='Active' 
+				WHERE E.shift_working = 0
+				AND E.status='Active'
 				AND E.attendance_by_timesheet != 1
 				AND E.default_shift IN(
 					SELECT name from `tabShift Type` st
@@ -746,7 +746,7 @@ def assign_pm_shift():
 				WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
 				)
 			AND ES.employee IN(
-				SELECT name from `tabEmployee` 
+				SELECT name from `tabEmployee`
 				WHERE status = "Active")
 	""".format(date=cstr(date)), as_dict=1)
 
@@ -851,7 +851,7 @@ def create_shift_assignment(roster, date, time):
 						_shift_type = shift_types_dict.get(_shift_request.shift_type) or default_shift
 						_project_r = frappe.db.get_value("Operations Shift", {'name':_shift_request.operations_shift}, ['project'])
 						shift_r_start_time = date+ " " + str(_shift_type.start_time)
-						
+
 						if _shift_type.start_time > _shift_type.end_time:
 							shift_r_end_time = str(add_to_date(date, days=1))+ " " + str(_shift_type.end_time)
 						else:
@@ -861,7 +861,7 @@ def create_shift_assignment(roster, date, time):
 						(
 							"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{_shift_request.shift_type}',
 							"{_shift_request.site or ''}", "{_project_r or ''}", 'Active', '{_shift_request.shift_type}', "{sites_list_dict.get(_shift_request.site) or ''}", "{date}",
-							"{shift_r_start_time or str(date)+' 08:00:00'}", "{shift_r_end_time or str(date)+' 17:00:00'}", "{r.department}", 
+							"{shift_r_start_time or str(date)+' 08:00:00'}", "{shift_r_end_time or str(date)+' 17:00:00'}", "{r.department}",
 							"{_shift_request.operations_shift or ''}", "{_shift_request.operations_role or ''}", "{r.post_abbrv or ''}", "{_shift_request.roster_type}",
 							"{owner}", "{owner}", "{creation}", "{creation}", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}"),"""
 					else:
@@ -875,7 +875,7 @@ def create_shift_assignment(roster, date, time):
 							"{owner}", "{owner}", "{creation}", "{creation}", '', '', ''),"""
 				else:
 					has_rostered.append(r.employee_name)
-			
+
 			if query_body:
 				query_body = query_body[:-1]
 				query = query_head + query_body + f"""
@@ -1013,9 +1013,9 @@ def overtime_shift_assignment():
 	date = cstr(getdate())
 	now_time = add_to_date(now_datetime(), hours=1).strftime("%H:%M:00")
 	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Over-Time"}, ["*"])
-	shift_request = frappe.db.sql(f"""SELECT sr.*, 'Shift Request' as doctype FROM `tabShift Request` sr 
+	shift_request = frappe.db.sql(f"""SELECT sr.*, 'Shift Request' as doctype FROM `tabShift Request` sr
 								WHERE '{date}' between  sr.from_date and sr.to_date
-								AND sr.roster_type = 'Over-Time' 
+								AND sr.roster_type = 'Over-Time'
 								AND sr.workflow_state = 'Approved'""", as_dict=1)
 	if shift_request:
 		roster.extend(shift_request)
@@ -1038,7 +1038,7 @@ def process_overtime_shift(roster, date, time):
 			else:
 				create_overtime_shift_assignment(schedule, date)
 		except Exception as e:
-			frappe.log_error(frappe.get_traceback(), "Create Overtime Shift Assignment")
+			continue
 
 def create_overtime_shift_assignment(schedule, date):
 	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, 'docstatus':1, "start_date":getdate(date), "status":"Active"}) and
@@ -1065,7 +1065,8 @@ def create_overtime_shift_assignment(schedule, date):
 					shift_assignment.check_out_site = shift_assignment.check_out_site
 			shift_assignment.submit()
 		except Exception:
-			frappe.log_error(frappe.get_traceback(), "Create Overtime Shift Assignment")
+			# TODO: Need to log all the errors except the OverlappingShiftError
+			pass
 
 
 def update_shift_type():
@@ -1970,5 +1971,3 @@ def run_checkin_reminder():
 			initiate_checkin_notification(res)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Checkin Notification')
-  
-  
