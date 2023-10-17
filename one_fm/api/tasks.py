@@ -1064,10 +1064,11 @@ def create_overtime_shift_assignment(schedule, date):
 					shift_assignment.check_in_site = shift_assignment.check_in_site
 					shift_assignment.check_out_site = shift_assignment.check_out_site
 			shift_assignment.submit()
-		except Exception:
-			# TODO: Need to log all the errors except the OverlappingShiftError
+		except frappe.ValidationError:
 			pass
-
+		except Exception:
+			# Log all the errors except the OverlappingShiftError(ValidationError)
+			frappe.log_error(frappe.get_traceback(), "Create Overtime Shift Assignment")
 
 def update_shift_type():
 	today_datetime = now_datetime()
