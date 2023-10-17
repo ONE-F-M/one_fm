@@ -14,7 +14,7 @@ class AttendanceCheck(Document):
 
 	def validate_justification(self):
 		'''
-			The method is used to validate the justification and its dependent fields
+			The method is used to validate the justification and its dependend fields
 		'''
 		if self.attendance_status == 'Present':
 			if not self.justification:
@@ -636,4 +636,3 @@ def validate_day_off(form,convert=1):
 				 <p>Please note that a Shift Request has not been created for <b>{doc.employee_name}</b> on <b>{doc.date}</b>. <a  class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/shift-request/new-shift-request-1')}?doc_id={doc.name}&doctype={doc.doctype}" target="_blank">Click Here</a> to create one.</p>
 				 """)
 				
-

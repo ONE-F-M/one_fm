@@ -6,8 +6,6 @@ frappe.ui.form.on('Attendance Check', {
 		if (frm.doc.docstatus==0){
 			frm.toggle_reqd(['attendance_status'], 1);
 		}
-		validate_admin_approval(frm);
-		
 	},
 	before_workflow_action: function(frm){
 		if(frm.doc.workflow_state == 'Pending Approval'){
@@ -19,31 +17,4 @@ frappe.ui.form.on('Attendance Check', {
 			}
 		}
 	},
-	// attendance_status: function(frm){
-	// 	validate_admin_approval(frm);
-	// }
-	
 });
-
-
-var validate_admin_approval = frm =>{
-	frappe.call({
-		method: 'one_fm.one_fm.doctype.attendance_check.attendance_check.check_attendance_manager',
-		args: {
-			email: frappe.session.user
-		},
-		callback:(r) => {
-			if (!r.message){
-				var selectField = document.querySelector('select[data-fieldname="justification"]');
-				var options = selectField.getElementsByTagName('option');
-
-				for (var i = 0; i < options.length; i++) {
-					if (options[i].value === "Approved by Administrator") {
-						options[i].style.display = 'none';
-						break;
-					}
-				}
-			}
-		},
-	})
-}
