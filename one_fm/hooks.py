@@ -182,7 +182,8 @@ permission_query_conditions = {
 	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
     "Leave Application": "one_fm.permissions.leave_application_list",
     "Roster Post Actions":"one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_permission_query_conditions",
-	"Roster Employee Actions": "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_permission_query_conditions"
+	"Roster Employee Actions": "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_permission_query_conditions",
+	"Warehouse": "one_fm.permissions.warehouse_list"
 }
 
 has_permission = {
@@ -193,6 +194,7 @@ has_permission = {
 
 standard_queries = {
 	"Operations Role": "one_fm.operations.doctype.operations_role.operations_role.get_operations_role_list",
+	"Warehouse": "one_fm.overrides.queries.warehouse_query",
 }
 
 doc_events = {
@@ -442,7 +444,7 @@ website_route_rules = [
 		"to_route": "knowledge_base/kbcategory/kbsubcategory/kbdetail"
 	},
 	{
-		"from_route": "/careers/opening/<path:job_id>",
+		"from_route": "/careers/opening/<path:lang>/<path:job_id>",
 		"to_route": "careers/opening"
 	},
 	{

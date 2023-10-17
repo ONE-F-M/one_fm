@@ -11,11 +11,27 @@ def execute(filters=None):
     data = fetch_data(filters)
     return columns, data
 
+def fetch_attendance_check_options():
+    """Fetch the current options for Attendance Check and Add to the default categories"""
+    last_attendance_check = frappe.get_last_doc("Attendance Check")
+    if last_attendance_check:
+        for each in last_attendance_check.meta.fields:
+            if each.label == 'Justification':
+                split_list = each.options.split('\n')
+                split_list = [each for each in split_list if each]
+                return split_list
+
+
 def fetch_data(filters):
     datapack = [] 
     categories = ["Invalid media content","Mobile isn't supporting the app","Out-of-site location","User not assigned to shift",\
         "No valid reason","Suddenly, the App stop working!","Employees insist that he/she did check in or out","No Justification at all "]
     column_names = get_date_range(getdate(filters.get('from_date')),getdate(filters.get('to_date')),as_dict=1)
+    check_options = fetch_attendance_check_options()
+    if check_options:
+        for each in check_options:
+            if each not in categories:
+                categories.insert(-1,each)
     for each in column_names:
         datapack=update_data(each,column_names,datapack,categories)
     return datapack
