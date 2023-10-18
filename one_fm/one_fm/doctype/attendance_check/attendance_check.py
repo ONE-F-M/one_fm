@@ -14,7 +14,7 @@ class AttendanceCheck(Document):
 
 	def validate_justification(self):
 		'''
-			The method is used to validate the justification and its dependend fields
+			The method is used to validate the justification and its dependent fields
 		'''
 		if self.attendance_status == 'Present':
 			if not self.justification:
@@ -45,9 +45,9 @@ class AttendanceCheck(Document):
 				if not self.screenshot:
 					frappe.throw("Please Attach ScreenShot")
 
-      if self.justification == "Approved by Administrator":
-        if not check_attendance_manager(email=frappe.session.user):
-          frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
+		if self.justification == "Approved by Administrator":
+			if not check_attendance_manager(email=frappe.session.user):
+				frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
 
 
 	def on_submit(self):
