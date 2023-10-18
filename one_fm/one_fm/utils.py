@@ -287,7 +287,7 @@ def manage_attendance_on_holiday(doc, method):
     '''
 
     # Get holiday list of dicts with `holiday_date` and `description`
-    holidays = get_holidays_for_employee(doc.employee, doc.attendance_date, doc.attendance_date)
+    holidays = get_holidays_for_employee(doc.employee, doc.attendance_date, doc.attendance_date, only_non_weekly=True)
 
     # process compensatory leave request and additional salary if attendance status not equals "Absent" or "On Leave"
     if len(holidays) > 0 and doc.status not in ["Absent", "On Leave"]:

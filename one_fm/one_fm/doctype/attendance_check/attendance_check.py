@@ -14,7 +14,7 @@ class AttendanceCheck(Document):
 
 	def validate_justification(self):
 		'''
-			The method is used to validate the justification and its dependent fields
+			The method is used to validate the justification and its dependend fields
 		'''
 		if self.attendance_status == 'Present':
 			if not self.justification:
@@ -45,11 +45,10 @@ class AttendanceCheck(Document):
 				if not self.screenshot:
 					frappe.throw("Please Attach ScreenShot")
 
-		if self.justification == "Approved by Administrator":
-			if not check_attendance_manager(email=frappe.session.user):
-				frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
+      if self.justification == "Approved by Administrator":
+        if not check_attendance_manager(email=frappe.session.user):
+          frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
 
-	
 
 	def on_submit(self):
 		
@@ -605,11 +604,11 @@ def mark_missing_attendance(attendance_checkin_found):
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), 'Attendance Remark')
 
-
 @frappe.whitelist()
 def check_attendance_manager(email: str) -> bool:
     return frappe.db.get_value("Employee", {"user_id": email}) == frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
  
+
 @frappe.whitelist()
 def validate_day_off(form,convert=1):
 	# Validates the existence of a shift request when the attendance status of the attendance
@@ -636,4 +635,3 @@ def validate_day_off(form,convert=1):
 				 <p>Please note that a Shift Request has not been created for <b>{doc.employee_name}</b> on <b>{doc.date}</b>. <a  class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/shift-request/new-shift-request-1')}?doc_id={doc.name}&doctype={doc.doctype}" target="_blank">Click Here</a> to create one.</p>
 				 """)
 				
-
