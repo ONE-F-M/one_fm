@@ -43,6 +43,36 @@ frappe.ui.form.on("Leave Application", {
             }
           };
         });
+        prefillForm(frm);
       }
 })
 
+
+var prefillForm = frm => { 
+    const url = new URL(window.location.href);
+
+    const params = new URLSearchParams(url.search);
+
+    const doc_id = params.get('doc_id');
+    const doctype = params.get('doctype'); 
+
+    if (doctype == "Attendance Check"){
+        frappe.call({
+            method: 'frappe.client.get_value',
+            args: {
+                'doctype': doctype,
+                'filters': {'name': doc_id},
+                'fieldname': [
+                    "employee"
+                ]
+            },
+            callback: function(r) {
+                if (r.message) {
+                    cur_frm.set_value("employee", r.message.employee)
+                    
+                }
+            }
+        });
+    }
+
+}
