@@ -45,9 +45,9 @@ class AttendanceCheck(Document):
 				if not self.screenshot:
 					frappe.throw("Please Attach ScreenShot")
 
-      if self.justification == "Approved by Administrator":
-        if not check_attendance_manager(email=frappe.session.user):
-          frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
+		if self.justification == "Approved by Administrator":
+			if not check_attendance_manager(email=frappe.session.user):
+				frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
 
 
 	def on_submit(self):
@@ -131,8 +131,8 @@ class AttendanceCheck(Document):
 			"""
 			select leave_type
 			from `tabLeave Application`
-			where employee = %s
-				and %s between from_date and to_date
+			where employee = '%s'
+				and '%s' between from_date and to_date
 				and status = 'Approved'
 				and docstatus = 1
 		""",
@@ -147,8 +147,8 @@ class AttendanceCheck(Document):
 							"""
 							select employee_name,leave_approver_name,name
 							from `tabLeave Application`
-							where employee = %s
-								and %s between from_date and to_date
+							where employee = '%s'
+								and '%s' between from_date and to_date
 								and docstatus = 0
 							""",
 								(self.employee, self.date),
