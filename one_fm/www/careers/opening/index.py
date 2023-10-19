@@ -4,7 +4,7 @@ from ..utils import remove_html_tags
 def get_context(context):
     no_cache = 1
     job_id = frappe.form_dict.job_id
-    lang = frappe.form_dict.lang
+    context.lang = frappe.form_dict.lang
 
     opening = {}
 
