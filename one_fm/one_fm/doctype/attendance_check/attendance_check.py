@@ -14,7 +14,7 @@ class AttendanceCheck(Document):
 
 	def validate_justification(self):
 		'''
-			The method is used to validate the justification and its dependent fields
+			The method is used to validate the justification and its dependend fields
 		'''
 		if self.attendance_status == 'Present':
 			if not self.justification:
