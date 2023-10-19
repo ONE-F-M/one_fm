@@ -6,7 +6,7 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_common_email_args, deduplicate_actions, get_next_possible_transitions,
     get_doc_workflow_state, get_workflow_name, get_users_next_action_data
 )
-from frappe.utils import getdate, today, cstr, add_to_date
+from frappe.utils import getdate, today, cstr, add_to_date, nowdate
 from frappe.model.workflow import apply_workflow
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 from one_fm.api.notification import create_notification_log, get_employee_user_id
@@ -190,8 +190,9 @@ def assign_day_off(shift_request):
     if shift_assignment:
         for s in shift_assignment:
             shift = frappe.get_doc("Shift Assignment", s.name)
-            shift.cancel()
-            shift.delete()
+            if shift.start_date >= getdate():
+                shift.cancel()
+                shift.delete()
 
     employee_schedule = frappe.get_list('Employee Schedule' ,{'employee':shift_request.employee, 'date': ["between",  (shift_request.from_date, shift_request.to_date)]}, ['name'])
     if employee_schedule:
