@@ -8,6 +8,7 @@
  "field_order": [
   "mobile_app_version",
   "column_break_xyl05",
+  "mark_atttendance_per_employee",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
@@ -18,6 +19,7 @@
   "mark_atttendance_per_employee",
   "attendance_manager",
   "attendance_manager_name"
+  "wiki_page_access"
  ],
  "fields": [
   {
