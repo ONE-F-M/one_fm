@@ -16,7 +16,10 @@
   "wiki_page_access",
   "section_break_7yvzt",
   "mark_atttendance_per_employee",
-  "attendance_manager"
+  "attendance_manager",
+  "attendance_manager_name",
+  "employee_section",
+  "employee_access"
  ],
  "fields": [
   {
@@ -80,11 +83,29 @@
    "fieldtype": "Link",
    "label": "Attendance Manager",
    "options": "Employee"
+  },
+  {
+   "fetch_from": "attendance_manager.employee_name",
+   "fieldname": "attendance_manager_name",
+   "fieldtype": "Data",
+   "label": "Attendance Manager Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee_section",
+   "fieldtype": "Section Break",
+   "label": "Employee"
+  },
+  {
+   "fieldname": "employee_access",
+   "fieldtype": "Table",
+   "label": "Employee Access",
+   "options": "ONEFM Employee Access"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-10-11 17:48:58.871087",
+ "modified": "2023-10-19 17:06:21.594157",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
