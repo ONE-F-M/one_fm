@@ -160,7 +160,9 @@ class AttendanceCheck(Document):
 				frappe.throw(error_template)
 			else:
 				frappe.throw(f"""
-				 <p>Please note that a Leave Application has not been created for <b>{self.employee_name}</b>.<a  class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/leave-application/new-leave-application-1')}?doc_id={self.name}&doctype={self.doctype}" target="_blank">Click Here</a> to create one.</p>
+				<p>Please note that a Leave Application has not been created for <b>{self.employee_name}</b>.</p>
+				<hr>
+				To create a leave application <a class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/leave-application/new-leave-application-1')}?doc_id={self.name}&doctype={self.doctype}" target="_blank">Click Here</a>
 				 """)
 				
 
@@ -632,6 +634,8 @@ def validate_day_off(form,convert=1):
 			else:
 				#cancelled or shift request not created at all
 				frappe.throw(f"""
-				 <p>Please note that a Shift Request has not been created for <b>{doc.employee_name}</b> on <b>{doc.date}</b>. <a  class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/shift-request/new-shift-request-1')}?doc_id={doc.name}&doctype={doc.doctype}" target="_blank">Click Here</a> to create one.</p>
+				<p>Please note that a shift request has not been created for <b>{doc.employee_name}</b> on <b>{doc.date}</b>..</p>
+				<hr>
+				 To create a Shift Request <a class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/shift-request/new-shift-request-1')}?doc_id={doc.name}&doctype={doc.doctype}" target="_blank">Click Here</a>
 				 """)
 				
