@@ -131,7 +131,7 @@ class AttendanceCheck(Document):
 			FROM `tabLeave Application`
 			WHERE employee = '{self.employee}'
 				AND '{self.date}' >= from_date AND '{self.date}' <= to_date
-				AND status = 'Approved'
+				AND workflow_state = 'Approved'
 				AND docstatus = 1
 		""",as_dict=True)
 		

@@ -83,6 +83,7 @@ class LeaveApplicationOverride(LeaveApplication):
         self.close_shifts()
         self.update_attendance()
         return super().on_submit()
+        self.db_set('status', 'Approved')
 
 
     def close_shifts(self):
