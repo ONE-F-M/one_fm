@@ -15,12 +15,11 @@
 
 {% block content %}
 <body>
-
     <article class="mt-10 p-2">
         <div class="container">
         {%if lang == 'en'%}
             {% if opening %}
-                <div class="d-flex p-2" style="direction: rtl;">
+                <div class="d-flex p-2">
                     <h2 class="text-secondary float-left">{{ opening.job_title }}</h2>
                 </div>
                 <p class="text-dark">
