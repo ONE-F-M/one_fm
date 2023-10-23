@@ -239,15 +239,21 @@ job_application = Class.extend({
         var response = await upload_image_to_server(cv)
         var url = (response && response.message) ? response.message.file_url : "";
         var name_of_file = (response && response.message) ? response.message.name : "";
-        var erf_languages = document.getElementById('languages_table_div').getAttribute('data').split(",");
+        const languages_div = document.getElementById('languages_table_div');
+        let erf_languages;
+        if(languages_div){
+          erf_languages = languages_div.getAttribute('data').split(",");
+        }
         var languages = [];
-        for (const language of erf_languages) {
-          languages.push({
-            language: language,
-            speak: $(`.${language}_speak`).val(),
-            read: $(`.${language}_read`).val(),
-            write: $(`.${language}_write`).val()
-          });
+        if(erf_languages){
+          for (const language of erf_languages) {
+            languages.push({
+              language: language,
+              speak: $(`.${language}_speak`).val(),
+              read: $(`.${language}_read`).val(),
+              write: $(`.${language}_write`).val()
+            });
+          }
         }
         frappe.call({
           type: "POST",
