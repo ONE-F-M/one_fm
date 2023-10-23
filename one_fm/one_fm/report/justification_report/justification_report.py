@@ -81,7 +81,7 @@ def set_attendance_status_day_count(cur_date, column_date_field, datapack):
         from
             `tabAttendance Check`
         where
-            docstatus < 2 and date = "{cur_date}"
+            docstatus = 1 and date = "{cur_date}" and workflow_state = "Approved"
         group by
             attendance_status
     """
@@ -121,7 +121,7 @@ def set_justification_details(cur_date, column_date_field, datapack, row_index):
         from
             `tabAttendance Check`
         where
-            docstatus = 1 and justification !=""  and date = "{cur_date}"
+            docstatus = 1 and justification !=""  and date = "{cur_date}" and workflow_state = "Approved"
         group by
             justification
     """
