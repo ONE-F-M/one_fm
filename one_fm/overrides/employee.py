@@ -20,6 +20,7 @@ class EmployeeOverride(EmployeeMaster):
         self.validate_status()
         self.validate_reports_to()
         self.validate_preferred_email()
+        validate_employee_status_access(self=self)
         update_user_doc(self)
         if self.job_applicant:
             self.validate_onboarding_process()
@@ -33,6 +34,7 @@ class EmployeeOverride(EmployeeMaster):
                     "Employee", self.name, existing_user_id)
         employee_validate_attendance_by_timesheet(self, method=None)
         validate_leaves(self)
+        
     
 def update_user_doc(doc):
     if not doc.is_new():
@@ -122,6 +124,20 @@ def validate_leaves(self):
                 '{getdate()}' BETWEEN from_date AND to_date
             """, as_dict=1):
             frappe.throw(f"Status cannot be 'Vacation' when no Leave Application exists for {self.employee_name} today {getdate()}.")
+            
+            
+def validate_employee_status_access(self):
+    if self.status:
+        if self.is_new():
+            pass
+        else:
+            if self.status != self.get_doc_before_save().status:
+                if not check_employee_access(email=frappe.session.user):
+                    frappe.throw("You are not allowed to make changes to an employee's status.")
+        
+def check_employee_access(email: str) -> bool:
+    employee_setting = frappe.get_doc("ONEFM General Setting").get("employee_access")
+    return frappe.db.get_value("Employee", {"user_id": email}) in [obj.employee for obj in employee_setting]
 
 @frappe.whitelist()
 def get_new_employee_id(employee_id):

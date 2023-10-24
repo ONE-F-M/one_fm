@@ -1,13 +1,42 @@
+
 // dom ready
 document.addEventListener("DOMContentLoaded", (event)=>{
   // Add knowledge base to help button
   setTimeout(()=>{
-	improve_my_erp();
+    improve_my_erp();
+    if(!frappe.user_roles.includes("System Manager")) {
+      show_change_log();
+    }
   }, 5000)
   knowledgeBase();
   quotes_flash();
+
 });
 
+var show_change_log=function() {
+  let change_log = frappe.boot.change_log;
+  if (
+    !Array.isArray(change_log) ||
+    !change_log.length ||
+    window.Cypress ||
+    cint(frappe.boot.sysdefaults.disable_change_log_notification)
+  ) {
+    return;
+  }
+
+  // Iterate over changelog
+  var change_log_dialog = frappe.msgprint({
+    message: frappe.render_template("change_log", { change_log: change_log }),
+    title: __("Updated To A New Version 🎉"),
+    wide: true,
+  });
+  change_log_dialog.keep_open = true;
+  change_log_dialog.custom_onhide = function () {
+    frappe.call({
+      method: "frappe.utils.change_log.update_last_known_versions",
+    });
+  };
+};
 
 let improve_my_erp = () => {
 	let improveBTN = document.createElement('a');

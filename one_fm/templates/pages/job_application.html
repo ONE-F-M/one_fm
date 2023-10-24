@@ -123,15 +123,16 @@
   <!-- Language Section -->
   {% if language_exists %}
   <h5 class="languages_heading hide">Tell me about your language proficiency, so we can arrange the interview smoothly.</h5>
+  <br/>
   <div class="row languages_table_div hide" data="{{languages_list}}" id="languages_table_div">
     <div class="col-sm-6">
-      <table class="table">
+      <table class="table" style="border: solid 2px lightgrey;">
         <thead>
           <tr>
-            <th style="width:31%">Language</th>
-            <th style="width:23%">Read</th>
-            <th style="width:23%">Write</th>
-            <th style="width:23%">Speak</th>
+            <td style="width:31%">Language</td>
+            <td style="width:23%">Read</td>
+            <td style="width:23%">Write</td>
+            <td style="width:23%">Speak</td>
           </tr>
         </thead>
         <tbody>
@@ -141,37 +142,47 @@
               <td>
                 <select class="form-control {{language.language}}_read">
                   <option value="0.1">Select</option>
-                  <option value="0.2">1</option>
-                  <option value="0.4">2</option>
-                  <option value="0.6">3</option>
-                  <option value="0.8">4</option>
-                  <option value="1.0">5</option>
+                  <option value="0.2">Beginner</option>
+                  <option value="0.4">Elementary</option>
+                  <option value="0.6">Intermediate</option>
+                  <option value="0.8">Advanced</option>
+                  <option value="1.0">Proficient</option>
                 </select>
               </td>
               <td>
                 <select class="form-control {{language.language}}_write">
                   <option value="0.1">Select</option>
-                  <option value="0.2">1</option>
-                  <option value="0.4">2</option>
-                  <option value="0.6">3</option>
-                  <option value="0.8">4</option>
-                  <option value="1.0">5</option>
+                  <option value="0.2">Beginner</option>
+                  <option value="0.4">Elementary</option>
+                  <option value="0.6">Intermediate</option>
+                  <option value="0.8">Advanced</option>
+                  <option value="1.0">Proficient</option>
                 </select>
               </td>
               <td>
                 <select class="form-control {{language.language}}_speak">
                   <option value="0.1">Select</option>
-                  <option value="0.2">1</option>
-                  <option value="0.4">2</option>
-                  <option value="0.6">3</option>
-                  <option value="0.8">4</option>
-                  <option value="1.0">5</option>
+                  <option value="0.2">Beginner</option>
+                  <option value="0.4">Elementary</option>
+                  <option value="0.6">Intermediate</option>
+                  <option value="0.8">Advanced</option>
+                  <option value="1.0">Proficient</option>
                 </select>
               </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
+    </div>
+    <div class="col-sm-6 text-muted">
+      Select your read, write and speak proficiency based on this options:
+      <ul>
+        <li>Beginner: Can understand and use simple phrases and vocabulary</li>
+        <li>Elementary: Can understand simple conversations and express basic ideas</li>
+        <li>Intermediate: Can understand the main ideas of complex texts and express thoughts clearly</li>
+        <li>Advanced: Can understand a wide range of demanding texts and express themselves fluently and spontaneously</li>
+        <li>Proficient: Can understand virtually everything heard or read and express themselves with native-like fluency and precision.</li>
+      </ul>
     </div>
   </div>
   {% endif %}
