@@ -20,6 +20,6 @@ def get_context(context):
         opening.update({'description_ar': job_opening.description_in_arabic if job_opening.description_in_arabic else ""})
        
         opening.update({'designation': job_opening.designation})
-
-
+        
+    
     context.opening = opening
