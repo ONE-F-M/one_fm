@@ -127,23 +127,23 @@ class AttendanceCheck(Document):
 			frappe.throw(_('To Approve the record set Attendance Status'))
 
 	def check_on_leave_record(self):
-		submited_leave_record = frappe.db.sql(f"""select leave_type
-								from `tabLeave Application`
-								where employee = '{self.employee}'
-									and '{self.date}' between from_date and to_date
-									and status = 'Approved'
-									and docstatus = 1
-							""",as_dict=True)
+		submited_leave_record = frappe.db.sql(f"""SELECT leave_type
+			FROM `tabLeave Application`
+			WHERE employee = '{self.employee}'
+				AND '{self.date}' >= from_date AND '{self.date}' <= to_date
+				AND workflow_state = 'Approved'
+				AND docstatus = 1
+		""",as_dict=True)
 		
 		if  submited_leave_record:
 			return
 		else:
 			draft_leave_records = frappe.db.sql(f"""select employee_name,leave_approver_name,name
-							from `tabLeave Application`
-							where employee = '{self.employee}'
-								and '{self.date}' between from_date and to_date
-								and docstatus = 0
-							""",as_dict=True)
+				FROM `tabLeave Application`
+				WHERE employee = '{self.employee}'
+					AND '{self.date}' >= from_date AND '{self.date}' <= to_date
+					AND docstatus = 0
+			""",as_dict=True)
 			if draft_leave_records:
 				doc_url = get_url_to_form('Leave Application',draft_leave_records[0].get('name'))
 				error_template = frappe.render_template('one_fm/templates/emails/attendance_check_alert.html',context={'doctype':'Leave Application','current_user':frappe.session.user,'date':self.date,'approver':draft_leave_records[0].get('leave_approver_name'),'page_link':doc_url,'employee_name':self.employee_name})
