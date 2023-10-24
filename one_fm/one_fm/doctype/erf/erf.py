@@ -368,6 +368,7 @@ def create_job_opening_from_erf(erf):
 	# Set unique job_title
 	# since job_title will be set a route in Job Opening and the route is set as name in Job Opening
 	job_opening.job_title = erf.job_title+'('+erf.name+')'
+	job_opening.job_title_in_arabic = job_opening.job_title
 	job_opening.designation = erf.designation
 	job_opening.employment_type = erf.employment_type
 	job_opening.department = erf.department
