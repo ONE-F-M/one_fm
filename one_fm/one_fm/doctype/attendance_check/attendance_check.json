@@ -29,6 +29,7 @@
   "mobile_brand",
   "mobile_model",
   "screenshot",
+  "other_reason",
   "employee_checkin_details_section",
   "has_checkin_record",
   "has_checkout_record",
@@ -128,7 +129,7 @@
    "fieldtype": "Select",
    "label": "Justification",
    "mandatory_depends_on": "eval:doc.attendance_status=='Present'",
-   "options": "\nInvalid media content\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nSuddenly, the App stop working!\nEmployees insist that he/she did check in or out\nApproved by Administrator"
+   "options": "\nInvalid media content\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nSuddenly, the App stop working!\nEmployees insist that he/she did check in or out\nOther\nApproved by Administrator"
   },
   {
    "fieldname": "attendance_status",
@@ -426,6 +427,13 @@
    "fieldtype": "Attach",
    "label": "Screenshot",
    "mandatory_depends_on": "eval:[\"Invalid media content\",\"Out-of-site location\", \"User not assigned to shift\", \"Suddenly, the App stop working!\"].includes(doc.justification)"
+  },
+  {
+   "depends_on": "eval:doc.justification == \"Other\"",
+   "fieldname": "other_reason",
+   "fieldtype": "Small Text",
+   "label": "Other Reason",
+   "mandatory_depends_on": "eval:doc.justification == \"Other\""
   }
  ],
  "in_create": 1,
@@ -436,7 +444,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2023-10-04 20:37:11.937095",
+ "modified": "2023-10-15 19:45:50.043103",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",

@@ -31,14 +31,16 @@ def get_openings(keywords=None, department=None):
         filters.update({'department': department})
 
     openings_raw_format = frappe.db.get_list("Job Opening", filters,
-                                ["name", "designation", "description", "one_fm_job_opening_created", "department"],
+                                ["name","job_title_in_arabic", "designation", "description","description_in_arabic", "one_fm_job_opening_created", "department"],
                                 order_by="one_fm_job_opening_created desc")
 
     for opening in openings_raw_format:
         data = {
             'name': opening.name,
+            'name_ar': opening.job_title_in_arabic,
             'designation': opening.designation,
             'description': ((remove_html_tags(opening.description)[0:250] + "...") if opening.description else ""),
+            'description_ar': ((remove_html_tags(opening.description_in_arabic)[0:250] + "...") if opening.description_in_arabic else ""),
             'department': opening.department,
             'posting_date': str(opening.one_fm_job_opening_created)
         }

@@ -16,14 +16,39 @@ class AttendanceCheck(Document):
 		'''
 			The method is used to validate the justification and its dependend fields
 		'''
-		if self.justification != "Mobile isn't supporting the app":
-			self.mobile_brand = ""
-			self.mobile_model = ""
+		if self.attendance_status == 'Present':
+			if not self.justification:
+				frappe.throw("Please select Justification")
 
-		if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Suddenly, the App stop working!"]:
-			self.screenshot = ""
+			if self.justification != "Other":
+				self.other_reason = ""
+			
+			if self.justification == "Other":
+				if not self.other_reason:
+					frappe.throw("Please write the other Reason")
+		
+			if self.justification != "Mobile isn't supporting the app":
+				self.mobile_brand = ""
+				self.mobile_model = ""
+			
 
-	
+			if self.justification == "Mobile isn't supporting the app": 
+				if not self.mobile_brand:
+					frappe.throw("Please select mobile brand")
+				if not self.mobile_model:
+					frappe.throw("Please Select Mobile Model")
+				
+			if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Suddenly, the App stop working!"]:
+				self.screenshot = ""
+			
+			if self.justification in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Suddenly, the App stop working!"]:
+				if not self.screenshot:
+					frappe.throw("Please Attach ScreenShot")
+
+		if self.justification == "Approved by Administrator":
+			if not check_attendance_manager(email=frappe.session.user):
+				frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
+
 
 	def on_submit(self):
 		
@@ -102,40 +127,32 @@ class AttendanceCheck(Document):
 			frappe.throw(_('To Approve the record set Attendance Status'))
 
 	def check_on_leave_record(self):
-		submited_leave_record = frappe.db.sql(
-			"""
-			select leave_type
-			from `tabLeave Application`
-			where employee = %s
-				and %s between from_date and to_date
-				and status = 'Approved'
-				and docstatus = 1
-		""",
-			(self.employee, self.date),
-			as_dict=True,
-		)
+		submited_leave_record = frappe.db.sql(f"""SELECT leave_type
+			FROM `tabLeave Application`
+			WHERE employee = '{self.employee}'
+				AND '{self.date}' >= from_date AND '{self.date}' <= to_date
+				AND workflow_state = 'Approved'
+				AND docstatus = 1
+		""",as_dict=True)
 		
 		if  submited_leave_record:
 			return
 		else:
-			draft_leave_records = frappe.db.sql(
-							"""
-							select employee_name,leave_approver_name,name
-							from `tabLeave Application`
-							where employee = %s
-								and %s between from_date and to_date
-								and docstatus = 0
-							""",
-								(self.employee, self.date),
-								as_dict=True,
-							)
+			draft_leave_records = frappe.db.sql(f"""select employee_name,leave_approver_name,name
+				FROM `tabLeave Application`
+				WHERE employee = '{self.employee}'
+					AND '{self.date}' >= from_date AND '{self.date}' <= to_date
+					AND docstatus = 0
+			""",as_dict=True)
 			if draft_leave_records:
 				doc_url = get_url_to_form('Leave Application',draft_leave_records[0].get('name'))
 				error_template = frappe.render_template('one_fm/templates/emails/attendance_check_alert.html',context={'doctype':'Leave Application','current_user':frappe.session.user,'date':self.date,'approver':draft_leave_records[0].get('leave_approver_name'),'page_link':doc_url,'employee_name':self.employee_name})
 				frappe.throw(error_template)
 			else:
 				frappe.throw(f"""
-				 <p>Please note that a Leave Application has not been created for <b>{self.employee_name}</b>.<a  class="btn btn-primary btn-sm" href="/app/leave-application/new" target="_blank">Click Here</a> to create one.</p>
+				<p>Please note that a Leave Application has not been created for <b>{self.employee_name}</b>.</p>
+				<hr>
+				To create a leave application <a class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/leave-application/new-leave-application-1')}?doc_id={self.name}&doctype={self.doctype}" target="_blank" onclick=" ">Click Here</a>
 				 """)
 				
 
@@ -578,9 +595,12 @@ def mark_missing_attendance(attendance_checkin_found):
 				frappe.db.set_value("Employee Checkin", i.checkout_record, "attendance", att.name)
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), 'Attendance Remark')
-   
-   
-   
+
+@frappe.whitelist()
+def check_attendance_manager(email: str) -> bool:
+    return frappe.db.get_value("Employee", {"user_id": email}) == frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
+ 
+
 @frappe.whitelist()
 def validate_day_off(form,convert=1):
 	# Validates the existence of a shift request when the attendance status of the attendance
@@ -604,6 +624,8 @@ def validate_day_off(form,convert=1):
 			else:
 				#cancelled or shift request not created at all
 				frappe.throw(f"""
-				 <p>Please note that a Shift Request has not been created for <b>{doc.employee_name}</b> on <b>{doc.date}</b>. <a  class="btn btn-primary btn-sm" href="/app/shift-request/new" target="_blank">Click Here</a> to create one.</p>
+				<p>Please note that a shift request has not been created for <b>{doc.employee_name}</b> on <b>{doc.date}</b>..</p>
+				<hr>
+				 To create a Shift Request <a class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/shift-request/new-shift-request-1')}?doc_id={doc.name}&doctype={doc.doctype}" target="_blank" onclick=" ">Click Here</a>
 				 """)
 				

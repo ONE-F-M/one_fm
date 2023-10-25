@@ -526,12 +526,27 @@ def leave_application_list(user):
 	except AttributeError:
 		employee = frappe.get_value("Employee",{'user_id':frappe.session.user})
 		if employee:
-			
+
 			frappe.cache().set_value(frappe.session.user,frappe._dict({'employee':employee}))
 			roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
 			has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', employee, 'user_id'))])
 			if has_roles:
 				return
 			return "(employee = '{employee}')".format(employee=employee)
-			
-		
+
+
+def warehouse_list(user):
+    """
+        Filter Warehouse list based on permision
+    """
+    if not user: user = frappe.session.user
+    user_roles = set(frappe.get_roles(user))
+    role_list = [item['role'] for item in frappe.get_all("Warehouse Full Access Role", fields = ['role'], filters = {'parenttype': 'Additional Stock Settings'})]
+
+    has_matching_role = any(role in user_roles for role in role_list)
+
+    if not has_matching_role:
+        session_user_employee = frappe.db.get_value('Employee', {'user_id': frappe.session.user}, 'name')
+        if session_user_employee:
+            return "`tabWarehouse`.`one_fm_store_keeper` = '{0}'".format(session_user_employee)
+    return ""
