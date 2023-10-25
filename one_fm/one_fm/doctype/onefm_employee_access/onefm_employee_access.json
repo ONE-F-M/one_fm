@@ -13,21 +13,22 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Employee",
-   "options": "Employee",
-   "unique": 1
+   "options": "Employee"
   },
   {
    "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Employee Name"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-10-19 17:07:31.095719",
+ "modified": "2023-10-25 08:20:37.578970",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "ONEFM Employee Access",
