@@ -89,7 +89,12 @@ def _get_current_shift(employee):
         """
         shift = frappe.db.sql(sql, as_dict=1)
         if shift: # shift was checked 1hr ahead
-            return shift[0]
+            the_shift = shift[0] 
+            shift_details = frappe.db.get_value("Shift Type", the_shift.shift_type, "begin_check_in_before_shift_start_time")
+            if shift_details:
+                pre_checkin = shift_details.begin_check_in_before_shift_start_time
+                if dt.time() > (dt + timedelta(minutes=pre_checkin)):
+                    return shift[0]
         else:
             curtime_plus_1 = dt + timedelta(hours=-1)
             sql = f"""
@@ -99,7 +104,12 @@ def _get_current_shift(employee):
             """
             shift = frappe.db.sql(sql, as_dict=1)
             if shift: # shift was checked 1hr in the past
-                return shift[0]
+               the_shift = shift[0] 
+               shift_details = frappe.db.get_value("Shift Type", the_shift.shift_type, "allow_check_out_after_shift_end_time")
+               if shift_details:
+                   post_checkout = shift_details.allow_check_out_after_shift_end_time
+                   if dt.time() > (dt - timedelta(minutes=post_checkout)):
+                       return shift[0]
     return False
 
 @frappe.whitelist()
