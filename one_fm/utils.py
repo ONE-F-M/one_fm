@@ -2677,7 +2677,7 @@ def queue_send_workflow_action_email(doc, recipients):
                 "message": message,
                 "doc_link": frappe.utils.get_url(doc.get_url()),
                 "workflow_state": doc.workflow_state,
-                "mandatory_field":mandatory_field,
+                "mandatory_field": mandatory_field,
                 "field_labels": labels
             },
             "reference_name": doc.name,
