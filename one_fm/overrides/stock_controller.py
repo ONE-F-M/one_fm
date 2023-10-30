@@ -17,7 +17,9 @@ def make_batches_with_supplier_batch_id(self, warehouse_field):
                             supplier=getattr(self, "supplier", None),
                             reference_doctype=self.doctype,
                             reference_name=self.name,
-                            supplier_batch_id=d.supplier_batch_id if d.get('supplier_batch_id') else ''
+                            supplier_batch_id=d.supplier_batch_id if d.get('supplier_batch_id') else '',
+                            manufacturing_date=d.manufacturing_date if d.get('manufacturing_date') else '',
+                            expiry_date=d.expiry_date if d.get('expiry_date') else ''
                         )
                     )
                     .insert()
