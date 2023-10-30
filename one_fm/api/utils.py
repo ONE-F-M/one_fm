@@ -66,7 +66,7 @@ def set_up_face_recognition_server_credentials():
         frappe.log_error("Face Recognition Setup", frappe.get_traceback())
         return {'error':True, 'message':e}
     
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=1)
 def _get_current_shift(employee):
     """
         Get current shift employee should be logged into
@@ -90,10 +90,9 @@ def _get_current_shift(employee):
         shift = frappe.db.sql(sql, as_dict=1)
         if shift: # shift was checked 1hr ahead
             the_shift = shift[0] 
-            shift_details = frappe.db.get_value("Shift Type", the_shift.shift_type, "begin_check_in_before_shift_start_time")
-            if shift_details:
-                pre_checkin = shift_details.begin_check_in_before_shift_start_time
-                if dt.time() > (dt + timedelta(minutes=pre_checkin)):
+            pre_checkin = frappe.db.get_value("Shift Type", the_shift.shift_type, "begin_check_in_before_shift_start_time")
+            if pre_checkin:
+                if dt > (the_shift.start_datetime - timedelta(minutes=pre_checkin)):
                     return shift[0]
         else:
             curtime_plus_1 = dt + timedelta(hours=-1)
@@ -105,10 +104,9 @@ def _get_current_shift(employee):
             shift = frappe.db.sql(sql, as_dict=1)
             if shift: # shift was checked 1hr in the past
                the_shift = shift[0] 
-               shift_details = frappe.db.get_value("Shift Type", the_shift.shift_type, "allow_check_out_after_shift_end_time")
-               if shift_details:
-                   post_checkout = shift_details.allow_check_out_after_shift_end_time
-                   if dt.time() > (dt - timedelta(minutes=post_checkout)):
+               post_checkout = frappe.db.get_value("Shift Type", the_shift.shift_type, "allow_check_out_after_shift_end_time")
+               if post_checkout:
+                   if dt < (the_shift.end_datetime + timedelta(minutes=post_checkout)):
                        return shift[0]
     return False
 
