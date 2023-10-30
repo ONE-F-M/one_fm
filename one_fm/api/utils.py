@@ -66,7 +66,7 @@ def set_up_face_recognition_server_credentials():
         frappe.log_error("Face Recognition Setup", frappe.get_traceback())
         return {'error':True, 'message':e}
     
-@frappe.whitelist(allow_guest=1)
+@frappe.whitelist()
 def _get_current_shift(employee):
     """
         Get current shift employee should be logged into
