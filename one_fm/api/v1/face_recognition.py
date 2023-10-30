@@ -1,7 +1,7 @@
 import frappe, ast, base64, time, grpc, json, random
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
-from one_fm.api.v1.roster import get_current_shift
+from one_fm.utils import get_current_shift
 from one_fm.api.v1.utils import response
 from frappe.utils import cstr, getdate,now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
@@ -235,22 +235,32 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
     try:
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
-        date = cstr(getdate())
-        log = check_existing()
-
-        if log == False:
-            log_type = "IN"
-        else:
-            log_type = "OUT"
-
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         shift = get_current_shift(employee)
+        date = cstr(getdate())
+        
         site, location = None, None
         if shift:
-            if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date], "status": "Approved"}):
-                check_in_site, check_out_site = frappe.get_value("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date], "status": "Approved"},["check_in_site","check_out_site"])
+            if not shift.can_checkin_out:
+                # check if user can checkin with the correct time
+                return response("Resource Not Found", 404, None, "Your are outside shift hours")
+            
+            log_type = shift.check_existing_checking()
+            if log_type=='IN':
+                if shift.after_4hrs():
+                    # check if hrs has passed since shift start. Here we can also allow those who checked out tp checkin by checkin if OUT exist for same shift
+                    return response("Resource Not Found", 404, None, "You are 4 or more hours late, you cannot checkin at this time.")
+
+            if frappe.db.exists("Shift Request", {
+                "employee":employee, 'from_date':['<=',date],
+                'to_date':['>=',date], "status": "Approved"}
+                ):
+                check_in_site, check_out_site = frappe.get_value("Shift Request", {
+                    "employee":employee, 'from_date':['<=',date],'to_date':['>=',date], 
+                    "status": "Approved"},["check_in_site","check_out_site"]
+                )
                 if log_type == "IN":
                     site = check_in_site
                     location = frappe.get_list("Location", {'name':check_in_site}, ["latitude","longitude", "geofence_radius"])

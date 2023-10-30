@@ -3006,39 +3006,6 @@ def get_approver(employee):
         frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
 
 
-# def get_approver(employee):
-#     """
-#         Get document approver for employee by
-#         reports_to, shift_approver, site_approver
-#     """
-#     if employee=="HR-EMP-00001":return "HR-EMP-00001" # for Abdullah
-#     operations_site, operations_shift = '', ''
-#     if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
-#     emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
-#     # Get for IT - ONEFM
-#     if emp_data.department=='IT - ONEFM':
-# <<<<<<< staging
-#         return emp_data.reports_to
-
-#     if emp_data.site:
-# =======
-#          return emp_data.reports_to
-
-#     if emp_data.shift:
-#         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
-#     elif emp_data.site:
-# >>>>>>> master-14
-#         operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
-#     elif emp_data.shift:
-#         operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
-#     elif emp_data.reports_to:
-#         return emp_data.reports_to
-#     if operations_site:return operations_site
-#     if operations_shift:return operations_shift
-#     if not (operations_shift and operations_site and operations_shift):
-#         frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
-
-
 def get_approver_for_many_employees(supervisor=None):
     """
         Get document approver for employee by
@@ -3264,3 +3231,68 @@ def custom_validate_interviewer(self):
                     frappe.bold(self.interviewer), frappe.bold(self.interview)
                 )
             )
+
+
+
+@frappe.whitelist()
+def get_current_shift(employee):
+    """
+        Get current shift employee should be logged into
+    """
+    sql = f"""
+        SELECT * FROM `tabShift Assignment`
+        WHERE employee="{employee}" AND status="Active" AND 
+        ('{now()}' BETWEEN start_datetime AND end_datetime)
+    """
+    shift = frappe.db.sql(sql, as_dict=1)
+    if shift: # shift was checked in between start and end time
+        return frappe.get_doc("Shift Assignment", shift[0])
+    else: # we look right and left (right for next shift)
+        dt = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
+        curtime_plus_1 = dt + timedelta(hours=1)
+        sql = f"""
+            SELECT * FROM `tabShift Assignment`
+            WHERE employee="{employee}" AND status="Active" AND 
+            ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
+        """
+        shift = frappe.db.sql(sql, as_dict=1)
+        if shift: # shift was checked 1hr ahead
+            return frappe.get_doc("Shift Assignment", shift[0])
+        else:
+            curtime_plus_1 = dt + timedelta(hours=-1)
+            sql = f"""
+                SELECT * FROM `tabShift Assignment`
+                WHERE employee="{employee}" AND status="Active" AND 
+                ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
+            """
+            shift = frappe.db.sql(sql, as_dict=1)
+            if shift: # shift was checked 1hr in the past
+                return frappe.get_doc("Shift Assignment", shift[0])
+    return False
+
+
+@frappe.whitelist()
+def check_existing_checking(shift):
+    """API to determine the applicable Log type.
+    The api checks employee's last lcheckin log type. and determine what next log type needs to be
+    Returns:
+        True: The log in was "IN", so his next Log Type should be "OUT".
+        False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
+    """
+    checkin = frappe.db.get_list("Employee Checkin", filters={
+        'employee':shift.employee, 'shift_assignment':shift.name,
+        'shift_actual_start':shift.start_datetime,
+        'shift_actual_end':shift.end_datetime,
+        'roster_type':shift.roster_type
+        }, 
+        fields='log_type',
+        order_by="actual_time DESC"
+    )
+    if checkin:
+        # #For Check IN
+        if checkin[0].log_type=='OUT':
+            return "IN"
+        #For Check OUT
+        else:
+            return "OUT"
+    return "IN"
