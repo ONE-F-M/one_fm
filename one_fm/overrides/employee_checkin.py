@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days, now, today
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
-from one_fm.api.v1.roster import get_current_shift
+from one_fm.utils import get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 from one_fm.api.doc_events import (
