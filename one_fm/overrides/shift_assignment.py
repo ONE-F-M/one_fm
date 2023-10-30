@@ -62,7 +62,9 @@ class ShiftAssignmentOverride(ShiftAssignment):
         """
             Check if checkin time has exceeded 4hrs, which mean employee is late.
         """
-        if divmod((now_datetime()-self.start_datetime).total_seconds(), 3600)[0] > 4:
+        if (
+            (divmod((now_datetime()-self.start_datetime).total_seconds(), 3600)[0] > 4) and not frappe.db.exists(
+                "Employee Checkin", {'shift_assignment':self.name})):
             return True
         return False
 
