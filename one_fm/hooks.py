@@ -278,7 +278,10 @@ doc_events = {
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
 		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
-		"validate": "one_fm.purchase.utils.validate_store_keeper_project_supervisor"
+		"validate": [
+			"one_fm.purchase.utils.validate_store_keeper_project_supervisor",
+			"one_fm.overrides.purchase_receipt.validate_item_batch"
+		]
 	},
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
@@ -775,7 +778,7 @@ override_whitelisted_methods = {
     "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
 	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_approver",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"

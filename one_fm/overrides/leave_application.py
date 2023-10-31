@@ -95,7 +95,7 @@ class LeaveApplicationOverride(LeaveApplication):
                 frappe.msgprint(msg = f"Shift Assignments for {self.employee_name} between {self.from_date} and {self.to_date} have been deleted",alert=1)
         except:
             frappe.log_error(frappe.get_traceback(),"Error Closing Shifts")
-        
+
 
     def notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
@@ -143,7 +143,7 @@ class LeaveApplicationOverride(LeaveApplication):
         if self.leave_type == 'Annual Leave' :
             holidays = get_holidays_for_employee(employee=self.employee, start_date=self.from_date, end_date=self.to_date, only_non_weekly=True)
             holiday_dates = [cstr(h.holiday_date) for h in holidays]
-            
+
         for dt in daterange(getdate(self.from_date), getdate(self.to_date)):
             date = dt.strftime("%Y-%m-%d")
             attendance_name = frappe.db.exists(
@@ -165,7 +165,7 @@ class LeaveApplicationOverride(LeaveApplication):
                     self.create_or_update_attendance(attendance_name, date, 'Holiday')
             else:
                 self.create_or_update_attendance(attendance_name, date, 'On Leave')
-            
+
 
     def create_or_update_attendance(self, attendance_name, date, status):
         if attendance_name:
@@ -378,9 +378,8 @@ class LeaveApplicationOverride(LeaveApplication):
                     frappe.db.commit()
         if self.status == "Approved":
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
-                emp = frappe.get_doc("Employee", self.employee)
-                emp.status = "Vacation"
-                emp.save()
+                # frappe.db.set_value(), will not call the validate.
+                frappe.db.set_value("Employee", self.employee, "status", "Vacation")
                 frappe.db.commit()
             if frappe.db.exists("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]}):
                 att_check = frappe.get_doc("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]})
@@ -389,19 +388,59 @@ class LeaveApplicationOverride(LeaveApplication):
                 frappe.db.commit()
 
 @frappe.whitelist()
+def get_leave_details(employee, date):
+	allocation_records = get_leave_allocation_records(employee, date)
+	leave_allocation = {}
+	precision = cint(frappe.db.get_single_value("System Settings", "float_precision", cache=True))
+
+	for d in allocation_records:
+		allocation = allocation_records.get(d, frappe._dict())
+		remaining_leaves = get_leave_balance_on(
+			employee, d, date, to_date=allocation.to_date, consider_all_leaves_in_the_allocation_period=True
+		)
+
+		end_date = allocation.to_date
+		leaves_taken = get_leaves_for_period(employee, d, allocation.from_date, end_date) * -1
+		leaves_pending = get_leaves_pending_approval_for_period(
+			employee, d, allocation.from_date, end_date
+		)
+		expired_leaves = allocation.total_leaves_allocated - (remaining_leaves + leaves_taken)
+
+		leave_allocation[d] = {
+			"total_leaves": flt(allocation.total_leaves_allocated, precision),
+			"expired_leaves": flt(expired_leaves, precision) if expired_leaves > 0 else 0,
+			"leaves_taken": flt(leaves_taken, precision),
+			"leaves_pending_approval": flt(leaves_pending, precision),
+			"remaining_leaves": flt(remaining_leaves, precision),
+		}
+
+	# is used in set query
+	lwp = frappe.get_list("Leave Type", filters={"is_lwp": 1}, pluck="name")
+
+	return {
+		"leave_allocation": leave_allocation,
+		"leave_approver": get_leave_approver(employee),
+		"lwps": lwp,
+	}
+
+@frappe.whitelist()
 def get_leave_approver(employee):
-    leave_approver, department = frappe.db.get_value(
-        "Employee", employee, ["leave_approver", "department"]
-    )
-
-    if not leave_approver and department:
-        leave_approver = frappe.db.get_value(
-            "Department Approver",
-            {"parent": department, "parentfield": "leave_approvers", "idx": 1},
-            "approver",
-        )
-
-    return leave_approver
+    employee_details = frappe.db.get_list("Employee", {"name":employee}, ["reports_to", "department"])
+    reports_to = employee_details[0].reports_to
+    department = employee_details[0].department
+    employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
+    if reports_to:
+        approver = frappe.get_value("Employee", reports_to, ["user_id"])
+    elif len(employee_shift) > 0 and employee_shift[0].shift:
+        approver, Role = get_action_user(employee,employee_shift[0].shift)
+    else:
+        approvers = frappe.db.sql(
+				"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'leave_approvers'""",
+				(department),
+			)
+        approvers = [approver[0] for approver in approvers]
+        approver = approvers[0]
+    return approver
 
 @frappe.whitelist()
 def employee_leave_status():
@@ -427,7 +466,5 @@ def process_change(start_leave, end_leave):
 
 def change_employee_status(employee_list, status):
     for e in employee_list:
-        emp = frappe.get_doc("Employee", e.employee)
-        emp.status = status
-        emp.save()
+        frappe.db.set_value("Employee", e.employee, "status", status)
     frappe.db.commit()

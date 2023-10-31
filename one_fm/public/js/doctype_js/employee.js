@@ -6,6 +6,7 @@ frappe.ui.form.on('Employee', {
         set_shift_working_btn(frm);
         filterDefaultShift(frm);
         setProjects(frm);
+		setReadOnly(frm);
 	},
 	status: function(frm){
 		set_mandatory(frm);
@@ -166,4 +167,18 @@ const TransferToNonShift = frm => {
 function setCharAt(str,index,chr) {
     if(index > str.length-1) return str;
     return str.substring(0,index) + chr + str.substring(index+1);
+}
+
+
+let setReadOnly = (frm) => {
+	frappe.call({
+		method: "one_fm.overrides.employee.check_employee_access",
+		args: {"email": frappe.session.user},
+		callback: function (r) {
+			if (!r.message){
+				frm.set_df_property("status", "read_only", 1)
+			}
+		}
+
+	})
 }
