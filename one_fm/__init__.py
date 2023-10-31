@@ -48,7 +48,7 @@ from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import Leav
 from erpnext.controllers.stock_controller import StockController
 from one_fm.overrides.stock_controller import make_batches_with_supplier_batch_id
 
-__version__ = '14.5.8'
+__version__ = '14.5.9'
 
 StockController.make_batches = make_batches_with_supplier_batch_id
 Interview.validate_overlap = validate_interview_overlap
