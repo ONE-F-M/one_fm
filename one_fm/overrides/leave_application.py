@@ -378,9 +378,8 @@ class LeaveApplicationOverride(LeaveApplication):
                     frappe.db.commit()
         if self.status == "Approved":
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
-                emp = frappe.get_doc("Employee", self.employee)
-                emp.status = "Vacation"
-                emp.save()
+                # frappe.db.set_value(), will not call the validate.
+                frappe.db.set_value("Employee", self.employee, "status", "Vacation")
                 frappe.db.commit()
             if frappe.db.exists("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]}):
                 att_check = frappe.get_doc("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]})
@@ -467,7 +466,5 @@ def process_change(start_leave, end_leave):
 
 def change_employee_status(employee_list, status):
     for e in employee_list:
-        emp = frappe.get_doc("Employee", e.employee)
-        emp.status = status
-        emp.save()
+        frappe.db.set_value("Employee", e.employee, "status", status)
     frappe.db.commit()
