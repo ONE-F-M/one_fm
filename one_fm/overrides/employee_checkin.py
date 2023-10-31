@@ -5,7 +5,7 @@ import frappe
 from frappe import _
 from frappe.utils import cint, get_datetime, cstr, getdate, now_datetime, add_days, now, today
 from hrms.hr.doctype.employee_checkin.employee_checkin import *
-from one_fm.api.v1.roster import get_current_shift
+from one_fm.utils import get_current_shift
 from one_fm.api.tasks import send_notification, issue_penalty
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 from one_fm.api.doc_events import (
@@ -36,7 +36,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 				checkin_time = get_datetime(self.time)
 				curr_shift = get_current_shift(self.employee)
 				if curr_shift:
-					curr_shift = curr_shift
+					curr_shift = curr_shift.as_dict()
 					start_date = curr_shift["start_date"].strftime("%Y-%m-%d")
 					existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{start_date}' and employee = '{self.employee}' and permission_type = '{perm_map[self.log_type]}' and workflow_state = 'Approved' """, as_dict=1)
 					self.shift_assignment = curr_shift["name"]

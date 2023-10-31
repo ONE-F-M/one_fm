@@ -139,6 +139,7 @@ def get_emp_list(self, project_list=False):
 	sal_struct = get_salary_structure(
 		self.company, self.currency, self.salary_slip_based_on_timesheet, condition
 	)
+	print(sal_struct)
 	if sal_struct:
 		cond += "and t2.salary_structure IN %(sal_struct)s "
 		cond += "and t2.payroll_payable_account = %(payroll_payable_account)s "
