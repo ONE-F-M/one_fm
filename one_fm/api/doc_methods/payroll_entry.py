@@ -130,14 +130,8 @@ def get_emp_list(self, project_list=False):
 	cond = get_filter_condition(filters)
 	cond += get_joining_relieving_condition(self.start_date, self.end_date)
 
-	condition = ""
-	if self.payroll_frequency:
-		condition = """and payroll_frequency = '%(payroll_frequency)s'""" % {
-			"payroll_frequency": self.payroll_frequency
-		}
-
 	sal_struct = get_salary_structure(
-		self.company, self.currency, self.salary_slip_based_on_timesheet, condition
+		self.company, self.currency, self.salary_slip_based_on_timesheet, self.payroll_frequency
 	)
 	print(sal_struct)
 	if sal_struct:
