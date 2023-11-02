@@ -44,6 +44,8 @@ class AttendanceCheck(Document):
 			if self.justification in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Suddenly, the App stop working!"]:
 				if not self.screenshot:
 					frappe.throw("Please Attach ScreenShot")
+		else:
+			self.justification = ""
 
 		if self.justification == "Approved by Administrator":
 			if not check_attendance_manager(email=frappe.session.user):
