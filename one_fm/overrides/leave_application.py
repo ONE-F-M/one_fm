@@ -89,12 +89,23 @@ class LeaveApplicationOverride(LeaveApplication):
         #delete the shifts if a leave application is approved
         try:
             if self.status == "Approved":
-                query =f"""DELETE from `tabShift Assignment` where employee = '{self.employee}' and start_date BETWEEN '{self.from_date}' and '{self.to_date}' and docstatus = 1 """
-                frappe.db.sql(query)
+                shift_assignment = frappe.db.sql(f"""SELECT name from `tabShift Assignment` where employee = '{self.employee}' and start_date BETWEEN '{self.from_date}' and '{self.to_date}' and docstatus = 1 """, as_dict=True)
+                for shift in shift_assignment:
+                    #unlink from attendance check
+                    self.unlink_attendance_check(shift.name)
+                    query =f"""DELETE from `tabShift Assignment` where name = '{shift.name}' and docstatus = 1 """
+                    frappe.db.sql(query)
                 frappe.msgprint(msg = f"Shift Assignments for {self.employee_name} between {self.from_date} and {self.to_date} have been deleted",alert=1)
         except:
             frappe.log_error(frappe.get_traceback(),"Error Closing Shifts")
-        
+
+    def unlink_attendance_check(self, shift):
+        if frappe.db.exists("Attendance Check", {'shift_assignment':shift}):
+            att_check_doc = frappe.get_doc("Attendance Check", {'shift_assignment':shift})
+            att_check_doc.db_set('shift_assignment', "")
+            att_check_doc.db_set('has_shift_assignment',0)
+        frappe.db.commit()
+
 
     def notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
