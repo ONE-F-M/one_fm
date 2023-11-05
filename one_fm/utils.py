@@ -3296,3 +3296,22 @@ def check_existing_checking(shift):
         else:
             return "OUT"
     return "IN"
+
+@frappe.whitelist()
+def check_existing():
+    """API to determine the applicable Log type.
+    The api checks employee's last lcheckin log type. and determine what next log type needs to be
+    Returns:
+        True: The log in was "IN", so his next Log Type should be "OUT".
+        False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
+    """
+    employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+    if not employee:
+        return response("Employee not found", 404, None, "Employee not found")
+    curr_shift = get_current_shift(employee)
+    if not curr_shift:
+        return response("Employee not found", 404, None, "Employee not found")
+    log_type = check_existing_checking(curr_shift)
+    if log_type=='IN':
+        return response("success", 200, True, "")
+    return response("success", 200, False, "")

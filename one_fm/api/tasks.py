@@ -17,7 +17,7 @@ from one_fm.utils import (
 	mark_attendance, get_holiday_today, production_domain, get_today_leaves, get_salary_amount,
 	get_leave_payment_breakdown
 )
-from one_fm.api.v1.roster import get_current_shift
+from one_fm.utils import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import approve_open_employee_checkin_issue
