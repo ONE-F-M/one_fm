@@ -279,7 +279,7 @@ function addYourLocationButton (map, marker){
 
 
 function check_existing(page){
-	frappe.xcall('one_fm.one_fm.page.face_recognition.face_recognition.check_existing')
+	frappe.xcall('one_fm.utils.check_existing')
 	.then(r =>{
 		if (!r.exc) {
 			// code snippet
