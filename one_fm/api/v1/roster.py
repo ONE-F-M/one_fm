@@ -7,6 +7,7 @@ import json, base64, ast, itertools, datetime
 from frappe.client import attach_file
 from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view  # , get_roster_view as _get_roster_view
 from one_fm.api.v1.utils import response
+from one_fm.utils import get_current_shift
 from one_fm.one_fm.page.roster.employee_map import CreateMap, PostMap
 
 
@@ -559,41 +560,6 @@ def get_handover_posts(shift=None):
     except Exception as e:
         return frappe.utils.response.report_error(e.http_status_code)
 
-
-@frappe.whitelist()
-def get_current_shift(employee):
-    """This function is to return employee's current Shift,
-	based on Shift Assignment. 
-	Args:
-		employee (str): Employee's ERP ID
-	Returns:
-		string: Operation Shift of the assigned shift if it exist.
-	"""
-    try:
-        # fetch datetime
-        current_datetime = now_datetime()
-        date, time = current_datetime.strftime("%Y-%m-%d %H:%M:%S").split(" ")
-        
-        shift = frappe.db.sql("""SELECT sa.* FROM `tabShift Assignment` sa, `tabShift Type` st
-							WHERE sa.shift_type = st.name
-                            AND employee ='{employee}'
-                            AND DATE_SUB(sa.start_datetime, INTERVAL st.begin_check_in_before_shift_start_time MINUTE) <= '{current_datetime}'
-                            AND DATE_ADD(sa.end_datetime, INTERVAL st.allow_check_out_after_shift_end_time MINUTE) >= '{current_datetime}'
-                            ORDER BY creation ASC""".format(current_datetime=cstr(current_datetime), employee=employee), as_dict=1)
-
-        if len(shift) == 1:
-            cur_shift = shift[0]
-        elif len(shift) == 2: #2 shift colliding
-            if has_checkout(shift[0], employee): #
-                cur_shift = shift[1]
-            else:
-                cur_shift = shift[0]
-        else:
-            cur_shift =  shift
-        return cur_shift
-            
-    except Exception as e:
-        return frappe.utils.response.report_error(e.http_status_code)
 
 def has_checkout(shift, employee):
     checkin = frappe.db.sql("""SELECT * FROM `tabEmployee Checkin` empChkin
