@@ -10,6 +10,7 @@ import pandas as pd
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.processor import is_user_id_company_prefred_email_in_employee
 from hrms.hr.utils import get_holidays_for_employee
+from one_fm.api.tasks import get_action_user
 
 def close_leaves(leave_ids, user=None):
     approved_leaves = leave_ids
