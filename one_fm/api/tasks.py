@@ -13,7 +13,6 @@ from frappe.utils import (
 )
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
-from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
 from one_fm.utils import (
 	mark_attendance, get_holiday_today, production_domain, get_today_leaves, get_salary_amount,
 	get_leave_payment_breakdown
@@ -1102,6 +1101,7 @@ def mark_auto_attendance(shift_type):
 
 
 def generate_payroll():
+	from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
 	'''
 		Method to generate payroll on 24th of each month(method calling form cron job for 24th in hooks.py)
 	'''
