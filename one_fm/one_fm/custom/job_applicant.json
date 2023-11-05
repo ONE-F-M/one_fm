@@ -59,6 +59,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -122,6 +123,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -185,6 +187,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -248,6 +251,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -311,6 +315,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -374,6 +379,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -437,6 +443,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -500,6 +507,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -563,6 +571,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -626,6 +635,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -689,6 +699,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -752,6 +763,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -815,6 +827,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -878,6 +891,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -941,6 +955,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1004,6 +1019,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1067,6 +1083,7 @@
    "report_hide": 0,
    "reqd": 1,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -1130,6 +1147,7 @@
    "report_hide": 0,
    "reqd": 1,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -1193,6 +1211,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -1256,6 +1275,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1319,6 +1339,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1382,6 +1403,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -1445,6 +1467,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1508,6 +1531,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1571,6 +1595,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1634,6 +1659,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1697,6 +1723,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -1760,6 +1787,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -1823,6 +1851,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -1886,6 +1915,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1949,6 +1979,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -2012,6 +2043,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2075,6 +2107,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2138,6 +2171,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2201,6 +2235,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2264,6 +2299,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2327,6 +2363,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2356,7 +2393,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 153,
+   "idx": 154,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -2390,6 +2427,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -2453,6 +2491,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2516,6 +2555,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -2579,6 +2619,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2642,6 +2683,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2705,6 +2747,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2768,6 +2811,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2831,6 +2875,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2894,6 +2939,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -2957,6 +3003,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3020,6 +3067,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3083,6 +3131,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3146,6 +3195,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -3209,6 +3259,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3272,6 +3323,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3335,6 +3387,7 @@
    "report_hide": 0,
    "reqd": 1,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -3398,6 +3451,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3461,6 +3515,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3524,6 +3579,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3587,6 +3643,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3650,6 +3707,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3713,6 +3771,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3776,6 +3835,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3839,6 +3899,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -3902,6 +3963,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -3965,6 +4027,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4028,6 +4091,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4091,6 +4155,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -4154,6 +4219,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -4217,6 +4283,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4280,6 +4347,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -4343,6 +4411,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -4406,6 +4475,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4469,6 +4539,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4532,6 +4603,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4595,6 +4667,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4658,6 +4731,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -4721,6 +4795,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4784,6 +4859,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4847,6 +4923,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4910,6 +4987,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -4973,6 +5051,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -5036,6 +5115,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -5099,6 +5179,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -5162,6 +5243,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -5225,6 +5307,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -5288,6 +5371,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -5351,6 +5435,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -5414,6 +5499,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -5477,6 +5563,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -5540,6 +5627,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -5603,6 +5691,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -5666,6 +5755,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -5729,6 +5819,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -5792,6 +5883,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -5855,6 +5947,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -5918,6 +6011,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -5981,6 +6075,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -6044,6 +6139,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -6107,6 +6203,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -6170,6 +6267,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -6233,6 +6331,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -6296,6 +6395,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -6359,6 +6459,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -6422,6 +6523,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -6485,6 +6587,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -6514,7 +6617,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 165,
+   "idx": 166,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -6548,6 +6651,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": "55"
@@ -6577,14 +6681,14 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 152,
+   "idx": 153,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
    "in_list_view": 0,
    "in_preview": 0,
    "in_standard_filter": 0,
-   "insert_after": "one_fm_is_transferable",
+   "insert_after": "custom_transfer_reminder_date",
    "is_system_generated": 0,
    "is_virtual": 0,
    "label": "",
@@ -6611,6 +6715,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -6674,6 +6779,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -6703,7 +6809,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 179,
+   "idx": 180,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -6737,6 +6843,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -6766,7 +6873,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 180,
+   "idx": 181,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -6800,6 +6907,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -6829,7 +6937,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 181,
+   "idx": 182,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -6863,6 +6971,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -6926,6 +7035,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -6989,6 +7099,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7052,6 +7163,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7115,6 +7227,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7178,6 +7291,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7241,6 +7355,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7270,7 +7385,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 154,
+   "idx": 155,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -7304,6 +7419,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7333,7 +7449,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 187,
+   "idx": 188,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -7367,6 +7483,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -7430,6 +7547,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7459,7 +7577,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 178,
+   "idx": 179,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -7493,6 +7611,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7522,7 +7641,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 185,
+   "idx": 186,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -7556,6 +7675,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7585,7 +7705,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 177,
+   "idx": 178,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -7619,6 +7739,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7682,6 +7803,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -7745,6 +7867,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -7774,7 +7897,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 188,
+   "idx": 189,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -7808,6 +7931,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7837,7 +7961,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 173,
+   "idx": 174,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -7871,6 +7995,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7900,7 +8025,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 184,
+   "idx": 185,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -7934,6 +8059,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -7963,7 +8089,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 174,
+   "idx": 175,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -7997,6 +8123,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8026,7 +8153,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 182,
+   "idx": 183,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8060,6 +8187,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8089,7 +8217,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 176,
+   "idx": 177,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8123,6 +8251,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -8152,7 +8281,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 183,
+   "idx": 184,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8186,6 +8315,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -8215,7 +8345,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 166,
+   "idx": 167,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8249,6 +8379,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -8278,7 +8409,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 157,
+   "idx": 158,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8312,6 +8443,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -8341,7 +8473,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 158,
+   "idx": 159,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8375,6 +8507,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -8404,7 +8537,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 168,
+   "idx": 169,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8438,6 +8571,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8467,7 +8601,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 171,
+   "idx": 172,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8501,6 +8635,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8530,7 +8665,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 167,
+   "idx": 168,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8564,6 +8699,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8593,7 +8729,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 172,
+   "idx": 173,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8627,6 +8763,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8656,7 +8793,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 175,
+   "idx": 176,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8690,6 +8827,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8719,7 +8857,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 169,
+   "idx": 170,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8753,6 +8891,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8782,7 +8921,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 170,
+   "idx": 171,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8816,6 +8955,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8845,7 +8985,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 163,
+   "idx": 164,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8879,6 +9019,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -8908,7 +9049,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 186,
+   "idx": 187,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -8942,6 +9083,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -8971,7 +9113,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 164,
+   "idx": 165,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -9005,6 +9147,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -9034,7 +9177,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 160,
+   "idx": 161,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -9068,6 +9211,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -9097,7 +9241,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 161,
+   "idx": 162,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -9131,6 +9275,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -9160,7 +9305,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 162,
+   "idx": 163,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -9194,6 +9339,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -9223,7 +9369,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 159,
+   "idx": 160,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -9257,6 +9403,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -9286,7 +9433,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 156,
+   "idx": 157,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -9320,6 +9467,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -9349,7 +9497,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 155,
+   "idx": 156,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -9383,6 +9531,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -9446,6 +9595,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -9509,6 +9659,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -9572,6 +9723,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -9635,6 +9787,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -9698,6 +9851,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -9761,6 +9915,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -9824,6 +9979,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -9887,6 +10043,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -9950,6 +10107,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -10013,6 +10171,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -10076,6 +10235,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -10139,6 +10299,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -10202,6 +10363,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -10231,7 +10393,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 189,
+   "idx": 190,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -10265,6 +10427,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -10294,7 +10457,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 190,
+   "idx": 191,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -10328,6 +10491,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -10357,7 +10521,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 191,
+   "idx": 192,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -10391,6 +10555,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -10420,7 +10585,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 192,
+   "idx": 193,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -10454,6 +10619,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -10483,7 +10649,7 @@
    "hide_border": 0,
    "hide_days": 0,
    "hide_seconds": 0,
-   "idx": 193,
+   "idx": 194,
    "ignore_user_permissions": 0,
    "ignore_xss_filter": 0,
    "in_global_search": 0,
@@ -10517,6 +10683,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -10580,7 +10747,72 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
+   "unique": 0,
+   "width": null
+  },
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "allow_in_quick_entry": 0,
+   "allow_on_submit": 0,
+   "bold": 0,
+   "collapsible": 0,
+   "collapsible_depends_on": null,
+   "columns": 0,
+   "creation": "2023-10-09 14:04:15.365981",
+   "default": null,
+   "depends_on": "eval:doc.one_fm_is_transferable==\"Later\"",
+   "description": null,
+   "docstatus": 0,
+   "dt": "Job Applicant",
+   "fetch_from": null,
+   "fetch_if_empty": 0,
+   "fieldname": "custom_transfer_reminder_date",
+   "fieldtype": "Date",
+   "hidden": 0,
+   "hide_border": 0,
+   "hide_days": 0,
+   "hide_seconds": 0,
+   "idx": 152,
+   "ignore_user_permissions": 0,
+   "ignore_xss_filter": 0,
+   "in_global_search": 0,
+   "in_list_view": 0,
+   "in_preview": 0,
+   "in_standard_filter": 0,
+   "insert_after": "one_fm_is_transferable",
+   "is_system_generated": 0,
+   "is_virtual": 0,
+   "label": "Transfer Reminder Date",
+   "length": 0,
+   "mandatory_depends_on": "eval: doc.one_fm_is_transferable == \"Later\"",
+   "modified": "2023-10-09 14:04:15.365981",
+   "modified_by": "e.olayinka@one-fm.com",
+   "module": null,
+   "name": "Job Applicant-custom_transfer_reminder_date",
+   "no_copy": 0,
+   "non_negative": 0,
+   "options": null,
+   "owner": "e.olayinka@one-fm.com",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "permlevel": 0,
+   "precision": "",
+   "print_hide": 0,
+   "print_hide_if_no_value": 0,
+   "print_width": null,
+   "read_only": 0,
+   "read_only_depends_on": null,
+   "report_hide": 0,
+   "reqd": 0,
+   "search_index": 0,
+   "sort_options": 0,
+   "translatable": 0,
    "unique": 0,
    "width": null
   }
@@ -10589,6 +10821,32 @@
  "doctype": "Job Applicant",
  "links": [],
  "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2023-10-09 14:10:50.158164",
+   "default_value": null,
+   "doc_type": "Job Applicant",
+   "docstatus": 0,
+   "doctype_or_field": "DocType",
+   "field_name": null,
+   "idx": 0,
+   "is_system_generated": 0,
+   "modified": "2023-10-09 14:10:50.158164",
+   "modified_by": "e.olayinka@one-fm.com",
+   "module": null,
+   "name": "Job Applicant-main-field_order",
+   "owner": "e.olayinka@one-fm.com",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "field_order",
+   "property_type": "Data",
+   "row_name": null,
+   "value": "[\"details_section\", \"applicant_name\", \"email_id\", \"one_fm_application_id\", \"phone_number\", \"country\", \"column_break_3\", \"job_title\", \"one_fm_designation\", \"applicant_lead\", \"designation\", \"status\", \"one_fm_reason_for_rejection\", \"one_fm_applicant_status\", \"one_fm_document_verification\", \"source_and_rating_section\", \"source\", \"source_name\", \"one_fm_erf_application_details_section\", \"one_fm_erf\", \"project\", \"department\", \"one_fm_sourcing_team\", \"one_fm_agency\", \"one_fm_is_agency_applying\", \"one_fm_job_applicant_cb_1\", \"one_fm_source_of_hire\", \"one_fm_hiring_method\", \"interview_round\", \"bulk_interview\", \"employment_type\", \"attendance_by_timesheet\", \"one_fm_applicant_personal_details_sb\", \"one_fm_first_name\", \"one_fm_second_name\", \"one_fm_third_name\", \"one_fm_forth_name\", \"one_fm_last_name\", \"one_fm_first_name_in_arabic\", \"one_fm_second_name_in_arabic\", \"one_fm_third_name_in_arabic\", \"one_fm_forth_name_in_arabic\", \"one_fm_last_name_in_arabic\", \"one_fm_height\", \"one_fm_i_am_currently_working\", \"one_fm_applicant_demographics_cb\", \"one_fm_gender\", \"one_fm_religion\", \"one_fm_date_of_birth\", \"one_fm_place_of_birth\", \"one_fm_marital_status\", \"one_fm_nationality\", \"one_fm_date_of_entry\", \"employee_referral\", \"column_break_13\", \"applicant_rating\", \"section_break_6\", \"notes\", \"cover_letter\", \"resume_attachment\", \"children_details_section\", \"one_fm_number_of_kids\", \"one_fm_kids_details\", \"day_off_details\", \"day_off_category\", \"column_break_66\", \"number_of_days_off\", \"one_fm_work_details_section\", \"one_fm_rotation_shift\", \"one_fm_night_shift\", \"one_fm_work_details_cb\", \"one_fm_type_of_travel\", \"one_fm_type_of_driving_license\", \"one_fm_uniform_measurements\", \"one_fm_is_uniform_needed_for_this_job\", \"one_fm_shoulder_width\", \"one_fm_waist_size\", \"one_fm_shoe_size\", \"one_fm_basic_skill_section\", \"one_fm_designation_skill\", \"one_fm_documents_required_section\", \"one_fm_documents_required\", \"one_fm_is_easy_apply\", \"previous_work_details\", \"one_fm_work_permit_number\", \"one_fm_duration_of_work_permit\", \"one_fm_previous_designation\", \"column_break_51\", \"one_fm_work_permit_salary\", \"one_fm_last_working_date\", \"resume_link\", \"section_break_16\", \"currency\", \"column_break_18\", \"lower_range\", \"upper_range\", \"one_fm_contact_details_section\", \"one_fm_email_id\", \"one_fm_country_code\", \"one_fm_contact_number\", \"one_fm_country_code_second\", \"one_fm_secondary_contact_number\", \"one_fm_contact_cb\", \"one_fm_language_section\", \"one_fm_languages\", \"country_and_nationality_section\", \"nationality_no\", \"nationality_subject\", \"nationality_cb\", \"date_of_naturalization\", \"one_fm_passport_section\", \"one_fm_passport_number\", \"one_fm_passport_holder_of\", \"one_fm_passport_issued\", \"one_fm_passport_expire\", \"one_fm_passport_cb\", \"one_fm_passport_type\", \"one_fm_centralized_number\", \"one_fm_visa_and_residency_section\", \"one_fm_have_a_valid_visa_in_kuwait\", \"one_fm_visa_type\", \"one_fm_cid_number\", \"one_fm_cid_expire\", \"one_fm_in_kuwait_at_present\", \"one_fm_visa_cb\", \"one_fm_current_employment_section_\", \"one_fm_current_employer\", \"one_fm_current_employer_website_link\", \"one_fm_employment_start_date\", \"one_fm_employment_end_date\", \"one_fm_current_employment_cb\", \"one_fm_current_job_title\", \"one_fm_current_salary\", \"one_fm_notice_period_in_days\", \"one_fm_educational_qualification_section\", \"one_fm_educational_qualification\", \"other_education\", \"one_fm_education_specialization\", \"one_fm_educational_qualification_cb\", \"one_fm_university\", \"one_fm_country_of_employment\", \"section_break_88\", \"one_fm_are_you_currently_studying\", \"one_fm_current_educational_institution\", \"column_break_91\", \"one_fm_place_of_study\", \"one_fm_entry_date_of_current_educational_institution\", \"section_break_66\", \"one_fm_applicant_is_overseas_or_local\", \"one_fm_country_of_overseas\", \"one_fm_is_transferable\", \"custom_transfer_reminder_date\", \"column_break_72\", \"one_fm_applicant_password\", \"authorized_signatory\", \"one_fm_old_number\", \"one_fm_old_designation\", \"one_fm_erf_pam_file_number\", \"one_fm_erf_pam_designation\", \"send_changes_to_supervisor\", \"accept_changes\", \"reject_changes\", \"suggestions\", \"save_me\", \"no_internal_issues\", \"one_fm_has_issue\", \"one_fm_type_of_issues\", \"column_break_149\", \"one_fm_change_pam_file_number\", \"pam_number_button\", \"pam_designation_button\", \"one_fm_change_pam_designation\", \"column_break_152\", \"one_fm_pam_file_number\", \"one_fm_pam_designation\", \"column_break_154\", \"one_fm_file_number\", \"one_fm_notify_recruiter\", \"previous_company_details\", \"one_fm_previous_company_trade_name_in_arabic\", \"one_fm__previous_company_authorized_signatory_name_arabic\", \"one_fm_previous_company_issuer_number\", \"column_break_142\", \"one_fm_previous_company_pam_file_number\", \"one_fm_government_project\", \"authorized_signatory_section\", \"one_fm_pam_authorized_signatory\", \"one_fm_signatory_name\", \"one_fm_grd_operator\", \"scans\", \"passport_data_page\", \"civil_id_front\", \"civil_id_back\", \"magic_link\"]"
+  },
   {
    "_assign": null,
    "_comments": null,

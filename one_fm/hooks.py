@@ -798,7 +798,7 @@ after_migrate = [
 
 before_migrate = [
     "one_fm.after_migrate.execute.before_migrate",
-    "one_fm.after_migrate.execute.set_files_directories",
+    #"one_fm.after_migrate.execute.set_files_directories",
     "one_fm.after_migrate.execute.replace_job_opening"
 ]
 
