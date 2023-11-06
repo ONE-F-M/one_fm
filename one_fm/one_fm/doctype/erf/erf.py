@@ -198,7 +198,11 @@ class ERF(Document):
 		data = len(frappe.db.get_list('Job Opening', filters={
 			'one_fm_erf':self.name, 'status':'Open', 'publish':1
 		}))
-		return {'opening': data}
+		return {'opening': data, "job_opening_exists": frappe.db.exists("Job Opening", {"one_fm_erf": self.name})}
+
+	@frappe.whitelist()
+	def create_job_opening(self):
+		create_job_opening_from_erf(self)
 
 	@frappe.whitelist()
 	def close_job_opening(self):
