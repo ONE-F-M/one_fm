@@ -754,8 +754,6 @@ def check_salary_slip_count(doc):
 		""", as_dict=1)
 	if salary_count[0] != payroll_entry.number_of_employees:
 		payroll_entry.db_set({"status": "Pending Salary Slip", "error_message": "", "salary_slips_created": 0})
-	else:
-		payroll_entry.db_set({"salary_slips_created": 1})
 	frappe.db.commit()
 	return True
 
