@@ -381,12 +381,12 @@ class LeaveApplicationOverride(LeaveApplication):
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 # frappe.db.set_value(), will not call the validate.
                 frappe.db.set_value("Employee", self.employee, "status", "Vacation")
-                frappe.db.commit()
             if frappe.db.exists("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]}):
                 att_check = frappe.get_doc("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]})
-                att_check.db_set("workflow_state", "Approved")
-                att_check.db_set('attendance_status','On Leave')
-                frappe.db.commit()
+                att_check.attendance_status= 'On Leave'
+                att_check.workflow_state = "Approved"
+                att_check.submit()
+            frappe.db.commit()
 
 @frappe.whitelist()
 def get_leave_details(employee, date):
