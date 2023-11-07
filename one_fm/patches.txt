@@ -61,4 +61,5 @@ one_fm.patches.v14_0.remove_magic_link_field_from_job_applicant
 one_fm.patches.v14_0.update_operation_shift 
 one_fm.patches.v14_0.copy_ml_to_ch_applicant_doc_url
 one_fm.patches.v14_0.update_attendance_check
+one_fm.patches.v14_0.missing_shift_assignment
 one_fm.patches.v14_0.update_docstatus
