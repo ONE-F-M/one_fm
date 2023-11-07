@@ -1,0 +1,106 @@
+{
+ "cards": [
+  {
+   "card": "AC - Present (Yesterday)"
+  },
+  {
+   "card": "AC - Present (Last Week)"
+  },
+  {
+   "card": "AC - Present (This Month)"
+  },
+  {
+   "card": "AC - Present (Last Month)"
+  },
+  {
+   "card": "AC - Pending (Yesterday)"
+  },
+  {
+   "card": "AC - Pending (Last Week)"
+  },
+  {
+   "card": "AC - Pending (This Month)"
+  },
+  {
+   "card": "AC - Pending (Last Month)"
+  },
+  {
+   "card": "AC - On Leave (Yesterday)"
+  },
+  {
+   "card": "AC - On Leave (Last Week)"
+  },
+  {
+   "card": "AC - On Leave (This Month)"
+  },
+  {
+   "card": "AC - On Leave (Last Month)"
+  },
+  {
+   "card": "AC - Day Off (Yesterday)"
+  },
+  {
+   "card": "AC - Day Off (Last Week)"
+  },
+  {
+   "card": "AC - Day Off (This Month)"
+  },
+  {
+   "card": "AC - Day Off (Last Month)"
+  },
+  {
+   "card": "AC - Absent (Yesterday)"
+  },
+  {
+   "card": "AC - Absent (Last Week)"
+  },
+  {
+   "card": "AC - Absent (This Month)"
+  },
+  {
+   "card": "AC - Absent (Last Month)"
+  }
+ ],
+ "charts": [
+  {
+   "chart": "Justification Count",
+   "width": "Full"
+  },
+  {
+   "chart": "AC - Pending Trend",
+   "width": "Full"
+  },
+  {
+   "chart": "AC - Present Trend",
+   "width": "Full"
+  },
+  {
+   "chart": "AC - Day Off Trend",
+   "width": "Full"
+  },
+  {
+   "chart": "AC - On Leave Trend",
+   "width": "Full"
+  },
+  {
+   "chart": "AC - Absent Trend",
+   "width": "Full"
+  },
+  {
+   "chart": "Total Attendance Check Trend",
+   "width": "Full"
+  }
+ ],
+ "creation": "2023-10-30 14:11:46.566570",
+ "dashboard_name": "Attendance Check",
+ "docstatus": 0,
+ "doctype": "Dashboard",
+ "idx": 0,
+ "is_default": 0,
+ "is_standard": 1,
+ "modified": "2023-11-05 13:52:05.017278",
+ "modified_by": "e.olayinka@one-fm.com",
+ "module": "One Fm",
+ "name": "Attendance Check",
+ "owner": "e.olayinka@one-fm.com"
+}
