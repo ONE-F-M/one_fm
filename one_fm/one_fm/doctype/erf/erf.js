@@ -1074,11 +1074,27 @@ const closeJobOpening = frm => {
     })
 }
 
+// close job opening
+const create_job_opening = frm => {
+	frappe.confirm('Are you sure you want to proceed?',
+	() => {
+		// action to perform if Yes is selected
+		frm.call('create_job_opening').then(res=>{
+			frm.refresh();
+		})
+	}, () => {
+		// action to perform if No is selected
+	})
+};
 
 const loadJobOpening = frm => {
 	frm.call('job_opening_status').then(res=>{
 		if (res.message.opening){
 			frm.add_custom_button(__('Close Job Opening'), () => closeJobOpening(frm)).addClass('btn-primary');
+		}
+		// Job Opening creation button
+		if(!res.message.job_opening_exists && frm.doc.status == "Accepted"){
+			frm.add_custom_button(__('Create Job Opening'), () => create_job_opening(frm)).addClass('btn-primary');
 		}
 	})
 }

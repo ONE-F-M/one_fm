@@ -2382,8 +2382,19 @@ def notify_on_close(doc, method):
         #Form Subject and Message
         subject = """Your Issue {docname} has been closed!""".format(docname=doc.name)
         user_full_name = doc.raised_by
-        if frappe.db.exists('User', {'email_id': doc.raised_by}):
-            user_full_name = frappe.db.get_value('User', {'email_id': doc.raised_by}, 'full_name')
+        # Check if the user exists in the ERP
+        user_exists = frappe.db.exists('User', {'email': doc.raised_by})
+        if user_exists:
+            '''
+                Check if the user is active in the ERP,
+                If the user is not active, then not send the notification to the issue raiser.
+            '''
+            user_enabled = frappe.db.get_value("User", user_exists, "enabled")
+            if not user_enabled:
+                frappe.msgprint(_("The issue raiser {0} is not an active user in the ERP!".format(doc.raised_by)), "Not send notification to the issue raiser")
+                return
+            user_full_name = frappe.db.get_value('User', {'email': doc.raised_by}, 'full_name')
+
         msg_html = """
             Hello {user},<br/>
             Your issue <a href={url}>{issue_id}</a> has been closed. If you are still experiencing
@@ -2396,7 +2407,6 @@ def notify_on_close(doc, method):
         if doc.description and strip_html(doc.description):
             # striphtml is used to get data without html tags, text editor will have a Defualt html <div class="ql-editor read-mode"><p><br></p></div>
             msg += f"""<b>Issue Description:</b><br/>{doc.description}"""
-
 
         sendemail( recipients= doc.raised_by, content=msg, subject=subject, delayed=False, is_external_mail=True)
 
@@ -3241,7 +3251,7 @@ def get_current_shift(employee):
     """
     sql = f"""
         SELECT * FROM `tabShift Assignment`
-        WHERE employee="{employee}" AND status="Active" AND 
+        WHERE employee="{employee}" AND status="Active" AND
         ('{now()}' BETWEEN start_datetime AND end_datetime)
     """
     shift = frappe.db.sql(sql, as_dict=1)
@@ -3252,7 +3262,7 @@ def get_current_shift(employee):
         curtime_plus_1 = dt + timedelta(hours=1)
         sql = f"""
             SELECT * FROM `tabShift Assignment`
-            WHERE employee="{employee}" AND status="Active" AND 
+            WHERE employee="{employee}" AND status="Active" AND
             ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
         """
         shift = frappe.db.sql(sql, as_dict=1)
@@ -3262,7 +3272,7 @@ def get_current_shift(employee):
             curtime_plus_1 = dt + timedelta(hours=-1)
             sql = f"""
                 SELECT * FROM `tabShift Assignment`
-                WHERE employee="{employee}" AND status="Active" AND 
+                WHERE employee="{employee}" AND status="Active" AND
                 ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
             """
             shift = frappe.db.sql(sql, as_dict=1)
@@ -3284,7 +3294,7 @@ def check_existing_checking(shift):
         'shift_actual_start':shift.start_datetime,
         'shift_actual_end':shift.end_datetime,
         'roster_type':shift.roster_type
-        }, 
+        },
         fields='log_type',
         order_by="actual_time DESC"
     )
@@ -3296,3 +3306,22 @@ def check_existing_checking(shift):
         else:
             return "OUT"
     return "IN"
+
+@frappe.whitelist()
+def check_existing():
+    """API to determine the applicable Log type.
+    The api checks employee's last lcheckin log type. and determine what next log type needs to be
+    Returns:
+        True: The log in was "IN", so his next Log Type should be "OUT".
+        False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
+    """
+    employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
+    if not employee:
+        return response("Employee not found", 404, None, "Employee not found")
+    curr_shift = get_current_shift(employee)
+    if not curr_shift:
+        return response("Employee not found", 404, None, "Employee not found")
+    log_type = check_existing_checking(curr_shift)
+    if log_type=='IN':
+        return response("success", 200, True, "")
+    return response("success", 200, False, "")
