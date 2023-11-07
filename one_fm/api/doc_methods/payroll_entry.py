@@ -716,7 +716,7 @@ def create_salary_slips_for_employees(employees, payroll_entry, publish_progress
 			if salary_slip_chunk:
 				frappe.enqueue(create_salary_slip_chunk,slips=salary_slip_chunk, queue="long")
 		payroll_entry.db_set("status", "Submitted")
-		
+
 		if salary_slips_exist_for:
 			frappe.msgprint(
 				_(
@@ -746,14 +746,14 @@ def check_salary_slip_count(doc):
 		salary_count = frappe.db.sql_list(
 			f"""
 			select Count(distinct employee) as salary_count from `tabSalary Slip`
-			where docstatus!= 2 
+			where docstatus!= 2
 				and company = '{payroll_entry.company}'
 				and start_date = '{payroll_entry.start_date}'
 				and end_date = '{payroll_entry.end_date}'
 			""", as_dict=1)
 		print(salary_count[0])
 		if salary_count[0] != payroll_entry.number_of_employees:
-			
+
 			payroll_entry.db_set({"status": "Pending Salary Slip", "error_message": ""})
 		else:
 			payroll_entry.db_set({"status": "Submitted", "error_message": ""})
@@ -769,7 +769,7 @@ def create_pending_sal_slip(doc):
 	ss_employees = frappe.db.sql_list(
 		f"""
 		select distinct employee from `tabSalary Slip`
-		where docstatus!= 2 
+		where docstatus!= 2
 			and company = '{payroll_entry.company}'
 			and start_date >= '{payroll_entry.start_date}'
 			and end_date <='{payroll_entry.end_date}'
@@ -858,11 +858,3 @@ def notify_for_open_leave_application():
 			sendemail(recipients= recipient , subject="Leave Application need approval", message=message)
 	except Exception as error:
 		frappe.log_error(str(error), 'Open Leave Application reminder failed')
-
-def close_all_leave_application():
-	leave_list = frappe.get_list("Leave Application", {"workflow_state":"Open"}, ['*'])
-	leave_ids = [leave.name for leave in leave_list]
-	if len(leave_ids) <= 5:
-		close_leaves(leave_ids)
-	else:
-		frappe.enqueue(method=close_leaves, leave_ids=leave_ids, queue='long', timeout=1200, job_name='Closing Leaves')
