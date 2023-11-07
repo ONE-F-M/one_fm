@@ -101,10 +101,9 @@ class LeaveApplicationOverride(LeaveApplication):
             frappe.log_error(frappe.get_traceback(),"Error Closing Shifts")
 
     def unlink_attendance_check(self, shift):
-        if frappe.db.exists("Attendance Check", {'shift_assignment':shift}):
-            att_check_doc = frappe.get_doc("Attendance Check", {'shift_assignment':shift})
-            att_check_doc.db_set('shift_assignment', "")
-            att_check_doc.db_set('has_shift_assignment',0)
+        attcheck_exists = frappe.db.exists("Attendance Check",  {"shift_assignment": shift})
+        if attcheck_exists:
+            frappe.db.set_value("Attendance Check", attcheck_exists, {'shift_assignment': "",'has_shift_assignment': 0})
         frappe.db.commit()
 
 
