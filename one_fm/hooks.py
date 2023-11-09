@@ -788,7 +788,8 @@ required_apps = ['frappe', 'erpnext']
 # jinja env
 jenv = {
     "methods": [
-        "pf:one_fm.jinja.print_format.methods.pf"
+        "pf:one_fm.jinja.print_format.methods.pf",
+        "get_qrcode:one_fm.qr_code_generator.get_qrcode"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"
