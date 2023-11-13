@@ -5,7 +5,7 @@ from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
 from frappe.desk.form.assign_to import add
 from one_fm.api.notification import create_notification_log
-from frappe.utils import getdate
+from frappe.utils import getdate, date_diff
 import pandas as pd
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.processor import is_user_id_company_prefred_email_in_employee
@@ -65,7 +65,9 @@ def is_app_user(emp):
         pass
 
 
-class LeaveApplicationOverride(LeaveApplication):
+class LeaveApplicationOverride(LeaveApplication): 
+    def validate(self):
+        self.validate_applicable_after()
 
     def close_todo(self):
         """Close the Todo document linked with a leave application
@@ -86,6 +88,23 @@ class LeaveApplicationOverride(LeaveApplication):
         return super().on_submit()
         self.db_set('status', 'Approved')
 
+    def validate_applicable_after(self):
+        if self.leave_type:
+            leave_type = frappe.get_doc("Leave Type", self.leave_type)
+            if leave_type.applicable_after > 0:
+                date_of_joining = frappe.db.get_value("Employee", self.employee, "date_of_joining")
+                leave_days = get_approved_leaves_for_period(
+                    self.employee, False, date_of_joining, self.from_date
+                )
+                number_of_days = date_diff(getdate(self.from_date), date_of_joining)
+                if number_of_days >= 0:
+                    number_of_days = number_of_days - leave_days
+                    if number_of_days < leave_type.applicable_after:
+                        frappe.throw(
+                            _("{0} applicable after {1} working days").format(
+                                self.leave_type, leave_type.applicable_after
+                            )
+                        )
 
     def close_shifts(self):
         #delete the shifts if a leave application is approved
@@ -356,7 +375,7 @@ class LeaveApplicationOverride(LeaveApplication):
             emp.save()
             frappe.db.commit()
         self.create_leave_ledger_entry(submit=False)
-		# notify leave applier about cancellation
+        # notify leave applier about cancellation
         self.cancel_attendance()
 
 
@@ -400,39 +419,39 @@ class LeaveApplicationOverride(LeaveApplication):
 
 @frappe.whitelist()
 def get_leave_details(employee, date):
-	allocation_records = get_leave_allocation_records(employee, date)
-	leave_allocation = {}
-	precision = cint(frappe.db.get_single_value("System Settings", "float_precision", cache=True))
+    allocation_records = get_leave_allocation_records(employee, date)
+    leave_allocation = {}
+    precision = cint(frappe.db.get_single_value("System Settings", "float_precision", cache=True))
 
-	for d in allocation_records:
-		allocation = allocation_records.get(d, frappe._dict())
-		remaining_leaves = get_leave_balance_on(
-			employee, d, date, to_date=allocation.to_date, consider_all_leaves_in_the_allocation_period=True
-		)
+    for d in allocation_records:
+        allocation = allocation_records.get(d, frappe._dict())
+        remaining_leaves = get_leave_balance_on(
+            employee, d, date, to_date=allocation.to_date, consider_all_leaves_in_the_allocation_period=True
+        )
 
-		end_date = allocation.to_date
-		leaves_taken = get_leaves_for_period(employee, d, allocation.from_date, end_date) * -1
-		leaves_pending = get_leaves_pending_approval_for_period(
-			employee, d, allocation.from_date, end_date
-		)
-		expired_leaves = allocation.total_leaves_allocated - (remaining_leaves + leaves_taken)
+        end_date = allocation.to_date
+        leaves_taken = get_leaves_for_period(employee, d, allocation.from_date, end_date) * -1
+        leaves_pending = get_leaves_pending_approval_for_period(
+            employee, d, allocation.from_date, end_date
+        )
+        expired_leaves = allocation.total_leaves_allocated - (remaining_leaves + leaves_taken)
 
-		leave_allocation[d] = {
-			"total_leaves": flt(allocation.total_leaves_allocated, precision),
-			"expired_leaves": flt(expired_leaves, precision) if expired_leaves > 0 else 0,
-			"leaves_taken": flt(leaves_taken, precision),
-			"leaves_pending_approval": flt(leaves_pending, precision),
-			"remaining_leaves": flt(remaining_leaves, precision),
-		}
+        leave_allocation[d] = {
+            "total_leaves": flt(allocation.total_leaves_allocated, precision),
+            "expired_leaves": flt(expired_leaves, precision) if expired_leaves > 0 else 0,
+            "leaves_taken": flt(leaves_taken, precision),
+            "leaves_pending_approval": flt(leaves_pending, precision),
+            "remaining_leaves": flt(remaining_leaves, precision),
+        }
 
-	# is used in set query
-	lwp = frappe.get_list("Leave Type", filters={"is_lwp": 1}, pluck="name")
+    # is used in set query
+    lwp = frappe.get_list("Leave Type", filters={"is_lwp": 1}, pluck="name")
 
-	return {
-		"leave_allocation": leave_allocation,
-		"leave_approver": get_leave_approver(employee),
-		"lwps": lwp,
-	}
+    return {
+        "leave_allocation": leave_allocation,
+        "leave_approver": get_leave_approver(employee),
+        "lwps": lwp,
+    }
 
 @frappe.whitelist()
 def get_leave_approver(employee):
@@ -446,9 +465,9 @@ def get_leave_approver(employee):
         approver, Role = get_action_user(employee,employee_shift[0].shift)
     else:
         approvers = frappe.db.sql(
-				"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'leave_approvers'""",
-				(department),
-			)
+                """select approver from `tabDepartment Approver` where parent= %s and parentfield = 'leave_approvers'""",
+                (department),
+            )
         approvers = [approver[0] for approver in approvers]
         approver = approvers[0]
     return approver
