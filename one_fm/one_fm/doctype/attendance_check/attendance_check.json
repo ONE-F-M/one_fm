@@ -129,7 +129,7 @@
    "fieldtype": "Select",
    "label": "Justification",
    "mandatory_depends_on": "eval:doc.attendance_status=='Present'",
-   "options": "\nInvalid media content\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nSuddenly, the App stop working!\nEmployees insist that he/she did check in or out\nOther\nApproved by Administrator"
+   "options": "\nInvalid media content\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nEmployees insist that he/she did check in or out\nOther\nApproved by Administrator"
   },
   {
    "fieldname": "attendance_status",
@@ -444,7 +444,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2023-10-15 19:45:50.043103",
+ "modified": "2023-11-12 10:58:38.519076",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
