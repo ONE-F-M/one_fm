@@ -1972,3 +1972,4 @@ def run_checkin_reminder():
 			initiate_checkin_notification(res)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Checkin Notification')
+
