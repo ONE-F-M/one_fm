@@ -1,6 +1,7 @@
 frappe.ui.form.on('Interview', {
 	refresh: function (frm) {
-		frm.remove_custom_button('Submit Feedback')
+		frm.remove_custom_button('Submit Feedback');
+		remove_custom_button_from_mobile_view(frm, "Submit Feedback");
 		let allowed_interviewers = [];
 		frm.doc.interview_details.forEach(values => {
 			allowed_interviewers.push(values.interviewer);
@@ -144,6 +145,15 @@ frappe.ui.form.on('Interview', {
 
 	},
 });
+
+var remove_custom_button_from_mobile_view = function(frm, label) {
+	// Find the span element with the specified data-label attribute
+	var span_element = $(`.menu-item-label[data-label='${encodeURIComponent(label)}']`);
+	// Get the parent li element
+	var parent_li_element = span_element.closest("li");
+	// Hide the parent li element
+	parent_li_element.hide();
+}
 
 var create_interview_feedback = function(frm, values, feedback_exists, save_submit) {
 	var args = {

@@ -40,6 +40,7 @@
   "attendance_settings_section",
   "validate_shift_permission_on_employee_checkin",
   "checkin_deadline",
+  "user_to_be_notified",
   "column_break_23",
   "issue_penalty"
  ],
@@ -276,12 +277,18 @@
    "fieldname": "remind_open_leave_application",
    "fieldtype": "Check",
    "label": "Remind Open Leave Application"
+  },
+  {
+   "fieldname": "user_to_be_notified",
+   "fieldtype": "Table",
+   "label": "User to be notified",
+   "options": "Attendance Check Setting"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-09-12 08:23:32.436829",
+ "modified": "2023-11-13 13:13:53.985669",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",

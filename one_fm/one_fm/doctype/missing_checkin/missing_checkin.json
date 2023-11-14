@@ -1,0 +1,147 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-11-13 14:43:01.670150",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "date",
+  "shift_section",
+  "operations_shift",
+  "section_break_djoqr",
+  "shift_start_time",
+  "shift_supervisor",
+  "column_break_akxty",
+  "shift_end_time",
+  "shift_supervisor_name",
+  "site_section",
+  "operations_site",
+  "site_supervisor",
+  "site_supervisor_name",
+  "missing_checkin_section",
+  "missing_checkin_detail"
+ ],
+ "fields": [
+  {
+   "fieldname": "operations_shift",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Operations Shift",
+   "options": "Operations Shift",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "operations_shift.start_time",
+   "fieldname": "shift_start_time",
+   "fieldtype": "Data",
+   "label": "Shift Start Time",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "operations_shift.end_time",
+   "fieldname": "shift_end_time",
+   "fieldtype": "Data",
+   "label": "Shift End TIme",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "operations_shift.supervisor",
+   "fieldname": "shift_supervisor",
+   "fieldtype": "Data",
+   "label": "Shift Supervisor",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "operations_shift.supervisor_name",
+   "fieldname": "shift_supervisor_name",
+   "fieldtype": "Data",
+   "label": "Shift Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "operations_site",
+   "fieldtype": "Link",
+   "label": "Operations Site",
+   "options": "Operations Site"
+  },
+  {
+   "fetch_from": "operations_site.account_supervisor",
+   "fieldname": "site_supervisor",
+   "fieldtype": "Data",
+   "label": "Site Supervisor",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "operations_site.account_supervisor_name",
+   "fieldname": "site_supervisor_name",
+   "fieldtype": "Data",
+   "label": "Site Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "missing_checkin_detail",
+   "fieldtype": "Table",
+   "label": "Missing Checkin Detail",
+   "options": "Missing Checkin Detail"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "shift_section",
+   "fieldtype": "Section Break",
+   "label": "Shift"
+  },
+  {
+   "fieldname": "column_break_akxty",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "site_section",
+   "fieldtype": "Section Break",
+   "label": "Site"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "missing_checkin_section",
+   "fieldtype": "Section Break",
+   "label": "Missing Checkin"
+  },
+  {
+   "fieldname": "section_break_djoqr",
+   "fieldtype": "Section Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2023-11-14 13:52:30.358763",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Missing Checkin",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
