@@ -5,7 +5,7 @@ from itertools import chain
 
 import frappe
 from frappe.model.document import Document
-from frappe.utils import nowdate, now
+from frappe.utils import now
 
 class MissingCheckin(Document):
 	def validate(self):
@@ -20,10 +20,9 @@ def create_missing_checkin_record():
     """_
         To create the missing checkin record
     """
-    test = MissingCheckinRecord()
-    test.create()
+    missing_checkin_record = MissingCheckinRecord()
+    missing_checkin_record.create()
 	
-
 
 class MissingCheckinRecord:
     
@@ -64,7 +63,7 @@ class MissingCheckinRecord:
                                         """, (operations_shifts, self.date, self.date), as_dict=1)
         return unlinked_assignments if unlinked_assignments else list()
     
-    def create(self):
+    def create(self) -> None:
         shift_assignments = self.fetch_shift_assignments_without_checkin()
         if shift_assignments:
             data_dict = {obj: list() for obj in self.uncreated_missing_checkin_shifts()}
@@ -78,10 +77,10 @@ class MissingCheckinRecord:
                 
                 site = frappe.db.get_value("Operations Shift", k, "site")
                 new_missing_checkin = frappe.get_doc(
-                    {"doctype": "Missing Checkin",
-                     "date": self.date,
-                     "operations_shift": k,
-                     "operations_site": site}
+                    dict(doctype="Missing Checkin",
+                     date=self.date,
+                     operations_shift=k,
+                     operations_site=site)
                 )
                 for obj in v:
                     new_missing_checkin.append("missing_checkin_detail",
