@@ -27,7 +27,7 @@ def create_missing_checkin_record():
 class MissingCheckinRecord:
     
     def __init__(self) -> None:
-        self.date_time = datetime.strptime('2023-11-11 11:29:27.212122', '%Y-%m-%d %H:%M:%S.%f')
+        self.date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
         self.date = self.date_time.date()
         self.time = self.date_time.time()
         self.one_hour_ago = (self.date_time - timedelta(hours=1)).strftime('%H:%M:%S')
