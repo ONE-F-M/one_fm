@@ -71,25 +71,27 @@ def create_roster_employee_actions():
     """
 
     # start date to be from tomorrow
-    start_date = add_to_date(cstr(getdate()), days=1)
+    start_date = getdate('2023-10-04') #add_to_date(cstr(getdate()), days=1)
     # end date to be 14 days after start date
-    end_date = add_to_date(start_date, days=14)
-
+    end_date = getdate('2023-10-04') #add_to_date(start_date, days=14)
+    print(start_date, end_date)
     #-------------------- Roster Employee actions ------------------#
     # fetch employees that are active and don't have a schedule in the specified date range
-    employees_not_rostered = frappe.db.sql("""
-                            select
-                                employee from `tabEmployee`
-                            where
-                                status = 'Active'
-                            AND shift_working = 1
-                            AND
-                                employee not in
-                                (select employee
-                                from `tabEmployee Schedule`
-                                where date >= %(start)s and date <=%(end)s)""",
-                                {'start': start_date, 'end': end_date})
-
+    employees_not_rostered = frappe.db.sql(f"""SELECT e.name, d.date
+                                    FROM `tabEmployee` e
+                                    CROSS JOIN (
+                                        SELECT DISTINCT d.date
+                                        FROM `tabEmployee Schedule`
+                                        WHERE d.date BETWEEN '{start_date}' AND '{end_date}'
+                                    ) d
+                                    LEFT JOIN `tabEmployee Schedule` s ON e.name = s.employee AND d.date = s.date
+                                    WHERE s.employee IS NULL;
+                            """)
+    # active_employee = frappe.db.sql("""select employee from `tabEmployee` where status = 'Active' AND shift_working = 1""", as_dict=1)
+    # print(len(employees_rostered), len(active_employee))
+    # employees_not_rostered = [i for i in active_employee if i not in employees_rostered]
+    print(len(employees_not_rostered))
+    print(employees_not_rostered)
     list_of_leaves_within_employee_action_period = frappe.db.get_list("Leave Application", {"status": "Approved", "from_date":["<", start_date ], "to_date": [">", end_date]}, pluck="employee")
 
     employees = ()
