@@ -73,9 +73,9 @@ def create_roster_employee_actions():
     """
 
     # start date to be from tomorrow
-    start_date = getdate('2023-10-04') #getdate(add_to_date(cstr(getdate()), days=1))
+    start_date = getdate(add_to_date(cstr(getdate()), days=1))
     # end date to be 14 days after start date
-    end_date = getdate('2023-10-04') #getdate(add_to_date(start_date, days=14))
+    end_date = getdate(add_to_date(start_date, days=14))
     #-------------------- Roster Employee actions ------------------#
     # fetch employees that are active and don't have a schedule in the specified date range
     active_employees = frappe.db.sql("""select employee from `tabEmployee` where status = 'Active' AND shift_working = 1""", as_dict=1)
