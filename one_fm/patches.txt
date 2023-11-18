@@ -58,10 +58,11 @@ one_fm.patches.v14_0.update_post_abbr #2023-09-24
 one_fm.patches.v14_0.change_educational_qualification_options_in_job_applicant
 one_fm.patches.v14_0.remove_unused_pri_custom_field
 one_fm.patches.v14_0.remove_magic_link_field_from_job_applicant
-one_fm.patches.v14_0.update_operation_shift 
+one_fm.patches.v14_0.update_operation_shift
 one_fm.patches.v14_0.copy_ml_to_ch_applicant_doc_url
 one_fm.patches.v14_0.update_attendance_check
 one_fm.patches.v14_0.payroll_salary_slip_created
 one_fm.patches.v14_0.missing_shift_assignment
 one_fm.patches.v14_0.update_docstatus
 one_fm.patches.v14_0.rejected_attendance_check
+one_fm.patches.v14_0.set_erf_workflow_state_with_status
