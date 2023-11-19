@@ -24,7 +24,7 @@ frappe.ui.form.on('Attendance Check', {
 
 var allow_only_attendance_manager = (frm) => {
 	const time_difference_check = calculate_time_difference(frm.doc.creation, 48)
-	if (time_difference_check){
+	if (time_difference_check && frm.doc.docstatus != 1){
 		frappe.call(
 			{
 				"method": "one_fm.one_fm.doctype.attendance_check.attendance_check.check_attendance_manager",
