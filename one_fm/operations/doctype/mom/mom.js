@@ -3,13 +3,20 @@
 
 frappe.ui.form.on('MOM', {
 	site: function(frm) {
-		let site = frm.doc.site;
-		let project = frm.doc.project;
-		if(site !== undefined && project !== undefined){
-			frm.clear_table("attendees");
-			get_poc_list(frm, "Project", project);
-			get_poc_list(frm, "Operations Site", site);
+		frm.clear_table("attendees");
+		if(frm.doc.site){
+			get_poc_list(frm, "Operations Site", frm.doc.site);
 		}
+		frm.refresh_fields("attendees");
+	},
+	project: function(frm) {
+		if(!frm.doc.site){
+			frm.clear_table("attendees");
+		}
+		if(frm.doc.project){
+			get_poc_list(frm, "Project", frm.doc.project);
+		}
+		frm.refresh_fields("attendees");
 	},
 	review_last_mom: function(frm) {
 		if(frm.doc.review_last_mom == 1){
@@ -60,7 +67,6 @@ function get_poc_list(frm, doctype, name){
 
 
 function set_table(frm, poc_list){
-
 	poc_list.forEach((poc) => {
 		let child_row = frappe.model.add_child(frm.doc, "attendees");
 		child_row.poc_name = poc.poc;
@@ -70,7 +76,6 @@ function set_table(frm, poc_list){
 }
 
 function set_last_attendees_table(frm, poc_list){
-
 	poc_list.forEach((mom_poc) => {
 		let child_row = frappe.model.add_child(frm.doc, "last_attendees");
 		child_row.poc_name = mom_poc.poc_name;
