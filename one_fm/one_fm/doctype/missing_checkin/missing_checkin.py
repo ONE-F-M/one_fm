@@ -41,7 +41,7 @@ class MissingCheckinRecord:
                                    name NOT IN (SELECT operations_shift from `tabMissing Checkin`
                                    WHERE date = %s) AND
                                    
-                                   TIME(start_time) >= %s
+                                   TIME(start_time) <= %s
                                    
                                    """,(self.date, self.one_hour_ago), as_list=1)
         return tuple(chain.from_iterable(the_shifts)) if the_shifts else tuple()
