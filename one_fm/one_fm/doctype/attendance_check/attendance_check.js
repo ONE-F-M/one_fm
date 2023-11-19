@@ -22,11 +22,8 @@ frappe.ui.form.on('Attendance Check', {
 });
 
 
-
-
 var allow_only_attendance_manager = (frm) => {
-	let time_difference_check = calculate_time_difference(frm.doc.creation, 48)
-	console.log(time_difference_check)
+	const time_difference_check = calculate_time_difference(frm.doc.creation, 48)
 	if (time_difference_check){
 		frappe.call(
 			{
@@ -35,10 +32,11 @@ var allow_only_attendance_manager = (frm) => {
 					"email": frappe.session.user
 				},
 				callback: (r) => {
-					console.log(r)
 					if (!r.message){
 						frm.page.clear_actions_menu();
-						
+						frm.set_df_property('attendance_status', 'read_only', 1)
+						frm.set_df_property('justification', 'read_only', 1)
+						frm.set_df_property('comment', 'read_only', 1)						
 					}
 					
 				}
@@ -56,7 +54,6 @@ var calculate_time_difference = (date_time, hours_difference) => {
 	var timeDifference = new Date() - dateObject;
 
 	var hoursDifference = timeDifference / (1000 * 60 * 60);
-	console.log(hoursDifference, 12332323)
 
 	return hoursDifference >= hours_difference;
 }

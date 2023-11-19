@@ -604,6 +604,14 @@ def mark_missing_attendance(attendance_checkin_found):
 @frappe.whitelist()
 def check_attendance_manager(email: str) -> bool:
     return frappe.db.get_value("Employee", {"user_id": email}) == frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
+
+
+@frappe.whitelist()
+def check_hour_limit_and_attendance_manager(email:str, hour_limit: int, creation_time: str):
+    attendance_manager_check = check_attendance_manager(email=email)
+    date_time_difference = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f') - datetime.strptime(creation_time, '%Y-%m-%d %H:%M:%S.%f')
+    hour_limit_check = (date_time_difference.total_seconds() / 3600) >= hour_limit
+    return all((attendance_manager_check, hour_limit_check))
  
 
 @frappe.whitelist()
@@ -641,9 +649,10 @@ def assign_attendance_manager_after_48_hours():
         date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f') - timedelta(hours=48)
         attendance_check = frappe.db.sql("""
 										SELECT name from `tabAttendance Check`
-										WHERE TIME(creation) >= %s
+										WHERE TIME(creation) <= %s
 										AND docstatus = 0
 										""", (date_time), as_list=1)
+        
         if attendance_check:
             list_of_names = tuple(chain.from_iterable(attendance_check))
             if list_of_names:
