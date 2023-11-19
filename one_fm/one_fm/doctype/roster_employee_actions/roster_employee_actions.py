@@ -7,10 +7,12 @@ from frappe.model.document import Document
 from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, get_link_to_form
 from one_fm.processor import sendemail
 from frappe.permissions import get_doctype_roles
+import datetime
+from datetime import timedelta
 
 class RosterEmployeeActions(Document):
 	def autoname(self):
-		self.name = self.start_date + "|" + self.end_date + "|" + self.action_type  + "|" + self.supervisor
+		self.name = str(self.start_date) + "|" + str(self.end_date) + "|" + self.action_type  + "|" + self.supervisor
 
 	def after_insert(self):
 		# send notification to supervisor
@@ -71,24 +73,22 @@ def create_roster_employee_actions():
     """
 
     # start date to be from tomorrow
-    start_date = add_to_date(cstr(getdate()), days=1)
+    start_date = getdate(add_to_date(cstr(getdate()), days=1))
     # end date to be 14 days after start date
-    end_date = add_to_date(start_date, days=14)
-
+    end_date = getdate(add_to_date(start_date, days=14))
     #-------------------- Roster Employee actions ------------------#
     # fetch employees that are active and don't have a schedule in the specified date range
-    employees_not_rostered = frappe.db.sql("""
-                            select
-                                employee from `tabEmployee`
-                            where
-                                status = 'Active'
-                            AND shift_working = 1
-                            AND
-                                employee not in
-                                (select employee
-                                from `tabEmployee Schedule`
-                                where date >= %(start)s and date <=%(end)s)""",
-                                {'start': start_date, 'end': end_date})
+    active_employees = frappe.db.sql("""select employee from `tabEmployee` where status = 'Active' AND shift_working = 1""", as_dict=1)
+
+    active_employees_combinations = [(employee.employee, date) for employee in active_employees for date in [(start_date + timedelta(days=x)).strftime('%Y-%m-%d') for x in range((end_date - start_date).days + 1)]]
+    
+    employees_rostered = frappe.db.sql(f"""SELECT s.employee, s.date
+                                    FROM `tabEmployee Schedule` s 
+                                    WHERE s.date >= '{start_date}' AND s.date <= '{end_date}'
+                                    """, as_dict= True)
+    employees_rostered_combination = [(roster.employee, (roster.date).strftime('%Y-%m-%d')) for roster in employees_rostered]
+    
+    employees_not_rostered = set(active_employees_combinations) - set(employees_rostered_combination)
 
     list_of_leaves_within_employee_action_period = frappe.db.get_list("Leave Application", {"status": "Approved", "from_date":["<", start_date ], "to_date": [">", end_date]}, pluck="employee")
 
