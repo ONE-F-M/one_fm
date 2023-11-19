@@ -173,7 +173,6 @@ def set_map_job_applicant_details(target, job_applicant_id, job_applicant=False)
 
 def employee_after_insert(doc, method):
     create_salary_structure_assignment(doc, method)
-    update_erf_close_with(doc)
     create_wp_for_transferable_employee(doc)
     create_leave_policy_assignment(doc)
     if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_generate_employee_id_on_employee_creation") and not doc.employee_id:
@@ -184,6 +183,7 @@ def employee_after_insert(doc, method):
             create_employee_user_from_employee_id(doc)
         else:
             create_employee_user_from_company_email(doc)
+    update_erf_close_with(doc)
 
 def employee_before_insert(doc, method):
     # check for nationality, then set residency
@@ -213,7 +213,7 @@ def create_employee_user(doc, email):
         r_prof =  None
         if doc.designation:
             r_prof = frappe.db.get_value("Designation", doc.designation, "role_profile")
-                  
+
         user = frappe.get_doc({
             'doctype':'User',
             'email': email,
@@ -278,7 +278,7 @@ def create_leave_policy_assignment(doc):
 		args:
 			doc: Employee Object
     """
-    if doc.leave_policy:
+    if doc.leave_policy and not frappe.db.exists("Leave Policy Assignment", {"employee": doc.name}):
         assignment = frappe.new_doc("Leave Policy Assignment")
         assignment.employee = doc.name
         assignment.assignment_based_on = 'Joining Date'
@@ -317,7 +317,10 @@ def notify_grd_operator_for_transfer_wp_record(tp):
         create_notification_log(subject, message, [operator], wp_record)
 
 def update_erf_close_with(doc):
-    if doc.one_fm_erf:
+    closed_with_exists = frappe.db.exists("ERF Employee",
+        {"employee": doc.name, "parenttype": "ERF", "parentfield": "erf_employee", "parent": doc.one_fm_erf}
+    )
+    if doc.one_fm_erf and not closed_with_exists:
         erf_employee = frappe.new_doc("ERF Employee")
         erf_employee.parent = doc.one_fm_erf
         erf_employee.parentfield = "erf_employee"
@@ -328,7 +331,7 @@ def update_erf_close_with(doc):
 
 @frappe.whitelist()
 def create_salary_structure_assignment(doc, method):
-    if doc.job_offer_salary_structure:
+    if doc.job_offer_salary_structure and not frappe.db.exists("Salary Structure Assignment", {"employee": doc.name}):
         assignment = frappe.new_doc("Salary Structure Assignment")
         assignment.employee = doc.name
         assignment.salary_structure = doc.job_offer_salary_structure
@@ -711,7 +714,7 @@ def get_interview_skill_and_question_set(interview_round, interviewer=False, int
 		return question, skill, False
 
 @frappe.whitelist()
-def create_interview_and_feedback(data, interview_round, interviewer, job_applicant, method='save', feedback_exists=False, interview_name=False):
+def create_interview_and_feedback(data, interview_round, interviewer, job_applicant, method='save', feedback_exists=False, interview_name=False, child_name=False):
 	if not feedback_exists:
 		interview = frappe.new_doc('Interview')
 		interview.interview_round = interview_round
@@ -731,6 +734,8 @@ def create_interview_and_feedback(data, interview_round, interviewer, job_applic
 			interview = frappe.get_doc('Interview', interview_name)
 			interview.status = data.result
 			interview.submit()
+		if child_name:
+			frappe.db.set_value('Job Applicant Interview Round', child_name, 'interview', interview_name)
 
 @frappe.whitelist()
 def create_interview_feedback(data, interview_name, interviewer, job_applicant, method='save', feedback_exists=False):

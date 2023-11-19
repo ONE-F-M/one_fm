@@ -19,7 +19,7 @@ frappe.ui.form.on('ERF', {
 				}
 			};
 		});
-		frm.set_query('interview_round', function () {
+		frm.set_query('interview_round', 'interview_rounds', function () {
 			return {
 				filters: {
 					'designation': frm.doc.designation
@@ -49,8 +49,8 @@ frappe.ui.form.on('ERF', {
 		// close erf
 		if(!frm.is_new()){
 			loadJobOpening(frm);
+			document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
 		}
-		document.querySelectorAll('[data-fieldname = "okr_workshop_submit_to_hr"]')[1].classList.add('btn-primary');
 		set_performance_profile_resource_btn(frm);
 		if(frm.doc.__onload && 'okr_workshop_with_full_name' in frm.doc.__onload){
 			frm.set_df_property('schedule_for_okr_workshop_with_recruiter', 'label',
@@ -172,6 +172,11 @@ frappe.ui.form.on('ERF', {
 			});
 		}
 	},
+	before_workflow_action: function(frm) {
+		if(frm.doc.workflow_state == 'Open' && frm.doc.hiring_method == 'Bulk Recruitment' && (!frm.doc.number_of_interview_rounds || frm.doc.number_of_interview_rounds < 1)){
+			frm.scroll_to_field('number_of_interview_rounds');
+		}
+	},
 	validate: function(frm) {
 		if(frm.doc.gender_height_requirement){
 			frm.doc.gender_height_requirement.forEach((item, i) => {
@@ -271,6 +276,11 @@ frappe.ui.form.on('ERF', {
 	provide_salary_advance: function(frm) {
 		manage_provide_salary_advance(frm);
 	},
+	hiring_method: function(frm) {
+		if(frm.doc.hiring_method == 'Bulk Recruitment' && !frm.doc.number_of_interview_rounds) {
+			frm.set_value('number_of_interview_rounds', 1);
+		}
+	}
 });
 
 
@@ -712,16 +722,14 @@ var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
 	$wrapper
 		.html(field_html);
 	$wrapper.on('click', '.'+field_btn_html, function() {
-		if(frm.doc.docstatus == 1 || field_name == 'shift_working'){
-			var $btn = $(this);
-			$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
-			$btn.addClass('btn-primary');
-			if(field_name == 'open_to_different'){
-				frm.set_value(field_name, $btn.attr('data'));
-			}
-			else{
-				frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
-			}
+		var $btn = $(this);
+		$wrapper.find('.'+field_btn_html).removeClass('btn-primary');
+		$btn.addClass('btn-primary');
+		if(field_name == 'open_to_different'){
+			frm.set_value(field_name, $btn.attr('data'));
+		}
+		else{
+			frm.set_value(field_name, $btn.attr('data')=='Yes'? true:false);
 		}
 	});
 };
@@ -834,7 +842,9 @@ var validate_height_range = function(frm, cdt, cdn) {
 
 frappe.ui.form.on('ERF Salary Detail', {
 	amount: function(frm, cdt, cdn){
-    calculate_salary_per_person(frm);
+		if(frm.doc.doctype=="ERF"){
+			calculate_salary_per_person(frm);
+		}
   }
 });
 
@@ -1064,11 +1074,27 @@ const closeJobOpening = frm => {
     })
 }
 
+// close job opening
+const create_job_opening = frm => {
+	frappe.confirm('Are you sure you want to proceed?',
+	() => {
+		// action to perform if Yes is selected
+		frm.call('create_job_opening').then(res=>{
+			frm.refresh();
+		})
+	}, () => {
+		// action to perform if No is selected
+	})
+};
 
 const loadJobOpening = frm => {
 	frm.call('job_opening_status').then(res=>{
 		if (res.message.opening){
 			frm.add_custom_button(__('Close Job Opening'), () => closeJobOpening(frm)).addClass('btn-primary');
+		}
+		// Job Opening creation button
+		if(!res.message.job_opening_exists && frm.doc.status == "Accepted"){
+			frm.add_custom_button(__('Create Job Opening'), () => create_job_opening(frm)).addClass('btn-primary');
 		}
 	})
 }

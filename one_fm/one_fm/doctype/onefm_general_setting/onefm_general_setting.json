@@ -14,6 +14,12 @@
   "zenquotes_api_key",
   "section_break_nsc7h",
   "document_access_roles",
+  "section_break_7yvzt",
+  "mark_atttendance_per_employee",
+  "attendance_manager",
+  "attendance_manager_name",
+  "employee_section",
+  "employee_access",
   "wiki_page_access"
  ],
  "fields": [
@@ -67,11 +73,40 @@
    "fieldtype": "Table",
    "label": "Wiki Page Access",
    "options": "ONEFM Document Access Roles Detail"
+  },
+  {
+   "fieldname": "section_break_7yvzt",
+   "fieldtype": "Section Break",
+   "label": "Attendance"
+  },
+  {
+   "fieldname": "attendance_manager",
+   "fieldtype": "Link",
+   "label": "Attendance Manager",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "attendance_manager.employee_name",
+   "fieldname": "attendance_manager_name",
+   "fieldtype": "Data",
+   "label": "Attendance Manager Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee_section",
+   "fieldtype": "Section Break",
+   "label": "Employee"
+  },
+  {
+   "fieldname": "employee_access",
+   "fieldtype": "Table",
+   "label": "Employee Access",
+   "options": "ONEFM Employee Access"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-03-24 19:05:35.222451",
+ "modified": "2023-10-19 17:06:21.594157",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

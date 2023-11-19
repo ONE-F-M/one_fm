@@ -19,7 +19,7 @@ $(document).ready(function() {
       setupReader(value, file_input);
     });
     window.file_reading = false;
-     
+
   });
 });
 var rotation_shift = $("#work_details").attr("rotation_shift")
@@ -77,7 +77,7 @@ job_application = Class.extend({
   },
   show_applicant_contact_details: function() {
     $(".applicant_contact").empty();
-    $(".applicant_contact").append(`<h5>Please provide your email address and mobile number so we could contact you.</h5>`)
+    $(".applicant_contact").append(`<h5>Please provide your mobile number and email address so we could contact you.</h5>`)
     $(".contact_number").removeClass('hide');
     $(".contact_email").removeClass('hide');
   },
@@ -101,7 +101,7 @@ job_application = Class.extend({
           // Show CV section
           me.show_cv_section();
       }
-      
+
     }
   },
   on_change_email: function() {
@@ -208,9 +208,15 @@ job_application = Class.extend({
     }
   },
   show_cv_section: function() {
+    var me  = this;
+    me.show_language_section();
     $(".applicant_cv").empty();
     $(".applicant_cv").append(`<h5>Please attach your CV here so we can get to know you better.</h5>`)
     $(".cv-file").removeClass('hide');
+  },
+  show_language_section: function() {
+    $(".languages_heading").removeClass('hide');
+    $(".languages_table_div").removeClass('hide');
   },
   submit_job_application: function() {
     // Submit Job Application
@@ -223,17 +229,32 @@ job_application = Class.extend({
 
       var cv = document.getElementById("cv").files[0]
       if (cv && !cv.type.includes(["application/pdf"])){
-        return frappe.msgprint(frappe._("CV must be in PDF format !"));      
+        return frappe.msgprint(frappe._("CV must be in PDF format !"));
       }
 
       // POST Job Application if all the conditions are satisfied
-      
+
       if ($(".applicant_name").val() && $(".country_list").val() && $(".contact_email").val() && $(".contact_number").val() && cv){
         frappe.freeze();
         var response = await upload_image_to_server(cv)
         var url = (response && response.message) ? response.message.file_url : "";
-        var name_of_file = (response && response.message) ? response.message.name : ""; 
-
+        var name_of_file = (response && response.message) ? response.message.name : "";
+        const languages_div = document.getElementById('languages_table_div');
+        let erf_languages;
+        if(languages_div){
+          erf_languages = languages_div.getAttribute('data').split(",");
+        }
+        var languages = [];
+        if(erf_languages){
+          for (const language of erf_languages) {
+            languages.push({
+              language: language,
+              speak: $(`.${language}_speak`).val(),
+              read: $(`.${language}_read`).val(),
+              write: $(`.${language}_write`).val()
+            });
+          }
+        }
         frappe.call({
           type: "POST",
           method: "one_fm.templates.pages.job_application.create_job_applicant_from_job_portal",
@@ -253,6 +274,7 @@ job_application = Class.extend({
             visa: $("#visa input[type='radio']:checked").val(),
             visa_type: $(".visa_type").val(),
             in_kuwait: $("#in_kuwait input[type='radio']:checked").val(),
+            languages: languages,
             name_of_file: name_of_file
           },
           btn: this,
@@ -308,4 +330,3 @@ async function upload_image_to_server(file) {
     xhr.send(form_data);
   });
 }
-

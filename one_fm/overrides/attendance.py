@@ -635,7 +635,7 @@ def mark_daily_attendance(start_date, end_date):
         query_body+= f"""
         (
             "{name}", "{naming_series}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
-            NULL, "{i.name}", "{i.operations_shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
+            NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
             "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
             "{owner}", "{creation}", "{creation}", "No attendance record found"
         ),"""
@@ -745,7 +745,7 @@ def mark_daily_attendance(start_date, end_date):
         query_body+= f"""
         (
             "{name}", "{naming_series}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
-            NULL, "{i.name}", "{i.operations_shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
+            NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
             "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
             "{owner}", "{creation}", "{creation}", "No attendance record found"
         ),"""

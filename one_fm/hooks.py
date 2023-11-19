@@ -182,7 +182,8 @@ permission_query_conditions = {
 	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
     "Leave Application": "one_fm.permissions.leave_application_list",
     "Roster Post Actions":"one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_permission_query_conditions",
-	"Roster Employee Actions": "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_permission_query_conditions"
+	"Roster Employee Actions": "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_permission_query_conditions",
+	"Warehouse": "one_fm.permissions.warehouse_list"
 }
 
 has_permission = {
@@ -193,6 +194,7 @@ has_permission = {
 
 standard_queries = {
 	"Operations Role": "one_fm.operations.doctype.operations_role.operations_role.get_operations_role_list",
+	"Warehouse": "one_fm.overrides.queries.warehouse_query",
 }
 
 doc_events = {
@@ -276,7 +278,10 @@ doc_events = {
 	"Purchase Receipt": {
 		"before_submit": "one_fm.purchase.utils.before_submit_purchase_receipt",
 		"on_submit": "one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
-		"validate": "one_fm.purchase.utils.validate_store_keeper_project_supervisor"
+		"validate": [
+			"one_fm.purchase.utils.validate_store_keeper_project_supervisor",
+			"one_fm.overrides.purchase_receipt.validate_item_batch"
+		]
 	},
 	"Contact": {
 		"on_update": "one_fm.accommodation.doctype.accommodation.accommodation.accommodation_contact_update"
@@ -341,6 +346,9 @@ doc_events = {
 	},
 	"Interview Feedback": {
 		"validate": "one_fm.hiring.utils.calculate_interview_feedback_average_rating",
+	},
+	"Interview": {
+		"validate": "one_fm.overrides.interview.update_interview_rounds_in_job_applicant",
 	},
 	"Issue": {
 		"after_insert": [
@@ -439,7 +447,7 @@ website_route_rules = [
 		"to_route": "knowledge_base/kbcategory/kbsubcategory/kbdetail"
 	},
 	{
-		"from_route": "/careers/opening/<path:job_id>",
+		"from_route": "/careers/opening/<path:lang>/<path:job_id>",
 		"to_route": "careers/opening"
 	},
 	{
@@ -468,6 +476,7 @@ override_doctype_class = {
 	"Attendance": "one_fm.overrides.attendance.AttendanceOverride",
 	"Shift Type": "one_fm.overrides.shift_type.ShiftTypeOverride",
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
+	"Holiday List": "one_fm.overrides.holiday_list.HolidayListOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
@@ -669,14 +678,14 @@ scheduler_events = {
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
 		],
-		"00 08 * * *": [ #notify leave approver to approve all the open application
+		"00 08 * * *": [ #notify leave approver to approve all the open application at 8:00 am
 		'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
-		],
-		"45 23 23 * *": [ #approve all the open leave application
-		'one_fm.api.doc_methods.payroll_entry.close_all_leave_application'
 		],
 		"05 00 * * *":[
 			'one_fm.overrides.leave_application.employee_leave_status'
+		],
+		"0 * * * *":[ # Creates the missing checkin record per shift, runs every hour
+			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record"
 		]
 	}
 }
@@ -757,6 +766,15 @@ fixtures = [
 				)
 			)
 		}
+	},
+	{
+		"dt": "Dashboard",
+	},
+	{
+		"dt": "Dashboard Chart"
+	},
+	{
+		"dt": "Number Card"
 	}
 ]
 
@@ -769,7 +787,7 @@ override_whitelisted_methods = {
     "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
 	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_approver",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
@@ -782,7 +800,8 @@ required_apps = ['frappe', 'erpnext']
 # jinja env
 jenv = {
     "methods": [
-        "pf:one_fm.jinja.print_format.methods.pf"
+        "pf:one_fm.jinja.print_format.methods.pf",
+        "get_qrcode:one_fm.qr_code_generator.get_qrcode"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"

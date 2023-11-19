@@ -30,6 +30,8 @@ career_history = Class.extend({
     <h5>Give us some details about your career, and tell us how great you are!</h5>
   `
     $(".intro").append(intro_section_html);
+    const pageContentWrapper = document.querySelector('.page-content-wrapper');
+    pageContentWrapper.style.position = 'relative';
   },
   on_change_promotion: function(company_no, promotion_no) {
     var me = this;

@@ -43,6 +43,14 @@ class ERF(Document):
 		# self.calculate_benefit_cost_to_company()
 		# self.calculate_total_cost_to_company()
 		self.validate_type_of_travel()
+		self.validate_interview_rounds()
+
+	def validate_interview_rounds(self):
+		if self.number_of_interview_rounds and self.number_of_interview_rounds != len(self.interview_rounds):
+			frappe.throw(_("Number of rows of the 'Intreview Rounds' must be equal to 'Number of Interview Rounds'!"))
+
+		if self.hiring_method == 'Bulk Recruitment' and self.number_of_interview_rounds < 1:
+			frappe.throw(_("Minimum one intreview rounds must be added for bulk recruitment!"))
 
 	def validate_attendance_by_timesheet(self):
 		if self.attendance_by_timesheet:
@@ -190,7 +198,11 @@ class ERF(Document):
 		data = len(frappe.db.get_list('Job Opening', filters={
 			'one_fm_erf':self.name, 'status':'Open', 'publish':1
 		}))
-		return {'opening': data}
+		return {'opening': data, "job_opening_exists": frappe.db.exists("Job Opening", {"one_fm_erf": self.name})}
+
+	@frappe.whitelist()
+	def create_job_opening(self):
+		create_job_opening_from_erf(self)
 
 	@frappe.whitelist()
 	def close_job_opening(self):
@@ -357,9 +369,10 @@ def get_erf_approver(reason_for_request):
 
 def create_job_opening_from_erf(erf):
 	job_opening = frappe.new_doc("Job Opening")
-	# TODO: job_title needs to be unique,
+	# Set unique job_title
 	# since job_title will be set a route in Job Opening and the route is set as name in Job Opening
-	job_opening.job_title = erf.job_title
+	job_opening.job_title = erf.job_title+' '+erf.name
+	job_opening.job_title_in_arabic = job_opening.job_title
 	job_opening.designation = erf.designation
 	job_opening.employment_type = erf.employment_type
 	job_opening.department = erf.department

@@ -229,7 +229,7 @@ def process_2fa_for_whatsapp(user, token, otp_secret):
 def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
   
     hotp = pyotp.HOTP(otpsecret)
-    body= 'Your verification code {}.'.format(hotp.at(int(token)))
+    body= '*{}* is your verification code. For your security, do not share this code.'.format(hotp.at(int(token)))
     
     message = send_whatsapp(sender_id=phone_no,body=body)
 

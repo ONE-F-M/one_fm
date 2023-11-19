@@ -82,6 +82,7 @@ def create_roster_employee_actions():
                                 employee from `tabEmployee`
                             where
                                 status = 'Active'
+                            AND shift_working = 1
                             AND
                                 employee not in
                                 (select employee

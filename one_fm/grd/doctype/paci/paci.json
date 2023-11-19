@@ -190,6 +190,7 @@
   },
   {
    "fetch_from": "employee.residency_expiry_date",
+   "fetch_if_empty": 1,
    "fieldname": "new_civil_id_expiry_date",
    "fieldtype": "Date",
    "label": "New Civil ID Expiry Date"
@@ -312,7 +313,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-08 07:38:45.220364",
+ "modified": "2023-11-14 14:14:29.601882",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
