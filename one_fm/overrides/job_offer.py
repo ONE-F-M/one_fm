@@ -9,6 +9,7 @@ from hrms.hr.doctype.job_offer.job_offer import JobOffer
 from one_fm.utils import validate_mandatory_fields
 from one_fm.api.notification import create_notification_log
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, close_all_assignments
+from one_fm.qr_code_generator import get_qr_code
 
 
 class JobOfferOverride(JobOffer):
@@ -27,6 +28,8 @@ class JobOfferOverride(JobOffer):
         validate_mandatory_fields(job_applicant)
         self.job_offer_validate_attendance_by_timesheet()
         self.validate_job_offer_mandatory_fields()
+        # Set url qr code
+        self.url_qr_code = get_qr_code(get_url(self.get_url()))
         # Validate day off
         if not self.number_of_days_off:
             frappe.throw(_("Please set the number of days off."))

@@ -683,6 +683,9 @@ scheduler_events = {
 		],
 		"05 00 * * *":[
 			'one_fm.overrides.leave_application.employee_leave_status'
+		],
+		"0 * * * *":[ # Creates the missing checkin record per shift, runs every hour
+			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record"
 		]
 	}
 }
@@ -763,6 +766,15 @@ fixtures = [
 				)
 			)
 		}
+	},
+	{
+		"dt": "Dashboard",
+	},
+	{
+		"dt": "Dashboard Chart"
+	},
+	{
+		"dt": "Number Card"
 	}
 ]
 
@@ -788,7 +800,8 @@ required_apps = ['frappe', 'erpnext']
 # jinja env
 jenv = {
     "methods": [
-        "pf:one_fm.jinja.print_format.methods.pf"
+        "pf:one_fm.jinja.print_format.methods.pf",
+        "get_qrcode:one_fm.qr_code_generator.get_qrcode"
     ],
     "filters": [
         # "xmul:one_fm.jinja.methods.xmultiply"
