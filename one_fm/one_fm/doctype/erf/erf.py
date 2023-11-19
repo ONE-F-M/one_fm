@@ -540,3 +540,22 @@ def recruitment_manager_check(user: str):
 	if role_profile:
 		return frappe.db.exists('User', {"role_profile_name": role_profile, "name": user})
 	return False
+
+@frappe.whitelist()
+def interview_round_filter(doctype, txt, searchfield, start, page_len, filters):
+	query = """
+		select
+			name
+		from
+			`tabInterview Round`
+		where
+			(designation = %(designation)s or designation = '' or designation is NULL) and name like %(txt)s
+			limit %(start)s, %(page_len)s"""
+	return frappe.db.sql(query,
+		{
+			'designation': filters.get("designation"),
+			'start': start,
+			'page_len': page_len,
+			'txt': "%%%s%%" % txt
+		}
+	)
