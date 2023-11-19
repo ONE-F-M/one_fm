@@ -647,11 +647,13 @@ def assign_attendance_manager_after_48_hours():
     attendance_manager_user = fetch_attendance_manager_user_obj()
     if attendance_manager_user:
         date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f') - timedelta(hours=48)
-        attendance_check = frappe.db.sql("""
-										SELECT name from `tabAttendance Check`
-										WHERE TIME(creation) <= %s
-										AND docstatus = 0
-										""", (date_time), as_list=1)
+        attendance_check = attendance_check = frappe.db.sql("""
+																SELECT name 
+																FROM `tabAttendance Check`
+																WHERE creation <= %s
+																AND docstatus = 0
+																AND TIME(creation) <= %s
+															""", (date_time, date_time.time()), as_list=1)
         
         if attendance_check:
             list_of_names = tuple(chain.from_iterable(attendance_check))
