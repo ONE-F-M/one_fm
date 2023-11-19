@@ -1,12 +1,15 @@
 # Copyright (c) 2023, omar jaber and contributors
 # For license information, please see license.txt
+from datetime import datetime, timedelta
+from itertools import chain
 
 from frappe.model.document import Document
 import frappe,json
 from frappe.utils import get_url_to_form
 from frappe import _
-from frappe.utils import nowdate, add_to_date, cstr, add_days, today, format_date
-from one_fm.utils import production_domain
+from frappe.desk.form.assign_to import add as add_assignment
+from frappe.utils import nowdate, add_to_date, cstr, add_days, today, format_date, now
+from one_fm.utils import production_domain, fetch_attendance_manager_user_obj
 
 class AttendanceCheck(Document):
 	def validate(self):
@@ -630,4 +633,24 @@ def validate_day_off(form,convert=1):
 				<hr>
 				 To create a Shift Request <a class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/shift-request/new-shift-request-1')}?doc_id={doc.name}&doctype={doc.doctype}" target="_blank" onclick=" ">Click Here</a>
 				 """)
-				
+
+
+def assign_attendance_manager_after_48_hours():
+    attendance_manager_user = fetch_attendance_manager_user_obj()
+    if attendance_manager_user:
+        date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f') - timedelta(hours=48)
+        attendance_check = frappe.db.sql("""
+										SELECT name from `tabAttendance Check`
+										WHERE TIME(creation) >= %s
+										AND docstatus = 0
+										""", (date_time), as_list=1)
+        if attendance_check:
+            list_of_names = tuple(chain.from_iterable(attendance_check))
+            if list_of_names:
+                for obj in list_of_names:
+                    add_assignment({
+						'doctype': "Attendance Check",
+						'name': obj,
+						'assign_to': [attendance_manager_user],
+					})
+        
