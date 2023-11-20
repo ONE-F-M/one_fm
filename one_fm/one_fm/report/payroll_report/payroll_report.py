@@ -217,6 +217,20 @@ def get_columns(filters):
 			"width": 180,
 		},
 		{
+			"label": ("Payment Days(Basic)"),
+			"fieldname": "pd",
+			"fieldtype": "Int",
+			"default": 0,
+			"width": 180,
+		},
+		{
+			"label": ("Payment Days(OT)"),
+			"fieldname": "pdot",
+			"fieldtype": "Int",
+			"default": 0,
+			"width": 180,
+		},
+		{
 			"label": ("Total"),
 			"fieldname": "total",
 			"fieldtype": "Int",
@@ -280,6 +294,8 @@ def get_data(filters):
 			
 		i.theoretical_days_off = theoretical_days_off(i.day_off_category, i.number_of_days_off, i.start_date, i.end_date)
 		i.theoretical_working_days = i.days_in_period - i.theoretical_days_off
+		i.pd = i.present_days + i.do_att + i.sl + i.al + i.ol + i.att_public_holidays
+		i.pdot = i.present_days_ot + i.do_ot
 		i.total = i.present_days + i.do_att + i.sl + i.al + i.ol + i.ab + i.att_public_holidays
 
 	if not query:
