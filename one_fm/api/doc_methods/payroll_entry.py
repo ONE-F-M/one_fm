@@ -299,38 +299,39 @@ def auto_create_payroll_entry(payroll_date=None):
 			`tabProject Payroll Cycle`
 	'''
 	payroll_start_day_list = frappe.db.sql(query, as_dict=True)
-
-
+	payroll_type = ["Basic", "Over-Time"]
 	for payroll_start_day in payroll_start_day_list:
 		# Find from date and end date for payroll
 		start_date, end_date = get_payroll_start_end_date_by_start_day(payroll_date, payroll_start_day.payroll_start_day)
 
 		# Create Payroll Entry
-		create_monthly_payroll_entry(payroll_date, start_date, end_date)
+		create_monthly_payroll_entry(payroll_date, start_date, end_date, payroll_type)
 
 	# # Find default from date and end date for payroll
 	default_payroll_start_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')
 	default_start_date, default_end_date = get_payroll_start_end_date_by_start_day(payroll_date, default_payroll_start_day)
 
-	create_monthly_payroll_entry(payroll_date, default_start_date, default_end_date)
+	create_monthly_payroll_entry(payroll_date, default_start_date, default_end_date, payroll_type)
 
-def create_monthly_payroll_entry(payroll_date, start_date, end_date):
+def create_monthly_payroll_entry(payroll_date, start_date, end_date, payroll_type):
 	try:
-		payroll_entry = frappe.new_doc("Payroll Entry")
-		payroll_entry.posting_date = getdate(payroll_date)
-		payroll_entry.payroll_frequency = "Monthly"
-		payroll_entry.exchange_rate = 0
-		payroll_entry.payroll_payable_account = frappe.get_value("Company", erpnext.get_default_company(), "default_payroll_payable_account")
-		payroll_entry.company = erpnext.get_default_company()
-		payroll_entry.start_date = start_date
-		payroll_entry.end_date = end_date
-		payroll_entry.cost_center = frappe.get_value("Company", erpnext.get_default_company(), "cost_center")
-		payroll_entry.save()
-		# Fetch employees with the project filter
-		payroll_entry.fill_employee_details()
-		payroll_entry.save()
-		payroll_entry.submit()
-		frappe.db.commit()
+		for types in payroll_type:
+			payroll_entry = frappe.new_doc("Payroll Entry")
+			payroll_entry.posting_date = getdate(payroll_date)
+			payroll_entry.payroll_frequency = "Monthly"
+			payroll_entry.exchange_rate = 0
+			payroll_entry.payroll_payable_account = frappe.get_value("Company", erpnext.get_default_company(), "default_payroll_payable_account")
+			payroll_entry.company = erpnext.get_default_company()
+			payroll_entry.start_date = start_date
+			payroll_entry.end_date = end_date
+			payroll_entry.payroll_type = types
+			payroll_entry.cost_center = frappe.get_value("Company", erpnext.get_default_company(), "cost_center")
+			payroll_entry.save()
+			# Fetch employees with the project filter
+			payroll_entry.fill_employee_details()
+			payroll_entry.save()
+			payroll_entry.submit()
+			frappe.db.commit()
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), cstr(start_date)+' | '+cstr(end_date))
 
