@@ -676,6 +676,7 @@ def create_salary_slips_for_employees(employees, payroll_entry, publish_progress
 				"exchange_rate": payroll_entry.exchange_rate,
 				"currency": payroll_entry.currency,
 				"payroll_entry": payroll_entry.name
+				"payroll_type": payroll_entry.payroll_type
 			}
 		)
 		salary_slips_exist_for = get_existing_salary_slips(employees, args)
@@ -686,6 +687,11 @@ def create_salary_slips_for_employees(employees, payroll_entry, publish_progress
 		chunk_counter = 0
 
 		employees_list = seperate_salary_slip(employees, start_date, end_date)
+		if payroll_entry.payroll_type == "Over-Time":
+			for emp in employees_list:
+				if get_ot_days(emp['employee'], emp['start_date'], emp['end_date']) == 0:
+					employees_list.remove(emp)
+
 		if len(employees_list) < 30:
 			for emp in employees_list:
 				if emp['employee'] not in salary_slips_exist_for:
