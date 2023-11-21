@@ -41,7 +41,7 @@ class AttendanceCheck(Document):
 				if not self.mobile_model:
 					frappe.throw("Please Select Mobile Model")
 				
-			if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift"]:
+			if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Other"]:
 				self.screenshot = ""
 			
 			if self.justification in ["Invalid media content","Out-of-site location", "User not assigned to shift"]:
