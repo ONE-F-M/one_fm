@@ -13,6 +13,7 @@
   {
    "fieldname": "health_insurance_provider",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Health Insurance Provider",
    "options": "Employee Health Insurance"
   },
@@ -20,13 +21,14 @@
    "depends_on": "eval:doc.health_insurance_provider",
    "fieldname": "health_insurance_provider_no",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Health insurance Provider No"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-09-28 03:48:39.628925",
+ "modified": "2023-11-19 11:10:59.055641",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Health Insurance Provider Detail",
