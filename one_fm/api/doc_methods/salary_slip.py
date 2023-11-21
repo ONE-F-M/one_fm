@@ -38,7 +38,7 @@ def get_working_days_details(
 	if self.payroll_type == 'Basic':
 		working_days = date_diff(end_date, start_date) + 1
 	else:
-		working_days = get_ot_days(self, start_date, end_date)
+		working_days = get_ot_days(self.employee, start_date, end_date)
 
 	if for_preview: 
 		self.total_working_days = working_days
@@ -107,12 +107,13 @@ def get_working_days_details(
 	else:
 		self.payment_days = 0
 
-def get_ot_days(self, start_date, end_date):
+@frappe.whitelist()
+def get_ot_days(employee, start_date, end_date):
 	ot_schedule = frappe.get_all(
 		"Employee Schedule",
 		filters={
 			"date": ["between", [start_date, end_date]],
-			"employee": self.employee,
+			"employee": employee,
 			"roster_type":"Over-Time"
 		},
 		fields=["COUNT(*) as working_ot_days"],

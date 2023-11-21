@@ -675,7 +675,7 @@ def create_salary_slips_for_employees(employees, payroll_entry, publish_progress
 				"deduct_tax_for_unsubmitted_tax_exemption_proof": payroll_entry.deduct_tax_for_unsubmitted_tax_exemption_proof,
 				"exchange_rate": payroll_entry.exchange_rate,
 				"currency": payroll_entry.currency,
-				"payroll_entry": payroll_entry.name
+				"payroll_entry": payroll_entry.name,
 				"payroll_type": payroll_entry.payroll_type
 			}
 		)
