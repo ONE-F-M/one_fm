@@ -150,7 +150,7 @@ def get_unmarked_days(self, include_holidays_in_total_working_days):
 		unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
 			unmarked_days,
 			include_holidays_in_total_working_days,
-			add_days(self.posting_date, 1),
+			self.posting_date,
 			self.end_date,
 		)
 	# exclude days for which attendance has been marked
