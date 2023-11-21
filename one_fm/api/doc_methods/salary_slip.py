@@ -21,6 +21,8 @@ def get_scheduled_day_off(employee, start_date, end_date):
 def get_working_days_details(
 	self, joining_date=None, relieving_date=None, lwp=None, for_preview=0
 ):
+	
+
 	payroll_based_on = frappe.db.get_value("Payroll Settings", None, "payroll_based_on")
 	include_holidays_in_total_working_days = frappe.db.get_single_value(
 		"Payroll Settings", "include_holidays_in_total_working_days"
@@ -33,23 +35,28 @@ def get_working_days_details(
 	if not (joining_date and relieving_date):
 			joining_date, relieving_date = self.get_joining_and_relieving_dates()
 
-	if self.payroll_type == 'Basic':
-		working_days = date_diff(self.end_date, self.start_date) + 1
-	else:
-		working_days = get_ot_days(self)
+	if joining_date > self.start_date:
+		start_date = joining_date
+	if relieving_date < self.end_date:
+		end_date = relieving_date
 
-	if for_preview:
+	if self.payroll_type == 'Basic':
+		working_days = date_diff(end_date, start_date) + 1
+	else:
+		working_days = get_ot_days(self, start_date, end_date)
+
+	if for_preview: 
 		self.total_working_days = working_days
 		self.payment_days = working_days
 		return
 
-	holidays = get_holiday_date_for_employee(self, self.start_date, self.end_date)
-	print(holidays)
+	holidays = get_holiday_date_for_employee(self, start_date, end_date)
+
 	working_days_list = [
-		add_days(getdate(self.start_date), days=day) for day in range(0, working_days)
+		add_days(getdate(start_date), days=day) for day in range(0, working_days)
 	]
 
-	day_off_dates = get_scheduled_day_off(self.employee, self.start_date, self.end_date)
+	day_off_dates = get_scheduled_day_off(self.employee, start_date, end_date)
 
 	if not cint(include_holidays_in_total_working_days):
 		working_days_list = [i for i in working_days_list if i not in holidays]
@@ -82,12 +89,12 @@ def get_working_days_details(
 
 	self.leave_without_pay = lwp
 	self.total_working_days = working_days
-
+	
 	# Set Payment days by considerring include_holidays_in_total_working_days
 	payment_days = get_payment_days(self,
 		joining_date, relieving_date
 	)
-
+	print(payment_days)
 	# Payment days by considerring include_day_off_in_total_working_days
 	if not cint(include_day_off_in_total_working_days):
 		payment_days -= len(day_off_dates)
@@ -110,11 +117,11 @@ def get_working_days_details(
 	else:
 		self.payment_days = 0
 
-def get_ot_days(self):
+def get_ot_days(self, start_date, end_date):
 	ot_schedule = frappe.get_all(
 		"Employee Schedule",
 		filters={
-			"date": ["between", [self.start_date, self.end_date]],
+			"date": ["between", [start_date, end_date]],
 			"employee": self.employee,
 			"roster_type":"Over-Time"
 		},
@@ -337,7 +344,7 @@ def deduct_from_salary(doc, last_salary_slip, deduct_days):
 
 def get_payment_days(doc, start_date, end_date):
 	payment_days = doc.total_working_days
-
+	print(payment_days)
 	include_holidays_in_total_working_days = frappe.db.get_single_value(
 		"Payroll Settings", "include_holidays_in_total_working_days"
 	)
@@ -347,7 +354,7 @@ def get_payment_days(doc, start_date, end_date):
 	)
 
 	holidays = get_holiday_date_for_employee(doc, start_date, end_date)
-	print(holidays)
+
 	if not cint(include_holidays_in_total_working_days):
 		payment_days -= len(holidays)
 
