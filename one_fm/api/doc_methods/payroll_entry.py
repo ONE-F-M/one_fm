@@ -663,6 +663,7 @@ def log_payroll_failure(process, payroll_entry, error):
 	payroll_entry.db_set({"error_message": error_message, "status": "Failed"})
 
 def create_salary_slips_for_employees(employees, payroll_entry, publish_progress=True ):
+	from one_fm.api.doc_methods.salary_slip import get_ot_days
 	try:
 		payroll_entry = frappe.get_doc("Payroll Entry", payroll_entry.name)
 		args = frappe._dict(
