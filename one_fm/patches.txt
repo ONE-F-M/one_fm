@@ -66,3 +66,4 @@ one_fm.patches.v14_0.missing_shift_assignment
 one_fm.patches.v14_0.update_docstatus
 one_fm.patches.v14_0.rejected_attendance_check
 one_fm.patches.v14_0.set_erf_workflow_state_with_status
+one_fm.patches.v14_0.update_rejected_attendance_check
