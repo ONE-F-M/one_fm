@@ -1160,8 +1160,8 @@
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
     "state": "Approved"
-    },
-    {
+   },
+   {
     "action": "Change Request",
     "allow_self_approval": 1,
     "allowed": "Stock Manager",
@@ -1175,7 +1175,7 @@
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
     "state": "Approved"
-    }
+   }
   ],
   "workflow_name": "Item",
   "workflow_state_field": "workflow_state"
