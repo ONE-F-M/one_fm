@@ -979,6 +979,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "depends_on": "number_of_interview_rounds",
    "fieldname": "interview_rounds",
    "fieldtype": "Table",
@@ -987,6 +988,7 @@
    "options": "ERF Interview Round"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "number_of_interview_rounds",
    "fieldtype": "Int",
    "label": "Number of Interview Rounds"
@@ -994,7 +996,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-10-02 20:57:46.237232",
+ "modified": "2023-11-21 10:31:21.063977",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",

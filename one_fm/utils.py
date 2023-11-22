@@ -3325,3 +3325,10 @@ def check_existing():
     if log_type=='IN':
         return response("success", 200, True, "")
     return response("success", 200, False, "")
+
+def fetch_attendance_manager_user_obj() -> str:
+    attendance_manager = frappe.get_doc("ONEFM General Setting").get("attendance_manager")
+    if attendance_manager:
+        attendance_manager_user = frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
+        return attendance_manager_user
+    return ""
