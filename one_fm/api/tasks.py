@@ -1609,9 +1609,11 @@ def fetch_employees_not_in_checkin():
 	# 	return
 
 	shift_start_time = f"{now_datetime().time().hour}:00:00"
+	
 	minute = now_datetime().time().minute
 	hour = now_datetime().time().hour
 	cur_date = str(getdate())
+	
 	return_data = []
 	log_types = ['IN', 'OUT']
 	for log_type in log_types:
@@ -1638,6 +1640,7 @@ def fetch_employees_not_in_checkin():
 				WHERE supervisor_reminder_start_ends>0
 				GROUP BY supervisor_reminder_start_ends;
 			""", as_dict=1)]
+			supervisor_reminder_minutes = list(range(0,60))
 
 
 		# get employees from shift assignment, check them in checkins and substract
@@ -1646,7 +1649,7 @@ def fetch_employees_not_in_checkin():
 			sa.shift as operations_shift, st.notification_reminder_after_shift_start,
 			st.notification_reminder_after_shift_end, st.supervisor_reminder_shift_start,
 			st.supervisor_reminder_start_ends, os.supervisor as shift_supervisor,
-			osi.account_supervisor as site_supervisor
+			osi.account_supervisor as site_supervisor,sa.name as shift_assignment_id
 
 			FROM `tabShift Assignment` sa RIGHT JOIN `tabShift Type` st ON sa.shift_type=st.name
 			RIGHT JOIN `tabOperations Shift` os ON sa.shift=os.name RIGHT JOIN `tabOperations Site` osi
@@ -1821,6 +1824,10 @@ def initiate_checkin_notification(res):
 	supervisor_checkout_reminder = []
 
 	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
+	all_applicable_shifts = [i.shift_assignment_id for i in res.employees if i.is_supervisor_checkout_reminder]
+	checkins_for_today = frappe.get_all("Employee Checkin",{'shift_assignment':["IN",all_applicable_shifts],'log_type':"IN"},['employee'])
+	if checkins_for_today:
+		checkin_assignments_employees = [i.employee for i in checkins_for_today]
 	for recipient in res.employees:
 		# split employees into lists
 		if recipient.initial_checkin_reminder:
@@ -1833,7 +1840,7 @@ def initiate_checkin_notification(res):
 			checkout_reminders.append(recipient)
 		elif recipient.is_after_grace_checkout:
 			after_grace_checkout_reminder.append(recipient)
-		elif recipient.is_supervisor_checkout_reminder:
+		elif recipient.is_supervisor_checkout_reminder and recipient.employee not in checkin_assignments_employees :
 			supervisor_checkout_reminder.append(recipient)
 
 	# process initial checkins
