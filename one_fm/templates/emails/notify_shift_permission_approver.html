@@ -1,0 +1,55 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, .shift_permission td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      width: 30%;
+      text-align: left;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #ddd;
+    }
+    
+    </style>
+    
+    
+<table>
+    <tr>
+        <td style="font-family: 'Cairo', sans-serif;color:#4b4b4c;" mc:edit="tm2-04" valign="top" >
+            <p>Hello {{ approver_name}},</p><br>
+            <p>The following Shift permissions needs your immediate action</p>
+            <br>
+        </td>
+    </tr>
+    <br><br>
+
+
+    <tbody class="shift_permission">
+
+    {% for obj in data %}
+        {% for key, value in obj.items() %}
+            <tr>
+                <th>{{ key}}</th>
+                <td><a href={{ value }}>Link to form</a></td>
+            </tr>
+        {% endfor %}
+    {% endfor %}
+    
+    </tbody>
+</table>
+    
