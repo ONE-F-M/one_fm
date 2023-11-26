@@ -21,7 +21,7 @@ class EmployeeSchedule(Document):
 
 
 	def validate(self):
-		if self.employee_availability=='Working':
+		if self.employee_availability=='Working' and self.shift_type and self.date:
 			start_time, end_time = frappe.db.get_value("Shift Type", self.shift_type, ['start_time', 'end_time'])
 			end_date = self.date
 			if start_time > end_time:
@@ -39,7 +39,7 @@ class EmployeeSchedule(Document):
 			self.start_datetime = ''
 			self.end_datetime = ''
 			self.project = ''
-			
+
 	def validate_offs(self):
 		"""
 		Validate if the employee is has exceeded weekly or monthly off schedule.

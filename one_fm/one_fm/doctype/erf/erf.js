@@ -21,9 +21,8 @@ frappe.ui.form.on('ERF', {
 		});
 		frm.set_query('interview_round', 'interview_rounds', function () {
 			return {
-				filters: {
-					'designation': frm.doc.designation
-				}
+				query: "one_fm.one_fm.doctype.erf.erf.interview_round_filter",
+				filters: {'designation': frm.doc.designation}
 			};
 		});
 
