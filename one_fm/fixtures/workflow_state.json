@@ -979,5 +979,14 @@
   "name": "Closed",
   "style": "",
   "workflow_state_name": "Closed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-11-26 10:47:46.435323",
+  "name": "Pending Onboarding Officer",
+  "style": "",
+  "workflow_state_name": "Pending Onboarding Officer"
  }
 ]
