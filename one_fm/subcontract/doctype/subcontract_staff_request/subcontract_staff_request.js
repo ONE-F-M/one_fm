@@ -26,7 +26,11 @@ var set_requester = (frm) => {
 var add_create_shortlist_button = (frm) => {
 	if (frm.doc.status == "Approved" && frm.doc.docstatus == 1){
 			frm.add_custom_button(__("Create Subcontract Staff Shortlist"), function() {
-				// frappe.set_route('Form', frm.doc.reference_type, frm.doc.reference_name);
+				const wo = frappe.model.get_new_doc('Subcontract Staff Shortlist Application');
+				wo.subcontract_staff_request = frm.doc.name
+				wo.date = frappe.datetime.get_today()
+				frappe.set_route('Form', wo.doctype, wo.name);
+				
 		}).addClass("btn-primary");
 	}
 }

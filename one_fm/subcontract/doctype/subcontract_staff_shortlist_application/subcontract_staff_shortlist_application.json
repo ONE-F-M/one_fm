@@ -1,0 +1,141 @@
+{
+ "actions": [],
+ "autoname": "OPR-SSS-.YYYY.-.#####",
+ "creation": "2023-11-26 09:56:59.354015",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_da1nr",
+  "subcontract_staff_request",
+  "subcontractor",
+  "subcontractor_name",
+  "column_break_xa6pn",
+  "company",
+  "date",
+  "subcontract_staff_shortlist_detail_section",
+  "subcontract_staff_shortlist_detail",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_da1nr",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "subcontractor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Subcontractor",
+   "options": "Supplier",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "subcontractor.supplier_name",
+   "fieldname": "subcontractor_name",
+   "fieldtype": "Data",
+   "label": "Subcontractor Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_xa6pn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "subcontract_staff_shortlist_detail_section",
+   "fieldtype": "Section Break",
+   "label": "Subcontract Staff Shortlist Detail"
+  },
+  {
+   "fieldname": "subcontract_staff_shortlist_detail",
+   "fieldtype": "Table",
+   "label": "Subcontract Staff Shortlist Detail",
+   "options": "Subcontract Staff Shortlist Detail"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Subcontract Staff Shortlist Application",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "subcontract_staff_request",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Subcontract Staff Request",
+   "options": "Subcontract Staff Request",
+   "read_only": 1,
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "max_attachments": 5,
+ "modified": "2023-11-26 12:29:59.795564",
+ "modified_by": "Administrator",
+ "module": "Subcontract",
+ "name": "Subcontract Staff Shortlist Application",
+ "name_case": "UPPER CASE",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "set_user_permissions": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "if_owner": 1,
+   "read": 1,
+   "role": "Operations Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "read": 1,
+   "role": "Onboarding Officer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
