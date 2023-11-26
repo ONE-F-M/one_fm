@@ -110,7 +110,7 @@
  "is_submittable": 1,
  "links": [],
  "max_attachments": 5,
- "modified": "2023-11-25 21:25:45.380906",
+ "modified": "2023-11-26 10:18:06.185453",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Subcontract Staff Request",
@@ -134,6 +134,15 @@
    "share": 1,
    "submit": 1,
    "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "email": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Supervisor",
+   "share": 1
   },
   {
    "email": 1,
