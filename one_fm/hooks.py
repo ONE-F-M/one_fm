@@ -686,7 +686,8 @@ scheduler_events = {
 			'one_fm.overrides.leave_application.employee_leave_status'
 		],
 		"0 * * * *":[ # Creates the missing checkin record per shift, runs every hour
-			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record"
+			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record",
+			"one_fm.operations.doctype.shift_permission.shift_permission.notify_approver_about_pending_shift_permission"
 		]
 	}
 }
