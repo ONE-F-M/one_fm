@@ -44,7 +44,7 @@ from frappe.core.doctype.doctype.doctype import validate_series
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from frappe.desk.form.linked_with import get_linked_fields
-from frappe.model.workflow import apply_workflow
+from frappe.model.workflow import apply_workflow, get_workflow_state_field
 
 from deep_translator import GoogleTranslator
 
@@ -3161,34 +3161,6 @@ def get_users_with_role_permitted_to_doctype(role, doctype=False):
 	if filtered_users and len(filtered_users) > 0:
 		return filtered_users
 	return False
-
-@frappe.whitelist()
-def get_assignment_rule_description(doctype):
-	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doctype)
-	message_html = '<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.'
-	if mandatory_fields:
-		message_html += '''
-			<br/>
-			The details of the request are as follows:<br/>
-			<table cellpadding="0" cellspacing="0" border="1" style="border-collapse: collapse;">
-				<thead>
-					<tr>
-						<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
-						<th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
-					</tr>
-				</thead>
-				<tbody>
-		'''
-		for mandatory_field in mandatory_fields:
-			message_html += '''
-				<tr>
-					<td style="padding: 10px;">'''+labels[mandatory_field]+'''</td>
-					<td style="padding: 10px;">{{'''+mandatory_field+'''}}</td>
-				</tr>
-			'''
-		message_html += '</tbody></table>'
-	message_html += '</p>'
-	return message_html
 
 @frappe.whitelist()
 def change_item_details(item, item_name=False, description=False):
