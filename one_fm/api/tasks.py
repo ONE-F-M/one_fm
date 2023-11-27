@@ -1824,6 +1824,7 @@ def initiate_checkin_notification(res):
 	supervisor_checkout_reminder = []
 
 	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
+	checkin_assignments_employees = []
 	all_applicable_shifts = [i.shift_assignment_id for i in res.employees if i.is_supervisor_checkout_reminder]
 	checkins_for_today = frappe.get_all("Employee Checkin",{'shift_assignment':["IN",all_applicable_shifts],'log_type':"IN"},['employee'])
 	if checkins_for_today:
