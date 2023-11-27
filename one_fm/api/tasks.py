@@ -1640,7 +1640,7 @@ def fetch_employees_not_in_checkin():
 				WHERE supervisor_reminder_start_ends>0
 				GROUP BY supervisor_reminder_start_ends;
 			""", as_dict=1)]
-			supervisor_reminder_minutes = list(range(0,60))
+			
 
 
 		# get employees from shift assignment, check them in checkins and substract
