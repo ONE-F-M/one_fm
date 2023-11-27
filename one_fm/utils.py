@@ -44,7 +44,7 @@ from frappe.core.doctype.doctype.doctype import validate_series
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from frappe.desk.form.linked_with import get_linked_fields
-from frappe.model.workflow import apply_workflow, get_workflow_state_field
+from frappe.model.workflow import apply_workflow
 
 from deep_translator import GoogleTranslator
 
