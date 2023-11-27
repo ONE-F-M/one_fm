@@ -8,7 +8,7 @@ frappe.ui.form.on('Purchase Order', {
 		// frm.set_df_property('quoted_delivery_date', 'hidden', (frm.doc.docstatus==1 && frappe.user.has_role("Purchase User"))?false:true);
 	},
 	refresh: function(frm) {
-		
+
 		hide_subscription_section(frm);
 		set_field_property_for_documents(frm);
 		set_field_property_for_other_documents(frm);
@@ -103,3 +103,16 @@ frappe.ui.form.on('Payment Schedule', {
 	}
 })
 
+
+function set_schedule_date(frm) {
+	if(frm.doc.schedule_date){
+		var d = locals[frm.doc.doctype][frm.doc.name];
+		if(d["schedule_date"]){
+			var cl = frm.doc["items"] || [];
+			for(var i = 0; i < cl.length; i++) {
+				cl[i]["schedule_date"] = d["schedule_date"];
+			}
+		}
+		refresh_field("items");
+	}
+}
