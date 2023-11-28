@@ -213,7 +213,7 @@ doc_events = {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po",
-		"validate":"one_fm.purchase.utils.set_approver",
+		"validate":"one_fm.purchase.utils.set_po_approver",
 		'on_update':"one_fm.purchase.utils.on_update",
 		"on_update_after_submit": "one_fm.purchase.utils.set_po_letter_head"
 	},
@@ -686,7 +686,8 @@ scheduler_events = {
 			'one_fm.overrides.leave_application.employee_leave_status'
 		],
 		"0 * * * *":[ # Creates the missing checkin record per shift, runs every hour
-			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record"
+			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record",
+			"one_fm.api.tasks.notify_approver_about_pending_shift_request"
 		]
 	}
 }
@@ -752,7 +753,7 @@ fixtures = [
 		"filters": [["name", "in",
 			[
 				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
-				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor"
+				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request"
 			]
 		]]
 	},
