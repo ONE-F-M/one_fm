@@ -1659,7 +1659,7 @@ def fetch_employees_not_in_checkin():
 			GROUP BY sa.employee
 		""", as_dict=1)
 		if not shift_assignments_employees_list:
-			return
+			continue
 		shift_assignments_employees = [i.employee for i in shift_assignments_employees_list]
 		# make map of employee against shift type
 		shift_assignments_employees_dict = {}
@@ -1825,7 +1825,7 @@ def initiate_checkin_notification(res):
 	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
 	checkin_assignments_employees = []
 	all_applicable_shifts = [i.shift_assignment_id for i in res.employees if i.is_supervisor_checkout_reminder]
-	checkins_for_today = frappe.get_all("Employee Checkin",{'shift_assignment':["IN",all_applicable_shifts],'log_type':"IN"},['employee'])
+	checkins_for_today = frappe.get_all("Employee Checkin",{'late_entry':1,'shift_assignment':["IN",all_applicable_shifts],'log_type':"IN"},['employee'])
 	if checkins_for_today:
 		checkin_assignments_employees = [i.employee for i in checkins_for_today]
 	for recipient in res.employees:
