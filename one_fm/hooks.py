@@ -753,7 +753,7 @@ fixtures = [
 		"filters": [["name", "in",
 			[
 				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
-				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor"
+				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request"
 			]
 		]]
 	},
