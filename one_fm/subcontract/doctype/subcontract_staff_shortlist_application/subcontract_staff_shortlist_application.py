@@ -22,5 +22,5 @@ class SubcontractStaffShortlistApplication(Document):
 						}
 					}
 				})
-
+				doclist.flags.ignore_mandatory = True
 				doclist.save(ignore_permissions=True)

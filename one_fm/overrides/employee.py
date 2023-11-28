@@ -80,6 +80,12 @@ class EmployeeOverride(EmployeeMaster):
 
         # clear future employee schedules
         self.clear_schedules()
+        self.update_subcontract_onboard()
+
+    def update_subcontract_onboard(self):
+        subcontract_onboard = frappe.db.exists("Onboard Subcontract Employee", {"employee": self.name, "enrolled": ['!=', '1']})
+        if subcontract_onboard and self.enrolled:
+            frappe.db.set_value("Onboard Subcontract Employee", subcontract_onboard, "enrolled", self.enrolled)
 
     def clear_schedules(doc):
         # clear future employee schedules

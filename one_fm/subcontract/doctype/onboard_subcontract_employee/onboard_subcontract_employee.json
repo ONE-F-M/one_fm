@@ -9,10 +9,6 @@
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
-  "section_break_5o2vz",
-  "subcontract_staff_shortlist",
-  "column_break_t4c4j",
-  "staff_shortlist_detail",
   "section_break_aj7yv",
   "first_name",
   "second_name",
@@ -40,8 +36,12 @@
   "project_allocation",
   "section_break_afmtj",
   "day_off_category",
-  "column_break_ci4ac",
   "number_of_days_off",
+  "date_of_joining",
+  "column_break_ci4ac",
+  "employment_type",
+  "department",
+  "basic_salary",
   "section_break_9kwnq",
   "provide_accommodation_by_company",
   "accommodation_provided",
@@ -49,7 +49,14 @@
   "column_break_4y6ga",
   "is_uniform_needed_for_this_job",
   "uniform_issued",
-  "amended_from"
+  "amended_from",
+  "section_break_5o2vz",
+  "subcontract_staff_shortlist",
+  "staff_shortlist_detail",
+  "column_break_t4c4j",
+  "employee",
+  "employee_user",
+  "enrolled"
  ],
  "fields": [
   {
@@ -61,7 +68,8 @@
   },
   {
    "fieldname": "section_break_5o2vz",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Reference"
   },
   {
    "fieldname": "subcontract_staff_shortlist",
@@ -321,12 +329,62 @@
   {
    "fieldname": "column_break_4y6ga",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fetch_if_empty": 1,
+   "fieldname": "employee_user",
+   "fieldtype": "Link",
+   "label": "Employee User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type"
+  },
+  {
+   "fieldname": "date_of_joining",
+   "fieldtype": "Date",
+   "label": "Date of Joining",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "employee.enrolled",
+   "fetch_if_empty": 1,
+   "fieldname": "enrolled",
+   "fieldtype": "Check",
+   "label": "Enrolled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "reqd": 1
+  },
+  {
+   "fieldname": "basic_salary",
+   "fieldtype": "Currency",
+   "label": "Basic Salary",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-11-28 12:05:49.981103",
+ "modified": "2023-11-28 14:25:36.501564",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Onboard Subcontract Employee",
