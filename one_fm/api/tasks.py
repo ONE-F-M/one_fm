@@ -1660,7 +1660,7 @@ def fetch_employees_not_in_checkin():
 			GROUP BY sa.employee
 		""", as_dict=1)
 		if not shift_assignments_employees_list:
-			return
+			continue
 		shift_assignments_employees = [i.employee for i in shift_assignments_employees_list]
 		# make map of employee against shift type
 		shift_assignments_employees_dict = {}
