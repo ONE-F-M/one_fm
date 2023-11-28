@@ -26,7 +26,7 @@ var set_requester = (frm) => {
 var add_create_shortlist_button = (frm) => {
 	if (frm.doc.status == "Approved" && frm.doc.docstatus == 1){
 			frm.add_custom_button(__("Create Subcontract Staff Shortlist"), function() {
-				const wo = frappe.model.get_new_doc('Subcontract Staff Shortlist Application');
+				const wo = frappe.model.get_new_doc('Subcontract Staff Shortlist');
 				wo.subcontract_staff_request = frm.doc.name
 				wo.company = frm.doc.company
 				wo.date = frappe.datetime.get_today()
