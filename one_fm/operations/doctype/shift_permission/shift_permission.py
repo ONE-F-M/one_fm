@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from datetime import datetime, timedelta
 import frappe
 from frappe.model.document import Document
-from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr, now, get_url_to_form
+from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr, now
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
@@ -240,31 +240,5 @@ def create_checkin(shift_permission):
 
 
 
-def notify_approver_about_pending_shift_permission():
-    date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
-    one_hour = date_time + timedelta(minutes=60)
-    pending_shift_permission = frappe.db.sql("""
-												SELECT sp.name, approver_user_id, approver_name, emp_name
-												FROM `tabShift Permission` sp
-												LEFT JOIN `tabOperations Shift` os ON sp.shift = os.name
-												WHERE sp.workflow_state = 'Pending'
-												AND sp.date = %s
-												AND os.start_time BETWEEN %s AND %s
-											""", (date_time.date(), date_time.time(), one_hour.time()), as_dict=1)
-    
-    
-    if pending_shift_permission:
-        data_dict = dict()
-        for obj in pending_shift_permission:
-            if not data_dict.get(obj["approver_user_id"]):
-                data_dict.update({obj["approver_user_id"]:{"approver_name":obj["approver_name"], "sp": list()}})
-                
-        for obj in pending_shift_permission:
-            data_dict.get(obj["approver_user_id"]).get("sp").append({obj.get("emp_name"): get_url_to_form("Shift Permission", obj.get("name"))})
-        
-        for key, value in data_dict.items():
-            title = "Pending Shift permission for upcoming shift"
-            msg = frappe.render_template('one_fm/templates/emails/notify_shift_permission_approver.html', context={"approver_name": value["approver_name"], "data": value["sp"]})
-            sendemail(recipients=key, subject=title, content=msg)
     
     
