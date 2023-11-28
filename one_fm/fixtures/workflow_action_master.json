@@ -432,5 +432,26 @@
   "modified": "2023-08-02 15:18:45.824598",
   "name": "Close",
   "workflow_action_name": "Close"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-11-28 12:22:20.644583",
+  "name": "Strat Onboarding",
+  "workflow_action_name": "Strat Onboarding"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-11-28 12:23:22.424815",
+  "name": "Stop",
+  "workflow_action_name": "Stop"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2023-11-28 12:23:34.131995",
+  "name": "Complete",
+  "workflow_action_name": "Complete"
  }
 ]

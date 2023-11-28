@@ -90,9 +90,14 @@
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
+ "links": [
+  {
+   "link_doctype": "Onboard Subcontract Employee",
+   "link_fieldname": "subcontract_staff_shortlist"
+  }
+ ],
  "max_attachments": 5,
- "modified": "2023-11-26 12:29:59.795564",
+ "modified": "2023-11-28 11:58:25.221222",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Subcontract Staff Shortlist Application",

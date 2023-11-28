@@ -795,9 +795,9 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2021-05-26 01:35:08.243382",
+  "modified": "2023-11-28 12:21:11.483947",
   "name": "Completed",
-  "style": "",
+  "style": "Success",
   "workflow_state_name": "Completed"
  },
  {
@@ -988,5 +988,23 @@
   "name": "Pending Onboarding Officer",
   "style": "",
   "workflow_state_name": "Pending Onboarding Officer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-11-28 12:20:17.568066",
+  "name": "In Progress",
+  "style": "Warning",
+  "workflow_state_name": "In Progress"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2023-11-28 12:21:39.910355",
+  "name": "Stopped",
+  "style": "Inverse",
+  "workflow_state_name": "Stopped"
  }
 ]
