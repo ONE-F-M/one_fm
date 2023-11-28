@@ -1,0 +1,357 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2023-11-28 11:16:25.949178",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "section_break_5o2vz",
+  "subcontract_staff_shortlist",
+  "column_break_t4c4j",
+  "staff_shortlist_detail",
+  "section_break_aj7yv",
+  "first_name",
+  "second_name",
+  "third_name",
+  "fourth_name",
+  "last_name",
+  "full_name",
+  "column_break_4nvfw",
+  "first_name_in_arabic",
+  "second_name_in_arabic",
+  "third_name_in_arabic",
+  "fourth_name_in_arabic",
+  "last_name_in_arabic",
+  "full_name_in_arabic",
+  "column_break_7rvpb",
+  "date_of_birth",
+  "gender",
+  "nationality",
+  "contact_number",
+  "section_break_vwtys",
+  "will_work_in_shift",
+  "shift_allocation",
+  "column_break_emfqq",
+  "site_allocation",
+  "project_allocation",
+  "section_break_afmtj",
+  "day_off_category",
+  "column_break_ci4ac",
+  "number_of_days_off",
+  "section_break_9kwnq",
+  "provide_accommodation_by_company",
+  "accommodation_provided",
+  "provide_transport_by_company",
+  "column_break_4y6ga",
+  "is_uniform_needed_for_this_job",
+  "uniform_issued",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "ONB-SCS-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "section_break_5o2vz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "subcontract_staff_shortlist",
+   "fieldtype": "Link",
+   "label": "Subcontract Staff Shortlist",
+   "options": "Subcontract Staff Shortlist Application",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_t4c4j",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "staff_shortlist_detail",
+   "fieldtype": "Link",
+   "label": "Staff Shortlist Detail",
+   "options": "Subcontract Staff Shortlist Detail",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_aj7yv",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "second_name",
+   "fieldtype": "Data",
+   "label": "Second Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "third_name",
+   "fieldtype": "Data",
+   "label": "Third Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fourth_name",
+   "fieldtype": "Data",
+   "label": "Fourth Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4nvfw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "first_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "First Name in Arabic",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "second_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Second Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "third_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Third Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fourth_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Fourth Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Last Name in Arabic",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "full_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Full Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7rvpb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact_number",
+   "fieldtype": "Data",
+   "label": "Contact Number",
+   "options": "Phone",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_vwtys",
+   "fieldtype": "Section Break",
+   "label": "Work Details"
+  },
+  {
+   "fieldname": "will_work_in_shift",
+   "fieldtype": "Select",
+   "label": "Will Work in Shift",
+   "options": "\nYes\nNo",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.will_work_in_shift=='Yes'",
+   "fieldname": "shift_allocation",
+   "fieldtype": "Link",
+   "label": "Shift Allocation",
+   "mandatory_depends_on": "eval:doc.will_work_in_shift=='Yes'",
+   "options": "Operations Shift",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.will_work_in_shift=='Yes'",
+   "fetch_from": "shift_allocation.site",
+   "fieldname": "site_allocation",
+   "fieldtype": "Link",
+   "label": "Site Allocation",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.will_work_in_shift=='Yes'",
+   "fetch_from": "shift_allocation.project",
+   "fieldname": "project_allocation",
+   "fieldtype": "Link",
+   "label": "Project Allocation",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fieldname": "day_off_category",
+   "fieldtype": "Select",
+   "label": "Day off Category",
+   "options": "\nWeekly\nMonthly",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "number_of_days_off",
+   "fieldtype": "Int",
+   "label": "Number of Days Off",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_ci4ac",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_uniform_needed_for_this_job",
+   "fieldtype": "Check",
+   "label": "Is Uniform Needed For This Job",
+   "read_only": 1
+  },
+  {
+   "depends_on": "is_uniform_needed_for_this_job",
+   "fieldname": "uniform_issued",
+   "fieldtype": "Link",
+   "label": "Uniform Issued",
+   "options": "Employee Uniform"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_accommodation_by_company",
+   "fieldtype": "Check",
+   "label": "Provide Accommodation by Company",
+   "read_only": 1
+  },
+  {
+   "depends_on": "provide_accommodation_by_company",
+   "fieldname": "accommodation_provided",
+   "fieldtype": "Link",
+   "label": "Accommodation Provided",
+   "options": "Accommodation Checkin Checkout"
+  },
+  {
+   "default": "0",
+   "fieldname": "provide_transport_by_company",
+   "fieldtype": "Check",
+   "label": "Provide Transport by Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Onboard Subcontract Employee",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_emfqq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_afmtj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_9kwnq",
+   "fieldtype": "Section Break",
+   "label": "Accommodation and Uniform"
+  },
+  {
+   "fieldname": "column_break_4y6ga",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2023-11-28 12:05:49.981103",
+ "modified_by": "Administrator",
+ "module": "Subcontract",
+ "name": "Onboard Subcontract Employee",
+ "name_case": "UPPER CASE",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "full_name, contact_number",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "full_name",
+ "track_changes": 1
+}
