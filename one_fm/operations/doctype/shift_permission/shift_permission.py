@@ -2,7 +2,6 @@
 # Copyright (c) 2020, omar jaber and contributors
 # For license information, please see license.txt
 from __future__ import unicode_literals
-from datetime import datetime, timedelta
 import frappe
 from frappe.model.document import Document
 from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr, now
