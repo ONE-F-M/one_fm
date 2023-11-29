@@ -83,18 +83,18 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "\nPending\nApproved\nRejected",
+   "options": "Pending\nApproved\nRejected",
    "read_only": 1
   },
   {
    "fieldname": "subcontractor_staff_request_detail_section",
    "fieldtype": "Section Break",
-   "label": "Subcontractor Staff Request Detail"
+   "label": "Subcontract Staff Request Detail"
   },
   {
    "fieldname": "subcontracted_staff_request_detail",
    "fieldtype": "Table",
-   "label": "Subcontracted Staff Request Detail",
+   "label": "Subcontract Staff Request Detail",
    "options": "ERF Gender Height Requirement",
    "reqd": 1
   },
@@ -110,7 +110,7 @@
  "is_submittable": 1,
  "links": [],
  "max_attachments": 5,
- "modified": "2023-11-26 10:18:06.185453",
+ "modified": "2023-11-29 14:24:32.476226",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Subcontract Staff Request",
