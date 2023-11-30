@@ -1,9 +1,12 @@
-import frappe
+import frappe,json
+from six import string_types
 from frappe import _
 from one_fm.api.doc_methods.payroll_entry import get_basic_salary
 from one_fm.api.notification import create_notification_log
-from frappe.utils import cint, flt, date_diff, cstr, today, getdate, get_last_day, add_days,formatdate
+from frappe.utils import cint, flt, date_diff, cstr, today, getdate,get_link_to_form, get_last_day, add_days,formatdate
 from hrms.hr.utils import get_holidays_for_employee
+from hrms.payroll.utils import sanitize_expression
+import unicodedata
 
 def get_scheduled_day_off(employee, start_date, end_date):
 	schedule_list = frappe.db.sql_list("""
@@ -296,8 +299,8 @@ def get_unmarked_days_based_on_doj_or_relieving(
 def is_day_off(employee, date=None):
 	"""
 	Returns True if given Employee has an holiday on the given date
-        :param employee: Employee `name`
-        :param date: Date to check. Will check for today if None
+		:param employee: Employee `name`
+		:param date: Date to check. Will check for today if None
 	"""
 
 	if not date:
@@ -529,3 +532,87 @@ def get_data_for_eval(doc):
 			data[d.abbr] = d.amount or 0
 
 	return data, default_data
+
+
+
+@frappe.whitelist()
+def validate_multi_structure_slip(doc,return_doc = 0):
+	"""Validate if the payroll period in the salary slip or payroll entry has multiple salary structures assigned, 
+ 		It will return either a boolean or a frappe object based on the arguments received """
+	if isinstance(doc,string_types):
+		return_doc = True
+		doc = frappe.get_doc(json.loads(doc))
+	
+	all_structures = frappe.get_all("Salary Structure Assignment",{'from_date':['between',[doc.start_date,doc.end_date]],'docstatus':1,'employee':doc.employee},['*'])
+	all_structures += frappe.get_all("Salary Structure Assignment",{'from_date':['<',doc.start_date],'docstatus':1,'employee':doc.employee},['*'],order_by="from_date desc",limit_page_length = 1)
+	if len(all_structures)>1:
+		doc.has_multiple_salary_structure = 1
+		doc = generate_split_payroll(doc,all_structures)
+		return doc
+			# return{'structures':len(all_structures),'has_multiple':0 if len(all_structures)<=1 else 1}
+
+
+def generate_split_payroll(doc,structure_dict):
+    doc.custom_salary_component_detail = []
+    "Handle all the requirements to change a salary slip from single to multiple salary structures"
+    #Set Salary Structure
+    #Set Components in Structure
+    #Set Dates for Structure
+    #Set Amount for Components per date
+    #Transfer to real table	
+    strucs = tuple([i.salary_structure for i in structure_dict])
+    components = frappe.db.sql(f"""Select sd.*,sc.type from `tabSalary Detail` sd JOIN `tabSalary Component` sc
+                               ON sd.salary_component = sc.name WHERE sd.parent IN {strucs}  """,as_dict = 1)
+    if components:
+        active_dates = get_salary_detail(structure_dict,doc,components)
+        for each in active_dates:
+            doc.append('custom_salary_component_detail',each)
+    return doc
+def get_date_before_start_date(date_field, start_date):
+    if date_field > start_date:
+        return date_field
+    else:
+        return start_date
+
+
+def get_salary_detail(structure_dict,doc,components):
+	"""Get the Start and End dates of a salary structure in a multi structure salary slip
+
+	Args:
+		structure_dict (_type_): list of salary structure assignments
+		doc (_type_): salary slip doc
+		components: list of salary components
+	"""
+	try:
+		valid_dates = [getdate(i.from_date) for i in structure_dict]
+		valid_dates.sort()
+		last_item = len(valid_dates) - 1
+		detail_dict = []
+		for each in structure_dict:
+			each.payroll_start_date = getdate(doc.start_date) if getdate(each.from_date) < getdate(doc.start_date) else getdate(each.from_date)
+			if valid_dates.index(getdate(each.from_date)) !=last_item:
+				payroll_end_date_index = valid_dates.index(getdate(each.from_date)) + 1
+				each.payroll_end_date = add_days(valid_dates[payroll_end_date_index],-1)
+			else:
+				each.payroll_end_date = getdate(doc.end_date)
+			for one in components:
+				if one.parent  == each.salary_structure:
+					detail_dict.append({
+					'salary_structure':one.parent,
+					'component_type':one.type,
+					'salary_component':one.salary_component,
+					'start_date':each.payroll_start_date,
+					'end_date':each.payroll_end_date,
+					'period':f'{each.payroll_start_date.strftime("%Y-%m-%d")} to {each.payroll_end_date.strftime("%Y-%m-%d")}',
+					})
+		return detail_dict
+	except:
+		frappe.log_error("Error Generating Salary",frappe.get_traceback())
+		frappe.throw("An error ocurred while generating salary, Kindly review error Logs")
+		
+
+
+   
+	
+	
+	
