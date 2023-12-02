@@ -9,6 +9,7 @@
   "salary_structure",
   "salary_component",
   "period",
+  "payment_days",
   "column_break_emioj",
   "start_date",
   "end_date",
@@ -68,12 +69,18 @@
    "label": "Component Type",
    "options": "Deduction\nEarning",
    "read_only": 1
+  },
+  {
+   "fieldname": "payment_days",
+   "fieldtype": "Float",
+   "label": "Payment Days",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-12-01 11:52:28.607235",
+ "modified": "2023-12-02 12:49:12.132489",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Salary Component Detail",

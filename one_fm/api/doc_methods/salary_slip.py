@@ -404,7 +404,9 @@ def set_earnings_and_deduction_with_respect_to_payroll_cycle(doc, method):
         doc = generate_split_payroll(doc,all_assignments)
         update_earning_deductions(doc)
         doc.set_totals()
+        doc.compute_year_to_date()
     else:
+        doc.has_multiple_salary_structure = 0
         last_salary_slip = get_last_salary_slip(doc.employee)
         if last_salary_slip and len(last_salary_slip) > 0:
             payroll_based_on = frappe.db.get_value("Payroll Settings", None, "payroll_based_on")
@@ -560,6 +562,9 @@ def validate_multi_structure_slip(doc,return_doc = 0):
     if len(all_structures)>1:
         doc.has_multiple_salary_structure = 1
         doc = generate_split_payroll(doc,all_structures)
+        update_earning_deductions(doc)
+        doc.set_totals()
+        doc.compute_year_to_date()
         return doc
             # return{'structures':len(all_structures),'has_multiple':0 if len(all_structures)<=1 else 1}
 
@@ -576,8 +581,8 @@ def generate_split_payroll(doc,structure_dict):
     components = frappe.db.sql(f"""Select sd.*,sc.type from `tabSalary Detail` sd JOIN `tabSalary Component` sc
                                ON sd.salary_component = sc.name WHERE sd.parent IN {strucs}  """,as_dict = 1)
     if components:
-        active_dates = get_salary_detail(structure_dict,doc,components)
-        for each in active_dates:
+        split_data = get_salary_detail(structure_dict,doc,components)
+        for each in split_data:
             doc.append('custom_salary_component_detail',each)
     return doc
 
@@ -625,9 +630,10 @@ def get_salary_detail(structure_dict,doc,components):
                         'component_type':one.type,
                         'amount':prorated_amount,
                         'salary_component':one.salary_component,
+                        'payment_days':payment_days_for_period,
                         'start_date':each.payroll_start_date,
                         'end_date':each.payroll_end_date,
-                        'period':f'{each.payroll_start_date.strftime("%Y-%m-%d")} to {each.payroll_end_date.strftime("%Y-%m-%d")}',
+                        'period':f'{each.payroll_start_date.strftime("%b %d")} to {each.payroll_end_date.strftime("%b %d")}',
                         }
 
                         detail_dict.append(default_dict_row)
