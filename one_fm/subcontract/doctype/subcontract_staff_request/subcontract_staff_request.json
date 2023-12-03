@@ -13,11 +13,12 @@
   "reason",
   "requester",
   "requester_name",
+  "approver",
+  "approver_name",
   "column_break_vzrpn",
   "company",
   "date",
   "status",
-  "approver",
   "subcontractor_staff_request_detail_section",
   "subcontracted_staff_request_detail",
   "amended_from"
@@ -113,12 +114,18 @@
    "label": "Approver",
    "options": "User",
    "read_only": 1
+  },
+  {
+   "fetch_from": "approver.full_name",
+   "fieldname": "approver_name",
+   "fieldtype": "Data",
+   "label": "Approver Name"
   }
  ],
  "is_submittable": 1,
  "links": [],
  "max_attachments": 5,
- "modified": "2023-12-03 10:14:59.135058",
+ "modified": "2023-12-03 22:52:49.437677",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Subcontract Staff Request",

@@ -19,8 +19,7 @@ class SubcontractStaffRequest(Document):
 					'doctype': 'Subcontract Staff Request',
 					'name': self.name,
 					'assign_to': [operations_manager],
-					'description': _(f'Please review the Subcontract Staff Request {self.name}'),
-                    "assignment_rule": ""
+					'description': _(f'Please review the Subcontract Staff Request {self.name}')
 				})
                 except DuplicateToDoError:
                     frappe.message_log.pop()
