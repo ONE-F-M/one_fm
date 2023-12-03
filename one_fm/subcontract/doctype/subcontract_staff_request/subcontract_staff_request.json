@@ -17,6 +17,7 @@
   "company",
   "date",
   "status",
+  "approver",
   "subcontractor_staff_request_detail_section",
   "subcontracted_staff_request_detail",
   "amended_from"
@@ -83,7 +84,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Pending\nApproved\nRejected",
+   "options": "\nPending\nApproved\nRejected",
    "read_only": 1
   },
   {
@@ -105,12 +106,19 @@
    "label": "Series",
    "options": "OPR-.SSR-.YYYY.-",
    "read_only": 1
+  },
+  {
+   "fieldname": "approver",
+   "fieldtype": "Link",
+   "label": "Approver",
+   "options": "User",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
  "max_attachments": 5,
- "modified": "2023-11-29 14:24:32.476226",
+ "modified": "2023-12-03 10:14:59.135058",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Subcontract Staff Request",
