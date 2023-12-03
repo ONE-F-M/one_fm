@@ -66,7 +66,7 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "Subcontract Staff Shortlist Application",
+   "options": "Subcontract Staff Shortlist",
    "print_hide": 1,
    "read_only": 1
   },
@@ -100,7 +100,7 @@
  "modified": "2023-11-28 11:58:25.221222",
  "modified_by": "Administrator",
  "module": "Subcontract",
- "name": "Subcontract Staff Shortlist Application",
+ "name": "Subcontract Staff Shortlist",
  "name_case": "UPPER CASE",
  "naming_rule": "Expression (old style)",
  "owner": "Administrator",

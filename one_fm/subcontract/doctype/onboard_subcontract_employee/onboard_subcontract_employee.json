@@ -75,7 +75,7 @@
    "fieldname": "subcontract_staff_shortlist",
    "fieldtype": "Link",
    "label": "Subcontract Staff Shortlist",
-   "options": "Subcontract Staff Shortlist Application",
+   "options": "Subcontract Staff Shortlist",
    "read_only": 1
   },
   {

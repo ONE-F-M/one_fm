@@ -5,7 +5,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
 
-class SubcontractStaffShortlistApplication(Document):
+class SubcontractStaffShortlist(Document):
 	def on_submit(self):
 		if self.workflow_state == 'Approved':
 			self.create_subcontract_onboard_employee()
