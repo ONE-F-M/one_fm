@@ -73,7 +73,8 @@ class AttendanceCheck(Document):
     def validate_unscheduled_check(self):
         #If Check is unscheduled,confirmed user roles before submitting
         if self.is_unscheduled:
-            if "Attendance Manager" in frappe.get_roles(frappe.session.user):
+            
+            if check_attendance_manager(frappe.session.user):
                 return
             elif "Shift Supervisor" in frappe.get_roles(frappe.session.user) or "Site Supervisor" in frappe.get_roles(frappe.session.user):
                 shift_assignments = frappe.db.get_list("Shift Assignment", filters={'docstatus':1,'start_date':self.date,'employee':self.employee}, fields="*")
