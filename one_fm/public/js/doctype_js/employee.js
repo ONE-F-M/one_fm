@@ -1,6 +1,7 @@
 frappe.ui.form.on('Employee', {
 	refresh: function(frm) {
 		hideFields(frm);
+		set_grd_fields(frm)
 		frm.trigger('set_queries');
 		set_mandatory(frm);
         set_shift_working_btn(frm);
@@ -119,6 +120,14 @@ var change_employee_id = function(frm) {
 // Hide un-needed fields
 const hideFields = frm => {
     $("[data-doctype='Employee Checkin']").hide();
+}
+
+let set_grd_fields= frm=>{
+	
+	frm.set_df_property('custom_employee_photo',"hidden",1)
+	if('GRD Supervisor' in frappe.user_roles){
+		frm.set_df_property('custom_employee_photo',"hidden",0)
+	}
 }
 
 var set_shift_working_btn = function(frm) {
