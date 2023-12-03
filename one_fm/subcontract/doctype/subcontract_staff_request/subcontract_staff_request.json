@@ -119,13 +119,14 @@
    "fetch_from": "approver.full_name",
    "fieldname": "approver_name",
    "fieldtype": "Data",
-   "label": "Approver Name"
+   "label": "Approver Name",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
  "max_attachments": 5,
- "modified": "2023-12-03 22:52:49.437677",
+ "modified": "2023-12-03 23:02:10.811526",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Subcontract Staff Request",
