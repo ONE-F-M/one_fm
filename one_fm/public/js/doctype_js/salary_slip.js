@@ -5,6 +5,21 @@ frappe.ui.form.on('Salary Slip', {
 		}
 		// SET FIELDS DISPLAY FOR ROLES
 		setFieldDisplay(frm);
+	},
+	employee:function(frm){
+		if(frm.doc.employee){
+			frappe.call({
+				method: 'one_fm.api.doc_methods.salary_slip.validate_multi_structure_slip',
+				args: {'doc':frm.doc},
+				callback: function(r) {
+					
+					frappe.model.sync(r.message)
+					frm.refresh_fields();
+
+					
+				}
+			});
+		}
 	}
 });
 
