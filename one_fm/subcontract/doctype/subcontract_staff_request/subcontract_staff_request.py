@@ -5,11 +5,17 @@ import frappe
 from frappe import _
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from frappe.model.document import Document
+from one_fm.utils import (workflow_approve_reject)
 
 
 class SubcontractStaffRequest(Document):
     
     def on_update(self):
+        if self.workflow_state == "Rejected":
+            last_doc = self.get_doc_before_save()
+            if last_doc and last_doc.get('workflow_state') != self.workflow_state:
+                workflow_approve_reject(self)
+            
         if self.workflow_state == "Pending":
             operations_manager = frappe.db.get_single_value("Operation Settings", "default_operation_manager")
             if operations_manager:
