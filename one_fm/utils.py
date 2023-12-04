@@ -2716,15 +2716,17 @@ def queue_send_workflow_action_email(doc, recipients):
             email_args['subject'] = subject
         frappe.enqueue(method=sendemail, queue="short", **email_args)
 
-def workflow_approve_reject(doc, recipients=None):
+def workflow_approve_reject(doc, recipients=None,message= None):
     if not recipients:
         recipients = [doc.owner]
+    if not message:
+        message = f"Your {doc.doctype} {doc.name} has been {doc.workflow_state}"
     email_args = {
         "subject": f"{doc.doctype} - {doc.workflow_state}",
         "recipients": recipients,
         "reference_name": doc.name,
         "reference_doctype": doc.doctype,
-        "message": f"Your {doc.doctype} {doc.name} has been {doc.workflow_state}"
+        "message": message
     }
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
