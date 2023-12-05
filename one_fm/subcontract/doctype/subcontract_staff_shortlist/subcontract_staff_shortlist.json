@@ -9,11 +9,13 @@
  "field_order": [
   "section_break_da1nr",
   "subcontract_staff_request",
+  "department",
   "subcontractor",
   "subcontractor_name",
   "column_break_xa6pn",
   "company",
   "date",
+  "expected_date_of_joining",
   "subcontract_staff_shortlist_detail_section",
   "subcontract_staff_shortlist_detail",
   "amended_from"
@@ -86,6 +88,21 @@
    "options": "Subcontract Staff Request",
    "read_only": 1,
    "reqd": 1
+  },
+  {
+   "fetch_from": "subcontract_staff_request.department",
+   "fetch_if_empty": 1,
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "fetch_from": "subcontract_staff_request.expected_date_of_joining",
+   "fetch_if_empty": 1,
+   "fieldname": "expected_date_of_joining",
+   "fieldtype": "Date",
+   "label": "Expected Date of Joining"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -97,7 +114,7 @@
   }
  ],
  "max_attachments": 5,
- "modified": "2023-11-28 11:58:25.221222",
+ "modified": "2023-12-05 09:18:26.391675",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Subcontract Staff Shortlist",

@@ -23,6 +23,12 @@ class SubcontractStaffShortlist(Document):
 	def create_subcontract_onboard_employee(self):
 		if self.subcontract_staff_shortlist_detail:
 			for staff_shortlist in self.subcontract_staff_shortlist_detail:
+				def set_missing_values(source, target):
+					target.department = self.department
+					target.date_of_joining = self.expected_date_of_joining
+					target.salary = 0.00
+					target.employment_type = frappe.db.get_single_value('Hiring Settings', 'subcontract_employment_type')
+
 				doclist = get_mapped_doc("Subcontract Staff Shortlist Detail", staff_shortlist.name, {
 					"Subcontract Staff Shortlist Detail": {
 						"doctype": "Onboard Subcontract Employee",
@@ -31,6 +37,6 @@ class SubcontractStaffShortlist(Document):
 							"name": "staff_shortlist_detail"
 						}
 					}
-				})
+				}, None, set_missing_values)
 				doclist.flags.ignore_mandatory = True
 				doclist.save(ignore_permissions=True)

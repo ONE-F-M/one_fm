@@ -13,11 +13,13 @@
   "reason",
   "requester",
   "requester_name",
-  "approver",
-  "approver_name",
+  "department",
   "column_break_vzrpn",
+  "expected_date_of_joining",
   "company",
   "date",
+  "approver",
+  "approver_name",
   "status",
   "subcontractor_staff_request_detail_section",
   "subcontracted_staff_request_detail",
@@ -96,7 +98,6 @@
   {
    "fieldname": "subcontracted_staff_request_detail",
    "fieldtype": "Table",
-   "label": "Subcontract Staff Request Detail",
    "options": "ERF Gender Height Requirement",
    "reqd": 1
   },
@@ -121,12 +122,23 @@
    "fieldtype": "Data",
    "label": "Approver Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "fieldname": "expected_date_of_joining",
+   "fieldtype": "Date",
+   "label": "Expected Date of Joining"
   }
  ],
  "is_submittable": 1,
  "links": [],
  "max_attachments": 5,
- "modified": "2023-12-03 23:02:10.811526",
+ "modified": "2023-12-05 09:11:59.324978",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Subcontract Staff Request",
@@ -152,7 +164,6 @@
    "write": 1
   },
   {
-   "amend": 1,
    "create": 1,
    "email": 1,
    "read": 1,
