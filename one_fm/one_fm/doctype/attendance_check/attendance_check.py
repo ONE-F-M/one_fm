@@ -364,7 +364,9 @@ def create_attendance_check(attendance_date=None):
         # Employees
         all_checks_to_be_created = missing_basic+absent_attendance_basic_list+missing_ot+absent_attendance_ot_list
         employees_with_no_docs = check_for_missed(attendance_date,employee_schedules,shift_assignments,attendance_requests,all_attendance,all_checks_to_be_created)
+        
         employees_dict = {}
+        
         for i in frappe.get_all("Employee", filters={"name":["IN", employees_with_no_docs+missing_ot+missing_basic+absent_attendance_basic_list+absent_attendance_ot_list]}, fields="*"):
             employees_dict[i.name] = i
 
@@ -755,8 +757,6 @@ def assign_attendance_manager_after_48_hours():
                         'assign_to': [attendance_manager_user],
                     })
         
-  
-  
 def check_for_missed(date,schedules,shift_assignments,attendance_requests,all_attendance,checks_to_create):
     all_leaves = frappe.db.sql(f"""SELECT name,employee
         FROM `tabLeave Application`
