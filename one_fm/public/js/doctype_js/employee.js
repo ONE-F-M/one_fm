@@ -123,9 +123,8 @@ const hideFields = frm => {
 }
 
 let set_grd_fields= frm=>{
-	
 	frm.set_df_property('custom_employee_photo',"hidden",1)
-	if('GRD Supervisor' in frappe.user_roles){
+	if(frappe.user_roles.includes("GRD Supervisor")){
 		frm.set_df_property('custom_employee_photo',"hidden",0)
 	}
 }
