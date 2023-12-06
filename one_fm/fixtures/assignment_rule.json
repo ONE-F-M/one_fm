@@ -1,5 +1,67 @@
 [
  {
+  "assign_condition": "workflow_state=='Approved'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": null,
+  "description": "Automatic Assignment",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Subcontract Staff Request",
+  "due_date_based_on": null,
+  "field": "owner",
+  "last_user": "a.adekunle@one-fm.com",
+  "modified": "2023-11-27 16:21:26.451821",
+  "name": "Subcontract Staff Request",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": null,
+  "users": []
+ },
+ {
   "assign_condition": "docstatus == 0",
   "assignment_days": [
    {

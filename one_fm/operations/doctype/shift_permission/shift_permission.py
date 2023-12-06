@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020, omar jaber and contributors
 # For license information, please see license.txt
-
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr
+from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr, now
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
 from one_fm.api.tasks import get_action_user
 from one_fm.api.utils import get_reports_to_employee_name
+from one_fm.processor import sendemail
 
 class PermissionTypeandLogTypeError(frappe.ValidationError):
 	pass
@@ -236,3 +236,8 @@ def create_checkin(shift_permission):
 		employee_checkin.db_set('creation', str(shift_assignment.start_datetime)+'.000000' if employee_checkin.log_type == "IN" else str(shift_assignment.end_datetime)+'.999999')
 		employee_checkin.db_set('actual_time', shift_assignment.start_datetime if employee_checkin.log_type == "IN" else shift_assignment.end_datetime)
 		frappe.db.commit()
+
+
+
+    
+    

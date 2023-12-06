@@ -102,7 +102,7 @@ class MissingCheckinRecord:
     
     
     def fetch_attendance_manager_user_obj(self) -> str:
-        attendance_manager = frappe.get_doc("ONEFM General Setting").get("attendance_manager")
+        attendance_manager = frappe.db.get_single_value('ONEFM General Setting', 'attendance_manager')
         if attendance_manager:
             attendance_manager_user = frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
             return attendance_manager_user

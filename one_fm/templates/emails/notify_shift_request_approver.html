@@ -1,0 +1,52 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, .shift_request td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      width: 30%;
+      text-align: left;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #ddd;
+    }
+    
+    </style>
+    
+
+    <p>Hello, The following Shift Request needs your immediate action</p><br>
+
+<table>
+    <tbody class="shift_request">
+      <tr>
+        <th>Employee Name</th>
+        <td>Link to Shift Perimission</a></td>
+      </tr>
+
+    {% for obj in data %}
+
+        {% for key, value in obj.items() %}
+            <tr>
+                <th>{{ key}}</th>
+                <td><a href={{ value }}>Link</a></td>
+            </tr>
+        {% endfor %}
+    {% endfor %}
+    
+    </tbody>
+</table>
+    

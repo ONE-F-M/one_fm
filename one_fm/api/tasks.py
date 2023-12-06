@@ -8,8 +8,7 @@ import frappe, erpnext
 from frappe import _
 from frappe.model.workflow import apply_workflow
 from frappe.utils import (
-	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date,
-	datetime, today, add_days, now
+	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, today, add_days, now, get_url_to_form
 )
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
@@ -1609,9 +1608,11 @@ def fetch_employees_not_in_checkin():
 	# 	return
 
 	shift_start_time = f"{now_datetime().time().hour}:00:00"
+	
 	minute = now_datetime().time().minute
 	hour = now_datetime().time().hour
 	cur_date = str(getdate())
+	
 	return_data = []
 	log_types = ['IN', 'OUT']
 	for log_type in log_types:
@@ -1638,6 +1639,7 @@ def fetch_employees_not_in_checkin():
 				WHERE supervisor_reminder_start_ends>0
 				GROUP BY supervisor_reminder_start_ends;
 			""", as_dict=1)]
+			
 
 
 		# get employees from shift assignment, check them in checkins and substract
@@ -1646,7 +1648,7 @@ def fetch_employees_not_in_checkin():
 			sa.shift as operations_shift, st.notification_reminder_after_shift_start,
 			st.notification_reminder_after_shift_end, st.supervisor_reminder_shift_start,
 			st.supervisor_reminder_start_ends, os.supervisor as shift_supervisor,
-			osi.account_supervisor as site_supervisor
+			osi.account_supervisor as site_supervisor,sa.name as shift_assignment_id
 
 			FROM `tabShift Assignment` sa RIGHT JOIN `tabShift Type` st ON sa.shift_type=st.name
 			RIGHT JOIN `tabOperations Shift` os ON sa.shift=os.name RIGHT JOIN `tabOperations Site` osi
@@ -1657,7 +1659,7 @@ def fetch_employees_not_in_checkin():
 			GROUP BY sa.employee
 		""", as_dict=1)
 		if not shift_assignments_employees_list:
-			return
+			continue
 		shift_assignments_employees = [i.employee for i in shift_assignments_employees_list]
 		# make map of employee against shift type
 		shift_assignments_employees_dict = {}
@@ -1821,6 +1823,11 @@ def initiate_checkin_notification(res):
 	supervisor_checkout_reminder = []
 
 	#eg: recipient: {'user_id': 's.shaikh@armor-services.com', 'name': 'HR-EMP-00001'}
+	checkin_assignments_employees = []
+	all_applicable_shifts = [i.shift_assignment_id for i in res.employees if i.is_supervisor_checkout_reminder]
+	checkins_for_today = frappe.get_all("Employee Checkin",{'late_entry':1,'shift_assignment':["IN",all_applicable_shifts],'log_type':"IN"},['employee'])
+	if checkins_for_today:
+		checkin_assignments_employees = [i.employee for i in checkins_for_today]
 	for recipient in res.employees:
 		# split employees into lists
 		if recipient.initial_checkin_reminder:
@@ -1833,7 +1840,7 @@ def initiate_checkin_notification(res):
 			checkout_reminders.append(recipient)
 		elif recipient.is_after_grace_checkout:
 			after_grace_checkout_reminder.append(recipient)
-		elif recipient.is_supervisor_checkout_reminder:
+		elif recipient.is_supervisor_checkout_reminder and recipient.employee not in checkin_assignments_employees :
 			supervisor_checkout_reminder.append(recipient)
 
 	# process initial checkins
@@ -1973,3 +1980,31 @@ def run_checkin_reminder():
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Checkin Notification')
 
+
+
+
+def notify_approver_about_pending_shift_request():
+    date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
+    one_hour = date_time + timedelta(minutes=60)
+    pending_shift_request = frappe.db.sql("""
+												SELECT sr.name, shift_approver, employee_name
+												FROM `tabShift Request` sr
+												LEFT JOIN `tabOperations Shift` os ON sr.operations_shift = os.name
+												WHERE sr.workflow_state = 'Pending Approval'
+												AND sr.from_date = %s
+												AND os.start_time BETWEEN %s AND %s
+											""", (date_time.date(), date_time.time(), one_hour.time()), as_dict=1)
+
+    if pending_shift_request:
+        data_dict = dict()
+        for obj in pending_shift_request:
+            if not data_dict.get(obj["shift_approver"]):
+                data_dict.update({obj["shift_approver"]: list()})
+    
+        for obj in pending_shift_request:
+            data_dict.get(obj["shift_approver"]).append({obj.get("employee_name"): get_url_to_form("Shift Request", obj.get("name"))})
+        
+        for key, value in data_dict.items():
+            title = "Pending Shift Request for upcoming shift"
+            msg = frappe.render_template('one_fm/templates/emails/notify_shift_request_approver.html', context={"data": value})
+            sendemail(recipients=key, subject=title, content=msg)

@@ -1,0 +1,161 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2023-11-25 19:21:06.661535",
+ "default_view": "List",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "project",
+  "reason",
+  "requester",
+  "requester_name",
+  "column_break_vzrpn",
+  "company",
+  "date",
+  "status",
+  "subcontractor_staff_request_detail_section",
+  "subcontracted_staff_request_detail",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "requester",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Requester",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "requester.employee_name",
+   "fieldname": "requester_name",
+   "fieldtype": "Data",
+   "label": "Requester Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Subcontract Staff Request",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_vzrpn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nPending\nApproved\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "subcontractor_staff_request_detail_section",
+   "fieldtype": "Section Break",
+   "label": "Subcontractor Staff Request Detail"
+  },
+  {
+   "fieldname": "subcontracted_staff_request_detail",
+   "fieldtype": "Table",
+   "label": "Subcontracted Staff Request Detail",
+   "options": "ERF Gender Height Requirement",
+   "reqd": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "OPR-.SSR-.YYYY.-",
+   "read_only": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "max_attachments": 5,
+ "modified": "2023-11-26 10:18:06.185453",
+ "modified_by": "Administrator",
+ "module": "Subcontract",
+ "name": "Subcontract Staff Request",
+ "name_case": "UPPER CASE",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1,
+   "set_user_permissions": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "email": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Supervisor",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
