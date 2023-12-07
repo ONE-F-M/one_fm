@@ -67,6 +67,8 @@
    "options": "ONB-SCS-.YYYY.-.#####"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "employee",
    "fieldname": "section_break_5o2vz",
    "fieldtype": "Section Break",
    "label": "Reference"
@@ -75,7 +77,7 @@
    "fieldname": "subcontract_staff_shortlist",
    "fieldtype": "Link",
    "label": "Subcontract Staff Shortlist",
-   "options": "Subcontract Staff Shortlist Application",
+   "options": "Subcontract Staff Shortlist",
    "read_only": 1
   },
   {
@@ -322,6 +324,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_9kwnq",
    "fieldtype": "Section Break",
    "label": "Accommodation and Uniform"
@@ -350,9 +353,12 @@
    "fieldname": "employment_type",
    "fieldtype": "Link",
    "label": "Employment Type",
-   "options": "Employment Type"
+   "options": "Employment Type",
+   "read_only": 1
   },
   {
+   "fetch_from": "subcontract_staff_shortlist.expected_date_of_joining",
+   "fetch_if_empty": 1,
    "fieldname": "date_of_joining",
    "fieldtype": "Date",
    "label": "Date of Joining",
@@ -360,14 +366,17 @@
   },
   {
    "default": "0",
+   "depends_on": "employee",
    "fetch_from": "employee.enrolled",
    "fetch_if_empty": 1,
    "fieldname": "enrolled",
    "fieldtype": "Check",
-   "label": "Enrolled",
+   "label": "Enrolled with face recognition system for attendance",
    "read_only": 1
   },
   {
+   "fetch_from": "subcontract_staff_shortlist.department",
+   "fetch_if_empty": 1,
    "fieldname": "department",
    "fieldtype": "Link",
    "label": "Department",
@@ -377,14 +386,14 @@
   {
    "fieldname": "basic_salary",
    "fieldtype": "Currency",
-   "label": "Basic Salary",
-   "reqd": 1
+   "hidden": 1,
+   "label": "Basic Salary"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-11-28 14:25:36.501564",
+ "modified": "2023-12-05 09:43:37.699957",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Onboard Subcontract Employee",

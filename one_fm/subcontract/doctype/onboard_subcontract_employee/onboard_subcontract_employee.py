@@ -78,13 +78,18 @@ class OnboardSubcontractEmployee(Document):
 
 	def create_accomodation_checkin(self):
 		if self.employee and self.provide_accommodation_by_company and not self.accommodation_provided:
-			checkin = frappe.new_doc("Accommodation Checkin Checkout")
-			checkin.employee = self.employee
-			checkin.full_name = self.full_name
-			checkin.tenant_category = "Granted Service"
-			checkin.type = "IN"
+			checkin = frappe.get_doc(
+				dict(
+					doctype = "Accommodation Checkin Checkout",
+					employee = self.employee,
+					full_name = self.full_name,
+					tenant_category = "Granted Service",
+					type = "IN"
+				)
+			)
 			checkin.flags.ignore_mandatory = True
-			checkin.save(ignore_permissions=True)
+			checkin.flags.ignore_validate = True
+			checkin.insert(ignore_permissions=True)
 
 			self.db_set("accommodation_provided", checkin.name)
 

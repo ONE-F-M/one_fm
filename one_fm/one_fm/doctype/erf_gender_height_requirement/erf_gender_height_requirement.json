@@ -9,6 +9,7 @@
   "number",
   "height",
   "minimum_age",
+  "column_break_2lcjg",
   "maximum_age",
   "nationality",
   "is_height_mandatory"
@@ -63,11 +64,15 @@
    "in_list_view": 1,
    "label": "Nationality",
    "options": "Nationality"
+  },
+  {
+   "fieldname": "column_break_2lcjg",
+   "fieldtype": "Column Break"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2023-07-23 22:02:34.684358",
+ "modified": "2023-12-05 09:12:48.339028",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF Gender Height Requirement",

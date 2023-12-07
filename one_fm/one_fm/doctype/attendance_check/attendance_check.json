@@ -59,7 +59,8 @@
   "has_attendance_request",
   "attendance_request",
   "comment",
-  "amended_from"
+  "amended_from",
+  "is_unscheduled"
  ],
  "fields": [
   {
@@ -434,6 +435,13 @@
    "fieldtype": "Small Text",
    "label": "Other Reason",
    "mandatory_depends_on": "eval:doc.justification == \"Other\""
+  },
+  {
+   "default": "0",
+   "fieldname": "is_unscheduled",
+   "fieldtype": "Check",
+   "label": "Is Unscheduled",
+   "read_only": 1
   }
  ],
  "in_create": 1,
@@ -444,7 +452,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2023-11-21 15:57:38.559948",
+ "modified": "2023-12-03 11:32:52.002023",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
