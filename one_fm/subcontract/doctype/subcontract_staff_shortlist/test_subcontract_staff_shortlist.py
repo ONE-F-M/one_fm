@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestSubcontractStaffShortlistApplication(FrappeTestCase):
+class TestSubcontractStaffShortlist(FrappeTestCase):
 	pass

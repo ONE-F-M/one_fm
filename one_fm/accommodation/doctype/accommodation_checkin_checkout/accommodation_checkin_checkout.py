@@ -13,7 +13,7 @@ class AccommodationCheckinCheckout(Document):
 	def validate(self):
 		if self.is_new():
 			self.validate_checkin_checkout()
-			if self.type == 'IN' and frappe.db.get_value('Bed', self.bed, 'status') != 'Vacant':
+			if self.type == 'IN' and self.bed and frappe.db.get_value('Bed', self.bed, 'status') != 'Vacant':
 				frappe.throw(_('Selected Bed {0} is not Vacant !'.format(self.bed)))
 		self.set_accommodation_policy()
 
@@ -125,6 +125,8 @@ class AccommodationCheckinCheckout(Document):
 			frappe.db.set_value('Accommodation Checkin Checkout', self.checkin_reference, 'checked_out', True)
 
 	def update_bed_details(self, occupy, on_trash=False):
+		if not self.bed:
+			return
 		bed = frappe.get_doc('Bed', self.bed)
 		if ("Occupied" in bed.status and bed.employee == self.employee) or (occupy and not bed.employee):
 			bed.status = 'Occupied' if occupy else 'Vacant'

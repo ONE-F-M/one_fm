@@ -9,7 +9,8 @@ from frappe.utils.user import get_users_with_role
 from frappe.utils import (
     getdate,
     today,
-    get_url
+    get_url,
+    flt
 )
 import datetime
 from hrms.payroll.doctype.salary_slip.salary_slip import get_salary_component_data

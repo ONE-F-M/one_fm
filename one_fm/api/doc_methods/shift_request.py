@@ -6,7 +6,7 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_common_email_args, deduplicate_actions, get_next_possible_transitions,
     get_doc_workflow_state, get_workflow_name, get_users_next_action_data
 )
-from frappe.utils import getdate, today, cstr, add_to_date, nowdate
+from frappe.utils import getdate, today, cstr, add_to_date, nowdate, add_days
 from frappe.model.workflow import apply_workflow
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 from one_fm.api.notification import create_notification_log, get_employee_user_id
@@ -85,19 +85,25 @@ def process_shift_assignemnt(doc, event=None):
                     update_shift_assignment(shift_assignemnt, doc )
                 else:
                     create_shift_assignment_from_request(doc)
-            
+
             # check for existing schedule
             schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=doc.to_date)]
             found_schedules_date = []
             existing_schedules = frappe.db.sql(f""" SELECT name, date FROM `tabEmployee Schedule`
-                WHERE employee="{doc.employee}" AND roster_type="{doc.roster_type}" 
+                WHERE employee="{doc.employee}" AND roster_type="{doc.roster_type}"
                 AND date BETWEEN '{doc.from_date}' AND '{doc.to_date}' """, as_dict=1)
             if existing_schedules:
                 # update existing schedule
                 for es in existing_schedules:
+                    start_time, end_time = frappe.db.get_value("Shift Type", doc.shift_type, ['start_time', 'end_time'])
+                    end_date = es.date
+                    if start_time > end_time:
+                        end_date = add_days(end_date, 1)
                     frappe.db.set_value('Employee Schedule', es.name, {
                         'shift':doc.operations_shift,
                         'shift_type':doc.shift_type,
+                        'start_datetime': f"{es.date} {start_time}",
+                        'end_datetime': f"{end_date} {end_time}",
                         'operations_role':doc.operations_role,
                         'post_abbrv': role_abbr,
                         'employee_availability':'Working',
@@ -114,9 +120,16 @@ def process_shift_assignemnt(doc, event=None):
                 for d in new_date_range:
                     if frappe.db.exists("Employee Schedule", {'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'}):
                         es = frappe.get_doc("Employee Schedule", {'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'})
+                        start_time, end_time = frappe.db.get_value("Shift Type", doc.shift_type, ['start_time', 'end_time'])
+                        end_date = es.date
+                        if start_time > end_time:
+                            end_date = add_days(end_date, 1)
+
                         frappe.db.set_value('Employee Schedule', es.name, {
                             'shift':doc.operations_shift,
                             'shift_type':doc.shift_type,
+                            'start_datetime': f"{es.date} {start_time}",
+                            'end_datetime': f"{end_date} {end_time}",
                             'operations_role':doc.operations_role,
                             'post_abbrv': role_abbr,
                             'employee_availability':'Working',
@@ -160,7 +173,7 @@ def update_shift_assignment(shift_assignemnt,shift_request):
     assignment_doc.db_set("check_out_site" , shift_request.check_out_site)
     if shift_request.operations_role:
         assignment_doc.db_set("operations_role" , shift_request.operations_role)
-    
+
 def create_shift_assignment_from_request(shift_request, submit=True):
     '''
         Method used to create Shift Assignment from Shift Request
@@ -245,7 +258,7 @@ def cancel_shift_assignment_of_request(shift_request):
             employee_name = schedule.employee_name,
             department = schedule.department,
             operations_role = schedule.operations_role,
-            shift = schedule.operations_shift,
+            shift = schedule.shift,
             site = schedule.site,
             project = schedule.project,
             shift_type = schedule.shift_type,
@@ -288,7 +301,7 @@ def fetch_approver(employee):
         if shift_worker == 0:
             if reports_to:
                 return frappe.get_value("Employee", reports_to, "user_id")
-        else: 
+        else:
             if project_alloc not in project_list and department == "Operations - ONEFM":
                 approvers = frappe.db.sql(
                     """select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
