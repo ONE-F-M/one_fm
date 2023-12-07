@@ -4,6 +4,8 @@
 frappe.ui.form.on('HR and Payroll Additional Settings', {
 	refresh: function(frm) {
 		set_filters(frm);
+		// toggle_projects_functionality(frm);
+		
 	},
 	default_payroll_start_day: function(frm) {
 		var payroll_end_day = ""
@@ -34,6 +36,12 @@ frappe.ui.form.on('HR and Payroll Additional Settings', {
 			freeze: true,
 			freeze_message: __("Fetching the projects ..!")
 		});
+	},
+	all_projects: function(frm) {
+		toggle_projects_table(frm);
+	},
+	enable_missing_checkin_job: function(frm) {
+		toggle_projects_functionality(frm);
 	}
 });
 
@@ -99,3 +107,23 @@ var set_filters = function(frm) {
 		};
 	});
 };
+
+var toggle_projects_table = (frm) => {
+	if (frm.doc.all_projects == 1){
+		frm.toggle_display("missing_checkin_projects", 0)
+	}
+	else{
+		frm.toggle_display("missing_checkin_projects", 1)
+	}
+}
+
+var toggle_projects_functionality = (frm) => {
+	if (frm.doc.enable_missing_checkin_job == 1){
+		frm.toggle_display("missing_checkin_projects", 1)
+		frm.toggle_display("all_projects", 1)
+	}
+	else{
+		frm.toggle_display("missing_checkin_projects", 0)
+		frm.toggle_display("all_projects", 0)	
+	}
+}
