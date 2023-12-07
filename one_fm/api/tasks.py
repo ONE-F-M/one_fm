@@ -509,8 +509,8 @@ def mark_deadline_attendance(shifts_list, now_time):
 		if shift.deadline==1:
 			recipients = []
 			if shift.has_split_shift == 1 and (now_time == shift.start_time + ((shift.first_shift_end_time - shift.start_time)/2) or now_time == shift.second_shift_start_time + ((shift.end_time -shift.second_shift_start_time)/2)):
-				start_time_1 = datetime.datetime.strptime(cstr(date)+" "+cstr(shift.start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
-				start_time_2 = datetime.datetime.strptime(cstr(date)+" "+cstr(shift.second_shift_start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
+				start_time_1 = datetime.strptime(cstr(date)+" "+cstr(shift.start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
+				start_time_2 = datetime.strptime(cstr(date)+" "+cstr(shift.second_shift_start_time - timedelta(minutes=cint(shift.begin_check_in_before_shift_start_time))), '%Y-%m-%d %H:%M:%S')
 				recipients = frappe.db.sql("""
 					SELECT DISTINCT emp.name FROM `tabShift Assignment` tSA, `tabEmployee` emp
 					WHERE
@@ -782,11 +782,11 @@ def create_shift_assignment(roster, date, time):
 			fields=['name', 'shift_type', 'start_time', 'end_time'])
 		shift_types_dict = {}
 		for i in shift_types:
-			i.start_datetime = f"{date} {(datetime.datetime.min + i.start_time).time()}"
+			i.start_datetime = f"{date} {(datetime.min + i.start_time).time()}"
 			if i.end_time.total_seconds() < i.start_time.total_seconds():
-				i.end_datetime = f"{add_days(date, 1)} {(datetime.datetime.min + i.end_time).time()}"
+				i.end_datetime = f"{add_days(date, 1)} {(datetime.min + i.end_time).time()}"
 			else:
-				i.end_datetime = f"{date} {(datetime.datetime.min + i.end_time).time()}"
+				i.end_datetime = f"{date} {(datetime.min + i.end_time).time()}"
 			shift_types_dict[i.name] = i
 		default_shift = frappe.get_doc("Shift Type", '"Standard|Morning|08:00:00-17:00:00|9 hours"').as_dict()
 
@@ -1120,7 +1120,7 @@ def generate_penalties():
 
 	#calculate Payroll date, start and end date.
 
-	payroll_date = datetime.datetime(year, month, cint(date)).strftime("%Y-%m-%d")
+	payroll_date = datetime(year, month, cint(date)).strftime("%Y-%m-%d")
 	start_date = add_to_date(payroll_date, months=-1)
 	end_date = add_to_date(payroll_date, days=-1)
 
@@ -1248,8 +1248,8 @@ def generate_site_allowance():
 	#Gather the required Date details such as start date, and respective end date. Get current year and month to get the no. of days in the current month.
 	start_date = add_to_date(getdate(), months=-1)
 	end_date = get_end_date(start_date, 'monthly')['end_date']
-	currentMonth = datetime.datetime.now().month
-	currentYear = datetime.datetime.now().year
+	currentMonth = datetime.now().month
+	currentYear = datetime.now().year
 	no_of_days = monthrange(currentYear, currentMonth)[1]
 
 	#generate site allowance for each site. Gets the employee and his/her respective no. of days in a given site.
