@@ -23,8 +23,7 @@ def create_missing_checkin_record() -> None:
     """_
         To create the missing checkin record
     """
-    # if production_domain() and frappe.db.get_single_value("HR and Payroll Additional Settings", "enable_missing_checkin_job"):
-    if frappe.db.get_single_value("HR and Payroll Additional Settings", "enable_missing_checkin_job"):
+    if production_domain() and frappe.db.get_single_value("HR and Payroll Additional Settings", "enable_missing_checkin_job"):
         missing_checkin_record = MissingCheckinRecord()
         missing_checkin_record.create()
 	
