@@ -86,9 +86,20 @@ def create_roster_employee_actions():
                                     FROM `tabEmployee Schedule` s 
                                     WHERE s.date >= '{start_date}' AND s.date <= '{end_date}'
                                     """, as_dict= True)
+    
     employees_rostered_combination = [(roster.employee, (roster.date).strftime('%Y-%m-%d')) for roster in employees_rostered]
     
     employees_not_rostered = set(active_employees_combinations) - set(employees_rostered_combination)
+    try:
+        data_dict = {obj[0]: list() for obj in employees_not_rostered}
+        for item in employees_not_rostered:
+            try:
+                data_dict.get(item[0]).append(item[1])
+            except Exception as e:
+                continue
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Error while genrating missing dates(Roster Employee Actions)")
+        data_dict = dict()
 
     list_of_leaves_within_employee_action_period = frappe.db.get_list("Leave Application", {"status": "Approved", "from_date":["<", start_date ], "to_date": [">", end_date]}, pluck="employee")
 
@@ -111,24 +122,29 @@ def create_roster_employee_actions():
 
     # for each supervisor, create a roster action
     for res in result:
-        supervisor = res[0]
-        site_supervisor = frappe.get_value('Operations Site', res[1], 'account_supervisor')
-        employees = res[2].split(",")
+        try:
+            supervisor = res[0]
+            site_supervisor = frappe.get_value('Operations Site', res[1], 'account_supervisor')
+            employees = res[2].split(",")
 
-        roster_employee_actions_doc = frappe.new_doc("Roster Employee Actions")
-        roster_employee_actions_doc.start_date = start_date
-        roster_employee_actions_doc.end_date = end_date
-        roster_employee_actions_doc.status = "Pending"
-        roster_employee_actions_doc.action_type = "Roster Employee"
-        roster_employee_actions_doc.supervisor = supervisor
-        roster_employee_actions_doc.site_supervisor = site_supervisor
+            roster_employee_actions_doc = frappe.new_doc("Roster Employee Actions")
+            roster_employee_actions_doc.start_date = start_date
+            roster_employee_actions_doc.end_date = end_date
+            roster_employee_actions_doc.status = "Pending"
+            roster_employee_actions_doc.action_type = "Roster Employee"
+            roster_employee_actions_doc.supervisor = supervisor
+            roster_employee_actions_doc.site_supervisor = site_supervisor
 
-        for emp in employees:
-            roster_employee_actions_doc.append('employees_not_rostered', {
-                'employee': emp
-            })
+            for emp in employees:
+                roster_employee_actions_doc.append('employees_not_rostered', {
+                    'employee': emp,
+                    "missing_dates": ", ".join(data_dict.get(emp))
+                })
 
-        roster_employee_actions_doc.save()
+            roster_employee_actions_doc.save()
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Error while generating Roster employee actions")
+            continue
         frappe.db.commit()
 
     #-------------------- END Roster Employee actions ------------------#
