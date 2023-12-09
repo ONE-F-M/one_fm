@@ -32,8 +32,7 @@ def create_missing_checkin_record() -> None:
 class MissingCheckinRecord:
     
     def __init__(self) -> None:
-        # self.date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
-        self.date_time = datetime.strptime("2023-12-04 09:00:00.914279", '%Y-%m-%d %H:%M:%S.%f')
+        self.date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
         self.date = self.date_time.date()
         self.time = self.date_time.time()
         self.one_hour_ago = (self.date_time - timedelta(hours=1)).strftime('%H:%M:%S')
@@ -125,13 +124,13 @@ class MissingCheckinRecord:
             frappe.db.commit()
     
         
-    def assign_to_attendance_manager(self, missing_checkin: MissingCheckin, attendance_manager_user: str ="") -> None:
+    def assign_to_attendance_manager(self, missing_checkin: MissingCheckin, attendance_manager_user: str = "") -> None:
         if attendance_manager_user:
             add_assignment({
                     'doctype': missing_checkin.doctype,
                     'name': missing_checkin.name,
                     'assign_to': [attendance_manager_user],
-                    'description': (_('The Missing checkin for {0} on {1} is ready.').format(missing_checkin.operations_shift, self.date))
+                    'description': (_('The Missing checkin report for {0} on {1} is ready.').format(missing_checkin.operations_shift, self.date))
                 })
 
             
