@@ -126,15 +126,16 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Series",
-   "options": "MSC-.YYYY.-.MM.-D-"
+   "options": "MSC-.YYYY.-.MM.-.DD.-.####"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-12-07 22:14:35.963033",
+ "modified": "2023-12-08 18:14:26.576378",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Missing Checkin",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {

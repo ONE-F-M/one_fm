@@ -23,7 +23,8 @@ def create_missing_checkin_record() -> None:
     """_
         To create the missing checkin record
     """
-    if production_domain() and frappe.db.get_single_value("HR and Payroll Additional Settings", "enable_missing_checkin_job"):
+    # if production_domain() and frappe.db.get_single_value("HR and Payroll Additional Settings", "enable_missing_checkin_job"):
+    if frappe.db.get_single_value("HR and Payroll Additional Settings", "enable_missing_checkin_job"):
         missing_checkin_record = MissingCheckinRecord()
         missing_checkin_record.create()
 	
@@ -31,7 +32,8 @@ def create_missing_checkin_record() -> None:
 class MissingCheckinRecord:
     
     def __init__(self) -> None:
-        self.date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
+        # self.date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
+        self.date_time = datetime.strptime("2023-12-04 09:00:00.914279", '%Y-%m-%d %H:%M:%S.%f')
         self.date = self.date_time.date()
         self.time = self.date_time.time()
         self.one_hour_ago = (self.date_time - timedelta(hours=1)).strftime('%H:%M:%S')
@@ -51,34 +53,39 @@ class MissingCheckinRecord:
             
     
     def uncreated_missing_checkin_shifts(self) -> tuple:
-        the_shifts = frappe.db.sql("""
-                                   SELECT name from `tabOperations Shift`
-                                   WHERE status = 'Active' AND
-                                   project in %s AND
-                                   name NOT IN (SELECT operations_shift from `tabMissing Checkin`
-                                   WHERE date = %s) AND 
-                                   
-                                   TIME(start_time) <= %s
-                                   
-                                   """,(self.fetch_selected_projects(), self.date, self.one_hour_ago), as_list=1)
-        return tuple(chain.from_iterable(the_shifts)) if the_shifts else tuple()
+        selected_projects = self.fetch_selected_projects()
+        if selected_projects:
+            the_shifts = frappe.db.sql("""
+                                    SELECT name from `tabOperations Shift`
+                                    WHERE status = 'Active' AND
+                                    project in %s AND
+                                    name NOT IN (SELECT operations_shift from `tabMissing Checkin`
+                                    WHERE date = %s) AND 
+                                    
+                                    TIME(start_time) <= %s
+                                    
+                                    """,(selected_projects, self.date, self.one_hour_ago), as_list=1)
+            return tuple(chain.from_iterable(the_shifts)) if the_shifts else tuple()
+        return tuple()
     
     
     def fetch_shift_assignments_without_checkin(self) -> list:
         operations_shifts = self.uncreated_missing_checkin_shifts()
-        unlinked_assignments = frappe.db.sql("""
-                                            SELECT name, shift  FROM `tabShift Assignment`
-                                            WHERE shift IN %s AND 
-                                            start_date = %s AND 
-                                            
-                                            name NOT IN (SELECT shift_assignment FROM `tabEmployee Checkin` 
-                                                        WHERE date = %s AND log_type = 'IN') AND
-                                                        
-                                            employee NOT IN (SELECT name FROM `tabEmployee`
-                                                            WHERE status = 'Vacation')
+        if operations_shifts:
+            unlinked_assignments = frappe.db.sql("""
+                                                SELECT name, shift  FROM `tabShift Assignment`
+                                                WHERE shift IN %s AND 
+                                                start_date = %s AND 
+                                                
+                                                name NOT IN (SELECT shift_assignment FROM `tabEmployee Checkin` 
+                                                            WHERE date = %s AND log_type = 'IN') AND
                                                             
-                                        """, (operations_shifts, self.date, self.date), as_dict=1)
-        return unlinked_assignments if unlinked_assignments else list()
+                                                employee NOT IN (SELECT name FROM `tabEmployee`
+                                                                WHERE status = 'Vacation')
+                                                                
+                                            """, (operations_shifts, self.date, self.date), as_dict=1)
+            return unlinked_assignments if unlinked_assignments else dict()
+        return dict()
     
     
     def create(self) -> None:
