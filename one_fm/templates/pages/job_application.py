@@ -173,7 +173,7 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
                 applicant_language.read = float(language['read'])
                 applicant_language.speak = float(language['speak'])
                 applicant_language.write = float(language['write'])
-
+        job_applicant.flags.ignore_mandatory = 1
         job_applicant.save(ignore_permissions=True)
         if name_of_file:
             frappe.enqueue(update_file_name, dt=job_applicant.doctype, dn=job_applicant.name, fn=name_of_file, at_front=True, is_async=True)
