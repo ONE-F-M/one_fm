@@ -42,9 +42,9 @@ def enroll():
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
 		# setup api endpoint
-		setup_credentials = set_up_face_recognition_server_credentials()
-		if setup_credentials.get('error'): #if error
-			return setup_credentials
+		# setup_credentials = set_up_face_recognition_server_credentials()
+		# if setup_credentials.get('error'): #if error
+		# 	return setup_credentials
 		
 		r = requests.post(channel+"/enroll", json={
 			'username': frappe.session.user, 
@@ -85,17 +85,17 @@ def verify():
 		file = files['file']
 
 		employee = frappe.db.get_value("Employee", {'user_id': frappe.session.user}, ["name"])
-
+		
 		# Get user video
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
-
+		print("yeparipa ye ye ye ya parirpa")
 		# setup api endpoint
-		setup_credentials = set_up_face_recognition_server_credentials()
-		if setup_credentials.get('error'): #if error
-			return setup_credentials
-		
+		# setup_credentials = set_up_face_recognition_server_credentials()
+		# if setup_credentials.get('error'): #if error
+		# 	return setup_credentials
+		print(999999999999999, "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
 		r = requests.post(channel+"/verify", json={
 			'username': frappe.session.user, 
 			'video':video_content,
@@ -103,6 +103,7 @@ def verify():
 			'filetype':file.content_type,
 			'bucketpath':bucketpath,
 		}, timeout=180)
+		print(r.json(), "\n\n\n\n\n\n\n")
 		# RESPONSE {'error': False|True, 'message': 'success|error message'}
 		res_data = frappe._dict(r.json())
 		if res_data.error:
@@ -190,6 +191,8 @@ def update_onboarding_employee(employee):
         onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
         onboard_employee.enrolled = True
         onboard_employee.enrolled_on = now_datetime()
+        onboard_employee.flags.ignore_mandatory = True
+        print(vars(onboard_employee).get("employment_type"))
         onboard_employee.save(ignore_permissions=True)
         frappe.db.commit()
 
@@ -200,6 +203,8 @@ def update_onboarding_employee(employee):
         onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist)
         onboard_employee.enrolled = True
         onboard_employee.enrolled_on = now_datetime()
+        print(vars(onboard_employee).get("employment_type"))
+        onboard_employee.flags.ignore_mandatory = True
         onboard_employee.save(ignore_permissions=True)
         frappe.db.commit()
 
