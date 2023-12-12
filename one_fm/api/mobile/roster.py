@@ -347,7 +347,7 @@ def get_assigned_employees(shift, date, limit_start=None, limit_page_length=20):
 def get_assigned_projects(employee_id):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
-		if "Operations Manager" in user_roles:
+		if "Operations Manager"  in user_roles or 'Operation Admin' in user_roles:
 			return frappe.get_list("Project", {"project_type": "External"}, limit_page_length=9999, order_by="name asc")
 
 		if "Projects Manager" in user_roles:
