@@ -55,17 +55,18 @@ def enroll():
 		}, timeout=180)
 		# RESPONSE {'error': False|True, 'message': 'success|error message'}
 		res_data = frappe._dict(r.json())
+
 		if res_data.error:
 			# process error
 			frappe.log_error('Face Enrollment v3', res_data.message)
 			error = True
 			message = res_data.message
-		else:
-			doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
-			doc.enrolled = 1
-			doc.save(ignore_permissions=True)
-			update_onboarding_employee(doc)
-			frappe.db.commit()
+			return res_data
+		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+		doc.enrolled = 1
+		doc.save(ignore_permissions=True)
+		update_onboarding_employee(doc)
+		frappe.db.commit()
 		return {'error':False, 'message':'Enrollment successfull.'}
 	except Exception as exc:
 		frappe.log_error('Face Enrollment v3', frappe.get_traceback())
