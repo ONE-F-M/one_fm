@@ -903,8 +903,6 @@ def create_shift_assignment(roster, date, time):
 				frappe.db.sql(query, values=[], as_dict=1)
 				frappe.db.commit()
 
-			if has_rostered:
-				frappe.log_error('Duplicate Shift Assignment', str(has_rostered))
 	except Exception as e:
 		frappe.log_error(f'Shift Assignment - {time}', frappe.get_traceback())
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
@@ -1608,11 +1606,11 @@ def fetch_employees_not_in_checkin():
 	# 	return
 
 	shift_start_time = f"{now_datetime().time().hour}:00:00"
-	
+
 	minute = now_datetime().time().minute
 	hour = now_datetime().time().hour
 	cur_date = str(getdate())
-	
+
 	return_data = []
 	log_types = ['IN', 'OUT']
 	for log_type in log_types:
@@ -1639,7 +1637,7 @@ def fetch_employees_not_in_checkin():
 				WHERE supervisor_reminder_start_ends>0
 				GROUP BY supervisor_reminder_start_ends;
 			""", as_dict=1)]
-			
+
 
 
 		# get employees from shift assignment, check them in checkins and substract
@@ -2000,10 +1998,10 @@ def notify_approver_about_pending_shift_request():
         for obj in pending_shift_request:
             if not data_dict.get(obj["shift_approver"]):
                 data_dict.update({obj["shift_approver"]: list()})
-    
+
         for obj in pending_shift_request:
             data_dict.get(obj["shift_approver"]).append({obj.get("employee_name"): get_url_to_form("Shift Request", obj.get("name"))})
-        
+
         for key, value in data_dict.items():
             title = "Pending Shift Request for upcoming shift"
             msg = frappe.render_template('one_fm/templates/emails/notify_shift_request_approver.html', context={"data": value})
