@@ -32,6 +32,7 @@ app_include_js = [
 		"/assets/one_fm/js/maps.js",
 		"/assets/one_fm/js/desk.js",
         "/assets/one_fm/js/showdown.min.js",
+        "/assets/one_fm/js/app_include_js/workflow.js",
         "purchase.bundle.js",
 ]
 # include js, css files in header of web template
