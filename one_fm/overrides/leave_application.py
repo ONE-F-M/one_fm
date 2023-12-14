@@ -438,8 +438,10 @@ class LeaveApplicationOverride(LeaveApplication):
             if self.workflow_state == "Approved":
                 frappe.db.sql(
                     '''
-                    DELETE FROM `tabEmployee Schedule` WHERE date BETWEEN %s AND %s;
-                    ''', (self.from_date, self.to_date)
+                    DELETE FROM `tabEmployee Schedule` WHERE 
+                    employee = %s AND
+                    date BETWEEN %s AND %s;
+                    ''', (self.employee, self.from_date, self.to_date)
                 )
 
 @frappe.whitelist()
