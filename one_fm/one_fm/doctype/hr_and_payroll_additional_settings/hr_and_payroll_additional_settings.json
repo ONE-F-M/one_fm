@@ -46,6 +46,7 @@
   "enable_missing_checkin_job",
   "column_break_e6up5",
   "all_projects",
+  "section_break_nkbfu",
   "missing_checkin_projects"
  ],
  "fields": [
@@ -289,7 +290,6 @@
    "options": "Missing Checkin Projects"
   },
   {
-   "collapsible": 1,
    "fieldname": "missing_checkin_settings_section",
    "fieldtype": "Section Break",
    "label": "Missing Checkin Settings"
@@ -309,12 +309,17 @@
    "fieldname": "enable_missing_checkin_job",
    "fieldtype": "Check",
    "label": "Enable Missing Checkin Job"
+  },
+  {
+   "fieldname": "section_break_nkbfu",
+   "fieldtype": "Section Break",
+   "hide_border": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-12-07 22:46:04.109351",
+ "modified": "2023-12-13 16:05:30.445222",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
