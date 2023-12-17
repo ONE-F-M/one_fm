@@ -480,7 +480,9 @@ def create_attendance_check(attendance_date=None):
                     at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
                     attendance_check_list.append(at_check_doc.name)
                 except Exception as e:
+                    frappe.log_error(title="Attendance Check Error",message=e)
                     print(e)
+                    continue
 
         # OT Create
         for i in missing_ot+absent_attendance_ot_list:
@@ -551,7 +553,9 @@ def create_attendance_check(attendance_date=None):
                     at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
                     attendance_check_list.append(at_check_doc.name)
                 except Exception as e:
+                    frappe.log_error(title="Attendance Check Error",message=e)
                     print(e)
+                    continue
         for i in employees_with_no_docs:
             employee = employees_dict.get(i)
             at_check = frappe._dict({
@@ -623,7 +627,9 @@ def create_attendance_check(attendance_date=None):
                     at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
                     attendance_check_list.append(at_check_doc.name)
                 except Exception as e:
+                    frappe.log_error(title="Attendance Check Error",message=e)
                     print(e)
+                    continue
                       
         
 
