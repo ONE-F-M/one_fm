@@ -272,7 +272,8 @@ class NotifyAttendanceManagerOnStatusChange:
                 the_cc = self._directors if is_att_man else list()
                 data_update = dict(
                     employee_name=self.employee_object.employee_name,
-                    employee_id=self.employee_object.employee_id
+                    employee_id=self.employee_object.employee_id,
+                    status=self.employee_object.status
                 )
                 data.update(data_update)
                 title = f"Immediate Attention Required: Employee {self.employee_object.name} Status Change and Reassignment is required"
