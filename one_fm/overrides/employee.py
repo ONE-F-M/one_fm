@@ -94,7 +94,10 @@ class EmployeeOverride(EmployeeMaster):
             frappe.db.set_value("Onboard Subcontract Employee", subcontract_onboard, "enrolled", self.enrolled)
             
     def notify_attendance_manager_on_status_change(self):
-        NotifyAttendanceManagerOnStatusChange(employee_object=self).notify_authorities()
+        last_doc = self.get_doc_before_save()
+        if last_doc and last_doc.get('status') == "Active":
+            if self.status != "Active":
+                NotifyAttendanceManagerOnStatusChange(employee_object=self).notify_authorities()
 
     def clear_schedules(doc):
         # clear future employee schedules
@@ -194,7 +197,7 @@ class NotifyAttendanceManagerOnStatusChange:
                                         FROM `tabToDo`
                                         WHERE allocated_to = %s AND status = 'Open'
                                     ) AS record_exists
-                                    """, (self.user_id,))
+                                    """, (self.employee_object.user_id,))
             is_to_do = result[0][0]
             return f"{get_domain()}/app/todo?status=Open&allocated_to={self.employee_object.user_id}" if is_to_do else ""
         except Exception as e:
@@ -241,19 +244,18 @@ class NotifyAttendanceManagerOnStatusChange:
             
             reports_to = self._employee_reports_to
             if reports_to:
-                data_dict.update({"reports_to": dict()})
+                data_dict.update({"reports_to": list()})
                 for obj in reports_to:
-                    data_dict.get("reports_to").update(dict(name=obj.get("name"), employee_name=obj.get("employee_name"), url=get_url_to_form("EMployee", obj.get("name"))))
+                    data_dict.get("reports_to").append(dict(name=obj.get("name"), employee_name=obj.get("employee_name"), url=get_url_to_form("Employee", obj.get("name"))))
                     
             if self._operation_manager:
-                data_dict.update({"operations_manager": True})
+                data_dict.update({"operations_manager": f"{get_domain()}/app/operation-settings"})
                 
             if self.employee_object.user_id == self._attendance_manager_user_id:
-                data_dict.update({"attendance_manager": True})
+                data_dict.update({"attendance_manager": f"{get_domain()}/app/onefm-general-setting"})
                 
             if self._to_do:
                 data_dict.update({"to_do": self._to_do})
-            print(data_dict)
             
             return data_dict
         except Exception as e:
@@ -262,20 +264,22 @@ class NotifyAttendanceManagerOnStatusChange:
             
             
     def notify_authorities(self):
-        data = self.generate_data()
-        if data:
-            is_att_man = self.employee_object.user_id == self._attendance_manager_user_id
-            the_recipient = self._attendance_manager_user_id if not is_att_man else self._directors
-            the_cc = self._directors if is_att_man else list()
-            data_update = dict(
-                employee_name=self.employee_object.employee_name,
-                employee_id=self.employee_object.employee_id
-            )
-            data.update(data_update)
-            title = f"Immediate Attention Required: Employee {self.employee_object.name} Status Change and Reassignment is required"
-            msg = frappe.render_template('one_fm/templates/emails/notify_authorities_employee_status_change.html', context=data)
-            print("\n\n\n\n\n\n\n", msg, "\n\n\n\n\n\n\n\n")
-            # sendemail(recipients=the_recipient, subject=title, content=msg, cc=the_cc)
+        try:
+            data = self.generate_data()
+            if data:
+                is_att_man = self.employee_object.user_id == self._attendance_manager_user_id
+                the_recipient = self._attendance_manager_user_id if not is_att_man else self._directors
+                the_cc = self._directors if is_att_man else list()
+                data_update = dict(
+                    employee_name=self.employee_object.employee_name,
+                    employee_id=self.employee_object.employee_id
+                )
+                data.update(data_update)
+                title = f"Immediate Attention Required: Employee {self.employee_object.name} Status Change and Reassignment is required"
+                msg = frappe.render_template('one_fm/templates/emails/notify_authorities_employee_status_change.html', context=data)
+                sendemail(recipients=the_recipient, subject=title, content=msg, cc=the_cc)
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Error while sending mail on status change(Employee)")
         
         
         

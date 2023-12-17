@@ -5,7 +5,7 @@
       width: 100%;
     }
     
-    th, .notify_recruitment_manager td {
+    th, .employee_status_change td {
       border: 1px solid #ddd;
       padding: 8px;
     }
@@ -31,6 +31,7 @@
 
 
 {% if operations_shift %}
+    <h3>Operations Shift</h3>
     <table>
         <thead>
             <tr>
@@ -42,16 +43,18 @@
             {% for key, value in operations_shift.items() %}  
                 <tr>
                     <th>{{ key }}</th>
-                    <td><a href={{ value }}>Link</a></td>
+                    <th><a href={{ value }}>Link</a></th>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
+    <br>
 {% endif %}
 
 
 
 {% if operations_site %}
+    <h3>Operations Site</h3>
     <table>
         <thead>
             <tr>
@@ -63,16 +66,18 @@
             {% for key, value in operations_site.items() %}  
                 <tr>
                     <th>{{ key }}</th>
-                    <td><a href={{ value }}>Link</a></td>
+                    <th><a href={{ value }}>Link</a></th>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
+    <br>
 {% endif %}
 
 
 
 {% if projects %}
+    <h3>Projects</h3>
     <table>
         <thead>
             <tr>
@@ -84,15 +89,17 @@
             {% for key, value in projects.items() %}  
                 <tr>
                     <th>{{ key }}</th>
-                    <td><a href={{ value }}>Link</a></td>
+                    <th><a href={{ value }}>Link</a></th>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
+    <br>
 {% endif %}
 
 
 {% if reports_to %}
+    <h3>Employee Reports To</h3>
     <table>
         <thead>
             <tr>
@@ -102,13 +109,33 @@
             </tr>
         </thead>
         <tbody class="employee_status_change">
-            
-            {% for key, value in projects.items() %}  
+            {% for obj in reports_to %}
                 <tr>
-                    <th>{{ key }}</th>
-                    <td><a href={{ value }}>Link</a></td>
+                    <th>{{ obj.get("name") }}</th>
+                    <th>{{ obj.get("employee_name") }}</th>
+                    <th><a href={{ obj.get("url") }}>Link</a></th>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
+    <br>
 {% endif %}
+
+{% if to_do %}
+    <h3>To Do</h3>
+    <p>To get the linked To Do documents, click <a href={{ to_do }}>here</a></p>
+    <br>
+{% endif %}
+
+{% if operations_manager %}
+    <h3>Operations Manager</h3>
+    <p>The employee is the current Operations Manager, click <a href={{ operations_manager }}>here</a> to make changes</p>
+    <br>
+{% endif %}
+
+{% if attendance_manager %}
+    <h3>Attendance Manager</h3>
+    <p>The employee is the current Attendance Manager, click <a href={{ attendance_manager }}>here</a> to make changes</p>
+    <br>
+{% endif %}
+
