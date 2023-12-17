@@ -209,8 +209,8 @@ def get_attendance_by_timesheet_employees(employees,attendance_date):
 
 @frappe.whitelist()
 def create_attendance_check(attendance_date=None):
-    # if production_domain():
-    if 1:
+    if production_domain():
+    
         attendance_checkin_found = []
         if not attendance_date:
             attendance_date = add_days(today(), -1)
