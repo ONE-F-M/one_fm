@@ -170,17 +170,17 @@ class NotifyAttendanceManagerOnStatusChange:
         
     @property
     def _operations_shift_supervisor(self) -> list():
-        operation_shifts = frappe.db.sql(""" SELECT name from `tabOperations Shift` WHERE supervisor = %s """, (self.employee_object.name), as_list=1)
+        operation_shifts = frappe.db.sql(""" SELECT name from `tabOperations Shift` WHERE supervisor = %s AND status = 'Active' """, (self.employee_object.name), as_list=1)
         return list(chain.from_iterable(operation_shifts)) if operation_shifts else list()
     
     @property
     def _operations_site_supervisor(self) -> list:
-        operation_sites = frappe.db.sql(""" SELECT name from `tabOperations Site` WHERE account_supervisor = %s """, (self.employee_object.name), as_list=1)
+        operation_sites = frappe.db.sql(""" SELECT name from `tabOperations Site` WHERE account_supervisor = %s AND status = 'Active' """, (self.employee_object.name), as_list=1)
         return list(chain.from_iterable(operation_sites)) if operation_sites else list()
     
     @property
     def _projects_manager(self) -> list:
-        projects = frappe.db.sql(""" SELECT name from `tabProject` WHERE account_manager = %s""", (self.employee_object.name), as_list=1)
+        projects = frappe.db.sql(""" SELECT name from `tabProject` WHERE account_manager = %s AND is_active = 'Yes' """, (self.employee_object.name), as_list=1)
         return list(chain.from_iterable(projects)) if projects else list()
     
     @property
