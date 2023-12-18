@@ -464,7 +464,7 @@ class DataExporter:
 
 			# clear sheet
 			service.spreadsheets().values().clear(spreadsheetId=self.google_sheet_id, 
-				range='{0}!A1:Z'.format(self.sheet_name), body={}).execute()
+				range='{0}'.format(self.sheet_name), body={}).execute()
 
 			# add new value
 			result = service.spreadsheets().values().update(
