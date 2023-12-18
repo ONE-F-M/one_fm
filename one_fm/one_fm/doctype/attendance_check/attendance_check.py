@@ -207,7 +207,6 @@ def get_attendance_by_timesheet_employees(employees,attendance_date):
         return [i.name for i in ts_employees]
     return [i.name for i in frappe.get_all("Employee",{"status":"Active",'attendance_by_timesheet':1,'name':['NOT IN',employees]},['name'])]
 
-@frappe.whitelist()
 def create_attendance_check(attendance_date=None):
     if production_domain():
     
