@@ -174,17 +174,17 @@ class DataExporter:
 		
 		if not self.link:
 			self.create()
-
-		if self.build_connection_with_sheet() == False:
+		sheet = self.build_connection_with_sheet()
+		if not sheet:
 			frappe.msgprint(frappe._("We do not have access to this sheet. Kindly, share your sheet with the following:<br><br> <b>{0}</b>").format(str(self.client_id)), 
 					indicator="red", 
 					title = "Warning")
 		else:
-			if not self.check_if_sheet_exist():
+			if not self.check_if_sheet_exist(sheet):
 				self.add_sheet()
 
 			self.update_sheet(values)
-			self.batch_update()
+			self.batch_update(sheet)
 
 		if self.with_data and not values:
 			frappe.respond_as_web_page(
@@ -328,7 +328,7 @@ class DataExporter:
 				value = remove_quotes(value)
 				# check if value size is greater than 50000
 				if len(value) >= 50000:
-					cell_colour.append({'column':_column_start_end.start + i, 'row':row_index})
+					cell_colour.append({'column':_column_start_end.start + i, 'row':row_index+1})
 					row[_column_start_end.start + i] = f"ERROR - Description Length is more than 50,000 so can not import Data"
 				else:
 					row[_column_start_end.start + i] = value
@@ -352,8 +352,8 @@ class DataExporter:
 		service = api["service"]
 		try:
 			if self.google_sheet_id:
-				service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
-				return True
+				sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id,ranges=[], includeGridData=False).execute()
+				return sheet
 			if not self.google_sheet_id:
 				return True
 		except HttpError as err:
@@ -410,10 +410,10 @@ class DataExporter:
 		self.google_sheet_id = request["spreadsheetId"]
 		self.link = request["spreadsheetUrl"]
 
-	def check_if_sheet_exist(self):
+	def check_if_sheet_exist(self, sheet_metadata):
 		service = self.service
 		try:
-			sheet_metadata = service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
+			# sheet_metadata = service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
 			
 			sheets = sheet_metadata.get('sheets', '')
 			sheetNames = []
@@ -464,7 +464,7 @@ class DataExporter:
 
 			# clear sheet
 			service.spreadsheets().values().clear(spreadsheetId=self.google_sheet_id, 
-				range='{0}!A1:Z'.format(self.sheet_name), body={}).execute()
+				range='{0}'.format(self.sheet_name), body={}).execute()
 
 			# add new value
 			result = service.spreadsheets().values().update(
@@ -479,7 +479,7 @@ class DataExporter:
 		except HttpError as err:
 			frappe.log_error(err)
 
-	def batch_update(self):
+	def batch_update(self, sheet):
 		'''
 			This method is to update the cell that have errors in displaying the value.
 		'''
@@ -489,7 +489,7 @@ class DataExporter:
 		spreadsheet = client.open_by_key(self.google_sheet_id)	
 
 		# get list of worksheets
-		sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id, ranges=[], includeGridData=False).execute()
+		# sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id, ranges=[], includeGridData=False).execute()
 		sheets= sheet['sheets']
 		
 		# define sheetId of the give sheet name
@@ -528,8 +528,8 @@ class DataExporter:
 							{
 								"range": {
 									"sheetId": sheetId,
-									"startRowIndex": e["row"]-1,
-									"endRowIndex": e["row"],
+									"startRowIndex": e["row"],
+									"endRowIndex": e["row"]+1,
 									"startColumnIndex":e["column"],
 									"endColumnIndex": e["column"]+1
 								},
