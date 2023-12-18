@@ -170,9 +170,15 @@ class CreateMap():
             self.employee_query = f"SELECT name, employee_id,relieving_date, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
 
         
+            
         self.schedule_set = frappe.db.sql(self.schedule_query,as_dict=1) if self.employees else []
         self.attendance_set = frappe.db.sql(self.attendance_query,as_dict=1) if self.employees else []
-
+        if self.isOt:
+            self.leave_attendance = frappe.db.sql(f"SELECT at.status,at.leave_type,at.leave_application,\
+                at.attendance_date,at.employee,at.employee_name, at.operations_shift from `tabAttendance`at\
+                where at.status = 'On Leave' and  at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{self.end}'\
+                and at.docstatus = 1 order by at.employee ",as_dict = 1)
+            self.attendance_set +=self.leave_attendance
         self.employee_set = frappe.db.sql(self.employee_query,as_dict=1) if self.employees else []
         self.start_mapping()
 
