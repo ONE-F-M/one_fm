@@ -436,7 +436,7 @@ def get_job_openig_description_template():
 def send_email(doc, recipients):
 	page_link = get_url(doc.get_url())
 	message = "<p>Here is the ERF <a href='{0}'>{1}</a> requested by {2}. Please Review it and take action.</p>".format(page_link, doc.name,doc.erf_requested_by_name)
-	mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
+	mandatory_field, labels = get_mandatory_fields(doc)
 
 	if mandatory_field and labels:
 		message = create_message_with_details(message, mandatory_field, labels)

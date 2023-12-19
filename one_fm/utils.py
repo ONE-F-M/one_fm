@@ -2665,7 +2665,6 @@ def override_frappe_send_workflow_action_email(users_data, doc):
 def send_workflow_action_email(doc, recipients):
     frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
 
-
 def queue_send_workflow_action_email(doc, recipients):
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
@@ -2675,8 +2674,7 @@ def queue_send_workflow_action_email(doc, recipients):
 
     common_args = get_common_email_args(doc)
     common_args.pop('attachments')
-
-    mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
+    mandatory_field, labels = get_mandatory_fields(doc)
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.name)
@@ -2731,10 +2729,10 @@ def workflow_approve_reject(doc, recipients=None,message= None):
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 @frappe.whitelist()
-def get_mandatory_fields(doctype, doc_name):
-	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doctype)
+def get_mandatory_fields(doc_obj):
+	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doc_obj.doctype)
 
-	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
+	doc = {key: value for key, value in vars(doc_obj).items() if key in mandatory_fields}
 	if doc:
 		for employee_field in employee_fields:
 			if doc[employee_field]:
@@ -2742,6 +2740,7 @@ def get_mandatory_fields(doctype, doc_name):
 				if employee_details.employee_name and  employee_details.employee_id:
 					doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
 		return doc, labels
+	return {}, {}
 
 def get_doctype_mandatory_fields(doctype):
 	meta = frappe.get_meta(doctype)
