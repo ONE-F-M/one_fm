@@ -486,8 +486,8 @@ override_doctype_class = {
     "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride",
     "Job Applicant": "one_fm.overrides.job_applicant.JobApplicantOverride",
     "Job Opening": "one_fm.overrides.job_opening.JobOpeningOverride",
-    "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride"
-	# "User": "one_fm.overrides.user.UserOverrideLMS",
+    "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
+    "Goal": "one_fm.overrides.goal.GoalOverride"
 }
 
 
