@@ -2,6 +2,7 @@ from itertools import chain
 
 import frappe
 from frappe.utils import getdate, add_days, get_url_to_form
+from frappe.utils.user import get_users_with_role
 from frappe.permissions import remove_user_permission
 from hrms.overrides.employee_master import *
 from one_fm.hiring.utils import (
@@ -205,14 +206,11 @@ class NotifyAttendanceManagerOnStatusChange:
     
     @property
     def _operation_manager(self) -> str | None:
-        return frappe.db.get_single_value("Operation Settings", "default_operation_manager")
+        return frappe.db.get_single_value("Operation Settings", "default_operation_manager") == self.employee_object.user_id
     
     @property
-    def _attendance_manager_user_id(self) -> str:
-        attendance_manager = frappe.db.get_single_value('ONEFM General Setting', 'attendance_manager')
-        if attendance_manager:
-            return frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
-        return ""
+    def _attendance_manager(self) -> str:
+        return frappe.db.get_single_value('ONEFM General Setting', 'attendance_manager') ==  self.employee_object.name
     
     @property
     def _directors(self) -> list:
@@ -251,7 +249,7 @@ class NotifyAttendanceManagerOnStatusChange:
             if self._operation_manager:
                 data_dict.update({"operations_manager": f"{get_domain()}/app/operation-settings"})
                 
-            if self.employee_object.user_id == self._attendance_manager_user_id:
+            if self._attendance_manager:
                 data_dict.update({"attendance_manager": f"{get_domain()}/app/onefm-general-setting"})
                 
             if self._to_do:
@@ -267,9 +265,7 @@ class NotifyAttendanceManagerOnStatusChange:
         try:
             data = self.generate_data()
             if data:
-                is_att_man = self.employee_object.user_id == self._attendance_manager_user_id
-                the_recipient = self._attendance_manager_user_id if not is_att_man else self._directors
-                the_cc = self._directors if is_att_man else list()
+                the_recipient = get_users_with_role("HR Manager")
                 data_update = dict(
                     employee_name=self.employee_object.employee_name,
                     employee_id=self.employee_object.employee_id,
@@ -278,7 +274,7 @@ class NotifyAttendanceManagerOnStatusChange:
                 data.update(data_update)
                 title = f"Immediate Attention Required: Employee {self.employee_object.name} Status Change and Reassignment is required"
                 msg = frappe.render_template('one_fm/templates/emails/notify_authorities_employee_status_change.html', context=data)
-                sendemail(recipients=the_recipient, subject=title, content=msg, cc=the_cc)
+                sendemail(recipients=the_recipient, subject=title, content=msg)
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Error while sending mail on status change(Employee)")
         
