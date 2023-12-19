@@ -421,7 +421,7 @@ def mark_night_attendance():
 def mark_daily_attendance(start_date, end_date):
     # try:
     creation = now()
-    print(start_date, end_date)
+    
     owner = frappe.session.user
     naming_series = 'HR-ATT-.YYYY.-'
     new_attendances = []
@@ -455,7 +455,7 @@ def mark_daily_attendance(start_date, end_date):
         'date':["BETWEEN", [start_date, end_date]],
         'roster_type':'Basic'
     }, fields="*")
-    print(basic_attendance_employees)
+    
     basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
     
     # Mark Holiday Attendance
@@ -533,7 +533,7 @@ def mark_daily_attendance(start_date, end_date):
             basic_attendance_employees.append(i.employee)
 
     if holiday_attendance_employee:
-        print(len(holiday_attendance_employee))
+        
         for i in holiday_attendance_employee:
             name = f"HR-ATT_{start_date}_{i.name}_Basic"
             emp = employees_dict.get(i.name)
@@ -846,3 +846,77 @@ def mark_open_timesheet_and_create_attendance():
         comment.insert(ignore_permissions=True)
         doc = frappe.get_doc("Timesheet", name )
         doc.create_attendance()
+    attendance_date = add_days(getdate(), -1)
+    timesheet_employees = frappe.get_all("Timesheet",{'start_date':attendance_date},['employee'])
+    timesheet_employees_list = [i.employee for i in timesheet_employees]
+    #employees with no timesheet for that day
+    no_timesheet_employees = frappe.get_all("Employee",{'attendance_by_timesheet':1,'name':['NOT IN',timesheet_employees_list]})
+    if no_timesheet_employees:
+        no_timesheet_employees_list = [i.name for i in no_timesheet_employees]
+        mark_timesheet_daily_attendance(no_timesheet_employees_list,attendance_date)
+        
+
+def mark_timesheet_daily_attendance(timesheet_employees,start_date):
+    """
+        Mark all the employees included in the daily attendance schedule
+    """
+    try:
+        
+        query = """
+            INSERT INTO `tabAttendance` (`name`, `naming_series`,`employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
+            `shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`,
+            `department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
+            `creation`, `modified`, `comment`)
+            VALUES
+
+        """
+        employees = frappe.get_all("Employee",filters={"name":["IN",timesheet_employees]},fields="*")
+        employees_dict = frappe._dict()
+        
+        for i in employees:
+            employees_dict[i.name] = i
+        owner = frappe.session.user
+        creation = now()
+        naming_series = 'HR-ATT-.YYYY.-'
+        query_body = """"""
+        for i in timesheet_employees:
+            emp = employees_dict.get(i)
+            name = f"HR-ATT_{start_date}_{i}_Basic"
+            query_body+= f"""
+            (
+                "{name}", "{naming_series}", "{i}", "{emp.employee_name}", 0, "Absent", '{emp.shift}', NULL,
+                NULL, "NULL", "NULL", "{emp.site}", "{emp.project}", "{start_date}", "{emp.company}",
+                "{emp.department}", 0, 0, "NULL", "NULL", "Basic", {1}, "{owner}",
+                "{owner}", "{creation}", "{creation}", "No Timesheet record found"
+            ),"""
+        if query_body:
+            query += query_body[:-1]
+            query += f"""
+                ON DUPLICATE KEY UPDATE
+                naming_series = VALUES(naming_series),
+                employee = VALUES(employee),
+                employee_name = VALUES(employee_name),
+                working_hours = VALUES(working_hours),
+                status = VALUES(status),
+                shift = VALUES(shift),
+                in_time = VALUES(in_time),
+                out_time = VALUES(out_time),
+                shift_assignment = VALUES(shift_assignment),
+                operations_shift = VALUES(operations_shift),
+                site = VALUES(site),
+                project = VALUES(project),
+                attendance_date = VALUES(attendance_date),
+                company = VALUES(company),
+                department = VALUES(department),
+                late_entry = VALUES(late_entry),
+                early_exit = VALUES(early_exit),
+                operations_role = VALUES(operations_role),
+                roster_type = VALUES(roster_type),
+                docstatus = VALUES(docstatus),
+                modified_by = VALUES(modified_by),
+                modified = VALUES(modified)
+            """
+            frappe.db.sql(query, values=[], as_dict=1)
+            frappe.db.commit()
+    except:
+        frappe.log_error(message=frappe.get_traceback(), title ='Timesheet Attendance')
