@@ -168,7 +168,7 @@ class ERF(Document):
 
 	def notify_recruitment_manager(self):
 		try:
-			role_profile = frappe.db.get_list("Role Profile", {"role_profile": ["IN", ["Recruitment Manager", "Director"]]}, pluck="name")
+			role_profile = frappe.db.get_list("Role Profile", {"role_profile": ["IN", ["Recruitment Manager", "Director"]]}, pluck="name", ignore_permissions=True)
 			if role_profile:
 				manager_emails = frappe.db.get_list("User", {"role_profile_name": ["IN", role_profile]}, pluck="name")
 				if manager_emails:
