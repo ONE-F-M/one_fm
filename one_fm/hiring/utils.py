@@ -186,8 +186,9 @@ def employee_after_insert(doc, method):
     update_erf_close_with(doc)
 
 def employee_before_insert(doc, method):
+    ...
     # check for nationality, then set residency
-    if doc.one_fm_nationality != "Kuwaiti":
+    if doc.one_fm_nationality != "Kuwaiti" and doc.employment_type != "Subcontractor":
         doc.under_company_residency = 1
 
 def create_employee_user_from_company_email(doc):
