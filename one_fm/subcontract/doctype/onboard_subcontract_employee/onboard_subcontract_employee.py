@@ -58,7 +58,6 @@ class OnboardSubcontractEmployee(Document):
 	            }
 	        }
 	    }, None, set_missing_values)
-		print(vars(employee))
 		employee.save(ignore_permissions=True)
 
 		self.db_set("employee", employee.name)
