@@ -361,7 +361,7 @@ def create_attendance_check(attendance_date=None):
             timesheets_dict[i.employee] = i
 
         #Attendance by Timeshseet Employees with no Timesheet
-        no_timesheet_employess = get_attendance_by_timesheet_employees(timesheet_employees+missing_basic,attendance_date)
+        no_timesheet_employess = get_attendance_by_timesheet_employees(timesheet_employees,attendance_date)
         #join with employees missing basic.
         missing_basic+=no_timesheet_employess
         # Attendance Request

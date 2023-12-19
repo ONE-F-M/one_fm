@@ -470,6 +470,7 @@ def mark_daily_attendance(start_date, end_date):
     day_off_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
                             INNER JOIN `tabHoliday` h ON h.parent = hl.name
                             WHERE e.holiday_list = hl.name 
+                            AND e.attendance_by_timesheet = 0
                             AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}'
                             AND h.weekly_off=1""", as_dict=1)
     day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
@@ -829,6 +830,7 @@ def update_day_off_ot(attendances):
             except:
                 frappe.log_error(frappe.get_traceback(), "Attendance Marking OT")   
 
+
 def mark_open_timesheet_and_create_attendance():
     the_timesheet_list = frappe.db.get_list("Timesheet", filters={"workflow_state": "Open", "total_hours":[">",0]}, pluck="name")
     for name in the_timesheet_list:
@@ -846,14 +848,7 @@ def mark_open_timesheet_and_create_attendance():
         comment.insert(ignore_permissions=True)
         doc = frappe.get_doc("Timesheet", name )
         doc.create_attendance()
-    attendance_date = add_days(getdate(), -1)
-    timesheet_employees = frappe.get_all("Timesheet",{'docstatus':1,'start_date':attendance_date},['employee'])
-    timesheet_employees_list = [i.employee for i in timesheet_employees]
-    #employees with no timesheet for that day
-    no_timesheet_employees = frappe.get_all("Employee",{'attendance_by_timesheet':1,'name':['NOT IN',timesheet_employees_list]})
-    if no_timesheet_employees:
-        no_timesheet_employees_list = [i.name for i in no_timesheet_employees]
-        mark_timesheet_daily_attendance(no_timesheet_employees_list,attendance_date)
+   
         
 
 def mark_timesheet_daily_attendance(timesheet_employees,start_date):
