@@ -31,7 +31,8 @@ class OnboardSubcontractEmployee(Document):
 			else:
 				target.shift_working = False
 			target.permanent_address = "Address"
-			target.employment_type = self.employment_type
+			target.employment_type = frappe.db.get_single_value("Hiring Settings", "subcontract_employment_type")
+			target.under_company_residency = frappe.db.get_single_value("Hiring Settings", "subcontract_residency_status")
 
 		employee = get_mapped_doc(self.doctype, self.name, {
 	        self.doctype: {
