@@ -847,7 +847,7 @@ def mark_open_timesheet_and_create_attendance():
         doc = frappe.get_doc("Timesheet", name )
         doc.create_attendance()
     attendance_date = add_days(getdate(), -1)
-    timesheet_employees = frappe.get_all("Timesheet",{'start_date':attendance_date},['employee'])
+    timesheet_employees = frappe.get_all("Timesheet",{'docstatus':1,'start_date':attendance_date},['employee'])
     timesheet_employees_list = [i.employee for i in timesheet_employees]
     #employees with no timesheet for that day
     no_timesheet_employees = frappe.get_all("Employee",{'attendance_by_timesheet':1,'name':['NOT IN',timesheet_employees_list]})
