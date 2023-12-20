@@ -33,13 +33,14 @@
    "fieldtype": "Long Text",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Missing Dates"
+   "label": "Missing Dates",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-12-09 21:47:30.901309",
+ "modified": "2023-12-13 12:40:03.948912",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Employees Not Rostered",

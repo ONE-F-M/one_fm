@@ -429,6 +429,20 @@ class LeaveApplicationOverride(LeaveApplication):
                 # frappe.db.set_value(), will not call the validate.
                 frappe.db.set_value("Employee", self.employee, "status", "Vacation")
             self.validate_attendance_check()
+        self.clear_employee_schedules()
+            
+    
+    def clear_employee_schedules(self):
+        last_doc = self.get_doc_before_save()
+        if last_doc and last_doc.get('workflow_state') != self.workflow_state:
+            if self.workflow_state == "Approved":
+                frappe.db.sql(
+                    '''
+                    DELETE FROM `tabEmployee Schedule` WHERE 
+                    employee = %s AND
+                    date BETWEEN %s AND %s;
+                    ''', (self.employee, self.from_date, self.to_date)
+                )
 
 @frappe.whitelist()
 def get_leave_details(employee, date):

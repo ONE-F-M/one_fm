@@ -65,7 +65,7 @@ class AttendanceCheck(Document):
                 if not shift_assignments:
                     frappe.throw(f"No Shift Assignments found for {self.employee_name} on {self.date} Please create one")
             else:
-                frappe.throw("Only Users Shift/Site Supervisors and Attendance Managers have permission to submit unscheduled Attendance Checks")
+                frappe.throw("Only Shift/Site Supervisors and Attendance Managers have permission to submit unscheduled Attendance Checks")
         
     def on_submit(self):
         if self.attendance_status == "Present":
@@ -172,14 +172,49 @@ class AttendanceCheck(Document):
                 <hr>
                 To create a leave application <a class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/leave-application/new-leave-application-1')}?doc_id={self.name}&doctype={self.doctype}" target="_blank" onclick=" ">Click Here</a>
                  """)
-                
+
+
+
+def get_attendance_by_timesheet_employees(employees,attendance_date):
+    #Get the applicable employees if the current date falls on a public holiday
+    default_company = frappe.defaults.get_defaults().company
+    cond = ''
+    if not default_company:
+        default_company = frappe.get_last_doc("Company").name
+    holiday_lists = frappe.db.sql(f"""SELECT  h.parent from `tabHoliday` h
+                            WHERE  h.holiday_date = '{attendance_date}'
+                        """, as_dict=1)
+    if holiday_lists:
+        default_holiday_list = frappe.get_value("Company",default_company,'default_holiday_list')
+        holiday_lists =[i.parent for i in holiday_lists]
+        if default_holiday_list in holiday_lists:
+            if len(holiday_lists)>1:
+                cond += f"  and holiday_list not in '{tuple(holiday_lists)}'"
+            else:
+                cond += f"  and holiday_list !='{holiday_lists[0]}'"
+        else:
+            if len(holiday_lists)>1:
+                cond+=f" and holiday_list is Not NULL and holiday_list not in '{tuple(holiday_lists)}'"
+            else:
+                cond+=f" and holiday_list is Not NULL and holiday_list != '{holiday_lists[0]}'"
+        if employees:
+            if len(employees)==1:
+                cond+=f" and name !='{employees[0]}'"
+            else:
+                cond+= f" and name not in '{tuple(employees)}'"
+    
+        ts_employees = frappe.db.sql(f"""SELECT name from  `tabEmployee` where status = "Active"  and attendance_by_timesheet = 1 {cond}""",as_dict=1)
+        return [i.name for i in ts_employees]
+    return [i.name for i in frappe.get_all("Employee",{"status":"Active",'attendance_by_timesheet':1,'name':['NOT IN',employees]},['name'])]
 
 def create_attendance_check(attendance_date=None):
     if production_domain():
+    
         attendance_checkin_found = []
         if not attendance_date:
             attendance_date = add_days(today(), -1)
         all_attendance = frappe.get_all("Attendance", filters={
+            'docstatus':1,
             'attendance_date':attendance_date}, fields="*")
         all_attendance_employee = [i.employee for i in all_attendance]
 
@@ -320,9 +355,15 @@ def create_attendance_check(attendance_date=None):
                 shift_permission_ot_dict[i.employee] = i
         # Timesheet
         timesheets_dict = {}
+        timesheet_employees = []
         for i in timesheets:
+            timesheet_employees.append(i.employee)
             timesheets_dict[i.employee] = i
 
+        #Attendance by Timeshseet Employees with no Timesheet
+        no_timesheet_employess = get_attendance_by_timesheet_employees(timesheet_employees,attendance_date)
+        #join with employees missing basic.
+        missing_basic+=no_timesheet_employess
         # Attendance Request
         attendance_requests_dict = {}
         for i in attendance_requests:
@@ -438,7 +479,9 @@ def create_attendance_check(attendance_date=None):
                     at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
                     attendance_check_list.append(at_check_doc.name)
                 except Exception as e:
+                    frappe.log_error(title="Attendance Check Error",message=e)
                     print(e)
+                    continue
 
         # OT Create
         for i in missing_ot+absent_attendance_ot_list:
@@ -509,7 +552,9 @@ def create_attendance_check(attendance_date=None):
                     at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
                     attendance_check_list.append(at_check_doc.name)
                 except Exception as e:
+                    frappe.log_error(title="Attendance Check Error",message=e)
                     print(e)
+                    continue
         for i in employees_with_no_docs:
             employee = employees_dict.get(i)
             at_check = frappe._dict({
@@ -581,7 +626,9 @@ def create_attendance_check(attendance_date=None):
                     at_check_doc = frappe.get_doc(at_check).insert(ignore_permissions=1)
                     attendance_check_list.append(at_check_doc.name)
                 except Exception as e:
+                    frappe.log_error(title="Attendance Check Error",message=e)
                     print(e)
+                    continue
                       
         
 
