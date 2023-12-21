@@ -111,6 +111,7 @@ doctype_js = {
     "Workflow": "public/js/doctype_js/workflow.js",
     "Stock Entry": "public/js/doctype_js/stock_entry.js",
     "Gratuity": "public/js/doctype_js/gratuity.js",
+    "Goal": "public/js/doctype_js/goal.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -485,7 +486,8 @@ override_doctype_class = {
     "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride",
     "Job Applicant": "one_fm.overrides.job_applicant.JobApplicantOverride",
     "Job Opening": "one_fm.overrides.job_opening.JobOpeningOverride",
-    "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride"
+    "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
+    "Goal": "one_fm.overrides.goal.GoalOverride"
 	# "User": "one_fm.overrides.user.UserOverrideLMS",
 }
 
