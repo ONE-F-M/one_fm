@@ -546,7 +546,7 @@ class DataExporter:
 									}
 								},
 								"fields": "userEnteredFormat(textFormat)"
-							},
+							}
 						}
 					)
 
