@@ -374,7 +374,7 @@
   "name": "Shift Permission Approver",
   "priority": 0,
   "rule": "Based on Field",
-  "unassign_condition": null,
+  "unassign_condition": "workflow_state == 'Approved'",
   "users": []
  }
 ]

@@ -379,6 +379,24 @@ class LeaveApplicationOverride(LeaveApplication):
         self.cancel_attendance()
 
 
+    def validate_attendance_check(self):
+        """
+            Validate if there are any draft attendance checks for the period and update
+        """
+        try:
+            if frappe.db.exists("Attendance Check",{'docstatus':0,'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]}):
+                att_checks = frappe.get_all("Attendance Check",{'docstatus':0,'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]},['name'])
+                if att_checks:
+                    for each in att_checks:
+                        att_check = frappe.get_doc("Attendance Check",each.name)
+                        att_check.attendance_status= 'On Leave'
+                        att_check.workflow_state = "Approved"
+                        att_check.submit()
+            frappe.db.commit()
+        except:
+            frappe.log_error(title = "Error Updating Attendance Check",message=frappe.get_traceback())
+            frappe.throw("An Error Occured while updating Attendance Checks. Please review the error logs")
+    
     def on_update(self):
         if self.status=='Rejected':
             self.notify_employee()
@@ -410,12 +428,21 @@ class LeaveApplicationOverride(LeaveApplication):
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 # frappe.db.set_value(), will not call the validate.
                 frappe.db.set_value("Employee", self.employee, "status", "Vacation")
-            if frappe.db.exists("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]}):
-                att_check = frappe.get_doc("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]})
-                att_check.attendance_status= 'On Leave'
-                att_check.workflow_state = "Approved"
-                att_check.submit()
-            frappe.db.commit()
+            self.validate_attendance_check()
+        self.clear_employee_schedules()
+            
+    
+    def clear_employee_schedules(self):
+        last_doc = self.get_doc_before_save()
+        if last_doc and last_doc.get('workflow_state') != self.workflow_state:
+            if self.workflow_state == "Approved":
+                frappe.db.sql(
+                    '''
+                    DELETE FROM `tabEmployee Schedule` WHERE 
+                    employee = %s AND
+                    date BETWEEN %s AND %s;
+                    ''', (self.employee, self.from_date, self.to_date)
+                )
 
 @frappe.whitelist()
 def get_leave_details(employee, date):

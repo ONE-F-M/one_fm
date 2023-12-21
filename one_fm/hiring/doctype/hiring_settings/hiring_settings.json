@@ -20,7 +20,8 @@
   "job_applicaion_section",
   "easy_apply_to",
   "subcontract_hiring_settings_section",
-  "subcontract_employment_type"
+  "subcontract_employment_type",
+  "subcontract_residency_status"
  ],
  "fields": [
   {
@@ -110,15 +111,22 @@
    "label": "Subcontract Hiring Settings"
   },
   {
+   "default": "Subcontractor",
    "fieldname": "subcontract_employment_type",
    "fieldtype": "Link",
    "label": "Subcontract Employment Type",
    "options": "Employment Type"
+  },
+  {
+   "default": "0",
+   "fieldname": "subcontract_residency_status",
+   "fieldtype": "Check",
+   "label": "Subcontract Residency Status"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-12-05 09:34:45.053425",
+ "modified": "2023-12-19 10:52:20.936673",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

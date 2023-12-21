@@ -40,9 +40,14 @@
   "attendance_settings_section",
   "validate_shift_permission_on_employee_checkin",
   "checkin_deadline",
-  "user_to_be_notified",
   "column_break_23",
-  "issue_penalty"
+  "issue_penalty",
+  "missing_checkin_settings_section",
+  "enable_missing_checkin_job",
+  "column_break_e6up5",
+  "all_projects",
+  "section_break_nkbfu",
+  "missing_checkin_projects"
  ],
  "fields": [
   {
@@ -279,16 +284,42 @@
    "label": "Remind Open Leave Application"
   },
   {
-   "fieldname": "user_to_be_notified",
+   "fieldname": "missing_checkin_projects",
    "fieldtype": "Table",
-   "label": "User to be notified",
-   "options": "Attendance Check Setting"
+   "label": "Missing Checkin Projects",
+   "options": "Missing Checkin Projects"
+  },
+  {
+   "fieldname": "missing_checkin_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Missing Checkin Settings"
+  },
+  {
+   "default": "0",
+   "fieldname": "all_projects",
+   "fieldtype": "Check",
+   "label": "All Projects"
+  },
+  {
+   "fieldname": "column_break_e6up5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_missing_checkin_job",
+   "fieldtype": "Check",
+   "label": "Enable Missing Checkin Job"
+  },
+  {
+   "fieldname": "section_break_nkbfu",
+   "fieldtype": "Section Break",
+   "hide_border": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-11-13 13:13:53.985669",
+ "modified": "2023-12-13 16:05:30.445222",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",

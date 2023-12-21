@@ -133,7 +133,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
         
         if isOt:
             employee_filters.update({'employee_availability' : 'Working'})
-            all_active_employees = frappe.db.sql("SELECT name from `tabEmployee` where status = 'Active' and attendance_by_timesheet = '0' ",as_dict =1)
+            all_active_employees = frappe.db.sql("SELECT name from `tabEmployee` where status in ('Active','Vacation') and attendance_by_timesheet = '0' ",as_dict =1)
             all_active_employee_ids = [i.name for i in all_active_employees]
             employee_filters.update({'employee':['In',all_active_employee_ids]})
             employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
@@ -146,7 +146,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
             employee_filters.pop('attendance_by_timesheet', None)
             
         else:
-            employee_filters.update({'status': 'Active'})
+            employee_filters.update({'status': ["IN",['Active',"Vacation"]]})
             employee_filters.update({'shift_working':'1'})
             employee_filters.update({'attendance_by_timesheet':'0'})
             if designation:
@@ -282,6 +282,27 @@ def get_current_user_details():
     return user, user_roles, user_employee
 
 
+def get_employee_leave_attendance(employees,start_date):
+    """Returns a dict of employees and their corresponding attendance dates if it falls on or after the start date
+
+    Args:
+        employees (list): list of employees
+
+    Returns:
+        dict: list of dictionaries
+    """
+    attendance_dict = {}
+    all_attendance = frappe.get_all("Attendance",{'attendance_date':['>=',start_date],'employee':["IN",employees],'docstatus':1,'status':'On Leave'},['attendance_date','employee'])
+    if all_attendance:
+        for each in all_attendance:
+            if attendance_dict.get(each.employee):
+                attendance_dict[each.employee].append(each.attendance_date)
+            else:
+                attendance_dict[each.employee] = [each.attendance_date]
+    return attendance_dict
+
+
+
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None, selected_days_only=0):
     try:
@@ -295,7 +316,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
             frappe.throw("Employees must be selected.")
 
         employee_list = list({obj["employee"] for obj in employees})
-        
+        employee_leave_attendance = get_employee_leave_attendance(employee_list,start_date)
         if cint(project_end_date) and not end_date:
             project = frappe.db.get_value("Operations Shift", shift, ["project"])
             if frappe.db.exists("Contracts", {'project': project}):
@@ -307,7 +328,8 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
                     list_of_date = date_range(start_date, end_date)
                     for obj in employee_list:
                         for day in list_of_date:
-                            employees.append({"employee": obj, "date": str(day.date())})
+                            if  day.date() not in employee_leave_attendance.get(obj,[]):
+                                employees.append({"employee": obj, "date": str(day.date())})
 
             else:
                 validation_logs.append("No contract linked with project {project}".format(project=project))
@@ -318,7 +340,8 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
             list_of_date = date_range(start_date, end_date)
             for obj in employee_list:
                 for day in list_of_date:
-                    employees.append({"employee": obj, "date": str(day.date())})
+                    if  day.date() not in employee_leave_attendance.get(obj,[]):
+                        employees.append({"employee": obj, "date": str(day.date())})
 
         elif not cint(project_end_date) and not end_date and not selected_days_only:
             validation_logs.append("Please set an end date for scheduling the staff.")
