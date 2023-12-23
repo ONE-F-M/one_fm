@@ -16,7 +16,10 @@ from pathlib import Path
 from hrms.payroll.doctype.payroll_entry.payroll_entry import (
 	get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_salary_structure
 )
-from one_fm.one_fm.doctype.hr_and_payroll_additional_settings.hr_and_payroll_additional_settings import get_projects_not_configured_in_payroll_cycle_but_linked_in_employee
+from one_fm.one_fm.doctype.hr_and_payroll_additional_settings.hr_and_payroll_additional_settings import (
+	get_projects_not_configured_in_payroll_cycle_but_linked_in_employee,
+	get_projects_configured_in_payroll_cycle
+)
 from itertools import groupby
 from operator import itemgetter
 from one_fm.processor import sendemail
@@ -69,8 +72,15 @@ def fill_employee_details(self):
 		and for which salary structure exists.
 	"""
 	self.set('employees', [])
-	# Find projects comes under the same payroll cycle
-	if str(get_start_date(self.start_date)) == str(frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')):
+
+	project_list = False
+
+	# Find payroll cycle start day
+	payroll_start_day = str(get_start_date(self.start_date))
+
+	# Find projects comes under the default payroll cycle
+	if payroll_start_day == str(frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')):
+		# Find all projects linked to payroll cycles
 		query = '''
 			select
 				project
@@ -78,20 +88,24 @@ def fill_employee_details(self):
 				`tabProject Payroll Cycle`
 		'''
 		projects = frappe.db.sql(query, as_dict=True)
-		default_projects = get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(', '.join(['"{}"'.format(project.project) for project in projects]))
-		project_list = ', '.join(['"{}"'.format(project.project) for project in default_projects])
+		if not projects:
+			projects = [{'project': ''}]
+
+		# Get projects not configured in payroll cycle but linked in employee
+		default_projects = get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(', '.join(['"{}"'.format(project['project']) for project in projects]))
+		if default_projects:
+			project_list = ', '.join(['"{}"'.format(project.project) for project in default_projects])
+
+		# Find projects configured in default payroll cycle
+		configured_projects = get_projects_configured_in_payroll_cycle(payroll_start_day)
+		if configured_projects:
+			if project_list:
+				project_list += ', '+configured_projects
+			else:
+				project_list = configured_projects
 	else:
-		query = '''
-			select
-				project
-			from
-				`tabProject Payroll Cycle`
-			where
-				payroll_start_day = '{0}'
-		'''
-		start_day = get_start_date(self.start_date)
-		projects = frappe.db.sql(query.format(start_day), as_dict=True)
-		project_list = ', '.join(['"{}"'.format(project.project) for project in projects])
+		# Find projects configured in payroll start day
+		project_list = get_projects_configured_in_payroll_cycle(payroll_start_day)
 
 	employees = get_emp_list(self, project_list)
 
@@ -133,7 +147,7 @@ def get_emp_list(self, project_list=False):
 	sal_struct = get_salary_structure(
 		self.company, self.currency, self.salary_slip_based_on_timesheet, self.payroll_frequency
 	)
-	print(sal_struct)
+
 	if sal_struct:
 		cond += "and t2.salary_structure IN %(sal_struct)s "
 		cond += "and t2.payroll_payable_account = %(payroll_payable_account)s "
@@ -290,6 +304,8 @@ def auto_create_payroll_entry(payroll_date=None):
 		# Calculate payroll date
 		payroll_date = (datetime(getdate().year, getdate().month, cint(payroll_date_day))).strftime("%Y-%m-%d")
 
+	# Find default from date and end date for payroll
+	default_payroll_start_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')
 
 	# Get Payroll cycle list from HR and Payroll Settings and itrate for payroll cycle
 	query = '''
@@ -298,23 +314,25 @@ def auto_create_payroll_entry(payroll_date=None):
 		from
 			`tabProject Payroll Cycle`
 	'''
-	payroll_start_day_list = frappe.db.sql(query, as_dict=True)
-	payroll_type = ["Basic", "Over-Time"]
+	data = frappe.db.sql(query, as_dict=True)
+
+	payroll_start_day_list = [d['payroll_start_day'] for d in data]
+
 	for payroll_start_day in payroll_start_day_list:
 		# Find from date and end date for payroll
-		start_date, end_date = get_payroll_start_end_date_by_start_day(payroll_date, payroll_start_day.payroll_start_day)
+		start_date, end_date = get_payroll_start_end_date_by_start_day(payroll_date, payroll_start_day)
 
 		# Create Payroll Entry
-		create_monthly_payroll_entry(payroll_date, start_date, end_date, payroll_type)
+		create_monthly_payroll_entry(payroll_date, start_date, end_date)
 
-	# # Find default from date and end date for payroll
-	default_payroll_start_day = frappe.db.get_single_value('HR and Payroll Additional Settings', 'default_payroll_start_day')
-	default_start_date, default_end_date = get_payroll_start_end_date_by_start_day(payroll_date, default_payroll_start_day)
+	if default_payroll_start_day and default_payroll_start_day not in payroll_start_day_list:
+		default_start_date, default_end_date = get_payroll_start_end_date_by_start_day(payroll_date, default_payroll_start_day)
 
-	create_monthly_payroll_entry(payroll_date, default_start_date, default_end_date, payroll_type)
+		create_monthly_payroll_entry(payroll_date, default_start_date, default_end_date)
 
-def create_monthly_payroll_entry(payroll_date, start_date, end_date, payroll_type):
+def create_monthly_payroll_entry(payroll_date, start_date, end_date):
 	try:
+		payroll_type = ["Basic", "Over-Time"]
 		for types in payroll_type:
 			payroll_entry = frappe.new_doc("Payroll Entry")
 			payroll_entry.posting_date = getdate(payroll_date)
@@ -643,7 +661,7 @@ def create_salary_slips(doc):
 			create_salary_slips_for_employees(employees, payroll_entry = doc, publish_progress=False)
 			# since this method is called via frm.call this doc needs to be updated manually
 			doc.reload()
-		
+
 
 def log_payroll_failure(process, payroll_entry, error):
 	error_log = frappe.log_error(

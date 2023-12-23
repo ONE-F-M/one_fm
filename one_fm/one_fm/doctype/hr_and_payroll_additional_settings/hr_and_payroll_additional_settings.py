@@ -31,3 +31,15 @@ def get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(project_
 			project NOT IN ({0})
 	'''
 	return frappe.db.sql(query.format(project_list), as_dict=True)
+
+def get_projects_configured_in_payroll_cycle(payroll_start_day):
+	query = '''
+		select
+			project
+		from
+			`tabProject Payroll Cycle`
+		where
+			payroll_start_day = '{0}'
+	'''
+	projects = frappe.db.sql(query.format(payroll_start_day), as_dict=True)
+	return ', '.join(['"{}"'.format(project.project) for project in projects])
