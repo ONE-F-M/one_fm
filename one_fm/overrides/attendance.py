@@ -286,7 +286,7 @@ def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
         out_checkins = _out_checkins[0] if _out_checkins else frappe._dict({})
         # check if checkin and out exists
         if (out_checkins and in_checkins):
-            if (out_checkins[0].time < in_checkins[0].time):
+            if (out_checkins.time < in_checkins.time):
                 out_checkins = False # The employee checked in, out, in but not out
 
         # start checkin
@@ -367,7 +367,7 @@ def create_single_attendance_record(record):
             if (work_duration/2) > doc.working_hours:
                 doc.status = 'Absent'
                 doc.comment = f'Late Checkin, {work_duration}hrs late.'
-        if not doc.working_hours:
+        if not doc.working_hours and doc.status=='Present':
             doc.status='Absent'
         if doc.status in ['Work From Home', 'Day Off', 'Holiday']:
             doc.flags.ignore_validate = True
