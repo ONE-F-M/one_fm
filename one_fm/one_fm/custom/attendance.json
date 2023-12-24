@@ -59,6 +59,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -122,6 +123,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -185,6 +187,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -248,6 +251,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -311,6 +315,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -374,6 +379,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -437,6 +443,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -500,6 +507,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -563,6 +571,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -626,6 +635,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -689,6 +699,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -752,6 +763,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -815,6 +827,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -878,6 +891,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 1,
    "unique": 0,
    "width": null
@@ -941,6 +955,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1004,6 +1019,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1067,6 +1083,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1130,6 +1147,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1193,6 +1211,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
@@ -1202,6 +1221,58 @@
  "doctype": "Attendance",
  "links": [],
  "property_setters": [
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2023-12-24 15:24:16.904880",
+   "default_value": null,
+   "doc_type": "Attendance",
+   "docstatus": 0,
+   "doctype_or_field": "DocField",
+   "field_name": "roster_type",
+   "idx": 0,
+   "is_system_generated": 0,
+   "modified": "2023-12-24 15:24:16.904880",
+   "modified_by": "Administrator",
+   "module": null,
+   "name": "Attendance-roster_type-in_standard_filter",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "in_standard_filter",
+   "property_type": "Check",
+   "row_name": null,
+   "value": "1"
+  },
+  {
+   "_assign": null,
+   "_comments": null,
+   "_liked_by": null,
+   "_user_tags": null,
+   "creation": "2023-12-24 15:24:16.715079",
+   "default_value": null,
+   "doc_type": "Attendance",
+   "docstatus": 0,
+   "doctype_or_field": "DocType",
+   "field_name": null,
+   "idx": 0,
+   "is_system_generated": 0,
+   "modified": "2023-12-24 15:24:16.715079",
+   "modified_by": "Administrator",
+   "module": null,
+   "name": "Attendance-main-field_order",
+   "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
+   "property": "field_order",
+   "property_type": "Data",
+   "row_name": null,
+   "value": "[\"attendance_details\", \"naming_series\", \"employee\", \"employee_name\", \"working_hours\", \"status\", \"leave_type\", \"leave_application\", \"column_break0\", \"attendance_date\", \"company\", \"department\", \"attendance_request\", \"details_section\", \"shift\", \"in_time\", \"out_time\", \"column_break_18\", \"late_entry\", \"early_exit\", \"section_break_17\", \"shift_assignment\", \"operations_shift\", \"site\", \"project\", \"timesheet\", \"column_break_21\", \"operations_role\", \"post_abbrv\", \"roster_type\", \"post_type\", \"sale_item\", \"day_off_ot\", \"attendance_comment\", \"comment\", \"references\", \"reference_doctype\", \"column_break_nahps\", \"reference_docname\", \"amended_from\"]"
+  },
   {
    "_assign": null,
    "_comments": null,
