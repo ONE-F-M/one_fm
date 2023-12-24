@@ -286,7 +286,7 @@ def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
         out_checkins = _out_checkins[0] if _out_checkins else frappe._dict({})
         # check if checkin and out exists
         if (out_checkins and in_checkins):
-            if (out_checkins < in_checkins):
+            if (out_checkins[0].time < in_checkins[0].time):
                 out_checkins = False # The employee checked in, out, in but not out
 
         # start checkin
