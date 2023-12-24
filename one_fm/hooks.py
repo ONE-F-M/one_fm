@@ -231,6 +231,10 @@ doc_events = {
 	"Leave Type": {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
+	"HD Ticket": {
+		"after_insert": "one_fm.api.doc_methods.hd_ticket.assign_to_bug_buster",
+		"validate": "one_fm.api.doc_methods.hd_ticket.validate_hd_ticket"
+	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
 	},
