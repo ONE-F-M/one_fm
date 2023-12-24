@@ -19,7 +19,12 @@ class TimesheetOveride(Timesheet):
         self.calculate_percentage_billed()
         self.set_dates()
         self.set_approver()
+        self.validate_start_date()
 
+    def validate_start_date(self):
+        if getdate(self.start_date) > getdate():
+            frappe.throw("Please note that timesheets cannot be created for a date in the future")
+            
     def set_approver(self):
         if self.attendance_by_timesheet:
             self.approver = fetch_approver(self.employee)
