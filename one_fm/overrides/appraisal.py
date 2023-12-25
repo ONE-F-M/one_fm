@@ -11,25 +11,8 @@ from hrms.hr.utils import validate_active_employee
 class AppraisalOverride(Appraisal):
     
     def validate(self):
-        super(Appraisal, self).validate()
-    
-	# def validate(self):
-	# 	if not self.status:
-	# 		self.status = "Draft"
-
-	# 	self.set_kra_evaluation_method()
-
-	# 	validate_active_employee(self.employee)
-	# 	validate_active_appraisal_cycle(self.appraisal_cycle)
-	# 	self.validate_duplicate()
-
-	# 	self.set_goal_score()
-	# 	self.calculate_self_appraisal_score()
-	# 	self.calculate_avg_feedback_score()
-	# 	self.calculate_final_score()
-        
-  
-  
+        super(AppraisalOverride, self).validate()
+         
 
     def set_goal_score(self, update=False):
         for kra in self.appraisal_kra:
