@@ -23,4 +23,7 @@ class GoalOverride(Goal):
         if self.appraisal_cycle != parent_details.appraisal_cycle:
             frappe.throw(
                 _("Goal should belong to the same Appraisal Cycle as its parent goal."), title=_("Not Allowed"),
+                
             )
+            
+    
