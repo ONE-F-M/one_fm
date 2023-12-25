@@ -366,7 +366,7 @@ def create_single_attendance_record(record):
         if doc.working_hours and work_duration:
             if (work_duration/2) > doc.working_hours:
                 doc.status = 'Absent'
-                doc.comment = f'Late Checkin, {work_duration}hrs late.'
+                doc.comment = f'Late Checkin, {work_duration}hrs late. or early checkout'
         if not doc.working_hours and doc.status=='Present':
             doc.status='Absent'
         if doc.status in ['Work From Home', 'Day Off', 'Holiday']:
@@ -408,27 +408,33 @@ def mark_for_active_employees(from_date=None, to_date=None):
 
 def remark_for_active_employees(from_date=None):
     if not from_date:from_date=today()
-    print(from_date)
     # fix absent if shift exists
     absent_attendance = frappe.get_list(
-        "Attendance", {"attendance_date":from_date, "status":"Absent"}
+        "Attendance", {"attendance_date":from_date, "status":"Absent"},
+        "*"
     )
-    print(absent_attendance)
     for i in absent_attendance:
         if i.shift_assignment:
-            print(i.employee_name)
             shift_assignment = frappe.get_doc("Shift Assignment", i.shift_assignment)
             checkins = frappe.get_list(
                 "Employee Checkin", 
                 {"shift_assignment":i.shift_assignment}, 
                 "*",
                 order_by="time ASC")
-            print(checkins)
+            # print(checkins)
             if checkins:
-                ins = [d for d in checkins if d.type=="IN"].sort(key = lambda x:x['time'])
-                outs = [d for d in checkins if d.type=="OUT"].sort(key = lambda x:x['time'])
+                # if i.employee=="HR-EMP-00865":
+                #     print(checkins)
+                ins = [d for d in checkins if d.log_type=="IN"]#.sort(key = lambda x:x.time)
+                outs = [d for d in checkins if d.log_type=="OUT"]#.sort(key = lambda x:x.time)
+                
                 if ins:ins = ins[0]
-                if outs:outs = outs[0]
+                if outs:
+                    outs = outs[-1]
+                    if ins:
+                        if checkins[-1].log_type=="IN": # check if last log is in not out
+                            outs = [] # this mean no checkout, we will auto checkout
+
                 if ((ins.time - shift_assignment.start_datetime).total_seconds() / (60*60)) > 1:
                     status = 'Absent'
                     comment = f" Some hrs late, checkin in at {ins.time}"
@@ -436,7 +442,7 @@ def remark_for_active_employees(from_date=None):
                 elif ins and not outs:
                     working_hours = ((shift_assignment.end_datetime - ins.time).total_seconds() / (60*60))
                     status = 'Present'
-                    comment = "Checkin but no checkout record found"
+                    comment = "Checkin but no checkout record found or last log is checkin"
                     checkin = ins
                 elif ins and outs:
                     working_hours = ((outs.time - ins.time).total_seconds() / (60*60))
