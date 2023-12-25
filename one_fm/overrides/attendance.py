@@ -431,34 +431,34 @@ def remark_for_active_employees(from_date=None):
                     if ins:
                         if checkins[-1].log_type=="IN": # check if last log is in not out
                             outs = [] # this mean no checkout, we will auto checkout
-
-                if ((ins.time - shift_assignment.start_datetime).total_seconds() / (60*60)) > 1:
-                    status = 'Absent'
-                    comment = f" Some hrs late, checkin in at {ins.time}"
-                    working_hours = 1
-                elif ins and not outs:
-                    working_hours = ((shift_assignment.end_datetime - ins.time).total_seconds() / (60*60))
-                    status = 'Present'
-                    comment = "Checkin but no checkout record found or last log is checkin"
-                    checkin = ins
-                elif ins and outs:
-                    working_hours = ((outs.time - ins.time).total_seconds() / (60*60))
-                    status = 'Present'
-                    comment = ""
-                    checkin = ins
-                    checkout = outs
-                create_single_attendance_record(frappe._dict({
-                    'status': status,
-                    'comment': comment,
-                    'attendance_date': from_date,
-                    'working_hours': working_hours,
-                    'checkin': ins,
-                    'checkout': outs,
-                    'shift_assignment':shift_assignment,
-                    'employee':frappe.db.get_value("Employee", i.employee, ["name", "employee_name", "holiday_list"], as_dict=1),
-                    'roster_type': shift_assignment.roster_type
-                    })
-                )
+                if ins: # there has to be an in checkin before we proceed.
+                    if ((ins.time - shift_assignment.start_datetime).total_seconds() / (60*60)) > 1:
+                        status = 'Absent'
+                        comment = f" Some hrs late, checkin in at {ins.time}"
+                        working_hours = 1
+                    elif ins and not outs:
+                        working_hours = ((shift_assignment.end_datetime - ins.time).total_seconds() / (60*60))
+                        status = 'Present'
+                        comment = "Checkin but no checkout record found or last log is checkin"
+                        checkin = ins
+                    elif ins and outs:
+                        working_hours = ((outs.time - ins.time).total_seconds() / (60*60))
+                        status = 'Present'
+                        comment = ""
+                        checkin = ins
+                        checkout = outs
+                    create_single_attendance_record(frappe._dict({
+                        'status': status,
+                        'comment': comment,
+                        'attendance_date': from_date,
+                        'working_hours': working_hours,
+                        'checkin': ins,
+                        'checkout': outs,
+                        'shift_assignment':shift_assignment,
+                        'employee':frappe.db.get_value("Employee", i.employee, ["name", "employee_name", "holiday_list"], as_dict=1),
+                        'roster_type': shift_assignment.roster_type
+                        })
+                    )
 
 
 def remark_absent_for_employees(employees, date):
