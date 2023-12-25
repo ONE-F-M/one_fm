@@ -421,10 +421,7 @@ def remark_for_active_employees(from_date=None):
                 {"shift_assignment":i.shift_assignment}, 
                 "*",
                 order_by="time ASC")
-            # print(checkins)
             if checkins:
-                # if i.employee=="HR-EMP-00865":
-                #     print(checkins)
                 ins = [d for d in checkins if d.log_type=="IN"]#.sort(key = lambda x:x.time)
                 outs = [d for d in checkins if d.log_type=="OUT"]#.sort(key = lambda x:x.time)
                 
