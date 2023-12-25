@@ -1,11 +1,8 @@
 import frappe
 from frappe.query_builder.functions import Avg
-from frappe.utils import flt, get_link_to_form, now
+from frappe.utils import flt
 
 from hrms.hr.doctype.appraisal.appraisal import Appraisal
-from hrms.hr.doctype.appraisal_cycle.appraisal_cycle import validate_active_appraisal_cycle
-from hrms.hr.utils import validate_active_employee
-
 
 
 class AppraisalOverride(Appraisal):
