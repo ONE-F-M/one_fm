@@ -393,7 +393,9 @@ def mark_bulk_attendance(employee, from_date, to_date):
     frappe.msgprint(f"Marked Attendance successfully for {employee} between {from_date} and {to_date}")
 
 # Mark attendance for Active Employees
-def mark_for_active_employees(from_date, to_date):
+def mark_for_active_employees(from_date=None, to_date=None):
+    if not from_date and to_date:
+        from_date, to_date = today(), today()
     active_employees_on_shift = frappe.get_list("Employee", {
         "status": ["=", "Active"],
         "employment_type": ["!=", "Service Provider"],},
