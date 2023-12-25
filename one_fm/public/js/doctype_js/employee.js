@@ -1,6 +1,7 @@
 frappe.ui.form.on('Employee', {
 	refresh: function(frm) {
 		hideFields(frm);
+		is_employee_master(frm);
 		set_grd_fields(frm)
 		frm.trigger('set_queries');
 		set_mandatory(frm);
@@ -120,6 +121,18 @@ var change_employee_id = function(frm) {
 // Hide un-needed fields
 const hideFields = frm => {
     $("[data-doctype='Employee Checkin']").hide();
+}
+
+let is_employee_master = frm =>{
+	frappe.db.get_single_value("ONEFM General Setting",'employee_master_role').then(value=>{
+		if(value){
+			if(!frappe.user.has_role(value)){
+				frm.disable_form()
+
+			}
+		}
+	})
+	
 }
 
 let set_grd_fields= frm=>{

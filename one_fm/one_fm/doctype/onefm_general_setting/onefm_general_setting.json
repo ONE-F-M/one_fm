@@ -8,7 +8,6 @@
  "field_order": [
   "mobile_app_version",
   "column_break_xyl05",
-  "mark_atttendance_per_employee",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
@@ -19,6 +18,7 @@
   "attendance_manager",
   "attendance_manager_name",
   "employee_section",
+  "employee_master_role",
   "employee_access",
   "wiki_page_access"
  ],
@@ -102,11 +102,18 @@
    "fieldtype": "Table",
    "label": "Employee Access",
    "options": "ONEFM Employee Access"
+  },
+  {
+   "description": "All users with this role have edit access on the Employee Form",
+   "fieldname": "employee_master_role",
+   "fieldtype": "Link",
+   "label": "Employee Master Role",
+   "options": "Role"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-10-19 17:06:21.594157",
+ "modified": "2023-12-25 18:01:16.629421",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
