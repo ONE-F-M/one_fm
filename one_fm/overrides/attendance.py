@@ -404,6 +404,60 @@ def mark_for_active_employees(from_date=None, to_date=None):
     for i in active_employees_on_shift:
         mark_bulk_attendance(i.name, from_date, to_date)
 
+    remark_for_active_employees(from_date)
+
+def remark_for_active_employees(from_date=None):
+    if not from_date:from_date=today()
+    print(from_date)
+    # fix absent if shift exists
+    absent_attendance = frappe.get_list(
+        "Attendance", {"attendance_date":from_date, "status":"Absent"}
+    )
+    print(absent_attendance)
+    for i in absent_attendance:
+        if i.shift_assignment:
+            print(i.employee_name)
+            shift_assignment = frappe.get_doc("Shift Assignment", i.shift_assignment)
+            checkins = frappe.get_list(
+                "Employee Checkin", 
+                {"shift_assignment":i.shift_assignment}, 
+                "*",
+                order_by="time ASC")
+            print(checkins)
+            if checkins:
+                ins = [d for d in checkins if d.type=="IN"].sort(key = lambda x:x['time'])
+                outs = [d for d in checkins if d.type=="OUT"].sort(key = lambda x:x['time'])
+                if ins:ins = ins[0]
+                if outs:outs = outs[0]
+                if ((ins.time - shift_assignment.start_datetime).total_seconds() / (60*60)) > 1:
+                    status = 'Absent'
+                    comment = f" Some hrs late, checkin in at {ins.time}"
+                    working_hours = 1
+                elif ins and not outs:
+                    working_hours = ((shift_assignment.end_datetime - ins.time).total_seconds() / (60*60))
+                    status = 'Present'
+                    comment = "Checkin but no checkout record found"
+                    checkin = ins
+                elif ins and outs:
+                    working_hours = ((outs.time - ins.time).total_seconds() / (60*60))
+                    status = 'Present'
+                    comment = ""
+                    checkin = ins
+                    checkout = outs
+                create_single_attendance_record(frappe._dict({
+                    'status': status,
+                    'comment': comment,
+                    'attendance_date': from_date,
+                    'working_hours': working_hours,
+                    'checkin': ins,
+                    'checkout': outs,
+                    'shift_assignment':shift_assignment,
+                    'employee':frappe.db.get_value("Employee", i.employee, ["name", "employee_name", "holiday_list"], as_dict=1),
+                    'roster_type': shift_assignment.roster_type
+                    })
+                )
+
+
 def remark_absent_for_employees(employees, date):
     # mark attendance
     for emp in employees:
@@ -433,13 +487,14 @@ def mark_day_attendance():
 
 
 def mark_night_attendance():
-	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
-	start_date = add_days(getdate(), -1)
-	end_date =  getdate()
-	approve_open_shift_permission(str(start_date), str(end_date))
-	approve_open_employee_checkin_issue(str(start_date), str(end_date))
-	frappe.enqueue(mark_open_timesheet_and_create_attendance)
-	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
+    from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
+    start_date = add_days(getdate(), -1)
+    end_date =  getdate()
+    approve_open_shift_permission(str(start_date), str(end_date))
+    approve_open_employee_checkin_issue(str(start_date), str(end_date))
+    frappe.enqueue(mark_open_timesheet_and_create_attendance)
+    frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
+    #frappe.enqueue(mark_for_active_employees, from_date=start_date, to_date=start_date, queue='long', timeout=6000)
 
 def mark_daily_attendance(start_date, end_date):
     # try:
