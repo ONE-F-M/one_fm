@@ -125,7 +125,10 @@ class AttendanceCheck(Document):
                         'shift_type':employee_schedule.shift_type,
                         'start_date':employee_schedule.date,
                         'status':'Active'
-                    }).insert(ignore_permissions=1)
+                    })
+                    if employee_schedule.employee_availability == "Day Off":
+                        shift_assignment.flags.ignore_mandatory = 1
+                    shift_assignment.insert(ignore_permissions=1)
                     shift_assignment.submit()
                     att.shift_Assignment = shift_assignment.name
             if att.shift_assignment and att.status=='Present':
