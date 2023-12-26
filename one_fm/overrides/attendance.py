@@ -853,7 +853,7 @@ def update_day_off_ot(attendances):
 
 
 def mark_open_timesheet_and_create_attendance():
-    date = add_days(getdate(), -12)
+    date = add_days(getdate(), -1)
     creation = now()
     
     owner = frappe.session.user
