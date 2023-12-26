@@ -422,12 +422,12 @@
    "mandatory_depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\""
   },
   {
-   "depends_on": "eval:[\"Invalid media content\",\"Out-of-site location\", \"User not assigned to shift\", \"Suddenly, the App stop working!\",\"Other\"].includes(doc.justification)",
+   "depends_on": "justification",
    "description": "Upload screenshot with the same issue!",
    "fieldname": "screenshot",
    "fieldtype": "Attach",
    "label": "Screenshot",
-   "mandatory_depends_on": "eval:[\"Invalid media content\",\"Out-of-site location\", \"User not assigned to shift\", \"Suddenly, the App stop working!\"].includes(doc.justification)"
+   "mandatory_depends_on": "justification"
   },
   {
    "depends_on": "eval:doc.justification == \"Other\"",
@@ -452,7 +452,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2023-12-03 11:32:52.002023",
+ "modified": "2023-12-26 10:10:06.142090",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
