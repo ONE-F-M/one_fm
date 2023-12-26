@@ -395,7 +395,7 @@ def mark_bulk_attendance(employee, from_date, to_date):
 # Mark attendance for Active Employees
 def mark_for_active_employees(from_date=None, to_date=None):
     if not (from_date and to_date):
-        from_date, to_date = getdate(), getdate()
+        from_date, to_date = add_days(getdate(), -1), add_days(getdate(), -1)
     active_employees_on_shift = frappe.get_list("Employee", {
         "status": ["=", "Active"],
         "employment_type": ["!=", "Service Provider"],},
@@ -459,6 +459,7 @@ def remark_for_active_employees(from_date=None):
                         'roster_type': shift_assignment.roster_type
                         })
                     )
+    
 
 
 def remark_absent_for_employees(employees, date):
