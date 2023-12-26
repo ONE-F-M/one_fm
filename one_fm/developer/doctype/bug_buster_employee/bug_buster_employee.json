@@ -12,7 +12,8 @@
   "full_name",
   "to_date",
   "section_break_x5grl",
-  "employees"
+  "employees",
+  "default_support_team"
  ],
  "fields": [
   {
@@ -55,11 +56,17 @@
    "fieldname": "to_date",
    "fieldtype": "Date",
    "label": "To Date"
+  },
+  {
+   "fieldname": "default_support_team",
+   "fieldtype": "Link",
+   "label": "Default Support Team",
+   "options": "HD Team"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-03-07 17:08:27.711904",
+ "modified": "2023-12-23 20:18:15.804068",
  "modified_by": "Administrator",
  "module": "Developer",
  "name": "Bug Buster Employee",
