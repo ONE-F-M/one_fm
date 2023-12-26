@@ -2992,6 +2992,35 @@ def get_today_leaves(cur_date):
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
 
+@frappe.whitelist()
+def has_super_user_role(user=None):
+    '''
+        A method to check the user is having super user role
+        Default it will be the role 'Director'
+        User having this role can be self approve configured documents like Shift Permission.
+        The user having this role no need reports to, since it will be the same employee linked to the user.
+
+        args:
+            user: user ID, eg: employee123@one_fm.com
+
+        return boolean(True if super user role exists in the given user's role list)
+    '''
+    if not user:
+        user = frappe.session.user
+    if user:
+        # get the user roles
+        user_roles = frappe.get_roles(user)
+        # Check if the default super user role in the user role list
+        if "Director" in user_roles:
+            return True
+        else:
+            # Get configured super user in ONEFM General Settings
+            super_user_role = frappe.get_single_value("ONEFM General Settings", "super_user_role")
+            # Check if the super user role exists in the user role list
+            if super_user_role and super_user_role in user_roles:
+                return True
+    return False
+
 def get_approver(employee):
     """
         Get document approver for employee by

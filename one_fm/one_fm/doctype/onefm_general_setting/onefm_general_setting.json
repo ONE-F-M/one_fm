@@ -7,19 +7,20 @@
  "engine": "InnoDB",
  "field_order": [
   "mobile_app_version",
-  "column_break_xyl05",
   "section_break_2",
   "zenquote_keyword_category",
+  "column_break_v0wzm",
   "zenquotes_api_key",
-  "section_break_nsc7h",
-  "document_access_roles",
   "section_break_7yvzt",
   "mark_atttendance_per_employee",
   "attendance_manager",
   "attendance_manager_name",
-  "employee_section",
+  "permissions_section",
   "employee_master_role",
   "employee_access",
+  "super_user_role",
+  "column_break_gng83",
+  "document_access_roles",
   "wiki_page_access"
  ],
  "fields": [
@@ -31,7 +32,8 @@
   {
    "collapsible": 1,
    "fieldname": "section_break_2",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Zenquote"
   },
   {
    "description": "A table of approved keywords from Zenquotes.io.\nRequests are going to be restricted to keywords in this table.",
@@ -46,19 +48,10 @@
    "label": "Zenquotes API Key"
   },
   {
-   "fieldname": "column_break_xyl05",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "0",
    "fieldname": "mark_atttendance_per_employee",
    "fieldtype": "Check",
    "label": "Mark Atttendance Per Employee"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_nsc7h",
-   "fieldtype": "Section Break"
   },
   {
    "description": "Roles that have access to documents regardless of employee field restriction.",
@@ -75,6 +68,7 @@
    "options": "ONEFM Document Access Roles Detail"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_7yvzt",
    "fieldtype": "Section Break",
    "label": "Attendance"
@@ -93,11 +87,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "employee_section",
-   "fieldtype": "Section Break",
-   "label": "Employee"
-  },
-  {
    "fieldname": "employee_access",
    "fieldtype": "Table",
    "label": "Employee Access",
@@ -109,11 +98,31 @@
    "fieldtype": "Link",
    "label": "Employee Master Role",
    "options": "Role"
+  },
+  {
+   "description": "Default it will be the role 'Director'\nYou can select any role here, then it will be the Super User Role\n\nUser having this role can be self approve configured documents like Shift Permission.\nThe user having this role no need reports to, since it will be the same employee linked to the user.",
+   "fieldname": "super_user_role",
+   "fieldtype": "Link",
+   "label": "Super User Role",
+   "options": "Role"
+  },
+  {
+   "fieldname": "column_break_gng83",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "permissions_section",
+   "fieldtype": "Section Break",
+   "label": "Permissions"
+  },
+  {
+   "fieldname": "column_break_v0wzm",
+   "fieldtype": "Column Break"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-12-25 18:01:16.629421",
+ "modified": "2024-01-02 14:41:19.773895",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
