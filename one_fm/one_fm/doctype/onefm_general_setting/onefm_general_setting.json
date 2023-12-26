@@ -106,14 +106,14 @@
   {
    "description": "All users with this role have edit access on the Employee Form",
    "fieldname": "employee_master_role",
-   "fieldtype": "Link",
-   "label": "Employee Master Role",
-   "options": "Role"
+   "fieldtype": "Table",
+   "label": "Employee Master Roles",
+   "options": "ONEFM Document Access Roles Detail"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-12-25 18:01:16.629421",
+ "modified": "2023-12-26 20:42:50.614242",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
