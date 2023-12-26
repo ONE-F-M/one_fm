@@ -436,7 +436,7 @@ def mark_night_attendance():
 	end_date =  getdate()
 	approve_open_shift_permission(str(start_date), str(end_date))
 	approve_open_employee_checkin_issue(str(start_date), str(end_date))
-	frappe.enqueue(mark_open_timesheet_and_create_attendance)
+	frappe.enqueue(mark_open_timesheet_and_create_attendance,date=start_date)
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_daily_attendance(start_date, end_date):
@@ -467,13 +467,14 @@ def mark_daily_attendance(start_date, end_date):
     for i in operations_shift:operations_shift_dict[i.name]=i
     
     basic_attendances = frappe.db.get_all("Attendance", filters={
-        'attendance_date':['BETWEEN', [start_date, end_date]],
+        'attendance_date':start_date,
         'roster_type':'Basic'
     }, fields="*")
     basic_attendance_employees = [i.employee for i in basic_attendances]
+    
     ## TREAT BASIC
     basic_employee_schedules = frappe.get_all("Employee Schedule", filters={
-        'date':["BETWEEN", [start_date, end_date]],
+        'date':start_date,
         'roster_type':'Basic'
     }, fields="*")
     
@@ -483,25 +484,58 @@ def mark_daily_attendance(start_date, end_date):
     holiday_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
                             INNER JOIN `tabHoliday` h ON h.parent = hl.name
                             WHERE e.holiday_list = hl.name 
-                            AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}'
+                            AND h.holiday_date = '{start_date}'
                             AND h.weekly_off=0""", as_dict=1)
     holiday_attendance_employee = [i for i in holiday_employee if not i.employee in basic_attendance_employees]
-
-    # Mark Holiday Attendance
+    
+    if holiday_attendance_employee: 
+        for i in holiday_attendance_employee:
+            name = f"HR-ATT_{start_date}_{i.name}_Basic"
+            emp = employees_dict.get(i.name)
+            query_body+= f"""
+                (
+                    "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Holiday", '', NULL,
+                    NULL, "", "", "", "", "{start_date}", "{emp.company}",
+                    "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
+                    "{owner}", "{creation}", "{creation}", "{i.description}"
+                ),"""
+            basic_attendance_employees.append(i.employee)
+    
+    # Mark DayOff Attendance
     day_off_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
                             INNER JOIN `tabHoliday` h ON h.parent = hl.name
                             WHERE e.holiday_list = hl.name 
                             AND e.attendance_by_timesheet = 0
-                            AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}'
+                            AND h.holiday_date = '{start_date}'
                             AND h.weekly_off=1""", as_dict=1)
-    day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
 
-    on_hold_employees = frappe.db.sql(f""" SELECT es.* from `tabEmployee Schedule` es
-                            INNER JOIN `tabOperations Role` o ON es.operations_role = o.name
-                            WHERE es.date BETWEEN '{start_date}' AND '{end_date}'
-                            AND o.attendance_by_client = 1
-                            """, as_dict=1)
-    on_hold_employees = [i for i in on_hold_employees if not i.employee in basic_attendance_employees]
+    # create BASIC DAY OFF
+    for i in basic_employee_schedules:
+        if i.employee_availability == "Day Off" and getdate(start_date) == getdate(i.date):
+            emp = employees_dict.get(i.employee)
+            query_body+= f"""
+            (
+                "HR-ATT_{start_date}_{i.employee}_Basic", "{naming_series}" , "{i.employee}", "{emp.employee_name}", 0, "Day Off", '', NULL,
+                NULL, "", "", "", "", "{start_date}", "{emp.company}",
+                "{emp.department}", 0, 0, "", "", "Basic", 1, "{owner}",
+                "{owner}", "{creation}", "{creation}", "Employee Schedule - {i.name}"
+            ),"""
+            basic_attendance_employees.append(i.employee)
+    
+    # Day Off from Holiday list.
+    day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
+    if day_off_attendance_employee:
+        for i in day_off_attendance_employee:
+            name = f"HR-ATT_{start_date}_{i.name}_Basic"
+            emp = employees_dict.get(i.name)
+            query_body+= f"""
+                (
+                    "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Day Off", '', NULL,
+                    NULL, "", "", "", "", "{start_date}", "{emp.company}",
+                    "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
+                    "{owner}", "{creation}", "{creation}", "{i.description}"
+                ),"""
+            basic_attendance_employees.append(i.employee)
 
     basic_shift_assignments = frappe.get_all("Shift Assignment", filters={
         'start_date':start_date, 
@@ -510,6 +544,29 @@ def mark_daily_attendance(start_date, end_date):
     }, fields="*")
     basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
     
+    on_hold_employees = frappe.db.sql(f""" SELECT s.* from `tabShift Assignment` s
+                            INNER JOIN `tabOperations Role` o ON s.operations_role = o.name
+                            WHERE s.start_date = '{start_date}' 
+                            AND s.end_date = '{end_date}'
+                            AND o.attendance_by_client = 1
+                            """, as_dict=1)
+
+    on_hold_employees = [i for i in on_hold_employees if not i.employee in basic_attendance_employees]
+    
+    # create On Hold Attendance 
+    if on_hold_employees:
+        for i in on_hold_employees:
+            name = f"HR-ATT_{start_date}_{i.employee}_Basic"
+            emp = employees_dict.get(i.employee)
+            query_body+= f"""
+                (
+                    "{name}", "{naming_series}","{i.employee}", "{i.employee_name}", 0, "On Hold", '{i.shift_type}', NULL,
+                    NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{emp.company}",
+                    "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
+                    "{owner}", "{creation}", "{creation}", "Attendance By Client"
+                ),"""
+            basic_attendance_employees.append(i.employee)
+
     basic_in_checkins = frappe.db.sql(f""" 
         SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
         employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
@@ -539,62 +596,6 @@ def mark_daily_attendance(start_date, end_date):
         ORDER BY time DESC
     """, as_dict=1)
     basic_out_checkins = [i for i in basic_out_checkins if not i.employee in basic_attendance_employees]
-    
-    # create On Hold Attendance 
-    if on_hold_employees:
-        for i in on_hold_employees:
-            name = f"HR-ATT_{start_date}_{i.employee}_Basic"
-            emp = employees_dict.get(i.employee)
-            query_body+= f"""
-                (
-                    "{name}", "{naming_series}","{i.employee}", "{i.employee_name}", 0, "On Hold", '{i.shift_type}', NULL,
-                    NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{emp.company}",
-                    "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
-                    "{owner}", "{creation}", "{creation}", "Attendance By Client"
-                ),"""
-            basic_attendance_employees.append(i.employee)
-
-    if holiday_attendance_employee:
-        
-        for i in holiday_attendance_employee:
-            name = f"HR-ATT_{start_date}_{i.name}_Basic"
-            emp = employees_dict.get(i.name)
-            query_body+= f"""
-                (
-                    "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Holiday", '', NULL,
-                    NULL, "", "", "", "", "{start_date}", "{emp.company}",
-                    "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
-                    "{owner}", "{creation}", "{creation}", "{i.description}"
-                ),"""
-            basic_attendance_employees.append(i.employee)
-
-    # create BASIC DAY OFF
-    for i in basic_employee_schedules:
-        if i.employee_availability == "Day Off" and getdate(start_date) == getdate(i.date):
-            emp = employees_dict.get(i.employee)
-            query_body+= f"""
-            (
-                "HR-ATT_{start_date}_{i.employee}_Basic", "{naming_series}" , "{i.employee}", "{emp.employee_name}", 0, "Day Off", '', NULL,
-                NULL, "", "", "", "", "{start_date}", "{emp.company}",
-                "{emp.department}", 0, 0, "", "", "Basic", 1, "{owner}",
-                "{owner}", "{creation}", "{creation}", "Employee Schedule - {i.name}"
-            ),"""
-            basic_attendance_employees.append(i.employee)
-    
-    # Day Off from Holiday list.
-    day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
-    if day_off_attendance_employee:
-        for i in day_off_attendance_employee:
-            name = f"HR-ATT_{start_date}_{i.name}_Basic"
-            emp = employees_dict.get(i.name)
-            query_body+= f"""
-                (
-                    "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Day Off", '', NULL,
-                    NULL, "", "", "", "", "{start_date}", "{emp.company}",
-                    "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
-                    "{owner}", "{creation}", "{creation}", "{i.description}"
-                ),"""
-            basic_attendance_employees.append(i.employee)
 
     # update employees schedule and assignment list
     basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees or i.employee_availability=='Working']
@@ -664,21 +665,22 @@ def mark_daily_attendance(start_date, end_date):
         new_attendances.append(name)
 
 
-    ### DO SAME FOR OVERTIME
+   ### DO SAME FOR OVERTIME
     ot_attendances = frappe.db.get_all("Attendance", filters={
-        'attendance_date':['BETWEEN', [start_date, end_date]],
+        'attendance_date':start_date,
         'roster_type':'Over-Time'
     }, fields="*")
     ot_attendance_employees = [i.employee for i in ot_attendances]
 
     ot_employee_schedules = frappe.get_all("Employee Schedule", filters={
-        'date':["BETWEEN", [start_date, end_date]],
+        'date':start_date,
         'roster_type':'Over-Time', 'employee_availability':'Working'
     }, fields="*")
-    ot_employee_schedules = [i for i in ot_employee_schedules if not i.employee in ot_attendance_employees]
+    ot_employee_schedules = [i.date for i in ot_employee_schedules if not i.employee in ot_attendance_employees]
     
     ot_shift_assignments = frappe.get_all("Shift Assignment", filters={
-        'start_date':["BETWEEN", [start_date, end_date]],
+        'start_date':start_date, 
+        'end_date': end_date,
         'roster_type':'Over-Time', 'docstatus':1
     }, fields="*")
     ot_shift_assignments = [i for i in ot_shift_assignments if not i.employee in ot_attendance_employees]
@@ -852,8 +854,11 @@ def update_day_off_ot(attendances):
                 frappe.log_error(frappe.get_traceback(), "Attendance Marking OT")   
 
 
-def mark_open_timesheet_and_create_attendance():
-    the_timesheet_list = frappe.db.get_list("Timesheet", filters={'start_date':['<=',getdate()],"workflow_state": "Open", "total_hours":[">",0]}, pluck="name")
+def mark_open_timesheet_and_create_attendance(date):
+    attendance_by_timesheet = frappe.db.get_list("Employee", filters={"attendance_by_timesheet": 1, "status":"Active"}, pluck="name")
+    
+    
+    the_timesheet_list = frappe.db.get_list("Timesheet", filters={"workflow_state": "Open", "total_hours":[">",0]}, pluck="name")
     for name in the_timesheet_list:
         frappe.db.set_value("Timesheet", name, "workflow_state", "Approved")
         frappe.db.set_value("Timesheet", name, "docstatus", 1)
