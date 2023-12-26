@@ -8,6 +8,7 @@ import csv
 import os
 import re
 import json
+import time
 
 import frappe
 import frappe.permissions
@@ -500,7 +501,6 @@ class DataExporter:
 				sheetId = properties['sheetId']
 		
 		if sheetId:
-			
 			# clear sheet design
 			spreadsheet.batch_update({
 				"requests": [
@@ -561,14 +561,12 @@ def update_google_sheet_daily():
 
 	for e in list_of_export:
 		doc = frappe.get_doc("Google Sheet Data Export",e.name)
-
-		select_columns = doc.field_cache
-		filters = doc.filter_cache
+		time.sleep(120)
 
 		frappe.enqueue(export_data, 
 			doctype= doc.reference_doctype,
-			select_columns= select_columns,
-			filters= filters,
+			select_columns= doc.field_cache,
+			filters= doc.filter_cache,
 			with_data = 1,
 			link= doc.link,
 			google_sheet_id= doc.google_sheet_id,

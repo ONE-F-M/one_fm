@@ -1021,24 +1021,22 @@ def process_overtime_shift(roster, date, time):
 	for schedule in roster:
 		#Check for employee's shift assignment of the day, if he has any.
 		try:
-			if frappe.db.exists("Shift Assignment", {"employee":schedule.employee, "start_date": date}):
-				shift_assignment = frappe.get_doc("Shift Assignment", {"employee":schedule.employee, "start_date": date},["name","shift_type"])
+			if frappe.db.exists('Employee', {'employee':schedule.employee, 'status':'Active'}):
+				shift_assignment = frappe.db.sql(f"""SELECT name, shift_type, end_datetime, roster_type from `tabShift Assignment` WHERE employee = '{schedule.employee}' AND date(end_datetime) = '{date}'""", as_dict=1)
 				if shift_assignment:
-					shift_end_time = frappe.get_value("Shift Type",shift_assignment.shift_type, "end_time")
+					shift_end_time = frappe.get_value("Shift Type",shift_assignment[0].shift_type, "end_time")
 					#check if the given shift has ended
 					# Set status inactive before creating new shift
 					if str(shift_end_time) == str(time):
-						frappe.set_value("Shift Assignment", shift_assignment.name,'end_date', date)
-						frappe.set_value("Shift Assignment", shift_assignment.name,'status', "Inactive")
+						frappe.set_value("Shift Assignment", shift_assignment[0].name,'end_date', date)
+						frappe.set_value("Shift Assignment", shift_assignment[0].name,'status', "Inactive")
 						create_overtime_shift_assignment(schedule, date)
-			else:
-				create_overtime_shift_assignment(schedule, date)
+				else:
+					create_overtime_shift_assignment(schedule, date)
 		except Exception as e:
 			continue
 
-def create_overtime_shift_assignment(schedule, date):
-	if (not frappe.db.exists("Shift Assignment",{"employee":schedule.employee, 'docstatus':1, "start_date":getdate(date), "status":"Active"}) and
-			frappe.db.exists('Employee', {'employee':schedule.employee, 'status':'Active'})):
+def create_overtime_shift_assignment(schedule, date):	
 		try:
 			shift_assignment = frappe.new_doc("Shift Assignment")
 			shift_assignment.start_date = date

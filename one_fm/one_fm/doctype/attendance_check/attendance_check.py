@@ -177,39 +177,44 @@ class AttendanceCheck(Document):
 
 def get_attendance_by_timesheet_employees(employees,attendance_date):
     #Get the applicable employees if the current date falls on a public holiday
-    default_company = frappe.defaults.get_defaults().company
-    cond = ''
-    if not default_company:
-        default_company = frappe.get_last_doc("Company").name
-    holiday_lists = frappe.db.sql(f"""SELECT  h.parent from `tabHoliday` h
-                            WHERE  h.holiday_date = '{attendance_date}'
-                        """, as_dict=1)
-    if holiday_lists:
-        default_holiday_list = frappe.get_value("Company",default_company,'default_holiday_list')
-        holiday_lists =[i.parent for i in holiday_lists]
-        if default_holiday_list in holiday_lists:
-            if len(holiday_lists)>1:
-                cond += f"  and holiday_list not in '{tuple(holiday_lists)}'"
+    try:
+        default_company = frappe.defaults.get_defaults().company
+        cond = ''
+        if not default_company:
+            default_company = frappe.get_last_doc("Company").name
+        holiday_lists = frappe.db.sql(f"""SELECT  h.parent from `tabHoliday` h
+                                WHERE  h.holiday_date = '{attendance_date}'
+                            """, as_dict=1)
+        if holiday_lists:
+            default_holiday_list = frappe.get_value("Company",default_company,'default_holiday_list')
+            holiday_lists =[i.parent for i in holiday_lists]
+            if default_holiday_list in holiday_lists:
+                if len(holiday_lists)>1:
+                    cond += f"  and holiday_list not in {tuple(holiday_lists)}"
+                else:
+                    cond += f"  and holiday_list !='{holiday_lists[0]}'"
             else:
-                cond += f"  and holiday_list !='{holiday_lists[0]}'"
-        else:
-            if len(holiday_lists)>1:
-                cond+=f" and holiday_list is Not NULL and holiday_list not in '{tuple(holiday_lists)}'"
-            else:
-                cond+=f" and holiday_list is Not NULL and holiday_list != '{holiday_lists[0]}'"
-        if employees:
-            if len(employees)==1:
-                cond+=f" and name !='{employees[0]}'"
-            else:
-                cond+= f" and name not in '{tuple(employees)}'"
-    
-        ts_employees = frappe.db.sql(f"""SELECT name from  `tabEmployee` where status = "Active"  and attendance_by_timesheet = 1 {cond}""",as_dict=1)
-        return [i.name for i in ts_employees]
-    return [i.name for i in frappe.get_all("Employee",{"status":"Active",'attendance_by_timesheet':1,'name':['NOT IN',employees]},['name'])]
+                if len(holiday_lists)>1:
+                    cond+=f" and holiday_list is Not NULL and holiday_list not in {tuple(holiday_lists)}"
+                else:
+                    cond+=f" and holiday_list is Not NULL and holiday_list != '{holiday_lists[0]}'"
+            if employees:
+                if len(employees)==1:
+                    cond+=f" and name !='{employees[0]}'"
+                else:
+                    cond+= f" and name not in {tuple(employees)}"
+        
+            ts_employees = frappe.db.sql(f"""SELECT name from  `tabEmployee` where status = "Active"  and attendance_by_timesheet = 1 {cond}""",as_dict=1)
+            return [i.name for i in ts_employees]
+        return [i.name for i in frappe.get_all("Employee",{"status":"Active",'attendance_by_timesheet':1,'name':['NOT IN',employees]},['name'])]
+    except:
+        frappe.log_error(title = "Attendance Check Error for Timesheet",message = frappe.get_traceback())
+        #Ensure that a value is returned regardless of what happens here
+        return []
+
 
 def create_attendance_check(attendance_date=None):
     if production_domain():
-    
         attendance_checkin_found = []
         if not attendance_date:
             attendance_date = add_days(today(), -1)
