@@ -1046,6 +1046,3 @@ def mark_timesheet_daily_attendance(timesheet_employees,start_date):
             frappe.db.commit()
     except:
         frappe.log_error(message=frappe.get_traceback(), title ='Timesheet Attendance')
-
-def dele():
-    r = frappe.db.sql("""DELETE from `tabAttendance` where date(creation) = '2023-12-26'""")
