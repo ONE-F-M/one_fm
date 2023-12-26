@@ -854,7 +854,6 @@ def update_day_off_ot(attendances):
 
 def mark_open_timesheet_and_create_attendance():
     date = add_days(getdate(), -12)
-    print(date)
     creation = now()
     
     owner = frappe.session.user
@@ -950,7 +949,6 @@ def mark_open_timesheet_and_create_attendance():
                 "{owner}", "{creation}", "{creation}", "No attendance record found"
             ),"""
             e_list.append(i.employee)
-    print(e_list)
     # UPDATE QUERY
     if query_body:
         query += query_body[:-1]
