@@ -429,7 +429,6 @@ def mark_day_attendance():
     frappe.enqueue(mark_open_timesheet_and_create_attendance)
     frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
-
 def mark_night_attendance():
 	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
 	start_date = add_days(getdate(), -1)
@@ -664,7 +663,6 @@ def mark_daily_attendance(start_date, end_date):
         ),"""
         new_attendances.append(name)
 
-
    ### DO SAME FOR OVERTIME
     ot_attendances = frappe.db.get_all("Attendance", filters={
         'attendance_date':start_date,
@@ -678,11 +676,11 @@ def mark_daily_attendance(start_date, end_date):
     }, fields="*")
     ot_employee_schedules = [i.date for i in ot_employee_schedules if not i.employee in ot_attendance_employees]
     
-    ot_shift_assignments = frappe.get_all("Shift Assignment", filters={
-        'start_date':start_date, 
-        'end_date': end_date,
-        'roster_type':'Over-Time', 'docstatus':1
-    }, fields="*")
+    ot_shift_assignments = frappe.db.sql(f"""SELECT * from `tabShift Assignment` 
+                WHERE date(start_datetime) = '{start_date}'
+                AND date(end_datetime) = '{end_date}'
+                AND roster_type='Over-Time' 
+                AND docstatus=1""", as_dict=1)
     ot_shift_assignments = [i for i in ot_shift_assignments if not i.employee in ot_attendance_employees]
     
     ot_in_checkins = frappe.db.sql(f""" 
