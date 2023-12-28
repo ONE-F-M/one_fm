@@ -59,7 +59,6 @@ class BugBuster(Document):
 			""",
 		)
 
-
 def roster_bug_buster():
 	today = getdate()
 	tomorrow = add_days(today, 1)
@@ -71,3 +70,18 @@ def roster_bug_buster():
 			"from_date": tomorrow,
 			"to_date": add_days(tomorrow, 6)
 		}).submit()
+		#set user in HD Team
+		try:
+			emp_user = frappe.get_value("Employee",busters.next_bug_buster,'user_id')
+			if emp_user and busters.get('default_support_team'):
+				frappe.db.sql(f"Delete from `tabHD Team Member` where parent = '{busters.get('default_support_team')}' and parenttype ='HD Team' ")
+				frappe.get_doc({
+					'doctype':'HD Team Member',
+					'parent':busters.get('default_support_team'),
+					'parentfield':'users',
+					'user':emp_user,
+					'parenttype' :'HD Team'
+				}).insert()
+		except:
+			frappe.log_error(title="Error Assigning Bug Buster",message = frappe.get_traceback())
+   
