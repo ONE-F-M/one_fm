@@ -526,7 +526,8 @@ scheduler_events = {
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
-		'one_fm.utils.send_gp_letter_reminder'
+		'one_fm.utils.send_gp_letter_reminder',
+        "one_fm.overrides.attendance.run_attendance_marking_hourly",
 	],
 
 	"weekly": [
@@ -681,6 +682,9 @@ scheduler_events = {
 		],
 		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
 			'one_fm.overrides.attendance.mark_night_attendance'
+		],
+        "55 12 * * *": [ # mark attendance for previous day mark_for_active_employees at 12:45 pm today
+			'one_fm.overrides.attendance.mark_for_active_employees'
 		],
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
