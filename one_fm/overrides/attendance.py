@@ -674,14 +674,14 @@ def mark_daily_attendance(start_date, end_date):
         'date':start_date,
         'roster_type':'Over-Time', 'employee_availability':'Working'
     }, fields="*")
-    ot_employee_schedules = [i.date for i in ot_employee_schedules if not i.employee in ot_attendance_employees]
+    ot_employee_schedules = [i.date for i in ot_employee_schedules if not i in ot_attendance_employees]
     
     ot_shift_assignments = frappe.db.sql(f"""SELECT * from `tabShift Assignment` 
                 WHERE date(start_datetime) = '{start_date}'
                 AND date(end_datetime) = '{end_date}'
                 AND roster_type='Over-Time' 
                 AND docstatus=1""", as_dict=1)
-    ot_shift_assignments = [i for i in ot_shift_assignments if not i.employee in ot_attendance_employees]
+    ot_shift_assignments = [i for i in ot_shift_assignments if not i in ot_attendance_employees]
     
     ot_in_checkins = frappe.db.sql(f""" 
         SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
@@ -696,7 +696,7 @@ def mark_daily_attendance(start_date, end_date):
         GROUP BY employee
         ORDER BY TIME ASC
     """, as_dict=1)
-    ot_in_checkins = [i for i in ot_in_checkins if not i.employee in ot_attendance_employees]
+    ot_in_checkins = [i for i in ot_in_checkins if not i in ot_attendance_employees]
     
     ot_out_checkins = frappe.db.sql(f""" 
         SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
@@ -711,7 +711,7 @@ def mark_daily_attendance(start_date, end_date):
         GROUP BY employee
         ORDER BY time DESC
     """, as_dict=1)
-    ot_out_checkins = [i for i in ot_out_checkins if not i.employee in ot_attendance_employees]
+    ot_out_checkins = [i for i in ot_out_checkins if not i in ot_attendance_employees]
     
     # mark checkins
     
@@ -758,8 +758,8 @@ def mark_daily_attendance(start_date, end_date):
         ot_attendance_employees.append(i.employee)
         new_attendances.append(name)
     # update schedules
-    ot_employee_schedules = [i for i in ot_employee_schedules if not i.employee in ot_attendance_employees]
-    ot_shift_assignments = [i for i in ot_shift_assignments if not i.employee in ot_attendance_employees]
+    ot_employee_schedules = [i for i in ot_employee_schedules if not i in ot_attendance_employees]
+    ot_shift_assignments = [i for i in ot_shift_assignments if not i in ot_attendance_employees]
     
     for i in ot_shift_assignments:
         emp = employees_dict.get(i.employee)
