@@ -171,6 +171,16 @@ def update_shift_assignment(shift_assignemnt,shift_request):
     assignment_doc.db_set("shift_request" , shift_request.name)
     assignment_doc.db_set("check_in_site" , shift_request.check_in_site)
     assignment_doc.db_set("check_out_site" , shift_request.check_out_site)
+    shift_type_data = frappe.get_doc("Shift Type",shift_request.shift_type)
+    if shift_type_data:
+        start_datetime = datetime.datetime.strptime(f"{shift_request.from_date} {(datetime.datetime.min + shift_type_data.start_time).time()}", '%Y-%m-%d %H:%M:%S')
+        if shift_type_data.end_time.total_seconds() < shift_type_data.start_time.total_seconds():
+            end_datetime = datetime.datetime.strptime(f"{add_days(assignment_doc.start_date, 1)} {(datetime.datetime.min + shift_type_data.end_time).time()}", '%Y-%m-%d %H:%M:%S')
+        else:
+            end_datetime = datetime.datetime.strptime(f"{assignment_doc.start_date} {(datetime.datetime.min + shift_type_data.end_time).time()}", '%Y-%m-%d %H:%M:%S')
+
+        assignment_doc.db_set("start_datetime" ,start_datetime)
+        assignment_doc.db_set("end_datetime" , end_datetime)
     if shift_request.operations_role:
         assignment_doc.db_set("operations_role" , shift_request.operations_role)
 
