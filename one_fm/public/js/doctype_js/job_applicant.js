@@ -330,6 +330,14 @@ frappe.ui.form.on('Job Applicant', {
 			)
 		}
 	},
+	// custom_transfer_reminder_date: function(frm){
+	// 	var the_date = frm.doc.custom_transfer_reminder_date
+	// 	if (the_date){
+	// 		if (!(validateDate(the_date))){
+	// 			frappe.throw("Oops! You can't choose a date in the past or today. Please select a future date.")
+	// 		}
+	// 	}
+	// },
 	one_fm_nationality: function(frm) {
 		if(frm.doc.one_fm_nationality && !frm.doc.one_fm_passport_holder_of || !frm.doc.one_fm_country_of_overseas){
 			frappe.db.get_value('Nationality', frm.doc.one_fm_nationality, 'country', function(r) {
@@ -1463,3 +1471,24 @@ var set_applicant_name = function(frm) {
   });
   frm.set_value('applicant_name', applicant_name);
 };
+
+
+var validateDate = (inputDate) => {
+	var inputDateParts = inputDate.split('-');
+	var year = parseInt(inputDateParts[0], 10);
+	var month = parseInt(inputDateParts[1], 10) - 1;
+	var day = parseInt(inputDateParts[2], 10);
+  
+	var inputDateObject = new Date(year, month, day);
+  
+	var currentDate = new Date();
+  
+
+	if (inputDateObject < currentDate) {
+	  return false;
+	}
+  
+	return true;
+  }
+  
+  
