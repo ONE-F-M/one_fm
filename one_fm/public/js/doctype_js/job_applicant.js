@@ -333,9 +333,9 @@ frappe.ui.form.on('Job Applicant', {
 	custom_transfer_reminder_date: function(frm){
 		var the_date = frm.doc.custom_transfer_reminder_date
 		if (the_date){
-			if (!(validateDate(the_date))){
+			if(the_date < frappe.datetime.now_date()){
 				frappe.throw("Oops! You can't choose a date in the past or today. Please select a future date.")
-			}
+			  }
 		}
 	},
 	one_fm_nationality: function(frm) {
