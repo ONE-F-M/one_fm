@@ -18,6 +18,8 @@
   "job_offer_section",
   "notify_finance_department_for_job_offer_salary_advance",
   "job_applicaion_section",
+  "default_hr_manager",
+  "default_hr_manager_name",
   "easy_apply_to",
   "subcontract_hiring_settings_section",
   "subcontract_employment_type",
@@ -77,7 +79,7 @@
    "collapsible": 1,
    "fieldname": "job_applicaion_section",
    "fieldtype": "Section Break",
-   "label": "Job Applicaion"
+   "label": "Job Application"
   },
   {
    "fieldname": "easy_apply_to",
@@ -122,11 +124,24 @@
    "fieldname": "subcontract_residency_status",
    "fieldtype": "Check",
    "label": "Subcontract Residency Status"
+  },
+  {
+   "fieldname": "default_hr_manager",
+   "fieldtype": "Link",
+   "label": "Default HR Manager",
+   "options": "User"
+  },
+  {
+   "fetch_from": "default_hr_manager.full_name",
+   "fieldname": "default_hr_manager_name",
+   "fieldtype": "Data",
+   "label": "Default HR Manager Name",
+   "read_only": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-12-19 10:52:20.936673",
+ "modified": "2024-01-02 01:03:07.283712",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

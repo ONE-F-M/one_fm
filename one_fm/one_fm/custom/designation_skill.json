@@ -46,6 +46,9 @@
    "non_negative": 0,
    "options": "",
    "owner": "Administrator",
+   "parent": null,
+   "parentfield": null,
+   "parenttype": null,
    "permlevel": 0,
    "precision": "",
    "print_hide": 0,
@@ -56,6 +59,7 @@
    "report_hide": 0,
    "reqd": 0,
    "search_index": 0,
+   "sort_options": 0,
    "translatable": 0,
    "unique": 0,
    "width": null
