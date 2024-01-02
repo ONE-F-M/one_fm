@@ -1473,22 +1473,4 @@ var set_applicant_name = function(frm) {
 };
 
 
-var validateDate = (inputDate) => {
-	var inputDateParts = inputDate.split('-');
-	var year = parseInt(inputDateParts[0], 10);
-	var month = parseInt(inputDateParts[1], 10) - 1;
-	var day = parseInt(inputDateParts[2], 10);
-  
-	var inputDateObject = new Date(year, month, day);
-  
-	var currentDate = new Date();
-  
-
-	if (inputDateObject <= currentDate) {
-	  return false;
-	}
-  
-	return true;
-  }
-  
   
