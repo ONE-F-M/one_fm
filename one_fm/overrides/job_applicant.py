@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import frappe
 from frappe import _
@@ -7,6 +7,8 @@ from hrms.hr.doctype.job_applicant.job_applicant import *
 from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
 from one_fm.processor import sendemail
 
+from one_fm.utils import production_domain
+
 class JobApplicantOverride(JobApplicant):
 
 	def autoname(self):
@@ -14,7 +16,7 @@ class JobApplicantOverride(JobApplicant):
 
 	def validate(self):
 		super(JobApplicantOverride, self).validate()
-		# self.validate_transfer_reminder_date()
+		self.validate_transfer_reminder_date()
 
 
 	@frappe.whitelist()
@@ -53,50 +55,55 @@ class JobApplicantOverride(JobApplicant):
 
 
 
-def notify_hr_manager_about_local_transfer():
-	print("Oya na")
-	return NotifyLocalTransfer().get_job_applicant_with_local_transfers()
+def notify_hr_manager_about_local_transfer() -> None:
+	if production_domain():
+		NotifyLocalTransfer().notify_hr_manager_recruiter()
 
 class NotifyLocalTransfer:
 
-	def __init__(self):
-		...
+	def __init__(self) -> None:
+		self.today = datetime.strptime(str(getdate()), "%Y-%m-%d")
+		self.thirty = self.today - timedelta(days=30)
+		self.sixty = self.today - timedelta(days=60)
+		self.ninety = self.today - timedelta(days=90)
 
+	@property
+	def _iterable_of_dates(self) -> tuple:
+		return (str(self.today), str(self.thirty), str(self.sixty), str(self.ninety))
 
-	def get_job_applicant_with_local_transfers(self):
-		job_applicants = frappe.db.sql("""
-										SELECT name, one_fm_first_name, one_fm_last_name, one_fm_erf
-										FROM `tabJob Applicant`
-										WHERE 
-											one_fm_is_transferable = 'Later'
-											AND (DATE(custom_transfer_reminder_date) = CURDATE() 
-												OR DATEDIFF(CURDATE(), DATE(custom_transfer_reminder_date)) IN (-30, -60, -90)
-											);
-									""", as_dict=True)
-		return job_applicants
+	def get_job_applicant_with_local_transfers(self) -> dict:
+		return frappe.db.sql(f"""
+								SELECT name, one_fm_first_name, one_fm_last_name, one_fm_erf
+								FROM `tabJob Applicant`
+								WHERE one_fm_is_transferable = 'Later'
+								AND custom_transfer_reminder_date IN {self._iterable_of_dates};
+								""",  as_dict=True)
 	
 
 	@staticmethod
-	def get_assigned_recruiter(erf: str) -> str:
+	def get_assigned_recruiter(erf: str) -> str | None:
 		return frappe.db.get_value("ERF", erf, "recruiter_assigned")
 	
 	@property
-	def default_hiring_manager(self):
+	def _default_hiring_manager(self) -> str | None:
 		return frappe.db.get_single_value('Hiring Settings', 'default_hr_manager')
 	
-	def notify_hr_manager_recruiter(self):
-		hr_manager = self.default_hiring_manager
-		job_applicants = self.get_job_applicant_with_local_transfers()
-		if job_applicants:
-			for obj in job_applicants:
-				receivers = [hr_manager, self.get_assigned_recruiter(erf=obj.get("one_fm_erf", ""))]
-				if receivers:
-					data = dict(
-						applicant_name_name=f'{obj.get("one_fm_first_name", "")} {obj.get("one_fm_first_name", "")}',
-						document_name=obj.get("name"),
-						doc_url=get_url_to_form("Job Applicant", obj.get('name'))
-					)
-					title = f"Local Residency Transfer: {data.get('applicant_name', '')}"
-					msg = frappe.render_template('one_fm/templates/emails/notify_recruiter_about_local_transfer..html', context=data)
-					# sendemail(recipients=receivers, subject=title, content=msg)
+	def notify_hr_manager_recruiter(self) -> None:
+		try:
+			hr_manager = self._default_hiring_manager
+			job_applicants = self.get_job_applicant_with_local_transfers()
+			if job_applicants:
+				for obj in job_applicants:
+					receivers = [hr_manager, self.get_assigned_recruiter(erf=obj.get("one_fm_erf", ""))]
+					if receivers:
+						data = dict(
+							applicant_name=f'{obj.get("one_fm_first_name", "")} {obj.get("one_fm_last_name", "")}',
+							document_name=obj.get("name"),
+							doc_url=get_url_to_form("Job Applicant", obj.get('name'))
+						)
+						title = f"Local Residency Transfer: {data.get('applicant_name', '')}"
+						msg = frappe.render_template('one_fm/templates/emails/notify_recruiter_about_local_transfer.html', context=data)
+						sendemail(recipients=receivers, subject=title, content=msg)
+		except:
+			frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
 
