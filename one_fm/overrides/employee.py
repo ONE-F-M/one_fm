@@ -131,6 +131,21 @@ def validate_employee_status_access(self):
                     frappe.throw("You are not allowed to make changes to an employee's status.")
 
 
+
+@frappe.whitelist()
+def is_employee_master(user:str) -> int:
+    #Return 1 if the employee has the required roles to modify the employee form.
+    can_edit = 0
+    employee_setting = frappe.get_doc("ONEFM General Setting").get("employee_master_role")
+    if employee_setting:
+        roles = [i.role for i in employee_setting]
+        user_roles = frappe.get_roles(user)
+        for each in roles:
+            if each in user_roles:
+                return 1
+    return can_edit
+
+
 @frappe.whitelist()
 def check_employee_access(email: str) -> bool:
     employee_setting = frappe.get_doc("ONEFM General Setting").get("employee_access")

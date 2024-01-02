@@ -95,9 +95,9 @@
   {
    "description": "All users with this role have edit access on the Employee Form",
    "fieldname": "employee_master_role",
-   "fieldtype": "Link",
-   "label": "Employee Master Role",
-   "options": "Role"
+   "fieldtype": "Table",
+   "label": "Employee Master Roles",
+   "options": "ONEFM Document Access Roles Detail"
   },
   {
    "description": "Default it will be the role 'Director'\nYou can select any role here, then it will be the Super User Role\n\nUser having this role can be self approve configured documents like Shift Permission.\nThe user having this role no need reports to, since it will be the same employee linked to the user.",

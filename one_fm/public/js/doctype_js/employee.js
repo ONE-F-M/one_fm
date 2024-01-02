@@ -1,7 +1,7 @@
 frappe.ui.form.on('Employee', {
 	refresh: function(frm) {
 		hideFields(frm);
-		is_employee_master(frm);
+		
 		set_grd_fields(frm)
 		frm.trigger('set_queries');
 		set_mandatory(frm);
@@ -48,6 +48,7 @@ frappe.ui.form.on('Employee', {
 	},
 	onload: function(frm) {
         frm.trigger('mandatory_reports_to');
+		is_employee_master(frm);
     },
 	designation: function(frm) {
 		frm.trigger('mandatory_reports_to');
@@ -124,13 +125,16 @@ const hideFields = frm => {
 }
 
 let is_employee_master = frm =>{
-	frappe.db.get_single_value("ONEFM General Setting",'employee_master_role').then(value=>{
-		if(value){
-			if(!frappe.user.has_role(value)){
+	frappe.call({
+		method: "one_fm.overrides.employee.is_employee_master",
+		args: {"user": frappe.session.user},
+		callback: function (r) {
+			console.log(r.message)
+			if (!parseInt(r.message)){
 				frm.disable_form()
-
 			}
 		}
+
 	})
 	
 }
