@@ -8,9 +8,7 @@ from hrms.payroll.doctype.salary_slip.salary_slip import SalarySlip
 from erpnext.stock.doctype.item_price.item_price import ItemPrice
 from erpnext.setup.doctype.employee.employee import Employee
 from one_fm.api.doc_methods.shift_request import shift_request_submit, validate_approver, shift_request_cancel, validate_default_shift
-from one_fm.api.doc_methods.payroll_entry import (
-	validate_employee_attendance, get_count_holidays_of_employee, get_count_employee_attendance, fill_employee_details, create_salary_slips
-)
+from one_fm.api.doc_methods.payroll_entry import fill_employee_details
 from one_fm.api.doc_methods.salary_slip import (
 	get_working_days_details, get_unmarked_days_based_on_doj_or_relieving, get_unmarked_days, get_data_for_eval
 )
@@ -72,11 +70,7 @@ ShiftRequest.on_submit = shift_request_submit
 ShiftRequest.validate_approver = validate_approver
 ShiftRequest.on_cancel = shift_request_cancel
 ShiftRequest.validate_default_shift = validate_default_shift
-PayrollEntry.validate_employee_attendance = validate_employee_attendance
-PayrollEntry.get_count_holidays_of_employee = get_count_holidays_of_employee
-PayrollEntry.get_count_employee_attendance = get_count_employee_attendance
 PayrollEntry.fill_employee_details = fill_employee_details
-PayrollEntry.create_salary_slips = create_salary_slips
 SalarySlip.get_working_days_details = get_working_days_details
 SalarySlip.get_unmarked_days_based_on_doj_or_relieving = get_unmarked_days_based_on_doj_or_relieving
 SalarySlip.get_unmarked_days = get_unmarked_days
