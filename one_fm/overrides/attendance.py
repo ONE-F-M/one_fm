@@ -437,7 +437,7 @@ def mark_night_attendance():
 	approve_open_shift_permission(str(start_date), str(end_date))
 	approve_open_employee_checkin_issue(str(start_date), str(end_date))
 	frappe.enqueue(mark_open_timesheet_and_create_attendance)
-    frappe.enqueue(mark_leave_attendance)
+	frappe.enqueue(mark_leave_attendance)
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_daily_attendance(start_date, end_date):
