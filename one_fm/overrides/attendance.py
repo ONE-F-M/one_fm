@@ -441,379 +441,379 @@ def mark_night_attendance():
 	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_daily_attendance(start_date, end_date):
-    # try:
-    creation = now()
-    
-    owner = frappe.session.user
-    naming_series = 'HR-ATT-.YYYY.-'
-    new_attendances = []
-    basic_unavailable = []
-    basic_available = []
-    checkin_attendance_link = {}
-    query = """
-        INSERT INTO `tabAttendance` (`name`, `naming_series`,`employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
-        `shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`,
-        `department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
-        `creation`, `modified`, `comment`)
-        VALUES
+    try:
+        creation = now()
+        
+        owner = frappe.session.user
+        naming_series = 'HR-ATT-.YYYY.-'
+        new_attendances = []
+        basic_unavailable = []
+        basic_available = []
+        checkin_attendance_link = {}
+        query = """
+            INSERT INTO `tabAttendance` (`name`, `naming_series`,`employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
+            `shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`,
+            `department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
+            `creation`, `modified`, `comment`)
+            VALUES
 
-    """
-    query_body = """"""
-    employees = frappe.get_all("Employee", fields="*")
-    employees_dict = {}
-    for i in employees:
-        employees_dict[i.employee] = i
-    operations_shift = frappe.get_all("Operations Shift", fields="*")
-    operations_shift_dict = {}
-    for i in operations_shift:operations_shift_dict[i.name]=i
-    
-    basic_attendances = frappe.db.get_all("Attendance", filters={
-        'attendance_date':start_date,
-        'roster_type':'Basic'
-    }, fields="*")
-    basic_attendance_employees = [i.employee for i in basic_attendances]
-    
-    ## TREAT BASIC
-    basic_employee_schedules = frappe.get_all("Employee Schedule", filters={
-        'date':start_date,
-        'roster_type':'Basic'
-    }, fields="*")
-    
-    basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
-    
-    # Mark Holiday Attendance
-    holiday_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
-                            INNER JOIN `tabHoliday` h ON h.parent = hl.name
-                            WHERE e.holiday_list = hl.name 
-                            AND h.holiday_date = '{start_date}'
-                            AND h.weekly_off=0""", as_dict=1)
-    holiday_attendance_employee = [i for i in holiday_employee if not i.employee in basic_attendance_employees]
-    
-    if holiday_attendance_employee: 
-        for i in holiday_attendance_employee:
-            name = f"HR-ATT_{start_date}_{i.name}_Basic"
-            emp = employees_dict.get(i.name)
-            query_body+= f"""
+        """
+        query_body = """"""
+        employees = frappe.get_all("Employee", fields="*")
+        employees_dict = {}
+        for i in employees:
+            employees_dict[i.employee] = i
+        operations_shift = frappe.get_all("Operations Shift", fields="*")
+        operations_shift_dict = {}
+        for i in operations_shift:operations_shift_dict[i.name]=i
+        
+        basic_attendances = frappe.db.get_all("Attendance", filters={
+            'attendance_date':start_date,
+            'roster_type':'Basic'
+        }, fields="*")
+        basic_attendance_employees = [i.employee for i in basic_attendances]
+        
+        ## TREAT BASIC
+        basic_employee_schedules = frappe.get_all("Employee Schedule", filters={
+            'date':start_date,
+            'roster_type':'Basic'
+        }, fields="*")
+        
+        basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
+        
+        # Mark Holiday Attendance
+        holiday_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
+                                INNER JOIN `tabHoliday` h ON h.parent = hl.name
+                                WHERE e.holiday_list = hl.name 
+                                AND h.holiday_date = '{start_date}'
+                                AND h.weekly_off=0""", as_dict=1)
+        holiday_attendance_employee = [i for i in holiday_employee if not i.employee in basic_attendance_employees]
+        
+        if holiday_attendance_employee: 
+            for i in holiday_attendance_employee:
+                name = f"HR-ATT_{start_date}_{i.name}_Basic"
+                emp = employees_dict.get(i.name)
+                query_body+= f"""
+                    (
+                        "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Holiday", '', NULL,
+                        NULL, "", "", "", "", "{start_date}", "{emp.company}",
+                        "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
+                        "{owner}", "{creation}", "{creation}", "{i.description}"
+                    ),"""
+                basic_attendance_employees.append(i.employee)
+        
+        # Mark DayOff Attendance
+        day_off_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
+                                INNER JOIN `tabHoliday` h ON h.parent = hl.name
+                                WHERE e.holiday_list = hl.name 
+                                AND e.attendance_by_timesheet = 0
+                                AND h.holiday_date = '{start_date}'
+                                AND h.weekly_off=1""", as_dict=1)
+
+        # create BASIC DAY OFF
+        for i in basic_employee_schedules:
+            if i.employee_availability == "Day Off" and getdate(start_date) == getdate(i.date):
+                emp = employees_dict.get(i.employee)
+                query_body+= f"""
                 (
-                    "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Holiday", '', NULL,
+                    "HR-ATT_{start_date}_{i.employee}_Basic", "{naming_series}" , "{i.employee}", "{emp.employee_name}", 0, "Day Off", '', NULL,
                     NULL, "", "", "", "", "{start_date}", "{emp.company}",
-                    "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
-                    "{owner}", "{creation}", "{creation}", "{i.description}"
+                    "{emp.department}", 0, 0, "", "", "Basic", 1, "{owner}",
+                    "{owner}", "{creation}", "{creation}", "Employee Schedule - {i.name}"
                 ),"""
-            basic_attendance_employees.append(i.employee)
-    
-    # Mark DayOff Attendance
-    day_off_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
-                            INNER JOIN `tabHoliday` h ON h.parent = hl.name
-                            WHERE e.holiday_list = hl.name 
-                            AND e.attendance_by_timesheet = 0
-                            AND h.holiday_date = '{start_date}'
-                            AND h.weekly_off=1""", as_dict=1)
+                basic_attendance_employees.append(i.employee)
+        
+        # Day Off from Holiday list.
+        day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
+        if day_off_attendance_employee:
+            for i in day_off_attendance_employee:
+                name = f"HR-ATT_{start_date}_{i.name}_Basic"
+                emp = employees_dict.get(i.name)
+                query_body+= f"""
+                    (
+                        "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Day Off", '', NULL,
+                        NULL, "", "", "", "", "{start_date}", "{emp.company}",
+                        "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
+                        "{owner}", "{creation}", "{creation}", "{i.description}"
+                    ),"""
+                basic_attendance_employees.append(i.employee)
 
-    # create BASIC DAY OFF
-    for i in basic_employee_schedules:
-        if i.employee_availability == "Day Off" and getdate(start_date) == getdate(i.date):
+        basic_shift_assignments = frappe.get_all("Shift Assignment", filters={
+            'start_date':start_date, 
+            'end_date': end_date,
+            'roster_type':'Basic', 'docstatus':1
+        }, fields="*")
+        basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
+        
+        on_hold_employees = frappe.db.sql(f""" SELECT s.* from `tabShift Assignment` s
+                                INNER JOIN `tabOperations Role` o ON s.operations_role = o.name
+                                WHERE s.start_date = '{start_date}' 
+                                AND s.end_date = '{end_date}'
+                                AND o.attendance_by_client = 1
+                                """, as_dict=1)
+
+        on_hold_employees = [i for i in on_hold_employees if not i.employee in basic_attendance_employees]
+        
+        # create On Hold Attendance 
+        if on_hold_employees:
+            for i in on_hold_employees:
+                name = f"HR-ATT_{start_date}_{i.employee}_Basic"
+                emp = employees_dict.get(i.employee)
+                query_body+= f"""
+                    (
+                        "{name}", "{naming_series}","{i.employee}", "{i.employee_name}", 0, "On Hold", '{i.shift_type}', NULL,
+                        NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{emp.company}",
+                        "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
+                        "{owner}", "{creation}", "{creation}", "Attendance By Client"
+                    ),"""
+                basic_attendance_employees.append(i.employee)
+
+        basic_in_checkins = frappe.db.sql(f""" 
+            SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
+            employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
+            shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
+            roster_type, operations_site, project, company, operations_role, post_abbrv,
+            shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin` 
+            WHERE 
+            roster_type='Basic' AND log_type='IN' AND
+            shift_actual_start BETWEEN '{start_date} 00:00:00' AND '{start_date} 23:59:59' 
+            AND shift_actual_end BETWEEN '{end_date} 00:00:00' AND '{end_date} 23:59:59' 
+            GROUP BY employee
+            ORDER BY time ASC
+        """, as_dict=1)
+        basic_in_checkins = [i for i in basic_in_checkins if not i.employee in basic_attendance_employees]
+        
+        basic_out_checkins = frappe.db.sql(f""" 
+            SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
+            employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
+            shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, 
+            roster_type, operations_site, project, company, operations_role, post_abbrv,
+            shift_permission, actual_time, MAX(time) as time  FROM `tabEmployee Checkin` 
+            WHERE 
+            roster_type='Basic' AND log_type='OUT' AND
+            shift_actual_start BETWEEN '{start_date} 00:00:00' AND '{start_date} 23:59:59' 
+            AND shift_actual_end BETWEEN '{end_date} 00:00:00' AND '{end_date} 23:59:59' 
+            GROUP BY employee
+            ORDER BY time DESC
+        """, as_dict=1)
+        basic_out_checkins = [i for i in basic_out_checkins if not i.employee in basic_attendance_employees]
+
+        # update employees schedule and assignment list
+        basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees or i.employee_availability=='Working']
+        basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
+        basic_in_checkins = [i for i in basic_in_checkins if not i.employee in basic_attendance_employees]
+        basic_out_checkins = [i for i in basic_out_checkins if not i.employee in basic_attendance_employees]
+        # mark checkins
+        
+        basic_in_checkins_dict = {}
+        basic_out_checkins_dict = {}
+        for i in basic_in_checkins:basic_in_checkins_dict[i.employee]=i
+        for i in basic_out_checkins:basic_out_checkins_dict[i.employee]=i
+        for i in basic_in_checkins:
             emp = employees_dict.get(i.employee)
+            name = f"HR-ATT-{start_date}_{i.employee}_{i.roster_type}"
+            checkin_attendance_link[name] = [i.name]
+            late_entry = late_entry = i.late_entry
+            early_exit = 0
+            out_time = i.shift_actual_end
+            comment = ""
+            if ((i.time - i.shift_actual_start).total_seconds() / (60*60)) > 4:
+                working_hours = 0
+                status = 'Absent'
+                comment = f"4 hours late, checked in at {i.time}"
+                out_time = i.shift_actual_end
+                if basic_out_checkins_dict.get(i.employee):
+                    out = basic_out_checkins_dict.get(i.employee)
+                    out_time = out.time
+                    checkin_attendance_link[name].append(out.name)
+            elif basic_out_checkins_dict.get(i.employee):
+                out = basic_out_checkins_dict.get(i.employee)
+                working_hours = (out.time - i.time).total_seconds() / (60 * 60)
+                status = 'Present'
+                out_time = out.time
+                early_exit = i.early_exit
+                checkin_attendance_link[name].append(out.name)
+            else:
+                working_hours = (i.shift_actual_end - i.time).total_seconds() / (60 * 60)
+                status = 'Present'
+                comment = 'No checkout record found.'
+                
+            if not emp:
+                emp = frappe._dict({})
             query_body+= f"""
             (
-                "HR-ATT_{start_date}_{i.employee}_Basic", "{naming_series}" , "{i.employee}", "{emp.employee_name}", 0, "Day Off", '', NULL,
-                NULL, "", "", "", "", "{start_date}", "{emp.company}",
-                "{emp.department}", 0, 0, "", "", "Basic", 1, "{owner}",
-                "{owner}", "{creation}", "{creation}", "Employee Schedule - {i.name}"
+                "{name}", "{naming_series}", "{i.employee}", "{emp.employee_name or ''}", {working_hours}, "{status}", '{i.shift_type}', '{i.time}',
+                '{out_time}', "{i.shift_assignment}", "{i.operations_shift}", "{i.operations_site}", "{i.project}", "{start_date}", "{i.company}",
+                "{emp.department}", {late_entry}, {early_exit}, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
+                "{owner}", "{creation}", "{creation}", "{comment}"
             ),"""
             basic_attendance_employees.append(i.employee)
-    
-    # Day Off from Holiday list.
-    day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
-    if day_off_attendance_employee:
-        for i in day_off_attendance_employee:
-            name = f"HR-ATT_{start_date}_{i.name}_Basic"
-            emp = employees_dict.get(i.name)
-            query_body+= f"""
-                (
-                    "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Day Off", '', NULL,
-                    NULL, "", "", "", "", "{start_date}", "{emp.company}",
-                    "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
-                    "{owner}", "{creation}", "{creation}", "{i.description}"
-                ),"""
-            basic_attendance_employees.append(i.employee)
-
-    basic_shift_assignments = frappe.get_all("Shift Assignment", filters={
-        'start_date':start_date, 
-        'end_date': end_date,
-        'roster_type':'Basic', 'docstatus':1
-    }, fields="*")
-    basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
-    
-    on_hold_employees = frappe.db.sql(f""" SELECT s.* from `tabShift Assignment` s
-                            INNER JOIN `tabOperations Role` o ON s.operations_role = o.name
-                            WHERE s.start_date = '{start_date}' 
-                            AND s.end_date = '{end_date}'
-                            AND o.attendance_by_client = 1
-                            """, as_dict=1)
-
-    on_hold_employees = [i for i in on_hold_employees if not i.employee in basic_attendance_employees]
-    
-    # create On Hold Attendance 
-    if on_hold_employees:
-        for i in on_hold_employees:
-            name = f"HR-ATT_{start_date}_{i.employee}_Basic"
+            new_attendances.append(name)
+        # update schedules
+        basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
+        basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
+        
+        for i in basic_shift_assignments:
             emp = employees_dict.get(i.employee)
+            name = f"HR-ATT_{start_date}_{i.employee}_Basic"
             query_body+= f"""
-                (
-                    "{name}", "{naming_series}","{i.employee}", "{i.employee_name}", 0, "On Hold", '{i.shift_type}', NULL,
-                    NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{emp.company}",
-                    "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
-                    "{owner}", "{creation}", "{creation}", "Attendance By Client"
-                ),"""
-            basic_attendance_employees.append(i.employee)
+            (
+                "{name}", "{naming_series}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
+                NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
+                "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
+                "{owner}", "{creation}", "{creation}", "No attendance record found"
+            ),"""
+            new_attendances.append(name)
 
-    basic_in_checkins = frappe.db.sql(f""" 
-        SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
-        employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
-        shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
-        roster_type, operations_site, project, company, operations_role, post_abbrv,
-        shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin` 
-        WHERE 
-        roster_type='Basic' AND log_type='IN' AND
-        shift_actual_start BETWEEN '{start_date} 00:00:00' AND '{start_date} 23:59:59' 
-        AND shift_actual_end BETWEEN '{end_date} 00:00:00' AND '{end_date} 23:59:59' 
-        GROUP BY employee
-        ORDER BY time ASC
-    """, as_dict=1)
-    basic_in_checkins = [i for i in basic_in_checkins if not i.employee in basic_attendance_employees]
-    
-    basic_out_checkins = frappe.db.sql(f""" 
-        SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
-        employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
-        shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, 
-        roster_type, operations_site, project, company, operations_role, post_abbrv,
-        shift_permission, actual_time, MAX(time) as time  FROM `tabEmployee Checkin` 
-        WHERE 
-        roster_type='Basic' AND log_type='OUT' AND
-        shift_actual_start BETWEEN '{start_date} 00:00:00' AND '{start_date} 23:59:59' 
-        AND shift_actual_end BETWEEN '{end_date} 00:00:00' AND '{end_date} 23:59:59' 
-        GROUP BY employee
-        ORDER BY time DESC
-    """, as_dict=1)
-    basic_out_checkins = [i for i in basic_out_checkins if not i.employee in basic_attendance_employees]
+    ### DO SAME FOR OVERTIME
+        ot_attendances = frappe.db.get_all("Attendance", filters={
+            'attendance_date':start_date,
+            'roster_type':'Over-Time'
+        }, fields="*")
+        ot_attendance_employees = [i.employee for i in ot_attendances]
 
-    # update employees schedule and assignment list
-    basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees or i.employee_availability=='Working']
-    basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
-    basic_in_checkins = [i for i in basic_in_checkins if not i.employee in basic_attendance_employees]
-    basic_out_checkins = [i for i in basic_out_checkins if not i.employee in basic_attendance_employees]
-    # mark checkins
-    
-    basic_in_checkins_dict = {}
-    basic_out_checkins_dict = {}
-    for i in basic_in_checkins:basic_in_checkins_dict[i.employee]=i
-    for i in basic_out_checkins:basic_out_checkins_dict[i.employee]=i
-    for i in basic_in_checkins:
-        emp = employees_dict.get(i.employee)
-        name = f"HR-ATT-{start_date}_{i.employee}_{i.roster_type}"
-        checkin_attendance_link[name] = [i.name]
-        late_entry = late_entry = i.late_entry
-        early_exit = 0
-        out_time = i.shift_actual_end
-        comment = ""
-        if ((i.time - i.shift_actual_start).total_seconds() / (60*60)) > 4:
-            working_hours = 0
-            status = 'Absent'
-            comment = f"4 hours late, checked in at {i.time}"
-            out_time = i.shift_actual_end
-            if basic_out_checkins_dict.get(i.employee):
-                out = basic_out_checkins_dict.get(i.employee)
-                out_time = out.time
-                checkin_attendance_link[name].append(out.name)
-        elif basic_out_checkins_dict.get(i.employee):
-            out = basic_out_checkins_dict.get(i.employee)
-            working_hours = (out.time - i.time).total_seconds() / (60 * 60)
-            status = 'Present'
-            out_time = out.time
-            early_exit = i.early_exit
-            checkin_attendance_link[name].append(out.name)
-        else:
-            working_hours = (i.shift_actual_end - i.time).total_seconds() / (60 * 60)
-            status = 'Present'
-            comment = 'No checkout record found.'
-            
-        if not emp:
-            emp = frappe._dict({})
-        query_body+= f"""
-        (
-            "{name}", "{naming_series}", "{i.employee}", "{emp.employee_name or ''}", {working_hours}, "{status}", '{i.shift_type}', '{i.time}',
-            '{out_time}', "{i.shift_assignment}", "{i.operations_shift}", "{i.operations_site}", "{i.project}", "{start_date}", "{i.company}",
-            "{emp.department}", {late_entry}, {early_exit}, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
-            "{owner}", "{creation}", "{creation}", "{comment}"
-        ),"""
-        basic_attendance_employees.append(i.employee)
-        new_attendances.append(name)
-    # update schedules
-    basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
-    basic_shift_assignments = [i for i in basic_shift_assignments if not i.employee in basic_attendance_employees]
-    
-    for i in basic_shift_assignments:
-        emp = employees_dict.get(i.employee)
-        name = f"HR-ATT_{start_date}_{i.employee}_Basic"
-        query_body+= f"""
-        (
-            "{name}", "{naming_series}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
-            NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
-            "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
-            "{owner}", "{creation}", "{creation}", "No attendance record found"
-        ),"""
-        new_attendances.append(name)
-
-   ### DO SAME FOR OVERTIME
-    ot_attendances = frappe.db.get_all("Attendance", filters={
-        'attendance_date':start_date,
-        'roster_type':'Over-Time'
-    }, fields="*")
-    ot_attendance_employees = [i.employee for i in ot_attendances]
-
-    ot_employee_schedules = frappe.get_all("Employee Schedule", filters={
-        'date':start_date,
-        'roster_type':'Over-Time', 'employee_availability':'Working'
-    }, fields="*")
-    ot_employee_schedules = [i.date for i in ot_employee_schedules if not i in ot_attendance_employees]
-    
-    ot_shift_assignments = frappe.db.sql(f"""SELECT * from `tabShift Assignment` 
-                WHERE date(start_datetime) = '{start_date}'
-                AND date(end_datetime) = '{end_date}'
-                AND roster_type='Over-Time' 
-                AND docstatus=1""", as_dict=1)
-    ot_shift_assignments = [i for i in ot_shift_assignments if not i in ot_attendance_employees]
-    
-    ot_in_checkins = frappe.db.sql(f""" 
-        SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
-        employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
-        shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
-        roster_type, operations_site, project, company, operations_role, post_abbrv,
-        shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin` 
-        WHERE 
-        roster_type='Over-Time' AND log_type='IN' AND
-        shift_actual_start BETWEEN '{start_date} 00:00:00' AND '{start_date} 23:59:59' 
-        AND shift_actual_end BETWEEN '{end_date} 00:00:00' AND '{end_date} 23:59:59' 
-        GROUP BY employee
-        ORDER BY TIME ASC
-    """, as_dict=1)
-    ot_in_checkins = [i for i in ot_in_checkins if not i in ot_attendance_employees]
-    
-    ot_out_checkins = frappe.db.sql(f""" 
-        SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
-        employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
-        shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
-        roster_type, operations_site, project, company, operations_role, post_abbrv,
-        shift_permission, actual_time, MAX(time) as time  FROM `tabEmployee Checkin` 
-        WHERE 
-        roster_type='Over-Time' AND log_type='OUT' AND
-        shift_actual_start BETWEEN '{start_date} 00:00:00' AND '{start_date} 23:59:59' 
-        AND shift_actual_end BETWEEN '{end_date} 00:00:00' AND '{end_date} 23:59:59' 
-        GROUP BY employee
-        ORDER BY time DESC
-    """, as_dict=1)
-    ot_out_checkins = [i for i in ot_out_checkins if not i in ot_attendance_employees]
-    
-    # mark checkins
-    
-    ot_in_checkins_dict = {}
-    ot_out_checkins_dict = {}
-    for i in ot_in_checkins:ot_in_checkins_dict[i.employee]=i
-    for i in ot_out_checkins:ot_out_checkins_dict[i.employee]=i
-    for i in ot_in_checkins:
-        emp = employees_dict.get(i.employee)
-        name = f"HR-ATT-{start_date}_{i.employee}_{i.roster_type}"
-        checkin_attendance_link[name] = [i.name]
-        late_entry = i.late_entry
-        early_exit = 0
-        out_time = i.shift_actual_end
-        comment = ""
-        if ((i.time - i.shift_actual_start).total_seconds() / (60*60)) > 4:
-            working_hours = 0
-            status = 'Absent'
-            comment = f"4 hours late, checked in at {i.time}"
+        ot_employee_schedules = frappe.get_all("Employee Schedule", filters={
+            'date':start_date,
+            'roster_type':'Over-Time', 'employee_availability':'Working'
+        }, fields="*")
+        ot_employee_schedules = [i.date for i in ot_employee_schedules if not i in ot_attendance_employees]
+        
+        ot_shift_assignments = frappe.db.sql(f"""SELECT * from `tabShift Assignment` 
+                    WHERE date(start_datetime) = '{start_date}'
+                    AND date(end_datetime) = '{end_date}'
+                    AND roster_type='Over-Time' 
+                    AND docstatus=1""", as_dict=1)
+        ot_shift_assignments = [i for i in ot_shift_assignments if not i in ot_attendance_employees]
+        
+        ot_in_checkins = frappe.db.sql(f""" 
+            SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
+            employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
+            shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
+            roster_type, operations_site, project, company, operations_role, post_abbrv,
+            shift_permission, actual_time, MIN(time) as time  FROM `tabEmployee Checkin` 
+            WHERE 
+            roster_type='Over-Time' AND log_type='IN' AND
+            shift_actual_start BETWEEN '{start_date} 00:00:00' AND '{start_date} 23:59:59' 
+            AND shift_actual_end BETWEEN '{end_date} 00:00:00' AND '{end_date} 23:59:59' 
+            GROUP BY employee
+            ORDER BY TIME ASC
+        """, as_dict=1)
+        ot_in_checkins = [i for i in ot_in_checkins if not i in ot_attendance_employees]
+        
+        ot_out_checkins = frappe.db.sql(f""" 
+            SELECT name, owner, creation, modified, modified_by, docstatus, idx, employee, 
+            employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, 
+            shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type,
+            roster_type, operations_site, project, company, operations_role, post_abbrv,
+            shift_permission, actual_time, MAX(time) as time  FROM `tabEmployee Checkin` 
+            WHERE 
+            roster_type='Over-Time' AND log_type='OUT' AND
+            shift_actual_start BETWEEN '{start_date} 00:00:00' AND '{start_date} 23:59:59' 
+            AND shift_actual_end BETWEEN '{end_date} 00:00:00' AND '{end_date} 23:59:59' 
+            GROUP BY employee
+            ORDER BY time DESC
+        """, as_dict=1)
+        ot_out_checkins = [i for i in ot_out_checkins if not i in ot_attendance_employees]
+        
+        # mark checkins
+        
+        ot_in_checkins_dict = {}
+        ot_out_checkins_dict = {}
+        for i in ot_in_checkins:ot_in_checkins_dict[i.employee]=i
+        for i in ot_out_checkins:ot_out_checkins_dict[i.employee]=i
+        for i in ot_in_checkins:
+            emp = employees_dict.get(i.employee)
+            name = f"HR-ATT-{start_date}_{i.employee}_{i.roster_type}"
+            checkin_attendance_link[name] = [i.name]
             late_entry = i.late_entry
+            early_exit = 0
             out_time = i.shift_actual_end
-            if basic_out_checkins_dict.get(i.employee):
+            comment = ""
+            if ((i.time - i.shift_actual_start).total_seconds() / (60*60)) > 4:
+                working_hours = 0
+                status = 'Absent'
+                comment = f"4 hours late, checked in at {i.time}"
+                late_entry = i.late_entry
+                out_time = i.shift_actual_end
+                if basic_out_checkins_dict.get(i.employee):
+                    out = basic_out_checkins_dict.get(i.employee)
+                    out_time = out.time
+                    checkin_attendance_link[name].append(out.name)
+            elif basic_out_checkins_dict.get(i.employee):
                 out = basic_out_checkins_dict.get(i.employee)
+                working_hours = (out.time - i.time).total_seconds() / (60 * 60)
+                status = 'Present'
                 out_time = out.time
+                early_exit = i.early_exit
                 checkin_attendance_link[name].append(out.name)
-        elif basic_out_checkins_dict.get(i.employee):
-            out = basic_out_checkins_dict.get(i.employee)
-            working_hours = (out.time - i.time).total_seconds() / (60 * 60)
-            status = 'Present'
-            out_time = out.time
-            early_exit = i.early_exit
-            checkin_attendance_link[name].append(out.name)
-        else:
-            working_hours = (i.shift_actual_end - i.time).total_seconds() / (60 * 60)
-            status = 'Present'
-            comment = 'No checkout record found.'
-        query_body+= f"""
-        (
-            "{name}", "{naming_series}", "{i.employee}", "{emp.employee_name}", {working_hours}, "{status}", '{i.shift_type}', '{i.time}',
-            '{out_time}', "{i.shift_assignment}", "{i.operations_shift}", "{i.operations_site}", "{i.project}", "{start_date}", "{i.company}",
-            "{emp.department}", {late_entry}, {early_exit}, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
-            "{owner}", "{creation}", "{creation}", "{comment}"
-        ),"""
-        ot_attendance_employees.append(i.employee)
-        new_attendances.append(name)
-    # update schedules
-    ot_employee_schedules = [i for i in ot_employee_schedules if not i in ot_attendance_employees]
-    ot_shift_assignments = [i for i in ot_shift_assignments if not i in ot_attendance_employees]
-    
-    for i in ot_shift_assignments:
-        emp = employees_dict.get(i.employee)
-        name = f"HR-ATT_{start_date}_{i.employee}_Basic"
-        query_body+= f"""
-        (
-            "{name}", "{naming_series}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
-            NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
-            "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
-            "{owner}", "{creation}", "{creation}", "No attendance record found"
-        ),"""
-        new_attendances.append(name)
+            else:
+                working_hours = (i.shift_actual_end - i.time).total_seconds() / (60 * 60)
+                status = 'Present'
+                comment = 'No checkout record found.'
+            query_body+= f"""
+            (
+                "{name}", "{naming_series}", "{i.employee}", "{emp.employee_name}", {working_hours}, "{status}", '{i.shift_type}', '{i.time}',
+                '{out_time}', "{i.shift_assignment}", "{i.operations_shift}", "{i.operations_site}", "{i.project}", "{start_date}", "{i.company}",
+                "{emp.department}", {late_entry}, {early_exit}, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
+                "{owner}", "{creation}", "{creation}", "{comment}"
+            ),"""
+            ot_attendance_employees.append(i.employee)
+            new_attendances.append(name)
+        # update schedules
+        ot_employee_schedules = [i for i in ot_employee_schedules if not i in ot_attendance_employees]
+        ot_shift_assignments = [i for i in ot_shift_assignments if not i in ot_attendance_employees]
+        
+        for i in ot_shift_assignments:
+            emp = employees_dict.get(i.employee)
+            name = f"HR-ATT_{start_date}_{i.employee}_Basic"
+            query_body+= f"""
+            (
+                "{name}", "{naming_series}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
+                NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{start_date}", "{i.company}",
+                "{emp.department}", 0, 0, "{i.operations_role}", "{i.post_abbrv}", "{i.roster_type}", {1}, "{owner}",
+                "{owner}", "{creation}", "{creation}", "No attendance record found"
+            ),"""
+            new_attendances.append(name)
 
-    # UPDATE QUERY
-    if query_body:
-        query += query_body[:-1]
-        query += f"""
-            ON DUPLICATE KEY UPDATE
-            naming_series = VALUES(naming_series),
-            employee = VALUES(employee),
-            employee_name = VALUES(employee_name),
-            working_hours = VALUES(working_hours),
-            status = VALUES(status),
-            shift = VALUES(shift),
-            in_time = VALUES(in_time),
-            out_time = VALUES(out_time),
-            shift_assignment = VALUES(shift_assignment),
-            operations_shift = VALUES(operations_shift),
-            site = VALUES(site),
-            project = VALUES(project),
-            attendance_date = VALUES(attendance_date),
-            company = VALUES(company),
-            department = VALUES(department),
-            late_entry = VALUES(late_entry),
-            early_exit = VALUES(early_exit),
-            operations_role = VALUES(operations_role),
-            roster_type = VALUES(roster_type),
-            docstatus = VALUES(docstatus),
-            modified_by = VALUES(modified_by),
-            modified = VALUES(modified)
-        """
-        frappe.db.sql(query, values=[], as_dict=1)
-        frappe.db.commit()
+        # UPDATE QUERY
+        if query_body:
+            query += query_body[:-1]
+            query += f"""
+                ON DUPLICATE KEY UPDATE
+                naming_series = VALUES(naming_series),
+                employee = VALUES(employee),
+                employee_name = VALUES(employee_name),
+                working_hours = VALUES(working_hours),
+                status = VALUES(status),
+                shift = VALUES(shift),
+                in_time = VALUES(in_time),
+                out_time = VALUES(out_time),
+                shift_assignment = VALUES(shift_assignment),
+                operations_shift = VALUES(operations_shift),
+                site = VALUES(site),
+                project = VALUES(project),
+                attendance_date = VALUES(attendance_date),
+                company = VALUES(company),
+                department = VALUES(department),
+                late_entry = VALUES(late_entry),
+                early_exit = VALUES(early_exit),
+                operations_role = VALUES(operations_role),
+                roster_type = VALUES(roster_type),
+                docstatus = VALUES(docstatus),
+                modified_by = VALUES(modified_by),
+                modified = VALUES(modified)
+            """
+            frappe.db.sql(query, values=[], as_dict=1)
+            frappe.db.commit()
 
-        # update employee checkin
-        frappe.enqueue(update_employee_checkin_with_attendance, attendance_dict=checkin_attendance_link, queue='long', timeout=6000)
-        # update day_off_ot
-        frappe.enqueue(update_day_off_ot, attendances=new_attendances, queue='long', timeout=6000)
-        # remark missing
-        frappe.enqueue(remark_attendance, start_date=start_date, end_date=end_date, queue='long', timeout=6000)
-    # except Exception as e:
-    #     frappe.log_error(frappe.get_traceback(), "Attendance Marking")    
+            # update employee checkin
+            frappe.enqueue(update_employee_checkin_with_attendance, attendance_dict=checkin_attendance_link, queue='long', timeout=6000)
+            # update day_off_ot
+            frappe.enqueue(update_day_off_ot, attendances=new_attendances, queue='long', timeout=6000)
+            # remark missing
+            frappe.enqueue(remark_attendance, start_date=start_date, end_date=end_date, queue='long', timeout=6000)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Attendance Marking")    
 
 def remark_attendance(start_date, end_date):
     try:
