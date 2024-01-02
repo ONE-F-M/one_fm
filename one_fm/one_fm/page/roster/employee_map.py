@@ -45,7 +45,7 @@ class PostMap():
         else:
             self.post_schedule_map[each.operations_role] = [one for one in self.post_schedule_count if one.operations_role ==each.operations_role]
         return self.post_schedule_map
-        
+
 
 
     def sort_post_filled(self,each):
@@ -159,18 +159,18 @@ class CreateMap():
             self.schedule_query  = f"""SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
             es.shift, es.roster_type, es.employee_availability, es.day_off_ot, es.project from `tabEmployee Schedule`es  where \
                 es.employee in  ('{employees[0].employee}') and {self.str_filter} order by es.employee """
-            self.attendance_query = f"SELECT at.status,at.leave_application,  at.attendance_date,at.employee,at.employee_name, at.operations_shift from `tabAttendance`at where at.employee in ('{employees[0].employee}')  and at.attendance_date between '{self.start}' and '{self.end}' and at.docstatus = 1 AND at.roster_type='{self.roster_type}' order by at.employee """
+            self.attendance_query = f"SELECT at.status, at.leave_type, at.leave_application,  at.attendance_date,at.employee,at.employee_name, at.operations_shift from `tabAttendance`at where at.employee in ('{employees[0].employee}')  and at.attendance_date between '{self.start}' and '{self.end}' and at.docstatus = 1 AND at.roster_type='{self.roster_type}' order by at.employee """
             self.employee_query = f"SELECT name,employee_id,relieving_date, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in ('{employees[0].employee}') order by employee_name"
         else:
             self.schedule_query  = f"SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
                 es.shift, es.roster_type, es.employee_availability, es.day_off_ot, es.project from `tabEmployee Schedule`es  where \
                     es.employee in {self.employees} and {self.str_filter}   order by es.employee "
             self.attendance_query = f"SELECT at.status,at.leave_type,at.leave_application, at.attendance_date,at.employee,at.employee_name, at.operations_shift from `tabAttendance`at where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{self.end}' and at.docstatus = 1 AND at.roster_type='{self.roster_type}' order by at.employee "
-            
+
             self.employee_query = f"SELECT name, employee_id,relieving_date, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
 
-        
-            
+
+
         self.schedule_set = frappe.db.sql(self.schedule_query,as_dict=1) if self.employees else []
         self.attendance_set = frappe.db.sql(self.attendance_query,as_dict=1) if self.employees else []
         if self.isOt:
@@ -197,7 +197,7 @@ class CreateMap():
         self.sch_map = list(map(self.create_schedule_map,filters))
         #Combine both the attenance and schedule maps,
         self.combined_map = list(map(self.combine_maps,self.att_map,self.sch_map))
-        #Add missing  calendar days 
+        #Add missing  calendar days
         res=list(map(self.add_blank_days,iter(self.date_range)))
 
     def add_blanks(self,emp_dict):
@@ -205,14 +205,14 @@ class CreateMap():
         try:
             #Key is the employee name
             key = list(emp_dict.keys())[0]
-            
+
             value = emp_dict[key]
             if value:
                 emp_name = value[0].get('employee_name')
             else:
                 emp_name = frappe.db.get_value("Employee",key,'employee_name')
 
-            
+
 
             if getdate(self.cur_date) not in [i['date'] for i in value]:
                 result = {
@@ -238,7 +238,7 @@ class CreateMap():
                         # month_data['day_off_ot'] = attendance_schedule_for_day[1]['day_off_ot']
                         month_data['day_off_ot'] = attendance_schedule_for_day[1].get('day_off_ot',0)
                     self.formated_rs[emp_name].append(month_data)
-                
+
                 else:
                     #When an employee has both attendance and employee schedule records the attendance is selected.
                     month_data = attendance_schedule_for_day[0]
@@ -252,11 +252,11 @@ class CreateMap():
         return self.formated_rs
 
 
-    
+
 
     def create_missing_days(self,key):
         missing_days = []
-            
+
         return self.formated_rs
 
 
@@ -283,7 +283,7 @@ class CreateMap():
         return {row[0]:schedule}
 
 
-    
+
     def create_attendance_map(self,row):
        """ Create a data structure in the form of """
        attendance = []
@@ -306,5 +306,5 @@ class CreateMap():
                 })
         except Exception as e:
             pass
-       
+
        return {row[0]:attendance}
