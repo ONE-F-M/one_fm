@@ -1112,7 +1112,9 @@ class AttendanceMarking():
             ec.shift_permission, 
             ec.actual_time, 
             MIN(CASE WHEN ec.log_type = 'IN' THEN ec.time END) AS earliest_time,
-            MAX(CASE WHEN ec.log_type = 'OUT' THEN ec.time END) AS latest_time
+            MAX(CASE WHEN ec.log_type = 'OUT' THEN ec.time END) AS latest_time,
+            MIN(CASE WHEN ec.log_type = 'IN' THEN ec.name END) AS in_name, 
+            MAX(CASE WHEN ec.log_type = 'OUT' THEN ec.name END) AS out_name
         FROM 
             `tabEmployee Checkin` ec
         WHERE 
@@ -1176,10 +1178,10 @@ class AttendanceMarking():
         doc.db_set('docstatus', 1)
         # updated checkins if exists
         if record.dt=="Employee Checkin":
-            if record.earliest_time:
-                frappe.db.set_value("Employee Checkin", record.name, 'attendance', doc.name)
-            # if record.latest_checkout:
-            #     frappe.db.set_value("Employee Checkin", record.checkout.name, 'attendance', doc.name)
+            if record.in_name:
+                frappe.db.set_value("Employee Checkin", record.in_name, 'attendance', doc.name)
+            if record.out_name:
+                frappe.db.set_value("Employee Checkin", record.out_name, 'attendance', doc.name)
         frappe.db.commit()
 
 
