@@ -1484,7 +1484,7 @@ var validateDate = (inputDate) => {
 	var currentDate = new Date();
   
 
-	if (inputDateObject < currentDate) {
+	if (inputDateObject <= currentDate) {
 	  return false;
 	}
   
