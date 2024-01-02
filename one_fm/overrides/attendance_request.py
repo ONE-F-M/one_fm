@@ -7,7 +7,7 @@ from hrms.hr.utils import validate_active_employee, validate_dates
 from hrms.hr.doctype.attendance_request.attendance_request import AttendanceRequest
 from frappe.model.workflow import apply_workflow
 from one_fm.utils import (
-	send_workflow_action_email, get_holiday_today, workflow_approve_reject, get_approver
+	send_workflow_action_email, get_holiday_today, workflow_approve_reject, get_approver, has_super_user_role
 )
 
 
@@ -40,8 +40,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 			self.approver_user = frappe.db.get_value("Employee", self.approver, 'user_id')
 
 	def on_submit(self):
-		reports_to = self.reports_to()
-		if not reports_to:
+		if not self.reports_to():
 			frappe.throw("You are not the employee supervisor")
 		self.create_attendance()
 
@@ -103,8 +102,8 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 				if old_status != 'Present':
 					doc.db_set({
-						"status": status, 
-						"attendance_request": self.name, 
+						"status": status,
+						"attendance_request": self.name,
 						"working_hours": working_hours,
 						"reference_doctype":"Attendance Request",
 						"reference_docname":self.name})
@@ -124,8 +123,8 @@ class AttendanceRequestOverride(AttendanceRequest):
 					)
 				elif old_status == 'Present' and status == "Work From Home":
 					doc.db_set({
-						"status": status, 
-						"attendance_request": self.name, 
+						"status": status,
+						"attendance_request": self.name,
 						"working_hours": working_hours,
 						"reference_doctype":"Attendance Request",
 						"reference_docname":self.name})
@@ -200,13 +199,16 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	@frappe.whitelist()
 	def reports_to(self):
-		reports_to = self.get_reports_to()
-		if (self.employee == 'HR-EMP-00001' and (frappe.session.user in ['abdullah@one-fm.com', 'e.anthony@armor-services.com'])):
+		employee_user = frappe.get_value("Employee", {"name": self.employee}, "user_id")
+		if employee_user and frappe.session.user = employee_user and has_super_user_role(employee_user):
 			return True
-		if not frappe.session.user in [reports_to, 'administrator', 'Administrator', 'abdullah@one-fm.com']:
-			frappe.msgprint('This Attendance Request can only be approved by the employee supervisor')
-			return False
-		return True
+
+		reports_to_user = self.get_reports_to()
+		if reports_to_user and frappe.session.user in [reports_to_user, 'administrator', 'Administrator']
+			return True
+
+		frappe.msgprint('This Attendance Request can only be approved by the employee supervisor')
+		return False
 
 def check_for_attendance(doc):
 	att = frappe.get_list("Attendance", {"employee": doc.employee, "attendance_date":["between", [doc.from_date, doc.to_date]]}, ['status'])

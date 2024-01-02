@@ -6781,7 +6781,7 @@
   "doctype": "Workflow",
   "document_type": "Contracts",
   "is_active": 1,
-  "modified": "2023-12-21 18:43:43.491826",
+  "modified": "2023-12-28 23:02:28.963066",
   "name": "Contracts",
   "override_status": 0,
   "send_email_alert": 0,
@@ -7377,7 +7377,7 @@
   "doctype": "Workflow",
   "document_type": "Timesheet",
   "is_active": 1,
-  "modified": "2023-06-18 19:53:09.146375",
+  "modified": "2023-12-28 23:31:07.237828",
   "name": "Timesheet",
   "override_status": 0,
   "send_email_alert": 0,
@@ -7431,8 +7431,8 @@
     "parentfield": "states",
     "parenttype": "Workflow",
     "state": "Approved",
-    "update_field": "",
-    "update_value": ""
+    "update_field": "status",
+    "update_value": "Submitted"
    },
    {
     "allow_edit": "Employee",
