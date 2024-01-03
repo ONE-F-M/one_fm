@@ -12,7 +12,7 @@ from frappe.model.utils.user_settings import get_user_settings
 from frappe.permissions import get_doc_permissions
 from frappe.utils.data import cstr
 from one_fm.utils import (
-    check_employee_permission_on_doc, get_approver_for_many_employees,
+    check_employee_permission_on_doc, get_approver_for_many_employees, has_super_user_role
 )
 
 @frappe.whitelist()
@@ -513,8 +513,12 @@ def leave_application_list(user):
 	"""
 		Filter leave application list based on permision
 	"""
-	if frappe.session.user in ["Administrator", "abdullah@one-fm.com"]:
+	if frappe.session.user in ["Administrator"]:
 		return
+
+	if has_super_user_role(frappe.session.user):
+		return
+
 	if not user: user = frappe.session.user
 	try:
 		supervisor = frappe.cache().get_value(frappe.session.user).employee

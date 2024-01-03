@@ -11,6 +11,7 @@ from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
 from one_fm.api.tasks import get_action_user
 from one_fm.api.utils import get_reports_to_employee_name
 from one_fm.processor import sendemail
+from one_fm.utils import has_super_user_role
 
 class PermissionTypeandLogTypeError(frappe.ValidationError):
 	pass
@@ -108,7 +109,9 @@ class ShiftPermission(Document):
 
 	def validate_approver(self):
 		if self.workflow_state in ["Approved", "Rejected"]:
-			if frappe.session.user not in [self.approver_user_id, 'abdullah@one-fm.com', 'administrator', 'Administrator']:
+			if has_super_user_role(frappe.session.user):
+				return
+			if frappe.session.user not in [self.approver_user_id, 'administrator', 'Administrator']:
 				frappe.throw(_("This document can only be approved/rejected by the approver."))
 
 	def on_submit(self):
@@ -194,9 +197,9 @@ def create_checkin(shift_permission):
 	log = frappe.db.sql(f""" SELECT * FROM `tabEmployee Checkin`
 						WHERE employee='{shift_permission.employee}'
 						AND time between '{start_time}' AND '{end_time}'
-						ORDER BY time DESC LIMIT 1;	
+						ORDER BY time DESC LIMIT 1;
 	""",as_dict=1)
-	#If log exists and the last checkin log type is same as the shift permission logtype, 
+	#If log exists and the last checkin log type is same as the shift permission logtype,
 	# create checkin log opposite to it.
 	if log and log[0].log_type == shift_permission.log_type:
 		ec = frappe.new_doc('Employee Checkin')
@@ -210,7 +213,7 @@ def create_checkin(shift_permission):
 		ec.flags.ignore_validate = True
 		ec.save(ignore_permissions=True)
 		frappe.db.commit()
-		
+
 	if not frappe.db.exists("Employee Checkin", {
 		'shift_permission':shift_permission.name
 		}):
@@ -236,8 +239,3 @@ def create_checkin(shift_permission):
 		employee_checkin.db_set('creation', str(shift_assignment.start_datetime)+'.000000' if employee_checkin.log_type == "IN" else str(shift_assignment.end_datetime)+'.999999')
 		employee_checkin.db_set('actual_time', shift_assignment.start_datetime if employee_checkin.log_type == "IN" else shift_assignment.end_datetime)
 		frappe.db.commit()
-
-
-
-    
-    

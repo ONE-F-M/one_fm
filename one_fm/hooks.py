@@ -196,6 +196,7 @@ has_permission = {
 standard_queries = {
 	"Operations Role": "one_fm.operations.doctype.operations_role.operations_role.get_operations_role_list",
 	"Warehouse": "one_fm.overrides.queries.warehouse_query",
+    "Employee": "one_fm.overrides.queries.employee_query",
 }
 
 doc_events = {
@@ -632,7 +633,8 @@ scheduler_events = {
 			'one_fm.utils.check_pam_visa_approval_submission_seven'
 		],
 		"30 12 * * *": [
-			'one_fm.utils.check_upload_original_visa_submission_reminder1'
+			'one_fm.utils.check_upload_original_visa_submission_reminder1',
+            "one_fm.overrides.job_applicant.notify_hr_manager_about_local_transfer"
 		],
 		"25 13 * * *": [ #“At 13:25"
 			'one_fm.utils.check_upload_original_visa_submission_reminder2'
