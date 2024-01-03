@@ -3015,7 +3015,7 @@ def has_super_user_role(user=None):
             return True
         else:
             # Get configured super user in ONEFM General Settings
-            super_user_role = frappe.db.get_single_value("ONEFM General Settings", "super_user_role")
+            super_user_role = frappe.db.get_single_value("ONEFM General Setting", "super_user_role")
             # Check if the super user role exists in the user role list
             if super_user_role and super_user_role in user_roles:
                 return True
