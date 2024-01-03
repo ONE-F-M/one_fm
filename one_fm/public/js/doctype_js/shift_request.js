@@ -15,6 +15,7 @@ frappe.ui.form.on('Shift Request', {
 	},
 	onload: function(frm){
 		prefillForm(frm);
+		set_employee_filters(frm)
 		
 	},
 	refresh: function(frm) {
@@ -170,6 +171,15 @@ function clearCircles(){
 }
 
 
+let set_employee_filters = frm=>{
+	frm.set_query("employee", function() {
+		return {
+			query: "one_fm.api.doc_methods.shift_request.get_employees",
+			
+		};
+	});
+
+}
 
 var prefillForm = frm =>{
 	const url = new URL(window.location.href);
