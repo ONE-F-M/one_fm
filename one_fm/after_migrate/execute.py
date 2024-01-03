@@ -143,3 +143,24 @@ def replace_job_opening():
     for i in [user_files_path, user_magic_link]:
         if not os.path.exists(bench_path+i):
             os.mkdir(bench_path+i)
+
+
+def replace_prompt_message_in_goal():
+    """
+    Replace the prompt message that pop us while changing the KRA of a parent goal
+    """
+    doctype_path = frappe.utils.get_bench_path() + "/apps/hrms/hrms/hr/doctype/goal/"
+    file_path = os.path.join(doctype_path, "goal.js")
+
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            filedata = f.read()
+
+        if not filedata.find("Modifying the KRA in the parent goal will specifically impact those child goals that share the same KRA; any other child goals with different KRAs will remain unaffected.") > 0:
+            newdata = filedata.replace(
+                "Changing KRA in this parent goal will align all the child goals to the same KRA, if any.",
+                "Modifying the KRA in the parent goal will specifically impact those child goals that share the same KRA; any other child goals with different KRAs will remain unaffected."
+            )
+
+            with open(file_path, 'w') as f:
+                f.write(newdata)

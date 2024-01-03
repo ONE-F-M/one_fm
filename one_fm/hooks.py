@@ -196,6 +196,7 @@ has_permission = {
 standard_queries = {
 	"Operations Role": "one_fm.operations.doctype.operations_role.operations_role.get_operations_role_list",
 	"Warehouse": "one_fm.overrides.queries.warehouse_query",
+    "Employee": "one_fm.overrides.queries.employee_query",
 }
 
 doc_events = {
@@ -526,7 +527,8 @@ scheduler_events = {
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
-		'one_fm.utils.send_gp_letter_reminder'
+		'one_fm.utils.send_gp_letter_reminder',
+        "one_fm.overrides.attendance.run_attendance_marking_hourly",
 	],
 
 	"weekly": [
@@ -631,7 +633,8 @@ scheduler_events = {
 			'one_fm.utils.check_pam_visa_approval_submission_seven'
 		],
 		"30 12 * * *": [
-			'one_fm.utils.check_upload_original_visa_submission_reminder1'
+			'one_fm.utils.check_upload_original_visa_submission_reminder1',
+            "one_fm.overrides.job_applicant.notify_hr_manager_about_local_transfer"
 		],
 		"25 13 * * *": [ #“At 13:25"
 			'one_fm.utils.check_upload_original_visa_submission_reminder2'
@@ -681,6 +684,9 @@ scheduler_events = {
 		],
 		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
 			'one_fm.overrides.attendance.mark_night_attendance'
+		],
+        "55 12 * * *": [ # mark attendance for previous day mark_for_active_employees at 12:45 pm today
+			'one_fm.overrides.attendance.mark_for_active_employees'
 		],
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
@@ -795,7 +801,7 @@ override_whitelisted_methods = {
     "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
 	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_approver",
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_details",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
@@ -821,6 +827,7 @@ after_migrate = [
     "one_fm.after_migrate.execute.disable_workflow_emails",
     "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
+    "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
 ]
 
 before_migrate = [
