@@ -204,7 +204,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 			return True
 
 		reports_to_user = self.get_reports_to()
-		if reports_to_user and frappe.session.user in [reports_to_user, 'administrator', 'Administrator']
+		if reports_to_user and frappe.session.user in [reports_to_user, 'administrator', 'Administrator']:
 			return True
 
 		frappe.msgprint('This Attendance Request can only be approved by the employee supervisor')
