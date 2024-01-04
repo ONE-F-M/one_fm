@@ -9,6 +9,7 @@
  "field_order": [
   "mobile_app_version",
   "column_break_xyl05",
+  "super_user_role",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
@@ -110,11 +111,17 @@
    "fieldname": "employee_section",
    "fieldtype": "Section Break",
    "label": "Employee"
+  },
+  {
+   "fieldname": "super_user_role",
+   "fieldtype": "Link",
+   "label": "Super User Role",
+   "options": "Role"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-01-03 22:56:18.112927",
+ "modified": "2024-01-04 04:44:59.408601",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
