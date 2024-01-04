@@ -546,6 +546,7 @@ def mark_daily_attendance(start_date, end_date):
                             INNER JOIN `tabHoliday` h ON h.parent = hl.name
                             WHERE e.holiday_list = hl.name 
                             AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}'
+                            AND e.status = 'Active'
                             AND h.weekly_off=0""", as_dict=1)
     holiday_attendance_employee = [i for i in holiday_employee if not i.employee in basic_attendance_employees]
 
@@ -554,6 +555,7 @@ def mark_daily_attendance(start_date, end_date):
                             INNER JOIN `tabHoliday` h ON h.parent = hl.name
                             WHERE e.holiday_list = hl.name 
                             AND e.attendance_by_timesheet = 0
+                            AND e.status = 'Active'
                             AND h.holiday_date BETWEEN '{start_date}' AND '{end_date}'
                             AND h.weekly_off=1""", as_dict=1)
     day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
