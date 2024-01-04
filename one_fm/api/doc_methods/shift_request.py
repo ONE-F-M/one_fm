@@ -366,7 +366,10 @@ def get_manager(doctype,employee):
         
 
 
-
+@frappe.whitelist()
+def fetch_employee_details(employee):
+    emp_data = frappe.get_all("Employee",{'name':employee},['employee_name','company','shift','site','project','default_shift','department'])
+    return emp_data[0] if emp_data else []
 
 @frappe.whitelist()
 def get_employees(doctype, txt, searchfield, start, page_len, filters):
@@ -375,11 +378,7 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
     else, it returns the full list of employees assigned to the Operations shifts,sites or projects where this user is set
     
     """
-    print("\n\n\n\n\n\n")
-    print("SEARCH TEXT")
-    print(searchfield)
-    print(txt)
-    print("\n\n\n\n\n\n")
+    
     is_master= False
     default_user_roles = None
     employee_master_roles = frappe.get_all("ONEFM Document Access Roles Detail",{'parent':"ONEFM General Setting",'parentfield':"employee_master_role"},['role'])
@@ -389,8 +388,15 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
     if [role for role in user_roles if role in default_user_roles ]:
             is_master = True
     if  is_master:
-        employees = frappe.db.sql("Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' ")
-        return employees
+        #If the user has not typed anything on the employee field
+        if not txt:
+            employees = frappe.db.sql("Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' ")
+            return employees
+        else:
+            #If the user has  typed anything on the employee field
+            employees = frappe.db.sql(f"Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'   ")
+            return employees
+            
     else:
         allowed_employees = []
         user = frappe.session.user
@@ -398,9 +404,9 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
             employee_id = _get_employee_from_user(user)
             if employee_id:
                 employee_base_query = f""" 
-                        SELECT name,employee_name from `tabEmployee` where status = "Active"
+                        SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"
                 """
-                cond = ""
+                cond_str = ""
                 query = None
                 allowed_employees.append(employee_id)
                 #get all reports to 
@@ -410,19 +416,27 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
                 #get all employees in  project,shift and site
                 if allowed_employees:
                     cond_str = f" and name in  {tuple(allowed_employees)}" if len(allowed_employees)>1 else f" and name = {allowed_employees[0]}"
+                    if txt:
+                        cond_str+=f" and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'  "
                     query=employee_base_query+cond_str
                 shifts = get_manager('Operations Shift',employee_id)
                 if shifts:
                     cond_str = f" and shift in {tuple(shifts)}" if len(shifts)>1 else f" and shift = {shifts[0]}"
-                    query += f""" UNION SELECT name,employee_name from `tabEmployee` where status = "Active"  {cond_str} """
+                    if txt:
+                        cond_str+=f" and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'  "
+                    query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
                 sites = get_manager('Operations Site',employee_id)
                 if sites:
                     cond_str = f" and site in {tuple(sites)}" if len(sites)>1 else f" and site = {sites[0]}"
-                    query += f""" UNION SELECT name,employee_name from `tabEmployee` where status = "Active"  {cond_str} """
+                    if txt:
+                        cond_str+=f" and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'  "
+                    query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
                 project = get_manager('Project',employee_id)
                 if project:
                     cond_str = f" and project in {tuple(project)}" if len(project)>1 else f" and project = {project[0]}"
-                    query += f""" UNION SELECT name,employee_name from `tabEmployee` where status = "Active"  {cond_str} """
+                    if txt:
+                        cond_str+=f" and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'  "
+                    query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
                 #Check if employee is set in operations shift, operations site or project
                 
                 return frappe.db.sql(query)
@@ -431,7 +445,11 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
             else:
                 return ()
         else:
-            return frappe.db.sql("Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' ")
+            if not txt:
+                return frappe.db.sql("Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' ")
+            else:
+                return frappe.db.sql("Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' and name \
+                    like '%{txt}%' or employee_name like '%{txt}%' \or employee_id like '%{txt}%'  ")
         
         
         
