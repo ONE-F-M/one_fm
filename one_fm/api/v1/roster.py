@@ -36,7 +36,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
         fields = ["employee", "employee_name", "date", "operations_role", "post_abbrv", "employee_availability",
                   "shift"]
         user, user_roles, user_employee = get_current_user_details()
-        print(user_roles)
+        
         if "Operations Manager" in user_roles or "Projects Manager" in user_roles:
             projects = get_assigned_projects(user_employee.name)
             assigned_projects = []
@@ -58,7 +58,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
                 assigned_sites.append(assigned_site.name)
             filters.update({"site": ("in", assigned_sites)})
             roster = frappe.get_all("Employee Schedule", filters, fields)
-            print(roster)
+            
             master_data = []
             for key, group in itertools.groupby(roster, key=lambda x: (x['post_abbrv'], x['operations_role'])):
                 employees = list(group)
@@ -79,6 +79,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
                 master_data.append({"employees": employees, "post": key[0], "count": len(employees)})
             return master_data
     except Exception as e:
+        frappe.log_error(title="API Roster Vie", message=frappe.get_traceback())
         return frappe.utils.response.report_error(e.http_status_code)
 
 
