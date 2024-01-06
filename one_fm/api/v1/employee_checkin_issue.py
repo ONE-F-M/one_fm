@@ -26,50 +26,49 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 			error (str): Any error handled.
 		}
 	"""
-
-	if not employee_id:
-		return response("Bad Request", 400, None, "employee_id required.")
-
-	if not log_type:
-		return response("Bad Request", 400, None, "log_type required.")
-
-	if not issue_type:
-		return response("Bad Request", 400, None, "issue_type required.")
-
-	if not date:
-		return response("Bad Request", 400, None, "date required.")
-
-	if issue_type == "Other":
-		if not issue_details:
-			return response("Bad Request", 400, None, "issue_details required.")
-		if not isinstance(issue_details, str):
-			return response("Bad Request", 400, None, "issue_details must be of type str.")
-
-	if not isinstance(employee_id, str):
-		return response("Bad Request", 400, None, "employee must be of type str.")
-
-	if not isinstance(issue_type, str):
-		return response("Bad Request", 400, None, "issue_type must be of type str.")
-
-	if not latitude:
-		return response("Bad Request", 400, None, "latitude required.")
-
-	if not longitude:
-		return response("Bad Request", 400, None, "longitude required.")
-
 	try:
-		latitude = float(latitude)
-		longitude = float(longitude)
-	except:
-		return response("Bad Request", 400, None, "Latitude and longitude must be float.")
+		if not employee_id:
+			return response("Bad Request", 400, None, "employee_id required.")
 
-	if not isinstance(date, str):
-		return response("Bad Request", 400, None, "date must be of type str.")
+		if not log_type:
+			return response("Bad Request", 400, None, "log_type required.")
 
-	if not validate_date(date):
-		return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
+		if not issue_type:
+			return response("Bad Request", 400, None, "issue_type required.")
 
-	try:
+		if not date:
+			return response("Bad Request", 400, None, "date required.")
+
+		if issue_type == "Other":
+			if not issue_details:
+				return response("Bad Request", 400, None, "issue_details required.")
+			if not isinstance(issue_details, str):
+				return response("Bad Request", 400, None, "issue_details must be of type str.")
+
+		if not isinstance(employee_id, str):
+			return response("Bad Request", 400, None, "employee must be of type str.")
+
+		if not isinstance(issue_type, str):
+			return response("Bad Request", 400, None, "issue_type must be of type str.")
+
+		if not latitude:
+			return response("Bad Request", 400, None, "latitude required.")
+
+		if not longitude:
+			return response("Bad Request", 400, None, "longitude required.")
+
+		try:
+			latitude = float(latitude)
+			longitude = float(longitude)
+		except:
+			return response("Bad Request", 400, None, "Latitude and longitude must be float.")
+
+		if not isinstance(date, str):
+			return response("Bad Request", 400, None, "date must be of type str.")
+
+		if not validate_date(date):
+			return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
+		
 		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
 		if not employee:
@@ -116,6 +115,7 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 			return response("Success", 201, employee_checkin_issue_doc.as_dict())
 
 		else:
+			frappe.log_error(title="API Authentication", message=frappe.get_traceback())
 			return response("Duplicate", 422, None, "Employee Checkin Issue is already created for {employee}"
 				.format(employee=employee_id))
 

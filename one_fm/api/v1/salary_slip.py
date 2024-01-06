@@ -26,13 +26,13 @@ def get_salary_slip_list(employee_id: str = None) -> dict:
 			error (str): Any error handled.
         }
     """
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee_id must be of type str.")
-    
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee_id must be of type str.")
+        
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
@@ -46,6 +46,7 @@ def get_salary_slip_list(employee_id: str = None) -> dict:
         return response("Success", 200, []) #salary_list)
     
     except Exception as error:
+        frappe.log_error(title="API Salary Slip", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()

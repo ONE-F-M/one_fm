@@ -29,81 +29,80 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
             error (str): Any error handled.
         }
     """
-
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not permission_type:
-        return response("Bad Request", 400, None, "permission_type required.")
-
-    if not date:
-        return response("Bad Request", 400, None, "date required.")
-
-    if not reason:
-        return response("Bad Request", 400, None, "reason required.")
-
-    if not log_type:
-        if permission_type in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
-            log_type='IN'
-        elif permission_type in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
-            log_type='OUT'
-        else:
-            return response("Bad Request", 400, None, "log_type required.")
-
-    if log_type == "IN" and permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
-        return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
-            "Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(permission_type)))
-
-    if log_type == "OUT" and permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
-        return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
-            "Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(permission_type)))
-
-    if permission_type == "Arrive Late" and not arrival_time:
-        return response("Bad Request", 400, None, "Arrival time required for late arrival shift permission.")
-
-    if permission_type == "Leave Early" and not leaving_time:
-        return response("Bad Request", 400, None, "Leaving time required for early exit shift permission")
-
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee must be of type str.")
-
-    if not isinstance(permission_type, str):
-        return response("Bad Request", 400, None, "permission_type must be of type str.")
-
-    if permission_type not in ["Arrive Late", "Leave Early", "Checkin Issue", "Checkout Issue"]:
-        return response("Bad Request", 400, None, "permission type must be either 'Arrive Late' or 'Leave Early' or 'Checkin Issue' or 'Checkout Issue'.")
-
-    if permission_type in ["Checkin Issue", "Checkout Issue"] and latitude and longitude:
-        try:
-            latitude = float(latitude)
-            longitude = float(longitude)
-        except:
-            return response("Bad Request", 400, None, "Latitude and longitude must be float.")
-
-    if not isinstance(date, str):
-        return response("Bad Request", 400, None, "date must be of type str.")
-
-    if not validate_date(date):
-        return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
-
-    if not isinstance(reason, str):
-        return response("Bad Request", 400, None, "reason must be of type str.")
-
-    if arrival_time:
-        if not isinstance(arrival_time, str):
-            return response("Bad Request", 400, None, "arival_time must be of type str.")
-
-        if not validate_time(arrival_time):
-            return response("Bad Request", 400, None, "arrival_time must be of type hh:mm:ss.")
-
-    if leaving_time:
-        if not isinstance(leaving_time, str):
-            return response("Bad Request", 400, None, "leaving_time must be of type str.")
-
-        if not validate_time(leaving_time):
-            return response("Bad Request", 400, None, "leaving_time must be of type hh:mm:ss.")
-
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not permission_type:
+            return response("Bad Request", 400, None, "permission_type required.")
+
+        if not date:
+            return response("Bad Request", 400, None, "date required.")
+
+        if not reason:
+            return response("Bad Request", 400, None, "reason required.")
+
+        if not log_type:
+            if permission_type in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
+                log_type='IN'
+            elif permission_type in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
+                log_type='OUT'
+            else:
+                return response("Bad Request", 400, None, "log_type required.")
+
+        if log_type == "IN" and permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
+            return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
+                "Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(permission_type)))
+
+        if log_type == "OUT" and permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
+            return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
+                "Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(permission_type)))
+
+        if permission_type == "Arrive Late" and not arrival_time:
+            return response("Bad Request", 400, None, "Arrival time required for late arrival shift permission.")
+
+        if permission_type == "Leave Early" and not leaving_time:
+            return response("Bad Request", 400, None, "Leaving time required for early exit shift permission")
+
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee must be of type str.")
+
+        if not isinstance(permission_type, str):
+            return response("Bad Request", 400, None, "permission_type must be of type str.")
+
+        if permission_type not in ["Arrive Late", "Leave Early", "Checkin Issue", "Checkout Issue"]:
+            return response("Bad Request", 400, None, "permission type must be either 'Arrive Late' or 'Leave Early' or 'Checkin Issue' or 'Checkout Issue'.")
+
+        if permission_type in ["Checkin Issue", "Checkout Issue"] and latitude and longitude:
+            try:
+                latitude = float(latitude)
+                longitude = float(longitude)
+            except:
+                return response("Bad Request", 400, None, "Latitude and longitude must be float.")
+
+        if not isinstance(date, str):
+            return response("Bad Request", 400, None, "date must be of type str.")
+
+        if not validate_date(date):
+            return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
+
+        if not isinstance(reason, str):
+            return response("Bad Request", 400, None, "reason must be of type str.")
+
+        if arrival_time:
+            if not isinstance(arrival_time, str):
+                return response("Bad Request", 400, None, "arival_time must be of type str.")
+
+            if not validate_time(arrival_time):
+                return response("Bad Request", 400, None, "arrival_time must be of type hh:mm:ss.")
+
+        if leaving_time:
+            if not isinstance(leaving_time, str):
+                return response("Bad Request", 400, None, "leaving_time must be of type str.")
+
+            if not validate_time(leaving_time):
+                return response("Bad Request", 400, None, "leaving_time must be of type hh:mm:ss.")
+
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
@@ -151,31 +150,35 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
             return response("Duplicate", 422, None, "Shift permission already created for {employee}".format(employee=employee_id))
 
     except Exception as error:
+        frappe.log_error(title="API Shift Permission", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
 
 def get_shift_details(employee):
-    shift = None
-    shift_type = None
-    shift_assignment = None
-    shift_supervisor = None
+    try:
+        shift = None
+        shift_type = None
+        shift_assignment = None
+        shift_supervisor = None
 
-    shift_assignment, shift_supervisor, shift, shift_type = fetch_approver(employee)
+        shift_assignment, shift_supervisor, shift, shift_type = fetch_approver(employee)
 
-    if not shift_assignment:
-        return frappe._dict({'found':False})
+        if not shift_assignment:
+            return frappe._dict({'found':False})
 
-    return frappe._dict({'found':True, 'data':[shift, shift_type, shift_assignment, shift_supervisor]})
+        return frappe._dict({'found':True, 'data':[shift, shift_type, shift_assignment, shift_supervisor]})
+    except:
+        frappe.log_error(title="API Shift Detail", message=frappe.get_traceback())
 
 @frappe.whitelist()
 def list_shift_permission(employee_id: str = None):
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee_id must be of type str.")
-
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee_id must be of type str.")
+
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
@@ -185,17 +188,18 @@ def list_shift_permission(employee_id: str = None):
         return response("Success", 200, shift_permission_list)
 
     except Exception as error:
+        frappe.log_error(title="API AuthList Permissionentication", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
 def shift_permission_details(shift_permission_id: str = None):
-    if not shift_permission_id:
-        return response("Bad Request", 400, None, "shift_permission_id required.")
-
-    if not isinstance(shift_permission_id, str):
-        return response("Bad Request", 400, None, "shift_permission_id must be of type str.")
-
     try:
+        if not shift_permission_id:
+            return response("Bad Request", 400, None, "shift_permission_id required.")
+
+        if not isinstance(shift_permission_id, str):
+            return response("Bad Request", 400, None, "shift_permission_id must be of type str.")
+
         shift_permission_doc = frappe.get_doc("Shift Permission", {'name': shift_permission_id})
 
         if not shift_permission_doc:
@@ -204,6 +208,7 @@ def shift_permission_details(shift_permission_id: str = None):
         return response("Success", 200, shift_permission_doc.as_dict())
 
     except Exception as error:
+        frappe.log_error(title="API Shift Permission", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
