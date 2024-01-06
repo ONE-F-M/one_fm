@@ -15,27 +15,27 @@ def get_employee_shift(employee_id, date_type='month'):
     """
 
     # prepare dates
-    today = datetime.today()
-    _start = today.replace(day=1).date()
-    _end = today.replace(day = calendar.monthrange(today.year, today.month)[1]).date()
-
-    if(date_type=='year'):
-        _start = date(today.year, 1, 31)
-        _end = date(today.year, 12, 31)
-
-    penalty_start_date = datetime.now() - timedelta(days=364)
-    penalty_end_date = date(today.year, today.month, today.day)
-
-    data = {
-        "leave_balance": "",
-        "penalties": "",
-        "days_worked": "",
-        "shift_time_from": "",
-        "shift_time_to": "",
-        "shift_location": "",
-        "shift_latitude_and_longitude": ""
-    }
     try:
+        today = datetime.today()
+        _start = today.replace(day=1).date()
+        _end = today.replace(day = calendar.monthrange(today.year, today.month)[1]).date()
+
+        if(date_type=='year'):
+            _start = date(today.year, 1, 31)
+            _end = date(today.year, 12, 31)
+
+        penalty_start_date = datetime.now() - timedelta(days=364)
+        penalty_end_date = date(today.year, today.month, today.day)
+
+        data = {
+            "leave_balance": "",
+            "penalties": "",
+            "days_worked": "",
+            "shift_time_from": "",
+            "shift_time_to": "",
+            "shift_location": "",
+            "shift_latitude_and_longitude": ""
+        }
         employee = frappe.get_doc('Employee', employee_id)
         shift_assignment =  frappe.db.get_list('Shift Assignment',
            filters=[
@@ -92,4 +92,5 @@ def get_employee_shift(employee_id, date_type='month'):
 
     except Exception as e:
         # an error occurred
+        frappe.log_error(title="API Authentication", message=frappe.get_traceback())
         return response(str(e), 500, None, None)

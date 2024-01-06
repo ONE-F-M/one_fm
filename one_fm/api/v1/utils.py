@@ -14,15 +14,17 @@ def response(message, status_code, data=None, error=None):
     #if not status_code in [200, 201]:
     #    frappe.enqueue(frappe.log_error, message=message + "\n" + str(error), title="API Response Error", queue='long')
 
-
-    frappe.local.response["message"] = message
-    frappe.local.response["http_status_code"] = status_code
-    frappe.local.response["status_code"] = status_code
-    if data:
-        frappe.local.response["data"] = data
-    elif error:
-        frappe.local.response["error"] = error
-    return
+    try:
+        frappe.local.response["message"] = message
+        frappe.local.response["http_status_code"] = status_code
+        frappe.local.response["status_code"] = status_code
+        if data:
+            frappe.local.response["data"] = data
+        elif error:
+            frappe.local.response["error"] = error
+        return
+    except Exception as e:
+        frappe.log_error(title="API Response", message=frappe.get_traceback())
 
 
 def response_dict(message, status_code, data=None, error=None):
