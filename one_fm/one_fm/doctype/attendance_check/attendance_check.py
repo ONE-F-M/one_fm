@@ -69,11 +69,11 @@ class AttendanceCheck(Document):
 
     def on_submit(self):
         shift_working = frappe.db.get_value("Employee", self.employee, "shift_working")
-        if self.attendance_status == "Present" and not shift_working:
+        if self.attendance_status == "Present" and shift_working:
             self.validate_unscheduled_check()
         if self.attendance_status == "On Leave":
             self.check_on_leave_record()
-        if self.attendance_status == "Day Off" and not shift_working:
+        if self.attendance_status == "Day Off" and shift_working:
             validate_day_off(self,convert=0)
         self.validate_justification_and_attendance_status()
         self.mark_attendance()
