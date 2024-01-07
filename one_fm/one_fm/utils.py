@@ -305,7 +305,12 @@ def manage_attendance_on_holiday(doc, method):
             if not is_site_allowance_exist_for_this_employee(doc.employee, doc.attendance_date):
                 create_additional_salary_from_attendance(doc, salary_component, remark)
             if doc.status == "Present":
-                if not frappe.db.exists("Compensatory Leave Request",{'leave_type':leave_type,'employee':doc.employee,'work_from_date':doc.attendance_date,'work_end_date':doc.attendance_date,'docstatus':1}):
+                leave_request_exists = frappe.db.sql(f"""SELECT c.name from `tabCompensatory Leave Request` c
+                                            WHERE c.leave_type='{leave_type}' 
+                                            AND c.employee='{doc.employee}' 
+                                            AND {doc.attendance_date} BETWEEN c.work_from_date AND c.work_end_date
+                                            AND c.docstatus=1 """, as_dict=1)
+                if not leave_request_exists:
                     create_compensatory_leave_request_from_attendance(doc, leave_type, remark)
 
         # cancel additional salary and compensatory leave request on attendance cancel
@@ -376,6 +381,7 @@ def cancel_additional_salary_from_attendance(attendance, salary_component):
         frappe.get_doc('Additional Salary', exist_additional_salary).cancel()
 
 def create_compensatory_leave_request_from_attendance(attendance, leave_type, reason):
+    print("Here", reason)
     compensatory_leave_request = frappe.new_doc('Compensatory Leave Request')
     compensatory_leave_request.employee = attendance.employee
     compensatory_leave_request.work_from_date = attendance.attendance_date
