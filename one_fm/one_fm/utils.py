@@ -381,7 +381,6 @@ def cancel_additional_salary_from_attendance(attendance, salary_component):
         frappe.get_doc('Additional Salary', exist_additional_salary).cancel()
 
 def create_compensatory_leave_request_from_attendance(attendance, leave_type, reason):
-    print("Here", reason)
     compensatory_leave_request = frappe.new_doc('Compensatory Leave Request')
     compensatory_leave_request.employee = attendance.employee
     compensatory_leave_request.work_from_date = attendance.attendance_date
