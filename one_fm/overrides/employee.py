@@ -136,10 +136,12 @@ def validate_employee_status_access(self):
 def is_employee_master(user:str) -> int:
     #Return 1 if the employee has the required roles to modify the employee form.
     can_edit = 0
-    employee_master_role = frappe.get_doc("ONEFM General Setting").get("employee_master_role")
+    employee_master_role = frappe.get_all("ONEFM Document Access Roles Detail",{'parent':"ONEFM General Setting",'parentfield':"employee_master_role"},['role'])
     if employee_master_role:
+        master_roles = [i.role for i in employee_master_role]
         user_roles = frappe.get_roles(user)
-        if employee_master_role in user_roles:
+        role_intersect = [i for i in master_roles if i in user_roles]
+        if role_intersect:
             return 1
     return can_edit
 
