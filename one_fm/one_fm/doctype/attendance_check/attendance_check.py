@@ -25,25 +25,25 @@ class AttendanceCheck(Document):
 
             if self.justification != "Other":
                 self.other_reason = ""
-            
+
             if self.justification == "Other":
                 if not self.other_reason:
                     frappe.throw("Please write the other Reason")
-        
+
             if self.justification != "Mobile isn't supporting the app":
                 self.mobile_brand = ""
                 self.mobile_model = ""
-            
 
-            if self.justification == "Mobile isn't supporting the app": 
+
+            if self.justification == "Mobile isn't supporting the app":
                 if not self.mobile_brand:
                     frappe.throw("Please select mobile brand")
                 if not self.mobile_model:
                     frappe.throw("Please Select Mobile Model")
-                
+
             if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Other"]:
                 self.screenshot = ""
-            
+
             if self.justification in ["Invalid media content","Out-of-site location", "User not assigned to shift"]:
                 if not self.screenshot:
                     frappe.throw("Please Attach ScreenShot")
@@ -66,13 +66,14 @@ class AttendanceCheck(Document):
                     frappe.throw(f"No Shift Assignments found for {self.employee_name} on {self.date} Please create one")
             else:
                 frappe.throw("Only Shift/Site Supervisors and Attendance Managers have permission to submit unscheduled Attendance Checks")
-        
+
     def on_submit(self):
-        if self.attendance_status == "Present":
+        shift_working = frappe.db.get_value("Employee", self.employee, "shift_working")
+        if self.attendance_status == "Present" and not shift_working:
             self.validate_unscheduled_check()
         if self.attendance_status == "On Leave":
             self.check_on_leave_record()
-        if self.attendance_status == "Day Off":
+        if self.attendance_status == "Day Off" and not shift_working:
             validate_day_off(self,convert=0)
         self.validate_justification_and_attendance_status()
         self.mark_attendance()
@@ -153,7 +154,7 @@ class AttendanceCheck(Document):
                 AND workflow_state = 'Approved'
                 AND docstatus = 1
         """,as_dict=True)
-        
+
         if  submited_leave_record:
             return
         else:
@@ -204,7 +205,7 @@ def get_attendance_by_timesheet_employees(employees,attendance_date):
                     cond+=f" and name !='{employees[0]}'"
                 else:
                     cond+= f" and name not in {tuple(employees)}"
-        
+
             ts_employees = frappe.db.sql(f"""SELECT name from  `tabEmployee` where status = "Active"  and attendance_by_timesheet = 1 {cond}""",as_dict=1)
             return [i.name for i in ts_employees]
         return [i.name for i in frappe.get_all("Employee",{"status":"Active",'attendance_by_timesheet':1,'name':['NOT IN',employees]},['name'])]
@@ -635,8 +636,8 @@ def create_attendance_check(attendance_date=None):
                     frappe.log_error(title="Attendance Check Error",message=e)
                     print(e)
                     continue
-                      
-        
+
+
 
         # remark missing
         frappe.enqueue(mark_missing_attendance, attendance_checkin_found=attendance_checkin_found, queue='long', timeout=5000)
@@ -748,7 +749,7 @@ def mark_missing_attendance(attendance_checkin_found):
 @frappe.whitelist()
 def check_attendance_manager(email: str) -> bool:
     return frappe.db.get_value("Employee", {"user_id": email}) == frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
- 
+
 
 @frappe.whitelist()
 def validate_day_off(form,convert=1):
@@ -759,13 +760,13 @@ def validate_day_off(form,convert=1):
         query = f"Select name from `tabShift Request` where docstatus = 1 and assign_day_off = 1 and  employee = '{doc.get('employee')}' and from_date <= '{doc.get('date')}'  and to_date >='{doc.get('date')}'"
         submited_result_set = frappe.db.sql(query,as_dict=1)
         if submited_result_set:
-            return 
+            return
         else:
             draft_query =  f"Select name,approver from `tabShift Request` where docstatus = 0 and assign_day_off = 1 and  employee = '{doc.get('employee')}' and from_date <= '{doc.get('date')}'  and to_date >='{doc.get('date')}'"
             drafts_result_set = frappe.db.sql(draft_query,as_dict=1)
             if drafts_result_set:
-                
-                
+
+
                 doc_url = get_url_to_form('Shift Request',drafts_result_set[0].get('name'))
                 approver_full_name = frappe.db.get_value("User",drafts_result_set[0].get('approver'),'full_name')
                 error_template = frappe.render_template('one_fm/templates/emails/attendance_check_alert.html',context={'doctype':'Shift Request','current_user':frappe.session.user,'date':doc.date,'approver':approver_full_name,'page_link':doc_url,'employee_name':doc.employee_name})
@@ -784,13 +785,13 @@ def assign_attendance_manager_after_48_hours():
     if attendance_manager_user:
         date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f') - timedelta(hours=48)
         attendance_check = attendance_check = frappe.db.sql("""
-                                                                SELECT name 
+                                                                SELECT name
                                                                 FROM `tabAttendance Check`
                                                                 WHERE creation <= %s
                                                                 AND docstatus = 0
                                                                 AND TIME(creation) <= %s
                                                             """, (date_time, date_time.time()), as_list=1)
-        
+
         if attendance_check:
             list_of_names = tuple(chain.from_iterable(attendance_check))
             if list_of_names:
@@ -800,8 +801,8 @@ def assign_attendance_manager_after_48_hours():
                         'name': obj,
                         'assign_to': [attendance_manager_user],
                     })
-                    
-                    
+
+
 def check_for_missed(date,schedules,shift_assignments,attendance_requests,all_attendance,checks_to_create):
     all_leaves = frappe.db.sql(f"""SELECT name,employee
         FROM `tabLeave Application`
@@ -809,7 +810,7 @@ def check_for_missed(date,schedules,shift_assignments,attendance_requests,all_at
             AND workflow_state = 'Approved'
             AND docstatus = 1
     """,as_dict=True)
-    all_shifts_query = f"""Select employee from `tabShift Request` where docstatus = 1 and 
+    all_shifts_query = f"""Select employee from `tabShift Request` where docstatus = 1 and
     from_date <= '{date}'  and to_date >='{date}'"""
     all_leave_employees = [i.employee for i in all_leaves]
     all_shifts = frappe.db.sql(all_shifts_query,as_dict = 1)
@@ -826,7 +827,7 @@ def check_for_missed(date,schedules,shift_assignments,attendance_requests,all_at
         single_employee = merged_tuple[0]
         employees_with_no_docs_query = f""" SELECT name from `tabEmployee` where status = 'Active' and shift_working = 1 and name = {single_employee}
                                         """
-    
+
     #Employees with no shift,schedule,leaves etc
     else:
          employees_with_no_docs_query = f""" SELECT name from `tabEmployee` where status = 'Active' and shift_working = 1 and name not in {merged_tuple}
