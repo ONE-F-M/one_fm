@@ -561,7 +561,7 @@ def update_google_sheet_daily():
 
 	for e in list_of_export:
 		doc = frappe.get_doc("Google Sheet Data Export",e.name)
-		time.sleep(120)
+		time.sleep(20)
 
 		frappe.enqueue(export_data, 
 			doctype= doc.reference_doctype,
