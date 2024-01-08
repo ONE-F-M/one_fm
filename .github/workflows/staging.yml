@@ -25,7 +25,7 @@ jobs:
         script: |
           cd /home/frappe/frappe-bench/apps/one_fm # we move into our app's folder
           # git pull upstream staging # we pull any changes from git
-          git config --global pull.ff only
+          git pull
           cd /home/frappe          
           pip3 install --upgrade frappe-bench
           cd /home/frappe/frappe-bench
