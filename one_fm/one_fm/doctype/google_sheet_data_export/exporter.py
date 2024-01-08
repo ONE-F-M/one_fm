@@ -573,7 +573,7 @@ def update_google_sheet_daily():
 			sheet_name= doc.sheet_name,
 			owner= doc.owner, 
 			client_id= doc.client_id,
-			is_async=True, queue="long")
+			is_async=True, queue="long", timeout=6000)
 
 @frappe.whitelist()
 def get_client_id():
