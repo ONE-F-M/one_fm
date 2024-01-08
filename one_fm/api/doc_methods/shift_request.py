@@ -417,25 +417,25 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
                 if allowed_employees:
                     cond_str = f" and name in  {tuple(allowed_employees)}" if len(allowed_employees)>1 else f" and name = {allowed_employees[0]}"
                     if txt:
-                        cond_str+=f" and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'  "
+                        cond_str+=f" and (name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%')  "
                     query=employee_base_query+cond_str
                 shifts = get_manager('Operations Shift',employee_id)
                 if shifts:
                     cond_str = f" and shift in {tuple(shifts)}" if len(shifts)>1 else f" and shift = {shifts[0]}"
                     if txt:
-                        cond_str+=f" and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'  "
+                        cond_str+=f" and (name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%')  "
                     query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
                 sites = get_manager('Operations Site',employee_id)
                 if sites:
                     cond_str = f" and site in {tuple(sites)}" if len(sites)>1 else f" and site = {sites[0]}"
                     if txt:
-                        cond_str+=f" and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'  "
+                        cond_str+=f" and (name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%')  "
                     query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
                 project = get_manager('Project',employee_id)
                 if project:
                     cond_str = f" and project in {tuple(project)}" if len(project)>1 else f" and project = {project[0]}"
                     if txt:
-                        cond_str+=f" and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'  "
+                        cond_str+=f" and (name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%')  "
                     query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
                 #Check if employee is set in operations shift, operations site or project
                 
