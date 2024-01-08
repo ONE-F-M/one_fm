@@ -21,7 +21,6 @@
   "attendance_manager_name",
   "employee_section",
   "employee_master_role",
-  "employee_access",
   "wiki_page_access"
  ],
  "fields": [
@@ -86,12 +85,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "employee_access",
-   "fieldtype": "Table",
-   "label": "Employee Access",
-   "options": "ONEFM Employee Access"
-  },
-  {
    "description": "All users with this role have edit access on the Employee Form",
    "fieldname": "employee_master_role",
    "fieldtype": "Table",
@@ -121,7 +114,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-01-07 13:30:09.074476",
+ "modified": "2024-01-08 17:20:02.050883",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
