@@ -29,6 +29,7 @@ jobs:
           cd /home/frappe/frappe-bench
           # bench setup requirements
           bench migrate # sync database
+          pip3 install --upgrade frappe-bench
           bench restart #${{secrets.PASSKEY}}
           # we remove any unused dependencies
           bench doctor
