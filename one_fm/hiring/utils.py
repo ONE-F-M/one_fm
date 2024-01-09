@@ -789,25 +789,33 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 		get_link_to_form('Interview Feedback', interview_feedback.name), method.title()))
 
 def calculate_interview_feedback_average_rating(doc, method):
-    total_skill_rating = doc.average_rating if doc.average_rating else 0
-    total_score = 0
-    total_questions = 0
-    for d in doc.interview_question_assessment:
-        d.weight = d.weight if d.weight else 0
-        if d.weight > 0 and d.score:
-            total_score += get_score_out_of_five(d.score, d.weight)
-            total_questions += 1
+    total_rating = 0
+    for d in doc.skill_assessment:
+        if d.rating:
+            total_rating += d.rating
 
-    average_score = flt(total_score / total_questions if total_questions else 0)
-    if total_score > 0:
-        if total_skill_rating > 0:
-            doc.average_rating = flt((total_skill_rating + average_score) / 2)
-        else:
-            doc.average_rating = flt(average_score)
+    total_skill_rating = flt(
+        total_rating / len(doc.skill_assessment) if len(doc.skill_assessment) else 0
+    )
 
-def get_score_out_of_five(score, weight):
-    return (score * 5) / weight
+    total_question_rating = 0
+    if doc.interview_question_assessment and len(doc.interview_question_assessment) > 0:
+        total_rating = 0
+        for d in doc.interview_question_assessment:
+            d.weight = d.weight if d.weight else 0
+            if d.weight > 0 and d.score:
+                total_rating += get_rating_from_the_score(d.score, d.weight)
 
+        total_question_rating = flt(total_rating / len(doc.interview_question_assessment))
+
+    if total_question_rating > 0:
+        doc.average_rating = (total_skill_rating + total_question_rating) / 2
+    else:
+        doc.average_rating = total_skill_rating
+
+def get_rating_from_the_score(score, weight):
+    score_per = score / weight
+    return score_per if score_per else 0
 
 def get_employee_record_exists_for_job_offer_or_job_applicant(job_offer=False, job_applicant=False, status='Active'):
 	"""
