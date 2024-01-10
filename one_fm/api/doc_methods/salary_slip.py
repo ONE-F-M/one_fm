@@ -21,40 +21,74 @@ def get_scheduled_day_off(employee, start_date, end_date):
 
     return schedules
 
-def get_working_days_details(
-    self, joining_date=None, relieving_date=None, lwp=None, for_preview=0
-):
+def get_scheduled_days(employee, start_date, end_date):
+    schedule_list = frappe.db.sql_list("""
+        select
+            distinct date from `tabEmployee Schedule`
+        where
+            employee=%s and date between %s and %s
+    """, (employee, start_date, end_date))
+
+    schedules = [cstr(schedule) for schedule in schedule_list]
+
+    return schedules
+
+def get_working_days_details(self, joining_date=None, relieving_date=None, lwp=None, for_preview=0):
+
+    # Get the payroll based on from the settings it can be "Attendance" or "Leave"
     payroll_based_on = frappe.db.get_value("Payroll Settings", None, "payroll_based_on")
+
+    # Get to know the payroll include holidays in the total working days
     include_holidays_in_total_working_days = frappe.db.get_single_value(
         "Payroll Settings", "include_holidays_in_total_working_days"
     )
 
-    include_day_off_in_total_working_days = frappe.db.get_single_value(
-        "HR and Payroll Additional Settings", "include_day_off_in_total_working_days"
-    )
-
+    # Set joining date and relieving date
     if not (joining_date and relieving_date):
             joining_date, relieving_date = self.get_joining_and_relieving_dates()
+
+    # Identify start date and end date based on the joining and relieving date
     start_date = getdate(self.start_date) if getdate(joining_date) < getdate(self.start_date) else getdate(joining_date)
     end_date = getdate(self.end_date) if getdate(relieving_date) < getdate(self.end_date) else getdate(relieving_date)
 
+    # Set working days based on the payroll type
     if self.payroll_type == 'Basic':
+        # Set working days as total number of days in between the sart and end date
         working_days = date_diff(end_date, start_date) + 1
     else:
+        # Set working days as Number of Over Time employee schedules in between the start and end date
         working_days = get_ot_days(self.employee, start_date, end_date)
 
-    if for_preview: 
+    if for_preview:
         self.total_working_days = working_days
         self.payment_days = working_days
         return
-    holidays = get_holiday_date_for_employee(self, start_date, end_date)
 
+    # Get the number of holidays marked in the holiday list for the employee or the company
+    holidays = self.get_holidays_for_employee(start_date, end_date)
+
+    '''
+    working_days_list is the list of date starts from start_date to end date if the payroll_type is Basic
+    For Over Time it will not be sequance of date starts from start date to end date.
+    Example:
+        start_date = "01/01/2023", end_date = "30/01/2023"
+        Basic:
+            working_days_list is "01/01/2023", "02/01/2023", "03/01/2023", ... "29/01/2023","30/01/2023",
+        OT:
+            OT schedules can be and the working_days_list is "03/01/2023", "06/01/2023" and "24/01/2023"
+            # TODO: working day list needs to be claculated for payroll_type is Over Time
+    '''
     working_days_list = [
         add_days(getdate(start_date), days=day) for day in range(0, working_days)
     ]
 
-    day_off_dates = get_scheduled_day_off(self.employee, start_date, end_date)
 
+    '''
+        Calculate working days based on the configuration of include_holidays_in_total_working_days
+        If include_holidays_in_total_working_days is true then,
+            set working_days by minusing the length of holidays from the working days
+            set working_days_list will update by removing the holiday dates from the working_days_list
+    '''
     if not cint(include_holidays_in_total_working_days):
         working_days_list = [i for i in working_days_list if i not in holidays]
 
@@ -62,19 +96,17 @@ def get_working_days_details(
         if working_days < 0:
             frappe.throw(_("There are more holidays than working days this month."))
 
-    day_off_dates = get_scheduled_day_off(self.employee, self.start_date, self.end_date)
-
     if not payroll_based_on:
         frappe.throw(_("Please set Payroll based on in Payroll settings"))
 
     if payroll_based_on == "Attendance":
-        actual_lwp, absent = calculate_lwp_ppl_and_absent_days_based_on_attendance(self,holidays, relieving_date)
+        actual_lwp, absent = self.calculate_lwp_ppl_and_absent_days_based_on_attendance(holidays, relieving_date)
         self.absent_days = absent
     else:
         actual_lwp = self.calculate_lwp_or_ppl_based_on_leave_application(
             holidays, working_days_list, relieving_date
         )
-    
+
     if not lwp:
         lwp = actual_lwp
     elif lwp != actual_lwp:
@@ -84,14 +116,12 @@ def get_working_days_details(
 
     self.leave_without_pay = lwp
     self.total_working_days = working_days
-    
-    # Set Payment days by considerring include_holidays_in_total_working_days
-    payment_days = get_payment_days(self,
-        start_date, end_date
-    )
-    # Payment days by considerring include_day_off_in_total_working_days
-    if not cint(include_day_off_in_total_working_days):
-        payment_days -= len(day_off_dates)
+
+
+    # TODO: find my payment days based on the payroll cycle also.
+    # If it is ending on the 24th then add payment days based on the employee schedule
+    # Initially set Payment days as working dyas by considerring include_holidays_in_total_working_days
+    payment_days = working_days
 
     if flt(payment_days) > flt(lwp):
         self.payment_days = flt(payment_days) - flt(lwp)
@@ -169,99 +199,6 @@ def get_unmarked_days(self, include_holidays_in_total_working_days):
     )[0].marked_days
     return unmarked_days
 
-def calculate_lwp_ppl_and_absent_days_based_on_attendance(self, holidays, relieving_date):
-    lwp = 0
-    absent = 0
-
-    end_date = self.end_date
-    if relieving_date and getdate(self.start_date) <= relieving_date < getdate(self.end_date):
-        end_date = relieving_date
-
-    payroll_settings = frappe.get_cached_value(
-        "Payroll Settings",
-        None,
-        [
-            "daily_wages_fraction_for_half_day",
-            "include_holidays_in_total_working_days",
-            "consider_marked_attendance_on_holidays",
-        ],
-        as_dict=True,
-    )
-
-    consider_marked_attendance_on_holidays = (
-        payroll_settings.include_holidays_in_total_working_days
-        and payroll_settings.consider_marked_attendance_on_holidays
-    )
-
-    daily_wages_fraction_for_half_day = (
-        flt(payroll_settings.daily_wages_fraction_for_half_day) or 0.5
-    )
-
-    leave_types = frappe.get_all(
-        "Leave Type",
-        or_filters=[["is_ppl", "=", 1], ["is_lwp", "=", 1]],
-        fields=["name", "is_lwp", "is_ppl", "fraction_of_daily_salary_per_leave", "include_holiday"],
-    )
-
-    leave_type_map = {}
-    for leave_type in leave_types:
-        leave_type_map[leave_type.name] = leave_type
-
-    attendance = frappe.qb.DocType("Attendance")
-    attendances = (
-        frappe.qb.from_(attendance)
-        .select(attendance.attendance_date, attendance.status, attendance.leave_type)
-        .where(
-            (attendance.status.isin(["Absent", "Half Day", "On Leave"]))
-            & (attendance.employee == self.employee)
-            & (attendance.docstatus == 1)
-            & (attendance.attendance_date.between(self.start_date, end_date))
-            & (attendance.roster_type == self.payroll_type)
-        )
-    ).run(as_dict=1)
-    for d in attendances:
-        if (
-            d.status in ("Half Day", "On Leave")
-            and d.leave_type
-            and d.leave_type not in leave_type_map.keys()
-        ):
-            continue
-
-        if (
-            not consider_marked_attendance_on_holidays
-            and formatdate(d.attendance_date, "yyyy-mm-dd") in holidays
-        ):
-            if d.status == "Absent" or (
-                d.leave_type
-                and d.leave_type in leave_type_map.keys()
-                and not leave_type_map[d.leave_type]["include_holiday"]
-            ):
-                continue
-
-        if d.leave_type:
-            fraction_of_daily_salary_per_leave = leave_type_map[d.leave_type][
-                "fraction_of_daily_salary_per_leave"
-            ]
-
-        if d.status == "Half Day":
-            equivalent_lwp = 1 - daily_wages_fraction_for_half_day
-
-            if d.leave_type in leave_type_map.keys() and leave_type_map[d.leave_type]["is_ppl"]:
-                equivalent_lwp *= (
-                    fraction_of_daily_salary_per_leave if fraction_of_daily_salary_per_leave else 1
-                )
-            lwp += equivalent_lwp
-        elif d.status == "On Leave" and d.leave_type and d.leave_type in leave_type_map.keys():
-            equivalent_lwp = 1
-            if leave_type_map[d.leave_type]["is_ppl"]:
-                equivalent_lwp *= (
-                    fraction_of_daily_salary_per_leave if fraction_of_daily_salary_per_leave else 1
-                )
-            lwp += equivalent_lwp
-        elif d.status == "Absent":
-            absent += 1
-    return lwp, absent
-
 def get_unmarked_days_based_on_doj_or_relieving(
         self, unmarked_days, include_holidays_in_total_working_days, start_date, end_date
     ):
@@ -270,28 +207,16 @@ def get_unmarked_days_based_on_doj_or_relieving(
     Relieving Date from unmarked days
     """
     from erpnext.setup.doctype.employee.employee import is_holiday
-    include_day_off_in_total_working_days = frappe.db.get_single_value(
-        "HR and Payroll Additional Settings", "include_day_off_in_total_working_days"
-    )
-    # if include_holidays_in_total_working_days and include_day_off_in_total_working_days:
-    # 	unmarked_days = date_diff(end_date, start_date) + 1
-    # el
     if include_holidays_in_total_working_days:
         unmarked_days -= date_diff(end_date, start_date) + 1
-        # for days in range(date_diff(end_date, start_date) + 1):
-        # 	date = add_days(end_date, -days)
-        # 	# include if not day off
-        # 	if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
-        # 		unmarked_days -= 1
     else:
+        scheduled_days = get_scheduled_days(self.employee, start_date, end_date)
         for days in range(date_diff(end_date, start_date) + 1):
             date = add_days(end_date, -days)
-            # exclude if not holidays
-            if not is_holiday(self.employee, date):
+            # exclude if not holidays and not having a employee schedule
+            if not is_holiday(self.employee, date) and date not in scheduled_days:
                 unmarked_days -= 1
-            # exclude if not day off
-            # if not include_day_off_in_total_working_days and not is_day_off(self.employee, date):
-            # 	unmarked_days -= 1
+
     return unmarked_days
 
 def is_day_off(employee, date=None):
@@ -451,18 +376,10 @@ def get_payment_days(doc, start_date, end_date):
         "Payroll Settings", "include_holidays_in_total_working_days"
     )
 
-    include_day_off_in_total_working_days = frappe.db.get_single_value(
-        "HR and Payroll Additional Settings", "include_day_off_in_total_working_days"
-    )
-
-    holidays = get_holiday_date_for_employee(doc, start_date, end_date)
+    holidays = doc.get_holidays_for_employee(start_date, end_date)
 
     if not cint(include_holidays_in_total_working_days):
         payment_days -= len(holidays)
-
-    if not cint(include_day_off_in_total_working_days):
-        day_off_dates = get_scheduled_day_off(doc.employee, start_date, end_date)
-        payment_days -= len(day_off_dates)
 
     return payment_days
 
@@ -553,7 +470,7 @@ def is_multiple_salary_structure(doc):
 
 @frappe.whitelist()
 def validate_multi_structure_slip(doc,return_doc = 0):
-    """Validate if the payroll period in the salary slip or payroll entry has multiple salary structures assigned, 
+    """Validate if the payroll period in the salary slip or payroll entry has multiple salary structures assigned,
          It will return either a boolean or a frappe object based on the arguments received """
     if isinstance(doc,string_types):
         return_doc = True
@@ -576,7 +493,7 @@ def generate_split_payroll(doc,structure_dict):
     #Set Components in Structure
     #Set Dates for Structure
     #Set Amount for Components per date
-    #Transfer to real table	
+    #Transfer to real table
     strucs = tuple([i.salary_structure for i in structure_dict])
     components = frappe.db.sql(f"""Select sd.*,sc.type from `tabSalary Detail` sd JOIN `tabSalary Component` sc
                                ON sd.salary_component = sc.name WHERE sd.parent IN {strucs}  """,as_dict = 1)
@@ -644,8 +561,8 @@ def get_salary_detail(structure_dict,doc,components):
     except:
         frappe.log_error("Error Generating Salary",frappe.get_traceback())
         frappe.throw("An error ocurred while generating salary, Kindly review error Logs")
-        
-  
+
+
 def _safe_eval(code: str, eval_globals: dict | None = None, eval_locals: dict | None = None):
     """Old version of safe_eval from framework.
 
@@ -710,14 +627,14 @@ def get_split_days(salary_assignment,doc,payroll_based_on,consider_unmarked_atte
     return payment_days_for_period
 
 def get_prorated_amount(component,doc,data,payment_days_for_period):
-    
+
     """
     Generate the amount to be paid for each salary structure assignment
     """
     try:
         salary_slip_amount = 0
         if component.amount_based_on_formula:
-            
+
             formula = sanitize_expression(component.formula)
             if formula:
                 salary_slip_amount = flt(
@@ -732,26 +649,20 @@ def get_prorated_amount(component,doc,data,payment_days_for_period):
         frappe.log_error("Error Generating Salary Amount",frappe.get_traceback())
         frappe.throw("An error ocurred while generating salary, Kindly review error Logs")
 
-        
-        
+
+
 def get_split_payment_days(doc,start,end_date, joining_date=None, relieving_date=None):
     if not joining_date:
         joining_date, relieving_date = frappe.get_cached_value(
             "Employee", doc.employee, ["date_of_joining", "relieving_date"]
         )
     start_date = getdate(start)
-    
- 
+
+
     include_holidays_in_total_working_days = frappe.db.get_single_value(
         "Payroll Settings", "include_holidays_in_total_working_days"
     )
 
-    include_day_off_in_total_working_days = frappe.db.get_single_value(
-        "HR and Payroll Additional Settings", "include_day_off_in_total_working_days"
-    )
- 
- 
- 
     if joining_date:
         if getdate(start_date) <= joining_date <= getdate(end_date):
             start_date = joining_date
@@ -771,18 +682,8 @@ def get_split_payment_days(doc,start,end_date, joining_date=None, relieving_date
     if not cint(include_holidays_in_total_working_days):
         holidays = doc.get_holidays_for_employee(start_date, end_date)
         payment_days -= len(holidays)
-    include_day_off_in_total_working_days = frappe.db.get_single_value(
-        "HR and Payroll Additional Settings", "include_day_off_in_total_working_days"
-    )
-    if not cint(include_day_off_in_total_working_days):
-        day_off_dates = get_scheduled_day_off(doc.employee, start_date, end_date)
-        payment_days -= len(day_off_dates)
 
     return payment_days
-
-    
-
-
 
 def get_split_data_for_eval(self,start_date,end_date,assignment_doc,salary_components):
     """Returns data for evaluating formula"""
@@ -809,7 +710,7 @@ def get_split_data_for_eval(self,start_date,end_date,assignment_doc,salary_compo
     data.update(self.as_dict())
 
     # set values for components
-    
+
     for sc in salary_components:
         if sc.parent == assignment_doc.salary_structure:
             data.setdefault(sc.salary_component_abbr, 0)
@@ -865,7 +766,7 @@ def lwp_ppl_and_absent_days_for_split_payslip(self,start_date,end_date, holidays
         leave_type_map[leave_type.name] = leave_type
 
     attendance = frappe.qb.DocType("Attendance")
-    
+
     attendances = (
         frappe.qb.from_(attendance)
         .select(attendance.attendance_date, attendance.status, attendance.leave_type)
@@ -955,7 +856,7 @@ def get_unmarked_days_for_split_salary(doc,include_holidays_in_total_working_day
             doc.posting_date,
             end_date,
         )
-        
+
     # exclude days for which attendance has been marked
     unmarked_days -= frappe.get_all(
         "Attendance",
@@ -972,7 +873,7 @@ def get_unmarked_days_for_split_salary(doc,include_holidays_in_total_working_day
 
 def update_earning_deductions(doc):
     """
-        Update the Earnings and Deductions tables based on values in the split payroll 
+        Update the Earnings and Deductions tables based on values in the split payroll
         doc.compute_component_wise_year_to_date()
     """
     if doc.has_multiple_salary_structure:
@@ -980,17 +881,15 @@ def update_earning_deductions(doc):
         doc.deductions = []
         component_dict = {}
         for each in doc.custom_salary_component_detail:
-            
+
             if component_dict.get(each.salary_component):
                 component_dict[each.salary_component][0]+=each.amount
             else:
                 component_dict[each.salary_component]=[each.amount,each.component_type]
-                
+
         for one in component_dict:
             table = 'earnings' if component_dict[one][1]== 'Earning' else 'deductions'
             doc.append(table,{
                 'salary_component':one,
                 'amount':component_dict[one][0]
             })
-            
-    

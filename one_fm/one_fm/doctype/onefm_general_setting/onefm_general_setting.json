@@ -2,6 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "creation": "2022-06-09 12:09:59.006662",
+ "description": "Settings Doctype",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -14,12 +15,12 @@
   "section_break_nsc7h",
   "document_access_roles",
   "section_break_7yvzt",
+  "super_user_role",
   "mark_atttendance_per_employee",
   "attendance_manager",
   "attendance_manager_name",
   "employee_section",
   "employee_master_role",
-  "employee_access",
   "wiki_page_access"
  ],
  "fields": [
@@ -46,19 +47,10 @@
    "label": "Zenquotes API Key"
   },
   {
-   "fieldname": "column_break_xyl05",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "0",
    "fieldname": "mark_atttendance_per_employee",
    "fieldtype": "Check",
    "label": "Mark Atttendance Per Employee"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_nsc7h",
-   "fieldtype": "Section Break"
   },
   {
    "description": "Roles that have access to documents regardless of employee field restriction.",
@@ -93,27 +85,36 @@
    "read_only": 1
   },
   {
+   "description": "All users with this role have edit access on the Employee Form",
+   "fieldname": "employee_master_role",
+   "fieldtype": "Table",
+   "label": "Employee Master Role",
+   "options": "ONEFM Document Access Roles Detail"
+  },
+  {
+   "fieldname": "column_break_xyl05",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_nsc7h",
+   "fieldtype": "Section Break"
+  },
+  {
    "fieldname": "employee_section",
    "fieldtype": "Section Break",
    "label": "Employee"
   },
   {
-   "fieldname": "employee_access",
-   "fieldtype": "Table",
-   "label": "Employee Access",
-   "options": "ONEFM Employee Access"
-  },
-  {
-   "description": "All users with this role have edit access on the Employee Form",
-   "fieldname": "employee_master_role",
+   "fieldname": "super_user_role",
    "fieldtype": "Link",
-   "label": "Employee Master Role",
+   "label": "Super User Role",
    "options": "Role"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-12-25 18:01:16.629421",
+ "modified": "2024-01-08 17:20:02.050883",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

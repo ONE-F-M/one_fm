@@ -1,14 +1,13 @@
 frappe.ui.form.on('Employee', {
 	refresh: function(frm) {
 		hideFields(frm);
-		is_employee_master(frm);
+		
 		set_grd_fields(frm)
 		frm.trigger('set_queries');
 		set_mandatory(frm);
         set_shift_working_btn(frm);
         filterDefaultShift(frm);
         setProjects(frm);
-		setReadOnly(frm);
 		if(frappe.user.has_role('HR Manager') && !frm.doc.employee_id){
 			frm.add_custom_button(__('Run Employee ID Generation Method'), function() {
 				frappe.call({
@@ -48,6 +47,7 @@ frappe.ui.form.on('Employee', {
 	},
 	onload: function(frm) {
         frm.trigger('mandatory_reports_to');
+		is_employee_master(frm);
     },
 	designation: function(frm) {
 		frm.trigger('mandatory_reports_to');
@@ -124,13 +124,16 @@ const hideFields = frm => {
 }
 
 let is_employee_master = frm =>{
-	frappe.db.get_single_value("ONEFM General Setting",'employee_master_role').then(value=>{
-		if(value){
-			if(!frappe.user.has_role(value)){
+	frappe.call({
+		method: "one_fm.overrides.employee.is_employee_master",
+		args: {"user": frappe.session.user},
+		callback: function (r) {
+			console.log(r.message)
+			if (!parseInt(r.message)){
 				frm.disable_form()
-
 			}
 		}
+
 	})
 	
 }
@@ -205,16 +208,3 @@ function setCharAt(str,index,chr) {
     return str.substring(0,index) + chr + str.substring(index+1);
 }
 
-
-let setReadOnly = (frm) => {
-	frappe.call({
-		method: "one_fm.overrides.employee.check_employee_access",
-		args: {"email": frappe.session.user},
-		callback: function (r) {
-			if (!r.message){
-				frm.set_df_property("status", "read_only", 1)
-			}
-		}
-
-	})
-}

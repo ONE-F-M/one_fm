@@ -2992,12 +2992,43 @@ def get_today_leaves(cur_date):
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
 
+@frappe.whitelist()
+def has_super_user_role(user=None):
+    '''
+        A method to check the user is having super user role
+        Default it will be the role 'Director'
+        User having this role can be self approve configured documents like Shift Permission.
+        The user having this role no need reports to, since it will be the same employee linked to the user.
+
+        args:
+            user: user ID, eg: employee123@one_fm.com
+
+        return boolean(True if super user role exists in the given user's role list)
+    '''
+    if not user:
+        user = frappe.session.user
+    if user:
+        # get the user roles
+        user_roles = frappe.get_roles(user)
+        # Check if the default super user role in the user role list
+        if "Director" in user_roles:
+            return True
+        else:
+            # Get configured super user in ONEFM General Setting
+            super_user_role = frappe.db.get_single_value("ONEFM General Setting", "super_user_role")
+            # Check if the super user role exists in the user role list
+            if super_user_role and super_user_role in user_roles:
+                return True
+    return False
+
 def get_approver(employee):
     """
         Get document approver for employee by
         reports_to, shift_approver, site_approver
     """
-    if employee=="HR-EMP-00001":return "HR-EMP-00001" # for Abdullah
+    employee_user = frappe.get_value("Employee", {"name": employee}, "user_id")
+    if employee_user and has_super_user_role(employee_user):
+        return employee
     operations_site, operations_shift = '', ''
     if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
     emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
@@ -3045,7 +3076,10 @@ def check_employee_permission_on_doc(doc):
         based on employee field.
     """
     try:
-        if frappe.session.user not in ["Administrator", 'administrator', 'abdullah@one-fm.com']:
+        if has_super_user_role(frappe.session.user):
+            return
+
+        if frappe.session.user not in ["Administrator", 'administrator']:
             session_employee = frappe.cache().get_value(frappe.session.user).employee
             roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
             has_roles = any([item in roles for item in frappe.get_roles()])

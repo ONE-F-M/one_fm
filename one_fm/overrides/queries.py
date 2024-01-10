@@ -58,3 +58,36 @@ def warehouse_query(doctype, txt, searchfield, start, page_len, filters, as_dict
         {"txt": "%%%s%%" % txt, "_txt": txt.replace("%", ""), "start": start, "page_len": page_len},
         as_dict=as_dict,
     )
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def employee_query(doctype, txt, searchfield, start, page_len, filters):
+    doctype = "Employee"
+    conditions = []
+    fields = get_fields(doctype, ["name", "employee_name", "employee_id"])
+
+    return frappe.db.sql(
+        """select {fields} from `tabEmployee`
+        where status = 'Active'
+            and docstatus < 2
+            and ({key} like %(txt)s
+                or employee_name like %(txt)s
+                or employee_id like %(txt)s)
+            {fcond} {mcond}
+        order by
+            (case when locate(%(_txt)s, name) > 0 then locate(%(_txt)s, name) else 99999 end),
+            (case when locate(%(_txt)s, employee_name) > 0 then locate(%(_txt)s, employee_name) else 99999 end),
+            (case when locate(%(_txt)s, employee_id) > 0 then locate(%(_txt)s, employee_id) else 99999 end),
+            idx desc,
+            name, employee_name, employee_id
+        limit %(page_len)s offset %(start)s""".format(
+            **{
+                "fields": ", ".join(fields),
+                "key": searchfield,
+                "fcond": get_filters_cond(doctype, filters, conditions),
+                "mcond": get_match_cond(doctype),
+            }
+        ),
+        {"txt": "%%%s%%" % txt, "_txt": txt.replace("%", ""), "start": start, "page_len": page_len},
+    )

@@ -15,6 +15,7 @@ frappe.ui.form.on('Shift Request', {
 	},
 	onload: function(frm){
 		prefillForm(frm);
+		set_employee_filters(frm)
 		
 	},
 	refresh: function(frm) {
@@ -120,6 +121,27 @@ function set_approver(frm){
             }
         });
     }
+	if(!frm.doc.employee_name && frm.doc.employee){
+		frappe.call({
+            method: 'one_fm.api.doc_methods.shift_request.fetch_employee_details',
+            args:{
+                'employee':frm.doc.employee
+            },
+            callback: function(r) {
+                if(r.message){
+                    frm.set_value("operations_shift",r.message.shift)
+					frm.set_value("shift",r.message.default_shift)
+					frm.set_value("site",r.message.site)
+					frm.set_value("employee_name",r.message.employee_name)
+					frm.set_value("project",r.message.project)
+					frm.set_value("department",r.message.department)
+					frm.set_value("company_name",r.message.company)
+					frm.set_value("company",r.message.company)
+
+                }
+            }
+        });
+	}
 }
 
 function loadGoogleMap(frm, log_type){
@@ -170,6 +192,15 @@ function clearCircles(){
 }
 
 
+let set_employee_filters = frm=>{
+	frm.set_query("employee", function() {
+		return {
+			query: "one_fm.api.doc_methods.shift_request.get_employees",
+			
+		};
+	});
+
+}
 
 var prefillForm = frm =>{
 	const url = new URL(window.location.href);

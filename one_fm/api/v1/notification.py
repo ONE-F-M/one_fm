@@ -24,14 +24,13 @@ def get_notification_list(employee_id: str = None) -> dict:
 			error (str): Any error handled.
         }
     """
-
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee_id must be of type str.")
-
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee_id must be of type str.")
+
         site = frappe.local.conf.app_url
 
 		# notifications created for mobile app
@@ -61,4 +60,5 @@ def get_notification_list(employee_id: str = None) -> dict:
         return response("Success", 200, result)
 
     except Exception as error:
+        frappe.log_error(title="API Notification", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)

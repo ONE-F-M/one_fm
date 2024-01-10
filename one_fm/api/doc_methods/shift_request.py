@@ -171,6 +171,16 @@ def update_shift_assignment(shift_assignemnt,shift_request):
     assignment_doc.db_set("shift_request" , shift_request.name)
     assignment_doc.db_set("check_in_site" , shift_request.check_in_site)
     assignment_doc.db_set("check_out_site" , shift_request.check_out_site)
+    shift_type_data = frappe.get_doc("Shift Type",shift_request.shift_type)
+    if shift_type_data:
+        start_datetime = datetime.datetime.strptime(f"{shift_request.from_date} {(datetime.datetime.min + shift_type_data.start_time).time()}", '%Y-%m-%d %H:%M:%S')
+        if shift_type_data.end_time.total_seconds() < shift_type_data.start_time.total_seconds():
+            end_datetime = datetime.datetime.strptime(f"{add_days(assignment_doc.start_date, 1)} {(datetime.datetime.min + shift_type_data.end_time).time()}", '%Y-%m-%d %H:%M:%S')
+        else:
+            end_datetime = datetime.datetime.strptime(f"{assignment_doc.start_date} {(datetime.datetime.min + shift_type_data.end_time).time()}", '%Y-%m-%d %H:%M:%S')
+
+        assignment_doc.db_set("start_datetime" ,start_datetime)
+        assignment_doc.db_set("end_datetime" , end_datetime)
     if shift_request.operations_role:
         assignment_doc.db_set("operations_role" , shift_request.operations_role)
 
@@ -335,6 +345,119 @@ def update_request(shift_request, from_date, to_date):
     shift_request_obj.db_set("update_request", True)
     shift_request_obj.db_set("status", 'Draft')
     apply_workflow(shift_request_obj, "Update Request")
+
+def _get_employee_from_user(user):
+	employee_docname = frappe.db.get_value("Employee", {"user_id": user})
+	return employee_docname if employee_docname else None
+	
+
+def get_manager(doctype,employee):
+    field = None
+    if doctype =="Project":
+        field = 'account_manager'
+    elif doctype =='Operations Site':
+        field = 'account_supervisor'
+    elif doctype =='Operations Shift':
+        field = 'supervisor'
+    if field:
+        values = frappe.get_all(doctype,{field:employee},['name'])
+        if values:
+            return [i.name for i in values]
+        
+
+
+@frappe.whitelist()
+def fetch_employee_details(employee):
+    emp_data = frappe.get_all("Employee",{'name':employee},['employee_name','company','shift','site','project','default_shift','department'])
+    return emp_data[0] if emp_data else []
+
+@frappe.whitelist()
+def get_employees(doctype, txt, searchfield, start, page_len, filters):
+    """
+    Return the full list of employees if current user has a HR role or Included in the Employee Master Table.
+    else, it returns the full list of employees assigned to the Operations shifts,sites or projects where this user is set
+    
+    """
+    
+    is_master= False
+    default_user_roles = None
+    employee_master_roles = frappe.get_all("ONEFM Document Access Roles Detail",{'parent':"ONEFM General Setting",'parentfield':"employee_master_role"},['role'])
+    user_roles = frappe.get_roles(frappe.session.user) or []
+    default_user_roles = [i.role for i in employee_master_roles] if employee_master_roles else  ['HR Manager',"HR User"]
+    #if user has any default hr role
+    if [role for role in user_roles if role in default_user_roles ]:
+            is_master = True
+    if  is_master:
+        #If the user has not typed anything on the employee field
+        if not txt:
+            employees = frappe.db.sql("Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' ")
+            return employees
+        else:
+            #If the user has  typed anything on the employee field
+            employees = frappe.db.sql(f"Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'   ")
+            return employees
+            
+    else:
+        allowed_employees = []
+        user = frappe.session.user
+        if user!="Administrator":
+            employee_id = _get_employee_from_user(user)
+            if employee_id:
+                employee_base_query = f""" 
+                        SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"
+                """
+                cond_str = ""
+                query = None
+                allowed_employees.append(employee_id)
+                #get all reports to 
+                reports_to = frappe.get_all("Employee",{'reports_to':employee_id,'status':"Active"},'name')
+                if reports_to:
+                    allowed_employees+=[i.name for i in reports_to]
+                #get all employees in  project,shift and site
+                if allowed_employees:
+                    cond_str = f" and name in  {tuple(allowed_employees)}" if len(allowed_employees)>1 else f" and name = {allowed_employees[0]}"
+                    if txt:
+                        cond_str+=f" and (name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%')  "
+                    query=employee_base_query+cond_str
+                shifts = get_manager('Operations Shift',employee_id)
+                if shifts:
+                    cond_str = f" and shift in {tuple(shifts)}" if len(shifts)>1 else f" and shift = {shifts[0]}"
+                    if txt:
+                        cond_str+=f" and (name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%')  "
+                    query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
+                sites = get_manager('Operations Site',employee_id)
+                if sites:
+                    cond_str = f" and site in {tuple(sites)}" if len(sites)>1 else f" and site = {sites[0]}"
+                    if txt:
+                        cond_str+=f" and (name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%')  "
+                    query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
+                project = get_manager('Project',employee_id)
+                if project:
+                    cond_str = f" and project in {tuple(project)}" if len(project)>1 else f" and project = {project[0]}"
+                    if txt:
+                        cond_str+=f" and (name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%')  "
+                    query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
+                #Check if employee is set in operations shift, operations site or project
+                
+                return frappe.db.sql(query)
+                
+                
+            else:
+                return ()
+        else:
+            if not txt:
+                return frappe.db.sql("Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' ")
+            else:
+                return frappe.db.sql("Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' and name \
+                    like '%{txt}%' or employee_name like '%{txt}%' \or employee_id like '%{txt}%'  ")
+        
+        
+        
+    
+        
+        
+        
+
 
 @frappe.whitelist()
 def get_operations_role(doctype, txt, searchfield, start, page_len, filters):

@@ -1,0 +1,55 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, .local_transfer td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      width: 30%;
+      text-align: left;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #ddd;
+    }
+    
+</style>
+    
+<h1>Reminder on {{ applicant_name }}</h1>
+<br>
+<table>
+    <tbody class="local_transfer">
+    <tr>
+        <th>Document Name</th>
+        <td>{{ document_name }}</td>
+    </tr>
+    <tr>
+        <th>Document Type</th>
+        <td>Job Applicant</td>
+    </tr>
+    <tr>
+        <th>Description</th>
+        <td>Follow up on local transfer</td>
+    </tr>
+    <tr>
+        <th>Content</th>
+        <td>Please be reminded to take action on the residence permit for {{ applicant_name }}</td>
+    </tr>
+    <tr>
+        <th>Document Link</th>
+        <td><a href={{ doc_url }}>Click Here</a></td>
+    </tr>
+    </tbody>
+</table>
