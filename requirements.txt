@@ -13,6 +13,7 @@ google-cloud-firestore
 google-cloud-storage
 google-cloud-vision
 googlemaps
+gspread
 firebase-admin
 redis-cli
 qrcode
