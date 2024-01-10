@@ -93,59 +93,59 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
     Returns:
         dict: {
             message (str): Brief message indicating the response,
-			status_code (int): Status code of response.
+            status_code (int): Status code of response.
             data (dict): checkin log created.
             error (str): Any error handled.
         }
     """
-    # ensure skip attendance is correctly formated
     try:
-        skip_attendance = int(skip_attendance) if skip_attendance else 0
-        latitude = float(latitude)
-        longitude = float(longitude)
-    except:
-        return response("Bad Request", 400, None, "skip_attendance must be an integer, latitude and longitude must be float.")
+        # ensure skip attendance is correctly formated
+        try:
+            skip_attendance = int(skip_attendance) if skip_attendance else 0
+            latitude = float(latitude)
+            longitude = float(longitude)
+        except:
+            return response("Bad Request", 400, None, "skip_attendance must be an integer, latitude and longitude must be float.")
 
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
 
-    if not video:
-        return response("Bad Request", 400, None, "video required.")
+        if not video:
+            return response("Bad Request", 400, None, "video required.")
 
-    if not log_type:
-        return response("Bad Request", 400, None, "log_type required.")
+        if not log_type:
+            return response("Bad Request", 400, None, "log_type required.")
 
-    if not skip_attendance:
-        return response("Bad Request", 400, None, "skip_attendance required.")
+        if not skip_attendance:
+            return response("Bad Request", 400, None, "skip_attendance required.")
 
-    if not latitude:
-        return response("Bad Request", 400, None, "latitdue required.")
+        if not latitude:
+            return response("Bad Request", 400, None, "latitdue required.")
 
-    if not longitude:
-        return response("Bad Request", 400, None, "longitude required.")
+        if not longitude:
+            return response("Bad Request", 400, None, "longitude required.")
 
-    if not isinstance(video, str):
-        return response("Bad Request", 400, None, "video must be of type str.")
+        if not isinstance(video, str):
+            return response("Bad Request", 400, None, "video must be of type str.")
 
-    if not isinstance(log_type, str):
-        return response("Bad Request", 400, None, "log_type must be of type str.")
+        if not isinstance(log_type, str):
+            return response("Bad Request", 400, None, "log_type must be of type str.")
 
-    if log_type not in ["IN", "OUT"]:
-        return response("Bad Request", 400, None, "Invalid log_type. log_type must be IN/OUT.")
+        if log_type not in ["IN", "OUT"]:
+            return response("Bad Request", 400, None, "Invalid log_type. log_type must be IN/OUT.")
 
-    if not isinstance(skip_attendance, int):
-        return response("Bad Request", 400, None, "skip_attendance must be of type int.")
+        if not isinstance(skip_attendance, int):
+            return response("Bad Request", 400, None, "skip_attendance must be of type int.")
 
-    if skip_attendance not in [0, 1]:
-        return response("Bad Request", 400, "Invalid skip_attendance. skip_attendance must be 0 or 1.")
+        if skip_attendance not in [0, 1]:
+            return response("Bad Request", 400, "Invalid skip_attendance. skip_attendance must be 0 or 1.")
 
-    if not isinstance(latitude, float):
-        return response("Bad Request", 400, None, "latitude must be of type float.")
+        if not isinstance(latitude, float):
+            return response("Bad Request", 400, None, "latitude must be of type float.")
 
-    if not isinstance(longitude, float):
-        return response("Bad Request", 400, None, "longitude must be of type float.")
+        if not isinstance(longitude, float):
+            return response("Bad Request", 400, None, "longitude must be of type float.")
 
-    try:
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
@@ -220,20 +220,19 @@ def has_day_off(employee,date):
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
 
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not latitude:
-        return response("Bad Request", 400, None, "latitude required.")
-
-    if not longitude:
-        return response("Bad Request", 400, None, "longitude required.")
-
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee must be of type str.")
-
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
 
+        if not latitude:
+            return response("Bad Request", 400, None, "latitude required.")
+
+        if not longitude:
+            return response("Bad Request", 400, None, "longitude required.")
+
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee must be of type str.")
+        
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
@@ -314,5 +313,5 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         return response("Success", 200, result)
 
     except Exception as error:
-        frappe.log_error(frappe.get_traceback(), 'Checkin -  Get site location')
+        frappe.log_error(title="API Site location", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)

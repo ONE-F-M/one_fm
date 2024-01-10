@@ -48,7 +48,7 @@ from one_fm.overrides.stock_controller import make_batches_with_supplier_batch_i
 from frappe.automation.doctype.assignment_rule.assignment_rule import AssignmentRule
 from one_fm.overrides.assignment_rule import do_assignment
 
-__version__ = '14.6.2'
+__version__ = '14.6.3'
 
 StockController.make_batches = make_batches_with_supplier_batch_id
 Interview.validate_overlap = validate_interview_overlap
