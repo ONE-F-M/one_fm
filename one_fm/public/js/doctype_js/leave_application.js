@@ -30,15 +30,28 @@ frappe.ui.form.on("Leave Application", {
                 // $('.btn .btn-primary .btn-sm').show();
             }
         }
+        if (frm.doc.status == 'Approved' && frm.doc.__onload && frm.doc.__onload.attendance_not_created){
+          frm.add_custom_button(__('Update Attendance'),
+            function () {
+              frappe.call({
+                doc: frm.doc,
+                method: 'update_attendance',
+                callback: function(r) {
+                  frm.reload_doc();
+                }
+              });
+            }
+          );
+        }
     },
     onload: function(frm) {
         $.each(frm.fields_dict, function(fieldname, field) {
           field.df.onchange = frm =>{
             if (cur_frm.doc.employee && cur_frm.doc.leave_type == "Sick Leave"){
-                frappe.db.get_value("Employee", cur_frm.doc.employee, "is_in_kuwait").then(res=>{ 
+                frappe.db.get_value("Employee", cur_frm.doc.employee, "is_in_kuwait").then(res=>{
                     res.message.is_in_kuwait ? cur_frm.set_value("is_proof_document_required", 1) : cur_frm.set_value("is_proof_document_required", 0)
                     cur_frm.refresh_field("is_proof_document_required")
-                    
+
                 })
             }
           };
@@ -48,13 +61,13 @@ frappe.ui.form.on("Leave Application", {
 })
 
 
-var prefillForm = frm => { 
+var prefillForm = frm => {
     const url = new URL(window.location.href);
 
     const params = new URLSearchParams(url.search);
 
     const doc_id = params.get('doc_id');
-    const doctype = params.get('doctype'); 
+    const doctype = params.get('doctype');
 
     if (doctype == "Attendance Check"){
         frappe.call({
@@ -69,7 +82,7 @@ var prefillForm = frm => {
             callback: function(r) {
                 if (r.message) {
                     cur_frm.set_value("employee", r.message.employee)
-                    
+
                 }
             }
         });
