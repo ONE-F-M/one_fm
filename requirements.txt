@@ -17,3 +17,5 @@ gspread
 firebase-admin
 redis-cli
 qrcode
+html2text
+gspread
