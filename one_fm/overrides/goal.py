@@ -117,10 +117,8 @@ def add_employee_child_goals(Goal, goal_names, employee):
 	goals = []
 	additional_goals = query.orderby(Goal.employee, Goal.kra).run(as_dict=True)
 	for i in additional_goals:
-		print(i)
 		if i.value not in goal_names:
 			parent_goal_employee = frappe.get_value("Goal", {'parent_goal':i.parent_goal}, ['employee'])
-			print(parent_goal_employee, employee)
 			if parent_goal_employee != employee:
 				goals.append(i)
 	return goals
