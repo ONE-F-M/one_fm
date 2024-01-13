@@ -2,7 +2,8 @@
 // For license information, please see license.txt
 
 // eslint-disable-next-line
-{% include 'erpnext/public/js/controllers/buying.js' %};
+frappe.provide("erpnext.accounts.dimensions");
+erpnext.buying.setup_buying_controller();
 
 frappe.ui.form.on('Request for Material', {
 	before_workflow_action: function(frm){
@@ -787,52 +788,54 @@ frappe.ui.form.on("Request for Material Item", {
 	}
 });
 
-// erpnext.buying.MaterialRequestController = class MaterialRequestController extends erpnext.buying.BuyingController{
-// 	tc_name() {
-// 		this.get_terms();
-// 	}
 
-// 	item_code() {
-// 		// to override item code trigger from transaction.js
-// 	}
+erpnext.buying.MaterialRequestController = class MaterialRequestController extends erpnext.buying.BuyingController {
+	tc_name() {
+		this.get_terms();
+	}
 
-// 	validate_company_and_party() {
-// 		return true;
-// 	}
+	item_code() {
+		// to override item code trigger from transaction.js
+	}
 
-// 	calculate_taxes_and_totals() {
-// 		return;
-// 	}
+	validate_company_and_party() {
+		return true;
+	}
 
-// 	validate() {
-// 		set_schedule_date(this.frm);
-// 	}
+	calculate_taxes_and_totals() {
+		return;
+	}
 
-// 	items_add(doc, cdt, cdn) {
-// 		var row = frappe.get_doc(cdt, cdn);
-// 		if(!row.uom){
-// 			this.frm.script_manager.copy_from_first_row("items", row, ["uom"]);
-// 		}
-// 		if(doc.schedule_date) {
-// 			row.schedule_date = doc.schedule_date;
-// 			refresh_field("schedule_date", cdn, "items");
-// 		} else {
-// 			this.frm.script_manager.copy_from_first_row("items", row, ["schedule_date"]);
-// 			this.frm.script_manager.copy_from_first_row("items", row, ["t_warehouse"]);
-// 		}
-// 	}
+	validate() {
+		set_schedule_date(this.frm);
+	}
 
-// 	items_on_form_rendered() {
-// 		set_schedule_date(this.frm);
-// 	}
+	items_add(doc, cdt, cdn) {
+		var row = frappe.get_doc(cdt, cdn);
+		if(!row.uom){
+			this.frm.script_manager.copy_from_first_row("items", row, ["uom"]);
+		}
+		if(doc.schedule_date) {
+			row.schedule_date = doc.schedule_date;
+			refresh_field("schedule_date", cdn, "items");
+		} else {
+			this.frm.script_manager.copy_from_first_row("items", row, ["schedule_date"]);
+			this.frm.script_manager.copy_from_first_row("items", row, ["t_warehouse"]);
+		}
+	}
 
-// 	schedule_date() {
-// 		set_schedule_date(this.frm);
-// 	}
-// };
+	items_on_form_rendered() {
+		set_schedule_date(this.frm);
+	}
 
-// // for backward compatibility: combine new and previous states
-// extend_cscript(cur_frm.cscript, new erpnext.buying.MaterialRequestController({frm: cur_frm}));
+	schedule_date() {
+		set_schedule_date(this.frm);
+	}
+};
+
+
+// for backward compatibility: combine new and previous states
+extend_cscript(cur_frm.cscript, new erpnext.buying.MaterialRequestController({frm: cur_frm}));
 
 function set_schedule_date(frm) {
 	if(frm.doc.schedule_date){
@@ -845,3 +848,6 @@ function set_t_warehouse(frm){
 		erpnext.utils.copy_value_in_all_rows(frm.doc, frm.doc.doctype, frm.doc.name, "items", "t_warehouse");
 	}
 };
+
+
+
