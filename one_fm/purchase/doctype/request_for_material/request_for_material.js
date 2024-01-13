@@ -787,52 +787,52 @@ frappe.ui.form.on("Request for Material Item", {
 	}
 });
 
-erpnext.buying.MaterialRequestController = class MaterialRequestController extends erpnext.buying.BuyingController{
-	tc_name() {
-		this.get_terms();
-	}
+// erpnext.buying.MaterialRequestController = class MaterialRequestController extends erpnext.buying.BuyingController{
+// 	tc_name() {
+// 		this.get_terms();
+// 	}
 
-	item_code() {
-		// to override item code trigger from transaction.js
-	}
+// 	item_code() {
+// 		// to override item code trigger from transaction.js
+// 	}
 
-	validate_company_and_party() {
-		return true;
-	}
+// 	validate_company_and_party() {
+// 		return true;
+// 	}
 
-	calculate_taxes_and_totals() {
-		return;
-	}
+// 	calculate_taxes_and_totals() {
+// 		return;
+// 	}
 
-	validate() {
-		set_schedule_date(this.frm);
-	}
+// 	validate() {
+// 		set_schedule_date(this.frm);
+// 	}
 
-	items_add(doc, cdt, cdn) {
-		var row = frappe.get_doc(cdt, cdn);
-		if(!row.uom){
-			this.frm.script_manager.copy_from_first_row("items", row, ["uom"]);
-		}
-		if(doc.schedule_date) {
-			row.schedule_date = doc.schedule_date;
-			refresh_field("schedule_date", cdn, "items");
-		} else {
-			this.frm.script_manager.copy_from_first_row("items", row, ["schedule_date"]);
-			this.frm.script_manager.copy_from_first_row("items", row, ["t_warehouse"]);
-		}
-	}
+// 	items_add(doc, cdt, cdn) {
+// 		var row = frappe.get_doc(cdt, cdn);
+// 		if(!row.uom){
+// 			this.frm.script_manager.copy_from_first_row("items", row, ["uom"]);
+// 		}
+// 		if(doc.schedule_date) {
+// 			row.schedule_date = doc.schedule_date;
+// 			refresh_field("schedule_date", cdn, "items");
+// 		} else {
+// 			this.frm.script_manager.copy_from_first_row("items", row, ["schedule_date"]);
+// 			this.frm.script_manager.copy_from_first_row("items", row, ["t_warehouse"]);
+// 		}
+// 	}
 
-	items_on_form_rendered() {
-		set_schedule_date(this.frm);
-	}
+// 	items_on_form_rendered() {
+// 		set_schedule_date(this.frm);
+// 	}
 
-	schedule_date() {
-		set_schedule_date(this.frm);
-	}
-};
+// 	schedule_date() {
+// 		set_schedule_date(this.frm);
+// 	}
+// };
 
-// for backward compatibility: combine new and previous states
-extend_cscript(cur_frm.cscript, new erpnext.buying.MaterialRequestController({frm: cur_frm}));
+// // for backward compatibility: combine new and previous states
+// extend_cscript(cur_frm.cscript, new erpnext.buying.MaterialRequestController({frm: cur_frm}));
 
 function set_schedule_date(frm) {
 	if(frm.doc.schedule_date){
