@@ -1379,7 +1379,7 @@
    "fieldname": "loan_type",
    "fieldtype": "Link",
    "label": "Loan Type",
-   "options": "Loan Type"
+   "options": "Loan Product"
   },
   {
    "depends_on": "eval:doc.net_loan_amount>0 && !doc.loan",
