@@ -296,3 +296,37 @@ def reject_penalty(rejection_reason: str = None, docname: str = None):
 	
 	except Exception as error:
 		return response("Internal Server Error", 500, None, error)
+
+
+@frappe.whitelist()
+def get_pending_penalties(employee_id: str = None, role: str = None, is_pending: bool = True) -> dict:
+	if not employee_id:
+		return response("Bad Request", 400, None, "employee_id required.")
+
+	if not isinstance(employee_id, str):
+		return response("Bad Request", 400, None, "employee_id must be of type str.")
+
+	if role:
+		if not isinstance(role, str):
+			return response("Bad Request", 400, None ,"role must be of type str.")
+
+	filter_param = dict()
+	if is_pending:
+		filter_param.update({"workflow_state": "Penalty Issued"})
+
+
+	try:
+		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+
+		if not employee:
+			return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+
+		if role and role == "Issuance":
+			result = frappe.get_list("Penalty", filters={"issuer_employee": employee, **filter_param}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+			return response("Success", 200, result)
+		result = frappe.get_list("Penalty", filters={ **filter_param}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+		return response("Success", 200, result)
+			
+	except Exception as error:
+		frappe.log_error(str(error), "Error while getting penalties")
+		return response("Internal Server Error", 500, None, error)
