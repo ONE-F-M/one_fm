@@ -12,6 +12,7 @@ from one_fm.utils import get_holiday_today
 from one_fm.operations.doctype.shift_permission.shift_permission import create_checkin as approve_shift_permission
 from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import approve_open_employee_checkin_issue
 from frappe.model import table_fields
+from frappe.workflow.doctype.workflow_action.workflow_action import apply_workflow
 
 def get_duplicate_attendance_record(employee, attendance_date, shift, roster_type, name=None):
     overlapping_attendance = frappe.db.get_list("Attendance", filters={
@@ -916,132 +917,12 @@ def update_day_off_ot(attendances):
 
 
 def mark_open_timesheet_and_create_attendance():
-    date = add_days(getdate(), -1)
-    creation = now()
-    
-    owner = frappe.session.user
-    naming_series = 'HR-ATT-.YYYY.-'
-    e_list = []
-    query = """
-        INSERT INTO `tabAttendance` (`name`, `naming_series`,`employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
-        `shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`,
-        `department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
-        `creation`, `modified`, `comment`)
-        VALUES
-
-    """
-    query_body = """"""
-
-    employees = frappe.db.get_list("Employee", filters={"attendance_by_timesheet": 1, "status":"Active"}, fields="*")
-    employee_list = [i.name for i in employees]
-    employees_dict = {}
-    for i in employees:
-        employees_dict[i.employee] = i
-
-    basic_attendances = frappe.db.get_all("Attendance", filters={
-        'attendance_date':date,
-    }, fields="*")
-
-    basic_attendance_employees = [i.employee for i in basic_attendances if i.employee in employee_list]
-
-    basic_employee_schedules = frappe.get_all("Employee Schedule", filters={
-        'date':date,
-        'roster_type':'Basic'
-    }, fields="*")
-    
-    basic_employee_schedules = [i for i in basic_employee_schedules if not i.employee in basic_attendance_employees]
-
-    # Mark Holiday Attendance
-    holiday_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
-                            INNER JOIN `tabHoliday` h ON h.parent = hl.name
-                            WHERE e.holiday_list = hl.name 
-                            AND attendance_by_timesheet = 1
-                            AND h.holiday_date = '{date}'
-                            AND h.weekly_off=0""", as_dict=1)
-    holiday_attendance_employee = [i for i in holiday_employee if not i.employee in basic_attendance_employees]
-    
-    if holiday_attendance_employee: 
-        for i in holiday_attendance_employee:
-            name = f"HR-ATT_{date}_{i.name}_Basic"
-            emp = employees_dict.get(i.name)
-            query_body+= f"""
-                (
-                    "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Holiday", '', NULL,
-                    NULL, "", "", "", "", "{date}", "{i.company}",
-                    "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
-                    "{owner}", "{creation}", "{creation}", "{i.description}"
-                ),"""
-            e_list.append(i.name)
-    
-    # Mark DayOff Attendance
-    day_off_employee = frappe.db.sql(f"""SELECT e.*, h.description from `tabEmployee` e ,`tabHoliday List` hl 
-                            INNER JOIN `tabHoliday` h ON h.parent = hl.name
-                            WHERE e.holiday_list = hl.name 
-                            AND e.attendance_by_timesheet = 1
-                            AND h.holiday_date = '{date}'
-                            AND h.weekly_off=1""", as_dict=1)
-  
-    # Day Off from Holiday list.
-    day_off_attendance_employee = [i for i in day_off_employee if not i.employee in basic_attendance_employees]
-    if day_off_attendance_employee:
-        for i in day_off_attendance_employee:
-            name = f"HR-ATT_{date}_{i.name}_Basic"
-            emp = employees_dict.get(i.name)
-            query_body+= f"""
-                (
-                    "{name}", "{naming_series}","{i.name}", "{i.employee_name}", 0, "Day Off", '', NULL,
-                    NULL, "", "", "", "", "{date}", "{i.company}",
-                    "{i.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
-                    "{owner}", "{creation}", "{creation}", "{i.description}"
-                ),"""
-            basic_attendance_employees.append(i.employee)
-            e_list.append(i.employee)
-    
-    #find missing Timesheet
-    timesheet_employees  = frappe.db.get_list("Timesheet", filters={"start_date":date}, pluck="employee")
-    missing_employee = [i for i in employees if i.name not in timesheet_employees and i.name not in e_list]
-    if missing_employee:
-        for i in missing_employee:
-            emp = employees_dict.get(i.employee)
-            name = f"HR-ATT_{date}_{i.employee}"
-            query_body+= f"""
-            (
-                "{name}", "{naming_series}", "{i.employee}", "{i.employee_name}", 0, "Absent", '{i.shift_type}', NULL,
-                NULL, "{i.name}", "{i.shift}", "{i.site}", "{i.project}", "{date}", "{i.company}",
-                "{emp.department}", 0, 0, "", "", "Basic", {1}, "{owner}",
-                "{owner}", "{creation}", "{creation}", "No attendance record found"
-            ),"""
-            e_list.append(i.employee)
-    # UPDATE QUERY
-    if query_body:
-        query += query_body[:-1]
-        query += f"""
-            ON DUPLICATE KEY UPDATE
-            naming_series = VALUES(naming_series),
-            employee = VALUES(employee),
-            employee_name = VALUES(employee_name),
-            working_hours = VALUES(working_hours),
-            status = VALUES(status),
-            shift = VALUES(shift),
-            in_time = VALUES(in_time),
-            out_time = VALUES(out_time),
-            shift_assignment = VALUES(shift_assignment),
-            operations_shift = VALUES(operations_shift),
-            site = VALUES(site),
-            project = VALUES(project),
-            attendance_date = VALUES(attendance_date),
-            company = VALUES(company),
-            department = VALUES(department),
-            late_entry = VALUES(late_entry),
-            early_exit = VALUES(early_exit),
-            operations_role = VALUES(operations_role),
-            roster_type = VALUES(roster_type),
-            docstatus = VALUES(docstatus),
-            modified_by = VALUES(modified_by),
-            modified = VALUES(modified)
-        """
-        frappe.db.sql(query, values=[], as_dict=1)
-        frappe.db.commit()
+    timesheets = frappe.get_list("Timesheet", {'workflow_state':'Open'})
+    for i in timesheets:
+        try:
+            apply_workflow(frappe.get_doc("Timesheet", i.name), 'Approve')
+        except Exception as e:
+            print(e)
    
 def mark_leave_attendance():
     try:
