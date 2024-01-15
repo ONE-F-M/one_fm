@@ -35,7 +35,9 @@ class TimesheetOveride(Timesheet):
         if allowed_role not in frappe.get_roles(frappe.session.user):
             if self.start_date != current_date or self.end_date != current_date:
                 frappe.throw("Not allowed to submit doc for previous date")
-
+        if self.total_hours <= 0:
+            frappe.throw("Total Hours cannot be 0 or less.")
+            
     def on_update(self):
         if self.workflow_state == 'Open':
             send_workflow_action_email(self, [self.approver])
