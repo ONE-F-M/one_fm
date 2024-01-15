@@ -1080,10 +1080,24 @@ class AttendanceMarking():
     
     def get_shifts(self):
         self.get_datetime()
-        shifts =  frappe.db.sql(f"""
-            SELECT * FROM `tabShift Assignment`
+        # CREATE ATTENDANCE FOR CLIENTS
+        client_shifts =  frappe.db.sql(f"""
+            SELECT sa.* FROM `tabShift Assignment` sa
+            JOIN `tabOperations Role` op ON sa.operations_role=op.name 
             WHERE
-            end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+            sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+            AND op.attendance_by_client=1
+            ;
+        """, as_dict=1)
+        for i in client_shifts:
+            self.create_attendance(frappe._dict({**i, **{'status':'On Hold'}}))
+
+        shifts =  frappe.db.sql(f"""
+            SELECT sa.* FROM `tabShift Assignment` sa
+            JOIN `tabOperations Role` op ON sa.operations_role=op.name 
+            WHERE
+            sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+            AND op.attendance_by_client=0
         """, as_dict=1)
         if shifts:
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0]))
@@ -1188,7 +1202,7 @@ class AttendanceMarking():
 
 
     
-    def create_attendance(self, record, day_off=False):
+    def create_attendance(self, record, attendace_type=None):
         # clear absent
         _date = None
         if record.shift_actual_start:
@@ -1220,14 +1234,6 @@ class AttendanceMarking():
             doc.shift = record.shift_type
             doc.operations_shift = record.operations_shift
             doc.site = record.site
-            # ON HOLD attendance
-            attendance_by_client = frappe.db.get_value(
-                "Operations Role", 
-                frappe.db.get_value("Shift Assignment", record.shift_assignment, "operations_role"),
-                "attendance_by_client"
-            )
-            if attendance_by_client:
-                doc.status = "On Hold"
         if record.dt=="Shift Assignment":
             doc.shift_assignment = record.name
             doc.shift = record.shift_type
