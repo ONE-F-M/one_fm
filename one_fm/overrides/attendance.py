@@ -1086,7 +1086,7 @@ class AttendanceMarking():
             JOIN `tabOperations Role` op ON sa.operations_role=op.name 
             WHERE
             sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
-            AND op.attendance_by_client=1
+            AND op.attendance_by_client=1 AND op.status='Active'
             ;
         """, as_dict=1)
         for i in client_shifts:
@@ -1098,7 +1098,7 @@ class AttendanceMarking():
             JOIN `tabOperations Role` op ON sa.operations_role=op.name 
             WHERE
             sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
-            AND op.attendance_by_client=0
+            AND op.attendance_by_client=0 AND op.status='Active'
         """, as_dict=1)
         if shifts:
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0]))
