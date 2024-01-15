@@ -917,7 +917,8 @@ def update_day_off_ot(attendances):
 
 
 def mark_open_timesheet_and_create_attendance():
-    timesheets = frappe.get_list("Timesheet", {'workflow_state':'Open'})
+    timesheets = frappe.get_list("Timesheet", {'workflow_state':'Open', 
+        'start_date':add_days(getdate(), -1)})
     for i in timesheets:
         try:
             apply_workflow(frappe.get_doc("Timesheet", i.name), 'Approve')
