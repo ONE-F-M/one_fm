@@ -1090,7 +1090,8 @@ class AttendanceMarking():
             ;
         """, as_dict=1)
         for i in client_shifts:
-            self.create_attendance(frappe._dict({**i, **{'status':'On Hold'}}))
+            self.create_attendance(frappe._dict({**i, **{
+                'status':'On Hold', 'dt':"Shift Assignment"}}))
 
         shifts =  frappe.db.sql(f"""
             SELECT sa.* FROM `tabShift Assignment` sa
