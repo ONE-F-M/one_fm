@@ -163,6 +163,7 @@
    "reqd": 1
   },
   {
+   "description": "Defualt Company",
    "fieldname": "company",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -492,7 +493,7 @@
    "link_fieldname": "request_for_material"
   }
  ],
- "modified": "2023-06-06 09:11:48.981641",
+ "modified": "2024-01-13 14:03:22.733816",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",

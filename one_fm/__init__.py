@@ -8,10 +8,10 @@ from hrms.payroll.doctype.salary_slip.salary_slip import SalarySlip
 from erpnext.stock.doctype.item_price.item_price import ItemPrice
 from erpnext.setup.doctype.employee.employee import Employee
 from one_fm.api.doc_methods.shift_request import shift_request_submit, validate_approver, shift_request_cancel, validate_default_shift
-from one_fm.api.doc_methods.payroll_entry import fill_employee_details
-from one_fm.api.doc_methods.salary_slip import (
-	get_working_days_details, get_unmarked_days_based_on_doj_or_relieving, get_unmarked_days, get_data_for_eval
-)
+# from one_fm.api.doc_methods.payroll_entry import fill_employee_details
+# from one_fm.api.doc_methods.salary_slip import (
+# 	get_working_days_details, get_unmarked_days_based_on_doj_or_relieving, get_unmarked_days, get_data_for_eval
+# )
 from one_fm.api.doc_methods.item_price import validate,check_duplicates
 from hrms.hr.doctype.leave_application.leave_application import LeaveApplication
 from one_fm.api.mobile.Leave_application import notify_leave_approver
@@ -51,7 +51,7 @@ from one_fm.overrides.assignment_rule import do_assignment
 from one_fm.overrides.goal import get_childrens
 
 
-__version__ = '14.6.2'
+__version__ = '15.0.0'
 
 
 StockController.make_batches = make_batches_with_supplier_batch_id
@@ -74,12 +74,12 @@ ShiftRequest.on_submit = shift_request_submit
 ShiftRequest.validate_approver = validate_approver
 ShiftRequest.on_cancel = shift_request_cancel
 ShiftRequest.validate_default_shift = validate_default_shift
-PayrollEntry.fill_employee_details = fill_employee_details
-SalarySlip.get_working_days_details = get_working_days_details
-SalarySlip.get_unmarked_days_based_on_doj_or_relieving = get_unmarked_days_based_on_doj_or_relieving
-SalarySlip.get_unmarked_days = get_unmarked_days
+# PayrollEntry.fill_employee_details = fill_employee_details to be fixed
+# SalarySlip.get_working_days_details = get_working_days_details to be fixed
+# SalarySlip.get_unmarked_days_based_on_doj_or_relieving = get_unmarked_days_based_on_doj_or_relieving to be fixed
+# SalarySlip.get_unmarked_days = get_unmarked_days to be fixed
 SalarySlip.add_tax_components = add_tax_components
-SalarySlip.get_data_for_eval = get_data_for_eval
+# SalarySlip.get_data_for_eval = get_data_for_eval to be fixed
 ItemPrice.validate = validate
 ItemPrice.check_duplicates = check_duplicates
 LeaveApplication.notify_leave_approver = notify_leave_approver

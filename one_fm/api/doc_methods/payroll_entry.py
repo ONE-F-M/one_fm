@@ -13,9 +13,9 @@ import calendar
 from datetime import datetime, timedelta
 from copy import copy
 from pathlib import Path
-from hrms.payroll.doctype.payroll_entry.payroll_entry import (
-	get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_salary_structure
-)
+# from hrms.payroll.doctype.payroll_entry.payroll_entry import (
+# 	get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_salary_structure
+# )
 from one_fm.one_fm.doctype.hr_and_payroll_additional_settings.hr_and_payroll_additional_settings import (
 	get_projects_not_configured_in_payroll_cycle_but_linked_in_employee,
 	get_projects_configured_in_payroll_cycle
@@ -97,30 +97,30 @@ def fill_employee_details(self):
 		self.append('employees', d)
 	self.number_of_employees = len(self.employees)
 
-@frappe.whitelist()
-def get_emp_list(self, project_list=False):
-	"""
-		Returns list of active employees based on selected criteria
-		and for which salary structure exists
-	"""
-	self.check_mandatory()
-	filters = self.make_filters()
-	cond = get_filter_condition(filters)
-	cond += get_joining_relieving_condition(self.start_date, self.end_date)
+# @frappe.whitelist()
+# def get_emp_list(self, project_list=False):
+# 	"""
+# 		Returns list of active employees based on selected criteria
+# 		and for which salary structure exists
+# 	"""
+# 	self.check_mandatory()
+# 	filters = self.make_filters()
+# 	cond = get_filter_condition(filters)
+# 	cond += get_joining_relieving_condition(self.start_date, self.end_date)
 
-	sal_struct = get_salary_structure(
-		self.company, self.currency, self.salary_slip_based_on_timesheet, self.payroll_frequency
-	)
+# 	sal_struct = get_salary_structure(
+# 		self.company, self.currency, self.salary_slip_based_on_timesheet, self.payroll_frequency
+# 	)
 
-	if sal_struct:
-		cond += "and t2.salary_structure IN %(sal_struct)s "
-		cond += "and t2.payroll_payable_account = %(payroll_payable_account)s "
-		cond += "and %(from_date)s >= t2.from_date "
-		if project_list:
-			cond += "and t1.project IN ({0})".format(project_list)
-		employee_list = get_employee_list(sal_struct, cond, self.end_date, self.payroll_payable_account)
-		employee_list = remove_payrolled_employees(employee_list, self.start_date, self.end_date)
-		return employee_list
+# 	if sal_struct:
+# 		cond += "and t2.salary_structure IN %(sal_struct)s "
+# 		cond += "and t2.payroll_payable_account = %(payroll_payable_account)s "
+# 		cond += "and %(from_date)s >= t2.from_date "
+# 		if project_list:
+# 			cond += "and t1.project IN ({0})".format(project_list)
+# 		employee_list = get_employee_list(sal_struct, cond, self.end_date, self.payroll_payable_account)
+# 		employee_list = remove_payrolled_employees(employee_list, self.start_date, self.end_date)
+# 		return employee_list
 
 @frappe.whitelist()
 def get_employee_list(sal_struct, cond, end_date, payroll_payable_account):

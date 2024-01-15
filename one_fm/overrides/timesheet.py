@@ -35,7 +35,9 @@ class TimesheetOveride(Timesheet):
         if allowed_role not in frappe.get_roles(frappe.session.user):
             if self.start_date != current_date or self.end_date != current_date:
                 frappe.throw("Not allowed to submit doc for previous date")
-
+        if self.total_hours <= 0:
+            frappe.throw("Total Hours cannot be 0 or less.")
+            
     def on_update(self):
         if self.workflow_state == 'Open':
             send_workflow_action_email(self, [self.approver])
@@ -103,7 +105,7 @@ class TimesheetOveride(Timesheet):
             att.submit()
     
     def check_approver(self):
-        if frappe.session.user != self.approver:
+        if frappe.session.user not in [self.approver, "Administrator"]:
             frappe.throw(_("Only Approver can Approve/Reject the timesheet"))
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
@@ -246,7 +248,7 @@ def validate_timesheet_count(doc, event):
 def validate_date(doc, method):
     current_date = getdate()
     allowed_role = "HR Manager"
-    if allowed_role not in frappe.get_roles(frappe.session.user):
+    if (allowed_role not in frappe.get_roles(frappe.session.user)) or (frappe.session.user!="Administrator"):
         if doc.start_date != current_date or doc.end_date != current_date:
             frappe.throw("Not allowed to submit doc for previous date")
 

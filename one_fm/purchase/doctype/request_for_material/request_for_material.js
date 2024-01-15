@@ -2,7 +2,8 @@
 // For license information, please see license.txt
 
 // eslint-disable-next-line
-{% include 'erpnext/public/js/controllers/buying.js' %};
+frappe.provide("erpnext.accounts.dimensions");
+erpnext.buying.setup_buying_controller();
 
 frappe.ui.form.on('Request for Material', {
 	before_workflow_action: function(frm){
@@ -787,7 +788,8 @@ frappe.ui.form.on("Request for Material Item", {
 	}
 });
 
-erpnext.buying.MaterialRequestController = class MaterialRequestController extends erpnext.buying.BuyingController{
+
+erpnext.buying.MaterialRequestController = class MaterialRequestController extends erpnext.buying.BuyingController {
 	tc_name() {
 		this.get_terms();
 	}
@@ -831,6 +833,7 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 	}
 };
 
+
 // for backward compatibility: combine new and previous states
 extend_cscript(cur_frm.cscript, new erpnext.buying.MaterialRequestController({frm: cur_frm}));
 
@@ -845,3 +848,6 @@ function set_t_warehouse(frm){
 		erpnext.utils.copy_value_in_all_rows(frm.doc, frm.doc.doctype, frm.doc.name, "items", "t_warehouse");
 	}
 };
+
+
+
