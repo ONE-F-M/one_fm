@@ -1207,16 +1207,27 @@ class AttendanceMarking():
         except:
             pass
         frappe.db.commit()
+
+
         doc = frappe._dict({})
         doc.doctype = "Attendance"
         doc.employee = record.employee
         doc.status = record.status
+        
         doc.attendance_date = _date
         if record.shift_assignment:
             doc.shift_assignment = record.shift_assignment
             doc.shift = record.shift_type
             doc.operations_shift = record.operations_shift
             doc.site = record.site
+            # ON HOLD attendance
+            attendance_by_client = frappe.db.get_value(
+                "Operations Role", 
+                frappe.db.get_value("Shift Assignment", record.shift_assignment, "operations_role"),
+                "attendance_by_client"
+            )
+            if attendance_by_client:
+                doc.status = "On Hold"
         if record.dt=="Shift Assignment":
             doc.shift_assignment = record.name
             doc.shift = record.shift_type
