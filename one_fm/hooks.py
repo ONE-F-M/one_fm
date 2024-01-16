@@ -806,6 +806,12 @@ override_whitelisted_methods = {
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
 }
+
+
+override_doctype_dashboards = {
+    'Project': 'one_fm.overrides.project_dashboard.get_data',
+}
+
 #ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation
