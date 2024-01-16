@@ -111,7 +111,7 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		return response("Success", 201, penalty_issuance)
 
 	except Exception as error:
-		frappe.log_error(error, 'Penalty Issance Error')
+		frappe.log_error(error, 'Penalty Issuance Error')
 		return response("Internal Server Error", 500, None, error)@frappe.whitelist()
 
 
@@ -324,9 +324,31 @@ def get_pending_penalties(employee_id: str = None, role: str = None, is_pending:
 		if role and role == "Issuance":
 			result = frappe.get_list("Penalty", filters={"issuer_employee": employee, **filter_param}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
 			return response("Success", 200, result)
-		result = frappe.get_list("Penalty", filters={ **filter_param}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+		result = frappe.get_list("Penalty", filters={"recipient_employee": employee, **filter_param}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
 		return response("Success", 200, result)
 			
 	except Exception as error:
-		frappe.log_error(str(error), "Error while getting penalties")
+		frappe.log_error(str(error), "Error while getting penalties (API)")
 		return response("Internal Server Error", 500, None, error)
+
+
+@frappe.whitelist()
+def get_subordinates(employee: str = None):
+	try:
+		if not employee:
+			return response("Bad Request", 400, None, "employee is required.")
+
+		if not isinstance(employee, str):
+			return response("Bad Request", 400, None, "employee must be of type str.")
+
+		the_subordinates = frappe.db.get_list("Employee", {"reports_to": employee}, ["employee_id", "employee_name", "name"])
+		return response("Success", 200, the_subordinates)
+	except Exception as e:
+		frappe.log_error(str(e), "Error while getting subordinates (API)")
+		return response("Internal Server Error", 500, None, e)
+
+     
+
+        
+    
+    
