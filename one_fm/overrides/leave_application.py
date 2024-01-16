@@ -502,6 +502,7 @@ def get_leave_approver(employee):
     reports_to = employee_details[0].reports_to
     department = employee_details[0].department
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
+    approver = False
     if reports_to:
         approver = frappe.get_value("Employee", reports_to, ["user_id"])
     elif len(employee_shift) > 0 and employee_shift[0].shift:
@@ -511,8 +512,9 @@ def get_leave_approver(employee):
                 """select approver from `tabDepartment Approver` where parent= %s and parentfield = 'leave_approvers'""",
                 (department),
             )
-        approvers = [approver[0] for approver in approvers]
-        approver = approvers[0]
+        if approvers and len(approvers) > 0:
+            approvers = [approver[0] for approver in approvers]
+            approver = approvers[0]
     return approver
 
 @frappe.whitelist()
