@@ -1091,7 +1091,7 @@ class AttendanceMarking():
         """, as_dict=1)
         for i in client_shifts:
             self.create_attendance(frappe._dict({**i, **{
-                'status':'On Hold', 'dt':"Shift Assignment"}}))
+                'status':'On Hold', 'dt':"Shift Assignment"}}), attendace_type="On Hold")
 
         shifts =  frappe.db.sql(f"""
             SELECT sa.* FROM `tabShift Assignment` sa
@@ -1155,7 +1155,7 @@ class AttendanceMarking():
                                     "status":status, "comment":comment, "working_hours":working_hours,
                                     "dt":"Employee Checkin"}}))
                             except Exception as e:
-                                print(e)
+                                pass
 
     def get_checkins(self, shift_assignments):
         query = f"""
@@ -1207,12 +1207,15 @@ class AttendanceMarking():
         try:
             # clear absent
             _date = None
-            if record.shift_actual_start:
-                _date = record.shift_actual_start.date()
-            elif record.date:
-                _date = record.date
+            if attendace_type=="On Hold":
+                    _date = record.start_date
             else:
-                _date = record.start_date
+                if record.shift_actual_start:
+                    _date = record.shift_actual_start.date()
+                elif record.date:
+                    _date = record.date
+                else:
+                    _date = record.start_date
             try:
                 frappe.db.sql(f"""
                     DELETE FROM `tabAttendance` WHERE employee="{record.employee}" AND
