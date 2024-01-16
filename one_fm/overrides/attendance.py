@@ -1151,7 +1151,7 @@ class AttendanceMarking():
 
                             #  continue to mark attendace
                             try:
-                                self.create_attendance(frappe._dict({**dict(i), **{
+                                self.create_attendance(record=frappe._dict({**i, **{
                                     "status":status, "comment":comment, "working_hours":working_hours,
                                     "dt":"Employee Checkin"}}))
                             except Exception as e:
