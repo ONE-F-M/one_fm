@@ -1078,7 +1078,11 @@ class AttendanceMarking():
         self.end = dt + timedelta(hours=-1)
 
     
-    def get_shifts(self):
+    def get_shifts(self, start=None, end=None):
+        if start:
+            self.start=start
+        if end:
+            self.end=end
         self.get_datetime()
         # CREATE ATTENDANCE FOR CLIENTS
         client_shifts =  frappe.db.sql(f"""
