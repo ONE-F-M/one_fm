@@ -19,3 +19,4 @@ redis-cli
 qrcode
 html2text
 gspread
+pydantic==2.3.0
