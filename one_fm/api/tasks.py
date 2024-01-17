@@ -57,7 +57,7 @@ def send_checkin_hourly_reminder():
 			recipients = [recipient[0] for recipient in recipients if recipient[0]]
 
 			subject = _("Hourly Reminder: Please checkin")
-			message = _('<a class="btn btn-warning" href="/app/face-recognition">Hourly Check In</a>')
+			message = _('<a class="btn btn-warning" href="https://mobile.one-fm.com/checkin">Hourly Check In</a>')
 			send_notification(title, subject, message, category, recipients)
 
 def checkin_checkout_initial_reminder():
@@ -156,7 +156,7 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 	notification_category = "Attendance"
 
 	checkin_message_body = """
-					<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
+					<a class="btn btn-success" href="https://mobile.one-fm.com/checkin">Check In</a>&nbsp;
 					<br/>
 					Submit a Shift Permission if you are planing to arrive late or forgot to checkin
 					<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1?log_type=IN&&permission_type=Arrive Late">Submit Shift Permission</a>&nbsp;
@@ -172,7 +172,7 @@ def notify_checkin_checkout_final_reminder(recipients, log_type, notification_ti
 		checkin_message = _(checkin_message_body.format("IF YOU DO NOT CHECK-IN WITHIN THE NEXT 3 HOURS, YOU WOULD BE MARKED AS ABSENT"))
 
 	checkout_message = _("""
-		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
+		<a class="btn btn-danger" href="https://mobile.one-fm.com/checkin">Check Out</a>
 		<br/>
 		Submit a Shift Permission if you are planing to leave early or forget to checkout
 		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1?log_type=OUT&&permission_type=Leave Early"">Submit Shift Permission</a>&nbsp;
@@ -1776,7 +1776,7 @@ def initiate_checkin_notification(res):
 	"""
 	now_time = now()
 	checkin_message = _(f"""
-		<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
+		<a class="btn btn-success" href="https://mobile.one-fm.com/checkin">Check In</a>&nbsp;
 		<br>
 		Submit a Shift Permission if you are planing to arrive late
 		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
@@ -1790,7 +1790,7 @@ def initiate_checkin_notification(res):
 	""")
 
 	checkin_message_after_grace = _("""
-		<a class="btn btn-success" href="/app/face-recognition">Check In</a>&nbsp;
+		<a class="btn btn-success" href="https://mobile.one-fm.com/checkin">Check In</a>&nbsp;
 		<br>
 		Submit a Shift Permission if you are planing to arrive late
 		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
@@ -1805,7 +1805,7 @@ def initiate_checkin_notification(res):
 
 
 	checkout_message = _("""
-		<a class="btn btn-danger" href="/app/face-recognition">Check Out</a>
+		<a class="btn btn-danger" href="https://mobile.one-fm.com/checkin">Check Out</a>
 		Submit a Shift Permission if you are planing to leave early or is there any issue in checkout or forget to checkout
 		<a class="btn btn-primary" href="/app/shift-permission/new-shift-permission-1">Submit Shift Permission</a>&nbsp;
 		""")

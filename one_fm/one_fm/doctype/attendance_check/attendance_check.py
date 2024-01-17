@@ -107,29 +107,12 @@ class AttendanceCheck(Document):
             if not frappe.db.get_value("Employee", self.employee, "attendance_by_timesheet"):
                 if self.shift_assignment:
                     att.shift_assignment = self.shift_assignment
-                if not att.shift_assignment:
-                    if frappe.db.exists("Shift Assignment", {
-                            'employee':self.employee, 'start_date':self.date, 'roster_type':self.roster_type
-                        }):
-                        shift_assignment = frappe.get_doc("Shift Assignment", {
+                else:
+                    shift_assignment = frappe.db.exists("Shift Assignment", {
                             'employee':self.employee, 'start_date':self.date, 'roster_type':self.roster_type
                         })
-                        att.shift_Assignment = shift_assignment.name
-                    elif frappe.db.exists("Employee Schedule", {
-                            'employee':self.employee, 'date':self.date, 'roster_type':self.roster_type
-                        }):
-                        employee_schedule = frappe.get_doc("Employee Schedule", {
-                            'employee':self.employee, 'date':self.date, 'roster_type':self.roster_type
-                        })
-                        shift_assignment = frappe.get_doc({
-                            'doctype':"Shift Assignment",
-                            'employee':employee_schedule.employee,
-                            'shift_type':employee_schedule.shift_type,
-                            'start_date':employee_schedule.date,
-                            'status':'Active'
-                        }).insert(ignore_permissions=1)
-                        shift_assignment.submit()
-                        att.shift_Assignment = shift_assignment.name
+                    if shift_assignment:
+                        att.shift_assignment = shift_assignment
                 if att.shift_assignment and att.status=='Present':
                     att.working_hours = frappe.db.get_value("Operations Shift",
                         frappe.db.get_value("Shift Assignment", att.shift_assignment, 'shift'), 'duration')

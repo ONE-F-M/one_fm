@@ -1078,12 +1078,31 @@ class AttendanceMarking():
         self.end = dt + timedelta(hours=-1)
 
     
-    def get_shifts(self):
+    def get_shifts(self, start=None, end=None):
+        if start:
+            self.start=start
+        if end:
+            self.end=end
         self.get_datetime()
-        shifts =  frappe.db.sql(f"""
-            SELECT * FROM `tabShift Assignment`
+        # CREATE ATTENDANCE FOR CLIENTS
+        client_shifts =  frappe.db.sql(f"""
+            SELECT sa.* FROM `tabShift Assignment` sa
+            JOIN `tabOperations Role` op ON sa.operations_role=op.name 
             WHERE
-            end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+            sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+            AND op.attendance_by_client=1 AND op.status='Active'
+            ;
+        """, as_dict=1)
+        for i in client_shifts:
+            self.create_attendance(frappe._dict({**i, **{
+                'status':'On Hold', 'dt':"Shift Assignment"}}))
+
+        shifts =  frappe.db.sql(f"""
+            SELECT sa.* FROM `tabShift Assignment` sa
+            JOIN `tabOperations Role` op ON sa.operations_role=op.name 
+            WHERE
+            sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+            AND op.attendance_by_client=0 AND op.status='Active'
         """, as_dict=1)
         if shifts:
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0]))
@@ -1188,64 +1207,69 @@ class AttendanceMarking():
 
 
     
-    def create_attendance(self, record, day_off=False):
-        # clear absent
-        _date = None
-        if record.shift_actual_start:
-            _date = record.shift_actual_start.date()
-        elif record.date:
-            _date = record.date
-        else:
-            _date = record.start_date
+    def create_attendance(self, record, attendace_type=None):
         try:
-            frappe.db.sql(f"""
-                DELETE FROM `tabAttendance` WHERE employee="{record.employee}" AND
-                attendance_date="{_date}" 
-                AND roster_type="{record.roster_type}"
-                AND status="Absent"
-            """)
-        except:
-            pass
-        frappe.db.commit()
-        doc = frappe._dict({})
-        doc.doctype = "Attendance"
-        doc.employee = record.employee
-        doc.status = record.status
-        doc.attendance_date = _date
-        if record.shift_assignment:
-            doc.shift_assignment = record.shift_assignment
-            doc.shift = record.shift_type
-            doc.operations_shift = record.operations_shift
-            doc.site = record.site
-        if record.dt=="Shift Assignment":
-            doc.shift_assignment = record.name
-            doc.shift = record.shift_type
-            doc.operations_shift = record.shift
-            doc.site = record.site
-        if record.late_entry:
-            doc.late_entry= record.late_entry
-        if record.early_exit:
-            doc.early_exit = record.early_exit
-        # check if worked less
-        if record.working_hours:
-            doc.working_hours = record.working_hours
-        if record.roster_type:
-            doc.roster_type = record.roster_type
-        if record.comment:
-            doc.comment = record.comment
-        doc = frappe.get_doc(doc)
-        doc.status = record.status
-        doc.flags.ignore_validate = True
-        doc.save()
-        doc.db_set('docstatus', 1)
-        # updated checkins if exists
-        if record.dt=="Employee Checkin":
-            if record.in_name:
-                frappe.db.set_value("Employee Checkin", record.in_name, 'attendance', doc.name)
-            if record.out_name:
-                frappe.db.set_value("Employee Checkin", record.out_name, 'attendance', doc.name)
-        frappe.db.commit()
+            # clear absent
+            _date = None
+            if record.shift_actual_start:
+                _date = record.shift_actual_start.date()
+            elif record.date:
+                _date = record.date
+            else:
+                _date = record.start_date
+            try:
+                frappe.db.sql(f"""
+                    DELETE FROM `tabAttendance` WHERE employee="{record.employee}" AND
+                    attendance_date="{_date}" 
+                    AND roster_type="{record.roster_type}"
+                    AND status="Absent"
+                """)
+            except:
+                pass
+            frappe.db.commit()
 
+
+            doc = frappe._dict({})
+            doc.doctype = "Attendance"
+            doc.employee = record.employee
+            doc.status = record.status
+            
+            doc.attendance_date = _date
+            if record.shift_assignment:
+                doc.shift_assignment = record.shift_assignment
+                doc.shift = record.shift_type
+                doc.operations_shift = record.operations_shift
+                doc.site = record.site
+            if record.dt=="Shift Assignment":
+                doc.shift_assignment = record.name
+                doc.shift = record.shift_type
+                doc.operations_shift = record.shift
+                doc.site = record.site
+            if record.late_entry:
+                doc.late_entry= record.late_entry
+            if record.early_exit:
+                doc.early_exit = record.early_exit
+            # check if worked less
+            if record.working_hours:
+                doc.working_hours = record.working_hours
+            if record.roster_type:
+                doc.roster_type = record.roster_type
+            if record.comment:
+                doc.comment = record.comment
+            doc = frappe.get_doc(doc)
+            doc.status = record.status
+            doc.flags.ignore_validate = True
+            doc.save()
+            doc.db_set('docstatus', 1)
+            # updated checkins if exists
+            if record.dt=="Employee Checkin":
+                if record.in_name:
+                    frappe.db.set_value("Employee Checkin", record.in_name, 'attendance', doc.name)
+                if record.out_name:
+                    frappe.db.set_value("Employee Checkin", record.out_name, 'attendance', doc.name)
+            frappe.db.commit()
+        except Exception as e:
+            frappe.log_error(message=str(e), title="Hourly Attendance Marking")
 
 
 def run_attendance_marking_hourly():

@@ -12,8 +12,8 @@ import datetime
 def load_versions(change_log_folder,folder,app,args):
     def append_to_iter(frappe_dict):
         version_data.append(frappe_dict)
-        
-    version_data =[] 
+
+    version_data =[]
     for file in os.listdir(os.path.join(change_log_folder, folder)):
         file_path = os.path.join(change_log_folder, folder, file)
         content = frappe.read_file(file_path)
@@ -29,7 +29,7 @@ def load_versions(change_log_folder,folder,app,args):
                         append_to_iter(frappe._dict({
                             "name":" ".join([app,version_str]),
                             "owner":"Administrator",
-                            "date_time":creation_datetime, 
+                            "date_time":creation_datetime,
                             "creation":creation_datetime,
                             "modified":creation_datetime,
                             "modified_by":"Administrator",
@@ -62,11 +62,11 @@ def load_versions(change_log_folder,folder,app,args):
 
 
 @frappe.whitelist()
-def fetch_data(args = frappe._dict()):  
+def fetch_data(args = frappe._dict()):
     """
         Fetch all the release notes in the change log folder of each installed app
         Variables like page length and filters will affect the size of the return set
-    """  
+    """
     app_data = []
     start_version = Version("0.0.1")
     last_known_versions = frappe._dict(
@@ -74,9 +74,8 @@ def fetch_data(args = frappe._dict()):
     )
     if not last_known_versions:
         last_known_versions  = get_versions()
-    
     for each in frappe.get_installed_apps():
-        if last_known_versions[each]:
+        if each in last_known_versions and last_known_versions[each]:
             change_log_folder = os.path.join(frappe.get_app_path(each), "change_log")
             if os.path.exists(change_log_folder):
                 app_current_version = Version(last_known_versions[each].get('version'))
@@ -91,35 +90,35 @@ def fetch_data(args = frappe._dict()):
     return sorted_versions
 
 class ApplicationReleaseNotes(Document):
-    
+
     def on_trash(self):
         frappe.throw("This document cannot be deleted.")
-    
+
     def get_selected_note(self):
         if not self.name:
             frappe.throw("Error Occured while opening the document")
         data = fetch_data()
         for each  in data:
             if each.name == self.name:
-    
+
                 setattr(self,'_table_fieldnames',[])
                 for key,value in each.items():
                     setattr(self,key,value)
                     if key=='release_notes':
                         docfield = self.meta.get_field(key)
                         docfield.options = value
-        
-    
+
+
     def db_insert(self, *args, **kwargs):
         pass
-    
+
     def on_trash(self):
         frappe.throw("This Document cannot be deleted!")
-    
+
     def load_from_db(self):
         self.get_selected_note()
         pass
-        
+
 
     def db_update(self, *args, **kwargs):
         pass
@@ -129,7 +128,7 @@ class ApplicationReleaseNotes(Document):
     def get_list(args):
         data =  fetch_data(args)
         return data[:int(args.page_length)]
-    
+
     @staticmethod
     def get_count(args):
         data =  fetch_data(args)
@@ -138,7 +137,3 @@ class ApplicationReleaseNotes(Document):
     @staticmethod
     def get_stats(args):
         pass
-    
-    
- 
-    
