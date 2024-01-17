@@ -82,10 +82,18 @@ class AttendanceCheck(Document):
         if self.workflow_state == 'Approved':
             comment = ""
             logs = []
-            if frappe.db.exists('Attendance',
+            check_attendance = frappe.db.get_value('Attendance',
                 {'attendance_date': self.date, 'employee': self.employee, 'docstatus': ['<', 2],
                 'roster_type':self.roster_type
-                }):
+                }, ["status", "name"], as_dict=1)
+            if check_attendance:
+                if check_attendance.get('status') == "Absent":
+                    if self.attendance_status == "Absent":
+                        return ""
+                    elif self.attendance_status == "Present":
+                        return frappe.db.set_value("Attendance", check_attendance.get("name"), dict(status="Present"))
+                    
+                    
                 att = frappe.get_doc("Attendance", {
                     'attendance_date': self.date, 'employee': self.employee,
                     'docstatus': ['<', 2],
