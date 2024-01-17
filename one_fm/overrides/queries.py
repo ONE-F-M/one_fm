@@ -69,12 +69,12 @@ def employee_query(doctype, txt, searchfield, start, page_len, filters):
 
     return frappe.db.sql(
         """select {fields} from `tabEmployee`
-        where status = 'Active'
+        where (status = 'Active' or status = 'Vacation')
             and docstatus < 2
             and ({key} like %(txt)s
                 or employee_name like %(txt)s
                 or employee_id like %(txt)s)
-            {fcond} {mcond}
+            {fcond}
         order by
             (case when locate(%(_txt)s, name) > 0 then locate(%(_txt)s, name) else 99999 end),
             (case when locate(%(_txt)s, employee_name) > 0 then locate(%(_txt)s, employee_name) else 99999 end),
@@ -86,8 +86,9 @@ def employee_query(doctype, txt, searchfield, start, page_len, filters):
                 "fields": ", ".join(fields),
                 "key": searchfield,
                 "fcond": get_filters_cond(doctype, filters, conditions),
-                "mcond": get_match_cond(doctype),
+
             }
         ),
         {"txt": "%%%s%%" % txt, "_txt": txt.replace("%", ""), "start": start, "page_len": page_len},
+
     )
