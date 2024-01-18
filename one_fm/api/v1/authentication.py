@@ -73,7 +73,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 	try:
 		site = frappe.utils.cstr(frappe.local.conf.app_url)
 		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
-
+		
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
 		
@@ -86,7 +86,6 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 		headers = {'Accept': 'application/json'}
 		session = requests.Session()
 		auth_api = site + "api/method/frappe.integrations.oauth2.get_token"
-		
 		auth_api_response = session.post(
             auth_api,
             data=args, headers=headers
