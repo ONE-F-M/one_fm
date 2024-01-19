@@ -679,11 +679,8 @@ scheduler_events = {
 		"15 3 * * *": [ # create shift assignment
 			'one_fm.overrides.employee_checkin.auto_generate_checkin'
 		],
-		"25 0 * * *": [ # mark day attendance 12:25 AM
-			# 'one_fm.overrides.attendance.mark_day_attendance'
-		],
-		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
-			'one_fm.overrides.attendance.mark_night_attendance'
+		"45 12 * * *": [ # mark all attendance for previous day at 12:45 pm today
+			'one_fm.overrides.attendance.mark_all_attendance'
 		],
         "55 12 * * *": [ # mark attendance for previous day mark_for_active_employees at 12:45 pm today
 			'one_fm.overrides.attendance.mark_for_active_employees'
