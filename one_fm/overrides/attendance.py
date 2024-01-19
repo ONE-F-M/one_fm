@@ -833,7 +833,7 @@ class AttendanceMarking():
             self.start=start
         if end:
             self.end=end
-        if not (self.start and self.end):
+        if not (start and end):
             self.get_datetime()
         # CREATE ATTENDANCE FOR CLIENTS
         if attendance_type:
