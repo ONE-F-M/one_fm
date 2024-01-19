@@ -1091,5 +1091,4 @@ def mark_day_off_for_yesterday():
         end=p_datetime.strptime(f'{getdate()} 00:00:00', '%Y-%m-%d %H:%M:%S'),
         attendance_type=True,
     )
-    attendance_marking.mark_day_off()
-    # frappe.enqueue(attendance_marking.mark_day_off, queue="long", timeout=4000)
+    frappe.enqueue(attendance_marking.mark_day_off, queue="long", timeout=6000)
