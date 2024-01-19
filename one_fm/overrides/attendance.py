@@ -628,7 +628,8 @@ def mark_daily_attendance(start_date, end_date):
         frappe.enqueue(
             attendance_marking.get_shifts,
             start=f'{start_date} 00:00:00', 
-            end=f'{end_date} 00:00:00', 
+            end=f'{end_date} 00:00:00',
+            attendance_type=True,
             queue="long",
             timeout=7000
         )
@@ -836,7 +837,7 @@ class AttendanceMarking():
         self.end = dt + timedelta(hours=-1)
 
     
-    def get_shifts(self, start=None, end=None):
+    def get_shifts(self, start=None, end=None, attendance_type=None):
         if start:
             self.start=start
         if end:
@@ -844,25 +845,46 @@ class AttendanceMarking():
         if not (self.start and self.end):
             self.get_datetime()
         # CREATE ATTENDANCE FOR CLIENTS
-        client_shifts =  frappe.db.sql(f"""
-            SELECT sa.* FROM `tabShift Assignment` sa
-            JOIN `tabOperations Role` op ON sa.operations_role=op.name 
-            WHERE
-            sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
-            AND op.attendance_by_client=1 AND op.status='Active'
-            ;
-        """, as_dict=1)
-        for i in client_shifts:
-            self.create_attendance(frappe._dict({**i, **{
-                'status':'On Hold', 'dt':"Shift Assignment"}}))
+        if attendance_type:
+            client_shifts =  frappe.db.sql(f"""
+                SELECT sa.* FROM `tabShift Assignment` sa
+                JOIN `tabOperations Role` op ON sa.operations_role=op.name 
+                WHERE
+                sa.start_date='{self.start}'
+                AND op.attendance_by_client=1 AND op.docstatus=1
+                ;
+            """, as_dict=1)
+            for i in client_shifts:
+                self.create_attendance(frappe._dict({**i, **{
+                    'status':'On Hold', 'dt':"Shift Assignment"}}))
 
-        shifts =  frappe.db.sql(f"""
-            SELECT sa.* FROM `tabShift Assignment` sa
-            JOIN `tabOperations Role` op ON sa.operations_role=op.name 
-            WHERE
-            sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
-            AND op.attendance_by_client=0 AND op.status='Active'
-        """, as_dict=1)
+            shifts =  frappe.db.sql(f"""
+                SELECT sa.* FROM `tabShift Assignment` sa
+                JOIN `tabOperations Role` op ON sa.operations_role=op.name 
+                WHERE
+                sa.start_date='{self.start}'
+                AND op.attendance_by_client=0 AND op.status='Active'
+            """, as_dict=1)
+        else:
+            client_shifts =  frappe.db.sql(f"""
+                SELECT sa.* FROM `tabShift Assignment` sa
+                JOIN `tabOperations Role` op ON sa.operations_role=op.name 
+                WHERE
+                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                AND op.attendance_by_client=1 AND op.status='Active'
+                ;
+            """, as_dict=1)
+            for i in client_shifts:
+                self.create_attendance(frappe._dict({**i, **{
+                    'status':'On Hold', 'dt':"Shift Assignment"}}))
+
+            shifts =  frappe.db.sql(f"""
+                SELECT sa.* FROM `tabShift Assignment` sa
+                JOIN `tabOperations Role` op ON sa.operations_role=op.name 
+                WHERE
+                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                AND op.attendance_by_client=0 AND op.status='Active'
+            """, as_dict=1)
         if shifts:
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0]))
             if checkins:
@@ -881,45 +903,46 @@ class AttendanceMarking():
                 if checkins: # check for work hours
                     # start checkin
                     for i in checkins:
-                        if not frappe.db.exists("Attendance", {
-                            'employee':i.employee,
-                            'attendance_date':i.shift_actual_start.date(),
-                            'roster_type':i.roster_type,
-                            'status': ["IN", ["Present", "On Leave", "Holiday", "Day Off", 
-                                "On Hold", "Work From Home"]]
-                            }):
-                            total_hours = (i.shift_actual_end - i.shift_actual_start).total_seconds() / (60*60)
-                            half_hour = total_hours/2
-                            working_hours = 0
-                            status = "Absent"
-                            comment = ""
-                            if ((i.earliest_time - i.shift_actual_end).total_seconds() / (60*60)) > half_hour:
-                                status = 'Absent'
-                                comment = f" Checked in late, checkin in at {i.earliest_time}"
-                            elif i.earliest_time and i.latest_time:
-                                working_hours = ((i.latest_time - i.earliest_time).total_seconds() / (60*60))
-                                if working_hours < half_hour:
-                                    status = "Absent"
-                                    comment = f"Worked less than 50% of {total_hours}hrs."
-                                else:
-                                    status = "Present"
-                                    comment = ""
-                            elif i.earliest_time and not i.latest_time:
-                                working_hours = (i.shift_actual_end - i.earliest_time).total_seconds() / (60*60)
-                                if working_hours < half_hour:
-                                    status = "Absent"
-                                    comment = f"Worked less than 50% of {total_hours}hrs."
-                                else:
-                                    status = "Present"
-                                    comment = ""
+                        if i.earliest_time: # maybe record retrived incorrectly
+                            if not frappe.db.exists("Attendance", {
+                                'employee':i.employee,
+                                'attendance_date':i.shift_actual_start.date(),
+                                'roster_type':i.roster_type,
+                                'status': ["IN", ["Present", "On Leave", "Holiday", "Day Off", 
+                                    "On Hold", "Work From Home"]]
+                                }):
+                                total_hours = (i.shift_actual_end - i.shift_actual_start).total_seconds() / (60*60)
+                                half_hour = total_hours/2
+                                working_hours = 0
+                                status = "Absent"
+                                comment = ""
+                                if ((i.earliest_time - i.shift_actual_end).total_seconds() / (60*60)) > half_hour:
+                                    status = 'Absent'
+                                    comment = f" Checked in late, checkin in at {i.earliest_time}"
+                                elif i.earliest_time and i.latest_time:
+                                    working_hours = ((i.latest_time - i.earliest_time).total_seconds() / (60*60))
+                                    if working_hours < half_hour:
+                                        status = "Absent"
+                                        comment = f"Worked less than 50% of {total_hours}hrs."
+                                    else:
+                                        status = "Present"
+                                        comment = ""
+                                elif i.earliest_time and not i.latest_time:
+                                    working_hours = (i.shift_actual_end - i.earliest_time).total_seconds() / (60*60)
+                                    if working_hours < half_hour:
+                                        status = "Absent"
+                                        comment = f"Worked less than 50% of {total_hours}hrs."
+                                    else:
+                                        status = "Present"
+                                        comment = ""
 
-                            #  continue to mark attendace
-                            try:
-                                self.create_attendance(frappe._dict({**dict(i), **{
-                                    "status":status, "comment":comment, "working_hours":working_hours,
-                                    "dt":"Employee Checkin"}}))
-                            except Exception as e:
-                                print(e)
+                                #  continue to mark attendace
+                                try:
+                                    self.create_attendance(frappe._dict({**dict(i), **{
+                                        "status":status, "comment":comment, "working_hours":working_hours,
+                                        "dt":"Employee Checkin"}}))
+                                except Exception as e:
+                                    print(e)
 
     def get_checkins(self, shift_assignments):
         query = f"""
