@@ -682,6 +682,9 @@ scheduler_events = {
 		"45 12 * * *": [ # mark all attendance for previous day at 12:45 pm today
 			'one_fm.overrides.attendance.mark_all_attendance'
 		],
+        "45 00 * * *": [ # mark all days off for previous day at 12:45 am today
+			'one_fm.overrides.attendance.mark_day_off_for_yesterday'
+		],
         "55 12 * * *": [ # mark attendance for previous day mark_for_active_employees at 12:45 pm today
 			'one_fm.overrides.attendance.mark_for_active_employees'
 		],

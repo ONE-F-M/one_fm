@@ -5,7 +5,7 @@ from frappe.utils import (
     now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date,
     datetime, today, add_days, now
 )
-from datetime import timedelta
+from datetime import timedelta, datetime as p_datetime
 from hrms.hr.doctype.attendance.attendance import *
 from hrms.hr.utils import  validate_active_employee, get_holidays_for_employee
 from one_fm.utils import get_holiday_today
@@ -616,11 +616,18 @@ def mark_daily_attendance(start_date, end_date):
         # # remark missing attendance for shifts
         end_date = add_days(start_date, 1)
         attendance_marking = AttendanceMarking()
-        frappe.enqueue(
-            attendance_marking.get_shifts,
-            start=f'{start_date} 00:00:00', 
-            end=f'{end_date} 00:00:00',
+        attendance_marking.get_datetime(
+            start=p_datetime.strptime(f'{start_date} 00:00:00', '%Y-%m-%d %H:%M:%S'), 
+            end=p_datetime.strptime(f'{end_date} 00:00:00', '%Y-%m-%d %H:%M:%S'),
             attendance_type=True,
+        )
+        frappe.enqueue(
+            attendance_marking.mark_day_off,
+            queue="long",
+            timeout=7000
+        )
+        frappe.enqueue(
+            attendance_marking.mark_shift_attendance,
             queue="long",
             timeout=7000
         )
@@ -818,30 +825,29 @@ class AttendanceMarking():
     """
 
     def __ini__(self):
+        self.attendance_type = None
         self.start = None
         self.end = None
 
-    def get_datetime(self):
-        dt = now_datetime()
-        dt = dt.replace(minute=0, second=0, microsecond=0)
-        self.start = dt + timedelta(hours=-2)
-        self.end = dt + timedelta(hours=-1)
+    def get_datetime(self, start=None, end=None, attendance_type=None):
+        self.attendance_type=attendance_type
+        self.start = start
+        self.end = end
+        if not (start and end):
+            dt = now_datetime()
+            dt = dt.replace(minute=0, second=0, microsecond=0)
+            self.start = dt + timedelta(hours=-2)
+            self.end = dt + timedelta(hours=-1)
 
     
-    def get_shifts(self, start=None, end=None, attendance_type=None):
-        if start:
-            self.start=start
-        if end:
-            self.end=end
-        if not (start and end):
-            self.get_datetime()
+    def mark_shift_attendance(self):
         # CREATE ATTENDANCE FOR CLIENTS
-        if attendance_type:
+        if self.attendance_type:
             client_shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name 
                 WHERE
-                sa.start_date='{self.start}'
+                sa.start_date='{self.start.date()}'
                 AND op.attendance_by_client=1 AND op.docstatus=1
                 ;
             """, as_dict=1)
@@ -853,7 +859,7 @@ class AttendanceMarking():
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name 
                 WHERE
-                sa.start_date='{self.start}'
+                sa.start_date='{self.start.date()}'
                 AND op.attendance_by_client=0 AND op.status='Active'
             """, as_dict=1)
         else:
@@ -979,6 +985,29 @@ class AttendanceMarking():
         """
         return frappe.db.sql(query, as_dict=1)
 
+    def mark_day_off(self):
+        days_off = frappe.get_list("Employee Schedule", {
+            'date':self.start.date(), 'employee_availability':'Day Off'
+        }, "*")
+        for i in days_off:
+            print(i.employee, i.date, i.roster_type, )
+            try:
+                if not frappe.db.exists("Attendance", {
+                    'employee':i.employee,
+                    'attendance_date':i.date,
+                    'roster_type':i.roster_type,
+                    'status': ["IN", ["Present", "On Leave", "Holiday", "Day Off", 
+                        "On Hold", "Work From Home"]]
+                    }):
+                    record = frappe._dict({**dict(i), **{
+                        "status":"Day Off", "comment":f"Employee Schedule - {i.name}",
+                        "dt":"Employee Schedule"}})
+                    self.create_attendance(record)
+                else:
+                    print("NOT FOOUND FOR", i.employee)
+            except Exception as e:
+                print(e)
+                pass
 
     
     def create_attendance(self, record, attendace_type=None):
@@ -1043,10 +1072,24 @@ class AttendanceMarking():
                     frappe.db.set_value("Employee Checkin", record.out_name, 'attendance', doc.name)
             frappe.db.commit()
         except Exception as e:
+            print(e)
             frappe.log_error(message=str(e), title="Hourly Attendance Marking")
 
 
 def run_attendance_marking_hourly():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""
     attendance_marking = AttendanceMarking()
-    frappe.enqueue(attendance_marking.get_shifts(), queue="long", timeout=4000)
+    attendance_marking.get_datetime()
+    frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
+
+def mark_day_off_for_yesterday():
+    """Marks Attendances for Hourly Employees based on Employee Checkin."""
+    start_date = add_days(getdate(), -1)
+    attendance_marking = AttendanceMarking()
+    attendance_marking.get_datetime(
+        start=p_datetime.strptime(f'{start_date} 00:00:00', '%Y-%m-%d %H:%M:%S'), 
+        end=p_datetime.strptime(f'{getdate()} 00:00:00', '%Y-%m-%d %H:%M:%S'),
+        attendance_type=True,
+    )
+    attendance_marking.mark_day_off()
+    # frappe.enqueue(attendance_marking.mark_day_off, queue="long", timeout=4000)
