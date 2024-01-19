@@ -990,7 +990,6 @@ class AttendanceMarking():
             'date':self.start.date(), 'employee_availability':'Day Off'
         }, "*")
         for i in days_off:
-            print(i.employee, i.date, i.roster_type, )
             try:
                 if not frappe.db.exists("Attendance", {
                     'employee':i.employee,
@@ -1003,10 +1002,8 @@ class AttendanceMarking():
                         "status":"Day Off", "comment":f"Employee Schedule - {i.name}",
                         "dt":"Employee Schedule"}})
                     self.create_attendance(record)
-                else:
-                    print("NOT FOOUND FOR", i.employee)
+                
             except Exception as e:
-                print(e)
                 pass
 
     
