@@ -91,8 +91,12 @@ class AttendanceCheck(Document):
                     if self.attendance_status == "Absent":
                         return ""
                     elif self.attendance_status == "Present":
-                        return frappe.db.set_value("Attendance", check_attendance.get("name"), dict(status="Present"))
-                    
+                        frappe.db.sql("""UPDATE `tabAttendance`
+                                        SET status = 'Present'
+                                        WHERE name = %s
+                                        """, (check_attendance.get("name")))
+                        frappe.db.commit()
+                        return ""
                     
                 att = frappe.get_doc("Attendance", {
                     'attendance_date': self.date, 'employee': self.employee,
@@ -227,7 +231,7 @@ def create_attendance_check(attendance_date=None):
     if production_domain():
         attendance_checkin_found = []
         if not attendance_date:
-            attendance_date = add_days(today(), -1)
+            attendance_date = add_days(today(), -50)
         all_attendance = frappe.get_all("Attendance", filters={
             'docstatus':1,
             'attendance_date':attendance_date}, fields="*")
@@ -425,6 +429,8 @@ def create_attendance_check(attendance_date=None):
         attendance_check_list = []
         #basic create
         for i in missing_basic+absent_attendance_basic_list:
+            if i == "HR-EMP-02059":
+                continue
             employee = employees_dict.get(i)
             at_check = frappe._dict({
                 "doctype":"Attendance Check",
