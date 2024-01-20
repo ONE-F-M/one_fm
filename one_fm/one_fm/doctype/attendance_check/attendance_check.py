@@ -228,15 +228,17 @@ def get_attendance_by_timesheet_employees(employees,attendance_date):
 
 
 def create_attendance_check(attendance_date=None):
-    if production_domain():
+    # if production_domain():
+    if True:
         attendance_checkin_found = []
         if not attendance_date:
-            attendance_date = add_days(today(), -50)
+            attendance_date = add_days(today(), -228)
+            
         all_attendance = frappe.get_all("Attendance", filters={
             'docstatus':1,
             'attendance_date':attendance_date}, fields="*")
         all_attendance_employee = [i.employee for i in all_attendance]
-
+        
         # employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':attendance_date, 'employee_availability':'Working'}, fields="*")
         employee_schedules = frappe.db.sql(f"""SELECT * from `tabEmployee Schedule`
                                 WHERE date = '{attendance_date}'
@@ -273,6 +275,7 @@ def create_attendance_check(attendance_date=None):
         for i in shift_assignment_basic: #shift assignment
             if not i.employee in attendance_basic_employees:
                 missing_basic.append(i.employee)
+                
 
         missing_ot = []
         for i in employee_schedules_ot: #employee schedule
