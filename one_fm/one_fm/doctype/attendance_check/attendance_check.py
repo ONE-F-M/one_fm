@@ -228,11 +228,10 @@ def get_attendance_by_timesheet_employees(employees,attendance_date):
 
 
 def create_attendance_check(attendance_date=None):
-    # if production_domain():
-    if True:
+    if production_domain():
         attendance_checkin_found = []
         if not attendance_date:
-            attendance_date = add_days(today(), -228)
+            attendance_date = add_days(today(), -1)
             
         all_attendance = frappe.get_all("Attendance", filters={
             'docstatus':1,
