@@ -236,6 +236,8 @@ def create_attendance_check(attendance_date=None):
         all_attendance = frappe.get_all("Attendance", filters={
             'docstatus':1,
             'attendance_date':attendance_date}, fields="*")
+        
+        excluded_employees = frappe.db.get_list("Attendance Check Exclusion", filters={"parent": "ONEFM General Setting", 'parentfield': 'attendance_check_exclusion'}, pluck="employee")
         all_attendance_employee = [i.employee for i in all_attendance]
         
         # employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':attendance_date, 'employee_availability':'Working'}, fields="*")
@@ -431,7 +433,7 @@ def create_attendance_check(attendance_date=None):
         attendance_check_list = []
         #basic create
         for i in missing_basic+absent_attendance_basic_list:
-            if i == "HR-EMP-02059":
+            if i in excluded_employees:
                 continue
             employee = employees_dict.get(i)
             at_check = frappe._dict({

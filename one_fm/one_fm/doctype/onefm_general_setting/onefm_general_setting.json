@@ -19,6 +19,7 @@
   "mark_atttendance_per_employee",
   "attendance_manager",
   "attendance_manager_name",
+  "attendance_check_exclusion",
   "employee_section",
   "employee_master_role",
   "wiki_page_access"
@@ -110,11 +111,17 @@
    "fieldtype": "Link",
    "label": "Super User Role",
    "options": "Role"
+  },
+  {
+   "fieldname": "attendance_check_exclusion",
+   "fieldtype": "Table",
+   "label": "Attendance Check Exclusion",
+   "options": "Attendance Check Exclusion"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-01-08 17:20:02.050883",
+ "modified": "2024-01-21 14:43:55.667092",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
