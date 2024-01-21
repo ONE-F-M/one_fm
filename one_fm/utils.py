@@ -3339,3 +3339,17 @@ def fetch_attendance_manager_user_obj() -> str:
         attendance_manager_user = frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
         return attendance_manager_user
     return ""
+
+
+def custom_toggle_notifications(user: str, enable: bool = False):
+    try:
+        settings = frappe.get_doc("Notification Settings", user)
+    except frappe.DoesNotExistError:
+        frappe.clear_last_message()
+        return
+
+    if settings.enabled != enable:
+        settings.enabled = enable
+        settings.flags.ignore_permissions = 1
+        settings.save()
+    
