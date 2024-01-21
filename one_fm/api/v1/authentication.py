@@ -73,7 +73,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 	try:
 		site = frappe.utils.cstr(frappe.local.conf.app_url)
 		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
-
+		
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
 		
@@ -86,7 +86,6 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 		headers = {'Accept': 'application/json'}
 		session = requests.Session()
 		auth_api = site + "api/method/frappe.integrations.oauth2.get_token"
-		
 		auth_api_response = session.post(
             auth_api,
             data=args, headers=headers
@@ -474,3 +473,38 @@ def set_password(employee_user_id, new_password):
 			'message': _('Password Updated!')
 		}
 	return response("Success", 200, message)
+
+@frappe.whitelist(allow_guest=True)
+def user_login(employee_id, password):
+	try:
+		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+		if not username:
+			return response("Unauthorized", 401, None, "Invalid employee ID")
+		auth = frappe.auth.LoginManager()
+		auth.authenticate(user=username, pwd=password)
+		auth.post_login()
+		msg={'status':200, 'text':frappe.local.response.message, 'user': frappe.session.user}
+		user = frappe.get_doc('User', frappe.session.user)
+		if(user.api_key and user.api_secret):
+			msg['token'] = f"token {user.api_key}:{user.get_password('api_secret')}"
+		else:
+			session_user = frappe.session.user
+			frappe.set_user('Administrator')
+			generate_keys(user.name)
+			user.reload()
+			msg['token'] = f"token {user.api_key}:{user.get_password('api_secret')}"
+			frappe.set_user(session_user)
+		user, user_roles, user_employee =  get_current_user_details()
+		msg.update(user_employee)
+		msg.update({"roles": user_roles})
+		if "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles:
+			msg.update({"supervisor": 1})
+		else:
+			msg.update({"supervisor": 0})
+		response("success", 200, msg)
+	except frappe.exceptions.AuthenticationError:
+		print('auth eror')
+		response("error", 401, None, frappe.local.response.message)
+	except Exception as e:
+		print(frappe.get_traceback(), 'Email Login')
+		response("error", 500, None, str(e))

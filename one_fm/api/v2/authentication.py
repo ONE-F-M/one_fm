@@ -14,6 +14,7 @@ from frappe.utils.password import update_password as _update_password
 from twilio.rest import Client as TwilioClient
 from one_fm.api.v2.utils import response
 from one_fm.processor import sendemail, send_whatsapp
+from one_fm.api.v2.utils import get_current_user_details
 
 @frappe.whitelist(allow_guest=True)
 def login(client_id: str = None, grant_type: str = None, employee_id: str = None, password: str = None) -> dict:
@@ -470,24 +471,33 @@ def set_password(employee_user_id, new_password):
 	return response("Success", 200, message)
 
 
-
 @frappe.whitelist(allow_guest=True)
-def email_login(usr, pwd):
+def user_login(employee_id, password):
 	try:
+		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+		if not username:
+			return response("Unauthorized", 401, None, "Invalid employee ID")
 		auth = frappe.auth.LoginManager()
-		auth.authenticate(user=usr, pwd=pwd)
+		auth.authenticate(user=username, pwd=password)
 		auth.post_login()
-		msg={'status_code':200, 'text':frappe.local.response.message, 'user': frappe.session.user}
+		msg={'status':200, 'text':frappe.local.response.message, 'user': frappe.session.user}
 		user = frappe.get_doc('User', frappe.session.user)
 		if(user.api_key and user.api_secret):
-			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
+			msg['token'] = f"token {user.api_key}:{user.get_password('api_secret')}"
 		else:
 			session_user = frappe.session.user
 			frappe.set_user('Administrator')
 			generate_keys(user.name)
 			user.reload()
-			msg['token'] = f"{user.api_key}:{user.get_password('api_secret')}"
+			msg['token'] = f"token {user.api_key}:{user.get_password('api_secret')}"
 			frappe.set_user(session_user)
+		user, user_roles, user_employee =  get_current_user_details()
+		msg.update(user_employee)
+		msg.update({"roles": user_roles})
+		if "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles:
+			msg.update({"supervisor": 1})
+		else:
+			msg.update({"supervisor": 0})
 		response("success", 200, msg)
 	except frappe.exceptions.AuthenticationError:
 		print('auth eror')
