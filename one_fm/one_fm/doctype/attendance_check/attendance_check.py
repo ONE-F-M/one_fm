@@ -82,10 +82,22 @@ class AttendanceCheck(Document):
         if self.workflow_state == 'Approved':
             comment = ""
             logs = []
-            if frappe.db.exists('Attendance',
+            check_attendance = frappe.db.get_value('Attendance',
                 {'attendance_date': self.date, 'employee': self.employee, 'docstatus': ['<', 2],
                 'roster_type':self.roster_type
-                }):
+                }, ["status", "name"], as_dict=1)
+            if check_attendance:
+                if check_attendance.get('status') == "Absent":
+                    if self.attendance_status == "Absent":
+                        return ""
+                    elif self.attendance_status == "Present":
+                        frappe.db.sql("""UPDATE `tabAttendance`
+                                        SET status = 'Present'
+                                        WHERE name = %s
+                                        """, (check_attendance.get("name")))
+                        frappe.db.commit()
+                        return ""
+                    
                 att = frappe.get_doc("Attendance", {
                     'attendance_date': self.date, 'employee': self.employee,
                     'docstatus': ['<', 2],
@@ -203,11 +215,14 @@ def create_attendance_check(attendance_date=None):
         attendance_checkin_found = []
         if not attendance_date:
             attendance_date = add_days(today(), -1)
+            
         all_attendance = frappe.get_all("Attendance", filters={
             'docstatus':1,
             'attendance_date':attendance_date}, fields="*")
+        
+        excluded_employees = frappe.db.get_list("Attendance Check Exclusion", filters={"parent": "ONEFM General Setting", 'parentfield': 'attendance_check_exclusion'}, pluck="employee")
         all_attendance_employee = [i.employee for i in all_attendance]
-
+        
         # employee_schedules = frappe.db.get_list("Employee Schedule", filters={'date':attendance_date, 'employee_availability':'Working'}, fields="*")
         employee_schedules = frappe.db.sql(f"""SELECT * from `tabEmployee Schedule`
                                 WHERE date = '{attendance_date}'
@@ -244,6 +259,7 @@ def create_attendance_check(attendance_date=None):
         for i in shift_assignment_basic: #shift assignment
             if not i.employee in attendance_basic_employees:
                 missing_basic.append(i.employee)
+                
 
         missing_ot = []
         for i in employee_schedules_ot: #employee schedule
@@ -400,6 +416,8 @@ def create_attendance_check(attendance_date=None):
         attendance_check_list = []
         #basic create
         for i in missing_basic+absent_attendance_basic_list:
+            if i in excluded_employees:
+                continue
             employee = employees_dict.get(i)
             at_check = frappe._dict({
                 "doctype":"Attendance Check",
@@ -546,6 +564,8 @@ def create_attendance_check(attendance_date=None):
                     print(e)
                     continue
         for i in employees_with_no_docs:
+            if i in excluded_employees:
+                continue
             employee = employees_dict.get(i)
             at_check = frappe._dict({
                 "doctype":"Attendance Check",
