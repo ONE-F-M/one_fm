@@ -7,7 +7,7 @@ class UserOverrideLMS(CustomUser):
         pass
     
     
-class TheCustomUser(User):
+class UserOverride(User):
     
     def validate(self):
         self.__new_password = self.new_password

@@ -3347,7 +3347,8 @@ def custom_toggle_notifications(user: str, enable: bool = False):
     except frappe.DoesNotExistError:
         frappe.clear_last_message()
         return
-
+    
+    
     if settings.enabled != enable:
         settings.enabled = enable
         settings.flags.ignore_permissions = 1
