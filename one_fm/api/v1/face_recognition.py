@@ -81,7 +81,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
 @frappe.whitelist()
 def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None,
-                            skip_attendance: str = None, latitude: str = None, longitude: str = None):
+        skip_attendance: str = None, latitude: str = None, longitude: str = None):
     """This method verifies user checking in/checking out.
 
     Args:
@@ -251,9 +251,9 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             log_type = shift.check_existing_checking()
             if log_type=='IN':
                 pass
-                # if shift.after_4hrs():
-                #     # check if hrs has passed since shift start. Here we can also allow those who checked out tp checkin by checkin if OUT exist for same shift
-                #     return response("Resource Not Found", 404, None, "You are 4 or more hours late, you cannot checkin at this time.")
+                if shift.after_4hrs():
+                    # check if hrs has passed since shift start. Here we can also allow those who checked out tp checkin by checkin if OUT exist for same shift
+                    return response("Resource Not Found", 404, None, "You are 4 or more hours late, you cannot checkin at this time.")
 
             if frappe.db.exists("Shift Request", {
                 "employee":employee, 'from_date':['<=',date],
