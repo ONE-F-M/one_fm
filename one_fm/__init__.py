@@ -93,3 +93,4 @@ InterviewFeedback.validate_interviewer = custom_validate_interviewer
 ShiftAssignment = ShiftAssignmentOverride
 get_children = get_childrens
 AssignmentRule.do_assignment = do_assignment
+

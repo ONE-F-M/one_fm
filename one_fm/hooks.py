@@ -493,7 +493,8 @@ override_doctype_class = {
     "Job Opening": "one_fm.overrides.job_opening.JobOpeningOverride",
     "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
     "Goal": "one_fm.overrides.goal.GoalOverride",
-    "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride"
+    "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
+    "User": "one_fm.overrides.user.UserOverride"
 }
 
 
