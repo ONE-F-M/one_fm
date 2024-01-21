@@ -581,6 +581,8 @@ def create_attendance_check(attendance_date=None):
                     print(e)
                     continue
         for i in employees_with_no_docs:
+            if i in excluded_employees:
+                continue
             employee = employees_dict.get(i)
             at_check = frappe._dict({
                 "doctype":"Attendance Check",
