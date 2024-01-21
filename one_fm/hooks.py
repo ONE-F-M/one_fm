@@ -494,7 +494,7 @@ override_doctype_class = {
     "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
     "Goal": "one_fm.overrides.goal.GoalOverride",
     "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
-    "User": "one_fm.overrides.user.UserOverride"
+    # "User": "one_fm.overrides.user.UserOverride"
 }
 
 
