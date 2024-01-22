@@ -2977,7 +2977,7 @@ def get_domain():
         return ''
 
 def production_domain():
-    return get_domain() == 'one-fm.com'
+    return frappe.db.get_single_value("ONEFM General Setting", "is_production")
 
 def check_employee_attendance_dependents(employee):
     """

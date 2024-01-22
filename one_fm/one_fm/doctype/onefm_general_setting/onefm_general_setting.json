@@ -9,6 +9,7 @@
  "field_order": [
   "mobile_app_version",
   "column_break_xyl05",
+  "is_production",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
@@ -19,7 +20,6 @@
   "mark_atttendance_per_employee",
   "attendance_manager",
   "attendance_manager_name",
-  "attendance_check_exclusion",
   "employee_section",
   "employee_master_role",
   "wiki_page_access"
@@ -113,15 +113,15 @@
    "options": "Role"
   },
   {
-   "fieldname": "attendance_check_exclusion",
-   "fieldtype": "Table",
-   "label": "Attendance Check Exclusion",
-   "options": "Attendance Check Exclusion"
+   "default": "0",
+   "fieldname": "is_production",
+   "fieldtype": "Check",
+   "label": "Is Production"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-01-21 14:43:55.667092",
+ "modified": "2024-01-22 19:57:49.621676",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
