@@ -138,13 +138,13 @@ def get_penalties(employee_id: str = None, role: str = None) -> dict:
 			return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
 		if role and role == "Issuance":
-			result = frappe.get_list("Penalty", filters={"issuer_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+			result = frappe.get_list("Penalty", filters={"issuer_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state", "recipient_name"], order_by="modified desc")
 			if len(result) > 0:
 				return response("Success", 200, result)
 			else:
 				return response("Resource not found", 404, None, "No penalties found for {employee} with role as {role}".format(employee=employee, role=role))
 		else:
-			result = frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+			result = frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state", "issuer_name"], order_by="modified desc")
 			if len(result) > 0:
 				return response("Success", 200, result)
 			else:
