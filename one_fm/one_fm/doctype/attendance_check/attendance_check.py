@@ -86,55 +86,59 @@ class AttendanceCheck(Document):
                 {'attendance_date': self.date, 'employee': self.employee, 'docstatus': ['<', 2],
                 'roster_type':self.roster_type
                 }, ["status", "name"], as_dict=1)
+            comment = "Created from Attendance Check"
             if check_attendance:
-                if check_attendance.get('status') == "Absent":
+                if check_attendance.status == "Absent":
                     if self.attendance_status == "Absent":
-                        return ""
-                    elif self.attendance_status == "Present":
-                        frappe.db.sql("""UPDATE `tabAttendance`
-                                        SET status = 'Present'
-                                        WHERE name = %s
-                                        """, (check_attendance.get("name")))
+                        pass
+                    elif self.attendance_status in ["Present", "Day Off", "On Leave"]:
+                        working_hours=0
+                        if self.shift_assignment:
+                            working_hours = frappe.db.get_value("Operations Shift",
+                                frappe.db.get_value("Shift Assignment", self.shift_assignment, 'shift'), 'duration')
+                        else:
+                            working_hours = 8 if self.attendance_status == 'Present' else 0
+                        frappe.db.sql(f"""UPDATE `tabAttendance`
+                            SET status = '{self.attendance_status}',
+                            reference_doctype="{self.doctype}",
+                            reference_docname="{self.name}",
+                            modified="{str(now())}",
+                            working_hours={working_hours},
+                            modified_by="{frappe.session.user}",
+                            comment="{comment}"
+                            WHERE name = "{check_attendance.name}"
+                            """
+                        )
                         frappe.db.commit()
-                        return ""
-                    
-                att = frappe.get_doc("Attendance", {
-                    'attendance_date': self.date, 'employee': self.employee,
-                    'docstatus': ['<', 2],
-                    'roster_type':self.roster_type
-                })
-                logs = frappe.get_all("Employee Checkin", filters={"attendance":att.name})
-                comment = att.comment
-                frappe.db.sql(f"""DELETE FROM `tabAttendance` WHERE name="{att.name}" """)
-
-            att = frappe.new_doc("Attendance")
-            att.employee = self.employee
-            att.employee_name = self.employee_name
-            att.attendance_date = self.date
-            att.status = self.attendance_status
-            att.roster_type = self.roster_type
-            att.reference_doctype = "Attendance Check"
-            att.reference_docname = self.name
-            att.comment = f"Created from Attendance Check\n{self.justification or ''}\n{self.comment or ''}"
-            if not frappe.db.get_value("Employee", self.employee, "attendance_by_timesheet"):
-                if self.shift_assignment:
-                    att.shift_assignment = self.shift_assignment
-                else:
-                    shift_assignment = frappe.db.exists("Shift Assignment", {
-                            'employee':self.employee, 'start_date':self.date, 'roster_type':self.roster_type
-                        })
-                    if shift_assignment:
-                        att.shift_assignment = shift_assignment
-                if att.shift_assignment and att.status=='Present':
-                    att.working_hours = frappe.db.get_value("Operations Shift",
-                        frappe.db.get_value("Shift Assignment", att.shift_assignment, 'shift'), 'duration')
-            if att.status != 'Day Off':
-                if not att.working_hours:
-                    att.working_hours = 8 if self.attendance_status == 'Present' else 0
-            att.insert(ignore_permissions=True)
-            att.submit()
-            for i in logs:
-                frappe.db.set_value("Employee Checkin", i.name, "attendance", att.name)
+            else:
+                att = frappe.new_doc("Attendance")
+                att.employee = self.employee
+                att.employee_name = self.employee_name
+                att.attendance_date = self.date
+                att.status = self.attendance_status
+                att.roster_type = self.roster_type
+                att.reference_doctype = "Attendance Check"
+                att.reference_docname = self.name
+                att.comment = comment
+                if not frappe.db.get_value("Employee", self.employee, "attendance_by_timesheet"):
+                    if self.shift_assignment:
+                        att.shift_assignment = self.shift_assignment
+                    else:
+                        shift_assignment = frappe.db.exists("Shift Assignment", {
+                                'employee':self.employee, 'start_date':self.date, 'roster_type':self.roster_type
+                            })
+                        if shift_assignment:
+                            att.shift_assignment = shift_assignment
+                    if att.shift_assignment and att.status=='Present':
+                        att.working_hours = frappe.db.get_value("Operations Shift",
+                            frappe.db.get_value("Shift Assignment", att.shift_assignment, 'shift'), 'duration')
+                if att.status != 'Day Off':
+                    if not att.working_hours:
+                        att.working_hours = 8 if self.attendance_status == 'Present' else 0
+                att.insert(ignore_permissions=True)
+                att.submit()
+                for i in logs:
+                    frappe.db.set_value("Employee Checkin", i.name, "attendance", att.name)
 
 
     def validate_justification_and_attendance_status(self):
