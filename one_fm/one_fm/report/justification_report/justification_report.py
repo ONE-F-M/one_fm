@@ -89,7 +89,7 @@ def set_day_total_pending_approval_acheck(cur_date, column_date_field, datapack)
         # Add new row Pending Approval and column value to the report
         datapack.append({'justification_value': 'Pending Approval', column_date_field: pending_apporval})
     else:
-        print("boy", pending_apporval)
+    
         # Add cloumn value to the row in the report
         datapack[3].update({column_date_field: pending_apporval})
 
