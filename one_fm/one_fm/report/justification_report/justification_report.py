@@ -17,7 +17,6 @@ def fetch_data(filters):
     column_dates = get_date_range(getdate(filters.get('from_date')),getdate(filters.get('to_date')),as_dict=1)
     for column_date in column_dates:
         datapack=update_data(column_date, column_dates[column_date], datapack)
-        print(datapack)
 
     return datapack
 
