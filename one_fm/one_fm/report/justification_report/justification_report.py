@@ -17,6 +17,7 @@ def fetch_data(filters):
     column_dates = get_date_range(getdate(filters.get('from_date')),getdate(filters.get('to_date')),as_dict=1)
     for column_date in column_dates:
         datapack=update_data(column_date, column_dates[column_date], datapack)
+        print(datapack)
 
     return datapack
 
@@ -42,6 +43,7 @@ def update_data(cur_date, column_date_field, datapack):
 
     # Set Justification details of attendance check for the day
     set_justification_details(cur_date, column_date_field, datapack, row_index)
+    
 
     return datapack
 
@@ -85,9 +87,11 @@ def set_day_total_overtime_attendance_check(cur_date, column_date_field, datapac
 def set_day_total_pending_approval_acheck(cur_date, column_date_field, datapack):
     pending_apporval = frappe.db.count('Attendance Check', {'date':cur_date, 'docstatus': ['<', 2], 'workflow_state': 'Pending Approval'})
     if len(datapack) == 3:
+        print("hey", pending_apporval)
         # Add new row Pending Approval and column value to the report
         datapack.append({'justification_value': 'Pending Approval', column_date_field: pending_apporval})
     else:
+        print("boy", pending_apporval)
         # Add cloumn value to the row in the report
         datapack[3].update({column_date_field: pending_apporval})
 
@@ -125,8 +129,8 @@ def set_attendance_status_day_count(cur_date, column_date_field, datapack):
     # Remove first empty option
     attendance_status_options.pop(0)
 
-    # Attendance status count adds from 4th row(index will be 3)
-    row_index = 3
+    # Attendance status count adds from 5th row(index will be 4)
+    row_index = 4
     for attendance_status in attendance_status_options:
         # Set total attendance_status of attendance check in the day
         attendance_status_count = status_count_data[attendance_status] if attendance_status in status_count_data else 0
