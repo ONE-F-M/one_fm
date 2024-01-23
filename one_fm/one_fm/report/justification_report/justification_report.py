@@ -86,7 +86,6 @@ def set_day_total_overtime_attendance_check(cur_date, column_date_field, datapac
 def set_day_total_pending_approval_acheck(cur_date, column_date_field, datapack):
     pending_apporval = frappe.db.count('Attendance Check', {'date':cur_date, 'docstatus': ['<', 2], 'workflow_state': 'Pending Approval'})
     if len(datapack) == 3:
-        print("hey", pending_apporval)
         # Add new row Pending Approval and column value to the report
         datapack.append({'justification_value': 'Pending Approval', column_date_field: pending_apporval})
     else:
