@@ -1571,7 +1571,7 @@ def set_job_applicant_fields(doc):
 def validate_mandatory_fields(doc):
     field_list = [{'First Name':'one_fm_first_name'}, {'Last Name':'one_fm_last_name'}, {'Passport Number':'one_fm_passport_number'},
                 {'Place of Birth':'one_fm_place_of_birth'}, {'Email ID':'one_fm_email_id'},
-                # {"First Name in Arabic": "one_fm_first_name_in_arabic"}, {"Last Name in Arabic": "one_fm_last_name_in_arabic"},
+                {"First Name in Arabic": "one_fm_first_name_in_arabic"}, {"Last Name in Arabic": "one_fm_last_name_in_arabic"},
                 {'Marital Status':'one_fm_marital_status'}, {'Passport Holder of':'one_fm_passport_holder_of'},
                 {'Passport Issued on':'one_fm_passport_issued'}, {'Passport Expires on ':'one_fm_passport_expire'},
                 {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
