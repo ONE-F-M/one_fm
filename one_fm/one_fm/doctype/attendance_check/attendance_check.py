@@ -329,7 +329,7 @@ def create_attendance_check(attendance_date=None):
                 frappe.db.commit()    
         frappe.db.commit()
 
-        # create for no shift but avtive shift based employees
+        # create for no shift but active shift based employees
         attendance_list = [i.employee for i in frappe.db.get_list("Attendance", {
             "attendance_date":attendance_date})]
         
@@ -343,12 +343,16 @@ def create_attendance_check(attendance_date=None):
         if no_shifts:
             for count, i in enumerate(no_shifts):
                 try:
-                    doc = frappe.get_doc({
-                        "doctype":"Attendance Check",
-                        "employee":i.name,
-                        "roster_type":"Basic",
-                        "date":attendance_date
-                    }).insert(ignore_permissions=1)
+                    if not frappe.db.exist("Attendance", {
+                        'attendance_date':attendance_date,
+                        'employee':i.name}
+                        ):
+                        doc = frappe.get_doc({
+                            "doctype":"Attendance Check",
+                            "employee":i.name,
+                            "roster_type":"Basic",
+                            "date":attendance_date
+                        }).insert(ignore_permissions=1)
                 except Exception as e:
                     if not "Attendance Check already exist for" in str(e):
                         frappe.log_error(message=frappe.get_traceback(), title="Attendance Check Creation")
