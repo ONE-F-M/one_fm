@@ -4,6 +4,37 @@ from one_fm.api.notification import create_notification_log
 from one_fm.api.v1.utils import response, validate_date, validate_time
 from one_fm.operations.doctype.shift_permission.shift_permission import fetch_approver
 
+
+
+@frappe.whitelist()
+def get_approver_details(employee_id):
+    """
+        Fetches the approver details and the last shift for that employee
+    Args:
+        employee_id : employee_id
+    """
+    
+    try:
+        if not frappe.db.exists('Employee',employee_id):
+            return response("Bad Request", 400, None, "No Employee Found")
+        
+        shift_id,shift_supervisor,ops_shift,shift_type = fetch_approver(employee_id)
+        supervisor_name = frappe.db.get_all("Employee",{'name':shift_supervisor},['employee_name'])
+        if supervisor_name:
+            supervisor_name = supervisor_name[0].employee_name
+        return response("Success", 200, frappe._dict({'approver':shift_supervisor,'approver_name':supervisor_name,'shift':ops_shift}))
+        
+    except Exception as error:
+        message = frappe.get_traceback()
+        frappe.log_error(title="Error fetching approver", message=message)
+        return response("Internal Server Error", 500, None, message)
+        
+    
+    
+    
+    
+
+
 @frappe.whitelist()
 def create_shift_permission(employee_id: str = None, log_type: str = None, permission_type: str = None, date: str = None,
     reason: str = None, leaving_time: str = None, arrival_time: str = None, latitude: str = None,
@@ -30,6 +61,8 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
         }
     """
     try:
+
+        
         if not employee_id:
             return response("Bad Request", 400, None, "employee_id required.")
 
@@ -51,61 +84,77 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
                 return response("Bad Request", 400, None, "log_type required.")
 
         if log_type == "IN" and permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
+            
             return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
                 "Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(permission_type)))
 
         if log_type == "OUT" and permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
+            
             return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
                 "Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(permission_type)))
 
         if permission_type == "Arrive Late" and not arrival_time:
+            
             return response("Bad Request", 400, None, "Arrival time required for late arrival shift permission.")
 
         if permission_type == "Leave Early" and not leaving_time:
+            
             return response("Bad Request", 400, None, "Leaving time required for early exit shift permission")
 
         if not isinstance(employee_id, str):
+            
             return response("Bad Request", 400, None, "employee must be of type str.")
 
         if not isinstance(permission_type, str):
+            
             return response("Bad Request", 400, None, "permission_type must be of type str.")
 
-        if permission_type not in ["Arrive Late", "Leave Early", "Checkin Issue", "Checkout Issue"]:
+        if permission_type not in ["Arrive Late", "Leave Early", "Checkin Issue", "Checkout Issue","Forget to Checkout","Forget to Checkin"]:
+            
             return response("Bad Request", 400, None, "permission type must be either 'Arrive Late' or 'Leave Early' or 'Checkin Issue' or 'Checkout Issue'.")
-
         if permission_type in ["Checkin Issue", "Checkout Issue"] and latitude and longitude:
             try:
                 latitude = float(latitude)
                 longitude = float(longitude)
             except:
+                frappe.log_error(title="API Shift Permission", message="MEssage 1")
                 return response("Bad Request", 400, None, "Latitude and longitude must be float.")
-
         if not isinstance(date, str):
+            
+            frappe.log_error(title="API Shift Permission", message='MEssage 2')
             return response("Bad Request", 400, None, "date must be of type str.")
 
         if not validate_date(date):
+            frappe.log_error(title="API Shift Permission", message=frappe.get_traceback())
+            
             return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
 
         if not isinstance(reason, str):
+            frappe.log_error(title="API Shift Permission", message='MEssage 3')
             return response("Bad Request", 400, None, "reason must be of type str.")
 
         if arrival_time:
             if not isinstance(arrival_time, str):
+                frappe.log_error(title="API Shift Permission", message='MEssage 4')
                 return response("Bad Request", 400, None, "arival_time must be of type str.")
 
             if not validate_time(arrival_time):
+                frappe.log_error(title="API Shift Permission", message='MEssage 5')
                 return response("Bad Request", 400, None, "arrival_time must be of type hh:mm:ss.")
 
         if leaving_time:
             if not isinstance(leaving_time, str):
+                frappe.log_error(title="API Shift Permission", message='MEssage 6')
                 return response("Bad Request", 400, None, "leaving_time must be of type str.")
 
             if not validate_time(leaving_time):
+                frappe.log_error(title="API Shift Permission", message='MEssage 7')
                 return response("Bad Request", 400, None, "leaving_time must be of type hh:mm:ss.")
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
+            
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         shift_details = get_shift_details(employee)
@@ -113,15 +162,19 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
         if shift_details.found:
             shift, shift_type, shift_assignment, shift_supervisor = shift_details.data
         else:
+            
             return response("Resource Not Found", 404, None, "shift not found in employee schedule for {employee}".format(employee=employee))
 
         if not shift_type:
+            
             return response("Resource Not Found", 404, None, "shift type not found in employee schedule for {employee}".format(employee=employee))
 
         if not shift_assignment:
+           
             return response("Resource Not Found", 404, None, "shift assingment not found for {employee}".format(employee=employee))
 
         if not shift_supervisor:
+            
             return response("Resource Not Found", 404, None, "shift supervisor not found for {employee}".format(employee=employee_id))
 
         if not frappe.db.exists("Shift Permission", {"employee": employee, "date": date, "assigned_shift": shift_assignment, "permission_type": permission_type}):
@@ -183,9 +236,11 @@ def list_shift_permission(employee_id: str = None):
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-
-        shift_permission_list = frappe.get_list("Shift Permission", filters={'employee': employee}, fields=["name", "date", "workflow_state"])
-        return response("Success", 200, shift_permission_list)
+        
+        shift_permission_list = frappe.get_list("Shift Permission", filters={'docstatus':['<',2],'employee': employee}, fields=["name", "date",'log_type','permission_type','emp_name', "workflow_state",'docstatus'])
+        line_manager_shift_permission = frappe.get_list("Shift Permission", filters={'docstatus':['<',2],'shift_supervisor': employee}, fields=["name", "date",'log_type','permission_type','emp_name', "workflow_state"])
+        
+        return response("Success", 200, shift_permission_list+line_manager_shift_permission)
 
     except Exception as error:
         frappe.log_error(title="API AuthList Permissionentication", message=frappe.get_traceback())
@@ -241,10 +296,12 @@ def approve_shift_permission(employee_id: str = None, shift_permission_id: str =
 
         if shift_supervisor != employee:
             return response("Forbidden", 403, None, "{employee_id} cannot approve this shift permission.".format(employee_id=employee_id))
-
+        
         if shift_permission_doc.workflow_state == "Pending":
             shift_permission_doc.workflow_state="Approved"
-            shift_permission_doc.save()
+            
+            shift_permission_doc.save(ignore_permissions = True)
+            shift_permission_doc.submit()
             frappe.db.commit()
 
             user_id, supervisor_name = frappe.db.get_value('Employee', {'name': shift_supervisor}, ['user_id', 'employee_name'])
@@ -258,6 +315,7 @@ def approve_shift_permission(employee_id: str = None, shift_permission_id: str =
             return response("Bad Request", 400, None, "Shift permission not in 'Pending' state.")
 
     except Exception as error:
+        frappe.log_error(title="Error Approving Shift Permission",message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
