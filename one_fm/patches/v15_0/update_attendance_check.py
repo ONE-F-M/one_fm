@@ -8,7 +8,4 @@ def execute():
                 SET
                     ac.attendance_by_timesheet = 1 
                 WHERE
-                    ac.employee = e.name AND e.attendance_by_timesheet = 1;""") 
-
-
-   
+                    ac.employee = e.name AND e.attendance_by_timesheet = 1;""")

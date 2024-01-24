@@ -307,7 +307,7 @@ def create_attendance_check(attendance_date=None):
             'status':'Absent',
             'attendance_date':attendance_date}, 
             fields="*"
-        ) 
+        )
         
         attendance_by_timesheet = 0
 
