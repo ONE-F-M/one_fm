@@ -83,9 +83,9 @@ class AttendanceCheck(Document):
         site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
         if reports_to:
             self.reports_to = reports_to
-        elif shift_supervisor:
+        if shift_supervisor:
             self.shift_supervisor = shift_supervisor 
-        elif site_supervisor:
+        if site_supervisor:
             self.site_supervisor = site_supervisor              
         
     def after_insert(self):
