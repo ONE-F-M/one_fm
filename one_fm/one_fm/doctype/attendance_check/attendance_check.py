@@ -307,15 +307,21 @@ def create_attendance_check(attendance_date=None):
             'status':'Absent',
             'attendance_date':attendance_date}, 
             fields="*"
-        )
+        ) 
         
+        attendance_by_timesheet = 0
+
         for count, i in enumerate(absentees):
             try:
+                if frappe.get_value("Employee", "HR-EMP-01986" , ['attendance_by_timesheet']) == 1:
+                   attendance_by_timesheet = 1 
+
                 doc = frappe.get_doc({
                     "doctype":"Attendance Check",
                     "employee":i.employee,
                     "roster_type":i.roster_type,
                     "date":i.attendance_date,
+                    "attendance_by_timesheet": attendance_by_timesheet,
                     "attendance":i.name,
                     "attendance_comment":i.comment,
                     "shift_assignment":i.shift_assignment,
