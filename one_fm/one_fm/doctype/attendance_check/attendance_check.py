@@ -288,9 +288,9 @@ def get_attendance_by_timesheet_employees(employees,attendance_date):
                 else:
                     cond+= f" and name not in {tuple(employees)}"
 
-            ts_employees = frappe.db.sql(f"""SELECT name from  `tabEmployee` where status = "Active"  and attendance_by_timesheet = 1 {cond}""",as_dict=1)
+            ts_employees = frappe.db.sql(f"""SELECT name from  `tabEmployee` where status = "Active" AND date_of_joining <= '{attendance_date}' and attendance_by_timesheet = 1 {cond}""",as_dict=1)
             return [i.name for i in ts_employees]
-        return [i.name for i in frappe.get_all("Employee",{"status":"Active",'attendance_by_timesheet':1,'name':['NOT IN',employees]},['name'])]
+        return [i.name for i in frappe.get_all("Employee",{"status":"Active",'date_of_joining':['<=',attendance_date],'attendance_by_timesheet':1,'name':['NOT IN',employees]},['name'])]
     except:
         frappe.log_error(title = "Attendance Check Error for Timesheet",message = frappe.get_traceback())
         #Ensure that a value is returned regardless of what happens here
@@ -528,12 +528,12 @@ def check_for_missed(date,schedules,shift_assignments,attendance_requests,all_at
     merged_tuple = tuple(merged_set)
     if len(merged_tuple) == 1:
         single_employee = merged_tuple[0]
-        employees_with_no_docs_query = f""" SELECT name from `tabEmployee` where status = 'Active' and shift_working = 1 and name = {single_employee}
+        employees_with_no_docs_query = f""" SELECT name from `tabEmployee` where status = 'Active' AND date_of_joining <= '{date}' AND shift_working = 1 and name = {single_employee}
                                         """
 
     #Employees with no shift,schedule,leaves etc
     else:
-         employees_with_no_docs_query = f""" SELECT name from `tabEmployee` where status = 'Active' and shift_working = 1 and name not in {merged_tuple}
+         employees_with_no_docs_query = f""" SELECT name from `tabEmployee` where status = 'Active' AND date_of_joining <= '{date}' and shift_working = 1 and name not in {merged_tuple}
                                             """
     result_set = frappe.db.sql(employees_with_no_docs_query,as_dict=1)
     return [i.name for i in result_set] if result_set else []

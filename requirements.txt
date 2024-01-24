@@ -1,6 +1,10 @@
 datefinder
 mindee==3.11.1
 deep-translator==1.11.4
+gpt-index==0.4.15
+#langchain==0.0.96
+langchainplus-sdk==0.0.1
+pydantic==2.3.0
 grpcio
 grpcio-status
 google-api-core
@@ -16,4 +20,3 @@ redis-cli
 qrcode
 html2text
 gspread
-pydantic==2.3.0
