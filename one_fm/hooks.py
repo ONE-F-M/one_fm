@@ -493,7 +493,8 @@ override_doctype_class = {
     "Job Opening": "one_fm.overrides.job_opening.JobOpeningOverride",
     "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
     "Goal": "one_fm.overrides.goal.GoalOverride",
-    "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride"
+    "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
+    "User": "one_fm.overrides.user.UserOverride"
 }
 
 
@@ -664,7 +665,7 @@ scheduler_events = {
 			'one_fm.api.tasks.validate_am_shift_assignment'
 		],
 		"15 13 * * *":[ # Attendance Check
-			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check',
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.schedule_attendance_check',
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.assign_attendance_manager_after_48_hours'
 		],
 		# "07 13 * * *":[ # Auto approve attendance check
@@ -679,11 +680,11 @@ scheduler_events = {
 		"15 3 * * *": [ # create shift assignment
 			'one_fm.overrides.employee_checkin.auto_generate_checkin'
 		],
-		"25 0 * * *": [ # mark day attendance 12:25 AM
-			'one_fm.overrides.attendance.mark_day_attendance'
+		"45 12 * * *": [ # mark all attendance for previous day at 12:45 pm today
+			'one_fm.overrides.attendance.mark_all_attendance'
 		],
-		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
-			'one_fm.overrides.attendance.mark_night_attendance'
+        "45 00 * * *": [ # mark all days off for previous day at 12:45 am today
+			'one_fm.overrides.attendance.mark_day_off_for_yesterday'
 		],
         "55 12 * * *": [ # mark attendance for previous day mark_for_active_employees at 12:45 pm today
 			'one_fm.overrides.attendance.mark_for_active_employees'
