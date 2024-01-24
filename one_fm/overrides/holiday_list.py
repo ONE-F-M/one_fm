@@ -24,16 +24,16 @@ class HolidayListOverride(HolidayList):
 		# Get the previous version of the document
 		previous_doc = self.get_doc_before_save()
 		# Loop through the child table records
-		if previous_doc:
-			for idx, row in enumerate(self.holidays):
-				#only on update of existing Row
-				if len(previous_doc.get("holidays")) != idx:
-					previous_row = previous_doc.get("holidays")[idx]
-					old_date = getdate(previous_row.holiday_date)
-					new_date = getdate(row.holiday_date)
-					# Compare the field in the current row with the previous version
-					if old_date != new_date:
-						self.validate_attendance(old_date, new_date)
+		# if previous_doc:
+		# 	for idx, row in enumerate(self.holidays):
+		# 		#only on update of existing Row
+		# 		if len(previous_doc.get("holidays")) != idx:
+		# 			previous_row = previous_doc.get("holidays")[idx]
+		# 			old_date = getdate(previous_row.holiday_date)
+		# 			new_date = getdate(row.holiday_date)
+		# 			# Compare the field in the current row with the previous version
+		# 			if old_date != new_date:
+		# 				self.validate_attendance(old_date, new_date)
 			
 
 	@frappe.whitelist()

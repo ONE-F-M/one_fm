@@ -1570,8 +1570,9 @@ def set_job_applicant_fields(doc):
 
 def validate_mandatory_fields(doc):
     field_list = [{'First Name':'one_fm_first_name'}, {'Last Name':'one_fm_last_name'}, {'Passport Number':'one_fm_passport_number'},
-                {'Place of Birth':'one_fm_place_of_birth'}, {'Email ID':'one_fm_email_id'},{"First Name in Arabic": "one_fm_first_name_in_arabic"},
-                {"Last Name in Arabic": "one_fm_last_name_in_arabic"},{'Marital Status':'one_fm_marital_status'}, {'Passport Holder of':'one_fm_passport_holder_of'},
+                {'Place of Birth':'one_fm_place_of_birth'}, {'Email ID':'one_fm_email_id'},
+                {"First Name in Arabic": "one_fm_first_name_in_arabic"}, {"Last Name in Arabic": "one_fm_last_name_in_arabic"},
+                {'Marital Status':'one_fm_marital_status'}, {'Passport Holder of':'one_fm_passport_holder_of'},
                 {'Passport Issued on':'one_fm_passport_issued'}, {'Passport Expires on ':'one_fm_passport_expire'},
                 {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
                 {'Date of Birth':'one_fm_date_of_birth'}, {'Educational Qualification':'one_fm_educational_qualification'},
@@ -2976,7 +2977,7 @@ def get_domain():
         return ''
 
 def production_domain():
-    return get_domain() == 'one-fm.com'
+    return frappe.db.get_single_value("ONEFM General Setting", "is_production")
 
 def check_employee_attendance_dependents(employee):
     """
@@ -3339,3 +3340,17 @@ def fetch_attendance_manager_user_obj() -> str:
         attendance_manager_user = frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
         return attendance_manager_user
     return ""
+
+
+def custom_toggle_notifications(user: str, enable: bool = False):
+    try:
+        settings = frappe.get_doc("Notification Settings", user)
+    except frappe.DoesNotExistError:
+        frappe.clear_last_message()
+        return
+    
+    if settings.enabled != enable:
+        settings.enabled = enable
+        settings.flags.ignore_permissions = 1
+        settings.save()
+    
