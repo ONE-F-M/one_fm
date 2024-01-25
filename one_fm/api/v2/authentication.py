@@ -499,9 +499,9 @@ def user_login(employee_id, password):
 		else:
 			msg.update({"supervisor": 0})
 		response("success", 200, msg)
-	except frappe.exceptions.AuthenticationError:
-		print('auth eror')
-		response("error", 401, None, frappe.local.response.message)
+	except frappe.exceptions.AuthenticationError as e:
+		frappe.log_error(message=frappe.get_traceback(), title="API Login")
+		response("error", 401, None, str(e))
 	except Exception as e:
-		print(frappe.get_traceback(), 'Email Login')
+		frappe.log_error(message=frappe.get_traceback(), title="API Login")
 		response("error", 500, None, str(e))
