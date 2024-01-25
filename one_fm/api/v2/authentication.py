@@ -473,13 +473,8 @@ def set_password(employee_user_id, new_password):
 
 @frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):
-	try:
-		frappe.log_error()
-		error_msg = employee_id + " " + password
-		
+	try:		
 		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
-		error_msg+=f" {username}"
-		frappe.log_error(message=error_msg, title="API Login")
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
 		auth = frappe.auth.LoginManager()
