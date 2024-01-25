@@ -113,7 +113,6 @@
    "label": "Subcontract Hiring Settings"
   },
   {
-   "default": "Subcontractor",
    "fieldname": "subcontract_employment_type",
    "fieldtype": "Link",
    "label": "Subcontract Employment Type",
@@ -141,7 +140,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-01-02 01:03:07.283712",
+ "modified": "2024-01-16 04:27:34.888456",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

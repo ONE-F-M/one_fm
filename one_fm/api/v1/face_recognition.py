@@ -11,8 +11,9 @@ from one_fm.api.doc_events import haversine
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+options = [('grpc.max_message_length', 100 * 1024 * 1024* 10)]
 channels = [
-    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+    grpc.secure_channel(i, grpc.ssl_channel_credentials(), options=options) for i in face_recognition_service_url
 ]
 
 # setup stub for face recognition
@@ -49,37 +50,38 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
     try:
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
         # Setup channel
-        face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
-        channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials())
-        # setup stub
-        stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
-        # request body
-        req = enroll_pb2.EnrollRequest(
-            username = frappe.session.user,
-            user_encoded_video = video,
-        )
+        # face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
+        # channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials(), options=[('grpc.max_message_length', 100 * 1024 * 1024* 10)])
+        # # setup stub
+        # stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
+        # # request body
+        # req = enroll_pb2.EnrollRequest(
+        #     username = frappe.session.user,
+        #     user_encoded_video = video,
+        # )
 
-        res = stub.FaceRecognitionEnroll(req)
-        data = {'employee':doc.name, 'log_type':'Enrollment', 'verification':res.enrollment,
-                'message':res.message, 'data':res.data, 'source': 'Enroll'}
-        #frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-        if res.enrollment == "FAILED":
-            return response(res.message, 400, None, res.data)
+        # res = stub.FaceRecognitionEnroll(req)
+        # data = {'employee':doc.name, 'log_type':'Enrollment', 'verification':res.enrollment,
+        #         'message':res.message, 'data':res.data, 'source': 'Enroll'}
+        # #frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
+        # if res.enrollment == "FAILED":
+        #     return response(res.message, 400, None, res.data)
 
         doc.enrolled = 1
         doc.save(ignore_permissions=True)
         update_onboarding_employee(doc)
         frappe.db.commit()
 
-        return response("Success", 201, "User enrolled successfully.")
+        return response("Success", 201, "User enrolled successfully.<br>Please wait for 10sec, you will be redirected to checkin.")
 
     except Exception as error:
+        frappe.log_error(message=error, title="Enrollment")
         return response("Internal Server Error", 500, None, error)
 
 
 @frappe.whitelist()
 def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None,
-                            skip_attendance: str = None, latitude: str = None, longitude: str = None):
+        skip_attendance: str = None, latitude: str = None, longitude: str = None):
     """This method verifies user checking in/checking out.
 
     Args:

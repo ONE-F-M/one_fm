@@ -1,9 +1,6 @@
 datefinder
 mindee==3.11.1
 deep-translator==1.11.4
-gpt-index==0.4.15
-langchain==0.0.96
-langchainplus-sdk==0.0.10
 grpcio
 grpcio-status
 google-api-core
@@ -13,8 +10,10 @@ google-cloud-firestore
 google-cloud-storage
 google-cloud-vision
 googlemaps
+gspread
 firebase-admin
 redis-cli
 qrcode
 html2text
 gspread
+pydantic==2.3.0

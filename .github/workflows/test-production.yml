@@ -1,9 +1,9 @@
-name: Deploy CI/CD to Test production
+name: Deploy CI/CD to Test_Production
 
 on:
   push: # tells github to run this on any push to the repository
     branches:
-      - master-14
+      - test-production
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -11,23 +11,26 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 90
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - name: Deploy to Test Production
+    - name: Deploy to Staging
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.LMS_HOST }}
+        host: ${{ secrets.STAGING_HOST }}
         username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.LMS_SECRET }}
+        key: ${{ secrets.STAGING_KEY }}
         port: 22
         script: |
-          cd /home/frappe/master-14/apps/one_fm # we move into our app's folder
-          git pull upstream test-production # we pull any changes from git
-          cd /home/frappe/master-14
-          sudo supervisorctl restart all
-          ${{ secrets.PASSKEY }}
+          cd /home/frappe/test-production/apps/one_fm # we move into our app's folder
+          # git pull upstream staging # we pull any changes from git
+          git pull
+          cd /home/frappe          
+          pip3 install --upgrade frappe-bench
+          cd /home/frappe/test-production
+          # bench setup requirements
           bench migrate # sync database
-           # we remove any unused dependencies
+          bench restart #${{secrets.PASSKEY}}
+          # we remove any unused dependencies
           bench doctor
