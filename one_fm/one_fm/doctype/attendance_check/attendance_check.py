@@ -313,7 +313,7 @@ def create_attendance_check(attendance_date=None):
 
         for count, i in enumerate(absentees):
             try:
-                if frappe.get_value("Employee", "HR-EMP-01986" , ['attendance_by_timesheet']) == 1:
+                if frappe.get_value("Employee", i.employee , ['attendance_by_timesheet']) == 1:
                    attendance_by_timesheet = 1 
 
                 doc = frappe.get_doc({
