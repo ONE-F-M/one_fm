@@ -342,7 +342,7 @@ def create_attendance_check(attendance_date=None):
         if no_shifts:
             for count, i in enumerate(no_shifts):
                 try:
-                    if not frappe.db.exist("Attendance", {
+                    if not frappe.db.exists("Attendance", {
                         'attendance_date':attendance_date,
                         'employee':i.name}
                         ):
