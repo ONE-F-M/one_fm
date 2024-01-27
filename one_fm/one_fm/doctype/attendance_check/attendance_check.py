@@ -350,6 +350,7 @@ def create_attendance_check(attendance_date=None):
                             "doctype":"Attendance Check",
                             "employee":i.name,
                             "roster_type":"Basic",
+                            'is_unscheduled':1,
                             "date":attendance_date
                         }).insert(ignore_permissions=1)
                 except Exception as e:
