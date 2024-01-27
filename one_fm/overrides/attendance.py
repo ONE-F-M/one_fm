@@ -525,11 +525,13 @@ def mark_daily_attendance(start_date, end_date):
             INNER JOIN `tabHoliday` h ON h.parent = hl.name
             WHERE e.holiday_list = hl.name 
             AND h.holiday_date = '{start_date}'
-            AND h.weekly_off=1
+            AND h.weekly_off=0
             AND '{start_date}' BETWEEN hl.from_date AND hl.to_date
             AND e.status='Active'
             """,
         as_dict=1)
+        
+        
         if holiday_attendance_employee:
             for i in holiday_attendance_employee:
                 if not i.name in existing_attendance:
@@ -552,6 +554,22 @@ def mark_daily_attendance(start_date, end_date):
                         ),"""
         
         # Mark DayOff Attendance
+        #Find Employees with no schedule but have Day Off in the company holiday. Mainly for head office employees
+        day_off_no_schedule = frappe.db.sql(f"""
+            SELECT e.name, e.employee_name, e.company, e.department,
+            h.description from `tabEmployee` e ,`tabHoliday List` hl 
+            INNER JOIN `tabHoliday` h ON h.parent = hl.name
+            WHERE e.holiday_list = hl.name 
+            AND h.holiday_date = '{start_date}'
+            AND h.weekly_off=1
+            AND e.attendance_by_timesheet = 0
+            AND '{start_date}' BETWEEN hl.from_date AND hl.to_date
+            AND e.status='Active'
+            AND e.name NOT IN (SELECT employee from `tabEmployee Schedule`es where es.date = '{start_date}' AND es.employee_availability='Day Off')
+            """,
+        as_dict=1)
+        
+        
         day_off_employee = frappe.db.sql(f"""
             SELECT e.name, e.employee_name, e.company, e.department, es.name as es_name from `tabEmployee` e  
             INNER JOIN `tabEmployee Schedule` es ON es.employee =e.name
@@ -559,11 +577,14 @@ def mark_daily_attendance(start_date, end_date):
             AND es.employee_availability='Day Off'
             AND e.attendance_by_timesheet = 0
             AND e.status='Active'
+            
             """, as_dict=1
         )
 
         # create BASIC DAY OFF
-        for i in day_off_employee:
+        for i in day_off_employee+day_off_no_schedule:
+            if not i.get('es_name'):
+                i.es_name = i.description
             if not i.name in existing_attendance:
                 try:
                     frappe.db.sql(f"""
@@ -573,7 +594,8 @@ def mark_daily_attendance(start_date, end_date):
                         AND status="Absent"
                     """)
                 except:
-                    pass
+                    frappe.log_error(message = frappe.get_traceback(),title=f"Error in Attendance Marking for {i.employee_name}")
+                    continue
                 query_body+= f"""
                 (
                     "HR-ATT_{start_date}_{i.name}_Basic", "{naming_series}" , "{i.name}", "{i.employee_name}", 0, "Day Off", '', NULL,
