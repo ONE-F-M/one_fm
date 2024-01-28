@@ -1900,6 +1900,10 @@ def validate_iban_is_filled(doc, method):
 
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
+    print(doc.workflow_state)
+    if doc.workflow_state == "Open Request":
+        notify_hr_manager(doc)
+
 
 def bank_account_on_trash(doc, method):
     if doc.onboard_employee:
@@ -1931,6 +1935,27 @@ def update_onboarding_doc_for_bank_account(doc):
         if oe.workflow_state == 'Duty Commencement':
             oe.workflow_state = 'Bank Account'
         oe.save(ignore_permissions=True)
+
+def notify_hr_manager(doc):
+    
+    try:
+        hr_manager = frappe.get_single_value("HR Setting", 'custom_hr_manager')
+        message = frappe.render_template('one_fm/templates/emails/bank_account_open_request.html', context={"name": doc.account_name, "employee_id": doc.party, "bank": doc.bank, "iban": doc.iban})
+
+        if hr_manager:
+            email_args = {
+                "subject":  f"Bank Account Request Opened: {doc.name}",
+                "recipients": hr_manager,
+                "reference_name": doc.name,
+                "reference_doctype": doc.doctype,
+                "message": "Kindly, Process the following Bank Account."
+            }
+            frappe.enqueue(method=sendemail, queue="short", **email_args)
+            # sendemail(**email_args)
+        else:
+            frappe.throw("Please add HR Manager in the HR Settings")
+    except:
+        frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
 
 def send_roster_report():
     # Enqueue roster report generation to background
