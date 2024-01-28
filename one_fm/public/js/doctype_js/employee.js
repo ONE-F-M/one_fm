@@ -110,11 +110,17 @@ var update_employee_id_based_on_residency = function(frm) {
 				method: 'one_fm.overrides.employee.get_employee_id_based_on_residency',
 				args: {
 					employee_id: frm.doc.employee_id,
-					residency: frm.doc.under_company_residency
+					residency: frm.doc.under_company_residency,
+					employee: frm.doc.name,
+					employment_type: frm.doc.employment_type
 				},
 				callback: function (r) {
 					if (r && r.message) {
-						let employee_id
+
+						if(frm.doc.employee_id == r.message){
+							return
+						}
+
 						let empid_msg = __(
 							'<b>{0}<u style="color: red;">{1}</u>{2}</b>',
 							[frm.doc.employee_id.substring(0, 9), frm.doc.employee_id.substring(9, 10), frm.doc.employee_id.substring(10, 12)]
@@ -124,6 +130,7 @@ var update_employee_id_based_on_residency = function(frm) {
 							[r.message.substring(0, 9), r.message.substring(9, 10), r.message.substring(10, 12)]
 						)
 						let msg = __('This action will change the employee id from {0} to {1}.<br/>Are you sure you want to proceed?', [empid_msg, new_empid_msg])
+
 						frappe.confirm(msg,
 							() => {
 								// action to perform if Yes is selected

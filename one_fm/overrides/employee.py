@@ -8,6 +8,7 @@ from hrms.overrides.employee_master import *
 from one_fm.hiring.utils import (
     employee_after_insert, employee_before_insert, set_employee_name,
     employee_validate_attendance_by_timesheet, set_mandatory_feilds_in_employee_for_Kuwaiti,
+    is_subcontract_employee
 )
 from one_fm.processor import sendemail
 from one_fm.utils import get_domain
@@ -43,7 +44,7 @@ class EmployeeOverride(EmployeeMaster):
 
     def set_employee_id_based_on_residency(self):
         if self.employee_id:
-            residency_employee_id = get_employee_id_based_on_residency(self.employee_id, self.under_company_residency)
+            residency_employee_id = get_employee_id_based_on_residency(self.employee_id, self.under_company_residency, self.name, self.employment_type)
             if self.employee_id != residency_employee_id:
                 self.employee_id = residency_employee_id
 
@@ -144,11 +145,13 @@ def is_employee_master(user:str) -> int:
 
 
 @frappe.whitelist()
-def get_employee_id_based_on_residency(employee_id, residency):
+def get_employee_id_based_on_residency(employee_id, residency, employee=False, employment_type=False):
     length = len(employee_id)
     if isinstance(residency, string_types):
         residency = int(residency)
     employee_id_residency_digit = '1' if residency==1 else '0'
+    if is_subcontract_employee(employee, employment_type):
+        employee_id_residency_digit = 'S'
     # Change third last character in employee id
     return employee_id[:length-3] + employee_id_residency_digit + employee_id[length-2:]
 
