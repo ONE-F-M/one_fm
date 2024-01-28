@@ -78,14 +78,13 @@ class AttendanceCheck(Document):
             self.has_shift_permissions = 1
 
         # get approver
-        reports_to = frappe.db.get_value("Employee", self.employee, 'reports_to')
-        shift_supervisor = operations_shift = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
-        site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
-        if reports_to:
-            self.reports_to = reports_to
-        if shift_supervisor:
+        if employee.reports_to:
+            self.reports_to = employee.reports_to
+        if employee.shift:
+            shift_supervisor = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
             self.shift_supervisor = shift_supervisor 
-        if site_supervisor:
+        if employee.site:
+            site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
             self.site_supervisor = site_supervisor              
         
     def after_insert(self):
@@ -343,7 +342,7 @@ def create_attendance_check(attendance_date=None):
         if no_shifts:
             for count, i in enumerate(no_shifts):
                 try:
-                    if not frappe.db.exist("Attendance", {
+                    if not frappe.db.exists("Attendance", {
                         'attendance_date':attendance_date,
                         'employee':i.name}
                         ):

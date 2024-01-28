@@ -43,13 +43,15 @@ class RoutineTask(Document):
 
 	def assign_employee_to_task(self, task):
 		assigne = frappe.get_value('Employee', self.employee, 'user_id')
+		assigner = frappe.db.get_value("Employee", self.direct_report_reviewer, "user_id")
 		if assigne:
 			try:
 				add_assignment({
 					'doctype': 'Task',
 					'name': task,
 					'assign_to': [assigne],
-					'description': _(self.task)
+					'description': _(self.task),
+					"assigned_by": assigner if assigner else frappe.session.user
 				})
 				self.add_comment("Info", "Task {0} Assigned to {1}".format(task, assigne))
 			except DuplicateToDoError:
