@@ -16,6 +16,7 @@ from frappe.model.naming import set_name_by_naming_series
 from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
     expire_allocation, create_leave_ledger_entry
 )
+from frappe.desk.form.assign_to import add as add_assignment
 from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
 from dateutil.relativedelta import relativedelta
 from frappe.utils import (
@@ -1939,10 +1940,12 @@ def update_onboarding_doc_for_bank_account(doc):
 def notify_hr_manager(doc):
     
     try:
-        hr_manager = frappe.get_single_value("HR Setting", 'custom_hr_manager')
+        hr_manager = frappe.db.get_single_value("HR Settings", 'custom_hr_manager')
         message = frappe.render_template('one_fm/templates/emails/bank_account_open_request.html', context={"name": doc.account_name, "employee_id": doc.party, "bank": doc.bank, "iban": doc.iban})
 
         if hr_manager:
+            add_assignment({"doctype": doc.doctype, "name": doc.name, "assign_to": [hr_manager]})
+
             email_args = {
                 "subject":  f"Bank Account Request Opened: {doc.name}",
                 "recipients": hr_manager,
