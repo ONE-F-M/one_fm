@@ -836,7 +836,7 @@ def create_shift_assignment(roster, date, time):
 				INSERT INTO `tabShift Assignment` (`name`, `company`, `docstatus`, `employee`, `employee_name`, `shift_type`, `site`, `project`, `status`,
 				`shift_classification`, `site_location`, `start_date`, `start_datetime`, `end_datetime`, `department`,
 				`shift`, `operations_role`, `post_abbrv`, `roster_type`, `owner`, `modified_by`, `creation`, `modified`,
-				`shift_request`, `check_in_site`, `check_out_site`)
+				`shift_request`, `check_in_site`, `check_out_site`, `employee_schedule`)
 				VALUES
 			"""
 			query_body = """"""
@@ -861,7 +861,7 @@ def create_shift_assignment(roster, date, time):
 							"{_shift_request.site or ''}", "{_project_r or ''}", 'Active', '{_shift_request.shift_type}', "{sites_list_dict.get(_shift_request.site) or ''}", "{date}",
 							"{shift_r_start_time or str(date)+' 08:00:00'}", "{shift_r_end_time or str(date)+' 17:00:00'}", "{r.department}",
 							"{_shift_request.operations_shift or ''}", "{_shift_request.operations_role or ''}", "{r.post_abbrv or ''}", "{_shift_request.roster_type}",
-							"{owner}", "{owner}", "{creation}", "{creation}", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}"),"""
+							"{owner}", "{owner}", "{creation}", "{creation}", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}"), {r.name},"""
 					else:
 						_shift_type = shift_types_dict.get(r.shift_type) or default_shift
 						query_body += f"""
@@ -870,9 +870,10 @@ def create_shift_assignment(roster, date, time):
 							"{r.site or ''}", "{r.project or ''}", 'Active', '{_shift_type.shift_type}', "{sites_list_dict.get(r.site) or ''}", "{date}",
 							"{_shift_type.start_datetime or str(date)+' 08:00:00'}",
 							"{_shift_type.end_datetime or str(date)+' 17:00:00'}", "{r.department}", "{r.shift or ''}", "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}",
-							"{owner}", "{owner}", "{creation}", "{creation}", '', '', ''),"""
+							"{owner}", "{owner}", "{creation}", "{creation}", '', '', '', {r.name}),"""
 				else:
 					has_rostered.append(r.employee_name)
+				print(r.name)
 
 			if query_body:
 				query_body = query_body[:-1]
@@ -898,17 +899,19 @@ def create_shift_assignment(roster, date, time):
 					check_in_site = VALUES(check_in_site),
 					check_out_site = VALUES(check_out_site),
 					shift_classification = VALUES(shift_classification),
-					status = VALUES(status)
+					status = VALUES(status),
+					employee_schedule = VALUES(employee_schedule)
 				"""
+				
 				frappe.db.sql(query, values=[], as_dict=1)
 				frappe.db.commit()
 
 	except Exception as e:
 		frappe.log_error(f'Shift Assignment - {time}', frappe.get_traceback())
-		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
-		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-		sendemail(sender=sender, recipients= recipient, content=msg, subject="Shift Assignment Failed", delayed=False)
+		# sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+		# recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
+		# msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
+		# sendemail(sender=sender, recipients= recipient, content=msg, subject="Shift Assignment Failed", delayed=False)
 
 def validate_am_shift_assignment():
 	date = cstr(getdate())
@@ -992,11 +995,12 @@ def validate_pm_shift_assignment():
 	roster = [i for i in roster if not i.employee in todays_leaves]
 
 	if len(roster)>0:
-		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
-		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
-		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False)
-		frappe.enqueue(create_shift_assignment, roster = roster, date = date, time='PM', is_async=True, queue='long')
+		# sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+		# recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
+		# msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
+		# sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False)
+		create_shift_assignment(roster = roster, date = date, time='PM')
+		# frappe.enqueue(create_shift_assignment, roster = roster, date = date, time='PM', is_async=True, queue='long')
 
 
 def overtime_shift_assignment():
