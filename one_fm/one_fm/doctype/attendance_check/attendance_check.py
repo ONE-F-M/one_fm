@@ -55,10 +55,10 @@ class AttendanceCheck(Document):
                     ec.shift_assignment;
             """, as_dict=1)
             if checkins:
-                if checkins.in_name:
-                    self.checkin_record=checkins.in_name
-                if checkins.out_name:
-                    self.checkout_record=checkins.out_name
+                if checkins[0].in_name:
+                    self.checkin_record=checkins[0].in_name
+                if checkins[0].out_name:
+                    self.checkout_record=checkins[0].out_name
 
         attendance_request = frappe.db.sql(f"""
             SELECT * FROM `tabAttendance Request`
