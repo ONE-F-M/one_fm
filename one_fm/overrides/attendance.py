@@ -502,8 +502,7 @@ def mark_daily_attendance(start_date, end_date):
         naming_series = 'HR-ATT-.YYYY.-'
         existing_attendance = [i.employee for i in frappe.get_list("Attendance", {
             'attendance_date':start_date,
-            'roster_type':'Basic', 'status':['IN', ['Present', 'Holiday', 'On Leave',
-            'Work From Home', 'On Hold', 'Day Off']]
+            'roster_type':'Basic', 'status':['IN', ['Present', 'Holiday', 'On Leave','Work From Home', 'On Hold', 'Day Off']]
             },
             "employee"
         )]
