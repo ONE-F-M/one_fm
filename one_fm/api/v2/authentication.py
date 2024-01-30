@@ -473,7 +473,7 @@ def set_password(employee_user_id, new_password):
 
 @frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):
-	try:
+	try:		
 		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
@@ -499,9 +499,9 @@ def user_login(employee_id, password):
 		else:
 			msg.update({"supervisor": 0})
 		response("success", 200, msg)
-	except frappe.exceptions.AuthenticationError:
-		print('auth eror')
+	except frappe.exceptions.AuthenticationError as e:
+		frappe.log_error(message=frappe.get_traceback(), title="API Login")
 		response("error", 401, None, frappe.local.response.message)
 	except Exception as e:
-		print(frappe.get_traceback(), 'Email Login')
+		frappe.log_error(message=frappe.get_traceback(), title="API Login")
 		response("error", 500, None, str(e))
