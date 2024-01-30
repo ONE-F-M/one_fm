@@ -268,9 +268,20 @@ def generate_employee_id(doc):
 		count = count + 1
 		serial_number = str(count).zfill(3)
 
-	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{1 if doc.under_company_residency else 0}{doc.date_of_birth.strftime('%y')}".upper())
+	residency_digit = 1 if doc.under_company_residency else 0
+
+	if is_subcontract_employee(doc.name, doc.employment_type):
+		residency_digit = 'S'
+
+	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{residency_digit}{doc.date_of_birth.strftime('%y')}".upper())
 	doc.reload()
 
+def is_subcontract_employee(employee, employment_type=False):
+    if frappe.db.exists("Onboard Subcontract Employee", {"employee": employee}):
+        return True
+    elif employment_type == frappe.db.get_single_value('Hiring Settings', 'subcontract_employment_type'):
+        return True
+    return False
 
 def create_leave_policy_assignment(doc):
     """

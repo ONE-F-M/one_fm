@@ -8,9 +8,12 @@ from hrms.overrides.employee_master import *
 from one_fm.hiring.utils import (
     employee_after_insert, employee_before_insert, set_employee_name,
     employee_validate_attendance_by_timesheet, set_mandatory_feilds_in_employee_for_Kuwaiti,
+    is_subcontract_employee
 )
 from one_fm.processor import sendemail
 from one_fm.utils import get_domain
+from six import string_types
+from frappe import _
 
 class EmployeeOverride(EmployeeMaster):
     def validate(self):
@@ -20,6 +23,7 @@ class EmployeeOverride(EmployeeMaster):
         self.employee = self.name
         self.set_employee_name()
         set_employee_name(self, method=None)
+        self.set_employee_id_based_on_residency()
         self.validate_date()
         self.validate_email()
         self.validate_status()
@@ -39,10 +43,14 @@ class EmployeeOverride(EmployeeMaster):
         employee_validate_attendance_by_timesheet(self, method=None)
         validate_leaves(self)
 
+    def set_employee_id_based_on_residency(self):
+        if self.employee_id:
+            residency_employee_id = get_employee_id_based_on_residency(self.employee_id, self.under_company_residency, self.name, self.employment_type)
+            if self.employee_id != residency_employee_id:
+                self.employee_id = residency_employee_id
+
     def before_save(self):
         self.assign_role_profile_based_on_designation()
-        if self.under_company_residency=='1':
-            self.employee_id = get_new_employee_id(self.employee_id)
 
     def after_insert(self):
         employee_after_insert(self, method=None)
@@ -86,13 +94,23 @@ class EmployeeOverride(EmployeeMaster):
         self.clear_schedules()
         self.update_subcontract_onboard()
         self.notify_attendance_manager_on_status_change()
-        
+        self.inform_employee_id_update()
+
+    def inform_employee_id_update(self):
+        if self.has_value_changed('employee_id'):
+            reports_to = self.get_reports_to_user()
+            subject = f"Employee {self.name} employee_id changed"
+            msg = _("Employee ID of the employee {0}({1}) is changed to {2}").format(self.employee_name, self.name, self.employee_id)
+            sendemail(recipients=[reports_to], subject=subject, content=msg)
+
+    def get_reports_to_user(self):
+        return get_employee_reports_to_user(self)
 
     def update_subcontract_onboard(self):
         subcontract_onboard = frappe.db.exists("Onboard Subcontract Employee", {"employee": self.name, "enrolled": ['!=', '1']})
         if subcontract_onboard and self.enrolled:
             frappe.db.set_value("Onboard Subcontract Employee", subcontract_onboard, "enrolled", self.enrolled)
-            
+
     def notify_attendance_manager_on_status_change(self):
         last_doc = self.get_doc_before_save()
         if last_doc and last_doc.get('status') == "Active":
@@ -138,12 +156,15 @@ def is_employee_master(user:str) -> int:
 
 
 @frappe.whitelist()
-def get_new_employee_id(employee_id):
+def get_employee_id_based_on_residency(employee_id, residency, employee=False, employment_type=False):
     length = len(employee_id)
-    num = employee_id[length-3] #get the third-last character.
-    if num == '0':
-        new_emp_id = employee_id[:length-3] + '1' + employee_id[length-2:]
-        return new_emp_id
+    if isinstance(residency, string_types):
+        residency = int(residency)
+    employee_id_residency_digit = '1' if residency==1 else '0'
+    if is_subcontract_employee(employee, employment_type):
+        employee_id_residency_digit = 'S'
+    # Change third last character in employee id
+    return employee_id[:length-3] + employee_id_residency_digit + employee_id[length-2:]
 
 def update_user_doc(doc):
     if not doc.is_new():
@@ -166,30 +187,30 @@ def update_user_doc(doc):
 
 
 class NotifyAttendanceManagerOnStatusChange:
-    
+
     def __init__(self, employee_object: EmployeeOverride) -> None:
         self.employee_object = employee_object
-        
+
     @property
     def _operations_shift_supervisor(self) -> list():
         operation_shifts = frappe.db.sql(""" SELECT name from `tabOperations Shift` WHERE supervisor = %s AND status = 'Active' """, (self.employee_object.name), as_list=1)
         return list(chain.from_iterable(operation_shifts)) if operation_shifts else list()
-    
+
     @property
     def _operations_site_supervisor(self) -> list:
         operation_sites = frappe.db.sql(""" SELECT name from `tabOperations Site` WHERE account_supervisor = %s AND status = 'Active' """, (self.employee_object.name), as_list=1)
         return list(chain.from_iterable(operation_sites)) if operation_sites else list()
-    
+
     @property
     def _projects_manager(self) -> list:
         projects = frappe.db.sql(""" SELECT name from `tabProject` WHERE account_manager = %s AND is_active = 'Yes' """, (self.employee_object.name), as_list=1)
         return list(chain.from_iterable(projects)) if projects else list()
-    
+
     @property
     def _employee_reports_to(self) -> list:
         reports_to = frappe.db.sql(""" SELECT name, employee_name from `tabEmployee` where reports_to = %s AND status= 'Active' """, (self.employee_object.name), as_dict=1)
-        return reports_to 
-    
+        return reports_to
+
     @property
     def _to_do(self) -> str:
         try:
@@ -204,20 +225,20 @@ class NotifyAttendanceManagerOnStatusChange:
             return f"{get_domain()}/app/todo?status=Open&allocated_to={self.employee_object.user_id}" if is_to_do else ""
         except Exception as e:
             return ""
-    
+
     @property
     def _operation_manager(self) -> str | None:
         return frappe.db.get_single_value("Operation Settings", "default_operation_manager") == self.employee_object.user_id
-    
+
     @property
     def _attendance_manager(self) -> str:
         return frappe.db.get_single_value('ONEFM General Setting', 'attendance_manager') ==  self.employee_object.name
-    
+
     @property
     def _directors(self) -> list:
         return frappe.db.get_list("User", filters={"role_profile_name": "Director"}, pluck="name")
-    
-    
+
+
     def generate_data(self) -> dict:
         try:
             data_dict = dict()
@@ -226,42 +247,42 @@ class NotifyAttendanceManagerOnStatusChange:
                 data_dict.update({"operations_shift": dict()})
                 for obj in operations_shift:
                     data_dict.get("operations_shift").update({obj: get_url_to_form("Operations Shift", obj)})
-                
-            
+
+
             operations_site = self._operations_site_supervisor
             if operations_site:
                 data_dict.update({"operations_site": dict()})
                 for obj in operations_site:
                     data_dict.get("operations_site").update({obj: get_url_to_form("Operations Site", obj)})
-                    
-            
+
+
             projects = self._projects_manager
             if projects:
                 data_dict.update({"projects": dict()})
                 for obj in projects:
                     data_dict.get("projects").update({obj: get_url_to_form("Projects", obj)})
-            
+
             reports_to = self._employee_reports_to
             if reports_to:
                 data_dict.update({"reports_to": list()})
                 for obj in reports_to:
                     data_dict.get("reports_to").append(dict(name=obj.get("name"), employee_name=obj.get("employee_name"), url=get_url_to_form("Employee", obj.get("name"))))
-                    
+
             if self._operation_manager:
                 data_dict.update({"operations_manager": f"{get_domain()}/app/operation-settings"})
-                
+
             if self._attendance_manager:
                 data_dict.update({"attendance_manager": f"{get_domain()}/app/onefm-general-setting"})
-                
+
             if self._to_do:
                 data_dict.update({"to_do": self._to_do})
-            
+
             return data_dict
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Employee Status Change Notification")
             return dict()
-            
-            
+
+
     def notify_authorities(self):
         try:
             data = self.generate_data()
@@ -278,11 +299,34 @@ class NotifyAttendanceManagerOnStatusChange:
                 sendemail(recipients=the_recipient, subject=title, content=msg)
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Error while sending mail on status change(Employee)")
-        
-        
-        
-        
-        
-        
-        
-    
+
+@frappe.whitelist()
+def get_employee_reports_to_user(employee):
+    '''
+        Method to get reports_to user of an employee with the priority
+        1. reports_to linked in the employee
+        2. If no reports_to linked in the employee, then supervisor linked in the Operation Shift(Linked in the employee)
+        3. If no shift linked in the employee or no supervisor linked in the shift,
+            then account_supervisor linked in the Operation Site(Linked in the employee)
+
+        args:
+            employee: object of Employee
+
+        return: user of the reports to employee or False
+    '''
+    reports_to = False
+    if employee.reports_to:
+        reports_to = employee.reports_to
+    if not reports_to and employee.shift:
+        shift_supervisor = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
+        if shift_supervisor:
+            reports_to = shift_supervisor
+    if not reports_to and employee.site:
+        site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
+        if site_supervisor:
+            reports_to = site_supervisor
+    if reports_to:
+        reports_to_user = frappe.db.get_value('Employee', reports_to, 'user_id')
+        if reports_to_user:
+            return reports_to_user
+    return False
