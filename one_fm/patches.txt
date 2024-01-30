@@ -69,4 +69,3 @@ one_fm.patches.v14_0.set_erf_workflow_state_with_status
 one_fm.patches.v14_0.update_rejected_attendance_check
 one_fm.patches.v14_0.update_timesheet_status
 one_fm.patches.v14_0.add_super_user_role
-one_fm.patches.v15_0.update_attendance_check #2024-01-24
