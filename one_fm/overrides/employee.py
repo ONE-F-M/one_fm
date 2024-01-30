@@ -13,6 +13,7 @@ from one_fm.hiring.utils import (
 from one_fm.processor import sendemail
 from one_fm.utils import get_domain
 from six import string_types
+from frappe import _
 
 class EmployeeOverride(EmployeeMaster):
     def validate(self):
@@ -93,7 +94,17 @@ class EmployeeOverride(EmployeeMaster):
         self.clear_schedules()
         self.update_subcontract_onboard()
         self.notify_attendance_manager_on_status_change()
+        self.inform_employee_id_update()
 
+    def inform_employee_id_update(self):
+        if self.has_value_changed('employee_id'):
+            reports_to = self.get_reports_to_user()
+            subject = f"Employee {self.name} employee_id changed"
+            msg = _("Employee ID of the employee {0}({1}) is changed to {2}").format(self.employee_name, self.name, self.employee_id)
+            sendemail(recipients=[reports_to], subject=subject, content=msg)
+
+    def get_reports_to_user(self):
+        return get_employee_reports_to_user(self)
 
     def update_subcontract_onboard(self):
         subcontract_onboard = frappe.db.exists("Onboard Subcontract Employee", {"employee": self.name, "enrolled": ['!=', '1']})
@@ -288,3 +299,34 @@ class NotifyAttendanceManagerOnStatusChange:
                 sendemail(recipients=the_recipient, subject=title, content=msg)
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Error while sending mail on status change(Employee)")
+
+@frappe.whitelist()
+def get_employee_reports_to_user(employee):
+    '''
+        Method to get reports_to user of an employee with the priority
+        1. reports_to linked in the employee
+        2. If no reports_to linked in the employee, then supervisor linked in the Operation Shift(Linked in the employee)
+        3. If no shift linked in the employee or no supervisor linked in the shift,
+            then account_supervisor linked in the Operation Site(Linked in the employee)
+
+        args:
+            employee: object of Employee
+
+        return: user of the reports to employee or False
+    '''
+    reports_to = False
+    if employee.reports_to:
+        reports_to = employee.reports_to
+    if not reports_to and employee.shift:
+        shift_supervisor = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
+        if shift_supervisor:
+            reports_to = shift_supervisor
+    if not reports_to and employee.site:
+        site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
+        if site_supervisor:
+            reports_to = site_supervisor
+    if reports_to:
+        reports_to_user = frappe.db.get_value('Employee', reports_to, 'user_id')
+        if reports_to_user:
+            return reports_to_user
+    return False
