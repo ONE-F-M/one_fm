@@ -1938,7 +1938,6 @@ def update_onboarding_doc_for_bank_account(doc):
         oe.save(ignore_permissions=True)
 
 def notify_hr_manager(doc):
-    
     try:
         hr_manager = frappe.db.get_single_value("HR Settings", 'custom_hr_manager')
         message = frappe.render_template('one_fm/templates/emails/bank_account_open_request.html', context={"name": doc.account_name, "employee_id": doc.party, "bank": doc.bank, "iban": doc.iban})
@@ -1951,7 +1950,7 @@ def notify_hr_manager(doc):
                 "recipients": hr_manager,
                 "reference_name": doc.name,
                 "reference_doctype": doc.doctype,
-                "message": "Kindly, Process the following Bank Account."
+                "message": message
             }
             frappe.enqueue(method=sendemail, queue="short", **email_args)
             # sendemail(**email_args)
