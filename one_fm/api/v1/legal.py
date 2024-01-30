@@ -41,7 +41,6 @@ def get_employee_list(shift: str = None, penalty_occurence_time: str = None) -> 
 
     try:
         result = get_filtered_employees(shift, penalty_occurence_time, as_dict=1)
-        print(result, "\n\n\n\n\n\n\n\n\n")
         return response("Success", 200, result)
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
@@ -68,7 +67,6 @@ def get_all_shifts():
 
         return response("Success", 200, result)
     except Exception as error:
-        print(error)
         return response("Internal Server Error", 500, None, error)
 
 
