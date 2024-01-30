@@ -481,16 +481,20 @@ def new_accept_penalty(docname: str = None) -> dict:
 		content_bytes = file.stream.read()
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
-		
+  
+
+		#GRPC TO BE INTEGRATED
+  
 		# setup channel
-		req = facial_recognition_pb2.FaceRecognitionRequest(
-            username = frappe.session.user,
-            media_type = "video",
-            media_content = video_content
-        )
+		# req = facial_recognition_pb2.FaceRecognitionRequest(
+        #     username = frappe.session.user,
+        #     media_type = "video",
+        #     media_content = video_content
+        # )
         # Call service stub and get response
-		res = choice(stubs).FaceRecognition(req)
-		if res.verification == "OK":
+		# res = choice(stubs).FaceRecognition(req)
+		# if res.verification == "OK":
+		if True:
 			if cint(penalty_doc.retries) == 0:
 				penalty_doc.verified = 0
 				send_email_to_legal(penalty_doc)
@@ -506,6 +510,5 @@ def new_accept_penalty(docname: str = None) -> dict:
 			return response("Unauthorized", 401, None, "Face not recognized. Please try again.")
 
 	except Exception as error:
-		print(error, "\n\n\n\n\n\n\n\n")
 		frappe.log_error(error, "Penalty Acceptance Error")
 		return response("Internal Server Error", 500, None, error)
