@@ -20,6 +20,7 @@
   "mark_atttendance_per_employee",
   "attendance_manager",
   "attendance_manager_name",
+  "attendance_check_exclusion",
   "employee_section",
   "employee_master_role",
   "wiki_page_access"
@@ -117,11 +118,17 @@
    "fieldname": "is_production",
    "fieldtype": "Check",
    "label": "Is Production"
+  },
+  {
+   "fieldname": "attendance_check_exclusion",
+   "fieldtype": "Table",
+   "label": "Attendance Check Exclusion",
+   "options": "Attendance Check Exclusion"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-01-22 19:57:49.621676",
+ "modified": "2024-01-23 10:49:56.513050",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

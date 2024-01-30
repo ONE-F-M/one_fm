@@ -78,14 +78,13 @@ class AttendanceCheck(Document):
             self.has_shift_permissions = 1
 
         # get approver
-        reports_to = frappe.db.get_value("Employee", self.employee, 'reports_to')
-        shift_supervisor = operations_shift = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
-        site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
-        if reports_to:
-            self.reports_to = reports_to
-        elif shift_supervisor:
+        if employee.reports_to:
+            self.reports_to = employee.reports_to
+        if employee.shift:
+            shift_supervisor = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
             self.shift_supervisor = shift_supervisor 
-        elif site_supervisor:
+        if employee.site:
+            site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
             self.site_supervisor = site_supervisor              
         
     def after_insert(self):
@@ -329,7 +328,7 @@ def create_attendance_check(attendance_date=None):
                 frappe.db.commit()    
         frappe.db.commit()
 
-        # create for no shift but avtive shift based employees
+        # create for no shift but active shift based employees
         attendance_list = [i.employee for i in frappe.db.get_list("Attendance", {
             "attendance_date":attendance_date})]
         
@@ -343,12 +342,16 @@ def create_attendance_check(attendance_date=None):
         if no_shifts:
             for count, i in enumerate(no_shifts):
                 try:
-                    doc = frappe.get_doc({
-                        "doctype":"Attendance Check",
-                        "employee":i.name,
-                        "roster_type":"Basic",
-                        "date":attendance_date
-                    }).insert(ignore_permissions=1)
+                    if not frappe.db.exists("Attendance", {
+                        'attendance_date':attendance_date,
+                        'employee':i.name}
+                        ):
+                        doc = frappe.get_doc({
+                            "doctype":"Attendance Check",
+                            "employee":i.name,
+                            "roster_type":"Basic",
+                            "date":attendance_date
+                        }).insert(ignore_permissions=1)
                 except Exception as e:
                     if not "Attendance Check already exist for" in str(e):
                         frappe.log_error(message=frappe.get_traceback(), title="Attendance Check Creation")
