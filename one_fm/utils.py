@@ -16,6 +16,7 @@ from frappe.model.naming import set_name_by_naming_series
 from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
     expire_allocation, create_leave_ledger_entry
 )
+from frappe.desk.form.assign_to import add as add_assignment
 from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
 from dateutil.relativedelta import relativedelta
 from frappe.utils import (
@@ -1900,6 +1901,9 @@ def validate_iban_is_filled(doc, method):
 
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
+    if doc.workflow_state == "Open Request":
+        notify_hr_manager(doc)
+
 
 def bank_account_on_trash(doc, method):
     if doc.onboard_employee:
@@ -1931,6 +1935,21 @@ def update_onboarding_doc_for_bank_account(doc):
         if oe.workflow_state == 'Duty Commencement':
             oe.workflow_state = 'Bank Account'
         oe.save(ignore_permissions=True)
+
+def notify_hr_manager(doc):
+    try:
+        hr_manager = frappe.db.get_single_value("HR Settings", 'custom_hr_manager')
+        if hr_manager:
+            add_assignment({
+                    'doctype': doc.doctype,
+                    'name': doc.name,
+                    'assign_to': [hr_manager],
+                    'description': (_("The Following Bank Acccount needs to be processed. Kindly, proceed with the action. ").format(doc.name))
+                })
+        else:
+            frappe.throw("Please add HR Manager in the HR Settings")
+    except:
+        frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
 
 def send_roster_report():
     # Enqueue roster report generation to background
