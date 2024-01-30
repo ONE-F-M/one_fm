@@ -1,11 +1,28 @@
+from datetime import datetime
+from random import choice
+
 import frappe, base64, json, grpc
-from frappe.utils import cint
+from frappe.utils import cint, now
 from one_fm.legal.doctype.penalty_issuance.penalty_issuance import get_filtered_employees
 from one_fm.legal.doctype.penalty.penalty import send_email_to_legal
 from frappe import _
 from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
 from one_fm.api.v1.utils import response
 from one_fm.utils import check_path, create_path
+
+
+# setup channel for face recognition
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+options = [('grpc.max_message_length', 100 * 1024 * 1024* 10)]
+channels = [
+    grpc.secure_channel(i, grpc.ssl_channel_credentials(), options=options) for i in face_recognition_service_url
+]
+
+# setup stub for face recognition
+stubs = [
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+]
+
 
 @frappe.whitelist()
 def get_employee_list(shift: str = None, penalty_occurence_time: str = None) -> dict:
@@ -44,7 +61,8 @@ def get_all_shifts():
     try:
         result = frappe.db.sql("""SELECT osh.name, osh.site, osh.project, ost.site_location 
 			FROM `tabOperations Shift` osh, `tabOperations Site` ost  
-			WHERE osh.site=ost.name
+			WHERE osh.site=ost.name 
+			AND osh.status="Active"	
 			ORDER BY name ASC """, as_dict=1)
 
         return response("Success", 200, result)
@@ -53,7 +71,7 @@ def get_all_shifts():
 
 
 @frappe.whitelist()
-def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_location, penalty_occurence_time,company_damage, customer_property_damage, asset_damage, other_damages, shift=None, site=None, project=None, site_location=None, penalty_employees=[], penalty_details=[]):
+def issue_penalty(penalty_category, issuing_location, issuing_time, penalty_location, penalty_occurence_time,company_damage, customer_property_damage, asset_damage, other_damages, shift=None, site=None, project=None, site_location=None, penalty_employees=[], penalty_details=[]):
 	try:
 		employee, employee_name, designation = frappe.get_value("Employee", {"user_id": frappe.session.user}, ["name","employee_name", "designation"])
 
@@ -111,8 +129,8 @@ def issue_penalty(penalty_category, issuing_time, issuing_location, penalty_loca
 		return response("Success", 201, penalty_issuance)
 
 	except Exception as error:
-		frappe.log_error(error, 'Penalty Issance Error')
-		return response("Internal Server Error", 500, None, error)@frappe.whitelist()
+		frappe.log_error(error, 'Penalty Issuance Error')
+		return response("Internal Server Error", 500, None, error)
 
 
 @frappe.whitelist()
@@ -134,13 +152,13 @@ def get_penalties(employee_id: str = None, role: str = None) -> dict:
 			return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
 		if role and role == "Issuance":
-			result = frappe.get_list("Penalty", filters={"issuer_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+			result = frappe.get_list("Penalty", filters={"issuer_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state", "recipient_name"], order_by="modified desc")
 			if len(result) > 0:
 				return response("Success", 200, result)
 			else:
 				return response("Resource not found", 404, None, "No penalties found for {employee} with role as {role}".format(employee=employee, role=role))
 		else:
-			result = frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+			result = frappe.get_list("Penalty", filters={"recipient_employee": employee}, fields=["name", "penalty_issuance_time", "workflow_state", "issuer_name"], order_by="modified desc")
 			if len(result) > 0:
 				return response("Success", 200, result)
 			else:
@@ -295,4 +313,200 @@ def reject_penalty(rejection_reason: str = None, docname: str = None):
 			return response("Bad Request", 400, None, "Penalty has not yet reached workflow state of 'Penalty Issued'.")
 	
 	except Exception as error:
+		return response("Internal Server Error", 500, None, error)
+
+
+@frappe.whitelist()
+def get_pending_penalties(employee_id: str = None, role: str = None, is_pending: bool = True) -> dict:
+	if not employee_id:
+		return response("Bad Request", 400, None, "employee_id required.")
+
+	if not isinstance(employee_id, str):
+		return response("Bad Request", 400, None, "employee_id must be of type str.")
+
+	if role:
+		if not isinstance(role, str):
+			return response("Bad Request", 400, None ,"role must be of type str.")
+
+	filter_param = dict()
+	if is_pending:
+		filter_param.update({"workflow_state": "Penalty Issued"})
+
+
+	try:
+		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+
+		if not employee:
+			return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+
+		if role and role == "Issuance":
+			result = frappe.get_list("Penalty", filters={"issuer_employee": employee, **filter_param}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+			return response("Success", 200, result)
+		result = frappe.get_list("Penalty", filters={"recipient_employee": employee, **filter_param}, fields=["name", "penalty_issuance_time", "workflow_state"], order_by="modified desc")
+		return response("Success", 200, result)
+			
+	except Exception as error:
+		frappe.log_error(str(error), "Error while getting penalties (API)")
+		return response("Internal Server Error", 500, None, error)
+
+
+@frappe.whitelist()
+def get_subordinates(employee: str = None):
+	try:
+		if not employee:
+			return response("Bad Request", 400, None, "employee is required.")
+
+		if not isinstance(employee, str):
+			return response("Bad Request", 400, None, "employee must be of type str.")
+
+		the_subordinates = frappe.db.get_list("Employee", {"reports_to": employee}, ["employee_name", "name"])
+		return response("Success", 200, the_subordinates)
+	except Exception as e:
+		frappe.log_error(str(e), "Error while getting subordinates (API)")
+		return response("Internal Server Error", 500, None, e)
+        
+    
+@frappe.whitelist()
+def new_issue_penalty(penalty_category, issuing_location, penalty_location, penalty_occurrence_time, company_damage, customer_property_damage, 
+                      asset_damage, other_damages, shift=None, site=None, project=None, site_location=None, penalty_employees=[], 
+                      penalty_files=[], issuing_time=datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f'), penalty_issuance_details=[]):
+	try:
+		employee, employee_name, designation = frappe.get_value("Employee", {"user_id": frappe.session.user}, ["name","employee_name", "designation"])
+
+		penalty_issuance = frappe.new_doc("Penalty Issuance")
+		penalty_issuance.penalty_category = penalty_category.capitalize()
+		
+		penalty_issuance.issuing_time = issuing_time
+		penalty_issuance.location = issuing_location
+		penalty_issuance.penalty_location = penalty_location
+		penalty_issuance.penalty_occurence_time = penalty_occurrence_time
+
+		penalty_issuance.issuing_employee = employee
+		penalty_issuance.employee_name = employee_name
+		penalty_issuance.designation = designation
+		
+		penalty_issuance.customer_property_damage = cint(customer_property_damage)
+		penalty_issuance.company_damage = cint(company_damage)
+		penalty_issuance.other_damages = cint(other_damages)
+		penalty_issuance.asset_damage = cint(asset_damage)
+  
+	
+		for employee in penalty_employees:
+			penalty_issuance.append('employees', {'employee_id':employee})
+
+	
+		path_name = frappe.utils.cstr(frappe.local.site)+"/public/files/Legal"
+		if not check_path(path_name):
+			create_path(path_name)
+
+		for detail in penalty_files:
+			if detail.get("attachments") and detail.get("attachment_name"):
+				filename = detail["attachment_name"]
+				attach = detail["attachments"]
+				content = base64.b64decode(attach)
+
+				OUTPUT_IMAGE_PATH = path_name+"/"+filename
+				fh = open(OUTPUT_IMAGE_PATH, "wb")
+				fh.write(content)
+				fh.close()
+				Attachment_file="/files/Legal/"+filename
+				detail.update({'attachments': Attachment_file})
+    
+
+		for obj in penalty_issuance_details:
+			penalty_issuance.append('penalty_issuance_details', {"penalty_type": obj})
+
+		if penalty_category == "Performance":
+			penalty_issuance.shift = shift
+			penalty_issuance.site = site
+			penalty_issuance.project = project
+			penalty_issuance.site_location = site_location
+
+
+		penalty_issuance.insert()
+		penalty_issuance.submit()
+		return response("Success", 201, penalty_issuance)
+
+	except Exception as error:
+		frappe.log_error(error, 'Penalty Issuance Error')
+		return response("Internal Server Error", 500, None, error)
+
+
+@frappe.whitelist()
+def get_shift_employee_list(shift: str = None, penalty_occurrence_time: str = None) -> dict:
+    if not shift:
+        return response("Bad Request", 400, None, "shift required.")
+
+    if not penalty_occurrence_time:
+        return response("Bad Request", 400, None, "penalty_ocurrence_time required.")
+
+    if not isinstance(shift, str):
+        return response("Bad Request", 400, None, "shift must be of type str.")
+
+    if not isinstance(penalty_occurrence_time, str):
+        return response("Bad Request", 400, None, "penalty_ocurrence_time must be of type str.")
+
+    try:
+        result = frappe.db.sql("""
+								SELECT sh.employee as name, sh.employee_name, emp.designation
+								FROM `tabShift Assignment` as sh, `tabEmployee` as emp
+								WHERE sh.shift="{shift}" AND sh.start_date=DATE("{date}") AND sh.employee=emp.name
+							""".format(shift=shift, date=penalty_occurrence_time), as_dict=1)
+        return response("Success", 200, result)
+    except Exception as error:
+        return response("Internal Server Error", 500, None, error)
+    
+@frappe.whitelist()
+def new_accept_penalty(docname: str = None) -> dict:
+	file = frappe.request.files.get("file")
+	if not file:
+		return response("Bad Request", 400, None, "Video recording is required")
+
+	if not docname:
+		return response("Bad Request", 400, None, "docname required.")
+
+	if not isinstance(docname, str):
+		return response("Bad Request", 400, None, "docname must be of type str.")
+	
+	try:
+		penalty_doc = frappe.get_doc("Penalty", docname)
+
+		if not penalty_doc:
+			return response("Resource not found", 404, None, "No penalty of name {penalty_doc} found.".format(penalty_doc=penalty_doc))
+
+
+		penalty_doc.retries = cint(penalty_doc.retries) - 1
+		content_bytes = file.stream.read()
+		content_base64_bytes = base64.b64encode(content_bytes)
+		video_content = content_base64_bytes.decode('ascii')
+  
+
+		#GRPC TO BE INTEGRATED
+  
+		# setup channel
+		# req = facial_recognition_pb2.FaceRecognitionRequest(
+        #     username = frappe.session.user,
+        #     media_type = "video",
+        #     media_content = video_content
+        # )
+        # Call service stub and get response
+		# res = choice(stubs).FaceRecognition(req)
+		# if res.verification == "OK":
+		if True:
+			if cint(penalty_doc.retries) == 0:
+				penalty_doc.verified = 0
+				send_email_to_legal(penalty_doc)
+			else:
+				penalty_doc.verified = 1		
+				penalty_doc.workflow_state = "Penalty Accepted"
+			penalty_doc.save(ignore_permissions=True)
+			# upload image if available
+			frappe.db.commit()
+			return response("Success", 201, penalty_doc.as_dict())
+
+		else:
+			return response("Unauthorized", 401, None, "Face not recognized. Please try again.")
+
+	except Exception as error:
+		frappe.log_error(error, "Penalty Acceptance Error")
 		return response("Internal Server Error", 500, None, error)
