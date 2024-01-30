@@ -5,10 +5,9 @@ from itertools import chain
 
 from frappe.model.document import Document
 import frappe,json
-from frappe.utils import get_url_to_form
 from frappe import _
 from frappe.desk.form.assign_to import add as add_assignment
-from frappe.utils import nowdate, add_to_date, cstr, add_days, today, format_date, now
+from frappe.utils import nowdate, add_to_date, cstr, add_days, today, format_date, now, get_url_to_form
 from one_fm.utils import (
     production_domain, 
     fetch_attendance_manager_user_obj,
@@ -313,8 +312,6 @@ def create_attendance_check(attendance_date=None):
 
         for count, i in enumerate(absentees):
             try:
-                if frappe.get_value("Employee", i.employee , ['attendance_by_timesheet']) == 1:
-                   attendance_by_timesheet = 1 
 
                 doc = frappe.get_doc({
                     "doctype":"Attendance Check",
@@ -367,6 +364,30 @@ def create_attendance_check(attendance_date=None):
             frappe.db.commit()
             
 
+        no_timesheet = frappe.db.sql(f"""SELECT emp.employee FROM `tabEmployee` emp
+                                    WHERE emp.attendance_by_timesheet = 1
+                                    AND emp.status ='Active'
+                                    AND emp.employee_name != 'Test Employee'
+                                    AND emp.name NOT IN (SELECT employee from `tabTimesheet` WHERE start_date='{attendance_date}')
+                                    AND '{attendance_date}' NOT IN (SELECT holiday_date from `tabHoliday` h WHERE h.parent = emp.holiday_list AND h.holiday_date = '{attendance_date}')""", as_dict=1)
+        
+        if no_timesheet:
+            for count, i in enumerate(no_timesheet):
+                try:
+                    doc = frappe.get_doc({
+                        "doctype":"Attendance Check",
+                        "employee":i.employee,
+                        "roster_type":'Basic',
+                        "date":attendance_date,
+                        "attendance_by_timesheet": 1,
+                        "attendance_marked":0,
+                        "comment":"No Timesheet Created."
+                    }).insert(ignore_permissions=1)
+                except Exception as e:
+                    if not "Attendance Check already exist for" in str(e):
+                        frappe.log_error(message=frappe.get_traceback(), title="Attendance Check Creation")
+                if count%10==0:
+                    frappe.db.commit()    
 
 def approve_attendance_check():
     attendance_checks = frappe.get_all("Attendance Check", filters={
