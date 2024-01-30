@@ -1,7 +1,7 @@
 from itertools import chain
 
 import frappe
-from frappe.utils import getdate, add_days, get_url_to_form
+from frappe.utils import getdate, add_days, get_url_to_form, get_url
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import remove_user_permission
 from hrms.overrides.employee_master import *
@@ -11,7 +11,7 @@ from one_fm.hiring.utils import (
     is_subcontract_employee
 )
 from one_fm.processor import sendemail
-from one_fm.utils import get_domain
+from one_fm.utils import get_domain, get_standard_notification_template
 from six import string_types
 from frappe import _
 
@@ -99,8 +99,15 @@ class EmployeeOverride(EmployeeMaster):
     def inform_employee_id_update(self):
         if self.has_value_changed('employee_id'):
             reports_to = self.get_reports_to_user()
-            subject = f"Employee {self.name} employee_id changed"
-            msg = _("Employee ID of the employee {0}({1}) is changed to {2}").format(self.employee_name, self.name, self.employee_id)
+            subject = f"Employee {self.name} employee id changed"
+            description = '''
+                The Employee ID for {{employee_name}} has been updated to {{employee_id}}.
+                Kindly ensure that the Employee is aware of this change so that they can continue to log in
+            '''
+            doc_link = "<p><a href='{0}'>Link to Employee Record</a></p>".format(get_url(self.get_url()))
+            context = self.as_dict()
+            context['message_heading'] = ''
+            msg = frappe.render_template(get_standard_notification_template(description, doc_link), context)
             sendemail(recipients=[reports_to], subject=subject, content=msg)
 
     def get_reports_to_user(self):
@@ -308,6 +315,8 @@ def get_employee_reports_to_user(employee):
         2. If no reports_to linked in the employee, then supervisor linked in the Operation Shift(Linked in the employee)
         3. If no shift linked in the employee or no supervisor linked in the shift,
             then account_supervisor linked in the Operation Site(Linked in the employee)
+        4. If no Supervisor is set for the linked Operations Site,
+            then account_manager linked in the project field of the Employee site
 
         args:
             employee: object of Employee
@@ -325,6 +334,12 @@ def get_employee_reports_to_user(employee):
         site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
         if site_supervisor:
             reports_to = site_supervisor
+        if not reports_to:
+            project = frappe.db.get_value('Operations Site', employee.site, 'project')
+            if project:
+                account_manager = frappe.db.get_value('Project', project, 'account_manager')
+                if account_manager:
+                    reports_to = account_manager
     if reports_to:
         reports_to_user = frappe.db.get_value('Employee', reports_to, 'user_id')
         if reports_to_user:
