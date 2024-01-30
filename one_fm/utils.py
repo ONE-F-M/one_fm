@@ -1940,20 +1940,13 @@ def update_onboarding_doc_for_bank_account(doc):
 def notify_hr_manager(doc):
     try:
         hr_manager = frappe.db.get_single_value("HR Settings", 'custom_hr_manager')
-        message = frappe.render_template('one_fm/templates/emails/bank_account_open_request.html', context={"name": doc.account_name, "employee_id": doc.party, "bank": doc.bank, "iban": doc.iban})
-
         if hr_manager:
-            add_assignment({"doctype": doc.doctype, "name": doc.name, "assign_to": [hr_manager]})
-
-            email_args = {
-                "subject":  f"Bank Account Request Opened: {doc.name}",
-                "recipients": hr_manager,
-                "reference_name": doc.name,
-                "reference_doctype": doc.doctype,
-                "message": message
-            }
-            frappe.enqueue(method=sendemail, queue="short", **email_args)
-            # sendemail(**email_args)
+            add_assignment({
+                    'doctype': doc.doctype,
+                    'name': doc.name,
+                    'assign_to': [hr_manager],
+                    'description': (_("The Following Bank Acccount needs to be processed. Kindly, proceed with the action. ").format(doc.name))
+                })
         else:
             frappe.throw("Please add HR Manager in the HR Settings")
     except:
