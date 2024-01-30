@@ -1901,7 +1901,6 @@ def validate_iban_is_filled(doc, method):
 
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
-    print(doc.workflow_state)
     if doc.workflow_state == "Open Request":
         notify_hr_manager(doc)
 
