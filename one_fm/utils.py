@@ -3348,9 +3348,43 @@ def custom_toggle_notifications(user: str, enable: bool = False):
     except frappe.DoesNotExistError:
         frappe.clear_last_message()
         return
-    
+
     if settings.enabled != enable:
         settings.enabled = enable
         settings.flags.ignore_permissions = 1
         settings.save()
-    
+
+def get_standard_notification_template(description, doc_link):
+    message_html = '<p>{{message_heading}}'
+    msg_details = [
+        {'label':'Document Type', 'value': '{{doctype}}'},
+        {'label':'Document Name', 'value': '{{name}}'},
+        {'label':'Description', 'value': description},
+        {'label':'Content', 'value': '{{name}} Employee ID has changed to {{employee_id}}'},
+        {'label':'Document Link', 'value': doc_link},
+    ]
+    if msg_details:
+        message_html += '''
+        <br/>
+        The details are as follows:
+        <br/>
+        <table cellpadding="0" cellspacing="0" border="1" style="border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+                    <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+                </tr>
+            </thead>
+        <tbody>
+        '''
+        for msg_detail in msg_details:
+            message_html += '''
+            <tr>
+                <td style="padding: 10px;">'''+msg_detail['label']+'''</td>
+                <td style="padding: 10px;">'''+msg_detail['value']+'''</td>
+            </tr>
+            '''
+        message_html += '</tbody></table>'
+    message_html += '</p>'
+
+    return message_html
