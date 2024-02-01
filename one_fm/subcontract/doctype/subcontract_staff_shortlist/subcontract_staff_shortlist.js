@@ -3,7 +3,6 @@
 
 frappe.ui.form.on('Subcontract Staff Shortlist', {
 	refresh: function(frm) {
-		;
 	},
 	set_full_name:function(frm,cdt,cdn,lang){
 		let row = locals[cdt][cdn]
@@ -17,6 +16,11 @@ frappe.ui.form.on('Subcontract Staff Shortlist', {
 		}
 		frm.refresh_fields()
 	},
+	default_designation: function(frm) {
+		$.each(frm.doc.subcontract_staff_shortlist_detail || [], function(i, item) {
+			frappe.model.set_value('Subcontract Staff Shortlist Detail', item.name, 'designation', frm.doc.default_designation);
+		});
+	}
 });
 
 
@@ -50,6 +54,12 @@ frappe.ui.form.on('Subcontract Staff Shortlist Detail', {
 	},
 	last_name_in_arabic:function(frm,cdt,cdn){
 		frm.events.set_full_name(frm,cdt,cdn,'ar')
+	},
+	subcontract_staff_shortlist_detail_add: function (frm, cdt, cdn) {
+		var row = frappe.get_doc(cdt, cdn);
+		if (!row.designation) {
+			frm.script_manager.copy_from_first_row("subcontract_staff_shortlist_detail", row, "designation");
+		}
+		if(!row.designation) row.designation = frm.doc.default_designation;
 	}
-
 });
