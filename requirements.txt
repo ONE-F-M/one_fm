@@ -158,7 +158,7 @@ pyasn1-modules==0.3.0
 pycares==4.4.0
 pycountry==22.3.5
 pycparser==2.21
-pycryptodome==3.18.0
+pycryptodome==3.19.1
 pydantic==2.3.0
 pydantic_core==2.6.3
 pydyf==0.8.0
