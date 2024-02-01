@@ -51,7 +51,7 @@ from one_fm.overrides.assignment_rule import do_assignment
 from one_fm.overrides.goal import get_childrens
 
 
-__version__ = '15.1.0'
+__version__ = '15.0.1'
 
 
 StockController.make_batches = make_batches_with_supplier_batch_id
