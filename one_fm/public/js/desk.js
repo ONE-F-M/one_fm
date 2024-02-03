@@ -109,12 +109,12 @@ const show_quotes = () => {
     method: "one_fm.api.v2.zenquotes.run_quotes", //dotted path to server method
     callback: function(r) {
         //show_alert with indicator
-        if (r.message) {
+        let data = r.message.results
+        if (data) {
           frappe.show_alert({
-            message:__(r.message),
+            message:__(`${data.quote}<hr>Author: ${data.author}`),
             indicator:'green'
           }, 20);
-          // frappe.msgprint(r.message)
         }
     }
   });
