@@ -100,6 +100,18 @@ def fetch_keyword():
 @frappe.whitelist()
 def run_quotes():
     try:
-        return fetch_quote(direct_response=True).get('html')
-    except:
-        False
+        base_url = "https://quotes-api-gk4sqqu5rq-lm.a.run.app/quotes/list"
+        keyword = fetch_keyword().lower()
+        res = requests.post(base_url, {'category':keyword, 'count':1})
+        if res.status_code in [200, 201]:
+            data = res.json()
+            if data.get('results'):
+                return data
+            else:
+                return {}
+        else:
+            frappe.log_error(message=res.text, title="Error fetching Quote")
+            return {}
+    except Exception as e:
+        frappe.log_error(message=frappe.get_traceback(), title="Error fetching Quote")
+        return {}
