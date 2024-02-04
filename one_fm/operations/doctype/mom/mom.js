@@ -14,9 +14,11 @@ frappe.ui.form.on('MOM', {
 			frm.clear_table("attendees");
 		}
 		if(frm.doc.project){
+			get_project_type(frm, "Project", frm.doc.project);
 			get_poc_list(frm, "Project", frm.doc.project);
 		}
 		frm.refresh_fields("attendees");
+
 	},
 	review_last_mom: function(frm) {
 		if(frm.doc.review_last_mom == 1){
@@ -66,6 +68,32 @@ function get_poc_list(frm, doctype, name){
 }
 
 
+
+function get_project_type(frm, doctype, name){
+	frappe.call({
+		method: 'frappe.client.get',
+		args: {
+			doctype,
+			name
+		},
+		callback: function(r) {
+			if(!r.exc) {
+				if(r.message.project_type == "External"){
+					frm.toggle_display("site", 1)
+
+				} else {
+					set_table_non_external(frm, r.message.users)
+					frm.toggle_display("issues", 0)
+					frm.toggle_display("meeting_duration", 0)
+					
+				}
+				
+			}
+		}
+	});
+}
+
+
 function set_table(frm, poc_list){
 	poc_list.forEach((poc) => {
 		let child_row = frappe.model.add_child(frm.doc, "attendees");
@@ -73,6 +101,32 @@ function set_table(frm, poc_list){
 		child_row.poc_designation = poc.designation;
 	});
 	frm.refresh_fields("attendees");
+}
+
+var set_table_non_external = (frm, user_list) => {
+	if(user_list){
+		const array_of_user = user_list.map(obj => obj.user);
+		frappe.call({
+			method: "one_fm.operations.doctype.mom.mom.fetch_designation_of_users",
+			args: {
+				"list_of_users": array_of_user
+			},
+			callback: function(r) {
+				if (!r.exc && r.message){
+					r.message.forEach((obj) => {
+						let child_row = frappe.model.add_child(frm.doc, "attendees");
+						child_row.poc_name = obj.employee_name;
+						child_row.poc_designation = obj.designation;
+					});
+					frm.refresh_fields("attendees");
+
+				}
+			}
+
+		}
+		)
+	}
+	
 }
 
 function set_last_attendees_table(frm, poc_list){

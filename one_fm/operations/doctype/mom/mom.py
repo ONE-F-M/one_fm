@@ -3,6 +3,8 @@
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
+from json import loads
+
 import frappe
 from frappe.model.document import Document
 from frappe import _
@@ -62,3 +64,14 @@ def review_pending_actions(project):
 	""", filters, as_dict=1)
 	return data
 
+
+@frappe.whitelist()
+def fetch_designation_of_users(list_of_users: list = []):
+	try:
+		return frappe.db.sql("""
+							SELECT employee_name, designation from `tabEmployee`
+							WHERE user_id IN %s
+							""",(tuple(loads(list_of_users)), ) ,as_dict=1)
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), "Error encountered while fetching users designation (MOM)")
+     
