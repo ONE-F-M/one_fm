@@ -1,8 +1,13 @@
 import frappe
+import datetime
+from frappe.utils import getdate
+
 def execute() :
     delete_list = []
-    dup_attendance = frappe.db.sql("""SELECT name, employee, attendance_date, roster_type, COUNT(*) as count
-                        FROM `tabAttendance`
+    date = getdate('2023-12-20')
+
+    dup_attendance = frappe.db.sql(f"""SELECT name, employee, attendance_date, roster_type, COUNT(*) as count
+                        FROM `tabAttendance` WHERE attendance_date >= {date}
                         GROUP BY employee, attendance_date, roster_type
                         HAVING COUNT(*)> 1""", as_dict=1)
     for att in dup_attendance:
@@ -25,8 +30,11 @@ def execute() :
                 delete_list.append(atts[2].name)
             elif atts[1].status == "Present":
                 delete_list.append (atts[0].name)
-                delete_list. append (atts[2]. name)
+                delete_list.append (atts[2].name)
             else:
                 delete_list.append(atts[0].name)
                 delete_list.append (atts[1].name)
-    print(delete_list)
+
+    delete_list = tuple(delete_list)
+    frappe.db.sql(f"""DELETE FROM `tabAttendance Check` where attendance IN {delete_list}""")
+    frappe.db.sql(f"""DELETE FROM `tabAttendance` where name IN {delete_list}""")
