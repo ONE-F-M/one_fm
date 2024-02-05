@@ -1,6 +1,6 @@
 import frappe
 import itertools
-from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
+from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate, get_datetime_in_timezone
 from calendar import monthrange
 from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
@@ -22,9 +22,13 @@ class TimesheetOveride(Timesheet):
         self.validate_start_date()
 
     def validate_start_date(self):
-        if getdate(self.start_date) > getdate():
-            frappe.throw("Please note that timesheets cannot be created for a date in the future")
-            
+        start_date = getdate(self.start_date)
+        if start_date > getdate():
+            frappe.throw(_("Please note that timesheets cannot be created for a date in the future"))
+
+        if start_date < get_datetime_in_timezone("Asia/Riyadh").date():
+            frappe.throw(_("Please note that timesheets cannot be created for a previous date."))
+
     def set_approver(self):
         if self.attendance_by_timesheet:
             self.approver = fetch_approver(self.employee)
