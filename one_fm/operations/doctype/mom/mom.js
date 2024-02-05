@@ -23,18 +23,34 @@ frappe.ui.form.on('MOM', {
 	review_last_mom: function(frm) {
 		if(frm.doc.review_last_mom == 1){
 			frappe.call({
-				method: 'one_fm.operations.doctype.mom.mom.review_last_mom',
+				method: 'frappe.client.get',
 				args: {
-					"mom":frm.doc.name,
-					"site":frm.doc.site
+					doctype: "Project",
+					name: frm.doc.project
 				},
 				callback: function(r) {
-					frm.set_value("last_mom_name", r.message.name);
-					set_last_attendees_table(frm, r.message.attendees);
-					set_last_action_table(frm, r.message.action);
+					if(!r.exc) {
+						if(r.message.project_type == "External"){
+							frappe.call({
+											method: 'one_fm.operations.doctype.mom.mom.review_last_mom',
+											args: {
+												"mom":frm.doc.name,
+												"site":frm.doc.site
+											},
+											callback: function(r) {
+												frm.set_value("last_mom_name", r.message.name);
+												set_last_attendees_table(frm, r.message.attendees);
+												set_last_action_table(frm, r.message.action);
 
+											}
+										})
+												
+						}
+					}
 				}
-			})
+			});
+		} else {
+			frm.clear_table("last_action")
 		}
 	},
 	review_pending_actions: function(frm) {
@@ -48,8 +64,35 @@ frappe.ui.form.on('MOM', {
 					set_pending_actions_table(frm,r.message);
 				}
 			})
+		} else {
+			frm.clear_table("pending_actions")
 		}
 	},
+	refresh: function(frm){
+		if (!frappe.user_roles.includes("Projects Manager")){
+			set_project_query_for_non_project_manager(frm);
+		}
+	},
+	validate: function (frm){
+		if (frm.is_new()){
+			frappe.call({
+				method: 'frappe.client.get',
+				args: {
+					doctype: "Project",
+					name: frm.doc.project
+				},
+				callback: function(r) {
+					if(!r.exc) {
+						if(r.message.project_type != "External" && !frappe.user_roles.includes("Projects Manager")){
+							frappe.throw("Only Project managers are allowed to create MOM for Non-External Projects")
+		
+						}
+					}
+				}
+			});
+		}
+	}
+
 });
 
 function get_poc_list(frm, doctype, name){
@@ -68,6 +111,16 @@ function get_poc_list(frm, doctype, name){
 }
 
 
+var set_project_query_for_non_project_manager = (frm) => {
+	frm.set_query("project", () => {
+		return {
+			filters: {
+				project_type: "External"
+			}
+		}
+	})
+}
+
 
 function get_project_type(frm, doctype, name){
 	frappe.call({
@@ -82,6 +135,9 @@ function get_project_type(frm, doctype, name){
 					frm.toggle_display("site", 1)
 
 				} else {
+					if (!frappe.user_roles.includes("Projects Manager")){
+						frappe.throw("Only Project managers are allowed to create MOM for Non-External Projects")
+					}
 					set_table_non_external(frm, r.message.users)
 					frm.toggle_display("issues", 0)
 					frm.toggle_display("meeting_duration", 0)
@@ -102,6 +158,7 @@ function set_table(frm, poc_list){
 	});
 	frm.refresh_fields("attendees");
 }
+
 
 var set_table_non_external = (frm, user_list) => {
 	if(user_list){
@@ -156,6 +213,8 @@ function set_pending_actions_table(frm, action_list){
 		child_row.subject = mom_action.subject;
 		child_row.priority = mom_action.priority;
 		child_row.description = mom_action.description;
+		child_row.user = mom_action.user;
+		child_row.due_date = mom_action.due_date;
 	});
 	frm.refresh_fields("pending_actions");
 }

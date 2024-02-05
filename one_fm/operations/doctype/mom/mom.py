@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 from json import loads
 
 import frappe
+from frappe.desk.form.assign_to import add as add_assignment
 from frappe.model.document import Document
 from frappe import _
 
@@ -25,8 +26,17 @@ class MOM(Document):
 			frappe.throw(_("Please add Action taken to the table."))
 
 
-	def after_insert(self):
-		if self.issues == "Yes" and len(self.action) > 0:
+	def on_submit(self):
+		project_type = frappe.db.get_value("Project", self.project, "project_type")
+		if project_type != "External":
+			self.create_task_and_assign()
+		else:
+			if self.issues == "Yes":
+				self.create_task_and_assign()
+	
+ 
+	def create_task_and_assign(self):
+		if len(self.action) > 0:
 			for issue in self.action:
 				op_task = frappe.new_doc("Task")
 				if not issue.subject:
@@ -37,10 +47,20 @@ class MOM(Document):
 				op_task.priority = issue.priority
 				op_task.project = self.project 
 				op_task.save(ignore_permissions=True)
+
+				add_assignment({
+					'doctype': "Task",
+					'name': op_task.name,
+					'assign_to': [issue.user],
+					"due_date": issue.due_date,
+					"priority": issue.priority if issue.priority in {"Low", "Medium", "High"} else "High"
+				})
+
 			frappe.db.commit()
+     
+   
 
 @frappe.whitelist()
-
 def review_last_mom(mom,site):
 	last_mom = frappe.db.get_list('MOM', filters={ 
 		'name': ['!=', mom ],
@@ -58,12 +78,13 @@ def review_last_mom(mom,site):
 def review_pending_actions(project):
 	filters = {'project': project}
 	data = frappe.db.sql("""
-	SELECT *
-	FROM `tabTask` 
-	WHERE (project = %(project)s) AND (status != 'Completed' AND status != 'Cancelled')
-	""", filters, as_dict=1)
+							SELECT task.subject AS subject, task.priority AS priority, task.description AS description, 
+								todo.date AS due_date, todo.allocated_to AS user
+							FROM `tabTask` AS task
+							LEFT JOIN `tabToDo` AS todo ON task.name = todo.reference_name AND todo.reference_type = 'Task'
+							WHERE (task.project = %(project)s) AND (task.status != 'Completed' AND task.status != 'Cancelled')
+						""", filters, as_dict=1)
 	return data
-
 
 @frappe.whitelist()
 def fetch_designation_of_users(list_of_users: list = []):
@@ -74,4 +95,3 @@ def fetch_designation_of_users(list_of_users: list = []):
 							""",(tuple(loads(list_of_users)), ) ,as_dict=1)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Error encountered while fetching users designation (MOM)")
-     
