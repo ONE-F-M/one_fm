@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:{DD}-{MM}-{YYYY}|{site}",
+ "autoname": "format:{DD}-{MM}-{YYYY}|{project}",
  "creation": "2020-04-27 15:55:06.978338",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -188,7 +188,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-04 21:45:08.569913",
+ "modified": "2024-02-05 23:42:17.268311",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM",

@@ -52,7 +52,7 @@ class MOM(Document):
 					'doctype': "Task",
 					'name': op_task.name,
 					'assign_to': [issue.user],
-					"due_date": issue.due_date,
+					"date": issue.due_date,
 					"priority": issue.priority if issue.priority in {"Low", "Medium", "High"} else "High"
 				})
 
