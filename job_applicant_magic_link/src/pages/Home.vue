@@ -341,11 +341,6 @@ export default {
                                 <div id="image_preview"></div>
                               </div>
                             </div>
-
-
-                            <!-- <div style="margin-top: 30px; display: flex; justify-content: end">
-                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" @click.prevent="upload">Upload Document</button>
-                            </div> -->
                         </form>
                       </div>
                     </section>
@@ -385,26 +380,6 @@ export default {
                                             <input class="form-control input" type="text" id="one_fm_last_name" name="one_fm_last_name" v-model="job_applicant.one_fm_last_name" :onchange="putField" required>
                                         </div>
                                     </div>
-                                    <!-- <div class="col-md-4">
-                                      <div class="form-group">
-                                          <label  class="form-label">First Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="one_fm_first_name_in_arabic" name="one_fm_first_name_in_arabic" v-model="job_applicant.one_fm_first_name_in_arabic" :onchange="putField">
-                                      </div>
-                                      <div class="form-group">
-                                          <label  class="form-label">Second Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="one_fm_second_name_in_arabic" name="one_fm_second_name_in_arabic" v-model="job_applicant.one_fm_second_name_in_arabic" :onchange="putField">
-                                      </div>
-                                      <div class="form-group">
-                                          <label  class="form-label">Third Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="one_fm_third_name_in_arabic" name="one_fm_third_name_in_arabic" v-model="job_applicant.one_fm_third_name_in_arabic" :onchange="putField">
-                                      </div>
-                                      <div class="form-group">
-                                          <label  class="form-label">Last Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="one_fm_last_name_in_arabic" name="one_fm_last_name_in_arabic" v-model="job_applicant.one_fm_last_name_in_arabic" :onchange="putField">
-                                      </div>
-                                    </div> -->
-                                    <!-- End name section -->
-                                    <!-- Gender, marital, DoB and Religion -->
                                     <div class="col-md-4">
                                       <div class="form-group">
                                           <label class="form-label text-danger" for="one_fm_gender">Gender *</label>
