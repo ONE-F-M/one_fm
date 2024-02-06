@@ -22,34 +22,23 @@ frappe.ui.form.on('MOM', {
 	},
 	review_last_mom: function(frm) {
 		if(frm.doc.review_last_mom == 1){
-			frappe.call({
-				method: 'frappe.client.get',
-				args: {
-					doctype: "Project",
-					name: frm.doc.project
-				},
-				callback: function(r) {
-					if(!r.exc) {
-						if(r.message.project_type == "External"){
-							frappe.call({
-											method: 'one_fm.operations.doctype.mom.mom.review_last_mom',
-											args: {
-												"mom":frm.doc.name,
-												"site":frm.doc.site
-											},
-											callback: function(r) {
-												frm.set_value("last_mom_name", r.message.name);
-												set_last_attendees_table(frm, r.message.attendees);
-												set_last_action_table(frm, r.message.action);
+			if (frm.doc.project_type == "External"){
+				frappe.call({
+					method: 'one_fm.operations.doctype.mom.mom.review_last_mom',
+					args: {
+						"mom":frm.doc.name,
+						"site":frm.doc.site
+					},
+					callback: function(r) {
+						frm.set_value("last_mom_name", r.message.name);
+						set_last_attendees_table(frm, r.message.attendees);
+						set_last_action_table(frm, r.message.action);
 
-											}
-										})
-												
-						}
 					}
-				}
-			});
-		} else {
+				})
+			}
+
+		}else {
 			frm.clear_table("last_action")
 		}
 	},
@@ -75,25 +64,14 @@ frappe.ui.form.on('MOM', {
 	},
 	validate: function (frm){
 		if (frm.is_new()){
-			frappe.call({
-				method: 'frappe.client.get',
-				args: {
-					doctype: "Project",
-					name: frm.doc.project
-				},
-				callback: function(r) {
-					if(!r.exc) {
-						if(r.message.project_type != "External" && !frappe.user_roles.includes("Projects Manager")){
-							frappe.throw("Only Project managers are allowed to create MOM for Non-External Projects")
-		
-						}
-					}
-				}
-			});
+			if (frm.doc.project_type != "External" && !frappe.user_roles.includes("Projects Manager")){
+				frappe.throw("Only Project managers are allowed to create MOM for Non-External Projects")
+			}
 		}
 	}
 
 });
+
 
 function get_poc_list(frm, doctype, name){
 	frappe.call({

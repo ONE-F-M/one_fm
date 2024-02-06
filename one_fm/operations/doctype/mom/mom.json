@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "project",
+  "project_type",
   "column_break_2",
   "site",
   "column_break_4",
@@ -184,11 +185,18 @@
    "options": "MOM",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fetch_from": "project.project_type",
+   "fieldname": "project_type",
+   "fieldtype": "Data",
+   "label": "Project Type",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-05 23:42:17.268311",
+ "modified": "2024-02-06 13:37:10.026026",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM",
