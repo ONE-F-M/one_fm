@@ -861,7 +861,7 @@ class AttendanceMarking():
             self.start = dt + timedelta(hours=-2)
             self.end = dt + timedelta(hours=-1)
 
-    
+
     def mark_shift_attendance(self):
         # CREATE ATTENDANCE FOR CLIENTS
         if self.attendance_type:
@@ -884,6 +884,13 @@ class AttendanceMarking():
                 sa.start_date='{self.start.date()}'
                 AND op.attendance_by_client=0 AND op.status='Active'
             """, as_dict=1)
+            non_shifts = frappe.db.sql(f"""
+                SELECT sa.* FROM `tabShift Assignment` sa
+                JOIN `tabEmployee` e ON sa.employee=e.name 
+                WHERE
+                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                AND e.shift_working=0""", as_dict=1)
+            shifts.extend(non_shifts)
         else:
             client_shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
@@ -892,7 +899,7 @@ class AttendanceMarking():
                 sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND op.attendance_by_client=1 AND op.status='Active'
                 ;
-            """, as_dict=1)
+                """, as_dict=1)
             for i in client_shifts:
                 self.create_attendance(frappe._dict({**i, **{
                     'status':'On Hold', 'dt':"Shift Assignment"}}))
@@ -904,6 +911,13 @@ class AttendanceMarking():
                 sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND op.attendance_by_client=0 AND op.status='Active'
             """, as_dict=1)
+            non_shifts = frappe.db.sql(f"""
+                SELECT sa.* FROM `tabShift Assignment` sa
+                JOIN `tabEmployee` e ON sa.employee=e.name 
+                WHERE
+                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                AND e.shift_working=0""", as_dict=1)
+            shifts.extend(non_shifts)
         if shifts:
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0]))
             if checkins:
