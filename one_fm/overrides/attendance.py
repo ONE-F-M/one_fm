@@ -256,6 +256,7 @@ def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
         'employee':employee,
         'start_date':att_date.date(),
         'roster_type':roster_type,
+        'custom_replaced':0,
         'docstatus':1
         }, ["*"], as_dict=1
     )
@@ -902,7 +903,7 @@ class AttendanceMarking():
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name 
                 WHERE
                 sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
-                AND op.attendance_by_client=0 AND op.status='Active'
+                AND op.attendance_by_client=0 AND sa.custom_replaced = 0 AND op.status='Active'
             """, as_dict=1)
         if shifts:
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0]))
@@ -1111,3 +1112,103 @@ def mark_day_off_for_yesterday():
         attendance_type=True,
     )
     frappe.enqueue(attendance_marking.mark_day_off, queue="long", timeout=6000)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+
+def get_datetime_test():
+    dt = now_datetime()
+    dt = dt.replace(minute=0, second=0, microsecond=0)
+    start = dt + timedelta(hours=-10)
+    end = dt + timedelta(hours=-1)
+    return frappe._dict({'start':start,'end':end})
+
+
+@frappe.whitelist()
+def mark_shift_attendance_test(employee):
+    attendance_marker =  AttendanceMarking()
+    dates = get_datetime_test()
+        # CREATE ATTENDANCE FOR CLIENTS
+    shifts =  frappe.db.sql(f"""
+                SELECT sa.* FROM `tabShift Assignment` sa
+                JOIN `tabOperations Role` op ON sa.operations_role=op.name 
+                WHERE
+                sa.end_datetime BETWEEN '{dates.start}' AND  '{dates.end}'
+                
+                AND op.attendance_by_client=0 AND sa.custom_replaced = 0 AND op.status='Active'
+            """, as_dict=1)
+    if shifts:
+            checkins = attendance_marker.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0]))
+            if checkins:
+                # employees = [i.employee for i in shifts]
+                checked_in_employees = [i.employee for i in checkins]
+                no_checkins = [i for i in shifts if not i.employee in checked_in_employees]
+                if no_checkins: #create absent
+                    for i in no_checkins:
+                        try:
+                            record = frappe._dict({**dict(i), **{
+                                "status":"Absent", "comment":"No checkin record found", "working_hours":0,
+                                "dt":"Shift Assignment"}})
+                            attendance_marker.create_attendance(record)
+                        except:
+                            pass
+                if checkins: # check for work hours
+                    # start checkin
+                    for i in checkins:
+                        if i.earliest_time: # maybe record retrived incorrectly
+                            if not frappe.db.exists("Attendance", {
+                                'employee':i.employee,
+                                'attendance_date':i.shift_actual_start.date(),
+                                'roster_type':i.roster_type,
+                                'status': ["IN", ["Present", "On Leave", "Holiday", "Day Off", 
+                                    "On Hold", "Work From Home"]]
+                                }):
+                                total_hours = (i.shift_actual_end - i.shift_actual_start).total_seconds() / (60*60)
+                                half_hour = total_hours/2
+                                working_hours = 0
+                                status = "Absent"
+                                comment = ""
+                                if ((i.earliest_time - i.shift_actual_end).total_seconds() / (60*60)) > half_hour:
+                                    status = 'Absent'
+                                    comment = f" Checked in late, checkin in at {i.earliest_time}"
+                                elif i.earliest_time and i.latest_time:
+                                    working_hours = ((i.latest_time - i.earliest_time).total_seconds() / (60*60))
+                                    if working_hours < half_hour:
+                                        status = "Absent"
+                                        comment = f"Worked less than 50% of {total_hours}hrs."
+                                    else:
+                                        status = "Present"
+                                        comment = ""
+                                elif i.earliest_time and not i.latest_time:
+                                    working_hours = (i.shift_actual_end - i.earliest_time).total_seconds() / (60*60)
+                                    if working_hours < half_hour:
+                                        status = "Absent"
+                                        comment = f"Worked less than 50% of {total_hours}hrs."
+                                    else:
+                                        status = "Present"
+                                        comment = ""
+
+                                #  continue to mark attendace
+                                try:
+                                    attendance_marker.create_attendance(frappe._dict({**dict(i), **{
+                                        "status":status, "comment":comment, "working_hours":working_hours,
+                                        "dt":"Employee Checkin"}}))
+                                except Exception as e:
+                                    print(e)
+
+

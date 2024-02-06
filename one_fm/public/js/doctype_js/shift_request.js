@@ -19,13 +19,37 @@ frappe.ui.form.on('Shift Request', {
 		
 	},
 	refresh: function(frm) {
+		
 		frm.set_df_property('shift_type', 'hidden', 1);
 		frm.set_df_property('company', 'hidden', 1);
 		frm.set_df_property('approver', 'hidden', 1);
+		frm.set_df_property('assign_day_off', 'hidden', 1);
 		set_update_request_btn(frm);
+		if((frm.doc.custom_replace_existing_shift)&&(frm.doc.custom_replaced_employee)){
+			set_replace_shift_assignment(frm)
+		}
 	},
+	
 	employee: function(frm) {
 		set_approver(frm)
+	},
+	custom_purpose:function(frm){
+		if (frm.doc.custom_purpose=="Assign Day Off"){
+			
+			frm.doc.assign_day_off = 1
+			frm.refresh_field('assign_day_off')
+		}
+		else{
+			frm.doc.assign_day_off = 0
+			frm.refresh_field('assign_day_off')
+		}
+		
+	},
+	custom_replaced_employee : function(frm){
+		if(frm.doc.custom_purpose == "Replace Employee in Shift"){
+			set_replace_shift_assignment(frm)
+		}
+		
 	},
 	check_in_site:function(frm){
 		loadGoogleMap(frm, "IN");
@@ -46,6 +70,22 @@ frappe.ui.form.on('Shift Request', {
 		}
 	}
 });
+
+
+ let set_replace_shift_assignment = function(frm){
+	frm.set_query("custom_shift_assignment", function() {
+		return {
+			"filters": {
+				"shift": frm.doc.operations_shift,
+				"operations_role": frm.doc.operations_role,
+				"employee":frm.doc.custom_replaced_employee,
+				"start_date":frm.doc.from_date,
+				'roster_type':frm.doc.roster_type
+				
+			}
+		};
+	});
+}
 
 function set_update_request_btn(frm) {
 	if(frm.doc.docstatus == 1 && frm.doc.workflow_state == 'Approved' && !frm.doc.update_request){
@@ -201,6 +241,8 @@ let set_employee_filters = frm=>{
 	});
 
 }
+
+
 
 var prefillForm = frm =>{
 	const url = new URL(window.location.href);
