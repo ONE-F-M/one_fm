@@ -49,7 +49,7 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
     applicant_name += " "+last_name
     job = frappe.get_doc('Job Opening', job_opening)
     erf_link = get_url("/app/erf/" + job.one_fm_erf)
-    job_link = get_url(doc.get_url())
+    job_link = get_url(job.get_url())
     subject = """Application for {0}""".format(job.designation)
     message_details = """
         <b>Name:</b> {0}<br>
