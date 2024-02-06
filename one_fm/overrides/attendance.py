@@ -1058,7 +1058,6 @@ class AttendanceMarking():
                     DELETE FROM `tabAttendance` WHERE employee="{record.employee}" AND
                     attendance_date="{_date}" 
                     AND roster_type="{record.roster_type}"
-                    AND status="Absent"
                 """)
             except:
                 pass
