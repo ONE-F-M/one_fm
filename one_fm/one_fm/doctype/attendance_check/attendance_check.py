@@ -70,7 +70,7 @@ class AttendanceCheck(Document):
         # check shift permission
         shift_permission = frappe.db.get_value("Shift Permission", {
             "employee":self.employee, "date":self.date, "roster_type":self.roster_type, "docstatus":["!=", 0]},
-            ["name", "date"], as_dict=1
+            ["name"], as_dict=1
         )
         if shift_permission:
             self.shift_permission = shift_permission
