@@ -1140,7 +1140,7 @@ def get_datetime_test():
 
 
 @frappe.whitelist()
-def mark_shift_attendance_test(employee):
+def mark_shift_attendance_test():
     attendance_marker =  AttendanceMarking()
     dates = get_datetime_test()
         # CREATE ATTENDANCE FOR CLIENTS
