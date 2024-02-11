@@ -48,7 +48,6 @@ export default {
           },
         })
         fetchMagicLink.fetch().then((data)=>{
-          console.log(data)
           if (Object.keys(data).length === 0){
             Swal.fire(
               'Error',
@@ -64,7 +63,7 @@ export default {
             this.religions = data.religions;
             this.education = data.education;
             this.civil_id_required = data.civil_id_required;
-            console.log(this);
+
             // set upload fields
             if (data.civil_id_required){
               $('#civil_id_front').parent().show();
@@ -124,6 +123,9 @@ export default {
             let result = reader.result;
             result = result.replace(/^data:image\/\w+;base64,/, "");
             me.imageFiles[el.id]={data:result, name:el.files[0].name, type:el.files[0].type, size:el.files[0].size};
+
+              //upload file
+              me.upload()
           };
         }        
       }
@@ -141,13 +143,12 @@ export default {
         document.querySelector('#cover-spin').style.display = 'block';
         me.imageFiles.reference_doctype = this.job_applicant.doctype;
         me.imageFiles.reference_docname = this.job_applicant.name;
-        console.log(me.imageFiles)
+
         let uploadImage = createResource({
         url: '/api/method/one_fm.www.job_applicant_magic_link.index.upload_image',
         params: me.imageFiles,
         method: 'POST',
         onSuccess(data) {
-          // console.log(data)
           if(data.passport || data.civil_id_front || data.civil_id_back){
             // update dom with mindee
             Swal.fire(
@@ -157,8 +158,8 @@ export default {
               'success'
             )
             me.loadContent();
-            document.querySelector('#cover-spin').style.display = 'none';
           }
+          document.querySelector('#cover-spin').style.display = 'none';
         },
       })
       uploadImage.fetch()
