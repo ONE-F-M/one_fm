@@ -3354,3 +3354,6 @@ def custom_toggle_notifications(user: str, enable: bool = False):
         settings.flags.ignore_permissions = 1
         settings.save()
     
+@frappe.whitelist()
+def get_user_timezone():
+    return frappe.get_value("User", frappe.session.user, "time_zone")
