@@ -88,6 +88,11 @@ def get_magic_link():
 def upload_image():
     bench_path = frappe.utils.get_bench_path()
     file_path = cstr(frappe.local.site)+"/public/files/user/magic_link/"
+
+    # Check if the directory exists
+    if not os.path.exists(file_path):
+        os.makedirs(file_path)
+
     full_path = bench_path+'/sites/'+file_path
     applicant_name = frappe.db.get_value(frappe.form_dict.reference_doctype, frappe.form_dict.reference_docname, 'applicant_name')
     response_data = {}
@@ -159,8 +164,8 @@ def upload_image():
                     else:v="Other"
                     frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_gender', v)
                 if(k=="surname" and v):
-                    frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_last_name', v)
-                    frappe.db.set_value(reference_doctype, reference_docname, 'applicant_name', frappe.db.get_value(reference_doctype, reference_docname, 'one_fm_first_name') + ' ' + v)
+                    frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_last_name', v.title())
+                    frappe.db.set_value(reference_doctype, reference_docname, 'applicant_name', frappe.db.get_value(reference_doctype, reference_docname, 'one_fm_first_name').title() + ' ' + v.title())
                 if(k=="birth_date" and v):
                     frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_date_of_birth', v)
                 if(k=="id_number" and v):
@@ -172,13 +177,13 @@ def upload_image():
                 if(k=="given_names" and v):
                     for i, j in enumerate(v):
                         if i==0:
-                            frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_first_name', j)
+                            frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_first_name', j.title())
                         if i==1:
-                            frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_second_name', j)
+                            frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_second_name', j.title())
                         if i==2:
-                            frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_third_name', j)
+                            frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_third_name', j.title())
                         if i==3:
-                            frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_forth_name', j)
+                            frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_forth_name', j.title())
             response_data['passport']=result_dict
             # return frappe._dict()
         except Exception as e:
