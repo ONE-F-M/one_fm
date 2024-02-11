@@ -26,9 +26,12 @@ class TimesheetOveride(Timesheet):
         if start_date > getdate():
             frappe.throw(_("Please note that timesheets cannot be created for a date in the future"))
 
-        if start_date < get_datetime_in_timezone("Asia/Riyadh").date():
+    def before_insert(self):
+        self.set_dates()
+        start_date = getdate(self.start_date)
+        if start_date < get_datetime_in_timezone("Asia/Kuwait").date():
             frappe.throw(_("Please note that timesheets cannot be created for a previous date."))
-
+    
     def set_approver(self):
         if self.attendance_by_timesheet:
             self.approver = fetch_approver(self.employee)
