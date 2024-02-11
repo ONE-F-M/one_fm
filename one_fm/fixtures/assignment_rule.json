@@ -118,11 +118,11 @@
   "field": "reports_to_user",
   "is_assignment_rule_with_workflow": 0,
   "last_user": "",
-  "modified": "2023-06-08 08:21:52.623492",
+  "modified": "2024-01-24 18:00:54.349067",
   "name": "Attendance Check Reports To",
   "priority": 2,
   "rule": "Based on Field",
-  "unassign_condition": null,
+  "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
   "users": []
  },
  {
@@ -181,11 +181,11 @@
   "field": "site_supervisor_user",
   "is_assignment_rule_with_workflow": 0,
   "last_user": "",
-  "modified": "2023-06-08 08:22:10.786821",
+  "modified": "2024-01-24 18:00:38.952572",
   "name": "Attendance Check Site Supervisor",
   "priority": 1,
   "rule": "Based on Field",
-  "unassign_condition": null,
+  "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
   "users": []
  },
  {
@@ -244,11 +244,11 @@
   "field": "shift_supervisor_user",
   "is_assignment_rule_with_workflow": 0,
   "last_user": "",
-  "modified": "2023-06-08 08:22:03.174673",
+  "modified": "2024-01-24 18:00:07.832120",
   "name": "Attendance Check Shift Supervisor",
   "priority": 0,
   "rule": "Based on Field",
-  "unassign_condition": null,
+  "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
   "users": []
  },
  {

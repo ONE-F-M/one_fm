@@ -11,6 +11,7 @@
   "employee_name",
   "department",
   "roster_type",
+  "attendance_by_timesheet",
   "column_break_1",
   "date",
   "reports_to",
@@ -366,6 +367,13 @@
   {
    "fieldname": "column_break_eekf",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "attendance_by_timesheet",
+   "fieldtype": "Check",
+   "label": "Attendance By Timesheet",
+   "read_only": 1
   }
  ],
  "in_create": 1,
@@ -376,7 +384,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2024-01-22 21:34:29.849434",
+ "modified": "2024-01-24 13:03:12.127598",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
