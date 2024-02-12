@@ -64,6 +64,7 @@
    "options": "fa fa-pushpin"
   },
   {
+   "default": "RFM-.YYYY.-.######",
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Series",
@@ -72,6 +73,7 @@
    "oldfieldtype": "Select",
    "options": "RFM-.YYYY.-.######\nRM-.YYYY.-",
    "print_hide": 1,
+   "read_only": 1,
    "reqd": 1,
    "set_only_once": 1
   },
@@ -493,7 +495,7 @@
    "link_fieldname": "request_for_material"
   }
  ],
- "modified": "2024-01-13 14:03:22.733816",
+ "modified": "2024-02-12 16:23:03.971455",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material",
