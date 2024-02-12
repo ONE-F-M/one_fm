@@ -315,7 +315,17 @@ def is_date(string, fuzzy=False):
 def update_job_applicant():
     try:
         data = frappe.form_dict
+
+        # All fields for name
+        name_fields = ['applicant_name', 'one_fm_first_name', 'one_fm_second_name', 'one_fm_third_name', 'one_fm_forth_name', 'one_fm_last_name']
+
+        # If updated field is a name field then convert it into title case
+        if data.field in name_fields:
+            data.value = data.value.title()
+
+        # Update field
         frappe.db.set_value(data.doctype, data.docname, data.field, data.value)
+
         if data.field=='one_fm_last_name':
             frappe.db.set_value(data.doctype, data.docname, 'applicant_name', frappe.db.get_value(data.doctype, data.docname, 'one_fm_first_name') + ' ' + data.value)
         if data.field=='one_fm_first_name':
