@@ -17,6 +17,9 @@ from frappe.utils.data import get_absolute_url
 
 class OnboardEmployee(Document):
 	def validate(self):
+		# update employee arabic name
+		self.employee_name_in_arabic = " ".join(filter(None, [self.first_name_in_arabic, self.second_name_in_arabic, self.third_name_in_arabic, self.forth_name_in_arabic, self.last_name_in_arabic]))
+		
 		if not self.number_of_days_off:
 			frappe.throw(_("Please set the number of days off."))
 		if self.day_off_category == "Weekly":

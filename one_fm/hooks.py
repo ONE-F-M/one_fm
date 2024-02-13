@@ -249,9 +249,6 @@ doc_events = {
 		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
 		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
 	},
-	"Onboard Employee": {
-		"validate": "one_fm.utils.validate_onboard_employee",
-	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
 		"before_insert": "one_fm.utils.before_insert_warehouse",
