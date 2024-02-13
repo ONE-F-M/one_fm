@@ -1,6 +1,9 @@
 import frappe
 
 def execute():
+    # Reload doctype so that newly added fields should be added first before executing patch
+    frappe.reload_doctype("Onboard Employee")
+
     """
     Fetch and split "employee_name_in_arabic" into ("first_name_in_arabic", "second_name_in_arabic", "third_name_in_arabic", "forth_name_in_arabic", "last_name_in_arabic")
     """
