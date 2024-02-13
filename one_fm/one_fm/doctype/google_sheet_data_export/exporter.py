@@ -598,7 +598,7 @@ def export_from_excel():
 	from google.auth.transport.requests import Request
 
 	spreadsheet_id = "1DMAkvDKbLlka8ATxjZlOxUEsBUDlBlcRYJhyiYuETg8"
-
+	sheet_name = "Sheet2"
 	# Define Excel file path
 	excel_file = os.getcwd()+"/"+cstr(frappe.local.site) + "/private/files/Employee.xlsx"
 
@@ -614,7 +614,7 @@ def export_from_excel():
 	service = discovery.build('sheets', 'v4', credentials=creds)
 
 	# Define range based on Excel data dimensions
-	range_ = f"A1:{chr(65 + data.shape[1] - 1)}{data.shape[0] + 1}"
+	range_ = f"{sheet_name}!A1:{chr(65 + data.shape[1] - 1)}{data.shape[0] + 1}"
 	
 	body_data = {
 		'values': [headers] + data.values.tolist()
