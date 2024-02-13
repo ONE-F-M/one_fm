@@ -158,13 +158,6 @@ class OnboardEmployee(Document):
 					employee.one_fm_forth_name_in_arabic = self.forth_name_in_arabic
 					employee.one_fm_last_name_in_arabic = self.last_name_in_arabic
 
-					# if self.job_applicant:
-					# 	employee.one_fm_first_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_first_name_in_arabic")
-					# 	employee.one_fm_last_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_last_name_in_arabic")
-					# else:
-					# 	employee.one_fm_first_name_in_arabic = self.employee_name_in_arabic.split()[len(self.employee_name_in_arabic.split())-1]
-					# 	employee.one_fm_last_name_in_arabic = self.employee_name_in_arabic.split()[0]
-
 					employee.permanent_address = "Test"
 					employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
 					pam_designation = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_pam_designation')
