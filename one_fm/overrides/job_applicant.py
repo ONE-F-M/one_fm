@@ -58,7 +58,8 @@ class JobApplicantOverride(JobApplicant):
 		name_fields = ['applicant_name', 'one_fm_first_name', 'one_fm_second_name', 'one_fm_third_name', 'one_fm_forth_name', 'one_fm_last_name']
 		for name_attr in name_fields:
 			current_name = getattr(self, name_attr, '')
-			setattr(self, name_attr, current_name.title())
+			if current_name is not None:
+				setattr(self, name_attr, current_name.title())
 
 
 
