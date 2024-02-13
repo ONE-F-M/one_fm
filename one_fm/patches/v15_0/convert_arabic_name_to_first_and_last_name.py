@@ -5,10 +5,10 @@ def execute():
     Fetch and split "employee_name_in_arabic" into ("first_name_in_arabic", "second_name_in_arabic", "third_name_in_arabic", "forth_name_in_arabic", "last_name_in_arabic")
     """
 
-    job_offers = frappe.get_all("Onboard Employee", fields=['name', 'employee_name_in_arabic'])
+    onboard_employees = frappe.get_all("Onboard Employee", fields=['name', 'employee_name_in_arabic'])
 
-    if job_offers:
-        for job_offer in job_offers:
+    if onboard_employees:
+        for job_offer in onboard_employees:
             try:
                 splitted_arabic_name = job_offer.employee_name_in_arabic.split()
                 first_arabic_name = splitted_arabic_name[0]
