@@ -1,10 +1,10 @@
-this.frm.dashboard.add_transactions([
-    {
-        'items': [
-            'Customer Asset'
+// this.frm.dashboard.add_transactions([
+//     {
+//         'items': [
+//             'Customer Asset'
             
-        ],
-        'label': 'Related'
-    },
+//         ],
+//         'label': 'Related'
+//     },
 
-]);
+// ]);
