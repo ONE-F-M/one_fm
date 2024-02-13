@@ -558,17 +558,12 @@ def create_onboarding_from_job_offer(job_offer):
                     else:
                         o_employee.set(od, job_applicant.get('one_fm_'+od))
 
-                #set employee's name in arabic
-                employee_name_in_arabic = False
-                if job_applicant.get('one_fm_first_name_in_arabic'):
-                    if job_applicant.get('one_fm_last_name_in_arabic'):
-                        employee_name_in_arabic = job_applicant.get('one_fm_lasst_name_in_arabic')
-                    if employee_name_in_arabic:
-                        employee_name_in_arabic += " "+job_applicant.get('one_fm_first_name_in_arabic')
-                    else:
-                        employee_name_in_arabic = job_applicant.get('one_fm_first_name_in_arabic')
-                if employee_name_in_arabic:
-                    o_employee.set('employee_name_in_arabic', employee_name_in_arabic)
+                # set employee's name in arabic
+                o_employee.set('custom_first_name_in_arabic', job_applicant.get('one_fm_first_name_in_arabic') or job_applicant.get('one_fm_first_name'))
+                o_employee.set('custom_second_name_in_arabic', job_applicant.get('one_fm_second_name_in_arabic') or '')
+                o_employee.set('custom_third_name_in_arabic', job_applicant.get('one_fm_third_name_in_arabic') or '')
+                o_employee.set('custom_forth_name_in_arabic', job_applicant.get('one_fm_forth_name_in_arabic') or '')
+                o_employee.set('custom_last_name_in_arabic', job_applicant.get('one_fm_last_name_in_arabic') or job_applicant.get('one_fm_last_name'))
 
                 # Set Documents attached in the Job Applicant to Onboard Employee document
                 for applicant_document in job_applicant.one_fm_documents_required:

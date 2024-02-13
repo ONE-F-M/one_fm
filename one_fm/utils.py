@@ -1469,6 +1469,10 @@ def validate_job_applicant(doc, method):
         if doc.one_fm_number_of_kids != len(doc.one_fm_kids_details):
             frappe.throw("Please List All Children in the Table.")
 
+def validate_onboard_employee(doc, method):
+    # update employee arabic name
+    doc.employee_name_in_arabic = " ".join(filter(None, [doc.custom_first_name_in_arabic, doc.custom_second_name_in_arabic, doc.custom_third_name_in_arabic, doc.custom_forth_name_in_arabic, doc.custom_last_name_in_arabic]))
+
 def set_erf_days_off_details(doc):
     pass
 

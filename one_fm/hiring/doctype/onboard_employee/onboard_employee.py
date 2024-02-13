@@ -147,12 +147,20 @@ class OnboardEmployee(Document):
 					employee.salary_mode = self.salary_mode
 					employee.job_offer = self.job_offer
 					employee.job_applicant = self.job_applicant
-					if self.job_applicant:
-						employee.one_fm_first_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_first_name_in_arabic")
-						employee.one_fm_last_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_last_name_in_arabic")
-					else:
-						employee.one_fm_first_name_in_arabic = self.employee_name_in_arabic.split()[len(self.employee_name_in_arabic.split())-1]
-						employee.one_fm_last_name_in_arabic = self.employee_name_in_arabic.split()[0]
+
+					# Set names for newly created employee
+					employee.one_fm_first_name_in_arabic = self.custom_first_name_in_arabic
+					employee.one_fm_second_name_in_arabic = self.custom_second_name_in_arabic
+					employee.one_fm_third_name_in_arabic = self.custom_third_name_in_arabic
+					employee.one_fm_forth_name_in_arabic = self.custom_forth_name_in_arabic
+					employee.one_fm_last_name_in_arabic = self.custom_last_name_in_arabic
+
+					# if self.job_applicant:
+					# 	employee.one_fm_first_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_first_name_in_arabic")
+					# 	employee.one_fm_last_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_last_name_in_arabic")
+					# else:
+					# 	employee.one_fm_first_name_in_arabic = self.employee_name_in_arabic.split()[len(self.employee_name_in_arabic.split())-1]
+					# 	employee.one_fm_last_name_in_arabic = self.employee_name_in_arabic.split()[0]
 
 					employee.permanent_address = "Test"
 					employee.one_fm_basic_salary = frappe.db.get_value('Job Offer', self.job_offer, 'base')
