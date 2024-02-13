@@ -2,7 +2,7 @@ import frappe
 
 def execute():
     """
-    Fetch and split "employee_name_in_arabic" into ("custom_first_name_in_arabic", "custom_second_name_in_arabic", "custom_third_name_in_arabic", "custom_forth_name_in_arabic", "custom_last_name_in_arabic")
+    Fetch and split "employee_name_in_arabic" into ("first_name_in_arabic", "second_name_in_arabic", "third_name_in_arabic", "forth_name_in_arabic", "last_name_in_arabic")
     """
 
     job_offers = frappe.get_all("Onboard Employee", fields=['name', 'employee_name_in_arabic'])
@@ -17,11 +17,11 @@ def execute():
                 third_arabic_name = splitted_arabic_name[2] if len(splitted_arabic_name) > 3 else ""
                 forth_arabic_name = splitted_arabic_name[3] if len(splitted_arabic_name) > 4 else ""
 
-                frappe.db.set_value("Onboard Employee", job_offer.name, 'custom_first_name_in_arabic', first_arabic_name)
-                frappe.db.set_value("Onboard Employee", job_offer.name, 'custom_second_name_in_arabic', second_arabic_name)
-                frappe.db.set_value("Onboard Employee", job_offer.name, 'custom_third_name_in_arabic', third_arabic_name)
-                frappe.db.set_value("Onboard Employee", job_offer.name, 'custom_forth_name_in_arabic', forth_arabic_name)
-                frappe.db.set_value("Onboard Employee", job_offer.name, 'custom_last_name_in_arabic', last_arabic_name)
+                frappe.db.set_value("Onboard Employee", job_offer.name, 'first_name_in_arabic', first_arabic_name)
+                frappe.db.set_value("Onboard Employee", job_offer.name, 'second_name_in_arabic', second_arabic_name)
+                frappe.db.set_value("Onboard Employee", job_offer.name, 'third_name_in_arabic', third_arabic_name)
+                frappe.db.set_value("Onboard Employee", job_offer.name, 'forth_name_in_arabic', forth_arabic_name)
+                frappe.db.set_value("Onboard Employee", job_offer.name, 'last_name_in_arabic', last_arabic_name)
             except Exception as e:
                 frappe.log_error(title=f"Error while splitting arabic name for {job_offer.name}", message=str(e))
                 continue

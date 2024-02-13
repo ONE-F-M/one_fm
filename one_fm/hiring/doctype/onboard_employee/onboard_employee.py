@@ -149,11 +149,11 @@ class OnboardEmployee(Document):
 					employee.job_applicant = self.job_applicant
 
 					# Set names for newly created employee
-					employee.one_fm_first_name_in_arabic = self.custom_first_name_in_arabic
-					employee.one_fm_second_name_in_arabic = self.custom_second_name_in_arabic
-					employee.one_fm_third_name_in_arabic = self.custom_third_name_in_arabic
-					employee.one_fm_forth_name_in_arabic = self.custom_forth_name_in_arabic
-					employee.one_fm_last_name_in_arabic = self.custom_last_name_in_arabic
+					employee.one_fm_first_name_in_arabic = self.first_name_in_arabic
+					employee.one_fm_second_name_in_arabic = self.second_name_in_arabic
+					employee.one_fm_third_name_in_arabic = self.third_name_in_arabic
+					employee.one_fm_forth_name_in_arabic = self.forth_name_in_arabic
+					employee.one_fm_last_name_in_arabic = self.last_name_in_arabic
 
 					# if self.job_applicant:
 					# 	employee.one_fm_first_name_in_arabic = frappe.db.get_value("Job Applicant", self.job_applicant, "one_fm_first_name_in_arabic")

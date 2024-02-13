@@ -1471,7 +1471,7 @@ def validate_job_applicant(doc, method):
 
 def validate_onboard_employee(doc, method):
     # update employee arabic name
-    doc.employee_name_in_arabic = " ".join(filter(None, [doc.custom_first_name_in_arabic, doc.custom_second_name_in_arabic, doc.custom_third_name_in_arabic, doc.custom_forth_name_in_arabic, doc.custom_last_name_in_arabic]))
+    doc.employee_name_in_arabic = " ".join(filter(None, [doc.first_name_in_arabic, doc.second_name_in_arabic, doc.third_name_in_arabic, doc.forth_name_in_arabic, doc.last_name_in_arabic]))
 
 def set_erf_days_off_details(doc):
     pass

@@ -15,6 +15,11 @@
   "employee",
   "employee_name",
   "employee_name_in_arabic",
+  "first_name_in_arabic",
+  "second_name_in_arabic",
+  "third_name_in_arabic",
+  "forth_name_in_arabic",
+  "last_name_in_arabic",
   "date_of_joining",
   "boarding_status",
   "erf",
@@ -597,7 +602,8 @@
   {
    "fieldname": "employee_name_in_arabic",
    "fieldtype": "Data",
-   "label": "Employee Name in Arabic"
+   "label": "Employee Name in Arabic",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.docstatus > 0",
@@ -1508,12 +1514,39 @@
    "fieldname": "auto_attendance",
    "fieldtype": "Check",
    "label": "Auto Attendance"
+  },
+  {
+   "fieldname": "first_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "First Name in Arabic",
+   "reqd": 1
+  },
+  {
+   "fieldname": "second_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Second Name in Arabic"
+  },
+  {
+   "fieldname": "third_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Third Name in Arabic"
+  },
+  {
+   "fieldname": "forth_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Forth Name in Arabic"
+  },
+  {
+   "fieldname": "last_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Last Name in Arabic",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-08-22 01:08:18.885060",
+ "modified": "2024-02-13 17:53:17.999967",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
