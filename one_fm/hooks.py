@@ -785,15 +785,6 @@ fixtures = [
 				)
 			)
 		}
-	},
-	{
-		"dt": "Dashboard",
-	},
-	{
-		"dt": "Dashboard Chart"
-	},
-	{
-		"dt": "Number Card"
 	}
 ]
 
