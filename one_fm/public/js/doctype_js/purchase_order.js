@@ -8,6 +8,7 @@ frappe.ui.form.on('Purchase Order', {
 		// frm.set_df_property('quoted_delivery_date', 'hidden', (frm.doc.docstatus==1 && frappe.user.has_role("Purchase User"))?false:true);
 	},
 	refresh: function(frm) {
+
 		hide_subscription_section(frm);
 		set_field_property_for_documents(frm);
 		set_field_property_for_other_documents(frm);
@@ -22,11 +23,6 @@ frappe.ui.form.on('Purchase Order', {
 				}
 			}
 		});
-
-	},
-	onload: function(frm){
-		
-		display_approver(frm);
 
 	},
 
@@ -118,22 +114,5 @@ function set_schedule_date(frm) {
 			}
 		}
 		refresh_field("items");
-	}
-}
-
-var display_approver = (frm) => {
-	if (!frm.is_new() && frm.doc.workflow_state != "Draft"){
-		frappe.call({
-			method: "one_fm.purchase.utils.fetch_approver_note",
-			args: {
-				"doc": frm.doc
-			},
-		callback: function(r){
-			if (!r.exc && r.message){
-				frm.set_intro(__(r.message), 'green');
-			}
-		}
-		})
-		
 	}
 }

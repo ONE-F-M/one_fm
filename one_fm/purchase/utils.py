@@ -66,22 +66,6 @@ def set_po_approver(doc,ev):
     """
     if not doc.department_manager:
         doc.department_manager = get_approving_user(doc)
-    
-@frappe.whitelist()    
-def fetch_approver_note(doc):
-    doc = json.loads(doc)
-    workflow_state = doc.get("workflow_state")
-    approver = ""
-    if workflow_state == "Pending HOD Approval":
-        approver = doc.get("department_manager")
-        if approver:
-            employee_data = frappe.db.get_value("Employee" , {"user_id": approver}, ["employee_name", "employee_id"], as_dict=1)
-            if employee_data:
-                return f"Please be informed that {employee_data.employee_name} has been designated as the approver for this document, providing their employee ID, {employee_data.employee_id} and email, {approver} for reference."
-        
-    elif workflow_state in {"Pending Procurement Manager Approval", 'Pending Finance Manager'}:
-        return f" Due to the number of Approvers, please refer to the Additional Info tab in the More Info section for details regarding the approvers and their email addresses."
-       
 
 def get_users_with_role(role):
     """
@@ -96,20 +80,6 @@ def get_users_with_role(role):
     if required_users:
         return [i.parent for i in required_users]
     return []
-
-
-def update_approvers_table(doc, ev):
-    doc_before_save = doc.get_doc_before_save()
-    if doc_before_save:
-        if all((doc.workflow_state in {"Pending Procurement Manager Approval", "Pending Finance Manager"} , doc_before_save.workflow_state != doc.workflow_state)):
-            approvers = get_users_with_role("Purchase Manager") if doc.workflow_state == "Pending Procurement Manager Approval" else get_users_with_role('Finance Manager')
-            if approvers:
-                employee_data = frappe.db.get_list("Employee", {"user_id": ["IN", approvers]}, pluck="name")
-                doc.approvers = []
-                for obj in employee_data:
-                    doc.append("approvers", {"employee": obj})
-                doc.save(ignore_permissions=1)
-                frappe.db.commit()
 
 
 def on_update(doc,ev):
