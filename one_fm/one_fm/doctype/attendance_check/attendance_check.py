@@ -9,7 +9,7 @@ from frappe import _
 from frappe.desk.form.assign_to import add as add_assignment
 from frappe.utils import nowdate, add_to_date, cstr, add_days, today, format_date, now, get_url_to_form
 from one_fm.utils import (
-    production_domain, 
+    production_domain,
     fetch_attendance_manager_user_obj,
     get_approver
 )
@@ -35,22 +35,22 @@ class AttendanceCheck(Document):
 
             # check checkin logs
             checkins = frappe.db.sql(f"""
-                SELECT ec.name, ec.owner, ec.creation, ec.modified, ec.modified_by, 
-                    ec.docstatus, ec.idx, ec.employee, ec.employee_name, ec.log_type, 
-                    ec.late_entry, ec.early_exit, ec.time, ec.date, ec.skip_auto_attendance, 
-                    ec.shift_actual_start, ec.shift_actual_end, ec.shift_assignment, 
-                    ec.operations_shift, ec.shift_type, ec.roster_type, ec.operations_site, 
-                    ec.project, ec.company, ec.operations_role, ec.post_abbrv,ec.shift_permission, 
-                    ec.actual_time, 
+                SELECT ec.name, ec.owner, ec.creation, ec.modified, ec.modified_by,
+                    ec.docstatus, ec.idx, ec.employee, ec.employee_name, ec.log_type,
+                    ec.late_entry, ec.early_exit, ec.time, ec.date, ec.skip_auto_attendance,
+                    ec.shift_actual_start, ec.shift_actual_end, ec.shift_assignment,
+                    ec.operations_shift, ec.shift_type, ec.roster_type, ec.operations_site,
+                    ec.project, ec.company, ec.operations_role, ec.post_abbrv,ec.shift_permission,
+                    ec.actual_time,
                     MIN(CASE WHEN ec.log_type = 'IN' THEN ec.time END) AS earliest_time,
                     MAX(CASE WHEN ec.log_type = 'OUT' THEN ec.time END) AS latest_time,
-                    MIN(CASE WHEN ec.log_type = 'IN' THEN ec.name END) AS in_name, 
+                    MIN(CASE WHEN ec.log_type = 'IN' THEN ec.name END) AS in_name,
                     MAX(CASE WHEN ec.log_type = 'OUT' THEN ec.name END) AS out_name
-                FROM 
+                FROM
                     `tabEmployee Checkin` ec
-                WHERE 
+                WHERE
                     ec.shift_assignment="{self.shift_assignment}"
-                GROUP BY 
+                GROUP BY
                     ec.shift_assignment;
             """, as_dict=1)
             if checkins:
@@ -66,7 +66,7 @@ class AttendanceCheck(Document):
         """, as_dict=1)
         if attendance_request:
             self.attendance_request=attendance_request[0].name
-        
+
         # check shift permission
         shift_permission = frappe.db.get_value("Shift Permission", {
             "employee":self.employee, "date":self.date, "roster_type":self.roster_type, "docstatus":["!=", 0]},
@@ -81,11 +81,11 @@ class AttendanceCheck(Document):
             self.reports_to = employee.reports_to
         if employee.shift:
             shift_supervisor = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
-            self.shift_supervisor = shift_supervisor 
+            self.shift_supervisor = shift_supervisor
         if employee.site:
             site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
-            self.site_supervisor = site_supervisor              
-        
+            self.site_supervisor = site_supervisor
+
     def after_insert(self):
         """
             Assign document to supervisors
@@ -299,14 +299,14 @@ def create_attendance_check(attendance_date=None):
     if production_domain():
         if not attendance_date:
             attendance_date = add_days(today(), -1)
-            
+
         absentees = frappe.get_all("Attendance", filters={
             'docstatus':1,
             'status':'Absent',
-            'attendance_date':attendance_date}, 
+            'attendance_date':attendance_date},
             fields="*"
         )
-        
+
         attendance_by_timesheet = 0
 
         for count, i in enumerate(absentees):
@@ -328,13 +328,13 @@ def create_attendance_check(attendance_date=None):
                 if not "Attendance Check already exist for" in str(e):
                     frappe.log_error(message=frappe.get_traceback(), title="Attendance Check Creation")
             if count%10==0:
-                frappe.db.commit()    
+                frappe.db.commit()
         frappe.db.commit()
 
         # create for no shift but active shift based employees
         attendance_list = [i.employee for i in frappe.db.get_list("Attendance", {
             "attendance_date":attendance_date})]
-        
+
         no_shifts = frappe.db.get_list("Employee", {
             "shift_working":1,
             "status":"Active",
@@ -362,15 +362,16 @@ def create_attendance_check(attendance_date=None):
                 if count%10==0:
                     frappe.db.commit()
             frappe.db.commit()
-            
+
 
         no_timesheet = frappe.db.sql(f"""SELECT emp.employee FROM `tabEmployee` emp
                                     WHERE emp.attendance_by_timesheet = 1
-                                    AND emp.status ='Active'
+                                    AND emp.status = 'Active'
+                                    AND emp.date_of_joining <= '{attendance_date}'
                                     AND emp.employee_name != 'Test Employee'
                                     AND emp.name NOT IN (SELECT employee from `tabTimesheet` WHERE start_date='{attendance_date}')
                                     AND '{attendance_date}' NOT IN (SELECT holiday_date from `tabHoliday` h WHERE h.parent = emp.holiday_list AND h.holiday_date = '{attendance_date}')""", as_dict=1)
-        
+
         if no_timesheet:
             for count, i in enumerate(no_timesheet):
                 try:
@@ -387,7 +388,7 @@ def create_attendance_check(attendance_date=None):
                     if not "Attendance Check already exist for" in str(e):
                         frappe.log_error(message=frappe.get_traceback(), title="Attendance Check Creation")
                 if count%10==0:
-                    frappe.db.commit()    
+                    frappe.db.commit()
 
 def approve_attendance_check():
     attendance_checks = frappe.get_all("Attendance Check", filters={
