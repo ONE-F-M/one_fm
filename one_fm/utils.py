@@ -3278,7 +3278,7 @@ def get_current_shift(employee):
     """
     sql = f"""
         SELECT * FROM `tabShift Assignment`
-        WHERE employee="{employee}" AND status="Active" AND
+        WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
         ('{now()}' BETWEEN start_datetime AND end_datetime)
     """
     shift = frappe.db.sql(sql, as_dict=1)
@@ -3289,7 +3289,7 @@ def get_current_shift(employee):
         curtime_plus_1 = dt + timedelta(hours=1)
         sql = f"""
             SELECT * FROM `tabShift Assignment`
-            WHERE employee="{employee}" AND status="Active" AND
+            WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
             ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
         """
         shift = frappe.db.sql(sql, as_dict=1)
@@ -3299,7 +3299,7 @@ def get_current_shift(employee):
             curtime_plus_1 = dt + timedelta(hours=-1)
             sql = f"""
                 SELECT * FROM `tabShift Assignment`
-                WHERE employee="{employee}" AND status="Active" AND
+                WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
                 ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
             """
             shift = frappe.db.sql(sql, as_dict=1)
