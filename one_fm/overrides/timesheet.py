@@ -6,7 +6,7 @@ from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
 from frappe import _
 from one_fm.processor import sendemail
-from one_fm.utils import send_workflow_action_email, get_user_timezone
+from one_fm.utils import send_workflow_action_email
 
 
 class TimesheetOveride(Timesheet):
