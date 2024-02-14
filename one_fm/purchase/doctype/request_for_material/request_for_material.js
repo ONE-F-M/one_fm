@@ -76,6 +76,10 @@ frappe.ui.form.on('Request for Material', {
 				frm.set_df_property('type', 'options', "\nIndividual\nDepartment\nProject\nOnboarding");
 			}
 		}
+		if(frm.doc.workflow_state == "Approved" || frm.doc.workflow_state == "Rejected"){
+			frm.set_df_property('items', 'allow_on_submit', 0);
+			frm.set_df_property('items', 'read_only', 1);
+		}
 		if(frm.is_new()){
 			frappe.call({
 				doc: frm.doc,
