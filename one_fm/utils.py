@@ -1467,7 +1467,7 @@ def validate_job_applicant(doc, method):
     if doc.one_fm_number_of_kids and doc.one_fm_number_of_kids > 0:
         """This part is comparing the number of children with the listed children details in the table and ask user to add all childrens"""
         if doc.one_fm_number_of_kids != len(doc.one_fm_kids_details):
-            frappe.throw("Please List All Children in the Table.")
+            frappe.throw("Please List All Children in the Table.") 
 
 def set_erf_days_off_details(doc):
     pass
@@ -3407,3 +3407,7 @@ def get_standard_notification_template(description, doc_link):
     message_html += '</p>'
 
     return message_html
+
+@frappe.whitelist()
+def get_user_timezone():
+    return frappe.get_value("User", frappe.session.user, "time_zone")

@@ -44,8 +44,10 @@ frappe.ui.form.on('Request for Material', {
 		
 		erpnext.utils.add_item(frm);
 		
-		frm.set_value('requested_by', frappe.session.user);
-		
+		if(frm.is_new() && !frm.doc.requested_by){
+			frm.set_value('requested_by', frappe.session.user);
+		}
+
 		set_t_warehouse_hidden(frm);
 		// set schedule_date
 		set_schedule_date(frm);

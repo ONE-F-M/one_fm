@@ -48,7 +48,6 @@ export default {
           },
         })
         fetchMagicLink.fetch().then((data)=>{
-          console.log(data)
           if (Object.keys(data).length === 0){
             Swal.fire(
               'Error',
@@ -64,6 +63,7 @@ export default {
             this.religions = data.religions;
             this.education = data.education;
             this.civil_id_required = data.civil_id_required;
+
             // set upload fields
             if (data.civil_id_required){
               $('#civil_id_front').parent().show();
@@ -122,10 +122,12 @@ export default {
           reader.onload = function() {
             let result = reader.result;
             result = result.replace(/^data:image\/\w+;base64,/, "");
-            me.imageFiles[el.id]={data:result, name:el.files[0].name, type:el.files[0].type, size:el.files[0].size}
+            me.imageFiles[el.id]={data:result, name:el.files[0].name, type:el.files[0].type, size:el.files[0].size};
+
+              //upload file
+              me.upload()
           };
-        }
-        
+        }        
       }
     },
     // Process image upload
@@ -141,13 +143,12 @@ export default {
         document.querySelector('#cover-spin').style.display = 'block';
         me.imageFiles.reference_doctype = this.job_applicant.doctype;
         me.imageFiles.reference_docname = this.job_applicant.name;
-        console.log(me.imageFiles)
+
         let uploadImage = createResource({
         url: '/api/method/one_fm.www.job_applicant_magic_link.index.upload_image',
         params: me.imageFiles,
         method: 'POST',
         onSuccess(data) {
-          // console.log(data)
           if(data.passport || data.civil_id_front || data.civil_id_back){
             // update dom with mindee
             Swal.fire(
@@ -157,8 +158,8 @@ export default {
               'success'
             )
             me.loadContent();
-            document.querySelector('#cover-spin').style.display = 'none';
           }
+          document.querySelector('#cover-spin').style.display = 'none';
         },
       })
       uploadImage.fetch()
@@ -203,6 +204,7 @@ export default {
     },
     submitForm(e){
       let me = this;
+      me.upload();
       document.querySelectorAll('#personal-detail input:required').forEach(function(e) {
         if(!e.value){
           Swal.fire(
@@ -298,10 +300,9 @@ export default {
                         </ul>
                         <h5>Instructions:</h5>
                         <ol>
-                            <li><h6>1. Upload a picture/photo of the above listed documents if availabe.</h6></li>
-                            <li><h6>2. Click 'Upload Document' button.</h6></li>
-                            <li><h6>3. Cross check form if the information uploaded is correct/fill it properly.</h6></li>
-                            <li><h6>4. Click the checkbux before submit and click submit at the end of the page.</h6></li>
+                            <li><h6>1. Upload a picture/photo of the above listed documents if available.</h6></li>
+                            <li><h6>2. Cross check form if the information uploaded is correct/fill it properly.</h6></li>
+                            <li><h6>3. Click the checkbox before submit and click submit at the end of the page.</h6></li>
                         </ol>
                         <h6>NOTE: All fields in red (*) must be filled before submission and only images (JPG, JPEG, PNG) allowed.</h6>
                     </div>
@@ -341,11 +342,6 @@ export default {
                                 <div id="image_preview"></div>
                               </div>
                             </div>
-
-
-                            <div style="margin-top: 30px; display: flex; justify-content: end">
-                                <button class="btn btn-dark" type="button" href="json.json" value="submit" id="fileUpload" @click.prevent="upload">Upload Document</button>
-                            </div>
                         </form>
                       </div>
                     </section>
@@ -354,7 +350,7 @@ export default {
 
                 <div  class="m-auto p-auto">
                     <div>
-                        <section class="form-wrapper" id="finalForm" style="display:block;">
+                        <section class="form-wrapper" id="finalForm" style="display: block;">
                             <div class="message-block-head d-flex">
                             <div class="message-block-info p-1 h2 m-1">
                                     <p id="output_message" style="font-size: 22px;"></p>
@@ -385,26 +381,6 @@ export default {
                                             <input class="form-control input" type="text" id="one_fm_last_name" name="one_fm_last_name" v-model="job_applicant.one_fm_last_name" :onchange="putField" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                      <div class="form-group">
-                                          <label  class="form-label">First Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="one_fm_first_name_in_arabic" name="one_fm_first_name_in_arabic" v-model="job_applicant.one_fm_first_name_in_arabic" :onchange="putField">
-                                      </div>
-                                      <div class="form-group">
-                                          <label  class="form-label">Second Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="one_fm_second_name_in_arabic" name="one_fm_second_name_in_arabic" v-model="job_applicant.one_fm_second_name_in_arabic" :onchange="putField">
-                                      </div>
-                                      <div class="form-group">
-                                          <label  class="form-label">Third Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="one_fm_third_name_in_arabic" name="one_fm_third_name_in_arabic" v-model="job_applicant.one_fm_third_name_in_arabic" :onchange="putField">
-                                      </div>
-                                      <div class="form-group">
-                                          <label  class="form-label">Last Name(Arabic)</label>
-                                          <input class="form-control input" type="text" id="one_fm_last_name_in_arabic" name="one_fm_last_name_in_arabic" v-model="job_applicant.one_fm_last_name_in_arabic" :onchange="putField">
-                                      </div>
-                                    </div>
-                                    <!-- End name section -->
-                                    <!-- Gender, marital, DoB and Religion -->
                                     <div class="col-md-4">
                                       <div class="form-group">
                                           <label class="form-label text-danger" for="one_fm_gender">Gender *</label>
@@ -443,7 +419,7 @@ export default {
                                   <div class="row">
                                     <div class="col-md-4">
                                       <div class="form-group">
-                                          <label class="form-label text-danger" for="one_fm_educational_qualification">Highest Educational Qualificat *</label>
+                                          <label class="form-label text-danger" for="one_fm_educational_qualification">Highest Educational Qualification *</label>
                                           <select class="form-control input" id="one_fm_educational_qualification" name="one_fm_educational_qualification" 
                                             aria-placeholder="Select Your Highest Educational Qualification"  required=1 v-model="job_applicant.one_fm_educational_qualification" :onchange="putField">
                                             <option :value="ed" v-for="ed in education">{{ed}}</option>
@@ -469,6 +445,8 @@ export default {
                                               <option :value="nationality.nationality" v-for="nationality in nationalities">{{nationality.nationality}}</option>
                                           </select>
                                       </div>
+                                    </div>
+                                    <div class="col-md-4">
                                       <div class="form-group">
                                           <label class="form-label" for="one_fm_country_code">Country Dial Code</label>
                                           <input class="form-control input2" type="text" id="one_fm_country_code" name="one_fm_country_code" size="50" v-model="job_applicant.one_fm_country_code" :onchange="putField">
