@@ -560,8 +560,8 @@ def update_google_sheet_daily():
 	list_of_export = frappe.get_list("Google Sheet Data Export",{"enable_auto_update":1}, ['name'])
 
 	for e in list_of_export:
-		doc = frappe.get_doc("Google Sheet Data Export",e.name)
 		time.sleep(20)
+		doc = frappe.get_doc("Google Sheet Data Export",e.name)
 
 		frappe.enqueue(export_data, 
 			doctype= doc.reference_doctype,
@@ -573,7 +573,7 @@ def update_google_sheet_daily():
 			sheet_name= doc.sheet_name,
 			owner= doc.owner, 
 			client_id= doc.client_id,
-			is_async=True, queue="long", timeout=6000)
+			is_async=True, queue="long", timeout=9000)
 
 @frappe.whitelist()
 def get_client_id():
@@ -589,4 +589,39 @@ def remove_quotes(value):
 	if value.endswith('"'):
 		value = value[:-1]
 	return value
+
+def export_from_excel():
+	# '/private/files/Employee (25) - Sheet1.csv'
+	# Import libraries
+	import pandas as pd
+	from googleapiclient.discovery import build
+	from google.auth.transport.requests import Request
+
+	spreadsheet_id = "1DMAkvDKbLlka8ATxjZlOxUEsBUDlBlcRYJhyiYuETg8"
+	sheet_name = "Sheet2"
+	# Define Excel file path
+	excel_file = os.getcwd()+"/"+cstr(frappe.local.site) + "/private/files/Employee.xlsx"
+
+	# Read Excel data
+	data = pd.read_excel(excel_file)
+	headers = list(data.columns)
+	# data = data.values.tolist()
+	print(data.shape)
+	# Build Google Sheets API service
+	SERVICE_ACCOUNT_FILE = os.getcwd()+"/"+cstr(frappe.local.site) + frappe.local.conf.google_sheet
+	scopes = ["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+	creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
+	service = discovery.build('sheets', 'v4', credentials=creds)
+
+	# Define range based on Excel data dimensions
+	range_ = f"{sheet_name}!A1:{chr(65 + data.shape[1] - 1)}{data.shape[0] + 1}"
 	
+	body_data = {
+		'values': [headers] + data.values.tolist()
+	}
+
+	# Update the sheet with Excel data
+	request = service.spreadsheets().values().update(spreadsheetId=spreadsheet_id, range=range_, valueInputOption="USER_ENTERED", body=body_data)
+	response = request.execute()
+
+	print(f"Sheet updated with {response['updatedCells']:,} cells.")
