@@ -6,7 +6,7 @@ from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
 from frappe import _
 from one_fm.processor import sendemail
-from one_fm.utils import send_workflow_action_email
+from one_fm.utils import send_workflow_action_email, get_user_timezone
 
 
 class TimesheetOveride(Timesheet):
@@ -31,7 +31,17 @@ class TimesheetOveride(Timesheet):
         start_date = getdate(self.start_date)
         if start_date < get_datetime_in_timezone("Asia/Kuwait").date():
             frappe.throw(_("Please note that timesheets cannot be created for a previous date."))
-    
+
+    def before_save(self):
+        if not self.is_new():
+            self.set_dates()
+            date_in_ast = get_datetime_in_timezone("Asia/Kuwait").date()
+            # 1. Check if value of start_date is changed and it is before current date according to AST.
+            # 2. Check if value of end_date is changed and it is before current date according to AST.
+            # If any of the above criteria is fulfilled then throw an error. 
+            if (self.has_value_changed("start_date") and date_in_ast > self.get('start_date')) or (self.has_value_changed("end_date") and date_in_ast > self.get('end_date')):
+                frappe.throw(_("Please note that timesheets cannot be updated to a previous date."))
+
     def set_approver(self):
         if self.attendance_by_timesheet:
             self.approver = fetch_approver(self.employee)
