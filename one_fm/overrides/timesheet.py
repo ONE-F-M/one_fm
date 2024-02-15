@@ -31,7 +31,17 @@ class TimesheetOveride(Timesheet):
         start_date = getdate(self.start_date)
         if start_date < get_datetime_in_timezone("Asia/Kuwait").date():
             frappe.throw(_("Please note that timesheets cannot be created for a previous date."))
-    
+
+    def before_save(self):
+        if not self.is_new():
+            self.set_dates()
+            date_in_ast = get_datetime_in_timezone("Asia/Kuwait").date()
+            # 1. Check if value of start_date is changed and it is before current date according to AST.
+            # 2. Check if value of end_date is changed and it is before current date according to AST.
+            # If any of the above criteria is fulfilled then throw an error. 
+            if (self.has_value_changed("start_date") and date_in_ast > self.get('start_date')) or (self.has_value_changed("end_date") and date_in_ast > self.get('end_date')):
+                frappe.throw(_("Please note that timesheets cannot be updated to a previous date."))
+
     def set_approver(self):
         if self.attendance_by_timesheet:
             self.approver = fetch_approver(self.employee)

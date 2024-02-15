@@ -3407,7 +3407,3 @@ def get_standard_notification_template(description, doc_link):
     message_html += '</p>'
 
     return message_html
-
-@frappe.whitelist()
-def get_user_timezone():
-    return frappe.get_value("User", frappe.session.user, "time_zone")
