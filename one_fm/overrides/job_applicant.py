@@ -17,6 +17,7 @@ class JobApplicantOverride(JobApplicant):
 	def validate(self):
 		super(JobApplicantOverride, self).validate()
 		self.validate_transfer_reminder_date()
+		self.convert_name_to_title_case()
 
 
 	@frappe.whitelist()
@@ -52,6 +53,13 @@ class JobApplicantOverride(JobApplicant):
 			except Exception as e:
 				frappe.log_error(frappe.get_traceback(), "Error while validating date of local transfer in Job Applicant")
 				...
+
+	def convert_name_to_title_case(self):
+		name_fields = ['applicant_name', 'one_fm_first_name', 'one_fm_second_name', 'one_fm_third_name', 'one_fm_forth_name', 'one_fm_last_name']
+		for name_attr in name_fields:
+			current_name = getattr(self, name_attr, '')
+			if current_name is not None:
+				setattr(self, name_attr, current_name.title())
 
 
 

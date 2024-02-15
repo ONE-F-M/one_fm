@@ -8400,19 +8400,19 @@
   "value": "[\"basic_info\", \"naming_series\", \"salutation\", \"customer_name\", \"customer_name_in_arabic\", \"customer_type\", \"customer_group\", \"column_break0\", \"territory\", \"gender\", \"lead_name\", \"opportunity_name\", \"account_manager\", \"image\", \"website_image\", \"defaults_tab\", \"default_currency\", \"default_bank_account\", \"column_break_14\", \"default_price_list\", \"internal_customer_section\", \"is_internal_customer\", \"represents_company\", \"attachments\", \"civil_id\", \"article_of_assosciation\", \"license\", \"column_break_22\", \"authorized_signatory\", \"authorized_signatory_civil_id\", \"column_break_70\", \"companies\", \"more_info\", \"market_segment\", \"industry\", \"customer_pos_id\", \"website\", \"language\", \"column_break_45\", \"customer_details\", \"dashboard_tab\", \"contact_and_address_tab\", \"address_contacts\", \"address_html\", \"column_break1\", \"contact_html\", \"primary_address_and_contact_detail\", \"column_break_26\", \"customer_primary_address\", \"primary_address\", \"column_break_nwor\", \"customer_primary_contact\", \"mobile_no\", \"email_id\", \"loan_details_tab\", \"is_npa\", \"tax_tab\", \"taxation_section\", \"tax_id\", \"column_break_21\", \"tax_category\", \"tax_withholding_category\", \"accounting_tab\", \"credit_limit_section\", \"payment_terms\", \"credit_limits\", \"default_receivable_accounts\", \"accounts\", \"loyalty_points_tab\", \"loyalty_program\", \"column_break_54\", \"loyalty_program_tier\", \"sales_team_tab\", \"sales_team\", \"sales_team_section\", \"default_sales_partner\", \"column_break_66\", \"default_commission_rate\", \"settings_tab\", \"so_required\", \"dn_required\", \"column_break_53\", \"is_frozen\", \"disabled\", \"portal_users_tab\", \"portal_users\"]"
  },
  {
-  "default_value": null,
-  "doc_type": "Customer",
-  "docstatus": 0,
-  "doctype": "Property Setter",
-  "doctype_or_field": "DocField",
-  "field_name": "customer_type",
-  "is_system_generated": 0,
-  "modified": "2024-01-29 23:57:16.221078",
-  "module": "One Fm",
-  "name": "Customer-customer_type-options",
-  "property": "options",
-  "property_type": "Select",
-  "row_name": null,
-  "value": "Company\nIndividual\nProprietorship\nPartnership\nGovernment"
- }
+    "default_value": null,
+    "doc_type": "Customer",
+    "docstatus": 0,
+    "doctype": "Property Setter",
+    "doctype_or_field": "DocField",
+    "field_name": "customer_type",
+    "is_system_generated": 0,
+    "modified": "2024-02-12 16:22:19.320224",
+    "module": "One Fm",
+    "name": "Customer-customer_type-options",
+    "property": "options",
+    "property_type": "Select",
+    "row_name": null,
+    "value": "Company\nIndividual\nGovernment\nProprietorship\nPartnership"
+   }
 ]
