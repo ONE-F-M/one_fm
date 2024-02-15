@@ -702,7 +702,13 @@ scheduler_events = {
 		"0 * * * *":[ # Creates the missing checkin record per shift, runs every hour
 			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record",
 			"one_fm.api.tasks.notify_approver_about_pending_shift_request"
-		]
+		],
+		"25 0 * * *": [ # mark day attendance 11:15 pm
+			'one_fm.overrides.attendance.mark_day_attendance'
+		],
+		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
+			'one_fm.overrides.attendance.mark_night_attendance'
+		],
 	}
 }
 
