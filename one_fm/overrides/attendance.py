@@ -1509,16 +1509,16 @@ def mark_daily_attendance_stipulated(start_date, end_date):
         frappe.db.sql(query, values=[], as_dict=1)
         frappe.db.commit()
         # update employee checkin
-        frappe.enqueue(update_employee_checkin_with_attendance, attendance_dict=checkin_attendance_link, queue='long', timeout=6000)
+        frappe.enqueue(update_employee_checkin_with_attendance_stipulated, attendance_dict=checkin_attendance_link, queue='long', timeout=6000)
         # update day_off_ot
-        frappe.enqueue(update_day_off_ot, attendances=new_attendances, queue='long', timeout=6000)
+        frappe.enqueue(update_day_off_ot_stipulated, attendances=new_attendances, queue='long', timeout=6000)
         # remark missing
-        frappe.enqueue(remark_attendance, start_date=start_date, end_date=end_date, queue='long', timeout=6000)
+        frappe.enqueue(remark_attendance_stipulated, start_date=start_date, end_date=end_date, queue='long', timeout=6000)
     # except Exception as e:
     #     frappe.log_error(frappe.get_traceback(), "Attendance Marking")    
     
     
-def remark_attendance(start_date, end_date):
+def remark_attendance_stipulated(start_date, end_date):
     try:
         shift_assignments = frappe.db.get_list("Shift Assignment", filters={
             'start_date':start_date, 'end_date':end_date},
@@ -1536,13 +1536,13 @@ def remark_attendance(start_date, end_date):
         frappe.log_error(frappe.get_traceback(), 'Remark Attendance')
         
         
-def update_employee_checkin_with_attendance(attendance_dict):
+def update_employee_checkin_with_attendance_stipulated(attendance_dict):
     for k, v in attendance_dict.items():
         for i in v:
             frappe.db.set_value("Employee Checkin", i, 'attendance', k)
             
             
-def update_day_off_ot(attendances):
+def update_day_off_ot_stipulated(attendances):
     for i in attendances:
         att = frappe.get_doc("Attendance", i)
         if att.shift_assignment:
