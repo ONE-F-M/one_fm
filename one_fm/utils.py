@@ -1467,7 +1467,7 @@ def validate_job_applicant(doc, method):
     if doc.one_fm_number_of_kids and doc.one_fm_number_of_kids > 0:
         """This part is comparing the number of children with the listed children details in the table and ask user to add all childrens"""
         if doc.one_fm_number_of_kids != len(doc.one_fm_kids_details):
-            frappe.throw("Please List All Children in the Table.") 
+            frappe.throw("Please List All Children in the Table.")
 
 def set_erf_days_off_details(doc):
     pass
@@ -3042,31 +3042,48 @@ def has_super_user_role(user=None):
     return False
 
 def get_approver(employee):
-    """
-        Get document approver for employee by
-        reports_to, shift_approver, site_approver
-    """
+    '''
+        Method to get reports_to user of an employee with the priority
+        1. reports_to linked in the employee
+        2. If no reports_to linked in the employee, then supervisor linked in the Operation Shift(Linked in the employee)
+        3. If no shift linked in the employee or no supervisor linked in the shift,
+            then account_supervisor linked in the Operation Site(Linked in the employee)
+        4. If no Supervisor is set for the linked Operations Site,
+            then account_manager linked in the project field of the Employee site
+
+        args:
+            employee: name of Employee object
+
+        return: user of the reports to employee or False
+    '''
+
+    if not frappe.db.exists("Employee", {'name':employee}):
+        frappe.throw(f"Employee {employee} does not exists")
+
     employee_user = frappe.get_value("Employee", {"name": employee}, "user_id")
     if employee_user and has_super_user_role(employee_user):
         return employee
-    operations_site, operations_shift = '', ''
-    if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
-    emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
-    # Get for IT - ONEFM
-    if emp_data.department=='IT - ONEFM':
-         return emp_data.reports_to
 
-    if emp_data.shift:
-        operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
-    elif emp_data.site:
-        operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
-    elif emp_data.reports_to:
-        return emp_data.reports_to
-    if operations_site:return operations_site
-    if operations_shift:return operations_shift
-    if not (operations_shift and operations_site and operations_shift):
-        frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
+    employee_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
 
+    reports_to = False
+    if employee_data.reports_to:
+        reports_to = employee_data.reports_to
+    if not reports_to and employee_data.shift:
+        shift_supervisor = frappe.db.get_value('Operations Shift', employee_data.shift, 'supervisor')
+        if shift_supervisor:
+            reports_to = shift_supervisor
+    if not reports_to and employee_data.site:
+        site_supervisor = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
+        if site_supervisor:
+            reports_to = site_supervisor
+        if not reports_to:
+            project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
+            if project:
+                account_manager = frappe.db.get_value('Project', project, 'account_manager')
+                if account_manager:
+                    reports_to = account_manager
+    return reports_to
 
 def get_approver_for_many_employees(supervisor=None):
     """
