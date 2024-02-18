@@ -329,7 +329,7 @@ def update_job_applicant():
         if data.field=='one_fm_last_name':
             frappe.db.set_value(data.doctype, data.docname, 'applicant_name', frappe.db.get_value(data.doctype, data.docname, 'one_fm_first_name') + ' ' + data.value)
         if data.field=='one_fm_first_name':
-            frappe.db.set_value(data.doctype, data.docname, 'applicant_name', data.value+' '+frappe.db.get_value(data.doctype, data.docname, 'one_fm_first_name'))
+            frappe.db.set_value(data.doctype, data.docname, 'applicant_name', data.value+' '+frappe.db.get_value(data.doctype, data.docname, 'one_fm_last_name'))
     except Exception as e:
         return {'error':str(e)}
 
