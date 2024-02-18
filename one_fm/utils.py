@@ -1446,7 +1446,10 @@ def validate_job_applicant(doc, method):
     # update night shift
     if doc.one_fm_night_shift:
         frappe.db.set_value("Job Applicant", doc.name, "one_fm_night_shift", doc.one_fm_night_shift)
-    doc.applicant_name = doc.one_fm_first_name + " " +doc.one_fm_last_name or ''
+    
+    # Because first name and last name are mandatory so merge both to generate applicant name
+    doc.applicant_name = doc.one_fm_first_name + " " + doc.one_fm_last_name
+    
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     # validate_pam_file_number_and_pam_designation(doc, method)
