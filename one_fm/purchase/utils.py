@@ -67,6 +67,16 @@ def set_po_approver(doc,ev):
     if not doc.department_manager:
         doc.department_manager = get_approving_user(doc)
 
+def validate_purchase_item_uom(doc,method):
+    check_list = []
+    for d in doc.get("items"):
+        if d.qty:
+            default_qty = frappe.get_value("UOM Conversion Detail", {'parent':d.item_code, 'uom':d.uom}, ['conversion_factor'])
+            if d.qty != default_qty:
+                frappe.throw(
+                    _("Conversion factor for default Unit of Measure must be {0} in row {1}").format(default_qty, d.idx)
+                )
+
 def get_users_with_role(role):
     """
     Get the users with the role
