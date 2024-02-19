@@ -3066,7 +3066,7 @@ def get_approver(employee):
 
     employee_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
 
-    reports_to = False
+    reports_to = None
     if employee_data.reports_to:
         reports_to = employee_data.reports_to
     if not reports_to and employee_data.shift:

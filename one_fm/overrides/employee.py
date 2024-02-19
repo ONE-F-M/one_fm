@@ -114,7 +114,6 @@ class EmployeeOverride(EmployeeMaster):
         approver = get_approver(self.name)
         if approver:
             return frappe.db.get_value('Employee', approver, 'user_id')
-        return False
 
     def update_subcontract_onboard(self):
         subcontract_onboard = frappe.db.exists("Onboard Subcontract Employee", {"employee": self.name, "enrolled": ['!=', '1']})
