@@ -4,13 +4,15 @@ import frappe
 from frappe.utils import getdate, add_days, get_url_to_form, get_url
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import remove_user_permission
+from one_fm.api.api import  push_notification_rest_api_for_checkin
+from one_fm.api.tasks import send_notification
 from hrms.overrides.employee_master import *
 from one_fm.hiring.utils import (
     employee_after_insert, employee_before_insert, set_employee_name,
     employee_validate_attendance_by_timesheet, set_mandatory_feilds_in_employee_for_Kuwaiti,
     is_subcontract_employee
 )
-from one_fm.processor import sendemail
+from one_fm.processor import sendemail,send_whatsapp
 from one_fm.utils import get_domain, get_standard_notification_template, get_approver
 from six import string_types
 from frappe import _
@@ -95,20 +97,55 @@ class EmployeeOverride(EmployeeMaster):
         self.update_subcontract_onboard()
         self.notify_attendance_manager_on_status_change()
         self.inform_employee_id_update()
+        self.notify_employee_id_update()
+
 
     def inform_employee_id_update(self):
-        if self.has_value_changed('employee_id'):
-            reports_to = self.get_reports_to_user()
-            subject = f"Employee {self.name} employee id changed"
-            description = '''
-                The Employee ID for {{employee_name}} has been updated to {{employee_id}}.
-                Kindly ensure that the Employee is aware of this change so that they can continue to log in
-            '''
-            doc_link = "<p><a href='{0}'>Link to Employee Record</a></p>".format(get_url(self.get_url()))
-            context = self.as_dict()
-            context['message_heading'] = ''
-            msg = frappe.render_template(get_standard_notification_template(description, doc_link), context)
-            sendemail(recipients=[reports_to], subject=subject, content=msg)
+        try:
+            if self.has_value_changed('employee_id'):
+                reports_to = self.get_reports_to_user()
+                subject = f"Employee {self.name} employee id changed"
+                description = '''
+                    The Employee ID for {{employee_name}} has been updated to {{employee_id}}.
+                    Kindly ensure that the Employee is aware of this change so that they can continue to log in
+                '''
+                doc_link = "<p><a href='{0}'>Link to Employee Record</a></p>".format(get_url(self.get_url()))
+                context = self.as_dict()
+                recipients = get_hr_generalists()
+                recipients.append(reports_to)
+                context['message_heading'] = ''
+                msg = frappe.render_template(get_standard_notification_template(description, doc_link), context)
+                # sendemail(recipients=[reports_to], subject=subject, content=msg)
+                send_notification(title=subject,subject=subject,message=msg,category="Alert",recipients=recipients)
+                emp_id = frappe.get_value("Employee",{'user_id':reports_to})
+                if emp_id:
+                    msg = f"Employee ID for {context.employee_name} has been updated to {context.employee_id}."
+                    push_notification_rest_api_for_checkin(employee_id=emp_id,title=subject,body=msg,checkin=False,arriveLate=False,checkout=False)
+        except:
+            frappe.log_error(title = "Error Notifying Manager",message = frappe.get_traceback())
+            frappe.msgprint("Error Notifying Manager, Please check Error Log for Details")
+        
+    def notify_employee_id_update(self):
+        try:
+            if self.has_value_changed('employee_id'):
+                context = self.as_dict()
+                if self.prefered_contact_email == "Company Email":
+                    subject = f"Your  Employee ID changed"
+                    description = f'''
+                        Dear {self.employee_name},
+                        Your residency registration process has been completed and your employee id has been update from {self.get_doc_before_save().employee_id}to {self.employee_id}
+                    '''
+                    doc_link = "<p><a href='{0}'>Link to Employee Record</a></p>".format(get_url(self.get_url()))
+                    context['message_heading'] = ''
+                    msg = frappe.render_template(get_standard_notification_template(description, doc_link), context)
+                    # sendemail(recipients=[self.user_id], subject=subject, content=msg)
+                    send_notification(title=subject,subject=subject,message=msg,category="Alert",recipients=[self.user_id])
+                
+                push_message = f"Dear {context.employee_name}, Your residency registration process has been completed and your employee ID has been updated from {self.get_doc_before_save().employee_id} to {self.employee_id}."
+                push_notification_rest_api_for_checkin(employee_id=self.name,title=subject,body=push_message,checkin=False,arriveLate=False,checkout=False)
+        except:
+            frappe.log_error(title = "Error Notifying Employee",message = frappe.get_traceback())
+            frappe.msgprint("Error Notifying Employee, Please check Error Log for Details")
 
     def get_reports_to_user(self):
         approver = get_approver(self.name)
@@ -162,7 +199,11 @@ def is_employee_master(user:str) -> int:
     return can_edit
 
 
-
+def get_hr_generalists():
+    users = frappe.get_all("User",{'role_profile_name':"HR Generalist"})
+    if users:
+        return [i.name for i in users]
+    return []
 
 @frappe.whitelist()
 def get_employee_id_based_on_residency(employee_id, residency, employee=False, employment_type=False):
