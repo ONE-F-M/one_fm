@@ -1,0 +1,217 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-02-19 12:20:46.619735",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "shift_type",
+  "site",
+  "project",
+  "status",
+  "shift_classification",
+  "site_location",
+  "employee_schedule",
+  "column_break_rwng",
+  "company",
+  "start_date",
+  "end_date",
+  "start_datetime",
+  "end_datetime",
+  "shift_request",
+  "department",
+  "shift",
+  "operations_role",
+  "post_abbreviation",
+  "roster_type",
+  "amended_from",
+  "site_request_section",
+  "check_in_site",
+  "column_break_ndov",
+  "check_out_site",
+  "post_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name"
+  },
+  {
+   "fieldname": "shift_type",
+   "fieldtype": "Link",
+   "label": "Shift Type",
+   "options": "Shift Type"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nPending Check"
+  },
+  {
+   "fieldname": "shift_classification",
+   "fieldtype": "Data",
+   "label": "Shift Classification"
+  },
+  {
+   "fieldname": "site_location",
+   "fieldtype": "Link",
+   "label": "Site Location",
+   "options": "Location"
+  },
+  {
+   "fieldname": "employee_schedule",
+   "fieldtype": "Link",
+   "label": "Employee Schedule",
+   "options": "Employee Schedule"
+  },
+  {
+   "fieldname": "column_break_rwng",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Start Date"
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "End Date"
+  },
+  {
+   "fieldname": "start_datetime",
+   "fieldtype": "Datetime",
+   "label": "Start Datetime"
+  },
+  {
+   "fieldname": "end_datetime",
+   "fieldtype": "Datetime",
+   "label": "end_datetime"
+  },
+  {
+   "fieldname": "shift_request",
+   "fieldtype": "Data",
+   "label": "Shift Request"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Link",
+   "label": "Shift",
+   "options": "Operations Shift"
+  },
+  {
+   "fieldname": "operations_role",
+   "fieldtype": "Link",
+   "label": "Operations Role",
+   "options": "Operations Role"
+  },
+  {
+   "fieldname": "post_abbreviation",
+   "fieldtype": "Data",
+   "label": "Post Abbreviation"
+  },
+  {
+   "fieldname": "roster_type",
+   "fieldtype": "Select",
+   "label": "Roster Type",
+   "options": "\nBasic\nOver-Time"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Shift Assignment Checker",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "site_request_section",
+   "fieldtype": "Section Break",
+   "label": "Site Request"
+  },
+  {
+   "fieldname": "check_in_site",
+   "fieldtype": "Link",
+   "label": "Check In Site",
+   "options": "Location"
+  },
+  {
+   "fieldname": "column_break_ndov",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "check_out_site",
+   "fieldtype": "Link",
+   "label": "Check Out Site",
+   "options": "Location"
+  },
+  {
+   "fieldname": "post_type",
+   "fieldtype": "Link",
+   "label": "Post Type",
+   "options": "Operations Role"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2024-02-19 12:34:17.348668",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Shift Assignment Checker",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
