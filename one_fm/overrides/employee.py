@@ -129,8 +129,9 @@ class EmployeeOverride(EmployeeMaster):
         try:
             if self.has_value_changed('employee_id'):
                 context = self.as_dict()
+                subject = f"Your  Employee ID changed"
                 if self.prefered_contact_email == "Company Email":
-                    subject = f"Your  Employee ID changed"
+                    
                     description = f'''
                         Dear {self.employee_name},
                         Your residency registration process has been completed and your employee id has been update from {self.get_doc_before_save().employee_id}to {self.employee_id}
