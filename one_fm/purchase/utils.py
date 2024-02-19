@@ -52,8 +52,14 @@ def get_approving_user(doc):
     """
         Fetch the line manager of the user that created the request for material
     """
+    name = ""
     if doc.get('request_for_material'):
-        return frappe.get_value("Request for Material", doc.get('request_for_material'), 'request_for_material_approver')
+        name = doc.get('request_for_material')
+
+    elif doc.get("one_fm_request_for_purchase"):
+        name = frappe.db.get_value("Request for Purchase", doc.get("one_fm_request_for_purchase"), "request_for_material")
+
+    return frappe.db.get_value("Request for Material", name, 'request_for_material_approver')
 
 def set_po_approver(doc,ev):
     """
@@ -64,8 +70,8 @@ def set_po_approver(doc,ev):
     Args:
         doc (doctype): valid doctype
     """
-    if not doc.department_manager:
-        doc.department_manager = get_approving_user(doc)
+    if not doc.custom_purchase_order_approver:
+        doc.custom_purchase_order_approver = get_approving_user(doc)
 
 def get_users_with_role(role):
     """
@@ -85,10 +91,10 @@ def get_users_with_role(role):
 def on_update(doc,ev):
     approvers = False
     # "Send workflow action emails to various employees based on the value of the workflow state field"
-    if doc.workflow_state == 'Pending HOD Approval':
+    if doc.workflow_state == 'Pending Approver':
         approvers = [doc.department_manager]
 
-    elif doc.workflow_state == 'Pending Procurement Manager Approval':
+    elif doc.workflow_state == 'Pending Purchase Manager':
         #Get all the employees with purchase manager role
         approvers = get_users_with_role("Purchase Manager")
 

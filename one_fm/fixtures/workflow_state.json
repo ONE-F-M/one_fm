@@ -3,6 +3,24 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
+  "modified": "2024-02-18 20:16:27.544291",
+  "name": "Pending Approver",
+  "style": "",
+  "workflow_state_name": "Pending Approver"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2024-02-18 20:18:09.415691",
+  "name": "Pending Purchase Manager",
+  "style": "",
+  "workflow_state_name": "Pending Purchase Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
   "modified": "2023-12-01 22:33:14.456856",
   "name": "Return",
   "style": "",
