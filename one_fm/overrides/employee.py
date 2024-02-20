@@ -142,7 +142,7 @@ class EmployeeOverride(EmployeeMaster):
                     # sendemail(recipients=[self.user_id], subject=subject, content=msg)
                     send_notification(title=subject,subject=subject,message=msg,category="Alert",recipients=[self.user_id])
                 
-                push_message = f"Dear {context.employee_name}, Your residency registration process has been completed and your employee ID has been updated from {self.get_doc_before_save().employee_id} to {self.employee_id}."
+                push_message = f"Dear {context.first_name}, Your residency registration process has been completed and your employee ID has been updated  to {self.employee_id}."
                 push_notification_rest_api_for_checkin(employee_id=self.name,title=subject,body=push_message,checkin=False,arriveLate=False,checkout=False)
         except:
             frappe.log_error(title = "Error Notifying Employee",message = frappe.get_traceback())
