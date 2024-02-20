@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "HR-SHACH-.YY.-.MM.-.#####",
  "creation": "2024-02-19 12:20:46.619735",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -14,6 +15,8 @@
   "shift_classification",
   "site_location",
   "employee_schedule",
+  "attendance_manager",
+  "shift_assignment_created",
   "column_break_rwng",
   "company",
   "start_date",
@@ -186,15 +189,30 @@
    "fieldtype": "Link",
    "label": "Post Type",
    "options": "Operations Role"
+  },
+  {
+   "fieldname": "attendance_manager",
+   "fieldtype": "Link",
+   "label": "Attendance Manager",
+   "options": "User"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "shift_assignment_created",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Shift Assignment Created"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-19 12:34:17.348668",
+ "modified": "2024-02-20 14:28:36.976906",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Shift Assignment Checker",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
   {
