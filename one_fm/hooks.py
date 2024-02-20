@@ -220,7 +220,7 @@ doc_events = {
 			"one_fm.purchase.utils.set_po_approver",
 			"one_fm.overrides.purchase_order.validate_purchase_uom"
 		],
-		'on_update':"one_fm.purchase.utils.on_update",
+		# 'on_update':"one_fm.purchase.utils.on_update",
 		"on_update_after_submit": "one_fm.purchase.utils.set_po_letter_head"
 	},
 	"Leave Application": {
