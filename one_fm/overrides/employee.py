@@ -134,7 +134,7 @@ class EmployeeOverride(EmployeeMaster):
                     
                     description = f'''
                         Dear {self.employee_name},
-                        Your residency registration process has been completed and your employee id has been update from {self.get_doc_before_save().employee_id}to {self.employee_id}
+                        Your residency registration process has been completed and your employee id has been update from {self.get_doc_before_save().employee_id} to {self.employee_id}
                     '''
                     doc_link = "<p><a href='{0}'>Link to Employee Record</a></p>".format(get_url(self.get_url()))
                     context['message_heading'] = ''
@@ -144,6 +144,13 @@ class EmployeeOverride(EmployeeMaster):
                 
                 push_message = f"Dear {context.first_name}, Your residency registration process has been completed and your employee ID has been updated  to {self.employee_id}."
                 push_notification_rest_api_for_checkin(employee_id=self.name,title=subject,body=push_message,checkin=False,arriveLate=False,checkout=False)
+                if self.cell_number:
+                    if '(' in self.cell_number or ')' in self.cell_number or '+' in self.cell_number:
+                        cell_number = "".join(i for i in self.cell_number if i.isdigit())
+                    else:
+                        cell_number = self.cell_number
+                whatsapp_message = f"Dear {context.first_name}, Your residency registration process has been completed and your employee ID has been updated from {self.get_doc_before_save().employee_id} to {self.employee_id}.",
+                send_whatsapp(sender_id=cell_number,body = whatsapp_message)
         except:
             frappe.log_error(title = "Error Notifying Employee",message = frappe.get_traceback())
             frappe.msgprint("Error Notifying Employee, Please check Error Log for Details")
