@@ -4,14 +4,16 @@ import frappe
 from frappe.utils import getdate, add_days, get_url_to_form, get_url
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import remove_user_permission
+from one_fm.api.api import  push_notification_rest_api_for_checkin
+from one_fm.api.tasks import send_notification
 from hrms.overrides.employee_master import *
 from one_fm.hiring.utils import (
     employee_after_insert, employee_before_insert, set_employee_name,
     employee_validate_attendance_by_timesheet, set_mandatory_feilds_in_employee_for_Kuwaiti,
     is_subcontract_employee
 )
-from one_fm.processor import sendemail
-from one_fm.utils import get_domain, get_standard_notification_template
+from one_fm.processor import sendemail,send_whatsapp
+from one_fm.utils import get_domain, get_standard_notification_template, get_approver
 from six import string_types
 from frappe import _
 
@@ -95,23 +97,61 @@ class EmployeeOverride(EmployeeMaster):
         self.update_subcontract_onboard()
         self.notify_attendance_manager_on_status_change()
         self.inform_employee_id_update()
+        self.notify_employee_id_update()
+
 
     def inform_employee_id_update(self):
-        if self.has_value_changed('employee_id'):
-            reports_to = self.get_reports_to_user()
-            subject = f"Employee {self.name} employee id changed"
-            description = '''
-                The Employee ID for {{employee_name}} has been updated to {{employee_id}}.
-                Kindly ensure that the Employee is aware of this change so that they can continue to log in
-            '''
-            doc_link = "<p><a href='{0}'>Link to Employee Record</a></p>".format(get_url(self.get_url()))
-            context = self.as_dict()
-            context['message_heading'] = ''
-            msg = frappe.render_template(get_standard_notification_template(description, doc_link), context)
-            sendemail(recipients=[reports_to], subject=subject, content=msg)
+        try:
+            if self.has_value_changed('employee_id'):
+                reports_to = self.get_reports_to_user()
+                subject = f"Employee {self.name} employee id changed"
+                description = '''
+                    The Employee ID for {{employee_name}} has been updated to {{employee_id}}.
+                    Kindly ensure that the Employee is aware of this change so that they can continue to log in
+                '''
+                doc_link = "<p><a href='{0}'>Link to Employee Record</a></p>".format(get_url(self.get_url()))
+                context = self.as_dict()
+                recipients = get_hr_generalists()
+                recipients.append(reports_to)
+                context['message_heading'] = ''
+                msg = frappe.render_template(get_standard_notification_template(description, doc_link), context)
+                # sendemail(recipients=[reports_to], subject=subject, content=msg)
+                send_notification(title=subject,subject=subject,message=msg,category="Alert",recipients=recipients)
+                emp_id = frappe.get_value("Employee",{'user_id':reports_to})
+                if emp_id:
+                    msg = f"Employee ID for {context.employee_name} has been updated to {context.employee_id}."
+                    push_notification_rest_api_for_checkin(employee_id=emp_id,title=subject,body=msg,checkin=False,arriveLate=False,checkout=False)
+        except:
+            frappe.log_error(title = "Error Notifying Manager",message = frappe.get_traceback())
+            frappe.msgprint("Error Notifying Manager, Please check Error Log for Details")
+        
+    def notify_employee_id_update(self):
+        try:
+            if self.has_value_changed('employee_id'):
+                context = self.as_dict()
+                subject = f"Your  Employee ID changed"
+                if self.prefered_contact_email == "Company Email":
+                    
+                    description = f'''
+                        Dear {self.employee_name},
+                        Your residency registration process has been completed and your employee id has been update from {self.get_doc_before_save().employee_id}to {self.employee_id}
+                    '''
+                    doc_link = "<p><a href='{0}'>Link to Employee Record</a></p>".format(get_url(self.get_url()))
+                    context['message_heading'] = ''
+                    msg = frappe.render_template(get_standard_notification_template(description, doc_link), context)
+                    # sendemail(recipients=[self.user_id], subject=subject, content=msg)
+                    send_notification(title=subject,subject=subject,message=msg,category="Alert",recipients=[self.user_id])
+                
+                push_message = f"Dear {context.first_name}, Your residency registration process has been completed and your employee ID has been updated  to {self.employee_id}."
+                push_notification_rest_api_for_checkin(employee_id=self.name,title=subject,body=push_message,checkin=False,arriveLate=False,checkout=False)
+        except:
+            frappe.log_error(title = "Error Notifying Employee",message = frappe.get_traceback())
+            frappe.msgprint("Error Notifying Employee, Please check Error Log for Details")
 
     def get_reports_to_user(self):
-        return get_employee_reports_to_user(self)
+        approver = get_approver(self.name)
+        if approver:
+            return frappe.db.get_value('Employee', approver, 'user_id')
 
     def update_subcontract_onboard(self):
         subcontract_onboard = frappe.db.exists("Onboard Subcontract Employee", {"employee": self.name, "enrolled": ['!=', '1']})
@@ -160,7 +200,11 @@ def is_employee_master(user:str) -> int:
     return can_edit
 
 
-
+def get_hr_generalists():
+    users = frappe.get_all("User",{'role_profile_name':"HR Generalist"})
+    if users:
+        return [i.name for i in users]
+    return []
 
 @frappe.whitelist()
 def get_employee_id_based_on_residency(employee_id, residency, employee=False, employment_type=False):
@@ -308,42 +352,3 @@ class NotifyAttendanceManagerOnStatusChange:
                 sendemail(recipients=the_recipient, subject=title, content=msg)
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Error while sending mail on status change(Employee)")
-
-@frappe.whitelist()
-def get_employee_reports_to_user(employee):
-    '''
-        Method to get reports_to user of an employee with the priority
-        1. reports_to linked in the employee
-        2. If no reports_to linked in the employee, then supervisor linked in the Operation Shift(Linked in the employee)
-        3. If no shift linked in the employee or no supervisor linked in the shift,
-            then account_supervisor linked in the Operation Site(Linked in the employee)
-        4. If no Supervisor is set for the linked Operations Site,
-            then account_manager linked in the project field of the Employee site
-
-        args:
-            employee: object of Employee
-
-        return: user of the reports to employee or False
-    '''
-    reports_to = False
-    if employee.reports_to:
-        reports_to = employee.reports_to
-    if not reports_to and employee.shift:
-        shift_supervisor = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
-        if shift_supervisor:
-            reports_to = shift_supervisor
-    if not reports_to and employee.site:
-        site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
-        if site_supervisor:
-            reports_to = site_supervisor
-        if not reports_to:
-            project = frappe.db.get_value('Operations Site', employee.site, 'project')
-            if project:
-                account_manager = frappe.db.get_value('Project', project, 'account_manager')
-                if account_manager:
-                    reports_to = account_manager
-    if reports_to:
-        reports_to_user = frappe.db.get_value('Employee', reports_to, 'user_id')
-        if reports_to_user:
-            return reports_to_user
-    return False

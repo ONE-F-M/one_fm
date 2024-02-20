@@ -7,11 +7,19 @@ frappe.ui.form.on('Purchase Order', {
 		}
 		// frm.set_df_property('quoted_delivery_date', 'hidden', (frm.doc.docstatus==1 && frappe.user.has_role("Purchase User"))?false:true);
 	},
-	refresh: function(frm) {
-
+	refresh: function(frm, cdt, cdn) {
 		hide_subscription_section(frm);
 		set_field_property_for_documents(frm);
 		set_field_property_for_other_documents(frm);
+
+		// Update filter UOM in item lines by UOM Conversion Detail set in the item
+		frm.set_query("uom", "items", function(frm, cdt, cdn) {
+			var child = locals[cdt][cdn];
+			return {
+				query: "one_fm.overrides.purchase_order.filter_purchase_uoms",
+				filters: {'item_code': child.item_code}
+			}
+		});
 	},
 	onload_post_render: function(frm){
 		frappe.call({
