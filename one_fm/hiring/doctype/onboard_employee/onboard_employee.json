@@ -76,6 +76,9 @@
   "visa_type",
   "civil_id",
   "cid_expire",
+  "column_break_bkfj",
+  "date_of_entry",
+  "visa_centralized_number",
   "job_offer_details_section",
   "salary_structure",
   "job_offer_total_salary",
@@ -1541,12 +1544,26 @@
    "fieldtype": "Data",
    "label": "Last Name in Arabic",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_bkfj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "date_of_entry",
+   "fieldtype": "Date",
+   "label": "Date of Entry"
+  },
+  {
+   "fieldname": "visa_centralized_number",
+   "fieldtype": "Data",
+   "label": "Visa Centralized Number"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-13 17:53:17.999967",
+ "modified": "2024-02-20 15:35:09.867842",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
