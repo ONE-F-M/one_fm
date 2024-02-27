@@ -71,4 +71,5 @@ one_fm.patches.v14_0.update_timesheet_status
 one_fm.patches.v14_0.add_super_user_role
 one_fm.patches.v15_0.split_arabic_name_to_first_and_last_name
 one_fm.patches.v15_0.delete_duplicate_attendance
+one_fm.patches.v15_0.update_department_in_goal
 
