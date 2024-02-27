@@ -216,8 +216,11 @@ doc_events = {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po",
-		"validate":"one_fm.purchase.utils.set_po_approver",
-		'on_update':"one_fm.purchase.utils.on_update",
+		"validate":[
+			"one_fm.purchase.utils.set_po_approver",
+			"one_fm.overrides.purchase_order.validate_purchase_uom"
+		],
+		# 'on_update':"one_fm.purchase.utils.on_update",
 		"on_update_after_submit": "one_fm.purchase.utils.set_po_letter_head"
 	},
 	"Leave Application": {
@@ -246,8 +249,7 @@ doc_events = {
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
 		"onload": "one_fm.utils.validate_pam_file_number_and_pam_designation",
-		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
-		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
+		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -381,7 +383,8 @@ doc_events = {
 	"Shift Request":{
 		"before_save":[
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
-			"one_fm.utils.send_shift_request_mail"
+			"one_fm.utils.send_shift_request_mail",
+			"one_fm.api.doc_methods.shift_request.validate_from_date"
 		],
 		# "on_update_after_submit":[
 			# "one_fm.api.doc_methods.shift_request.on_update_after_submit",
@@ -531,6 +534,7 @@ scheduler_events = {
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
 		'one_fm.utils.send_gp_letter_reminder',
         "one_fm.overrides.attendance.run_attendance_marking_hourly",
+		"one_fm.api.tasks.validate_shift_assignment"
 	],
 
 	"weekly": [
@@ -767,7 +771,8 @@ fixtures = [
 		"filters": [["name", "in",
 			[
 				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
-				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request"
+				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request",
+				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action"
 			]
 		]]
 	},

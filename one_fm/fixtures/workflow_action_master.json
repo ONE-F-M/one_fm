@@ -2,6 +2,41 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2023-11-28 12:22:20.644583",
+  "name": "Strat Onboarding",
+  "workflow_action_name": "Strat Onboarding"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2024-02-18 20:20:46.637951",
+  "name": "Return To Draft",
+  "workflow_action_name": "Return To Draft"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2024-02-18 20:23:55.863757",
+  "name": "Return To Pending Purchase Order Approver",
+  "workflow_action_name": "Return To Pending Purchase Order Approver"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2024-02-18 20:30:23.692128",
+  "name": "Return To Pending Purchase Manager",
+  "workflow_action_name": "Return To Pending Purchase Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2024-02-18 20:34:02.453105",
+  "name": "Return To Pending Approver",
+  "workflow_action_name": "Return To Pending Approver"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2023-07-20 12:20:02.155489",
   "name": "Submit to Recruitment Manager",
   "workflow_action_name": "Submit to Recruitment Manager"
