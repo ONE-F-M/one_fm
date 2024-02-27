@@ -12,7 +12,8 @@
   "employee",
   "column_break_ecn7a",
   "employee_name",
-  "column_break_hppoh",
+  "employee_user",
+  "column_break_pwlz",
   "department",
   "process_section",
   "process_name",
@@ -83,6 +84,7 @@
    "reqd": 1
   },
   {
+   "description": "Set number of hours take for the task in the frequency",
    "fieldname": "hours_per_frequency",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -102,10 +104,6 @@
    "fieldtype": "Data",
    "label": "Employee Name",
    "read_only": 1
-  },
-  {
-   "fieldname": "column_break_hppoh",
-   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "employee.department",
@@ -254,11 +252,24 @@
    "fieldname": "start_date",
    "fieldtype": "Date",
    "label": "Start Date"
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fieldname": "employee_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Employee User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_pwlz",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-05-30 10:34:43.472561",
+ "modified": "2024-02-18 10:04:17.560326",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Routine Task",

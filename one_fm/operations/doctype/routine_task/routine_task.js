@@ -37,7 +37,7 @@ var remove_task_and_auto_repeat = function(frm) {
 };
 
 var set_task_and_auto_repeat = function(frm) {
-	if (!frm.doc.task_reference && !frm.doc.auto_repeat_reference){
+	if (!frm.doc.task_reference && !frm.doc.auto_repeat_reference && !frm.doc.is_erp_process){
 		frm.add_custom_button(__("Set Task and Auto Repeat"), function() {
 			if(frm.is_dirty()){
 				frappe.throw(__('Please Save the Document and Continue .!'))
