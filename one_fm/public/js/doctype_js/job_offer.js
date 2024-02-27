@@ -129,6 +129,9 @@ frappe.ui.form.on('Job Offer', {
   employee_grade: function(frm) {
     set_filters(frm);
   },
+  designation: function(frm) {
+    set_offer_term_templates(frm)
+  },
   offer_term_templates: function(frm){
     if (frm.doc.offer_term_templates){
       frappe.call({
@@ -145,7 +148,7 @@ frappe.ui.form.on('Job Offer', {
         }
       });
     }
-  } 
+  },
 });
 
 var set_filters = function(frm) {
@@ -390,6 +393,15 @@ const set_default_terms_and_conditions = (frm) => {
       frm.refresh_field("select_terms")
     }
   });
+}
+
+const set_offer_term_templates = (frm) => {
+  frappe.db.get_value('Job Offer Templates',{'name':frm.doc.designation},'name', (response) => {
+    if(response.name) {
+      frm.set_value('offer_term_templates', response.name)
+      frm.refresh_field('offer_term_templates')
+    }
+  })
 }
 
 
