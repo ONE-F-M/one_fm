@@ -17,6 +17,7 @@
   "performance_profile_guid",
   "job_offer_section",
   "notify_finance_department_for_job_offer_salary_advance",
+  "default_terms_and_conditions",
   "job_applicaion_section",
   "default_hr_manager",
   "default_hr_manager_name",
@@ -136,11 +137,17 @@
    "fieldtype": "Data",
    "label": "Default HR Manager Name",
    "read_only": 1
+  },
+  {
+   "fieldname": "default_terms_and_conditions",
+   "fieldtype": "Link",
+   "label": "Default Terms and Conditions",
+   "options": "Terms and Conditions"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-01-16 04:27:34.888456",
+ "modified": "2024-02-27 08:29:05.173163",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",
