@@ -5,7 +5,6 @@ frappe.ui.form.on('Employee Checkin', {
 	    }
 	},
 	validate: (frm) => {
-		console.log("got here")
 		validate_source_of_checkin(frm);
 
 	},
