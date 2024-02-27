@@ -157,22 +157,29 @@ frappe.ui.form.on('Job Applicant', {
 	},
 	bulk_interview_feedback_submit: function(frm) {
 		if(frm.doc.one_fm_hiring_method == 'Bulk Recruitment'){
+			var drop_down_menu = 'Submit Interview and Feedback';
+			let no_of_interview_rounds = frm.doc.interview_rounds.length;
 			frm.doc.interview_rounds.forEach((item, i) => {
+				var btn_name = item.interview_round;
+				if(no_of_interview_rounds == 1){
+					drop_down_menu = '';
+					btn_name = 'Submit Interview and Feedback';
+				}
 				let args = {interview_round: item.interview_round, interviewer: frappe.session.user}
 				if(item.interview){
 					frappe.db.get_value('Interview', item.interview, 'docstatus', function(r) {
 						if(r.docstatus == 0){
 							args['interview_name'] = item.interview
-							frm.add_custom_button(__(item.interview_round), function() {
+							frm.add_custom_button(__(btn_name), function() {
 								frm.events.submit_interview_and_feedback(frm, args, item.name)
-							}, 'Submit Interview and Feedback');
+							}, drop_down_menu);
 						}
 					})
 				}
 				else{
-					frm.add_custom_button(__(item.interview_round), function() {
+					frm.add_custom_button(__(btn_name), function() {
 						frm.events.submit_interview_and_feedback(frm, args, item.name)
-					}, 'Submit Interview and Feedback');
+					}, drop_down_menu);
 				}
 			});
 		}
