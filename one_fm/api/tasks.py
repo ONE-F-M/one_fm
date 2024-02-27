@@ -912,8 +912,8 @@ def create_shift_assignment(roster, date, time):
 
 def validate_shift_assignment():
 	date = cstr(getdate())
-	now = datetime.strptime("20-02-2024 06:00:00", "%d-%m-%Y %H:%M:%S") #datetime.strptime(format(datetime.now() + timedelta(hours=1), "%d-%m-%Y %H:00:00"), "%d-%m-%Y %H:00:00")
-	now_time = datetime.strptime("08:00:00", "%H:%M:%S").time() #now.time()
+	now = datetime.strptime(format(datetime.now() + timedelta(hours=1), "%d-%m-%Y %H:00:00"), "%d-%m-%Y %H:00:00")
+	now_time = now.time()
 	shift_request = frappe.db.sql("""
 			SELECT * from `tabShift Request` SR
 				WHERE '{date}' BETWEEN SR.from_date AND SR.to_date
@@ -959,7 +959,7 @@ def validate_shift_assignment():
 					WHERE
 						h.parent = E.holiday_list
 					AND h.holiday_date = '{date}')""".format(now_time=now_time, date=cstr(date)), as_dict=1)
-	# non_shift = fetch_non_shift(date, "PM")
+
 	if non_shift:
 		roster.extend(non_shift)
 	
@@ -975,7 +975,6 @@ def validate_shift_assignment():
 		recipient = frappe.get_value("Email Account", {"name":"Develop"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False)
-		# frappe.enqueue(create_shift_assignment, roster = roster, date = date, time='AM', is_async=True, queue='long')
 
 def validate_am_shift_assignment():
 	date = cstr(getdate())
