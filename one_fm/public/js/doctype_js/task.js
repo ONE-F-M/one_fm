@@ -18,7 +18,11 @@ function set_perms(frm){
     frappe.xcall('one_fm.api.api.get_user_roles')
     .then(roles => {
         if (roles.includes("Projects User") && !roles.includes("Projects Manager")){
-            frm.set_df_property("status", "options", USER_PERMS["status"]);
+            if(USER_PERMS["status"].includes(frm.doc.status)){
+                frm.set_df_property("status", "options", USER_PERMS["status"]);
+            } else {
+                frm.set_df_property("status", "read_only", 1);
+            }
             frm.set_df_property("priority", "read_only", USER_PERMS["priority"]);
             frm.set_df_property("completed_by", "read_only", USER_PERMS["completed_by"]);
             frm.set_df_property("completed_on", "read_only", USER_PERMS["completed_on"]);
