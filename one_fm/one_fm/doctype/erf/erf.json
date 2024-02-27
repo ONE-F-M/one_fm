@@ -78,6 +78,7 @@
   "event_for_okr_workshop",
   "hr_section",
   "reports_to",
+  "reports_to_name",
   "performance_profile",
   "grade",
   "hiring_method",
@@ -1002,11 +1003,18 @@
    "ignore_user_permissions": 1,
    "label": "Reports To",
    "options": "Employee"
+  },
+  {
+   "fetch_from": "reports_to.employee_name",
+   "fieldname": "reports_to_name",
+   "fieldtype": "Data",
+   "label": "Reports to Name",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-26 19:34:30.889974",
+ "modified": "2024-02-27 08:37:26.523120",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
