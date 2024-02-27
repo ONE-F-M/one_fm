@@ -19,6 +19,60 @@ class JobApplicantOverride(JobApplicant):
 		self.validate_transfer_reminder_date()
 		self.convert_name_to_title_case()
 
+	def after_insert(self):
+		self.notify_recruiter_and_requester_from_job_applicant()
+		self.set_interview_rounds_from_erf()
+
+	def notify_recruiter_and_requester_from_job_applicant(self):
+		if self.one_fm_erf and self.one_fm_hiring_method == "A la carte Recruitment":
+			recipients = []
+			erf_details = frappe.db.get_values('ERF', filters={'name': self.one_fm_erf},
+				fieldname=["erf_requested_by", "recruiter_assigned", "secondary_recruiter_assigned"], as_dict=True)
+			if erf_details and len(erf_details) == 1:
+				if erf_details[0].erf_requested_by and erf_details[0].erf_requested_by != 'Administrator':
+					recipients.append(erf_details[0].erf_requested_by)
+				if erf_details[0].recruiter_assigned:
+					recipients.append(erf_details[0].recruiter_assigned)
+				if erf_details[0].secondary_recruiter_assigned:
+					recipients.append(erf_details[0].secondary_recruiter_assigned)
+			designation = frappe.db.get_value('Job Opening', self.job_title, 'designation')
+			context = {
+				"designation": designation,
+				"status": self.status,
+				"applicant_name": self.applicant_name,
+				"cv": frappe.utils.get_url(self.resume_attachment) if self.resume_attachment else None,
+				"passport_type": self.one_fm_passport_type,
+				"job_applicant": get_url(self.get_url()),
+				"contact_email": self.one_fm_email_id
+			}
+
+			message = frappe.render_template('one_fm/templates/emails/job_application_notification.html', context=context)
+
+			if recipients:
+				sendemail(
+					recipients=recipients,
+					subject='Job Application created for {0}'.format(designation),
+					message=message,
+					reference_doctype=self.doctype,
+					reference_name=self.name,
+				)
+
+	def set_interview_rounds_from_erf(self):
+		if self.one_fm_erf:
+			erf_interview_rounds = frappe.get_all(
+				"ERF Interview Round",
+				fields = ['interview_round', 'interview_type'],
+				filters={
+					"parent": self.one_fm_erf, "parenttype": "ERF"
+				}
+			)
+
+			if erf_interview_rounds and len(erf_interview_rounds) > 0:
+				for erf_interview_round in erf_interview_rounds:
+					interview_rounds = self.append('interview_rounds')
+					interview_rounds.interview_round = erf_interview_round.interview_round
+					interview_rounds.interview_type = erf_interview_round.interview_type
+				self.save(ignore_permissions=True)
 
 	@frappe.whitelist()
 	def send_applicant_doc_magic_link(self):
@@ -86,16 +140,16 @@ class NotifyLocalTransfer:
 								WHERE one_fm_is_transferable = 'Later'
 								AND custom_transfer_reminder_date IN {self._iterable_of_dates};
 								""",  as_dict=True)
-	
+
 
 	@staticmethod
 	def get_assigned_recruiter(erf: str) -> str | None:
 		return frappe.db.get_value("ERF", erf, "recruiter_assigned")
-	
+
 	@property
 	def _default_hiring_manager(self) -> str | None:
 		return frappe.db.get_single_value('Hiring Settings', 'default_hr_manager')
-	
+
 	def notify_hr_manager_recruiter(self) -> None:
 		try:
 			hr_manager = self._default_hiring_manager
@@ -114,4 +168,3 @@ class NotifyLocalTransfer:
 						sendemail(recipients=receivers, subject=title, content=msg)
 		except:
 			frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
-
