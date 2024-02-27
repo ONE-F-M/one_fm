@@ -399,8 +399,12 @@ const set_offer_term_templates = (frm) => {
   frappe.db.get_value('Job Offer Templates',{'name':frm.doc.designation},'name', (response) => {
     if(response.name) {
       frm.set_value('offer_term_templates', response.name)
-      frm.refresh_field('offer_term_templates')
+    } else {
+      frm.set_value('offer_term_templates', '')
+      frm.clear_table('offer_terms');
     }
+    frm.refresh_field('offer_term_templates')
+    frm.refresh_field('offer_terms');
   })
 }
 
