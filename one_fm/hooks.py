@@ -531,6 +531,7 @@ scheduler_events = {
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
 		'one_fm.utils.send_gp_letter_reminder',
         "one_fm.overrides.attendance.run_attendance_marking_hourly",
+		"one_fm.api.tasks.validate_shift_assignment"
 	],
 
 	"weekly": [
