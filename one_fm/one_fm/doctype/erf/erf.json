@@ -77,6 +77,8 @@
   "okr_workshop_submit_to_hr",
   "event_for_okr_workshop",
   "hr_section",
+  "reports_to",
+  "reports_to_name",
   "performance_profile",
   "grade",
   "hiring_method",
@@ -992,11 +994,27 @@
    "fieldname": "number_of_interview_rounds",
    "fieldtype": "Int",
    "label": "Number of Interview Rounds"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:!doc.shift_working",
+   "fieldname": "reports_to",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Reports To",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "reports_to.employee_name",
+   "fieldname": "reports_to_name",
+   "fieldtype": "Data",
+   "label": "Reports to Name",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-12-07 22:06:22.613333",
+ "modified": "2024-02-27 08:37:26.523120",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ERF",
