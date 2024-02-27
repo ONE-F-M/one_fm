@@ -111,7 +111,8 @@ doctype_js = {
     "Workflow": "public/js/doctype_js/workflow.js",
     "Stock Entry": "public/js/doctype_js/stock_entry.js",
     "Gratuity": "public/js/doctype_js/gratuity.js",
-    "Goal": "public/js/doctype_js/goal.js"
+    "Goal": "public/js/doctype_js/goal.js",
+    "Task": "public/js/doctype_js/task.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -416,6 +417,9 @@ doc_events = {
 	"Wiki Page": {
 		"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
 	},
+    "Task": {
+        "validate": "one_fm.overrides.task.validate_task"
+	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
