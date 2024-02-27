@@ -18,6 +18,8 @@ function set_perms(frm){
     frappe.xcall('one_fm.api.api.get_user_roles')
     .then(roles => {
         if (roles.includes("Projects User") && !roles.includes("Projects Manager")){
+            // If task status is one of ["Open", "Working", "Pending Review"], keep the status field editable.
+            // If task status is one of ["Overdue", "Template", "Completed", "Canceled"], make the status field read_only for Projects User.
             if(USER_PERMS["status"].includes(frm.doc.status)){
                 frm.set_df_property("status", "options", USER_PERMS["status"]);
             } else {
