@@ -285,31 +285,30 @@ frappe.ui.form.on('ERF', {
 
 var allow_recruitment_manager = function(frm){
 	if (frm.doc.docstatus === 1){
-		frappe.call({
-			method: 'one_fm.one_fm.doctype.erf.erf.recruitment_manager_check',
-			args: {"user": frappe.session.user},
-			callback: function(r){
-				if (!r.message){
-					frm.set_df_property('number_of_candidates_required', 'read_only', !r.message);
-					frm.set_df_property('gender_height_requirement', 'read_only', !r.message);
-					frm.page.clear_actions_menu();
-					frm.toggle_display("hr_section", r.message)
-					frm.toggle_display("salary_compensation_budget_section", r.message)
-					frappe.ui.form.on('ERF Gender Height Requirement', {
-						form_render: function(frm, cdt, cdn){
-							const row = locals[cdt][cdn];
-							var current_row = frm.fields_dict["candidates_required_section"].fields_dict.gender_height_requirement.grid.grid_rows_by_docname[row.name]
-							current_row.toggle_editable("number", r.message)
-						}
-					});
-				}else {
-					frm.toggle_reqd('performance_profile', r.message);
-					frm.toggle_reqd('grade', r.message);
-					frm.toggle_reqd('hiring_method', r.message);
-					frm.toggle_reqd('recruiter_assigned', r.message);
+		const is_senior_recruiter = frappe.user.has_role('Senior Recruiter');
+		if(!is_senior_recruiter){
+			frm.set_df_property('number_of_candidates_required', 'read_only', !is_senior_recruiter);
+			frm.set_df_property('gender_height_requirement', 'read_only', !is_senior_recruiter);
+			frm.page.clear_actions_menu();
+			frm.toggle_display("hr_section", is_senior_recruiter)
+			frm.toggle_display("salary_compensation_budget_section", is_senior_recruiter)
+			frappe.ui.form.on('ERF Gender Height Requirement', {
+				form_render: function(frm, cdt, cdn){
+					const row = locals[cdt][cdn];
+					var current_row = frm.fields_dict["candidates_required_section"].fields_dict.gender_height_requirement.grid.grid_rows_by_docname[row.name]
+					current_row.toggle_editable("number", is_senior_recruiter)
 				}
+			});
+		}
+		else{
+			frm.toggle_reqd('performance_profile', is_senior_recruiter);
+			frm.toggle_reqd('grade', is_senior_recruiter);
+			frm.toggle_reqd('hiring_method', is_senior_recruiter);
+			frm.toggle_reqd('recruiter_assigned', is_senior_recruiter);
+			if(!frm.doc.shift_working){
+				frm.toggle_reqd('reports_to', is_senior_recruiter);
 			}
-		})
+		}
 	}
 }
 
