@@ -216,8 +216,11 @@ doc_events = {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po",
-		"validate":"one_fm.purchase.utils.set_po_approver",
-		'on_update':"one_fm.purchase.utils.on_update",
+		"validate":[
+			"one_fm.purchase.utils.set_po_approver",
+			"one_fm.overrides.purchase_order.validate_purchase_uom"
+		],
+		# 'on_update':"one_fm.purchase.utils.on_update",
 		"on_update_after_submit": "one_fm.purchase.utils.set_po_letter_head"
 	},
 	"Leave Application": {
@@ -767,7 +770,8 @@ fixtures = [
 		"filters": [["name", "in",
 			[
 				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
-				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request"
+				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request",
+				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action"
 			]
 		]]
 	},
