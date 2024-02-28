@@ -40,7 +40,8 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						company_objective_quarter: '',
 						my_objective: '',
 						okr_year: '',
-						okr_quarter: ''
+						okr_quarter: '',
+						timer: null
 					}
 				},
 				mounted(){
@@ -48,9 +49,15 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					this.setupJS();
 					this.getDefault();
 					this.setupTriggers()
-
+					this.timer = setInterval(() => {
+						this.refresh()
+					}, 60000) //Refresh every one minute
 				},
 				methods: {
+					refresh(){
+						console.log("Refreshing.....")
+						this.getDefault()						
+					  },
 					getAllFilters(){
 
 						let me = this;
@@ -276,6 +283,7 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 									}
 
 									me.setOKRYearQuarter(res.okr_year)
+									$('#spinner-overlay').hide();
 								}
 							}
 						});
@@ -390,6 +398,15 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					},
 					setupJS(){
 						me = this
+						var $input = $('<a class="btn btn-default icon-btn text-center" @click="refresh" id="refresh">&#x21bb;</a>');
+   						$input.appendTo($(".page-head-content"));
+						$input.on('click', function() {
+							// Your refresh logic here
+							$('#spinner-overlay').show();
+							$('#spinner').show();
+							me.refresh();
+							
+						});
 						$("#my_todos_date").datepicker({
 							'language':'en',
 							'autoClose':1,
@@ -413,7 +430,6 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 					open_ref(){
 							window.open(`${window.location.origin}/app/todo/${this.todo_pane.name}`);
 					},
-					
 					copyText() {
 						if (navigator.clipboard && window.isSecureContext) {
 							navigator.clipboard.writeText(`${window.location.origin}/app/todo/${this.todo_pane.name}`).then(()=>{
@@ -439,6 +455,9 @@ frappe.pages['ows'].on_page_load = function(wrapper) {
 						
 					}
 				},
+				beforeDestroy() {
+					clearInterval(this.timer)
+				}
 			}
 		)
 		app.mount('#OKR-APP')
