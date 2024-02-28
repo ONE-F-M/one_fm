@@ -377,7 +377,6 @@ const filterDefaultShift = (frm) => {
     })
 }
 
-
 frappe.ui.form.on('Job Offer Term', {
   offer_term(frm, cdt, cdn) { 
       let row = locals[cdt][cdn]

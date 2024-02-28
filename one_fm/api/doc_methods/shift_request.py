@@ -330,6 +330,10 @@ def fill_to_date(doc, method):
     if not doc.to_date:
         doc.to_date = doc.from_date
 
+def validate_from_date(doc, method):
+    if not doc.assign_day_off:
+        if getdate(today()) > getdate(doc.from_date):
+            frappe.throw('From Date cannot be before today.')
 
 @frappe.whitelist()
 def update_request(shift_request, from_date, to_date):
