@@ -1,6 +1,9 @@
 import frappe
 from frappe import _
+from pypika import CustomFunction
 from hrms.hr.doctype.goal.goal import Goal
+
+
 
 class GoalOverride(Goal):
     
@@ -121,4 +124,16 @@ def add_employee_child_goals(Goal, goal_names, employee):
 			parent_goal_employee = frappe.get_value("Goal", {'parent_goal':i.parent_goal}, ['employee'])
 			if parent_goal_employee != employee:
 				goals.append(i)
+	return goals
+
+def _update_goal_completion_status(goals: list[dict]) -> list[dict]:
+	for goal in goals:
+		if goal.expandable:  # group node
+			total_goals = frappe.db.count("Goal", dict(parent_goal=goal.value))
+
+			if total_goals:
+				completed = frappe.db.count("Goal", {"parent_goal": goal.value, "status": "Completed"}) or 0
+				# set completion status of group node
+				goal["completion_count"] = _("{0} of {1} Completed").format(completed, total_goals)
+
 	return goals

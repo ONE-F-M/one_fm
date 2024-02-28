@@ -48,7 +48,7 @@ from erpnext.controllers.stock_controller import StockController
 from one_fm.overrides.stock_controller import make_batches_with_supplier_batch_id
 from frappe.automation.doctype.assignment_rule.assignment_rule import AssignmentRule
 from one_fm.overrides.assignment_rule import do_assignment
-from one_fm.overrides.goal import get_childrens
+
 
 
 __version__ = '15.0.2'
@@ -91,6 +91,6 @@ Employee.validate_reports_to = validate_reports_to
 frappe.utils.nestedset.validate_loop = custom_validate_nestedset_loop
 InterviewFeedback.validate_interviewer = custom_validate_interviewer
 ShiftAssignment = ShiftAssignmentOverride
-get_children = get_childrens
+
 AssignmentRule.do_assignment = do_assignment
 
