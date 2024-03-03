@@ -79,9 +79,26 @@ class JobOfferOverride(JobOffer):
             self.letter_head = 'ONE FM - Job Offer'
         # update terms and consitions
         if self.docstatus==0:
-            default_terms = frappe.db.get_single_value('Hiring Settings', 'default_terms_and_conditions') or 'Job Offer Acceptance'
-            self.select_terms = default_terms
-            terms = frappe.db.get_value("Terms and Conditions", default_terms, "terms")
+            # set job offer terms according to designation (if not set)
+            if not self.job_offer_term_template:
+                target_offer_template = frappe.db.get_value('Job Offer Templates',{ "name": self.designation }, "name")
+                if target_offer_template:
+                    self.job_offer_term_template = target_offer_template
+                    # Clear existing offer_terms
+                    self.set("offer_terms", [])
+                    # Add new offer_terms
+                    offer_terms = frappe.get_all("Job Offer Term", filters={"parent": target_offer_template}, fields=['offer_term', 'value'])
+                    for item in offer_terms:
+                        self.append("offer_terms", {
+                            "offer_term": item.offer_term,
+                            "value": item.value,
+                        })
+
+            # Set terms according to default terms and conditions (if not set)
+            if not self.select_terms:
+                default_terms = frappe.db.get_single_value('Hiring Settings', 'default_terms_and_conditions') or 'Job Offer Acceptance'
+                self.select_terms = default_terms
+            terms = frappe.db.get_value("Terms and Conditions", self.select_terms, "terms")
             self.terms = frappe.render_template(terms, {
                 'applicant_name':self.applicant_name, 'designation':self.designation, 'company':self.company}
             )
