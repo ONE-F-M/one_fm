@@ -2,7 +2,6 @@ frappe.ui.form.on('Job Offer', {
   refresh(frm) {
     if(frm.is_new()){
       frm.set_value('offer_date', frappe.datetime.now_date());
-      set_default_terms_and_conditions(frm);
     }
     set_shift_working_btn(frm);
     filterDefaultShift(frm);
@@ -380,34 +379,6 @@ const filterDefaultShift = (frm) => {
         }
     })
 }
-
-const set_default_terms_and_conditions = (frm) => {
-  frappe.call({
-    method: 'frappe.client.get_single_value',
-    args: {
-    doctype: 'Hiring Settings',
-    field: 'default_terms_and_conditions'
-    },
-    callback: function(r){						
-      frm.set_value('select_terms', r.message || '')
-      frm.refresh_field("select_terms")
-    }
-  });
-}
-
-const set_offer_term_templates = (frm) => {
-  frappe.db.get_value('Job Offer Templates',{'name':frm.doc.designation},'name', (response) => {
-    if(response.name) {
-      frm.set_value('offer_term_templates', response.name)
-    } else {
-      frm.set_value('offer_term_templates', '')
-      frm.clear_table('offer_terms');
-    }
-    frm.refresh_field('offer_term_templates')
-    frm.refresh_field('offer_terms');
-  })
-}
-
 
 frappe.ui.form.on('Job Offer Term', {
   offer_term(frm, cdt, cdn) { 

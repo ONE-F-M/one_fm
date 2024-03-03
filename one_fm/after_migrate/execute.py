@@ -117,11 +117,6 @@ def before_migrate():
         DELETE FROM `tabCustom Field` WHERE name='Salary Structure Assignment-column_break_20'
     """)
 
-    print("Removing employment_type from Job Offer in Custom Field and put back from migration")
-    frappe.db.sql("""
-        DELETE FROM `tabCustom Field` WHERE name='Salary Structure Assignment-column_break_20'
-    """)
-
 def set_files_directories():
     """
         Set files and directories if not exists
