@@ -252,7 +252,7 @@ class NotifyAttendanceManagerOnStatusChange:
         self.employee_object = employee_object
 
     @property
-    def _operations_shift_supervisor(self) -> list():
+    def _operations_shift_supervisor(self) -> list:
         operation_shifts = frappe.db.sql(""" SELECT name from `tabOperations Shift` WHERE supervisor = %s AND status = 'Active' """, (self.employee_object.name), as_list=1)
         return list(chain.from_iterable(operation_shifts)) if operation_shifts else list()
 
@@ -344,18 +344,19 @@ class NotifyAttendanceManagerOnStatusChange:
 
 
     def notify_authorities(self):
-        try:
-            data = self.generate_data()
-            if data:
-                the_recipient = get_users_with_role("HR Manager")
-                data_update = dict(
-                    employee_name=self.employee_object.employee_name,
-                    employee_id=self.employee_object.employee_id,
-                    status=self.employee_object.status
-                )
-                data.update(data_update)
-                title = f"Immediate Attention Required: Employee {self.employee_object.name} Status Change and Reassignment is required"
-                msg = frappe.render_template('one_fm/templates/emails/notify_authorities_employee_status_change.html', context=data)
-                sendemail(recipients=the_recipient, subject=title, content=msg)
-        except Exception as e:
-            frappe.log_error(frappe.get_traceback(), "Error while sending mail on status change(Employee)")
+        pass
+        # try:
+        #     data = self.generate_data()
+        #     if data:
+        #         the_recipient = get_users_with_role("HR Manager")
+        #         data_update = dict(
+        #             employee_name=self.employee_object.employee_name,
+        #             employee_id=self.employee_object.employee_id,
+        #             status=self.employee_object.status
+        #         )
+        #         data.update(data_update)
+        #         title = f"Immediate Attention Required: Employee {self.employee_object.name} Status Change and Reassignment is required"
+        #         msg = frappe.render_template('one_fm/templates/emails/notify_authorities_employee_status_change.html', context=data)
+        #         sendemail(recipients=the_recipient, subject=title, content=msg)
+        # except Exception as e:
+        #     frappe.log_error(frappe.get_traceback(), "Error while sending mail on status change(Employee)")

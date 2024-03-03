@@ -12,6 +12,8 @@ from one_fm.processor import is_user_id_company_prefred_email_in_employee
 from hrms.hr.utils import get_holidays_for_employee
 from one_fm.api.tasks import get_action_user
 
+from .employee import NotifyAttendanceManagerOnStatusChange
+
 def close_leaves(leave_ids, user=None):
     approved_leaves = leave_ids
     not_approved_leaves = []
@@ -527,11 +529,13 @@ def employee_leave_status():
     today = getdate()
     yesterday = add_to_date(today, days=-1)
 
-    start_leave = frappe.get_list("Leave Application", {'from_date': today, 'status':'Approved'}, ['employee'])
-    end_leave = frappe.get_list("Leave Application", {'to_date': yesterday, 'status':'Approved'}, ['employee'])
+    print(today, yesterday)
 
-    frappe.enqueue(process_change,start_leave=start_leave,end_leave=end_leave, is_async=True, queue="long")
+    start_leave = frappe.get_list("Leave Application", {'from_date': today, 'status':'Approved'}, ['employee', "name", "custom_reliever_"])
+    end_leave = frappe.get_list("Leave Application", {'to_date': yesterday, 'status':'Approved'}, ['employee', "name", "custom_reassigned_documents"])
 
+    # frappe.enqueue(process_change,start_leave=start_leave,end_leave=end_leave, is_async=True, queue="long")
+    process_change(start_leave=start_leave,end_leave=end_leave)
 
 
 
@@ -542,4 +546,141 @@ def process_change(start_leave, end_leave):
 def change_employee_status(employee_list, status):
     for e in employee_list:
         frappe.db.set_value("Employee", e.employee, "status", status)
+        if status == "Vacation" and e.custom_reliever_:
+            reassign_to_reliever(reliever=e.custom_reliever_, leave_name=e.name, employee=e.employee)
+
+        if status == "Active" and e.custom_reassigned_documents:
+            reassign_to_applicant(employee=e.employee, reassigned_documents=e.custom_reassigned_documents)
+        
     frappe.db.commit()
+
+
+def reassign_to_reliever(reliever: str, leave_name: str, employee: str):
+    reliever_employee = frappe.db.get_value("Employee", reliever, ["name", "user_id"], as_dict=1)
+    employee = frappe.db.get_value("Employee", employee, ["name", "user_id"], as_dict=1)
+    reassign = ReassignDutiesToReliever(reliever=reliever_employee, leave_name=leave_name, employee_object=employee)
+    reassign.reassign()
+
+
+def reassign_to_applicant(employee: str, reassigned_documents: dict):
+    employee = frappe.db.get_value("Employee", employee, ["name", "user_id"], as_dict=1)
+    reassign = ReassignDocumentToLeaveApplicant(reassigned_documents=reassigned_documents, employee=employee)
+    reassign.reassign()
+
+
+
+class ReassignDutiesToReliever(NotifyAttendanceManagerOnStatusChange):
+
+
+    def __init__(self, reliever: dict, leave_name: str, employee_object: dict) -> None:
+        super().__init__(employee_object)
+        self._reliever = reliever
+        self._reassigned_documents = dict()
+        self._leave_name = leave_name
+    
+    def reassign_operations_shift_supervisor(self):
+        operation_shift_supervisors = self._operations_shift_supervisor
+        if operation_shift_supervisors:
+            for obj in operation_shift_supervisors:
+                frappe.db.set_value("Operations Shift", obj, "supervisor", self._reliever.name)
+            self._reassigned_documents.update({"Operations Shift": operation_shift_supervisors})
+
+
+    def reassign_operations_site_supervisor(self):
+        operations_site_supervisor = self._operations_site_supervisor
+        if operations_site_supervisor:
+            for obj in operations_site_supervisor:
+                frappe.db.set_value("Operations Site", obj, "account_supervisor", self._reliever.name)
+            self._reassigned_documents.update({"Operations Site": operations_site_supervisor})
+
+
+    def reassign_projects_manager(self):
+        projects_manager = self._projects_manager
+        if projects_manager:
+            for obj in projects_manager:
+                frappe.db.set_value("Project", obj, "account_manager", self._reliever.name)
+            self._reassigned_documents.update({"Project": projects_manager})
+    
+    def reassign_reports_to(self):
+        reports_to = self._employee_reports_to
+        if reports_to:
+            for obj in reports_to:
+                frappe.db.set_value("Employee", obj, "reports_to", self._reliever.name)
+            self._reassigned_documents.update({"Employee": reports_to})
+
+
+    def reassign_operations_manager(self):
+        if self._operation_manager:
+            frappe.db.set_value("Operation Settings", "Operation Settings", "default_operation_manager", self._reliever.user_id)
+            self._reassigned_documents.update({"Operation Settings": "Operation Settings"})
+
+    def reassign_attendance_manager(self):
+        if self._attendance_manager:
+            frappe.db.set_value("ONEFM General Setting", "ONEFM General Setting", "attendance_manager", self._reliever.name)
+            self._reassigned_documents.update({"ONEFM General Setting": "ONEFM General Setting"})
+
+
+    def reassign(self):
+        print(self._reliever)
+        self.reassign_operations_shift_supervisor()
+        self.reassign_operations_site_supervisor()
+        self.reassign_projects_manager()
+        self.reassign_reports_to()
+        self.reassign_operations_manager()
+        self.reassign_attendance_manager()
+        if self._reassigned_documents:
+            leave_application = frappe.get_doc("Leave Application", self._leave_name)
+            for key, value in self._reassigned_documents.items():
+                leave_application.append("custom_reassigned_documents", {key: value})
+
+            leave_application.insert()
+        # frappe.db.set_value("Leave Application", self._leave_name, "custom_reassigned_documents", self._reassigned_documents)
+
+
+class ReassignDocumentToLeaveApplicant:
+
+    def __init__(self, reassigned_documents: dict, employee: dict):
+        self._employee = employee
+        self._reassigned_documents = reassigned_documents
+
+    
+    def reassign_operations_site(self, sites: list):
+        for obj in sites:
+            frappe.db.set_value("Operation Site", obj, "account_supervisor", self._employee.name)
+
+    
+    def reassign_operation_shift(self, shifts: list):
+        for obj in shifts:
+            frappe.db.set_value("Operation Shift", obj, "supervisor", self._employee.name)
+
+    def reassign_projects(self, projects: list):
+        for obj in projects:
+            frappe.db.set_value("Project", obj, "account_manager", self._employee.name)
+
+    def reassign_reports_to(self, reports_to: list):
+        for obj in reports_to:
+            frappe.db.set_value("Employee", obj, "reports_to", self._employee.name)
+    
+    def reassign(self):
+        for key, value in self._reassigned_documents.items():
+            if key == "Operations Site":
+                self.reassign_operations_site(sites=value)
+            
+            if key == "Operations Shift":
+                self.reassign_operation_shift(shifts=value)
+
+            if key == "Project":
+                self.reassign_projects(projects=value)
+
+            if key == "Employee":
+                self.reassign_reports_to(reports_to=value)
+            
+            if key == "Operation Settings":
+                frappe.db.set_value("Operation Settings", "Operation Settings", "default_operation_manager", self._employee.user_id)
+            
+            if key == "ONEFM General Setting":
+                frappe.db.set_value("ONEFM General Setting", "ONEFM General Setting", "attendance_manager", self._employee.name)
+
+
+            
+
