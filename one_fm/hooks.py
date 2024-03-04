@@ -182,7 +182,7 @@ permission_query_conditions = {
 	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
 	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
-    "Leave Application": "one_fm.permissions.leave_application_list",
+    "Leave Application": "one_fm.permissions.leave_application_list_",
     "Roster Post Actions":"one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_permission_query_conditions",
 	"Roster Employee Actions": "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_permission_query_conditions",
 	"Warehouse": "one_fm.permissions.warehouse_list"
@@ -806,7 +806,8 @@ override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_details",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
-	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
+	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate",
+	"frappe.core.doctype.user_permission.user_permission.get_user_permissions":"one_fm.permissions.get_custom_user_permissions"
 }
 
 
