@@ -532,7 +532,7 @@ def employee_leave_status():
     print(today, yesterday)
 
     start_leave = frappe.get_list("Leave Application", {'from_date': today, 'status':'Approved'}, ['employee', "name", "custom_reliever_"])
-    end_leave = frappe.get_list("Leave Application", {'to_date': yesterday, 'status':'Approved'}, ['employee', "name", "custom_reassigned_documents"])
+    end_leave = frappe.get_list("Leave Application", {'to_date': yesterday, 'status':'Approved'}, ['employee', "custom_reassigned_documents"])
 
     # frappe.enqueue(process_change,start_leave=start_leave,end_leave=end_leave, is_async=True, queue="long")
     process_change(start_leave=start_leave,end_leave=end_leave)
@@ -546,26 +546,35 @@ def process_change(start_leave, end_leave):
 def change_employee_status(employee_list, status):
     for e in employee_list:
         frappe.db.set_value("Employee", e.employee, "status", status)
-        if status == "Vacation" and e.custom_reliever_:
-            reassign_to_reliever(reliever=e.custom_reliever_, leave_name=e.name, employee=e.employee)
+        try:
+            if status == "Vacation" and e.custom_reliever_:
+                reassign_to_reliever(reliever=e.custom_reliever_, leave_name=e.name, employee=e.employee)
 
-        if status == "Active" and e.custom_reassigned_documents:
-            reassign_to_applicant(employee=e.employee, reassigned_documents=e.custom_reassigned_documents)
+            if status == "Active" and e.custom_reassigned_documents:
+                reassign_to_applicant(employee=e.employee, reassigned_documents=e.custom_reassigned_documents)
+        except:
+            ...
         
     frappe.db.commit()
 
 
 def reassign_to_reliever(reliever: str, leave_name: str, employee: str):
-    reliever_employee = frappe.db.get_value("Employee", reliever, ["name", "user_id"], as_dict=1)
-    employee = frappe.db.get_value("Employee", employee, ["name", "user_id"], as_dict=1)
-    reassign = ReassignDutiesToReliever(reliever=reliever_employee, leave_name=leave_name, employee_object=employee)
-    reassign.reassign()
+    try:
+        reliever_employee = frappe.db.get_value("Employee", reliever, ["name", "user_id"], as_dict=1)
+        employee = frappe.db.get_value("Employee", employee, ["name", "user_id"], as_dict=1)
+        reassign = ReassignDutiesToReliever(reliever=reliever_employee, leave_name=leave_name, employee_object=employee)
+        reassign.reassign()
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Reassign Employee Duties To Reliever")
 
 
 def reassign_to_applicant(employee: str, reassigned_documents: dict):
-    employee = frappe.db.get_value("Employee", employee, ["name", "user_id"], as_dict=1)
-    reassign = ReassignDocumentToLeaveApplicant(reassigned_documents=reassigned_documents, employee=employee)
-    reassign.reassign()
+    try:
+        employee = frappe.db.get_value("Employee", employee, ["name", "user_id"], as_dict=1)
+        reassign = ReassignDocumentToLeaveApplicant(reassigned_documents=reassigned_documents, employee=employee)
+        reassign.reassign()
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Reassign Duties Back To Employee")
 
 
 
@@ -621,20 +630,27 @@ class ReassignDutiesToReliever(NotifyAttendanceManagerOnStatusChange):
 
 
     def reassign(self):
-        print(self._reliever)
         self.reassign_operations_shift_supervisor()
         self.reassign_operations_site_supervisor()
         self.reassign_projects_manager()
         self.reassign_reports_to()
         self.reassign_operations_manager()
         self.reassign_attendance_manager()
+        print(self._reassigned_documents)
         if self._reassigned_documents:
-            leave_application = frappe.get_doc("Leave Application", self._leave_name)
+            ...
             for key, value in self._reassigned_documents.items():
-                leave_application.append("custom_reassigned_documents", {key: value})
+                reassigned_documents = frappe.new_doc('Reassigned Documents')
+                reassigned_documents.parent=self._leave_name,
+                reassigned_documents.parentfield="custom_reassigned_documents",
+                reassigned_documents.parenttype="Leave Application",
+                reassigned_documents.reassigned_doctype=key,
+                reassigned_documents.names=str(value)
+                reassigned_documents.insert()
+                print(reassigned_documents, 9999999999999999)
+                
 
-            leave_application.insert()
-        # frappe.db.set_value("Leave Application", self._leave_name, "custom_reassigned_documents", self._reassigned_documents)
+               
 
 
 class ReassignDocumentToLeaveApplicant:

@@ -15,12 +15,11 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Reassigned Doctype",
-   "options": "DocType",
-   "reqd": 1
+   "options": "DocType"
   },
   {
    "fieldname": "names",
-   "fieldtype": "JSON",
+   "fieldtype": "Long Text",
    "in_filter": 1,
    "in_list_view": 1,
    "label": "Names"
@@ -29,7 +28,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-03 23:25:23.599015",
+ "modified": "2024-03-04 09:43:48.713038",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Reassigned Documents",
