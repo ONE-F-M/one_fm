@@ -27,7 +27,7 @@ def update_data(cur_date, column_date_field, datapack):
 
     # Set total basic roster-type attendance check in the day, row 2
     set_day_total_basic_attendance_check(cur_date, column_date_field, datapack)
-    
+
     # Set total over-time roster-type attendance check in the day, row 3
     set_day_total_overtime_attendance_check(cur_date, column_date_field, datapack)
 
@@ -42,7 +42,7 @@ def update_data(cur_date, column_date_field, datapack):
 
     # Set Justification details of attendance check for the day
     set_justification_details(cur_date, column_date_field, datapack, row_index)
-    
+
 
     return datapack
 
@@ -60,7 +60,7 @@ def set_day_total_attendance_check(cur_date, column_date_field, datapack):
 
 def set_day_total_basic_attendance_check(cur_date, column_date_field, datapack):
     # Get total attendance check in the day for basic roster type
-    
+
     total_basic_attendance_check = frappe.db.count('Attendance Check', {'date':cur_date, 'docstatus': ['<', 2], "roster_type": "Basic"})
     if len(datapack) == 1:
         # Add new row Total for Basic Roster types  and column value to the report
@@ -89,7 +89,7 @@ def set_day_total_pending_approval_acheck(cur_date, column_date_field, datapack)
         # Add new row Pending Approval and column value to the report
         datapack.append({'justification_value': 'Pending Approval', column_date_field: pending_apporval})
     else:
-    
+
         # Add cloumn value to the row in the report
         datapack[3].update({column_date_field: pending_apporval})
 
@@ -127,8 +127,8 @@ def set_attendance_status_day_count(cur_date, column_date_field, datapack):
     # Remove first empty option
     attendance_status_options.pop(0)
 
-    # Attendance status count adds from 5th row(index will be 4)
-    row_index = 4
+    # Attendance status count adds from 6th row(index will be 5)
+    row_index = 5
     for attendance_status in attendance_status_options:
         # Set total attendance_status of attendance check in the day
         attendance_status_count = status_count_data[attendance_status] if attendance_status in status_count_data else 0
