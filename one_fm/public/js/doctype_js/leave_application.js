@@ -57,7 +57,13 @@ frappe.ui.form.on("Leave Application", {
           };
         });
         prefillForm(frm);
-      }
+      },
+    validate: function(frm) {
+        validate_reliever(frm);
+    },
+    custom_reliever_: function(frm){
+        validate_reliever(frm);
+    }
 })
 
 
@@ -88,4 +94,13 @@ var prefillForm = frm => {
         });
     }
 
+}
+
+
+var validate_reliever = (frm) => {
+    if (frm.doc.custom_reliever_){
+        if (frm.doc.custom_reliever_ == frm.doc.employee){
+            frappe.throw("Oops! You can't assign yourself as the reliever!")
+        }
+    }
 }
