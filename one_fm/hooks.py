@@ -414,9 +414,9 @@ doc_events = {
 	"ToDo": {
 		"validate": "one_fm.overrides.todo.validate_todo"
 	},
-	"Wiki Page": {
-		"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
-	},
+	# "Wiki Page": {
+	# 	"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
+	# },
     "Task": {
         "validate": "one_fm.overrides.task.validate_task"
 	}
