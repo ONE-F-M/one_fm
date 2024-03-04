@@ -61,7 +61,7 @@ def get_custom_user_permissions(user=None):
 		return {}
 
 	cached_user_permissions = frappe.cache.hget("user_permissions", user)
-	cached_user_permissions = None
+	
 	if cached_user_permissions is not None:
 		return cached_user_permissions
 
