@@ -81,6 +81,7 @@ class EmployeeOverride(EmployeeMaster):
 
     def on_update(self):
         super(EmployeeOverride, self).on_update()
+        self.validate_status_change()
         set_mandatory_feilds_in_employee_for_Kuwaiti(self, method=None)
         try:
             current_doc = frappe.get_doc("Employee", self.name)
@@ -95,9 +96,9 @@ class EmployeeOverride(EmployeeMaster):
         # clear future employee schedules
         self.clear_schedules()
         self.update_subcontract_onboard()
-        self.notify_attendance_manager_on_status_change()
         self.inform_employee_id_update()
         self.notify_employee_id_update()
+        
 
 
     def inform_employee_id_update(self):
@@ -170,6 +171,17 @@ class EmployeeOverride(EmployeeMaster):
         if last_doc and last_doc.get('status') == "Active":
             if self.status != "Active":
                 NotifyAttendanceManagerOnStatusChange(employee_object=self).notify_authorities()
+                
+    def validate_status_change(self):
+        last_doc = self.get_doc_before_save()
+        if last_doc and last_doc.get('status') == "Active":
+            if self.status != "Active":
+                status_validate = StatusChangeVaccumValidate(employee_object=self)
+                message = status_validate.message()
+                print(message)
+                if message:
+                    frappe.throw(message)
+        
 
     def clear_schedules(doc):
         # clear future employee schedules
@@ -360,3 +372,95 @@ class NotifyAttendanceManagerOnStatusChange:
         #         sendemail(recipients=the_recipient, subject=title, content=msg)
         # except Exception as e:
         #     frappe.log_error(frappe.get_traceback(), "Error while sending mail on status change(Employee)")
+
+
+class StatusChangeVaccumValidate(NotifyAttendanceManagerOnStatusChange):
+    
+    
+    def __init__(self, employee_object: EmployeeOverride):
+        super().__init__(employee_object=employee_object)
+        self._message = ""
+        
+    @property
+    def message_header(self):
+        return f"""
+                <div>
+                    <h3>This employee has responsibilities in the following document</h3> """
+        
+        
+    
+    def construct_operations_shift_supervisor_message(self):
+        shifts = self._operations_shift_supervisor
+        if shifts:
+            self._message += "<h5>Operations Shift</h5> <ul>"
+            for obj in shifts:
+                self._message += f""" <li>{obj}</li>"""
+            
+            self._message += f""" </ul><br><br>"""
+    
+    def construct_operations_site_supervisor_message(self):
+        sites = self._operations_site_supervisor
+        if sites:
+            self._message += "<h5>Operations Site</h5> <ul>"
+            for obj in sites:
+                self._message += f""" <li>{obj}</li>"""
+            
+            self._message += f""" </ul><br><br>"""
+            
+    
+    def construct_projects_manager_message(self):
+        projects = self._projects_manager
+        if projects:
+            self._message += "<h5>Project</h5> <ul>"
+            for obj in projects:
+                self._message += f""" <li>{obj}</li>"""
+            
+            self._message += f""" </ul><br><br>"""
+            
+    
+    def construct_reports_to_message(self):
+        reports_to = self._employee_reports_to
+        if reports_to:
+            self._message += "<h5>Employee Reports To</h5> <ul>"
+            for obj in reports_to:
+                self._message += f""" <li>{obj.name} -- {obj.employee_name}</li>"""
+            
+            self._message += f""" </ul><br><br>"""
+            
+    
+    
+    def construct_attendance_manager_message(self):
+        if self._attendance_manager:
+            self._message += "<h5>This employee is the attendance manager.</h5> <br><br>"
+
+    
+    def construct_operations_manager_message(self):
+        if self._operation_manager:
+            self._message += "<h5>This employee is the Operations manager.</h5> <br><br>"
+        
+    
+    
+    def message(self):
+        if any((self._operations_shift_supervisor, self._operations_site_supervisor, self._projects_manager, 
+               self._employee_reports_to, self._attendance_manager, self._operation_manager)):
+            self._message = self.message_header
+            
+            self.construct_operations_shift_supervisor_message()
+            
+            self.construct_operations_site_supervisor_message()
+            
+            self.construct_projects_manager_message()
+            
+            self.construct_reports_to_message()
+            
+            self.construct_attendance_manager_message()
+            
+            self.construct_operations_manager_message()
+            
+            self._message += "<div>"
+            
+            return self._message
+            
+            
+        
+        
