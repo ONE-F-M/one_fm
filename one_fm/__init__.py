@@ -93,6 +93,6 @@ Employee.validate_reports_to = validate_reports_to
 frappe.utils.nestedset.validate_loop = custom_validate_nestedset_loop
 InterviewFeedback.validate_interviewer = custom_validate_interviewer
 ShiftAssignment = ShiftAssignmentOverride
-get_children = get_childrens
+
 AssignmentRule.do_assignment = do_assignment
 
