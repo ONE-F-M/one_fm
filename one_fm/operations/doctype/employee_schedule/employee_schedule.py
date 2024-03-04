@@ -86,7 +86,7 @@ class EmployeeSchedule(Document):
 def is_operations_post_overfill(date, operations_shift, new_roster=0):
 	operations_post_overfill = False
 	# Fetch total number of active operations post for the operations shift
-	no_of_posts = frappe.db.count("Operations Post", {'site_shift': operations_shift})
+	no_of_posts = frappe.db.count("Operations Post", {'site_shift': operations_shift, 'status': 'Active'})
 
 	# Fetch employee scedules for the operations_shift and date
 	staffs_rostered = frappe.db.count("Employee Schedule",
