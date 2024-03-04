@@ -64,8 +64,6 @@ class WorkflowActionOverride extends frappe.ui.form.States{
 					me.frm.page.add_action_item(__(d.action), function () {
 						// set the workflow_action for use in form scripts
 						frappe.dom.freeze();
-						console.log("DDDD");
-						console.log(d);
 						me.frm.selected_workflow_action = d.action;
 						me.frm.script_manager.trigger("before_workflow_action").then(() => {
 							if(d.custom_confirm_transition){
