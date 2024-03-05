@@ -73,3 +73,4 @@ one_fm.patches.v15_0.split_arabic_name_to_first_and_last_name
 one_fm.patches.v15_0.delete_duplicate_attendance
 one_fm.patches.v15_0.update_purchase_order
 one_fm.patches.v15_0.patch_employee_educational_qualifications
+one_fm.patches.v15_0.missing_attendance_request
