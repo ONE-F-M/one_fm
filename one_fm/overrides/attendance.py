@@ -895,7 +895,6 @@ class AttendanceMarking():
 
 
     def mark_shift_attendance(self):
-        print(self.start.date())
         # CREATE ATTENDANCE FOR CLIENTS
         if self.attendance_type:
             client_shifts =  frappe.db.sql(f"""
@@ -952,7 +951,6 @@ class AttendanceMarking():
                 AND e.shift_working=0""", as_dict=1)
             shifts.extend(non_shifts)
         if shifts:
-            print(shifts)
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0].name))
             if checkins:
                 # employees = [i.employee for i in shifts]
@@ -1146,8 +1144,7 @@ def run_attendance_marking_hourly():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""
     attendance_marking = AttendanceMarking()
     attendance_marking.get_datetime()
-    attendance_marking.mark_shift_attendance()
-    # frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
+    frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
 
 def mark_day_off_for_yesterday():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""
