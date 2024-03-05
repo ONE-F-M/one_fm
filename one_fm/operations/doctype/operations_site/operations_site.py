@@ -80,8 +80,13 @@ class OperationsSite(Document):
 
 		# if "Operations Manager" not in roles and site_supervisor != frappe.session.user and project_manager != frappe.session.user:
 		# 	frappe.throw(_("You don't have sufficient previliges to update this document."))
-
+  
+	def clear_cache(self):
+		if self.has_value_changed('account_supervisor'):
+			frappe.cache.delete_key('user_permissions')
+   
 	def on_update(self):
+		self.clear_cache()
 		doc_before_save = self.get_doc_before_save()
 		self.update_shift_post_role_status()
 		# changes = self.get_changes()
