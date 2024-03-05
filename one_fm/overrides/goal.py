@@ -73,9 +73,7 @@ def get_childrens(doctype: str, parent: str, is_root: bool = False, **filters) -
 	elif parent and not is_root:
 		# via expand child
 		query = query.where(Goal.parent_goal == parent)
-	else:
-		ifnull = CustomFunction("IFNULL", ["value", "default"])
-		query = query.where(ifnull(Goal.parent_goal, "") == "")
+	
 
 	if filters.get("date_range"):
 		date_range = frappe.parse_json(filters.get("date_range"))
