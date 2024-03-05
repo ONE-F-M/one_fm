@@ -81,7 +81,7 @@ class JobOfferOverride(JobOffer):
         if self.docstatus==0:
             # set job offer terms according to designation (if not set)
             if not self.job_offer_term_template:
-                target_offer_template = frappe.db.get_value('Job Offer Templates',{ "name": self.designation }, "name")
+                target_offer_template = frappe.db.get_value('Designation',{ "name": self.designation }, "custom_job_offer_term_template")
                 if target_offer_template:
                     self.job_offer_term_template = target_offer_template
                     # Clear existing offer_terms

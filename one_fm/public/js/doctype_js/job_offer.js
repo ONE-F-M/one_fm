@@ -128,26 +128,6 @@ frappe.ui.form.on('Job Offer', {
   employee_grade: function(frm) {
     set_filters(frm);
   },
-  job_offer_term_template: function(frm){
-    if (frm.doc.job_offer_term_template){
-      frappe.call({
-        method: 'frappe.client.get',
-        args: {
-          doctype: 'Job Offer Templates',
-          filters: {'name': frm.doc.job_offer_term_template}
-        },
-        callback: function(r) {
-          if(r && r.message){
-            var temp = r.message;
-            set_offer_terms_(frm, temp.offer_terms_table)
-          }
-        }
-      });
-    } else {
-      frm.clear_table('offer_terms');
-      frm.refresh_field('offer_terms');
-    }
-  },
 });
 
 var set_filters = function(frm) {
@@ -401,24 +381,3 @@ frappe.ui.form.on('Job Offer Term', {
       frm.refresh_field("one_fm_provide_transportation_by_company")
   },
 });
-
-
-
-var set_offer_terms_ = function(frm, terms_list) {
-  frm.clear_table('offer_terms');
-  terms_list.forEach((item) => {
-    let offer_term = frappe.model.add_child(frm.doc, 'Job Offer Term', 'offer_terms');
-    frappe.model.set_value(offer_term.doctype, offer_term.name, 'offer_term', item['offer_terms']);
-    frappe.model.set_value(offer_term.doctype, offer_term.name, 'value', item['valuedescription']);
-
-    if(item["offer_terms"] == "Accommodation"){
-      frm.set_value("one_fm_provide_accommodation_by_company", 1)
-      frm.refresh_field("one_fm_provide_accommodation_by_company")
-    }else if (item["offer_terms"] == "Transportation"){
-      frm.set_value("one_fm_provide_transportation_by_company", 1)
-      frm.refresh_field("one_fm_provide_transportation_by_company")
-    }
-
-  });
-  frm.refresh_field('offer_terms');
-}
