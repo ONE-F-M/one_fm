@@ -363,6 +363,15 @@ def _get_employee_from_user(user):
 
 
 def get_manager(doctype,employee):
+    """Return the instances of the doctype where the employee is the supervisor
+
+    Args:
+        doctype : Valid Doctype
+        employee (_type_): Valid Employee ID
+
+    Returns:
+        _type_: _description_
+    """
     field = None
     if doctype =="Project":
         field = 'account_manager'

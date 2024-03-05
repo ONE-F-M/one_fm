@@ -48,12 +48,14 @@ from erpnext.controllers.stock_controller import StockController
 from one_fm.overrides.stock_controller import make_batches_with_supplier_batch_id
 from frappe.automation.doctype.assignment_rule.assignment_rule import AssignmentRule
 from one_fm.overrides.assignment_rule import do_assignment
-
+from one_fm.overrides.goal import get_childrens
+from frappe.core.doctype.user_permission import user_permission
+from one_fm.permissions import get_custom_user_permissions
 
 
 __version__ = '15.0.3'
 
-
+user_permission.get_user_permissions = get_custom_user_permissions
 StockController.make_batches = make_batches_with_supplier_batch_id
 Interview.validate_overlap = validate_interview_overlap
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_

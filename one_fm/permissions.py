@@ -11,9 +11,109 @@ from frappe.model.utils import is_virtual_doctype
 from frappe.model.utils.user_settings import get_user_settings
 from frappe.permissions import get_doc_permissions
 from frappe.utils.data import cstr
+from one_fm.api.doc_methods.shift_request import get_manager
 from one_fm.utils import (
     check_employee_permission_on_doc, get_approver_for_many_employees, has_super_user_role
 )
+
+
+
+
+def extend_user_permission(user):
+	"""
+		Extend the user permissions of the 
+	Args:
+		data (_type_): _description_
+	"""
+	
+	employee_set = []
+	employee_id = get_employee_doc(user)
+	shifts = get_manager('Operations Shift',employee_id)
+	if shifts:
+		employee_set+= frappe.get_all("Employee",{'shift':['in',shifts]})
+	sites = get_manager('Operations Site',employee_id)
+	if sites:
+		employee_set+= frappe.get_all("Employee",{'site':['in',sites]})
+	projects = get_manager('Project',employee_id)
+	if projects:
+		employee_set+= frappe.get_all("Employee",{'project':['in',projects]})
+	return employee_set
+	
+
+def get_employee_doc(user):
+    emp= frappe.get_value("Employee",{'user_id':user})
+    return emp if emp else None
+
+
+
+@frappe.whitelist()
+def get_custom_user_permissions(user=None):
+	"""Get all users permissions for the user as a dict of doctype"""
+	# if this is called from client-side,
+	# user can access only his/her user permissions
+	if frappe.request and frappe.local.form_dict.cmd == "get_user_permissions":
+		user = frappe.session.user
+
+	if not user:
+		user = frappe.session.user
+
+	if not user or user in ("Administrator", "Guest"):
+		return {}
+
+	cached_user_permissions = frappe.cache.hget("user_permissions", user)
+	
+	
+	if cached_user_permissions is not None:
+		return cached_user_permissions
+
+	out = {}
+
+	def add_doc_to_perm(perm, doc_name, is_default):
+		# group rules for each type
+		# for example if allow is "Customer", then build all allowed customers
+		# in a list
+		if not out.get(perm.allow):
+			out[perm.allow] = []
+
+		out[perm.allow].append(
+			frappe._dict(
+				{"doc": doc_name, "applicable_for": perm.get("applicable_for"), "is_default": is_default}
+			)
+		)
+
+	try:
+		for perm in frappe.get_all(
+			"User Permission",
+			fields=["allow", "for_value", "applicable_for", "is_default", "hide_descendants"],
+			filters=dict(user=user),
+		):
+
+			meta = frappe.get_meta(perm.allow)
+			add_doc_to_perm(perm, perm.for_value, perm.is_default)
+
+			if meta.is_nested_set() and not perm.hide_descendants:
+				decendants = frappe.db.get_descendants(perm.allow, perm.for_value)
+				for doc in decendants:
+					add_doc_to_perm(perm, doc, False)
+
+
+		out = frappe._dict(out)
+		if frappe.get_single("ONEFM General Setting").extend_user_permissions:
+			data = extend_user_permission(user)
+			if out.get("Employee"):
+				if data:
+					for each in data:
+						out['Employee'].append({'doc':each.name,'applicable_for':None,'is_default':0})
+		frappe.cache.hset("user_permissions", user, out)
+		
+	except frappe.db.SQLError as e:
+		if frappe.db.is_table_missing(e):
+			# called from patch
+			pass
+	
+    
+	return out
+
 
 @frappe.whitelist()
 def getdoc(doctype, name, user=None):
@@ -513,6 +613,7 @@ def leave_application_list(user):
 	"""
 		Filter leave application list based on permision
 	"""
+	
 	if frappe.session.user in ["Administrator"]:
 		return
 
@@ -522,7 +623,8 @@ def leave_application_list(user):
 	if not user: user = frappe.session.user
 	try:
 		supervisor = frappe.cache().get_value(frappe.session.user).employee
-		roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+		
+		roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail` where parentfield = 'document_access_roles'", as_dict=1)]
 		has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', supervisor, 'user_id'))])
 		if has_roles:
 			return
@@ -532,11 +634,61 @@ def leave_application_list(user):
 		if employee:
 
 			frappe.cache().set_value(frappe.session.user,frappe._dict({'employee':employee}))
-			roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+			roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail` where parentfield = 'document_access_roles'    ", as_dict=1)]
 			has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', employee, 'user_id'))])
 			if has_roles:
 				return
 			return "(employee = '{employee}')".format(employee=employee)
+
+
+
+
+
+def leave_application_list_(user):
+	"""
+		Filter leave application list based on permision
+	"""
+	if frappe.session.user in ["Administrator"]:
+		return
+
+	if has_super_user_role(frappe.session.user):
+		return
+
+	if not user: user = frappe.session.user
+	supervisors = []
+	
+	try:
+		supervisor = frappe.cache().get_value(frappe.session.user).employee
+		if frappe.get_single("ONEFM General Setting").extend_user_permissions:
+			supervisors=extend_user_permission(user)
+			if supervisors:
+				supervisors = [i.name for i in supervisors]
+		supervisors.append(supervisor)
+		roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail` where parentfield = 'document_access_roles'", as_dict=1)]
+		has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', supervisor, 'user_id'))])
+		if has_roles:
+			return
+		return "(employee = '{supervisor}')".format(supervisor=supervisor) if len(supervisors) == 1\
+			else f"employee in {tuple(supervisors)}"
+	except AttributeError:
+		employee = frappe.get_value("Employee",{'user_id':frappe.session.user})
+		if employee:
+			if frappe.get_single("ONEFM General Setting").extend_user_permissions:
+				supervisors=extend_user_permission(user)
+				if supervisors:
+					supervisors = [i.name for i in supervisors]
+			supervisors.append(employee)
+			frappe.cache().set_value(frappe.session.user,frappe._dict({'employee':employee}))
+			roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail` where parentfield = 'document_access_roles'    ", as_dict=1)]
+			has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', employee, 'user_id'))])
+			if has_roles:
+				return
+			return "(employee = '{employee}')".format(employee=employee) if len(supervisors) == 1\
+			else f"employee in {tuple(supervisors)}"
+
+
+
+
 
 
 def warehouse_list(user):
