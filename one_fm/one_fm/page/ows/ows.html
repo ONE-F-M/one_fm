@@ -32,15 +32,36 @@
     font-size: var(--text-md);
     position: relative;
     }
+    
+    #refresh{
+        font-weight: 600;
+        margin: 0px 15px 0px 0px;
+    }
 
+    .spinner-overlay {
+        display: none; 
+        position: fixed; /* Or absolute, depending on your layout */
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(248, 246, 246, 0.3); /* Semi-transparent background */
+        z-index: 99; 
+        justify-content: center;
+        align-items: center;
+    }
 
-
-
+    .spinner {
+        position: fixed; 
+        top: 50%; 
+        left: 50%;
+        z-index: 999; /*Ensure it sits above other content*/
+    }
 
 </style>
 
-
-<div class="spinner" id="spinner" style="display:block; position: fixed; top: 50%; left: 50%;"></div>
+<div class="spinner-overlay" id="spinner-overlay"></div>
+<div class="spinner" id="spinner"></div>
 <div id="OKR-APP">
     <div class="container-fluid" id="app-container" style="display:none; background-color: transparent;">
         <div class="col-md-12" id = "stickypane">

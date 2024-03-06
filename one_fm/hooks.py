@@ -33,6 +33,7 @@ app_include_js = [
 		"/assets/one_fm/js/desk.js",
         "/assets/one_fm/js/showdown.min.js",
         "purchase.bundle.js",
+		"/assets/one_fm/js/form_overrides/workflow_override.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -111,7 +112,8 @@ doctype_js = {
     "Workflow": "public/js/doctype_js/workflow.js",
     "Stock Entry": "public/js/doctype_js/stock_entry.js",
     "Gratuity": "public/js/doctype_js/gratuity.js",
-    "Goal": "public/js/doctype_js/goal.js"
+    "Goal": "public/js/doctype_js/goal.js",
+    "Task": "public/js/doctype_js/task.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -181,7 +183,7 @@ permission_query_conditions = {
 	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
 	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
-    "Leave Application": "one_fm.permissions.leave_application_list",
+    "Leave Application": "one_fm.permissions.leave_application_list_",
     "Roster Post Actions":"one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_permission_query_conditions",
 	"Roster Employee Actions": "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_permission_query_conditions",
 	"Warehouse": "one_fm.permissions.warehouse_list"
@@ -249,8 +251,7 @@ doc_events = {
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
 		"onload": "one_fm.utils.validate_pam_file_number_and_pam_designation",
-		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
-		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
+		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -384,7 +385,8 @@ doc_events = {
 	"Shift Request":{
 		"before_save":[
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
-			"one_fm.utils.send_shift_request_mail"
+			"one_fm.utils.send_shift_request_mail",
+			"one_fm.api.doc_methods.shift_request.validate_from_date"
 		],
 		# "on_update_after_submit":[
 			# "one_fm.api.doc_methods.shift_request.on_update_after_submit",
@@ -416,6 +418,9 @@ doc_events = {
 	# "Wiki Page": {
 	# 	"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
 	# },
+    "Task": {
+        "validate": "one_fm.overrides.task.validate_task"
+	}
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -534,6 +539,7 @@ scheduler_events = {
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
 		'one_fm.utils.send_gp_letter_reminder',
         "one_fm.overrides.attendance.run_attendance_marking_hourly",
+		"one_fm.api.tasks.validate_shift_assignment"
 	],
 
 	"weekly": [
@@ -801,7 +807,8 @@ override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_details",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
-	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
+	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate",
+	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens"
 }
 
 

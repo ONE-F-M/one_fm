@@ -4,6 +4,7 @@ frappe.listview_settings['Job Applicant'] = {
 		update_applicant_status(listview, 'Filter Applicants', 'Filter {0} applicants ?', 'Applicant Filtered');
 		update_applicant_status(listview, 'Schedule Interview', 'Schedule Interview for {0} applicants ?', 'Interview Scheduled');
 		update_applicant_status(listview, 'Shortlist', 'Shortlist {0} applicants ?', 'Shortlisted');
+		update_applicant_status(listview, 'Select Applicant', 'Selected {0} applicants ?', 'Selected');
 		reject_applicat_directly(listview);
 		send_magic_link_to_selected_applicants(listview, 'Career History')
 		send_magic_link_to_selected_applicants(listview, 'Applicant Doc')

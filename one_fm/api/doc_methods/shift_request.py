@@ -10,6 +10,7 @@ from frappe.utils import getdate, today, cstr, add_to_date, nowdate, add_days
 from frappe.model.workflow import apply_workflow
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 from one_fm.api.notification import create_notification_log, get_employee_user_id
+from one_fm.operations.doctype.employee_schedule.employee_schedule import validate_operations_post_overfill
 
 class OverlappingShiftError(frappe.ValidationError):
     pass
@@ -99,6 +100,9 @@ def process_shift_assignemnt(doc, event=None):
                     end_date = es.date
                     if start_time > end_time:
                         end_date = add_days(end_date, 1)
+
+                    validate_operations_post_overfill({es.date: 1}, doc.operations_shift)
+
                     frappe.db.set_value('Employee Schedule', es.name, {
                         'shift':doc.operations_shift,
                         'shift_type':doc.shift_type,
@@ -125,6 +129,8 @@ def process_shift_assignemnt(doc, event=None):
                         if start_time > end_time:
                             end_date = add_days(end_date, 1)
 
+                        validate_operations_post_overfill({es.date: 1}, doc.operations_shift)
+
                         frappe.db.set_value('Employee Schedule', es.name, {
                             'shift':doc.operations_shift,
                             'shift_type':doc.shift_type,
@@ -140,6 +146,7 @@ def process_shift_assignemnt(doc, event=None):
                             'reference_docname': doc.name
                             }
                         )
+
                     else:
                         schedule = frappe.new_doc("Employee Schedule")
                         schedule.employee = doc.employee
@@ -330,6 +337,10 @@ def fill_to_date(doc, method):
     if not doc.to_date:
         doc.to_date = doc.from_date
 
+def validate_from_date(doc, method):
+    if not doc.assign_day_off:
+        if getdate(today()) > getdate(doc.from_date):
+            frappe.throw('From Date cannot be before today.')
 
 @frappe.whitelist()
 def update_request(shift_request, from_date, to_date):
@@ -349,9 +360,18 @@ def update_request(shift_request, from_date, to_date):
 def _get_employee_from_user(user):
 	employee_docname = frappe.db.get_value("Employee", {"user_id": user})
 	return employee_docname if employee_docname else None
-	
+
 
 def get_manager(doctype,employee):
+    """Return the instances of the doctype where the employee is the supervisor
+
+    Args:
+        doctype : Valid Doctype
+        employee (_type_): Valid Employee ID
+
+    Returns:
+        _type_: _description_
+    """
     field = None
     if doctype =="Project":
         field = 'account_manager'
@@ -363,7 +383,7 @@ def get_manager(doctype,employee):
         values = frappe.get_all(doctype,{field:employee},['name'])
         if values:
             return [i.name for i in values]
-        
+
 
 
 @frappe.whitelist()
@@ -376,9 +396,9 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
     """
     Return the full list of employees if current user has a HR role or Included in the Employee Master Table.
     else, it returns the full list of employees assigned to the Operations shifts,sites or projects where this user is set
-    
+
     """
-    
+
     is_master= False
     default_user_roles = None
     employee_master_roles = frappe.get_all("ONEFM Document Access Roles Detail",{'parent':"ONEFM General Setting",'parentfield':"employee_master_role"},['role'])
@@ -396,20 +416,20 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
             #If the user has  typed anything on the employee field
             employees = frappe.db.sql(f"Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' and name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%'   ")
             return employees
-            
+
     else:
         allowed_employees = []
         user = frappe.session.user
         if user!="Administrator":
             employee_id = _get_employee_from_user(user)
             if employee_id:
-                employee_base_query = f""" 
+                employee_base_query = f"""
                         SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"
                 """
                 cond_str = ""
                 query = None
                 allowed_employees.append(employee_id)
-                #get all reports to 
+                #get all reports to
                 reports_to = frappe.get_all("Employee",{'reports_to':employee_id,'status':"Active"},'name')
                 if reports_to:
                     allowed_employees+=[i.name for i in reports_to]
@@ -438,10 +458,10 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
                         cond_str+=f" and (name like '%{txt}%' or employee_name like '%{txt}%' or employee_id like '%{txt}%')  "
                     query += f""" UNION SELECT name,employee_name,employee_id from `tabEmployee` where status = "Active"  {cond_str} """
                 #Check if employee is set in operations shift, operations site or project
-                
+
                 return frappe.db.sql(query)
-                
-                
+
+
             else:
                 return ()
         else:
@@ -450,13 +470,6 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
             else:
                 return frappe.db.sql("Select name,employee_name,employee_id from `tabEmployee` where status = 'Active' and name \
                     like '%{txt}%' or employee_name like '%{txt}%' \or employee_id like '%{txt}%'  ")
-        
-        
-        
-    
-        
-        
-        
 
 
 @frappe.whitelist()
