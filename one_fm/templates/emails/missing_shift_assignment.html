@@ -14,12 +14,19 @@
         <table style="color:#71746f;width:80%;" class="table">
             <tr>
                 <th>Employee ID</th>
-               
+                <th>Shift Type</th>
+                <th>Roster Type</th>
             </tr>
             {% for roster in rosters %}
             <tr>
                 <td>
                     {% if roster.employee %}{{ roster.employee }}{% endif %}
+                </td>
+                <td>
+                    {% if roster.shift_type %}{{ roster.shift_type }}{% endif %}
+                </td>
+                <td>
+                    {% if roster.roster_type %}{{ roster.roster_type }}{% endif %}
                 </td>
             </tr>
             {% endfor %}

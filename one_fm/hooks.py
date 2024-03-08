@@ -249,8 +249,7 @@ doc_events = {
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
 		"onload": "one_fm.utils.validate_pam_file_number_and_pam_designation",
-		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
-		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
+		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -384,7 +383,8 @@ doc_events = {
 	"Shift Request":{
 		"before_save":[
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
-			"one_fm.utils.send_shift_request_mail"
+			"one_fm.utils.send_shift_request_mail",
+			"one_fm.api.doc_methods.shift_request.validate_from_date"
 		],
 		# "on_update_after_submit":[
 			# "one_fm.api.doc_methods.shift_request.on_update_after_submit",
@@ -534,6 +534,7 @@ scheduler_events = {
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
 		'one_fm.utils.send_gp_letter_reminder',
         "one_fm.overrides.attendance.run_attendance_marking_hourly",
+		"one_fm.api.tasks.validate_shift_assignment"
 	],
 
 	"weekly": [

@@ -3,6 +3,9 @@ frappe.ui.form.on('Attendance Request', {
       frm.trigger('check_workflow');
 			set_update_request_btn(frm);
     },
+	validate: (frm) => {
+		validate_from_date(frm);
+	},
     check_workflow: (frm)=>{
       if(frm.doc.workflow_state=='Pending Approval'){
         // Disable action button/worklow if not approver
@@ -25,6 +28,9 @@ frappe.ui.form.on('Attendance Request', {
 				}
 			})
 		}
+	},
+	from_date: (frm) =>{
+		validate_from_date(frm);
 	}
 });
 
@@ -77,3 +83,9 @@ function update_request(frm) {
 	});
 	dialog.show();
 };
+
+validate_from_date = (frm) => {
+	if (frm.doc.from_date < frappe.datetime.now_date()){
+		frappe.throw("Atendance Request can not be created for past dates.")
+	}
+}

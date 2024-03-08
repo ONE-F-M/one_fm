@@ -260,7 +260,7 @@ def notify_supervisor_about_late_entry(checkin):
 	try:
 		auto_attendance_employee = frappe.get_value("Employee", {'name':checkin.employee}, ['auto_attendance'])
 		if auto_attendance_employee == 0:
-			shift_permission = frappe.db.sql(f""" select name from `tabShift Permission` where employee = '{checkin.employee}' and date = '{now_datetime().date()}' and log_type = 'IN' and permission_type = 'Arrive Late' and workflow_state = 'Approved' ;  """)
+			shift_permission = frappe.db.sql(f""" select name from `tabShift Permission` where employee = '{checkin.employee}' and date = '{now_datetime().date()}' and log_type = 'IN' and permission_type = 'Arrive Late' and workflow_state IN ('Pending','Approved') ;  """)
 			checkin_shift_assignment = False
 			if checkin.shift_assignment:
 				checkin_shift_assignment = last_shift_assignment = checkin.shift_assignment

@@ -1682,6 +1682,9 @@ def set_erf_details(job_offer, erf, job_app):
         job_offer.designation = erf.designation
     job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
     job_offer.one_fm_provide_transportation_by_company = erf.provide_transportation_by_company
+    job_offer.reports_to = erf.reports_to
+    job_offer.shift_working = erf.shift_working
+    job_offer.operations_shift = erf.operations_shift
     set_salary_details(job_offer, erf)
     set_other_benefits_to_terms(job_offer, erf, job_app)
 

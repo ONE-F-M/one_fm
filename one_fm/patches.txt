@@ -71,6 +71,8 @@ one_fm.patches.v14_0.update_timesheet_status
 one_fm.patches.v14_0.add_super_user_role
 one_fm.patches.v15_0.split_arabic_name_to_first_and_last_name
 one_fm.patches.v15_0.delete_duplicate_attendance
+one_fm.patches.v15_0.update_department_in_goal
 one_fm.patches.v15_0.update_purchase_order
 one_fm.patches.v15_0.patch_employee_educational_qualifications
 one_fm.patches.v15_0.missing_attendance_request
+one_fm.patches.v15_0.delete_employment_type_field_from_job_opening
