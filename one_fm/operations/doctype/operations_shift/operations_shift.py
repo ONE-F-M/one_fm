@@ -18,9 +18,16 @@ class OperationsShift(Document):
 		except Exception as e:
 			if not self.service_type and self.site and self.shift_classification:
 				frappe.throw("Kindly, make sure all required fields are not missing")
-
+    
+	def clear_cache(self):
+		if self.has_value_changed('supervisor'):
+			frappe.cache.delete_key('user_permissions')
+  
+  
 	def on_update(self):
+		self.clear_cache()
 		self.validate_name()
+  
 		self.update_post_status()
 
 	def validate_name(self):

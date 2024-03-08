@@ -3113,6 +3113,67 @@ def get_approver_for_many_employees(supervisor=None):
     return employees
 
 
+def get_other_managers(employee):
+    """
+        Return list of managers from shift,project and site for that employee
+    """
+    query = None
+    emp_data = frappe.get_all("Employee",{'name':employee},['project','site','shift'])
+    if emp_data:
+        emp_data = emp_data[0]
+        if emp_data.get('project'):
+            if query:
+                query +=f"""
+
+                    UNION
+                    SELECT account_manager as manager FROM `tabProject`
+                    WHERE name = '{emp_data.get('project')}'
+                    
+                    """
+            else:
+                query = f"""
+                    SELECT account_manager  as manager  FROM `tabProject`
+                    WHERE name = '{emp_data.get('project')}'  """
+        if emp_data.get("site"):
+            if query:
+                query+=f"""
+
+                    UNION
+                    
+                    SELECT account_supervisor  as manager FROM `tabOperations Site`
+                    WHERE name = '{emp_data.get('site')}' AND status = 'Active'
+                    
+                    """
+            else:
+                query = f"""
+                    SELECT account_supervisor as manager FROM `tabOperations Site`
+                WHERE name = '{emp_data.get('site')}' AND status = 'Active'
+                
+                """
+        if emp_data.get('shift'):
+            if query:
+                query+=f"""
+
+                    UNION
+                    
+                    SELECT supervisor as manager FROM `tabOperations Shift` 
+                WHERE name = '{emp_data.get('shift')}'  AND status = 'Active'
+                    
+                    """
+            else:
+                query = f"""
+                    SELECT supervisor  as manager FROM `tabOperations Shift` 
+                WHERE name = '{emp_data.get('shift')}' AND status = 'Active'
+                
+                """
+        if not query:
+            return []
+        result_set = frappe.db.sql(query,as_dict=1)
+        return [i.manager for  i in result_set] if result_set else []
+        
+    else:
+        return []
+
 def check_employee_permission_on_doc(doc):
     """
         Before loading document form, check if session user has access to view the doc data
@@ -3121,15 +3182,20 @@ def check_employee_permission_on_doc(doc):
     try:
         if has_super_user_role(frappe.session.user):
             return
-
+        approver_list = []
         if frappe.session.user not in ["Administrator", 'administrator']:
             session_employee = frappe.cache().get_value(frappe.session.user).employee
-            roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
+            
+            roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail` where parentfield = 'document_access_roles'", as_dict=1)]
             has_roles = any([item in roles for item in frappe.get_roles()])
             if not has_roles and (session_employee!=doc.employee):
                 if (session_employee and doc.employee):
                     approver = get_approver(doc.employee)
-                    if approver != session_employee:
+                    if frappe.get_single("ONEFM General Setting").extend_user_permissions:
+                        approver_list = get_other_managers(doc.employee)
+                    approver_list.append(approver)
+                    if session_employee not in approver_list:
+                    
                         frappe.throw("You do not have permissions to access this document.")
     except Exception as e:
         pass
