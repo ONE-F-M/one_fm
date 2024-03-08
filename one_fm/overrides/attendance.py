@@ -604,6 +604,38 @@ def mark_daily_attendance(start_date, end_date):
                     "{owner}", "{creation}", "{creation}", "Employee Schedule - {i.es_name}"
                 ),"""
 
+        attendance_request = frappe.db.sql(f"""
+                SELECT e.name, e.employee_name, e.company, e.department, ar.name as ar_name from `tabEmployee` e  
+                INNER JOIN `tabAttendance Request` ar ON ar.employee =e.name
+                WHERE '{start_date}' BETWEEN ar.from_date AND ar.to_date
+                AND ar.workflow_state='Approved'
+                AND e.status='Active'
+                """, as_dict=1
+            )
+
+        # create BASIC DAY OFF
+        for i in attendance_request:
+            if not i.get('ar_name'):
+                i.ar_name = i.description
+            if not i.name in existing_attendance:
+                try:
+                    frappe.db.sql(f"""
+                        DELETE FROM `tabAttendance` WHERE employee="{i.name}" AND
+                        attendance_date="{start_date}" 
+                        AND roster_type="Basic"
+                        AND status="Absent"
+                    """)
+                except:
+                    frappe.log_error(message = frappe.get_traceback(),title=f"Error in Attendance Marking for {i.employee_name}")
+                    continue
+                query_body+= f"""
+                (
+                    "HR-ATT_{start_date}_{i.name}_Basic", "{naming_series}" , "{i.name}", "{i.employee_name}", 0,  "Work From Home", '', NULL,
+                    NULL, "", "", "", "", "{start_date}", "{i.company}",
+                    "{i.department}", 0, 0, "", "", "Basic", 1, "{owner}",
+                    "{owner}", "{creation}", "{creation}", "Attendance Request - {i.ar_name}"
+                ),"""
+
         # UPDATE QUERY
         if query_body:
             query += query_body[:-1]
