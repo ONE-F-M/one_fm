@@ -53,7 +53,7 @@ from frappe.core.doctype.user_permission import user_permission
 from one_fm.permissions import get_custom_user_permissions
 
 
-__version__ = '15.0.3'
+__version__ = '15.0.4'
 
 user_permission.get_user_permissions = get_custom_user_permissions
 StockController.make_batches = make_batches_with_supplier_batch_id
@@ -95,4 +95,3 @@ InterviewFeedback.validate_interviewer = custom_validate_interviewer
 ShiftAssignment = ShiftAssignmentOverride
 
 AssignmentRule.do_assignment = do_assignment
-
