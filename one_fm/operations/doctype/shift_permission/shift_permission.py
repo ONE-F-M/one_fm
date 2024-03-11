@@ -143,32 +143,32 @@ class ShiftPermission(Document):
 			if self.assigned_shift:
 				if self.log_type == "IN":
 					if self.arrival_time:
-						date_time = datetime.strptime(self.date + self.arrival_time, '%Y-%m-%d %H:%M:%S')
+						date_time = datetime.strptime(self.date + " " + self.arrival_time, '%Y-%m-%d %H:%M:%S')
 						frappe.db.sql("""
-										UPDATE `tabShiftAssignment`
+										UPDATE `tabShift Assignment`
 										SET start_datetime = %s
 										WHERE name = %s
 									""", (date_time, self.assigned_shift))
 		
 						frappe.db.sql("""
 										UPDATE `tabEmployee Checkin`
-										SET shift_actual_start = %s, early_exit = 0
+										SET shift_actual_start = %s, late_entry = 0
 										WHERE shift_assignment = %s
 										AND log_type = %s
 									""", (date_time, self.assigned_shift, self.log_type))
 				
 				else:
 					if self.leaving_time:
-						date_time = datetime.strptime(self.date + self.leaving_time, '%Y-%m-%d %H:%M:%S')
+						date_time = datetime.strptime(self.date + " " + self.leaving_time, '%Y-%m-%d %H:%M:%S')
 						frappe.db.sql("""
-										UPDATE `tabShiftAssignment`
+										UPDATE `tabShift Assignment`
 										SET end_datetime = %s
 										WHERE name = %s
 									""", (date_time, self.assigned_shift))
 
 						frappe.db.sql("""
 										UPDATE `tabEmployee Checkin`
-										SET shift_actual_end = %s, late_entry = 0
+										SET shift_actual_end = %s, early_exit = 0
 										WHERE shift_assignment = %s
 										AND log_type = %s
 									""", (date_time, self.assigned_shift, self.log_type))
