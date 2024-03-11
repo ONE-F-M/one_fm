@@ -383,8 +383,7 @@ doc_events = {
 	"Shift Request":{
 		"before_save":[
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
-			"one_fm.utils.send_shift_request_mail",
-			"one_fm.api.doc_methods.shift_request.validate_from_date"
+			"one_fm.utils.send_shift_request_mail"
 		],
 		# "on_update_after_submit":[
 			# "one_fm.api.doc_methods.shift_request.on_update_after_submit",
@@ -395,6 +394,7 @@ doc_events = {
 		],
         "validate": [
             "one_fm.api.doc_methods.shift_request.validate",
+			"one_fm.api.doc_methods.shift_request.validate_from_date"
         ]
 
 	},

@@ -10,6 +10,8 @@ from frappe.utils import getdate, today, cstr, add_to_date, nowdate, add_days
 from frappe.model.workflow import apply_workflow
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 from one_fm.api.notification import create_notification_log, get_employee_user_id
+from one_fm.operations.doctype.employee_schedule.employee_schedule import validate_operations_post_overfill
+from one_fm.api.doc_events import get_employee_user_id
 
 class OverlappingShiftError(frappe.ValidationError):
     pass
@@ -111,7 +113,8 @@ def process_shift_assignemnt(doc, event=None):
                         'department':doc.department,
                         'site':doc.site,
                         'reference_doctype': doc.doctype,
-                        'reference_docname': doc.name
+                        'reference_docname': doc.name,
+                        'employee_is_replaced':1
                     })
                     found_schedules_date.append(str(es.date))
             # create new schedule
@@ -171,6 +174,7 @@ def update_shift_assignment(shift_assignemnt,shift_request):
     assignment_doc.db_set("shift_request" , shift_request.name)
     assignment_doc.db_set("check_in_site" , shift_request.check_in_site)
     assignment_doc.db_set("check_out_site" , shift_request.check_out_site)
+    assignment_doc.db_set("employee_is_replaced",1)
     shift_type_data = frappe.get_doc("Shift Type",shift_request.shift_type)
     if shift_type_data:
         start_datetime = datetime.datetime.strptime(f"{shift_request.from_date} {(datetime.datetime.min + shift_type_data.start_time).time()}", '%Y-%m-%d %H:%M:%S')
@@ -183,6 +187,7 @@ def update_shift_assignment(shift_assignemnt,shift_request):
         assignment_doc.db_set("end_datetime" , end_datetime)
     if shift_request.operations_role:
         assignment_doc.db_set("operations_role" , shift_request.operations_role)
+    employee_checkin_update = frappe.db.sql(f"""UPDATE `tabEmployee Checkin` SET employee_is_replaced=1 WHERE shift_assignment='{shift_assignemnt}'""")
 
 def create_shift_assignment_from_request(shift_request, submit=True):
     '''
@@ -212,6 +217,7 @@ def assign_day_off(shift_request):
     shift_assignment = frappe.get_list('Shift Assignment' ,{'employee':shift_request.employee, 'start_date': shift_request.from_date}, ['name'])
     if shift_assignment:
         for s in shift_assignment:
+            del_employee_checkin = frappe.db.sql(f"""DELETE from `tabEmployee Checkin` WHERE employee='{shift_request.employee}' AND shift_assignment='{s.name}'""")
             shift = frappe.get_doc("Shift Assignment", s.name)
             if shift.start_date >= getdate():
                 shift.cancel()
@@ -331,16 +337,22 @@ def fill_to_date(doc, method):
         doc.to_date = doc.from_date
 
 def validate_from_date(doc, method):
-    if not doc.assign_day_off:
+    if doc.assign_day_off == 0 and not (frappe.session.user == get_employee_user_id(frappe.get_doc("ONEFM General Setting").get("attendance_manager"))):
         if getdate(today()) > getdate(doc.from_date):
-            frappe.throw('From Date cannot be before today.')
+            frappe.throw(
+                _("Please note that Shift Requests cannot be created for a past date."),
+                title=_("Invalid Start Date"),
+		    )
 
 @frappe.whitelist()
 def update_request(shift_request, from_date, to_date):
     from_date = getdate(from_date)
     to_date = getdate(to_date)
     if getdate(today()) > from_date:
-        frappe.throw('From Date cannot be before today.')
+        frappe.throw(
+                _("Please note that Shift Requests cannot be updated to a past date."),
+                title=_("Invalid Start Date"),
+		    )
     if from_date > to_date:
         frappe.throw('To Date cannot be before From Date.')
     shift_request_obj = frappe.get_doc('Shift Request', shift_request)
