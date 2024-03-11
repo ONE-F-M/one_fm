@@ -3,12 +3,22 @@ from __future__ import unicode_literals
 import frappe
 from hrms.hr.doctype.shift_request.shift_request import ShiftRequest
 
-from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
+# -- Start Payroll Entry Overrides --
+# Imports from core
+from hrms.payroll.doctype.payroll_entry import payroll_entry
+
+# Imports from onefm
+from one_fm.overrides import payroll_entry as onefm_payroll_entry
+
+# Override
+# Overrides get_employee_list since it is used in filter query
+payroll_entry.get_employee_list = onefm_payroll_entry.get_employee_list
+
+# -- End Payroll Entry Overrides --
 from hrms.payroll.doctype.salary_slip.salary_slip import SalarySlip
 from erpnext.stock.doctype.item_price.item_price import ItemPrice
 from erpnext.setup.doctype.employee.employee import Employee
 from one_fm.api.doc_methods.shift_request import shift_request_submit, validate_approver, shift_request_cancel, validate_default_shift
-# from one_fm.api.doc_methods.payroll_entry import fill_employee_details
 # from one_fm.api.doc_methods.salary_slip import (
 # 	get_working_days_details, get_unmarked_days_based_on_doj_or_relieving, get_unmarked_days, get_data_for_eval
 # )
@@ -74,7 +84,6 @@ ShiftRequest.on_submit = shift_request_submit
 ShiftRequest.validate_approver = validate_approver
 ShiftRequest.on_cancel = shift_request_cancel
 ShiftRequest.validate_default_shift = validate_default_shift
-# PayrollEntry.fill_employee_details = fill_employee_details to be fixed
 # SalarySlip.get_working_days_details = get_working_days_details to be fixed
 # SalarySlip.get_unmarked_days_based_on_doj_or_relieving = get_unmarked_days_based_on_doj_or_relieving to be fixed
 # SalarySlip.get_unmarked_days = get_unmarked_days to be fixed
@@ -93,4 +102,3 @@ InterviewFeedback.validate_interviewer = custom_validate_interviewer
 ShiftAssignment = ShiftAssignmentOverride
 get_children = get_childrens
 AssignmentRule.do_assignment = do_assignment
-

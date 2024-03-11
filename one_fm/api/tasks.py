@@ -930,7 +930,7 @@ def validate_shift_assignment():
 					IN (Select employee from `tabEmployee` E
 					WHERE E.name = SR.employee
 					AND E.status = 'Active')""".format(now_time=now_time,date=cstr(date), now=now), as_dict=1)
-	
+
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 				WHERE ES.start_datetime = '{now}'
@@ -962,7 +962,7 @@ def validate_shift_assignment():
 
 	if non_shift:
 		roster.extend(non_shift)
-	
+
 	if shift_request:
 		roster_emp = shift_request
 		employee_list = [i.employee for i in shift_request]
@@ -1102,7 +1102,7 @@ def process_overtime_shift(roster, date, time):
 		except Exception as e:
 			continue
 
-def create_overtime_shift_assignment(schedule, date):	
+def create_overtime_shift_assignment(schedule, date):
 		try:
 			shift_assignment = frappe.new_doc("Shift Assignment")
 			shift_assignment.start_date = date
@@ -1162,7 +1162,7 @@ def mark_auto_attendance(shift_type):
 
 
 def generate_payroll():
-	from one_fm.api.doc_methods.payroll_entry import auto_create_payroll_entry
+	from one_fm.overrides.payroll_entry import auto_create_payroll_entry
 	'''
 		Method to generate payroll on 24th of each month(method calling form cron job for 24th in hooks.py)
 	'''

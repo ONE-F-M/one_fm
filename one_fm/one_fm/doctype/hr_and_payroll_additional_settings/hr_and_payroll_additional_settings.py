@@ -42,4 +42,4 @@ def get_projects_configured_in_payroll_cycle(payroll_start_day):
 			payroll_start_day = '{0}'
 	'''
 	projects = frappe.db.sql(query.format(payroll_start_day), as_dict=True)
-	return ', '.join(['"{}"'.format(project.project) for project in projects])
+	return [project.project for project in projects]
