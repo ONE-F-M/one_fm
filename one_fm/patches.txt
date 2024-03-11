@@ -76,6 +76,7 @@ one_fm.patches.v15_0.update_purchase_order
 one_fm.patches.v15_0.patch_employee_educational_qualifications
 one_fm.patches.v15_0.missing_attendance_request
 one_fm.patches.v15_0.delete_employment_type_field_from_job_opening
+one_fm.patches.v15_0.update_shift_permission_workflow
 one_fm.patches.v15_0.migrate_data_for_job_offer_term_templates
 one_fm.patches.v15_0.delete_offer_term_templates_field
 one_fm.patches.v15_0.replicate_issue_types_to_hd_ticket_types
