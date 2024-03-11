@@ -1540,6 +1540,7 @@
    "label": "Forth Name in Arabic"
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "last_name_in_arabic",
    "fieldtype": "Data",
    "label": "Last Name in Arabic",
@@ -1563,7 +1564,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-02-20 15:35:09.867842",
+ "modified": "2024-03-04 09:51:08.981949",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
