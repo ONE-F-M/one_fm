@@ -28,7 +28,6 @@ class ShiftDetailsMissing(frappe.ValidationError):
 
 class ShiftPermission(Document):
 	def validate(self):
-		self.alter_shift_assignment()
 		self.validate_permission_type()
 		self.check_shift_details_value()
 		self.validate_date()
