@@ -1,0 +1,40 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-03-03 23:04:55.647552",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "reassigned_doctype",
+  "names"
+ ],
+ "fields": [
+  {
+   "fieldname": "reassigned_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Reassigned Doctype",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "names",
+   "fieldtype": "Long Text",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "Names"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-03-04 09:43:48.713038",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Reassigned Documents",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

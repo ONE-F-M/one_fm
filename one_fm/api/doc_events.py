@@ -243,8 +243,12 @@ def update_training_event_data(doc, method):
 			})
 			doc_esm.save()
 
+def clear_cache(doc):
+	if doc.has_value_changed('account_manager'):
+		frappe.cache.delete_key('user_permissions')
 
 def on_project_update_switch_shift_site_post_to_inactive(doc, method):
+    clear_cache(doc)
     if doc.is_active == "No" and  doc.project_type == "External":
         list_of_shift = frappe.db.sql(f""" select name from `tabOperations Shift` where project = "{doc.name}" """)
 

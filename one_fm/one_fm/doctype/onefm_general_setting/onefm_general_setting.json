@@ -13,6 +13,7 @@
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
+  "extend_user_permissions",
   "section_break_nsc7h",
   "document_access_roles",
   "section_break_7yvzt",
@@ -124,11 +125,18 @@
    "fieldtype": "Table",
    "label": "Attendance Check Exclusion",
    "options": "Attendance Check Exclusion"
+  },
+  {
+   "default": "0",
+   "description": "Enabling this will open employee records to their site supervisor, shift supervisor and project managers ",
+   "fieldname": "extend_user_permissions",
+   "fieldtype": "Check",
+   "label": "Extend User Permissions"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-01-23 10:49:56.513050",
+ "modified": "2024-03-04 08:35:52.740118",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
