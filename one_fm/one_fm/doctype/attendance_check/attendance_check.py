@@ -369,7 +369,13 @@ def create_attendance_check(attendance_date=None):
                                     AND emp.status ='Active'
                                     AND emp.employee_name != 'Test Employee'
                                     AND emp.name NOT IN (SELECT employee from `tabTimesheet` WHERE start_date='{attendance_date}')
-                                    AND '{attendance_date}' NOT IN (SELECT holiday_date from `tabHoliday` h WHERE h.parent = emp.holiday_list AND h.holiday_date = '{attendance_date}')""", as_dict=1)
+                                    AND '{attendance_date}' NOT IN (SELECT holiday_date from `tabHoliday` h WHERE h.parent = emp.holiday_list AND h.holiday_date = '{attendance_date}')
+                                    AND emp.employee NOT IN (SELECT employee
+                                    FROM `tabLeave Application`
+                                    Where '{attendance_date}' >= from_date AND '{attendance_date}' <= to_date
+                                    AND workflow_state = 'Approved'
+                                    AND docstatus = 1)
+                                    """, as_dict=1)
         
         if no_timesheet:
             for count, i in enumerate(no_timesheet):
