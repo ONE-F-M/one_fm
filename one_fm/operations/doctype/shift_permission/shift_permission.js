@@ -45,10 +45,10 @@ function set_employee_from_the_session_user(frm) {
 function set_options_for_permission_type(frm) {
 	if(frm.doc.log_type){
 		if(frm.doc.log_type == 'IN'){
-			frm.set_df_property('permission_type', 'options', ['', 'Arrive Late']);
+			frm.set_df_property('permission_type', 'options', ['', 'Arrive Late', 'Forget to Checkin', 'Checkin Issue']);
 		}
 		else{
-			frm.set_df_property('permission_type', 'options', ['', 'Leave Early']);
+			frm.set_df_property('permission_type', 'options', ['', 'Leave Early', 'Forget to Checkout', 'Checkout Issue']);
 		}
 	}
 	else{
