@@ -323,9 +323,9 @@ def get_active_shifts(now_time):
 
 def checkin_checkout_query(date, shift_type, log_type):
 	if log_type == "IN":
-		permission_type = ("Arrive Late", "Forget to Checkin", "Checkin Issue")
+		permission_type = ("Arrive Late", )
 	else:
-		permission_type = ("Leave Early", "Forget to Checkout", "Checkout Issue")
+		permission_type = ("Leave Early",)
 
 	query = frappe.db.sql("""SELECT DISTINCT emp.user_id, emp.name , emp.employee_name, emp.holiday_list, tSA.shift
 					FROM `tabShift Assignment` tSA, `tabEmployee` emp
