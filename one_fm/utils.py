@@ -1446,10 +1446,10 @@ def validate_job_applicant(doc, method):
     # update night shift
     if doc.one_fm_night_shift:
         frappe.db.set_value("Job Applicant", doc.name, "one_fm_night_shift", doc.one_fm_night_shift)
-    
+
     # Because first name and last name are mandatory so merge both to generate applicant name
     doc.applicant_name = doc.one_fm_first_name + " " + doc.one_fm_last_name
-    
+
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     # validate_pam_file_number_and_pam_designation(doc, method)
@@ -3047,6 +3047,7 @@ def has_super_user_role(user=None):
                 return True
     return False
 
+@frappe.whitelist()
 def get_approver(employee):
     '''
         Method to get reports_to user of an employee with the priority
@@ -3070,7 +3071,7 @@ def get_approver(employee):
     if employee_user and has_super_user_role(employee_user):
         return employee
 
-    employee_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
+    employee_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department', 'project'], as_dict=1)
 
     reports_to = None
     if employee_data.reports_to:
@@ -3089,6 +3090,10 @@ def get_approver(employee):
                 account_manager = frappe.db.get_value('Project', project, 'account_manager')
                 if account_manager:
                     reports_to = account_manager
+    if not reports_to and employee_data.project:
+        account_manager = frappe.db.get_value('Project', employee_data.project, 'account_manager')
+        if account_manager:
+            reports_to = account_manager
     return reports_to
 
 def get_approver_for_many_employees(supervisor=None):
