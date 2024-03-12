@@ -96,7 +96,7 @@ def process_shift_assignemnt(doc, event=None):
     role_abbr = frappe.db.get_value("Operations Role",doc.operations_role,'post_abbrv')
     shift_worker = frappe.db.get_value("Employee", doc.employee, 'shift_working')
     if doc.workflow_state=='Approved' and doc.docstatus==1:
-        if doc.assign_day_off == 1:
+        if doc.purpose == 'Assign Day Off':
             assign_day_off(doc)
         else:
             if doc.roster_type == "Basic" and cstr(doc.from_date) == cstr(getdate()):
@@ -361,7 +361,7 @@ def fill_to_date(doc, method):
         doc.to_date = doc.from_date
 
 def validate_from_date(doc, method):
-    if doc.assign_day_off == 0 and not (frappe.session.user == get_employee_user_id(frappe.get_doc("ONEFM General Setting").get("attendance_manager"))):
+    if doc.purpose != 'Assign Day Off' and not (frappe.session.user == get_employee_user_id(frappe.get_doc("ONEFM General Setting").get("attendance_manager"))):
         if getdate(today()) > getdate(doc.from_date):
             frappe.throw(
                 _("Please note that Shift Requests cannot be created for a past date."),
