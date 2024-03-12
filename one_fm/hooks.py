@@ -780,7 +780,8 @@ fixtures = [
 			[
 				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
 				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request",
-				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action"
+				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action",
+				"Timesheet Return to Draft", "Timesheet Approval Assignment"
 			]
 		]]
 	},
