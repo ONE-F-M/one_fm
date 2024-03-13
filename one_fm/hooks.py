@@ -514,6 +514,8 @@ scheduler_events = {
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
+		'one_fm.utils.send_work_anniversary_reminders',
+		'one_fm.utils.send_birthday_reminders',
 		'one_fm.utils.increase_daily_leave_balance',
 		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.daily_indemnity_allocation_builder',
 		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.allocate_daily_indemnity',
@@ -832,6 +834,8 @@ jenv = {
 
 after_migrate = [
     "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
+    "one_fm.after_migrate.execute.replace_send_birthday_reminder",
+    "one_fm.after_migrate.execute.replace_send_anniversary_reminder",
     "one_fm.after_migrate.execute.disable_workflow_emails",
     "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
