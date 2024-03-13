@@ -420,10 +420,13 @@ doc_events = {
 	# },
     "Task": {
         "validate": "one_fm.overrides.task.validate_task"
-	}
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
+    "OAuth Bearer Token": {
+		"after_insert": "one_fm.api.doc_methods.oauth_bearer_token.revoke_and_delete_existing_tokens",
+	},
 }
 
 standard_portal_menu_items = [
