@@ -951,7 +951,7 @@ class AttendanceMarking():
                 AND e.shift_working=0""", as_dict=1)
             shifts.extend(non_shifts)
         if shifts:
-            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0]))
+            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0].name))
             if checkins:
                 # employees = [i.employee for i in shifts]
                 checked_in_employees = [i.employee for i in checkins]
