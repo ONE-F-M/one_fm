@@ -3539,9 +3539,9 @@ def get_all_employee_emails(company,is_birthday=False,is_anniversary = False):
         return []
     all_users=[]
     if is_anniversary:
-        all_users = frappe.get_all("Notification Settings",{'enable_work_anniversary_notification':1},['name'])
+        all_users = frappe.get_all("Notification Settings",{'custom_enable_work_anniversary_notification':1},['name'])
     if is_birthday:
-        all_users = frappe.get_all("Notification Settings",{'enable_employee_birthday_notification':1},['name'])
+        all_users = frappe.get_all("Notification Settings",{'custom_enable_employee_birthday_notification':1},['name'])
     if all_users and None not in all_users:
         all_users = [i.name for i in all_users]
     else:
