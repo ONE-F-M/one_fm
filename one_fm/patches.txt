@@ -23,7 +23,7 @@ one_fm.patches.v14_0.set_job_offer_field_valuse_from_applicant
 one_fm.patches.v14_0.patch_contract_items
 one_fm.patches.v14_0.update_place_of_birth
 one_fm.patches.v14_0.update_working_hours_threshold_for_absent_in_shift_type
-one_fm.patches.v14_0.fix_sick_leaves_
+one_fm.patches.v14_0.fix_sick_leaves_https://github.com/ONE-F-M/one_fm/pull/3266/conflict?name=one_fm%252Fpatches.txt&ancestor_oid=a2ba6ed7a7590954eb49055e036e1fc8dded5a7f&base_oid=a562d18787748a023717fa8b913361eb0f909ec3&head_oid=4552a8aaff3a9ec98b999e472973de725fee8380
 one_fm.patches.v14_0.update_route_for_wiki_page
 one_fm.patches.v14_0.update_cancelled_leave_application_workflow_state
 one_fm.patches.v14_0.allocate_leave_allocation
@@ -76,4 +76,5 @@ one_fm.patches.v15_0.update_purchase_order
 one_fm.patches.v15_0.patch_employee_educational_qualifications
 one_fm.patches.v15_0.missing_attendance_request
 one_fm.patches.v15_0.delete_employment_type_field_from_job_opening
+one_fm.patches.v15_0.update_shift_permission_workflow
 one_fm.patches.v15_0.update_timesheet_workflow_sate
