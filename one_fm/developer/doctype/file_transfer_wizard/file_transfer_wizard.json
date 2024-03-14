@@ -1,0 +1,141 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "FTZ-.YYYY.-.MM. -.####",
+ "creation": "2024-03-14 10:10:11.005923",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "recipient_details_section",
+  "server_id",
+  "ip_address",
+  "username",
+  "password",
+  "column_break_mchs",
+  "fetch_ip_from_url",
+  "url",
+  "transfer_public_and_private_files",
+  "directory",
+  "create_directory_if_missing",
+  "transfer_status",
+  "section_break_vpib",
+  "updates"
+ ],
+ "fields": [
+  {
+   "fieldname": "server_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Server ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "ip_address",
+   "fieldtype": "Data",
+   "label": "IP Address",
+   "mandatory_depends_on": "eval:doc.fetch_ip_from_url == 0",
+   "read_only_depends_on": "eval:doc.fetch_ip_from_url"
+  },
+  {
+   "default": "0",
+   "fieldname": "fetch_ip_from_url",
+   "fieldtype": "Check",
+   "label": "Fetch IP from URL"
+  },
+  {
+   "depends_on": "eval:doc.fetch_ip_from_url",
+   "fieldname": "url",
+   "fieldtype": "Data",
+   "label": "URL",
+   "mandatory_depends_on": "eval:doc.fetch_ip_from_url",
+   "options": "URL"
+  },
+  {
+   "fieldname": "recipient_details_section",
+   "fieldtype": "Section Break",
+   "label": "Recipient Details"
+  },
+  {
+   "fieldname": "column_break_mchs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Username to access the server",
+   "fieldname": "username",
+   "fieldtype": "Data",
+   "label": "Username",
+   "reqd": 1
+  },
+  {
+   "description": "Password to access the server",
+   "fieldname": "password",
+   "fieldtype": "Password",
+   "label": "Password",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Copy the attached files backups ",
+   "fieldname": "transfer_public_and_private_files",
+   "fieldtype": "Check",
+   "label": "Transfer Public and Private Files"
+  },
+  {
+   "description": "The full file path to the directory where the backup files will be copied",
+   "fieldname": "directory",
+   "fieldtype": "Data",
+   "label": "Directory",
+   "reqd": 1
+  },
+  {
+   "fieldname": "transfer_status",
+   "fieldtype": "Select",
+   "label": "Transfer Status",
+   "options": "Pending\nReady\nInitiated\nSuccessful\nFailed",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "create_directory_if_missing",
+   "fieldtype": "Check",
+   "label": "Create Directory If Missing"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_vpib",
+   "fieldtype": "Section Break",
+   "label": "Progress"
+  },
+  {
+   "fieldname": "updates",
+   "fieldtype": "Long Text",
+   "label": "Updates",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-03-14 22:22:00.946363",
+ "modified_by": "Administrator",
+ "module": "Developer",
+ "name": "File Transfer Wizard",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
