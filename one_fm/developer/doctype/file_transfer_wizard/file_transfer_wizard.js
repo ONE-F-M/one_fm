@@ -4,7 +4,8 @@
 frappe.ui.form.on("File Transfer Wizard", {
 	refresh(frm) {
         if(frm.doc.transfer_status =="Ready"){
-            frm.add_custom_button(`Hey ${frappe.session.user} ! Click me to start`,()=>{
+            frm.add_custom_button(`Hey ${frappe.session.user_fullname.split(' ')[0]
+        }! Click me to start the upload`,()=>{
                 frappe.call({
                     doc: frm.doc,
                     method: 'initiate_transfers',

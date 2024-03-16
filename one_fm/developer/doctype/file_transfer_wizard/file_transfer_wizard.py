@@ -31,7 +31,13 @@ class FileTransferWizard(Document):
                         self.db_set('updates',old_update+f"<br/> Uploading {file_name}......")
                         self.sftp_client.put(last_backups.get(one),self.directory+'/'+file_name)
                         self.db_set('updates',old_update+f"<br/> Uploaded {file_name}")
+                self.db_set("transfer_status",'Successful')
+                self.client.close()
+                self.sftp_client.close()
         except Exception as e:
+            self.db_set("transfer_status",'Failed')
+            self.client.close()
+            self.sftp_client.close()
             frappe.log_error(title = "Error Uploading File",message = frappe.get_traceback())
             
     

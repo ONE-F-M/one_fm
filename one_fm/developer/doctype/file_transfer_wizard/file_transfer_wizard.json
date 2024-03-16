@@ -91,7 +91,7 @@
    "fieldname": "transfer_status",
    "fieldtype": "Select",
    "label": "Transfer Status",
-   "options": "Pending\nReady\nInitiated\nSuccessful\nFailed",
+   "options": "Pending\nReady\nSuccessful\nFailed",
    "read_only": 1
   },
   {
@@ -115,7 +115,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-03-14 22:22:00.946363",
+ "modified": "2024-03-16 12:00:32.147161",
  "modified_by": "Administrator",
  "module": "Developer",
  "name": "File Transfer Wizard",
