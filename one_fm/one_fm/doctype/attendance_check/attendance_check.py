@@ -323,24 +323,6 @@ def insert_attendance_check_records(details, attendance_date, is_unscheduled=Fal
             frappe.db.commit()
     frappe.db.commit()
 
-def approve_attendance_check():
-    attendance_checks = frappe.get_all("Attendance Check", filters={
-        "date":["<", today()], "workflow_state":"Pending Approval"}
-    )
-    for i in attendance_checks:
-        doc = frappe.get_doc("Attendance Check", i.name)
-        if not doc.justification:
-            doc.justification = "Approved by Administrator"
-        if not doc.attendance_status:
-            doc.attendance_status = "Absent"
-        doc.workflow_state = "Approved"
-        try:
-            doc.submit()
-        except Exception as e:
-            if str(e)=="To date can not greater than employee's relieving date":
-                doc.db_set("Comment", f"Employee exited company on {frappe.db.get_value('Employee', doc.employee, 'relieving_date')}\n{doc.comment or ''}")
-
-
 def mark_missing_attendance(attendance_checkin_found):
     for i in attendance_checkin_found:
         try:
