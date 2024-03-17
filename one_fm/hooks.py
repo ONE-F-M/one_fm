@@ -684,9 +684,6 @@ scheduler_events = {
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.schedule_attendance_check',
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.assign_attendance_manager_after_48_hours'
 		],
-		# "07 13 * * *":[ # Auto approve attendance check
-			# 'one_fm.one_fm.doctype.attendance_check.attendance_check.approve_attendance_check'
-		# ],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
 		],
