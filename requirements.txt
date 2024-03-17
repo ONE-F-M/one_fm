@@ -238,3 +238,4 @@ xlrd==2.0.1
 yarl==1.9.2
 zopfli==0.2.3
 zxcvbn==4.4.28
+paramiko==3.4.0
