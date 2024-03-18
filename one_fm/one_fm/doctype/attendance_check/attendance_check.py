@@ -10,7 +10,7 @@ from frappe.desk.form.assign_to import add as add_assignment
 from frappe.utils import nowdate, add_to_date, cstr, add_days, today, format_date, now, get_url_to_form
 from one_fm.utils import (
     production_domain,
-    fetch_attendance_manager_user_obj,
+    fetch_attendance_manager_user,
     get_approver
 )
 
@@ -425,29 +425,75 @@ def validate_day_off(form,convert=1):
                  To create a Shift Request <a class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/shift-request/new-shift-request-1')}?doc_id={doc.name}&doctype={doc.doctype}" target="_blank" onclick=" ">Click Here</a>
                  """)
 
+def attendance_check_pending_approval_check():
+    pending_approval_attendance_checks = get_pending_approval_attendance_check(48)
+    if pending_approval_attendance_checks and len(pending_approval_attendance_checks)>0:
+        # Issue Penalty to the assigned approver
+        issue_penalty_to_the_assigned_approver(pending_approval_attendance_checks)
+        # Assign the attendance checks to attendance manager for approval
+        assign_attendance_manager(pending_approval_attendance_checks)
 
-def assign_attendance_manager_after_48_hours():
-    attendance_manager_user = fetch_attendance_manager_user_obj()
+def get_pending_approval_attendance_check(hours):
+    # Method to get list of attendance check, which is in panding approval state after a given hours
+    date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f') - timedelta(hours=hours)
+    return frappe.db.sql("""
+        select
+            name, _assign as assign_to
+        from
+            `tabAttendance Check`
+        where
+            creation <= %s
+            and
+            docstatus = 0
+            and
+            TIME(creation) <= %s
+    """, (date_time, date_time.time()), as_dict=1)
+
+def issue_penalty_to_the_assigned_approver(pending_approval_attendance_checks):
+    approvers = {}
+    for pending_approval_attendance_check in pending_approval_attendance_checks:
+        pending_approval_attendance_check = frappe.parse_json(pending_approval_attendance_check)
+        if "assign_to" in pending_approval_attendance_check:
+            assign_to = frappe.parse_json(pending_approval_attendance_check.assign_to)
+            if assign_to and len(assign_to) > 0:
+                if assign_to[0] in approvers:
+                    approvers[assign_to[0]] += ", "+pending_approval_attendance_check.name
+                else:
+                    approvers[assign_to[0]] = pending_approval_attendance_check.name
+
+    penalty_type = frappe.db.get_single_value("ONEFM General Setting", "att_check_approver_penalty_type")
+    for approver in approvers:
+        note = "There are attendance check not approved "+approvers[approver]
+        approver_employee = frappe.db.get_values(
+            "Employee",
+            {"user_id": approver},
+            ['name', 'employee_name', 'designation'],
+            as_dict=True
+        )
+        if approver_employee and len(approver_employee)>0:
+            penalty = frappe.get_doc({
+                "doctype": "Penalty",
+                "penalty_issuance_time": now(),
+                "recipient_employee": approver_employee[0].name,
+                "recipient_name": approver_employee[0].employee_name,
+                "recipient_designation": approver_employee[0].designation,
+                "recipient_user": approver,
+            })
+            penalty_details = penalty.append("penalty_details")
+            penalty_details.penalty_type = penalty_type
+            penalty_details.exact_notes = note
+            penalty.save(ignore_permissions=True)
+
+def assign_attendance_manager(pending_approval_attendance_checks):
+    attendance_manager_user = fetch_attendance_manager_user()
     if attendance_manager_user:
-        date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f') - timedelta(hours=48)
-        attendance_check = attendance_check = frappe.db.sql("""
-                                                                SELECT name
-                                                                FROM `tabAttendance Check`
-                                                                WHERE creation <= %s
-                                                                AND docstatus = 0
-                                                                AND TIME(creation) <= %s
-                                                            """, (date_time, date_time.time()), as_list=1)
-
-        if attendance_check:
-            list_of_names = tuple(chain.from_iterable(attendance_check))
-            if list_of_names:
-                for obj in list_of_names:
-                    add_assignment({
-                        'doctype': "Attendance Check",
-                        'name': obj,
-                        'assign_to': [attendance_manager_user],
-                    })
-
+        for pending_approval_attendance_check in pending_approval_attendance_checks:
+            add_assignment({
+                'doctype': "Attendance Check",
+                'name': pending_approval_attendance_check.name,
+                'assign_to': [attendance_manager_user],
+            })
+        frappe.db.commit()
 
 def check_for_missed(date,schedules,shift_assignments,attendance_requests,all_attendance,checks_to_create):
     all_leaves = frappe.db.sql(f"""SELECT name,employee
