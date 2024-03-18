@@ -3513,8 +3513,7 @@ def send_birthday_reminders():
 
     for company, birthday_persons in employees_born_today.items():
         employee_emails = get_all_employee_emails(company,is_birthday = True)
-        print("EMPLOYEE EMAILS")
-        print(employee_emails)
+        
         birthday_person_emails = [get_employee_email(doc) for doc in birthday_persons]
         recipients = list(set(employee_emails) - set(birthday_person_emails))
 
