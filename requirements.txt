@@ -46,7 +46,6 @@ dill==0.3.7
 docopt==0.6.2
 dropbox==11.36.2
 email-reply-parser==0.5.12
--e git+https://github.com/frappe/erpnext.git@1dc85fcaf874b6c6f8822a8a1e974bf374f27900#egg=erpnext
 et-xmlfile==1.1.0
 exceptiongroup==1.2.0
 executing==2.0.0
@@ -54,7 +53,6 @@ filelock==3.8.2
 filetype==1.2.0
 firebase-admin==6.2.0
 fonttools==4.47.2
--e git+https://github.com/frappe/frappe.git@82a52cc97372b92fe9510ef6ad363be90f2b5472#egg=frappe
 frozenlist==1.4.0
 fsspec==2023.10.0
 git-url-parse==1.2.2
@@ -80,10 +78,8 @@ grpcio==1.59.0
 grpcio-status==1.48.2
 gspread==5.12.0
 gunicorn==21.2.0
--e git+https://github.com/frappe/helpdesk.git@bd83467f9e0d8d3b63569bbf54f3a36073cdce93#egg=helpdesk
 hiredis==2.2.3
 holidays==0.35
--e git+https://github.com/frappe/hrms.git@17678bb2f62092401fdeaf7cff562c83fbbac421#egg=hrms
 html2text==2020.1.16
 html5lib==1.1
 httplib2==0.22.0
@@ -97,10 +93,7 @@ Jinja2==3.1.2
 jmespath==0.10.0
 joblib==1.3.2
 jsonobject==2.1.0
-langchain==0.0.96
-langchainplus-sdk==0.0.10
 ldap3==2.9.1
--e git+https://github.com/frappe/lending.git@78f7fd506cfc098900b383e8235414ef9e65342b#egg=lending
 libdeeplake==0.0.84
 lxml==4.9.3
 lz4==4.3.2
@@ -122,8 +115,6 @@ nltk==3.8.1
 num2words==0.5.13
 numpy==1.26.1
 oauthlib==3.2.2
--e git+https://github.com/ONE-F-M/password_management@6a859c8a74e211fa114bd9a3866eb27298b895f3#egg=one_fm_password_management
--e git+https://github.com/ONE-F-M/one_fm@94894977872293bb1f03c6b8466d53ca53660a06#egg=one_fm
 openai==0.28.1
 openpyxl==3.1.2
 packaging==23.2
@@ -131,7 +122,6 @@ pandas==2.1.2
 parso==0.8.3
 passlib==1.7.4
 pathos==0.3.1
--e git+https://github.com/frappe/payments.git@8a6b92a75db6327dd2c87c54a750ea16e4f41f53#egg=payments
 paytmchecksum==1.7.0
 pbr==5.11.1
 pdfkit==1.0.0
@@ -187,9 +177,7 @@ rauth==0.7.3
 razorpay==1.2.0
 redis==4.5.5
 redis-cli==1.0.1
-redisearch==2.1.1
 regex==2023.10.3
-rejson==0.5.6
 requests==2.31.0
 requests-oauthlib==1.3.1
 RestrictedPython==6.2
@@ -220,7 +208,6 @@ traitlets==5.12.0
 transformers==4.34.1
 tweepy==3.10.0
 twilio==6.44.2
--e git+https://github.com/frappe/twilio-integration.git@cb474c54d794c3a58a8c5287d387cf3d41e5ed0a#egg=twilio_integration
 typing-inspect==0.9.0
 typing_extensions==4.8.0
 tzdata==2023.3
@@ -232,7 +219,6 @@ weasyprint==59.0
 webencodings==0.5.1
 Werkzeug==3.0.1
 Whoosh==2.7.4
--e git+https://github.com/frappe/wiki.git@2315dea80a73cb23f307a835fdda2b828791bc51#egg=wiki
 wrapt==1.15.0
 xlrd==2.0.1
 yarl==1.9.2
