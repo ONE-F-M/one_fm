@@ -370,6 +370,7 @@
   },
   {
    "default": "0",
+   "fetch_from": "employee.attendance_by_timesheet",
    "fieldname": "attendance_by_timesheet",
    "fieldtype": "Check",
    "label": "Attendance By Timesheet",
@@ -384,7 +385,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2024-01-24 13:03:12.127598",
+ "modified": "2024-03-18 12:01:32.877623",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
