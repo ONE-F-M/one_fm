@@ -29,7 +29,7 @@ jobs:
           cd /home/frappe          
           pip3 install --upgrade frappe-bench
           cd /home/frappe/frappe-bench
-          env/bin/pip install -r  apps/one_fm/requirements.txt 
+          bench setup requirements one_fm
           bench migrate # sync database
           bench restart #${{secrets.PASSKEY}}
           # we remove any unused dependencies
