@@ -18,7 +18,7 @@ class OperationsShift(Document):
 		except Exception as e:
 			if not self.service_type and self.site and self.shift_classification:
 				frappe.throw("Kindly, make sure all required fields are not missing")
-    
+	
 	def clear_cache(self):
 		if self.has_value_changed('supervisor'):
 			frappe.cache.delete_key('user_permissions')
@@ -102,6 +102,7 @@ def queue_operation_role_inactive(operations_role_list):
 		doc.is_active = False
 		doc.save(ignore_permissions=True)
 
+
 @frappe.whitelist()
 def create_posts(data, site_shift, site, project=None):
 	try:
@@ -138,8 +139,75 @@ def create_posts(data, site_shift, site, project=None):
 				})
 
 			operations_post.save()
-
 		frappe.db.commit()
 		frappe.msgprint(_("Posts created successfully."))
+		
 	except Exception as e:
 		frappe.throw(_(frappe.get_traceback()))
+
+
+
+@frappe.whitelist()
+def get_active_supervisor(ops_shift):
+	"""
+	Return the highest ranked available employee based on hierarchy 
+
+	Args:
+		ops_shift (str): Operations Shift
+	"""
+	emps = frappe.get_all("Operations Shift Supervisors",{'parent':ops_shift},['employee','hierarchy'],order_by='hierarchy')
+	has_day_off,day_off_employees = None,[]
+	if emps:
+		if len(emps) > 1:
+			
+			has_day_off = frappe.db.sql(f"""SELECT name,employee from `tabEmployee Schedule` where employee in {tuple([i.employee for i in emps])} 
+					and date = '{today()}' and employee_availability  ='Day Off' """,as_dict = 1)
+		else:
+			has_day_off = frappe.db.sql(f"""SELECT name,employee from `tabEmployee Schedule` where employee = '{emps[0].employee}'
+					and date = '{today()}' and employee_availability  ='Day Off' """,as_dict = 1)
+		if has_day_off:
+			  for one in has_day_off:
+				  day_off_employees.append(one.employee)
+		for each in emps:
+			if each.employee not in day_off_employees:
+				if is_active_supervisor(each):
+					return each.employee
+			
+def is_active_supervisor(row):
+	"""
+	Return True if the employee is Not on Leave and does not have a Day off
+	Args:
+		row (dict): A frappe._dict containing hierarchy and employee id
+	"""
+	
+	if frappe.db.get_value("Employee",{'name':row.employee},'status') != "Active":
+		return False
+
+	return True
+	
+def get_supervisors(ops_shift):
+	"""Return the list of shift supervisors for the supplied operations shift
+
+	Args:
+		ops_shift (str): Operations Shift
+	"""
+	#Implemented this as a single sql query, but It ran too slow.
+	try:
+	
+		emps = frappe.get_all("Operations Shift Supervisors",{'parent':ops_shift},['employee'])
+		if emps:
+			emps = [i.employee for i in emps]
+			active_emps = frappe.get_all("Employee",{'status':"Active",'name':['IN',emps]},['name'])
+			active_emps = [i.name for i in active_emps]
+			day_off = frappe.get_all("Employee Schedule",{'employee_availability':'Day Off','date':today(),'employee':['IN',active_emps]},['employee'])
+			if day_off:
+				
+				return [i for i in active_emps if i not in [o.employee for o in day_off] ]
+			else:
+				return active_emps
+		else:
+			return []
+	except:
+		frappe.log_error(title = "Error Fetching Shift Supervisors",message = frappe.get_traceback())
+		return []
+		
