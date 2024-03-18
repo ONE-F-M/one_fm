@@ -1446,10 +1446,10 @@ def validate_job_applicant(doc, method):
     # update night shift
     if doc.one_fm_night_shift:
         frappe.db.set_value("Job Applicant", doc.name, "one_fm_night_shift", doc.one_fm_night_shift)
-    
+
     # Because first name and last name are mandatory so merge both to generate applicant name
     doc.applicant_name = doc.one_fm_first_name + " " + doc.one_fm_last_name
-    
+
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     # validate_pam_file_number_and_pam_designation(doc, method)
@@ -3376,13 +3376,13 @@ def check_existing():
         return response("success", 200, True, "")
     return response("success", 200, False, "")
 
-def fetch_attendance_manager_user_obj() -> str:
-    attendance_manager = frappe.get_doc("ONEFM General Setting").get("attendance_manager")
+def fetch_attendance_manager_user() -> str:
+    attendance_manager = frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
     if attendance_manager:
         attendance_manager_user = frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
-        return attendance_manager_user
+        if attendance_manager_user:
+            return attendance_manager_user
     return ""
-
 
 def custom_toggle_notifications(user: str, enable: bool = False):
     try:

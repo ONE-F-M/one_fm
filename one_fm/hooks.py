@@ -671,7 +671,7 @@ scheduler_events = {
 		],
 		"15 13 * * *":[ # Attendance Check
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.schedule_attendance_check',
-			'one_fm.one_fm.doctype.attendance_check.attendance_check.assign_attendance_manager_after_48_hours'
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.attendance_check_pending_approval_check'
 		],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
