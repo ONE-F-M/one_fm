@@ -7,7 +7,7 @@ from one_fm.api.notification import create_notification_log
 from frappe import _
 import frappe, os, erpnext, json, math, itertools, pymysql, requests
 from frappe.model.document import Document
-from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee,get_employee_email
+from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
 from frappe.utils.csvutils import read_csv_content
 from datetime import tzinfo, timedelta, datetime
 from dateutil import parser
@@ -16,7 +16,6 @@ from frappe.model.naming import set_name_by_naming_series
 from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
     expire_allocation, create_leave_ledger_entry
 )
-
 from frappe.desk.form.assign_to import add as add_assignment
 from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
 from dateutil.relativedelta import relativedelta
@@ -54,25 +53,25 @@ from frappe.model.naming import make_autoname
 
 
 def get_common_email_args(doc):
-    doctype = doc.get("doctype")
-    docname = doc.get("name")
+	doctype = doc.get("doctype")
+	docname = doc.get("name")
 
-    email_template = get_email_template(doc)
-    if email_template:
-        subject = frappe.render_template(email_template.subject, vars(doc))
-        response = frappe.render_template(email_template.response, vars(doc))
-    else:
-        subject = _("Workflow Action") + f" on {doctype}: {docname}"
-        response = get_link_to_form(doctype, docname, f"{doctype}: {docname}")
+	email_template = get_email_template(doc)
+	if email_template:
+		subject = frappe.render_template(email_template.subject, vars(doc))
+		response = frappe.render_template(email_template.response, vars(doc))
+	else:
+		subject = _("Workflow Action") + f" on {doctype}: {docname}"
+		response = get_link_to_form(doctype, docname, f"{doctype}: {docname}")
 
-    common_args = {
-        "template": "workflow_action",
-        "header": "Workflow Action",
-        "attachments": [],
-        "subject": subject,
-        "message": response,
-    }
-    return common_args
+	common_args = {
+		"template": "workflow_action",
+		"header": "Workflow Action",
+		"attachments": [],
+		"subject": subject,
+		"message": response,
+	}
+	return common_args
 
 
 
@@ -692,21 +691,21 @@ def validate_hajj_leave(doc, method):
             frappe.throw(_("You can't apply for hajj leave twice"))
 
 def get_salary_amount(employee):
-    salary_amount = 0
-    query = """
-        select
-            name, base
-        from
-            `tabSalary Structure Assignment`
-        where
-            employee='{0}' and docstatus=1
-        order by
-            from_date desc limit 1
-    """
-    salary_structure_assignment = frappe.db.sql(query.format(employee), as_dict=True)
-    if salary_structure_assignment and len(salary_structure_assignment) > 0:
-        salary_amount = salary_structure_assignment[0].base
-    return salary_amount
+	salary_amount = 0
+	query = """
+		select
+			name, base
+		from
+			`tabSalary Structure Assignment`
+		where
+			employee='{0}' and docstatus=1
+		order by
+			from_date desc limit 1
+	"""
+	salary_structure_assignment = frappe.db.sql(query.format(employee), as_dict=True)
+	if salary_structure_assignment and len(salary_structure_assignment) > 0:
+		salary_amount = salary_structure_assignment[0].base
+	return salary_amount
 
 @frappe.whitelist()
 def hooked_leave_allocation_builder():
@@ -817,42 +816,42 @@ def get_existing_leave_count(doc):
     return ledger_entries[0].total_leaves if ledger_entries[0].total_leaves else 0
 
 def create_leave_allocation(employee, policy_detail, leave_type_details, from_date, to_date):
-    ''' Creates leave allocation for the given employee in the provided leave policy '''
-    leave_type = policy_detail.leave_type
-    new_leaves_allocated = policy_detail.annual_allocation
-    carry_forward = 0
-    if leave_type_details.get(leave_type).is_carry_forward:
-        carry_forward = 1
+	''' Creates leave allocation for the given employee in the provided leave policy '''
+	leave_type = policy_detail.leave_type
+	new_leaves_allocated = policy_detail.annual_allocation
+	carry_forward = 0
+	if leave_type_details.get(leave_type).is_carry_forward:
+		carry_forward = 1
 
-    # Earned Leaves and Compensatory Leaves are allocated by scheduler, initially allocate 0
-    if leave_type_details.get(leave_type).is_earned_leave == 1 or leave_type_details.get(leave_type).is_compensatory == 1:
-        new_leaves_allocated = 0
+	# Earned Leaves and Compensatory Leaves are allocated by scheduler, initially allocate 0
+	if leave_type_details.get(leave_type).is_earned_leave == 1 or leave_type_details.get(leave_type).is_compensatory == 1:
+		new_leaves_allocated = 0
 
-    # Annual Leave allocated by scheduler, initially allocate 0
-    if leave_type_details.get(leave_type).one_fm_is_paid_annual_leave == 1:
-        default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
-        new_leaves_allocated = default_annual_leave_balance/365
+	# Annual Leave allocated by scheduler, initially allocate 0
+	if leave_type_details.get(leave_type).one_fm_is_paid_annual_leave == 1:
+		default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
+		new_leaves_allocated = default_annual_leave_balance/365
 
-    allocate_leave = True
-    # Hajj Leave is allocated for employees who do not perform hajj before
-    if leave_type_details.get(leave_type).one_fm_is_hajj_leave == 1 and employee.went_to_hajj:
-        allocate_leave = False
+	allocate_leave = True
+	# Hajj Leave is allocated for employees who do not perform hajj before
+	if leave_type_details.get(leave_type).one_fm_is_hajj_leave == 1 and employee.went_to_hajj:
+		allocate_leave = False
 
-    if allocate_leave:
-        allocation = frappe.get_doc(dict(
-            doctype="Leave Allocation",
-            employee=employee.name,
-            leave_type=leave_type,
-            from_date=from_date,
-            to_date=to_date,
-            new_leaves_allocated=new_leaves_allocated,
-            carry_forward=carry_forward
-        ))
-        try:
-            allocation.save(ignore_permissions = True)
-            allocation.submit()
-        except Exception as e:
-            frappe.log_error(str(e), 'Leave allocation builder exception against {0}/{1}'.format(employee.name, leave_type))
+	if allocate_leave:
+		allocation = frappe.get_doc(dict(
+			doctype="Leave Allocation",
+			employee=employee.name,
+			leave_type=leave_type,
+			from_date=from_date,
+			to_date=to_date,
+			new_leaves_allocated=new_leaves_allocated,
+			carry_forward=carry_forward
+		))
+		try:
+			allocation.save(ignore_permissions = True)
+			allocation.submit()
+		except Exception as e:
+			frappe.log_error(str(e), 'Leave allocation builder exception against {0}/{1}'.format(employee.name, leave_type))
 
 
 def increase_daily_leave_balance():
@@ -1088,7 +1087,7 @@ def get_item_code(subitem_group = None ,item_group = None ,cur_item_id = None):
                 item_code = subitem_group_code+"-"+item_group_code
             else:
                 frappe.msgprint(_("Set Abbreviation for the Item Group {0}".format(item_group)),
-                    alert=True, indicator='orange')
+					alert=True, indicator='orange')
     item_code += ("-"+cur_item_id) if cur_item_id else ""
     return item_code
 
@@ -1152,36 +1151,36 @@ def warehouse_naming_series(doc, method):
         doc.name = name +'-'+doc.warehouse_code+'-'+doc.warehouse_name
 
 def create_new_project_code(project_id):
-    project_code = frappe.db.sql("select one_fm_project_code+1 from `tabProject` order by one_fm_project_code desc limit 1")
-    if project_code and len(project_code) > 1 and project_code[0][0]:
-        new_project_code = project_code[0][0]
-    else:
-        new_project_code = '1'
-    frappe.db.set_value('Project', project_id, 'one_fm_project_code', str(int(new_project_code)).zfill(4))
-    return str(int(new_project_code)).zfill(4)
+	project_code = frappe.db.sql("select one_fm_project_code+1 from `tabProject` order by one_fm_project_code desc limit 1")
+	if project_code and len(project_code) > 1 and project_code[0][0]:
+		new_project_code = project_code[0][0]
+	else:
+		new_project_code = '1'
+	frappe.db.set_value('Project', project_id, 'one_fm_project_code', str(int(new_project_code)).zfill(4))
+	return str(int(new_project_code)).zfill(4)
 
 @frappe.whitelist()
 def get_warehouse_children(doctype, parent=None, company=None, is_root=False):
-    from erpnext.stock.utils import get_stock_value_from_bin
+	from erpnext.stock.utils import get_stock_value_from_bin
 
-    if is_root:
-        parent = ""
+	if is_root:
+		parent = ""
 
-    fields = ['name as value', 'is_group as expandable', 'warehouse_name', 'one_fm_project']
-    filters = [
-        ['docstatus', '<', '2'],
-        ['ifnull(`parent_warehouse`, "")', '=', parent],
-        ['company', 'in', (company, None,'')]
-    ]
+	fields = ['name as value', 'is_group as expandable', 'warehouse_name', 'one_fm_project']
+	filters = [
+		['docstatus', '<', '2'],
+		['ifnull(`parent_warehouse`, "")', '=', parent],
+		['company', 'in', (company, None,'')]
+	]
 
-    warehouses = frappe.get_list(doctype, fields=fields, filters=filters, order_by='name')
+	warehouses = frappe.get_list(doctype, fields=fields, filters=filters, order_by='name')
 
-    # return warehouses
-    for wh in warehouses:
-        wh["balance"] = get_stock_value_from_bin(warehouse=wh.value)
-        if company:
-            wh["company_currency"] = frappe.db.get_value('Company', company, 'default_currency')
-    return warehouses
+	# return warehouses
+	for wh in warehouses:
+		wh["balance"] = get_stock_value_from_bin(warehouse=wh.value)
+		if company:
+			wh["company_currency"] = frappe.db.get_value('Company', company, 'default_currency')
+	return warehouses
 
 @frappe.whitelist(allow_guest=True)
 def item_group_naming_series(doc, method):
@@ -1316,14 +1315,14 @@ def validate_item(doc, method):
     item_approval_workflow_notification(doc)
 
 def item_approval_workflow_notification(doc):
-    if doc.is_stock_item and not doc.variant_of and doc.workflow_state=='Pending Approval':
-        users = get_users_with_role('Purchase Officer')
-        filtered_users = []
-        for user in users:
-            if has_permission(doctype='Item', user=user):
-                filtered_users.append(user)
-        if filtered_users and len(filtered_users) > 0:
-            send_workflow_action_email(doc, filtered_users)
+	if doc.is_stock_item and not doc.variant_of and doc.workflow_state=='Pending Approval':
+		users = get_users_with_role('Purchase Officer')
+		filtered_users = []
+		for user in users:
+			if has_permission(doctype='Item', user=user):
+				filtered_users.append(user)
+		if filtered_users and len(filtered_users) > 0:
+			send_workflow_action_email(doc, filtered_users)
 
 def set_item_id(doc):
     next_item_id = "000000"
@@ -1426,22 +1425,22 @@ def get_sorted_item_id(item_id_list):
     return max
 
 def filter_uniform_type_description(doctype, txt, searchfield, start, page_len, filters):
-    query = """
-        select
-            parent
-        from
-            `tabUniform Description Type`
-        where
-            uniform_type = %(uniform_type)s and uniform_type like %(txt)s
-            limit %(start)s, %(page_len)s"""
-    return frappe.db.sql(query,
-        {
-            'uniform_type': filters.get("uniform_type"),
-            'start': start,
-            'page_len': page_len,
-            'txt': "%%%s%%" % txt
-        }
-    )
+	query = """
+		select
+			parent
+		from
+			`tabUniform Description Type`
+		where
+			uniform_type = %(uniform_type)s and uniform_type like %(txt)s
+			limit %(start)s, %(page_len)s"""
+	return frappe.db.sql(query,
+		{
+			'uniform_type': filters.get("uniform_type"),
+			'start': start,
+			'page_len': page_len,
+			'txt': "%%%s%%" % txt
+		}
+	)
 
 def validate_job_applicant(doc, method):
     # update night shift
@@ -2267,23 +2266,23 @@ def update_employee_schedule(employee_schedule_doc,employee_availability,roster_
 
 def create_additional_salary_for_ot(employee, amount, overtime_component):
 
-    """
+	"""
     Param:
     ------
     Employee & overtime amount & overtime_component
 
     overtime_component: (eg :"Overtime Allowance")
     """
-    additional_salary = frappe.new_doc("Additional Salary")
-    additional_salary.employee = employee
-    additional_salary.salary_component = overtime_component
-    additional_salary.amount = amount
-    additional_salary.payroll_date = getdate()
-    additional_salary.company = erpnext.get_default_company()
-    additional_salary.overwrite_salary_structure_amount = 1
-    additional_salary.notes = "Overtime Earning"
-    additional_salary.insert()
-    additional_salary.submit()
+	additional_salary = frappe.new_doc("Additional Salary")
+	additional_salary.employee = employee
+	additional_salary.salary_component = overtime_component
+	additional_salary.amount = amount
+	additional_salary.payroll_date = getdate()
+	additional_salary.company = erpnext.get_default_company()
+	additional_salary.overwrite_salary_structure_amount = 1
+	additional_salary.notes = "Overtime Earning"
+	additional_salary.insert()
+	additional_salary.submit()
 
 def response(message, data, success, status_code):
      # Function to create response to the API. It generates json with message, success, data object and the status code.
@@ -2606,33 +2605,33 @@ def notify_issue_responder_or_assignee_on_comment_in_issue(doc, method):
                 pass
 
 def create_notification_log_for_issue_comments(users, issue, comment):
-    """
-        Method used to create notification log from the issue commnets
-        args:
-            users: list of recipients
-            issue: Object of Issue
-            comment: Object of Comment
-    """
-    title = get_title("Issue", issue.name)
-    subject = _("New comment on {0}".format(get_title_html(title)))
-    notification_message = _('''Comment: <br/>{0}'''.format(comment.content))
+	"""
+		Method used to create notification log from the issue commnets
+		args:
+			users: list of recipients
+			issue: Object of Issue
+			comment: Object of Comment
+	"""
+	title = get_title("Issue", issue.name)
+	subject = _("New comment on {0}".format(get_title_html(title)))
+	notification_message = _('''Comment: <br/>{0}'''.format(comment.content))
 
-    # Remove commenter from the notification
-    if comment.comment_email and comment.comment_email in users:
-        users.remove(comment.comment_email)
+	# Remove commenter from the notification
+	if comment.comment_email and comment.comment_email in users:
+		users.remove(comment.comment_email)
 
-    """
-        Extracts mentions to remove from notification log recipients,
-        since mentions will be notified by frappe core
-    """
-    mentions = extract_mentions(comment.content)
-    if mentions and len(mentions) > 0:
-        for mention in mentions:
-            if mention in users:
-                users.remove(mention)
+	"""
+		Extracts mentions to remove from notification log recipients,
+		since mentions will be notified by frappe core
+	"""
+	mentions = extract_mentions(comment.content)
+	if mentions and len(mentions) > 0:
+		for mention in mentions:
+			if mention in users:
+				users.remove(mention)
 
-    if users and len(users) > 0:
-        create_notification_log(subject, notification_message, users, issue)
+	if users and len(users) > 0:
+		create_notification_log(subject, notification_message, users, issue)
 
 def set_expire_magic_link(reference_doctype, reference_docname, link_for):
     """
@@ -2660,33 +2659,33 @@ def create_path(path):
 
 
 def get_users_next_action_data(transitions, doc, recipients):
-    user_data_map = {}
-    for transition in transitions:
-        for user in recipients:
-            if not user_data_map.get(user):
-                user_data_map[user] = frappe._dict(
-                    {
-                        "possible_actions": [],
-                        "email": user,
-                    }
-                )
+	user_data_map = {}
+	for transition in transitions:
+		for user in recipients:
+			if not user_data_map.get(user):
+				user_data_map[user] = frappe._dict(
+					{
+						"possible_actions": [],
+						"email": user,
+					}
+				)
 
-            user_data_map[user].get("possible_actions").append(
-                frappe._dict(
-                    {
-                        "action_name": transition.action,
-                        "action_link": get_workflow_action_url(transition.action, doc, user),
-                    }
-                )
-            )
-    return user_data_map
+			user_data_map[user].get("possible_actions").append(
+				frappe._dict(
+					{
+						"action_name": transition.action,
+						"action_link": get_workflow_action_url(transition.action, doc, user),
+					}
+				)
+			)
+	return user_data_map
 
 def override_frappe_send_workflow_action_email(users_data, doc):
-    recipients = []
-    for d in users_data:
-        recipients.append(d.get("email"))
-    if recipients:
-        send_workflow_action_email(doc, recipients)
+	recipients = []
+	for d in users_data:
+		recipients.append(d.get("email"))
+	if recipients:
+		send_workflow_action_email(doc, recipients)
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
@@ -2757,41 +2756,41 @@ def workflow_approve_reject(doc, recipients=None,message= None):
 
 @frappe.whitelist()
 def get_mandatory_fields(doc_obj):
-    mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doc_obj.doctype)
+	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doc_obj.doctype)
 
-    doc = {key: value for key, value in vars(doc_obj).items() if key in mandatory_fields}
-    if doc:
-        for employee_field in employee_fields:
-            if doc[employee_field]:
-                employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
-                if employee_details.employee_name and  employee_details.employee_id:
-                    doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
-        return doc, labels
-    return {}, {}
+	doc = {key: value for key, value in vars(doc_obj).items() if key in mandatory_fields}
+	if doc:
+		for employee_field in employee_fields:
+			if doc[employee_field]:
+				employee_details = frappe.get_value('Employee', doc[employee_field], ['employee_name', 'employee_id'], as_dict=True)
+				if employee_details.employee_name and  employee_details.employee_id:
+					doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
+		return doc, labels
+	return {}, {}
 
 def get_doctype_mandatory_fields(doctype):
-    meta = frappe.get_meta(doctype)
-    mandatory_fields = []
-    labels = {}
-    employee_fields = []
-    for d in meta.get("fields", {"reqd": 1, "fieldtype":["!=", "Table"], "fieldname":["!=", "naming_series"]}):
-        mandatory_fields.append(d.fieldname)
-        labels[d.fieldname] = d.label
-        if d.fieldtype == "Link" and d.options=="Employee":
-            employee_fields.append(d.fieldname)
+	meta = frappe.get_meta(doctype)
+	mandatory_fields = []
+	labels = {}
+	employee_fields = []
+	for d in meta.get("fields", {"reqd": 1, "fieldtype":["!=", "Table"], "fieldname":["!=", "naming_series"]}):
+		mandatory_fields.append(d.fieldname)
+		labels[d.fieldname] = d.label
+		if d.fieldtype == "Link" and d.options=="Employee":
+			employee_fields.append(d.fieldname)
 
-    if not employee_fields:
-        for link_field in meta.get_link_fields():
-            if link_field.options == 'Employee':
-                employee_fields.append(link_field.fieldname)
-                mandatory_fields.append(link_field.fieldname)
-                labels[link_field.fieldname] = link_field.label
+	if not employee_fields:
+		for link_field in meta.get_link_fields():
+			if link_field.options == 'Employee':
+				employee_fields.append(link_field.fieldname)
+				mandatory_fields.append(link_field.fieldname)
+				labels[link_field.fieldname] = link_field.label
 
-    if not mandatory_fields:
-        mandatory_fields = ['name']
-        labels['name'] = 'Document Name'
+	if not mandatory_fields:
+		mandatory_fields = ['name']
+		labels['name'] = 'Document Name'
 
-    return mandatory_fields, employee_fields, labels
+	return mandatory_fields, employee_fields, labels
 
 @frappe.whitelist()
 def create_message_with_details(message, mandatory_field, labels):
@@ -2821,37 +2820,37 @@ def create_message_with_details(message, mandatory_field, labels):
 
 @frappe.whitelist()
 def notify_live_user(company, message, users=False):
-    '''
-        A method to send live notification to all or 20 number of live users
-        args:
-            company: the name of comapny to update last notification details to the company record
-            message: notification message content
-            users: list of users (optional), leave blank to send notification to all the live users
-    '''
+	'''
+		A method to send live notification to all or 20 number of live users
+		args:
+			company: the name of comapny to update last notification details to the company record
+			message: notification message content
+			users: list of users (optional), leave blank to send notification to all the live users
+	'''
 
-    if 'System Manager' in frappe.get_roles(frappe.session.user):
-        event = 'eval_js'
-        publish_message = "frappe.msgprint({message: '"+message+"', indicator: 'blue', 'title': 'Alert!'})"
-        last_notified = "All"
+	if 'System Manager' in frappe.get_roles(frappe.session.user):
+		event = 'eval_js'
+		publish_message = "frappe.msgprint({message: '"+message+"', indicator: 'blue', 'title': 'Alert!'})"
+		last_notified = "All"
 
-        if isinstance(users, string_types):
-            users = json.loads(users)
-        if users:
-            last_notified =  ', '.join(['{}'.format(user) for user in users])
-            if len(users) <= 20:
-                for user in users:
-                    frappe.publish_realtime(event=event, message=publish_message, user=user)
-            else:
-                frappe.throw(__("You can send live notification to all or less than 21 users!"))
-        else:
-            frappe.publish_realtime(event=event, message=publish_message)
+		if isinstance(users, string_types):
+			users = json.loads(users)
+		if users:
+			last_notified =  ', '.join(['{}'.format(user) for user in users])
+			if len(users) <= 20:
+				for user in users:
+					frappe.publish_realtime(event=event, message=publish_message, user=user)
+			else:
+				frappe.throw(__("You can send live notification to all or less than 21 users!"))
+		else:
+			frappe.publish_realtime(event=event, message=publish_message)
 
-        frappe.db.set_value("Company", company, "last_notification_send_on", now_datetime())
-        frappe.db.set_value("Company", company, "last_notification_send_by", frappe.session.user)
-        frappe.db.set_value("Company", company, "last_notification_message", message)
-        frappe.db.set_value("Company", company, "last_notified", last_notified)
-    else:
-        frappe.throw(__("System Manger can only send the notification!!"))
+		frappe.db.set_value("Company", company, "last_notification_send_on", now_datetime())
+		frappe.db.set_value("Company", company, "last_notification_send_by", frappe.session.user)
+		frappe.db.set_value("Company", company, "last_notification_message", message)
+		frappe.db.set_value("Company", company, "last_notified", last_notified)
+	else:
+		frappe.throw(__("System Manger can only send the notification!!"))
 
 # this is used to map weekday starting from sundat to saturday
 # in get week start and end date based on entered date string value
@@ -2911,14 +2910,14 @@ def get_payroll_cycle(filters={}):
 
 
 def mark_attendance(
-    employee,
-    attendance_date,
-    status,
-    shift=None,
-    leave_type=None,
-    ignore_validate=False,
-    late_entry=False,
-    early_exit=False,
+	employee,
+	attendance_date,
+	status,
+	shift=None,
+	leave_type=None,
+	ignore_validate=False,
+	late_entry=False,
+	early_exit=False,
 ):
     from hrms.hr.doctype.attendance.attendance import get_duplicate_attendance_record, get_overlapping_shift_attendance
     if get_duplicate_attendance_record(employee, attendance_date, shift):
@@ -2979,22 +2978,22 @@ def query_db_list(query_list, commit=False):
 
 
 def get_holiday_today(curr_date):
-    start_date = getdate(curr_date).replace(day=1, month=1)
-    end_date = getdate(start_date).replace(day=31, month=12)
+	start_date = getdate(curr_date).replace(day=1, month=1)
+	end_date = getdate(start_date).replace(day=31, month=12)
 
-    holidays = frappe.db.sql(f"""
-        SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
-        JOIN `tabHoliday List` hl ON hl.name=h.parent
-        WHERE hl.from_date='{start_date}' AND hl.to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
+	holidays = frappe.db.sql(f"""
+		SELECT h.parent as holiday, h.holiday_date, h.description FROM `tabHoliday` h
+		JOIN `tabHoliday List` hl ON hl.name=h.parent
+		WHERE hl.from_date='{start_date}' AND hl.to_date='{end_date}' AND h.holiday_date= '{curr_date}' """, as_dict=1)
 
-    holiday_dict = {}
-    for i in holidays:
-        if(holiday_dict.get(i.holiday)):
-            holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{str(i.holiday_date):i.description}}
-        else:
-            holiday_dict[i.holiday] = {str(i.holiday_date):i.description}
+	holiday_dict = {}
+	for i in holidays:
+		if(holiday_dict.get(i.holiday)):
+			holiday_dict[i.holiday] = {**holiday_dict[i.holiday], **{str(i.holiday_date):i.description}}
+		else:
+			holiday_dict[i.holiday] = {str(i.holiday_date):i.description}
 
-    return holiday_dict
+	return holiday_dict
 
 def get_domain():
     try:
@@ -3257,55 +3256,55 @@ def custom_validate_nestedset_loop(doctype, name, lft, rgt):
     validate_loop(doctype, name, lft, rgt)
 
 def is_assignment_exist_for_the_shift(shift_field, assignment_doctype, shift_name, date_field, assignment_after_date=None):
-    '''
-        Method to check assignment exists on or after a date for shift
-        args:
-            assignment_doctype is Employee Schedule/Shift Assignment
-            shift_field is shift(Operations Shift)
-            shift_name is self.name
-            date_field is date/start_date
-        return boolean
-    '''
-    if not assignment_after_date:
-        assignment_after_date = today()
-    assignments = frappe.db.exists(
-        assignment_doctype,
-        {
-            shift_field: shift_name,
-            date_field: ['>=', getdate(assignment_after_date)],
-            'docstatus': 1
-        }
-    )
+	'''
+		Method to check assignment exists on or after a date for shift
+		args:
+			assignment_doctype is Employee Schedule/Shift Assignment
+			shift_field is shift(Operations Shift)
+			shift_name is self.name
+			date_field is date/start_date
+		return boolean
+	'''
+	if not assignment_after_date:
+		assignment_after_date = today()
+	assignments = frappe.db.exists(
+		assignment_doctype,
+		{
+			shift_field: shift_name,
+			date_field: ['>=', getdate(assignment_after_date)],
+			'docstatus': 1
+		}
+	)
 
-    return True if assignments else False
+	return True if assignments else False
 
 @frappe.whitelist()
 def mark_suggestions_to_issue(suggestions):
-    issue = frappe.new_doc('Issue')
-    issue.subject = (suggestions[slice(78)]+"...") if len(suggestions) > 80 else suggestions
-    issue.issue_type = get_issue_type("Feedback")
-    issue.description = suggestions
-    issue.save(ignore_permissions=True)
+	issue = frappe.new_doc('Issue')
+	issue.subject = (suggestions[slice(78)]+"...") if len(suggestions) > 80 else suggestions
+	issue.issue_type = get_issue_type("Feedback")
+	issue.description = suggestions
+	issue.save(ignore_permissions=True)
 
 def get_issue_type(issue_type):
-    exist_issue_type = frappe.db.exists('Issue Type', {'name': issue_type})
-    if exist_issue_type:
-        return issue_type
-    else:
-        new_issue_type = frappe.new_doc("Issue Type")
-        new_issue_type.__newname = issue_type
-        new_issue_type.save(ignore_permissions=True)
-        return new_issue_type.name
+	exist_issue_type = frappe.db.exists('Issue Type', {'name': issue_type})
+	if exist_issue_type:
+		return issue_type
+	else:
+		new_issue_type = frappe.new_doc("Issue Type")
+		new_issue_type.__newname = issue_type
+		new_issue_type.save(ignore_permissions=True)
+		return new_issue_type.name
 
 def get_users_with_role_permitted_to_doctype(role, doctype=False):
-    filtered_users = []
-    users = get_users_with_role(role)
-    for user in users:
-        if has_permission(doctype=doctype, user=user):
-            filtered_users.append(user)
-    if filtered_users and len(filtered_users) > 0:
-        return filtered_users
-    return False
+	filtered_users = []
+	users = get_users_with_role(role)
+	for user in users:
+		if has_permission(doctype=doctype, user=user):
+			filtered_users.append(user)
+	if filtered_users and len(filtered_users) > 0:
+		return filtered_users
+	return False
 
 @frappe.whitelist()
 def change_item_details(item, item_name=False, description=False):
