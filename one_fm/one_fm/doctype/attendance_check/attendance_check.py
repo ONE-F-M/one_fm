@@ -6,7 +6,7 @@ from frappe.model.document import Document
 import frappe,json
 from frappe import _
 from frappe.desk.form.assign_to import add as add_assignment
-from frappe.utils import add_days, today, now, get_url_to_form
+from frappe.utils import add_days, today, now, get_url_to_form, getdate
 from one_fm.utils import (
     production_domain,
     fetch_attendance_manager_user
@@ -362,6 +362,7 @@ def create_attendance_check(attendance_date=None):
     if production_domain():
         if not attendance_date:
             attendance_date = add_days(today(), -1)
+        attendance_date = getdate(attendance_date)
 
         # Create attendance check for absentees for the date
         absentees = get_absentees_on_date(attendance_date)
