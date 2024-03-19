@@ -171,33 +171,11 @@ class AttendanceCheck(Document):
         if not self.attendance_status:
             frappe.throw(_('To Approve the record set Attendance Status'))
         shift_working = frappe.db.get_value("Employee", self.employee, "shift_working")
-        if self.attendance_status == "Present" and shift_working:
-            self.validate_unscheduled_check()
         if self.attendance_status == "On Leave":
             self.check_on_leave_record()
         if self.attendance_status == "Day Off" and shift_working:
             self.validate_day_off()
         self.mark_attendance()
-
-    def validate_unscheduled_check(self):
-        #If Check is unscheduled,confirmed user roles before submitting
-        if self.is_unscheduled:
-            if check_attendance_manager(frappe.session.user):
-                return
-            user_roles = frappe.get_roles(frappe.session.user)
-            if "Shift Supervisor" in user_roles or "Site Supervisor" in user_roles:
-                shift_assignments = frappe.db.get_list(
-                    "Shift Assignment",
-                    filters={
-                        "docstatus":1,
-                        "start_date":self.date,
-                        "employee":self.employee
-                    }
-                )
-                if not shift_assignments:
-                    frappe.throw(f"No Shift Assignments found for {self.employee_name} on {self.date} Please create one")
-            else:
-                frappe.throw("Only Shift/Site Supervisors and Attendance Managers have permission to submit unscheduled Attendance Checks")
 
     def check_on_leave_record(self):
         if self.attendance_status == "On Leave":
