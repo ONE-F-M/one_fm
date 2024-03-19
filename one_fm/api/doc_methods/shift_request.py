@@ -99,7 +99,18 @@ def process_shift_assignemnt(doc, event=None):
         if doc.assign_day_off == 1:
             assign_day_off(doc)
         elif doc.purpose == 'Replace Existing Assignment':
-            replace_shift_assignment(shift_assignemnt, doc )
+            if doc.roster_type == "Basic" and cstr(doc.from_date) == cstr(getdate()):
+                shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"}, ['name'])
+                if shift_assignemnt:
+                    replace_shift_assignment(shift_assignemnt, doc)
+                if shift_worker == 1:
+                    # check for existing schedule
+                    schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=doc.to_date)]
+                    existing_schedules = frappe.db.sql(f""" SELECT name, date FROM `tabEmployee Schedule`
+                        WHERE employee="{doc.employee}" AND roster_type="{doc.roster_type}"
+                        AND date BETWEEN '{doc.from_date}' AND '{doc.to_date}' """, as_dict=1)
+                    if existing_schedules:
+                        replace_employee_schedule(doc, existing_schedules, schedule_date_range)
         elif doc.purpose == 'Assign Unrostered Employee':
             create_shift_assignment_from_request(doc)
             schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=doc.to_date)]
@@ -141,7 +152,6 @@ def process_shift_assignemnt(doc, event=None):
                                 'site':doc.site,
                                 'reference_doctype': doc.doctype,
                                 'reference_docname': doc.name,
-                                'employee_is_replaced':1
                             })
                             found_schedules_date.append(str(es.date))
                     # create new schedule
@@ -171,6 +181,8 @@ def process_shift_assignemnt(doc, event=None):
                                     'reference_docname': doc.name
                                     }
                                 )
+                            else:
+                                create_employee_schedule_from_request(doc, d)
 
 def update_shift_assignment(shift_assignemnt,shift_request):
     assignment_doc = frappe.get_doc('Shift Assignment', shift_assignemnt)
@@ -208,6 +220,62 @@ def replace_shift_assignment(shift_assignemnt, doc):
             submit: Boolean
     '''
     #Replace Existing Assignment
+    assignment_doc = frappe.get_doc('Shift Assignment', shift_assignemnt)
+    project = frappe.db.get_value("Operations Shift", {'name':shift_request.operations_shift}, ['project'])
+    assignment_doc.db_set("company" , shift_request.company)
+    assignment_doc.db_set("shift" , shift_request.operations_shift)
+    assignment_doc.db_set("roster_type" , shift_request.roster_type)
+    assignment_doc.db_set("shift_type" , shift_request.shift_type)
+    assignment_doc.db_set("site" , shift_request.site)
+    assignment_doc.db_set("project" , project)
+    assignment_doc.db_set("site_location" , shift_request.check_in_site)
+    assignment_doc.db_set("employee" , shift_request.employee)
+    assignment_doc.db_set("start_date" , shift_request.from_date)
+    assignment_doc.db_set("shift_request" , shift_request.name)
+    assignment_doc.db_set("check_in_site" , shift_request.check_in_site)
+    assignment_doc.db_set("check_out_site" , shift_request.check_out_site)
+    assignment_doc.db_set("employee_is_replaced",1)
+    shift_type_data = frappe.get_doc("Shift Type",shift_request.shift_type)
+    if shift_type_data:
+        start_datetime = datetime.datetime.strptime(f"{shift_request.from_date} {(datetime.datetime.min + shift_type_data.start_time).time()}", '%Y-%m-%d %H:%M:%S')
+        if shift_type_data.end_time.total_seconds() < shift_type_data.start_time.total_seconds():
+            end_datetime = datetime.datetime.strptime(f"{add_days(assignment_doc.start_date, 1)} {(datetime.datetime.min + shift_type_data.end_time).time()}", '%Y-%m-%d %H:%M:%S')
+        else:
+            end_datetime = datetime.datetime.strptime(f"{assignment_doc.start_date} {(datetime.datetime.min + shift_type_data.end_time).time()}", '%Y-%m-%d %H:%M:%S')
+
+        assignment_doc.db_set("start_datetime" ,start_datetime)
+        assignment_doc.db_set("end_datetime" , end_datetime)
+    if shift_request.operations_role:
+        assignment_doc.db_set("operations_role" , shift_request.operations_role)
+    employee_checkin_update = frappe.db.sql(f"""UPDATE `tabEmployee Checkin` SET employee_is_replaced=1 WHERE shift_assignment='{shift_assignemnt}'""")
+
+def replace_employee_schedule(doc, existing_schedules, schedule_date_range):
+    try:
+        # replace existing schedule
+        for es in existing_schedules:
+            start_time, end_time = frappe.db.get_value("Shift Type", doc.shift_type, ['start_time', 'end_time'])
+            end_date = es.date
+            if start_time > end_time:
+                end_date = add_days(end_date, 1)
+
+            frappe.db.set_value('Employee Schedule', es.name, {
+                'shift':doc.operations_shift,
+                'shift_type':doc.shift_type,
+                'start_datetime': f"{es.date} {start_time}",
+                'end_datetime': f"{end_date} {end_time}",
+                'operations_role':doc.operations_role,
+                'post_abbrv': role_abbr,
+                'employee_availability':'Working',
+                'roster_type':doc.roster_type,
+                'department':doc.department,
+                'site':doc.site,
+                'reference_doctype': doc.doctype,
+                'reference_docname': doc.name,
+                'employee_is_replaced':1
+            })
+    except Exception as e:
+        frappe.throw(_("Error Replacing Employee Schedule"))
+        frappe.log_error(frappe.get_traceback(), "Error Replacing Employee Schedule")
 
 def create_shift_assignment_from_request(shift_request, submit=True):
     '''
