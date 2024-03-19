@@ -10,7 +10,6 @@ from frappe.utils import getdate, today, cstr, add_to_date, nowdate, add_days
 from frappe.model.workflow import apply_workflow
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 from one_fm.api.notification import create_notification_log, get_employee_user_id
-# from one_fm.operations.doctype.employee_schedule.employee_schedule import validate_operations_post_overfill
 from one_fm.api.doc_events import get_employee_user_id
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 
@@ -47,7 +46,6 @@ def on_update(doc, event):
         validate_shift_overlap(doc)
 
 def assign_approver(doc, approver_id):
-    print("here")
     add_assignment({
 				'doctype': doc.doctype,
 				'name': doc.name,
@@ -107,8 +105,8 @@ def process_shift_assignemnt(doc, event=None):
             schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=doc.to_date)]
             new_date_range = [i for i in schedule_date_range]
             if new_date_range:
-                for d in new_date_range:
-                    create_employee_schedule_from_request(doc, d)
+                for date in new_date_range:
+                    create_employee_schedule_from_request(doc, date)
         elif doc.purpose == 'Update Existing Assignment':
             if check_for_roster(doc):
                 if doc.roster_type == "Basic" and cstr(doc.from_date) == cstr(getdate()):
@@ -157,7 +155,6 @@ def process_shift_assignemnt(doc, event=None):
                                 if start_time > end_time:
                                     end_date = add_days(end_date, 1)
 
-                                # validate_operations_post_overfill({es.date: 1}, doc.operations_shift)
 
                                 frappe.db.set_value('Employee Schedule', es.name, {
                                     'shift':doc.operations_shift,
@@ -190,7 +187,6 @@ def update_shift_assignment(shift_assignemnt,shift_request):
     assignment_doc.db_set("shift_request" , shift_request.name)
     assignment_doc.db_set("check_in_site" , shift_request.check_in_site)
     assignment_doc.db_set("check_out_site" , shift_request.check_out_site)
-    # assignment_doc.db_set("employee_is_replaced",1)
     shift_type_data = frappe.get_doc("Shift Type",shift_request.shift_type)
     if shift_type_data:
         start_datetime = datetime.datetime.strptime(f"{shift_request.from_date} {(datetime.datetime.min + shift_type_data.start_time).time()}", '%Y-%m-%d %H:%M:%S')
@@ -203,7 +199,6 @@ def update_shift_assignment(shift_assignemnt,shift_request):
         assignment_doc.db_set("end_datetime" , end_datetime)
     if shift_request.operations_role:
         assignment_doc.db_set("operations_role" , shift_request.operations_role)
-    # employee_checkin_update = frappe.db.sql(f"""UPDATE `tabEmployee Checkin` SET employee_is_replaced=1 WHERE shift_assignment='{shift_assignemnt}'""")
 
 def replace_shift_assignment(shift_assignemnt, doc):
     '''
@@ -238,10 +233,10 @@ def create_shift_assignment_from_request(shift_request, submit=True):
         assignment_doc.submit()
     frappe.db.commit()
 
-def create_employee_schedule_from_request(doc, d):
+def create_employee_schedule_from_request(doc, date):
     schedule = frappe.new_doc("Employee Schedule")
     schedule.employee = doc.employee
-    schedule.date = d
+    schedule.date = date
     schedule.shift = doc.operations_shift
     schedule.shift_type = doc.shift_type
     schedule.operations_role = doc.operations_role
@@ -377,7 +372,7 @@ def fill_to_date(doc, method):
         doc.to_date = doc.from_date
 
 def validate_from_date(doc, method):
-    if doc.purpose != 'Assign Day Off' and not (frappe.session.user == get_employee_user_id(frappe.get_doc("ONEFM General Setting").get("attendance_manager"))):
+    if doc.purpose != 'Assign Day Off' and not (frappe.session.user == get_employee_user_id(frappe.db.get_single_value("ONEFM General Setting","attendance_manager"))):
         if getdate(today()) > getdate(doc.from_date):
             frappe.throw(
                 _("Please note that Shift Requests cannot be created for a past date."),
