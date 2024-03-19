@@ -2,6 +2,7 @@ import itertools
 from datetime import timedelta
 from string import Template
 from calendar import month, monthrange
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisors
 from datetime import datetime, timedelta
 from frappe import enqueue
 import frappe, erpnext
@@ -407,6 +408,48 @@ def get_action_user(employee, shift):
 					Role = "Project Manager"
 
 	return action_user, Role
+
+
+@frappe.whitelist()
+def get_action_users(employee, shift):
+	"""
+			Shift > Site > Project > Reports to
+	"""
+	action_user = []
+	Role = None
+
+	operations_shift = frappe.get_doc("Operations Shift", shift)
+	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
+	project = frappe.get_doc("Project", operations_site.project)
+	report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
+	current_user = frappe.get_value("Employee", {"name":employee},["user_id"])
+
+	if report_to:
+		action_user.append(get_employee_user_id(report_to))
+		Role = "Report To"
+	else:
+		if operations_site.account_supervisor:
+			site_supervisor = get_employee_user_id(operations_site.account_supervisor)
+			if site_supervisor != operations_shift.owner and site_supervisor != current_user:
+				action_user.append(site_supervisor)
+				Role = "Site Supervisor"
+		elif operations_shift.shift_supervisors:
+			active_supervisors = get_supervisors(shift)
+			if active_supervisors:
+				action_user = [get_employee_user_id(i) for  i in active_supervisors]
+			if operations_shift.owner in action_user:
+				action_user.remove(operations_shift.owner)
+			if current_user in action_user:
+				action_user.remove(current_user)
+			Role = "Shift Supervisor"
+		elif operations_site.project:
+			if project.account_manager:
+				project_manager = get_employee_user_id(project.account_manager)
+				if project_manager != operations_shift.owner and project_manager != current_user:
+					action_user.append(project_manager)
+					Role = "Project Manager"
+
+	return {'action_user':action_user,'role':Role}
 
 def issue_penalties():
 	"""This function to issue penalty to employee if employee checkin late without Shift Permission to Arrive Late.
@@ -1690,6 +1733,7 @@ def fetch_employees_not_in_checkin():
 				WHERE supervisor_reminder_shift_start>0
 				GROUP BY supervisor_reminder_shift_start;
 			""", as_dict=1)]
+			supervisor_reminder_minutes = [i for i in range(60)]
 		else:
 			reminder_minutes = [i.minute for i in frappe.db.sql("""
 				SELECT notification_reminder_after_shift_end as minute FROM `tabShift Type`
@@ -1701,6 +1745,7 @@ def fetch_employees_not_in_checkin():
 				WHERE supervisor_reminder_start_ends>0
 				GROUP BY supervisor_reminder_start_ends;
 			""", as_dict=1)]
+			supervisor_reminder_minutes = [i for i in range(60)]
 
 
 
@@ -1962,7 +2007,7 @@ def initiate_checkin_notification(res):
 		category = "Attendance"
 		date = getdate()
 		for recipient in supervisor_checkin_reminder:
-			action_user, Role = get_action_user(recipient.employee,recipient.operations_shift)
+			action_user_dict = get_action_users(recipient.employee,recipient.operations_shift)
 			subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
 			action_message = _("""
 				Submit a Shift Permission for the employee to give an excuse and not need to penalize
@@ -1971,8 +2016,8 @@ def initiate_checkin_notification(res):
 				Issue penalty for the employee
 				<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
 			""").format(recipient=recipient, shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
-			if action_user is not None: #and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
-				send_notification(title, subject, action_message, category, [action_user])
+			if action_user_dict.get('action_user') is not None: #and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+				send_notification(title, subject, action_message, category, action_user_dict.get('action_user'))
 
 			# notify_message = _("""Note that {employee} from Shift {shift} has Not Checked in yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
 			# if Role:
@@ -2012,7 +2057,7 @@ def initiate_checkin_notification(res):
 		category = "Attendance"
 		date = getdate()
 		for recipient in supervisor_checkout_reminder:
-			action_user, Role = get_action_user(recipient.employee,recipient.operations_shift)
+			action_user_dict = get_action_users(recipient.employee,recipient.operations_shift)
 			subject = _("{employee} has not checked out yet.".format(employee=recipient.employee_name))
 			action_message = _("""
 				Submit a Shift Permission for the employee to give an excuse and not need to penalize
@@ -2022,8 +2067,8 @@ def initiate_checkin_notification(res):
 				<a class='btn btn-primary btn-danger no-punch-in' id='{employee}_{date}_{shift}' href="/app/penalty-issuance/new-penalty-issuance-1">Issue Penalty</a>
 
 			""").format(recipient=recipient, shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
-			if action_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
-				send_notification(title, subject, action_message, category, [action_user])
+			if action_user_dict.get('action_user') is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
+				send_notification(title, subject, action_message, category, action_user_dict.get('action_user'))
 
 			# notify_message = _("""Note that {employee} from Shift {shift} has Not Checked out yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
 			# if Role:
@@ -2032,6 +2077,7 @@ def initiate_checkin_notification(res):
 			# 		send_notification(title, subject, notify_message, category, notify_user)
 
 
+@frappe.whitelist()
 def run_checkin_reminder():
 	# execute first checkin reminder
 

@@ -27,8 +27,20 @@ class OperationsShift(Document):
 	def on_update(self):
 		self.clear_cache()
 		self.validate_name()
-  
 		self.update_post_status()
+		self.validate_sequential_hierarchy()
+  
+  
+	def validate_sequential_hierarchy(self):
+		if self.shift_supervisors:
+			hierarchy_list = [int(i.hierarchy) for i in self.shift_supervisors]
+			hierarchy_list.sort()
+			if 1 not in hierarchy_list:
+				frappe.throw("Please ensure that an employee  has a hierarchy value for 1")
+			if not all(hierarchy_list[i] == hierarchy_list[0] + i for i in range(1, len(hierarchy_list))):
+				frappe.throw("Please ensure that the numbers provided are sequential")
+    
+    
 
 	def validate_name(self):
 		#this method is updating the name of the record and sending clear message through exception if any of the records are missing
@@ -146,32 +158,6 @@ def create_posts(data, site_shift, site, project=None):
 		frappe.throw(_(frappe.get_traceback()))
 
 
-
-@frappe.whitelist()
-def get_active_supervisor(ops_shift):
-	"""
-	Return the highest ranked available employee based on hierarchy 
-
-	Args:
-		ops_shift (str): Operations Shift
-	"""
-	emps = frappe.get_all("Operations Shift Supervisors",{'parent':ops_shift},['employee','hierarchy'],order_by='hierarchy')
-	has_day_off,day_off_employees = None,[]
-	if emps:
-		if len(emps) > 1:
-			
-			has_day_off = frappe.db.sql(f"""SELECT name,employee from `tabEmployee Schedule` where employee in {tuple([i.employee for i in emps])} 
-					and date = '{today()}' and employee_availability  ='Day Off' """,as_dict = 1)
-		else:
-			has_day_off = frappe.db.sql(f"""SELECT name,employee from `tabEmployee Schedule` where employee = '{emps[0].employee}'
-					and date = '{today()}' and employee_availability  ='Day Off' """,as_dict = 1)
-		if has_day_off:
-			  for one in has_day_off:
-				  day_off_employees.append(one.employee)
-		for each in emps:
-			if each.employee not in day_off_employees:
-				if is_active_supervisor(each):
-					return each.employee
 			
 def is_active_supervisor(row):
 	"""
@@ -211,3 +197,44 @@ def get_supervisors(ops_shift):
 		frappe.log_error(title = "Error Fetching Shift Supervisors",message = frappe.get_traceback())
 		return []
 		
+@frappe.whitelist()
+def get_active_supervisor(ops_shift):
+	"""
+	Return the highest ranked available employee based on hierarchy 
+
+	Args:
+		ops_shift (str): Operations Shift
+	"""
+	emps = frappe.get_all("Operations Shift Supervisors",{'parent':ops_shift},['employee','hierarchy'],order_by='hierarchy')
+	has_day_off,day_off_employees = None,[]
+	if emps:
+		if len(emps) > 1:
+			has_day_off = frappe.db.sql(f"""SELECT name,employee from `tabEmployee Schedule` where employee in {tuple([i.employee for i in emps])} 
+					and date = '{today()}' and employee_availability  ='Day Off' """,as_dict = 1)
+		else:
+			has_day_off = frappe.db.sql(f"""SELECT name,employee from `tabEmployee Schedule` where employee = '{emps[0].employee}'
+					and date = '{today()}' and employee_availability  ='Day Off' """,as_dict = 1)
+		if has_day_off:
+			  for one in has_day_off:
+				  day_off_employees.append(one.employee)
+		for each in emps:
+			if each.employee not in day_off_employees:
+				if is_active_supervisor(each):
+					return each.employee
+		
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
