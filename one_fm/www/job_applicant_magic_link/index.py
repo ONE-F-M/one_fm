@@ -122,6 +122,10 @@ def upload_image():
         absolute_path = bench_path+'/sites/'+cstr(frappe.local.site)+'/public/files/'+filename
         if os.path.isfile(absolute_path):
             os.remove(absolute_path)
+
+        # delete existing files
+        delete_existing_files(reference_doctype, reference_docname, f"%/files/user/magic_link/passport-{applicant_name}_%", filedoc.name)
+
         # get data from mindee
         try:
             mindee_client = Client(api_key=frappe.local.conf.mindee_passport_api)
@@ -215,6 +219,10 @@ def upload_image():
         absolute_path = frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/public/files/'+filename
         if os.path.isfile(absolute_path):
             os.remove(absolute_path)
+
+        # delete existing files
+        delete_existing_files(reference_doctype, reference_docname, f"%/files/user/magic_link/civil_id_front-{applicant_name}_%", filedoc.name)
+
         # process file detection
         try:
             # Init a new client and add your custom endpoint (document)
@@ -290,6 +298,10 @@ def upload_image():
         absolute_path = frappe.utils.get_bench_path()+'/sites/'+cstr(frappe.local.site)+'/public/files/'+filename
         if os.path.isfile(absolute_path):
             os.remove(absolute_path)
+
+        # delete existing files
+        delete_existing_files(reference_doctype, reference_docname, f"%/files/user/magic_link/civil_id_back-{applicant_name}_%", filedoc.name)
+
         # process file detection
         response_data['civil_id_back']={'done':True} #fake response
 
@@ -309,6 +321,22 @@ def is_date(string, fuzzy=False):
 
     except ValueError:
         return False
+    
+def delete_existing_files(reference_doctype,reference_docname, file_url_filter, newly_created_docname):
+    bench_path = frappe.utils.get_bench_path()
+    try:
+        files = frappe.get_all("File", filters={"is_private":0,"attached_to_doctype":reference_doctype, "attached_to_name":reference_docname, "file_url": ["like", file_url_filter], "name": ["!=", newly_created_docname]}, fields=["name", "file_url"])
+
+        for f in files:
+            frappe.delete_doc("File", f.name)
+
+            doc_file_url = bench_path+'/sites/'+cstr(frappe.local.site)+'/public/'+f.file_url
+            if os.path.isfile(doc_file_url):
+                os.remove(doc_file_url)
+
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Error deleting existing files")
 
 
 @frappe.whitelist(allow_guest=True)
