@@ -147,9 +147,9 @@ def process_shift_assignemnt(doc, event=None):
                     # create new schedule
                     new_date_range = [i for i in schedule_date_range if not i in found_schedules_date]
                     if new_date_range:
-                        for d in new_date_range:
-                            if frappe.db.exists("Employee Schedule", {'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'}):
-                                es = frappe.get_doc("Employee Schedule", {'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'})
+                        for date in new_date_range:
+                            if frappe.db.exists("Employee Schedule", {'date':date, 'employee':doc.employee, 'employee_availability':'Day Off'}):
+                                es = frappe.get_doc("Employee Schedule", {'date':date, 'employee':doc.employee, 'employee_availability':'Day Off'})
                                 start_time, end_time = frappe.db.get_value("Shift Type", doc.shift_type, ['start_time', 'end_time'])
                                 end_date = es.date
                                 if start_time > end_time:
@@ -515,10 +515,10 @@ def check_for_roster(doc):
     schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=doc.to_date)]
     new_date_range = [i for i in schedule_date_range]
     if new_date_range:
-        for d in new_date_range:
-            if frappe.db.exists("Employee Schedule", {'date':d, 'employee':doc.employee}):
+        for date in new_date_range:
+            if frappe.db.exists("Employee Schedule", {'date':date, 'employee':doc.employee}):
                 return True
-            elif frappe.db.exists("Shift Assignment", {'start_date':d, 'employee':doc.employee}):
+            elif frappe.db.exists("Shift Assignment", {'start_date':date, 'employee':doc.employee}):
                 return True
             else:
                 return False
