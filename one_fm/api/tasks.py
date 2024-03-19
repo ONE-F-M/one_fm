@@ -90,13 +90,13 @@ def schedule_initial_reminder(shifts_list, now_time):
 			date = getdate() - timedelta(days=1)
 
 		# Current time == shift start time => Checkin
-		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
+		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
 			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 			if len(recipients) > 0:
 				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in)
 
 		# current time == shift end time => Checkout
-		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
+		if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
 			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
 
 			if len(recipients) > 0:
@@ -130,19 +130,11 @@ def schedule_final_notification(shifts_list, now_time):
 			date = getdate() - timedelta(days=1)
 		# shift_start is equal to now time - notification reminder in mins
 		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
-		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
+		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.late_entry_grace_period))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.late_entry_grace_period))).time())):
 			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 
 			if len(recipients) > 0:
 				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in, is_after_grace_checkin=1)
-
-		# shift_end is equal to now time - notification reminder in mins
-		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
-		if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
-			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
-
-			if len(recipients) > 0:
-				notify_checkin_checkout_final_reminder(recipients=recipients, log_type="OUT", notification_title=notification_title, notification_subject=notification_subject_out)
 
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
