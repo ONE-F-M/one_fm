@@ -167,29 +167,141 @@ class AttendanceCheck(Document):
         if self.justification == "Approved by Administrator" and not check_attendance_manager(email=frappe.session.user):
             frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
 
-
-    def validate_unscheduled_check(self):
-        #If Check is unscheduled,confirmed user roles before submitting
-        if self.is_unscheduled:
-            if check_attendance_manager(frappe.session.user):
-                return
-            elif "Shift Supervisor" in frappe.get_roles(frappe.session.user) or "Site Supervisor" in frappe.get_roles(frappe.session.user):
-                shift_assignments = frappe.db.get_list("Shift Assignment", filters={'docstatus':1,'start_date':self.date,'employee':self.employee}, fields="*")
-                if not shift_assignments:
-                    frappe.throw(f"No Shift Assignments found for {self.employee_name} on {self.date} Please create one")
-            else:
-                frappe.throw("Only Shift/Site Supervisors and Attendance Managers have permission to submit unscheduled Attendance Checks")
-
     def on_submit(self):
+        if not self.attendance_status:
+            frappe.throw(_('To Approve the record set Attendance Status'))
         shift_working = frappe.db.get_value("Employee", self.employee, "shift_working")
         if self.attendance_status == "Present" and shift_working:
             self.validate_unscheduled_check()
         if self.attendance_status == "On Leave":
             self.check_on_leave_record()
         if self.attendance_status == "Day Off" and shift_working:
-            validate_day_off(self,convert=0)
-        self.validate_justification_and_attendance_status()
+            self.validate_day_off()
         self.mark_attendance()
+
+    def validate_unscheduled_check(self):
+        #If Check is unscheduled,confirmed user roles before submitting
+        if self.is_unscheduled:
+            if check_attendance_manager(frappe.session.user):
+                return
+            user_roles = frappe.get_roles(frappe.session.user)
+            if "Shift Supervisor" in user_roles or "Site Supervisor" in user_roles:
+                shift_assignments = frappe.db.get_list(
+                    "Shift Assignment",
+                    filters={
+                        "docstatus":1,
+                        "start_date":self.date,
+                        "employee":self.employee
+                    }
+                )
+                if not shift_assignments:
+                    frappe.throw(f"No Shift Assignments found for {self.employee_name} on {self.date} Please create one")
+            else:
+                frappe.throw("Only Shift/Site Supervisors and Attendance Managers have permission to submit unscheduled Attendance Checks")
+
+    def check_on_leave_record(self):
+        if self.attendance_status == "On Leave":
+            draft_leave_records = self.get_draft_leave_records()
+            if draft_leave_records and len(draft_leave_records)>0:
+                doc_url = get_url_to_form('Leave Application',draft_leave_records[0].get('name'))
+                error_template = frappe.render_template(
+                    'one_fm/templates/emails/attendance_check_alert.html',
+                    context={
+                        'doctype':'Leave Application',
+                        'current_user':frappe.session.user,
+                        'date':self.date,
+                        'approver':draft_leave_records[0].get('leave_approver_name'),
+                        'page_link':doc_url,
+                        'employee_name':self.employee_name
+                    }
+                )
+                frappe.throw(error_template)
+            else:
+                link_to_new_leave = frappe.utils.get_url('/app/leave-application/new-leave-application-1')
+                frappe.throw(f"""
+                    <p>Please note that a Leave Application has not been created for <b>{self.employee_name}</b>.</p>
+                    <hr>
+                    To create a leave application
+                    <a class="btn btn-primary btn-sm"
+                    href='{link_to_new_leave}?doc_id={self.name}&doctype={self.doctype}'
+                    target="_blank" onclick=" ">
+                        Click Here
+                    </a>
+                 """)
+
+    def get_draft_leave_records(self):
+        return frappe.db.sql(f"""
+            select
+                employee_name, leave_approver_name, name
+            from
+                `tabLeave Application`
+            where
+                employee = '{self.employee}'
+                and
+                '{self.date}' >= from_date
+                and
+                '{self.date}' <= to_date
+                and
+                docstatus = 0
+            """,
+            as_dict=True
+        )
+
+    def validate_day_off(self):
+        if self.attendance_status == "Day Off":
+            # Check if shift request for that day exists
+            draft_shift_request = self.get_draft_shift_request()
+            if draft_shift_request and len(draft_shift_request)>0:
+                doc_url = get_url_to_form('Shift Request',draft_shift_request[0].get('name'))
+                approver_full_name = frappe.db.get_value("User",draft_shift_request[0].get('approver'), 'full_name')
+                error_template = frappe.render_template(
+                    "one_fm/templates/emails/attendance_check_alert.html",
+                    context={
+                        "doctype":"Shift Request",
+                        "current_user":frappe.session.user,
+                        "date":self.date,
+                        "approver":approver_full_name,
+                        "page_link":doc_url,
+                        "employee_name":doc.employee_name
+                    }
+                )
+                frappe.throw(error_template)
+            else:
+                # Cancelled or shift request not created at all
+                link_to_new_shift_request = frappe.utils.get_url('/app/shift-request/new-shift-request-1')
+                frappe.throw(f"""
+                    <p>
+                        Please note that a shift request has not been created for
+                        <b>{doc.employee_name}</b> on <b>{doc.date}</b>
+                    </p>
+                    <hr>
+                    To create a Shift Request
+                    <a class="btn btn-primary btn-sm"
+                    href='{link_to_new_shift_request}?doc_id={doc.name}&doctype={doc.doctype}'
+                    target="_blank" onclick=" ">
+                        Click Here
+                    </a>
+                 """)
+
+    def get_draft_shift_request(self):
+        return frappe.db.sql(f"""
+            select
+                name,approver
+            from
+                `tabShift Request`
+            where
+                docstatus = 0
+                and
+                assign_day_off = 1
+                and
+                employee = '{self.employee}'
+                and
+                from_date <= '{self.date}'
+                and
+                to_date >='{self.date}'
+            """,
+            as_dict=1
+        )
 
     def mark_attendance(self):
         if self.workflow_state == 'Approved':
@@ -269,39 +381,6 @@ class AttendanceCheck(Document):
         else:
             working_hours = 8 if self.attendance_status == 'Present' else 0
         return working_hours
-
-    def validate_justification_and_attendance_status(self):
-        if not self.attendance_status:
-            frappe.throw(_('To Approve the record set Attendance Status'))
-
-    def check_on_leave_record(self):
-        submited_leave_record = frappe.db.sql(f"""SELECT leave_type
-            FROM `tabLeave Application`
-            WHERE employee = '{self.employee}'
-                AND '{self.date}' >= from_date AND '{self.date}' <= to_date
-                AND workflow_state = 'Approved'
-                AND docstatus = 1
-        """,as_dict=True)
-
-        if  submited_leave_record:
-            return
-        else:
-            draft_leave_records = frappe.db.sql(f"""select employee_name,leave_approver_name,name
-                FROM `tabLeave Application`
-                WHERE employee = '{self.employee}'
-                    AND '{self.date}' >= from_date AND '{self.date}' <= to_date
-                    AND docstatus = 0
-            """,as_dict=True)
-            if draft_leave_records:
-                doc_url = get_url_to_form('Leave Application',draft_leave_records[0].get('name'))
-                error_template = frappe.render_template('one_fm/templates/emails/attendance_check_alert.html',context={'doctype':'Leave Application','current_user':frappe.session.user,'date':self.date,'approver':draft_leave_records[0].get('leave_approver_name'),'page_link':doc_url,'employee_name':self.employee_name})
-                frappe.throw(error_template)
-            else:
-                frappe.throw(f"""
-                <p>Please note that a Leave Application has not been created for <b>{self.employee_name}</b>.</p>
-                <hr>
-                To create a leave application <a class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/leave-application/new-leave-application-1')}?doc_id={self.name}&doctype={self.doctype}" target="_blank" onclick=" ">Click Here</a>
-                 """)
 
 def create_attendance_check(attendance_date=None):
     if production_domain():
@@ -458,35 +537,6 @@ def mark_missing_attendance(attendance_checkin_found):
 def check_attendance_manager(email: str) -> bool:
     return frappe.db.get_value("Employee", {"user_id": email}) == frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
 
-
-@frappe.whitelist()
-def validate_day_off(form,convert=1):
-    # Validates the existence of a shift request when the attendance status of the attendance
-    doc = json.loads(form) if convert else form
-    if doc.get('attendance_status') == "Day Off":
-        #check if shift request for that day exists
-        query = f"Select name from `tabShift Request` where docstatus = 1 and assign_day_off = 1 and  employee = '{doc.get('employee')}' and from_date <= '{doc.get('date')}'  and to_date >='{doc.get('date')}'"
-        submited_result_set = frappe.db.sql(query,as_dict=1)
-        if submited_result_set:
-            return
-        else:
-            draft_query =  f"Select name,approver from `tabShift Request` where docstatus = 0 and assign_day_off = 1 and  employee = '{doc.get('employee')}' and from_date <= '{doc.get('date')}'  and to_date >='{doc.get('date')}'"
-            drafts_result_set = frappe.db.sql(draft_query,as_dict=1)
-            if drafts_result_set:
-
-
-                doc_url = get_url_to_form('Shift Request',drafts_result_set[0].get('name'))
-                approver_full_name = frappe.db.get_value("User",drafts_result_set[0].get('approver'),'full_name')
-                error_template = frappe.render_template('one_fm/templates/emails/attendance_check_alert.html',context={'doctype':'Shift Request','current_user':frappe.session.user,'date':doc.date,'approver':approver_full_name,'page_link':doc_url,'employee_name':doc.employee_name})
-                frappe.throw(error_template)
-            else:
-                #cancelled or shift request not created at all
-                frappe.throw(f"""
-                <p>Please note that a shift request has not been created for <b>{doc.employee_name}</b> on <b>{doc.date}</b>..</p>
-                <hr>
-                 To create a Shift Request <a class="btn btn-primary btn-sm" href="{frappe.utils.get_url('/app/shift-request/new-shift-request-1')}?doc_id={doc.name}&doctype={doc.doctype}" target="_blank" onclick=" ">Click Here</a>
-                 """)
-
 def attendance_check_pending_approval_check():
     pending_approval_attendance_checks = get_pending_approval_attendance_check(48)
     if pending_approval_attendance_checks and len(pending_approval_attendance_checks)>0:
@@ -514,7 +564,6 @@ def get_pending_approval_attendance_check(hours):
 def issue_penalty_to_the_assigned_approver(pending_approval_attendance_checks):
     approvers = {}
     for pending_approval_attendance_check in pending_approval_attendance_checks:
-        pending_approval_attendance_check = frappe.parse_json(pending_approval_attendance_check)
         if "assign_to" in pending_approval_attendance_check:
             assign_to = frappe.parse_json(pending_approval_attendance_check.assign_to)
             if assign_to and len(assign_to) > 0:
