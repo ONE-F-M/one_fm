@@ -515,38 +515,5 @@ def assign_attendance_manager(pending_approval_attendance_checks):
             })
         frappe.db.commit()
 
-def check_for_missed(date,schedules,shift_assignments,attendance_requests,all_attendance,checks_to_create):
-    all_leaves = frappe.db.sql(f"""SELECT name,employee
-        FROM `tabLeave Application`
-            Where '{date}' >= from_date AND '{date}' <= to_date
-            AND workflow_state = 'Approved'
-            AND docstatus = 1
-    """,as_dict=True)
-    all_shifts_query = f"""Select employee from `tabShift Request` where docstatus = 1 and
-    from_date <= '{date}'  and to_date >='{date}'"""
-    all_leave_employees = [i.employee for i in all_leaves]
-    all_shifts = frappe.db.sql(all_shifts_query,as_dict = 1)
-    shift_request_employees = [i.employee for i in all_shifts]
-    schedule_employees = [i.employee for i in schedules]
-    shift_assignments_employees = [i.employee for i in shift_assignments]
-    attendance_requests_employees = [i.employee for i in attendance_requests]
-    all_attendance_employees = [i.employee for i in all_attendance]
-    merged = shift_request_employees+schedule_employees+shift_assignments_employees+\
-            all_attendance_employees+attendance_requests_employees+checks_to_create+all_leave_employees
-    merged_set  = set(merged) #Remove Duplicates
-    merged_tuple = tuple(merged_set)
-    if len(merged_tuple) == 1:
-        single_employee = merged_tuple[0]
-        employees_with_no_docs_query = f""" SELECT name from `tabEmployee` where status = 'Active' AND date_of_joining <= '{date}' AND shift_working = 1 and name = {single_employee}
-                                        """
-
-    #Employees with no shift,schedule,leaves etc
-    else:
-         employees_with_no_docs_query = f""" SELECT name from `tabEmployee` where status = 'Active' AND date_of_joining <= '{date}' and shift_working = 1 and name not in {merged_tuple}
-                                            """
-    result_set = frappe.db.sql(employees_with_no_docs_query,as_dict=1)
-    return [i.name for i in result_set] if result_set else []
-
-
 def schedule_attendance_check():
     frappe.enqueue(create_attendance_check, queue='long', timeout=7000)
