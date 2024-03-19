@@ -1,17 +1,15 @@
 # Copyright (c) 2023, omar jaber and contributors
 # For license information, please see license.txt
 from datetime import datetime, timedelta
-from itertools import chain
 
 from frappe.model.document import Document
 import frappe,json
 from frappe import _
 from frappe.desk.form.assign_to import add as add_assignment
-from frappe.utils import nowdate, add_to_date, cstr, add_days, today, format_date, now, get_url_to_form
+from frappe.utils import add_days, today, now, get_url_to_form
 from one_fm.utils import (
     production_domain,
-    fetch_attendance_manager_user,
-    get_approver
+    fetch_attendance_manager_user
 )
 
 class AttendanceCheck(Document):
