@@ -41,9 +41,11 @@ def on_update(doc, event):
         workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])
 
     if doc.workflow_state == 'Draft':
-        assign_approver(doc, doc.approver)
         send_workflow_action_email(doc,[doc.approver])
         validate_shift_overlap(doc)
+    if doc.workflow_state == 'Pending Approval':
+        assign_approver(doc, doc.approver)
+
 
 def assign_approver(doc, approver_id):
     add_assignment({
@@ -99,10 +101,10 @@ def process_shift_assignemnt(doc, event=None):
         if doc.assign_day_off == 1:
             assign_day_off(doc)
         elif doc.purpose == 'Replace Existing Assignment':
-            if doc.roster_type == "Basic" and cstr(doc.from_date) == cstr(getdate()):
-                shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"}, ['name'])
+            if doc.roster_type == "Basic" and cstr(doc.from_date) <= cstr(getdate()) <= cstr(doc.to_date):
+                shift_assignemnt = frappe.get_list("Shift Assignment", filters = [['employee','=', doc.employee], ['start_date', 'between', [doc.from_date, doc.to_date]], ['roster_type','=',"Basic"]], fields=['name'])
                 if shift_assignemnt:
-                    replace_shift_assignment(shift_assignemnt, doc)
+                    replace_shift_assignment(shift_assignemnt[0].name, doc)
                 if shift_worker == 1:
                     # check for existing schedule
                     schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=doc.to_date)]
@@ -120,10 +122,10 @@ def process_shift_assignemnt(doc, event=None):
                     create_employee_schedule_from_request(doc, date)
         elif doc.purpose == 'Update Existing Assignment':
             if check_for_roster(doc):
-                if doc.roster_type == "Basic" and cstr(doc.from_date) == cstr(getdate()):
-                    shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"}, ['name'])
+                if doc.roster_type == "Basic" and cstr(doc.from_date) <= cstr(getdate()) <= cstr(doc.to_date):
+                    shift_assignemnt = frappe.get_list("Shift Assignment", filters = [['employee','=', doc.employee], ['start_date', 'between', [doc.from_date, doc.to_date]], ['roster_type','=',"Basic"]], fields=['name'])
                     if shift_assignemnt:
-                        update_shift_assignment(shift_assignemnt, doc )
+                        update_shift_assignment(shift_assignemnt[0].name, doc )
                 if shift_worker == 1:
                     # check for existing schedule
                     schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=doc.to_date)]
@@ -212,7 +214,7 @@ def update_shift_assignment(shift_assignemnt,shift_request):
     if shift_request.operations_role:
         assignment_doc.db_set("operations_role" , shift_request.operations_role)
 
-def replace_shift_assignment(shift_assignemnt, doc):
+def replace_shift_assignment(shift_assignemnt, shift_request):
     '''
         Method used to create Shift Assignment from Shift Request
         args:
