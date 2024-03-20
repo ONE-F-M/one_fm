@@ -3,6 +3,7 @@ import pyotp
 from frappe.utils import getdate
 from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token,get_email_subject_for_2fa,get_email_body_for_2fa
 from frappe.integrations.oauth2 import get_token
+from frappe.core.doctype.user.user import generate_keys
 from frappe.utils.background_jobs import enqueue
 from frappe.core.doctype.sms_settings.sms_settings import send_sms
 from frappe.frappeclient import FrappeClient
@@ -11,7 +12,7 @@ from frappe import _
 import requests, json
 from frappe.utils.password import update_password as _update_password
 from twilio.rest import Client as TwilioClient
-from one_fm.api.v1.utils import response
+from one_fm.api.v1.utils import response, get_current_user_details
 from one_fm.processor import sendemail, send_whatsapp
 
 @frappe.whitelist(allow_guest=True)

@@ -70,6 +70,46 @@ def comment_payment_entry_in_hrms():
         f.close()
 
 
+def replace_send_anniversary_reminder():
+    """
+        Replace the default email notification for birthdays with a custom function
+    """
+    app_path = frappe.utils.get_bench_path()+"/apps/hrms/hrms/"
+    f = open(app_path+"hooks.py",'r')
+    filedata = f.read()
+    f.close()
+
+    if  filedata.find('"hrms.controllers.employee_reminders.send_work_anniversary_reminders"') > 0:
+        newdata = filedata.replace(
+                '"hrms.controllers.employee_reminders.send_work_anniversary_reminders",',
+                '#"hrms.controllers.employee_reminders.send_work_anniversary_reminders",'
+        )
+        f = open(app_path+"hooks.py",'w')
+        f.write(newdata)
+        f.close()
+        
+        
+
+def replace_send_birthday_reminder():
+    """
+        Replace the default email notification for birthdays with a custom function
+    """
+    app_path = frappe.utils.get_bench_path()+"/apps/hrms/hrms/"
+    f = open(app_path+"hooks.py",'r')
+    filedata = f.read()
+    f.close()
+
+    if  filedata.find('"hrms.controllers.employee_reminders.send_birthday_reminders",') > 0:
+        newdata = filedata.replace(
+                '"hrms.controllers.employee_reminders.send_birthday_reminders",',
+                '#"hrms.controllers.employee_reminders.send_birthday_reminders",'
+        )
+        f = open(app_path+"hooks.py",'w')
+        f.write(newdata)
+        f.close()
+        
+        
+
 def comment_process_expired_allocation_in_hrms():
     """
         Comment hrms scheduler to process_expired_allocation

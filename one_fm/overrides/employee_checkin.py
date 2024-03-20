@@ -326,6 +326,7 @@ def calculate_time_diffrence_for_checkin(shift_time, checkin_time):
 @frappe.whitelist()
 def auto_generate_checkin():
 	date = today()
+	expected_date_time = datetime.strptime(format(now_datetime() + timedelta(hours=1), "%d-%m-%Y %H:00:00"), "%d-%m-%Y %H:00:00")
 	employee_list = frappe.db.sql(f"""SELECT e.name as ename, sa.name as sname, sa.start_datetime, sa.end_datetime, sa.start_date
 									from `tabEmployee` as e, `tabShift Assignment` as sa
 									WHERE e.auto_attendance = 1
@@ -334,14 +335,16 @@ def auto_generate_checkin():
 					""", as_dict=1)
 
 	if employee_list:
-		frappe.enqueue(process_list, employee_list=employee_list, is_async=True, queue='long')
+		frappe.enqueue(process_list, employee_list=employee_list, expected_date_time=expected_date_time, is_async=True, queue='long')
 
-def process_list(employee_list):
+def process_list(employee_list, expected_date_time):
 	for e in employee_list:
-		checkin_time = e.start_datetime + (e.start_datetime + timedelta(minutes=60) - e.start_datetime) * random.random()
-		checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=30) - e.end_datetime) * random.random()
-		create_checkin_record(e.ename, "IN", checkin_time, e.sname)
-		create_checkin_record(e.ename, "OUT", checkout_time, e.sname)
+		if expected_date_time == e.start_datetime:
+			checkin_time = e.start_datetime + (e.start_datetime + timedelta(minutes=60) - e.start_datetime) * random.random()
+			create_checkin_record(e.ename, "IN", checkin_time, e.sname)
+		if expected_date_time == e.end_datetime:
+			checkout_time = e.end_datetime + (e.end_datetime + timedelta(minutes=30) - e.end_datetime) * random.random()
+			create_checkin_record(e.ename, "OUT", checkout_time, e.sname)
 
 def create_checkin_record(employee, log_type, time, shift_assignment):
 	employee_checkin = frappe.new_doc('Employee Checkin')

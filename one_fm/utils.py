@@ -48,9 +48,8 @@ from frappe.desk.form.linked_with import get_linked_fields
 from frappe.model.workflow import apply_workflow
 
 from deep_translator import GoogleTranslator
-
 from frappe.model.naming import make_autoname
-
+from erpnext.setup.doctype.employee.employee import get_all_employee_emails, get_employee_email
 
 def get_common_email_args(doc):
 	doctype = doc.get("doctype")
@@ -3496,3 +3495,102 @@ def get_standard_notification_template(description, doc_link):
     message_html += '</p>'
 
     return message_html
+
+def get_sender_email() -> str | None:
+    return frappe.db.get_single_value("HR Settings", "sender_email")
+
+@frappe.whitelist()
+def send_birthday_reminders():
+    """Send Employee birthday reminders if no 'Stop Birthday Reminders' is not set."""
+    from hrms.controllers.employee_reminders import send_birthday_reminder, get_employees_who_are_born_today,get_birthday_reminder_text_and_message
+    
+    to_send = int(frappe.db.get_single_value("HR Settings", "send_birthday_reminders"))
+    if not to_send:
+        return
+
+    sender = get_sender_email()
+    employees_born_today = get_employees_who_are_born_today()
+
+    for company, birthday_persons in employees_born_today.items():
+        employee_emails = get_all_employee_emails(company,is_birthday = True)
+        
+        birthday_person_emails = [get_employee_email(doc) for doc in birthday_persons]
+        recipients = list(set(employee_emails) - set(birthday_person_emails))
+
+        reminder_text, message = get_birthday_reminder_text_and_message(birthday_persons)
+        send_birthday_reminder(recipients, reminder_text, birthday_persons, message, sender)
+
+        if len(birthday_persons) > 1:
+            # special email for people sharing birthdays
+            for person in birthday_persons:
+                person_email = person["user_id"] or person["personal_email"] or person["company_email"]
+                if frappe.get_value("Notification Settings",person['user_id'],'custom_enable_employee_birthday_notification'):
+                    others = [d for d in birthday_persons if d != person]
+                    reminder_text, message = get_birthday_reminder_text_and_message(others)
+                    send_birthday_reminder(person_email, reminder_text, others, message, sender)
+
+
+
+def get_all_employee_emails(company,is_birthday=False,is_anniversary = False):
+    """Returns list of employee emails either based on user_id or company_email"""
+ 
+    if not is_birthday and not is_anniversary:
+        return []
+    all_users=[]
+    if is_anniversary:
+        all_users = frappe.get_all("Notification Settings",{'custom_enable_work_anniversary_notification':1},['name'])
+    if is_birthday:
+        all_users = frappe.get_all("Notification Settings",{'custom_enable_employee_birthday_notification':1},['name'])
+    if all_users and None not in all_users:
+        all_users = [i.name for i in all_users]
+    else:
+        return []
+    employee_list = frappe.get_all(
+        "Employee", fields=["name", "employee_name"], filters={'user_id':['IN',all_users],"status": "Active", "company": company}
+    )
+    
+    employee_emails = []
+    for employee in employee_list:
+        if not employee:
+            continue
+        user, company_email, personal_email = frappe.db.get_value(
+            "Employee", employee, ["user_id", "company_email", "personal_email"]
+        )
+        email = user or company_email or personal_email
+        if email:
+            employee_emails.append(email)
+    return employee_emails
+
+
+@frappe.whitelist()
+def send_work_anniversary_reminders():
+    from hrms.controllers.employee_reminders import send_work_anniversary_reminder, get_employees_having_an_event_today,get_work_anniversary_reminder_text
+    """Send Employee Work Anniversary Reminders if 'Send Work Anniversary Reminders' is checked"""
+    to_send = int(frappe.db.get_single_value("HR Settings", "send_work_anniversary_reminders"))
+    if not to_send:
+        return
+
+    sender = get_sender_email()
+    employees_joined_today = get_employees_having_an_event_today("work_anniversary")
+    
+    message = _("A friendly reminder of an important date for our team.")
+    message += "<br>"
+    message += _("Everyone, let’s congratulate them on their work anniversary!")
+
+    for company, anniversary_persons in employees_joined_today.items():
+        employee_emails = get_all_employee_emails(company,is_anniversary=True)
+        
+        anniversary_person_emails = [get_employee_email(doc) for doc in anniversary_persons]
+        recipients = list(set(employee_emails) - set(anniversary_person_emails))
+
+        reminder_text = get_work_anniversary_reminder_text(anniversary_persons)
+        send_work_anniversary_reminder(recipients, reminder_text, anniversary_persons, message, sender)
+
+        if len(anniversary_persons) > 1:
+            # email for people sharing work anniversaries
+            for person in anniversary_persons:
+                person_email = person["user_id"] or person["personal_email"] or person["company_email"]
+                if frappe.get_value("Notification Settings",person['user_id'],'custom_enable_work_anniversary_notification'):
+                    others = [d for d in anniversary_persons if d != person]
+                    reminder_text = get_work_anniversary_reminder_text(others)
+                    send_work_anniversary_reminder(person_email, reminder_text, others, message, sender)
