@@ -40,7 +40,7 @@ class EmployeeSchedule(Document):
 			self.end_datetime = ''
 			self.project = ''
 
-		validate_operations_post_overfill({self.date: 1}, self.shift)
+		# validate_operations_post_overfill({self.date: 1}, self.shift)
 
 	def validate_offs(self):
 		"""

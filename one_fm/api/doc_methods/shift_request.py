@@ -101,7 +101,7 @@ def process_shift_assignemnt(doc, event=None):
                     if start_time > end_time:
                         end_date = add_days(end_date, 1)
 
-                    validate_operations_post_overfill({es.date: 1}, doc.operations_shift)
+                    # validate_operations_post_overfill({es.date: 1}, doc.operations_shift)
 
                     frappe.db.set_value('Employee Schedule', es.name, {
                         'shift':doc.operations_shift,
@@ -129,7 +129,7 @@ def process_shift_assignemnt(doc, event=None):
                         if start_time > end_time:
                             end_date = add_days(end_date, 1)
 
-                        validate_operations_post_overfill({es.date: 1}, doc.operations_shift)
+                        # validate_operations_post_overfill({es.date: 1}, doc.operations_shift)
 
                         frappe.db.set_value('Employee Schedule', es.name, {
                             'shift':doc.operations_shift,
