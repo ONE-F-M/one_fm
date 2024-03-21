@@ -33,6 +33,7 @@ app_include_js = [
 		"/assets/one_fm/js/desk.js",
         "/assets/one_fm/js/showdown.min.js",
         "purchase.bundle.js",
+		"/assets/one_fm/js/form_overrides/workflow_override.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -111,7 +112,8 @@ doctype_js = {
     "Workflow": "public/js/doctype_js/workflow.js",
     "Stock Entry": "public/js/doctype_js/stock_entry.js",
     "Gratuity": "public/js/doctype_js/gratuity.js",
-    "Goal": "public/js/doctype_js/goal.js"
+    "Goal": "public/js/doctype_js/goal.js",
+    "Task": "public/js/doctype_js/task.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -181,7 +183,7 @@ permission_query_conditions = {
 	"Penalty": "one_fm.legal.doctype.penalty.penalty.get_permission_query_conditions",
 	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.get_permission_query_conditions",
 	"Issue": "one_fm.utils.get_issue_permission_query_conditions",
-    "Leave Application": "one_fm.permissions.leave_application_list",
+    "Leave Application": "one_fm.permissions.leave_application_list_",
     "Roster Post Actions":"one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_permission_query_conditions",
 	"Roster Employee Actions": "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_permission_query_conditions",
 	"Warehouse": "one_fm.permissions.warehouse_list"
@@ -416,9 +418,15 @@ doc_events = {
 	# "Wiki Page": {
 	# 	"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
 	# },
+    "Task": {
+        "validate": "one_fm.overrides.task.validate_task"
+	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
+    "OAuth Bearer Token": {
+		"after_insert": "one_fm.api.doc_methods.oauth_bearer_token.revoke_and_delete_existing_tokens",
+	},
 }
 
 standard_portal_menu_items = [
@@ -509,6 +517,8 @@ scheduler_events = {
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
+		'one_fm.utils.send_work_anniversary_reminders',
+		'one_fm.utils.send_birthday_reminders',
 		'one_fm.utils.increase_daily_leave_balance',
 		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.daily_indemnity_allocation_builder',
 		'one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.allocate_daily_indemnity',
@@ -534,7 +544,8 @@ scheduler_events = {
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
 		'one_fm.utils.send_gp_letter_reminder',
         "one_fm.overrides.attendance.run_attendance_marking_hourly",
-		"one_fm.api.tasks.validate_shift_assignment"
+		"one_fm.api.tasks.validate_shift_assignment",
+		'one_fm.overrides.employee_checkin.auto_generate_checkin'
 	],
 
 	"weekly": [
@@ -682,9 +693,6 @@ scheduler_events = {
 		"45 13 * * *": [ # validate shift assignmet
 			'one_fm.api.tasks.validate_pm_shift_assignment'
 		],
-		"15 3 * * *": [ # create shift assignment
-			'one_fm.overrides.employee_checkin.auto_generate_checkin'
-		],
 		"45 12 * * *": [ # mark all attendance for previous day at 12:45 pm today
 			'one_fm.overrides.attendance.mark_all_attendance'
 		],
@@ -802,7 +810,8 @@ override_whitelisted_methods = {
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_details",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
-	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
+	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate",
+	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens"
 }
 
 
@@ -828,6 +837,8 @@ jenv = {
 
 after_migrate = [
     "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
+    "one_fm.after_migrate.execute.replace_send_birthday_reminder",
+    "one_fm.after_migrate.execute.replace_send_anniversary_reminder",
     "one_fm.after_migrate.execute.disable_workflow_emails",
     "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
