@@ -1,5 +1,133 @@
 [
  {
+  "assign_condition": "workflow_state == 'Draft' and creation < modified",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Attendance Request Return to Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Attendance Request Return to Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Attendance Request Return to Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Attendance Request Return to Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Attendance Request Return to Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Attendance Request Return to Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Attendance Request Return to Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Pending Approval')",
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table cellpadding=\"0\" cellspacing=\"0\" border=\"1\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">From Date</td>\n                <td style=\"padding: 10px;\">{{from_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">To Date</td>\n                <td style=\"padding: 10px;\">{{to_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Reason</td>\n                <td style=\"padding: 10px;\">{{reason}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Explanation</td>\n                <td style=\"padding: 10px;\">{{explanation}}</td>\n            </tr>\n            </tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Attendance Request",
+  "due_date_based_on": null,
+  "field": "owner",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "Administrator",
+  "modified": "2024-03-12 14:38:20.220387",
+  "name": "Attendance Request Return to Draft",
+  "priority": 1,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Pending Approval')",
+  "users": []
+ },
+ {
+  "assign_condition": "workflow_state == 'Pending Approval'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Approved', 'Draft', 'Rejected')",
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table cellpadding=\"0\" cellspacing=\"0\" border=\"1\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">From Date</td>\n                <td style=\"padding: 10px;\">{{from_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">To Date</td>\n                <td style=\"padding: 10px;\">{{to_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Reason</td>\n                <td style=\"padding: 10px;\">{{reason}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Explanation</td>\n                <td style=\"padding: 10px;\">{{explanation}}</td>\n            </tr>\n            </tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Attendance Request",
+  "due_date_based_on": null,
+  "field": "approver_user",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "",
+  "modified": "2024-03-12 14:38:26.655070",
+  "name": "Attendance Request Approval",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Approved', 'Draft', 'Rejected')",
+  "users": []
+ },
+ {
   "assign_condition": "workflow_state in ('Approved', \"Rejected\")",
   "assignment_days": [
    {
@@ -120,7 +248,7 @@
   "field": "reports_to_user",
   "is_assignment_rule_with_workflow": 0,
   "last_user": "",
-  "modified": "2024-01-24 18:00:54.349067",
+  "modified": "2024-03-22 09:51:17.332071",
   "name": "Attendance Check Reports To",
   "priority": 2,
   "rule": "Based on Field",
@@ -375,7 +503,7 @@
   "due_date_based_on": null,
   "field": "approver_user_id",
   "is_assignment_rule_with_workflow": 0,
-  "last_user": "j.poil@one-fm.com",
+  "last_user": "",
   "modified": "2024-03-10 15:19:46.392833",
   "name": "Shift Permission Approver",
   "priority": 0,
