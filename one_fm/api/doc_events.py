@@ -11,6 +11,7 @@ from one_fm.operations.doctype.operations_site.operations_site import create_not
 import datetime
 from frappe.permissions import remove_user_permission
 from hrms.hr.utils import get_holidays_for_employee
+from one_fm.operations.doctype.operations_shift.operations_shift import get_active_supervisor
 
 #Shift Type
 @frappe.whitelist()
@@ -39,8 +40,9 @@ def get_notification_user(doc, employee=None):
 	
 	operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
 
-	if operations_shift.supervisor:
-		supervisor = get_employee_user_id(operations_shift.supervisor)
+	if operations_shift.shift_supervisors:
+		active_supervisor = get_active_supervisor(doc.operations_shift)
+		supervisor = get_employee_user_id(active_supervisor)
 		if supervisor != doc.owner:
 			return supervisor
 

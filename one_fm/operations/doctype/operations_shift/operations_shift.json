@@ -17,9 +17,10 @@
   "shift_type",
   "column_break_8",
   "supervisor",
-  "shift_supervisors",
   "column_break_14",
   "supervisor_name",
+  "supervisors_section",
+  "shift_supervisors",
   "section_break_12",
   "start_time",
   "end_time",
@@ -161,6 +162,11 @@
    "fieldtype": "Table",
    "label": "Shift Supervisors",
    "options": "Operations Shift Supervisors"
+  },
+  {
+   "fieldname": "supervisors_section",
+   "fieldtype": "Section Break",
+   "label": "Supervisors"
   }
  ],
  "links": [
@@ -170,7 +176,7 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2024-03-17 11:02:09.014449",
+ "modified": "2024-03-22 12:57:17.235742",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",

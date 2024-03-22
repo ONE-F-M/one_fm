@@ -211,16 +211,17 @@ def get_active_supervisor(ops_shift):
 		if len(emps) > 1:
 			has_day_off = frappe.db.sql(f"""SELECT name,employee from `tabEmployee Schedule` where employee in {tuple([i.employee for i in emps])} 
 					and date = '{today()}' and employee_availability  ='Day Off' """,as_dict = 1)
-		else:
+		elif len(emps)==1:
 			has_day_off = frappe.db.sql(f"""SELECT name,employee from `tabEmployee Schedule` where employee = '{emps[0].employee}'
 					and date = '{today()}' and employee_availability  ='Day Off' """,as_dict = 1)
 		if has_day_off:
-			  for one in has_day_off:
-				  day_off_employees.append(one.employee)
+			day_off_employees = [one.employee for one in has_day_off]
 		for each in emps:
 			if each.employee not in day_off_employees:
 				if is_active_supervisor(each):
 					return each.employee
+
+
 		
   
   

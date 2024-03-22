@@ -16,6 +16,7 @@ from frappe.model.naming import set_name_by_naming_series
 from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
     expire_allocation, create_leave_ledger_entry
 )
+from one_fm.operations.doctype.operations_shift.operations_shift import get_active_supervisor
 from frappe.desk.form.assign_to import add as add_assignment
 from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
 from dateutil.relativedelta import relativedelta
@@ -3076,7 +3077,7 @@ def get_approver(employee):
     if employee_data.reports_to:
         reports_to = employee_data.reports_to
     if not reports_to and employee_data.shift:
-        shift_supervisor = frappe.db.get_value('Operations Shift', employee_data.shift, 'supervisor')
+        shift_supervisor = get_active_supervisor(employee_data.shift)
         if shift_supervisor:
             reports_to = shift_supervisor
     if not reports_to and employee_data.site:
@@ -3091,26 +3092,6 @@ def get_approver(employee):
                     reports_to = account_manager
     return reports_to
 
-def get_approver_for_many_employees(supervisor=None):
-    """
-        Get document approver for employee by
-        reports_to, shift_approver, site_approver
-    """
-    if not supervisor:
-        supervisor = frappe.cache().get_value(frappe.session.user).employee
-    roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
-    has_roles = any([item in roles for item in frappe.get_roles(frappe.db.get_value('Employee', supervisor, 'user_id'))])
-    if has_roles:
-        return [i.name for i in frappe.db.get_list("Employee", ignore_permissions=True)]
-    employees = [i.name for i in frappe.db.get_list('Employee', {'reports_to':supervisor}, "name", ignore_permissions=True)]
-    operations_site = [i.name for i in frappe.db.get_list('Operations Site', {'account_supervisor':supervisor}, "name", ignore_permissions=True)]
-    if operations_site:
-        employees += [i.name for i in frappe.db.get_list('Employee', {'site':['IN', operations_site]}, "name", ignore_permissions=True) if not i.name in employees]
-    operations_shift = [i.name for i in frappe.db.get_list('Operations Shift', {'supervisor':supervisor}, "name", ignore_permissions=True)]
-    if operations_shift:
-        employees += [i.name for i in frappe.db.get_list('Employee', {'shift':['IN', operations_shift]}, "name", ignore_permissions=True) if not i.name in employees]
-    employees.append(supervisor)
-    return employees
 
 
 def get_other_managers(employee):
@@ -3152,20 +3133,24 @@ def get_other_managers(employee):
                 """
         if emp_data.get('shift'):
             if query:
+                
+                    
                 query+=f"""
 
                     UNION
                     
-                    SELECT supervisor as manager FROM `tabOperations Shift` 
-                WHERE name = '{emp_data.get('shift')}'  AND status = 'Active'
+                    SELECT employee as manager FROM `tabOperations Shift Supervisors` 
+                WHERE parent = '{emp_data.get('shift')}'
                     
                     """
             else:
-                query = f"""
-                    SELECT supervisor  as manager FROM `tabOperations Shift` 
-                WHERE name = '{emp_data.get('shift')}' AND status = 'Active'
                 
-                """
+                
+                query = f"""                    
+                    SELECT employee as manager FROM `tabOperations Shift Supervisors` 
+                WHERE parent = '{emp_data.get('shift')}'
+                    
+                    """
         if not query:
             return []
         result_set = frappe.db.sql(query,as_dict=1)

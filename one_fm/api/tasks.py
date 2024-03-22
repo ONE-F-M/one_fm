@@ -2,7 +2,7 @@ import itertools
 from datetime import timedelta
 from string import Template
 from calendar import month, monthrange
-from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisors
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisors,get_active_supervisor
 from datetime import datetime, timedelta
 from frappe import enqueue
 import frappe, erpnext
@@ -509,9 +509,10 @@ def get_notification_user(employee, shift, Role):
 		project_manager = get_employee_user_id(project.account_manager)
 	if operations_site.account_supervisor and get_employee_user_id(operations_site.account_supervisor) != operations_shift.owner:
 		site_supervisor = get_employee_user_id(operations_site.account_supervisor)
-	elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owner:
-		shift_supervisor = get_employee_user_id(operations_shift.supervisor)
-
+	elif operations_shift.supervisors:
+		active_supervisor = get_active_supervisor(shift)
+		if get_employee_user_id(active_supervisor) != operations_shift.owner:
+			shift_supervisor = get_employee_user_id(operations_shift.supervisor)
 	if Role == "Report To" and reports_to:
 		notify_user = [get_employee_user_id(reports_to)]
 	elif Role == "Shift Supervisor" and site_supervisor and project_manager:
@@ -1733,7 +1734,7 @@ def fetch_employees_not_in_checkin():
 				WHERE supervisor_reminder_shift_start>0
 				GROUP BY supervisor_reminder_shift_start;
 			""", as_dict=1)]
-			supervisor_reminder_minutes = [i for i in range(60)]
+			
 		else:
 			reminder_minutes = [i.minute for i in frappe.db.sql("""
 				SELECT notification_reminder_after_shift_end as minute FROM `tabShift Type`
@@ -1745,7 +1746,7 @@ def fetch_employees_not_in_checkin():
 				WHERE supervisor_reminder_start_ends>0
 				GROUP BY supervisor_reminder_start_ends;
 			""", as_dict=1)]
-			supervisor_reminder_minutes = [i for i in range(60)]
+			
 
 
 
