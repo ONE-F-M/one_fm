@@ -1445,10 +1445,10 @@ def validate_job_applicant(doc, method):
     # update night shift
     if doc.one_fm_night_shift:
         frappe.db.set_value("Job Applicant", doc.name, "one_fm_night_shift", doc.one_fm_night_shift)
-    
+
     # Because first name and last name are mandatory so merge both to generate applicant name
     doc.applicant_name = doc.one_fm_first_name + " " + doc.one_fm_last_name
-    
+
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     # validate_pam_file_number_and_pam_designation(doc, method)
@@ -3046,49 +3046,74 @@ def has_super_user_role(user=None):
                 return True
     return False
 
-def get_approver(employee):
+def get_approver(employee, date=False):
     '''
-        Method to get reports_to user of an employee with the priority
-        1. reports_to linked in the employee
-        2. If no reports_to linked in the employee, then supervisor linked in the Operation Shift(Linked in the employee)
-        3. If no shift linked in the employee or no supervisor linked in the shift,
-            then account_supervisor linked in the Operation Site(Linked in the employee)
-        4. If no Supervisor is set for the linked Operations Site,
-            then account_manager linked in the project field of the Employee site
-
+        Method to get the line manager employee of an employee with the priority
         args:
             employee: name of Employee object
-
-        return: user of the reports to employee or False
+            date: date in which the shift supervisor working
+        return: employee eference of the line manager or None
     '''
 
     if not frappe.db.exists("Employee", {'name':employee}):
         frappe.throw(f"Employee {employee} does not exists")
 
-    employee_user = frappe.get_value("Employee", {"name": employee}, "user_id")
-    if employee_user and has_super_user_role(employee_user):
-        return employee
+    employee_field_list = ["user_id", "reports_to", "shift", "site", "shift_working", "employee_name"]
+    employee_data = frappe.db.get_value('Employee', employee, employee_field_list, as_dict=1)
 
-    employee_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
+    line_manager = employee_data.reports_to if employee_data.reports_to else None
 
-    reports_to = None
-    if employee_data.reports_to:
-        reports_to = employee_data.reports_to
-    if not reports_to and employee_data.shift:
-        shift_supervisor = frappe.db.get_value('Operations Shift', employee_data.shift, 'supervisor')
-        if shift_supervisor:
-            reports_to = shift_supervisor
-    if not reports_to and employee_data.site:
-        site_supervisor = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
-        if site_supervisor:
-            reports_to = site_supervisor
-        if not reports_to:
-            project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
-            if project:
-                account_manager = frappe.db.get_value('Project', project, 'account_manager')
-                if account_manager:
-                    reports_to = account_manager
-    return reports_to
+    if not line_manager:
+        if employee_data.user_id and has_super_user_role(employee_data.user_id):
+            line_manager = employee
+
+    if not line_manager:
+        if employee_data.shift_working:
+            if employee_data.shift:
+                line_manager = get_shift_supervisor(employee_data.shift, date)
+
+            if not line_manager and employee_data.site:
+                line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
+                if not line_manager:
+                    project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
+                    if project:
+                        line_manager = frappe.db.get_value('Project', project, 'account_manager')
+        else:
+            frappe.msgprint(
+                _("Please ensure that the Reports To is set for {0}".format(employee_data.employee_name)),
+                title= "Missing Data",
+                indicator="orange"
+            )
+
+    return line_manager
+
+def get_shift_supervisor(shift, date=False):
+    # Get all the shift supervisors assigned to the shift
+    supervisors = frappe.get_all(
+        "Operations Shift Supervisor",
+        fields=["shift_supervisor"],
+        filters={
+            "parent": shift, "parenttype": "Operations Shift"
+        },
+        order_by="idx"
+    )
+
+    if not date:
+        date = getdate()
+
+    for supervisor in supervisors:
+        # Return the supervisor if the supervisor working on the day
+        if frappe.db.exists(
+            "Employee Schedule",
+            {
+                "employee": supervisor.supervisor,
+                "date": date,
+                "availability": "Working"
+            }
+        ):
+            return supervisor.supervisor
+
+    return None
 
 def get_approver_for_many_employees(supervisor=None):
     """
@@ -3127,7 +3152,7 @@ def get_other_managers(employee):
                     UNION
                     SELECT account_manager as manager FROM `tabProject`
                     WHERE name = '{emp_data.get('project')}'
-                    
+
                     """
             else:
                 query = f"""
@@ -3138,38 +3163,38 @@ def get_other_managers(employee):
                 query+=f"""
 
                     UNION
-                    
+
                     SELECT account_supervisor  as manager FROM `tabOperations Site`
                     WHERE name = '{emp_data.get('site')}' AND status = 'Active'
-                    
+
                     """
             else:
                 query = f"""
                     SELECT account_supervisor as manager FROM `tabOperations Site`
                 WHERE name = '{emp_data.get('site')}' AND status = 'Active'
-                
+
                 """
         if emp_data.get('shift'):
             if query:
                 query+=f"""
 
                     UNION
-                    
-                    SELECT supervisor as manager FROM `tabOperations Shift` 
+
+                    SELECT supervisor as manager FROM `tabOperations Shift`
                 WHERE name = '{emp_data.get('shift')}'  AND status = 'Active'
-                    
+
                     """
             else:
                 query = f"""
-                    SELECT supervisor  as manager FROM `tabOperations Shift` 
+                    SELECT supervisor  as manager FROM `tabOperations Shift`
                 WHERE name = '{emp_data.get('shift')}' AND status = 'Active'
-                
+
                 """
         if not query:
             return []
         result_set = frappe.db.sql(query,as_dict=1)
         return [i.manager for  i in result_set] if result_set else []
-        
+
     else:
         return []
 
@@ -3184,7 +3209,7 @@ def check_employee_permission_on_doc(doc):
         approver_list = []
         if frappe.session.user not in ["Administrator", 'administrator']:
             session_employee = frappe.cache().get_value(frappe.session.user).employee
-            
+
             roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail` where parentfield = 'document_access_roles'", as_dict=1)]
             has_roles = any([item in roles for item in frappe.get_roles()])
             if not has_roles and (session_employee!=doc.employee):
@@ -3194,7 +3219,7 @@ def check_employee_permission_on_doc(doc):
                         approver_list = get_other_managers(doc.employee)
                     approver_list.append(approver)
                     if session_employee not in approver_list:
-                    
+
                         frappe.throw("You do not have permissions to access this document.")
     except Exception as e:
         pass
@@ -3503,7 +3528,7 @@ def get_sender_email() -> str | None:
 def send_birthday_reminders():
     """Send Employee birthday reminders if no 'Stop Birthday Reminders' is not set."""
     from hrms.controllers.employee_reminders import send_birthday_reminder, get_employees_who_are_born_today,get_birthday_reminder_text_and_message
-    
+
     to_send = int(frappe.db.get_single_value("HR Settings", "send_birthday_reminders"))
     if not to_send:
         return
@@ -3513,7 +3538,7 @@ def send_birthday_reminders():
 
     for company, birthday_persons in employees_born_today.items():
         employee_emails = get_all_employee_emails(company,is_birthday = True)
-        
+
         birthday_person_emails = [get_employee_email(doc) for doc in birthday_persons]
         recipients = list(set(employee_emails) - set(birthday_person_emails))
 
@@ -3533,7 +3558,7 @@ def send_birthday_reminders():
 
 def get_all_employee_emails(company,is_birthday=False,is_anniversary = False):
     """Returns list of employee emails either based on user_id or company_email"""
- 
+
     if not is_birthday and not is_anniversary:
         return []
     all_users=[]
@@ -3548,7 +3573,7 @@ def get_all_employee_emails(company,is_birthday=False,is_anniversary = False):
     employee_list = frappe.get_all(
         "Employee", fields=["name", "employee_name"], filters={'user_id':['IN',all_users],"status": "Active", "company": company}
     )
-    
+
     employee_emails = []
     for employee in employee_list:
         if not employee:
@@ -3572,14 +3597,14 @@ def send_work_anniversary_reminders():
 
     sender = get_sender_email()
     employees_joined_today = get_employees_having_an_event_today("work_anniversary")
-    
+
     message = _("A friendly reminder of an important date for our team.")
     message += "<br>"
     message += _("Everyone, let’s congratulate them on their work anniversary!")
 
     for company, anniversary_persons in employees_joined_today.items():
         employee_emails = get_all_employee_emails(company,is_anniversary=True)
-        
+
         anniversary_person_emails = [get_employee_email(doc) for doc in anniversary_persons]
         recipients = list(set(employee_emails) - set(anniversary_person_emails))
 
