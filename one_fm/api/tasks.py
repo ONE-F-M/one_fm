@@ -1825,7 +1825,6 @@ def fetch_employees_not_in_checkin():
 					else:
 						i['is_supervisor_checkout_reminder'] = False
 					return_data.append(frappe._dict(i))
-	print(return_data)
 	return frappe._dict({
 		'employees':return_data,
 		# 'reminder_minutes':reminder_minutes,
@@ -2045,7 +2044,6 @@ def run_checkin_reminder():
 
 	try:
 		res = fetch_employees_not_in_checkin()
-		print(res)
 		if res:
 			initiate_checkin_notification(res)
 	except Exception as e:
