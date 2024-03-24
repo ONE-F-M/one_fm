@@ -90,13 +90,13 @@ def schedule_initial_reminder(shifts_list, now_time):
 			date = getdate() - timedelta(days=1)
 
 		# Current time == shift start time => Checkin
-		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
+		if strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
 			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 			if len(recipients) > 0:
 				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in)
 
 		# current time == shift end time => Checkout
-		if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
+		if strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)).time()):
 			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
 
 			if len(recipients) > 0:
@@ -130,11 +130,19 @@ def schedule_final_notification(shifts_list, now_time):
 			date = getdate() - timedelta(days=1)
 		# shift_start is equal to now time - notification reminder in mins
 		# Employee won't receive checkin notification when accepted Arrive Late shift permission is present
-		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.late_entry_grace_period))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.late_entry_grace_period))).time())):
+		if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_start))).time())):
 			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="IN")
 
 			if len(recipients) > 0:
 				notify_checkin_checkout_final_reminder(recipients=recipients,log_type="IN", notification_title= notification_title, notification_subject=notification_subject_in, is_after_grace_checkin=1)
+
+		# shift_end is equal to now time - notification reminder in mins
+		# Employee won't receive checkout notification when accepted Leave Early shift permission is present
+		if (strfdelta(shift.end_time, '%H:%M:%S') == cstr((get_datetime(now_time)- timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.first_shift_end_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.notification_reminder_after_shift_end))).time())):
+			recipients = checkin_checkout_query(date=cstr(date), shift_type=shift.name, log_type="OUT")
+
+			if len(recipients) > 0:
+				notify_checkin_checkout_final_reminder(recipients=recipients, log_type="OUT", notification_title=notification_title, notification_subject=notification_subject_out)
 
 #This function is the combination of two types of notification, email/log notifcation and push notification
 @frappe.whitelist()
@@ -1658,8 +1666,8 @@ def fetch_employees_not_in_checkin():
 	"""
 	if not production_domain():
 		return
-	# if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
-	# 	return
+	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
+		return
 
 	shift_start_time = f"{now_datetime().time().hour}:00:00"
 
@@ -1672,10 +1680,15 @@ def fetch_employees_not_in_checkin():
 	for log_type in log_types:
 		# capture current minute
 		if log_type=='IN':
-			reminder_minutes = [i.minute for i in frappe.db.sql("""
+			initial_reminder_minutes = [i.minute for i in frappe.db.sql("""
 				SELECT notification_reminder_after_shift_start as minute FROM `tabShift Type`
 				WHERE notification_reminder_after_shift_start>0
 				GROUP BY notification_reminder_after_shift_start;
+			""", as_dict=1)]
+			grace_period_minute = [i.minute for i in frappe.db.sql("""
+				SELECT late_entry_grace_period as minute FROM `tabShift Type`
+				WHERE late_entry_grace_period>0
+				GROUP BY late_entry_grace_period;
 			""", as_dict=1)]
 			supervisor_reminder_minutes = [i.minute for i in frappe.db.sql("""
 				SELECT supervisor_reminder_shift_start as minute FROM `tabShift Type`
@@ -1683,7 +1696,7 @@ def fetch_employees_not_in_checkin():
 				GROUP BY supervisor_reminder_shift_start;
 			""", as_dict=1)]
 		else:
-			reminder_minutes = [i.minute for i in frappe.db.sql("""
+			initial_reminder_minutes = [i.minute for i in frappe.db.sql("""
 				SELECT notification_reminder_after_shift_end as minute FROM `tabShift Type`
 				WHERE notification_reminder_after_shift_end>0
 				GROUP BY notification_reminder_after_shift_end;
@@ -1700,14 +1713,12 @@ def fetch_employees_not_in_checkin():
 		shift_assignments_employees_list = frappe.db.sql(f"""
 			SELECT DISTINCT sa.employee, sa.shift_type, sa.start_datetime, sa.end_datetime,
 			sa.shift as operations_shift, st.notification_reminder_after_shift_start,
-			st.notification_reminder_after_shift_end, st.supervisor_reminder_shift_start,
+			st.notification_reminder_after_shift_end, st.late_entry_grace_period, st.supervisor_reminder_shift_start,
 			st.supervisor_reminder_start_ends, os.supervisor as shift_supervisor,
 			osi.account_supervisor as site_supervisor,sa.name as shift_assignment_id
-
 			FROM `tabShift Assignment` sa RIGHT JOIN `tabShift Type` st ON sa.shift_type=st.name
 			RIGHT JOIN `tabOperations Shift` os ON sa.shift=os.name RIGHT JOIN `tabOperations Site` osi
 			ON sa.site=osi.name
-
 			WHERE {'sa.start_datetime' if log_type=='IN' else 'sa.end_datetime'}='{cur_date} {shift_start_time}'
 			AND sa.status='Active' AND sa.docstatus=1
 			GROUP BY sa.employee
@@ -1729,7 +1740,6 @@ def fetch_employees_not_in_checkin():
 			GROUP BY employee
 		""", as_dict=1)]
 		employees_yet_to_checkin = [i for i in shift_assignments_employees if not i in checkins]
-
 		# check shift permissions, attendance request, leave application
 		shift_permissions = [i.employee for i in frappe.db.sql(f"""
 			SELECT employee FROM `tabShift Permission`
@@ -1766,33 +1776,38 @@ def fetch_employees_not_in_checkin():
 
 		# holiday list
 		holiday_list = [i for i,j in get_holiday_today(cur_date).items()]
-		holiday_list_employees = [i.name for i in frappe.db.get_list("Employee", filters={
-			'name': ['IN', employees_yet_to_checkin],
-			'status':'Active',
-			'holiday_list': ['IN', holiday_list]
-		})]
+		holiday_list_tuple = str(tuple(shift_assignments_employees)).replace(',)', ')')
+		holiday_list_employees = [i.name for i in frappe.db.sql(f"""SELECT name from `tabEmployee` WHERE
+			status = 'Active' AND
+			holiday_list IN {holiday_list_tuple}
+		""")]
 		employees_yet_to_checkin = [i for i in employees_yet_to_checkin if not i in holiday_list_employees]
-
+		
 		employee_details = frappe.db.get_list("Employee", filters={
 			'name': ['IN', employees_yet_to_checkin]},
 			fields=['name', 'employee_id', 'employee_name', 'user_id', 'prefered_contact_email',
 			'prefered_email', 'reports_to']
 		)
-
 		if log_type=='IN':
 			for i in employee_details:
 				if shift_assignments_employees_dict.get(i.name):
 					i = {**i, **shift_assignments_employees_dict.get(i.name), **{'log_type':'IN'}}
 					del i['name']
 					# check if is_after_grace_period
-					if minute in reminder_minutes:i['is_after_grace_checkin'] = True
-					else:i['is_after_grace_checkin'] = False
+					if minute in initial_reminder_minutes:
+						i['initial_checkin_reminder']=True
+					else:
+						i['initial_checkin_reminder']=False
 					# check if supervisor reminder
-					if minute in supervisor_reminder_minutes:i['is_supervisor_checkin_reminder'] = True
-					else:i['is_supervisor_checkin_reminder'] = False
+					if minute in supervisor_reminder_minutes:
+						i['is_supervisor_checkin_reminder'] = True
+					else:
+						i['is_supervisor_checkin_reminder'] = False
 					# check initial
-					if (minute==i['start_datetime'].minute and hour==i['start_datetime'].hour):i['initial_checkin_reminder']=True
-					else:i['initial_checkin_reminder']=False
+					if minute in grace_period_minute:
+						i['is_after_grace_checkin'] = True
+					else:
+						i['is_after_grace_checkin'] = False
 					return_data.append(frappe._dict(i))
 		else:
 			for i in employee_details:
@@ -1800,16 +1815,17 @@ def fetch_employees_not_in_checkin():
 					i = {**i, **shift_assignments_employees_dict.get(i.name), **{'log_type':'OUT'}}
 					del i['name']
 					# check if is_after_grace_period
-					if minute in reminder_minutes:i['is_after_grace_checkout'] = True
-					else:i['is_after_grace_checkout'] = False
+					if minute in initial_reminder_minutes:
+						i['initial_checkout_reminder']=True
+					else:
+						i['initial_checkout_reminder']=False
 					# check if supervisor reminder
-					if minute in supervisor_reminder_minutes:i['is_supervisor_checkout_reminder'] = True
-					else:i['is_supervisor_checkout_reminder'] = False
-					# check initial
-					if (minute==i['end_datetime'].minute and hour==i['end_datetime'].hour):i['initial_checkout_reminder']=True
-					else:i['initial_checkout_reminder']=False
+					if minute in supervisor_reminder_minutes:
+						i['is_supervisor_checkout_reminder'] = True
+					else:
+						i['is_supervisor_checkout_reminder'] = False
 					return_data.append(frappe._dict(i))
-
+	print(return_data)
 	return frappe._dict({
 		'employees':return_data,
 		# 'reminder_minutes':reminder_minutes,
@@ -2029,6 +2045,7 @@ def run_checkin_reminder():
 
 	try:
 		res = fetch_employees_not_in_checkin()
+		print(res)
 		if res:
 			initiate_checkin_notification(res)
 	except Exception as e:
