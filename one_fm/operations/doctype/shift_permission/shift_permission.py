@@ -7,7 +7,7 @@ from frappe.model.document import Document
 from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr, now
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
-from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
+
 from one_fm.api.tasks import get_action_user
 from one_fm.api.utils import get_reports_to_employee_name
 from one_fm.processor import sendemail

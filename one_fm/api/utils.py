@@ -1,5 +1,5 @@
 import frappe, os, json, requests
-
+from one_fm.operations.doctype.operations_shift.operations_shift import get_active_supervisor
 
 def validate_sick_leave_attachment(doc):
     """
@@ -36,8 +36,8 @@ def get_reports_to_employee_name(employee):
         shift = frappe.db.get_list("Shift Assignment", filters={'employee':employee},
             fields=['shift'], order_by="start_date DESC", page_length=1)
         if len(shift):
-            return frappe.db.get_value("Operations Shift", shift[0].shift, 'supervisor')
-
+            return get_active_supervisor(shift[0].shift)
+            
     # when no shift supervisor or reports to in employee use site and project
 
     # if no site supervisor, get project manager 

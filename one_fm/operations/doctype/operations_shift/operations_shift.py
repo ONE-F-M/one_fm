@@ -198,15 +198,16 @@ def get_supervisors(ops_shift):
 		return []
 		
 @frappe.whitelist()
-def get_active_supervisor(ops_shift):
+def get_active_supervisor(ops_shift,with_name=False):
 	"""
 	Return the highest ranked available employee based on hierarchy 
 
 	Args:
 		ops_shift (str): Operations Shift
 	"""
-	emps = frappe.get_all("Operations Shift Supervisors",{'parent':ops_shift},['employee','hierarchy'],order_by='hierarchy')
+	emps = frappe.get_all("Operations Shift Supervisors",{'parent':ops_shift},['employee','employee_name','hierarchy'],order_by='hierarchy')
 	has_day_off,day_off_employees = None,[]
+	
 	if emps:
 		if len(emps) > 1:
 			has_day_off = frappe.db.sql(f"""SELECT name,employee from `tabEmployee Schedule` where employee in {tuple([i.employee for i in emps])} 
@@ -219,8 +220,10 @@ def get_active_supervisor(ops_shift):
 		for each in emps:
 			if each.employee not in day_off_employees:
 				if is_active_supervisor(each):
-					return each.employee
-
+					
+					return each.employee if not with_name else {'supervisor':each.employee,'supervisor_name':each.employee_name}
+		
+     
 
 		
   

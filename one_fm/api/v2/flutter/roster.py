@@ -12,6 +12,7 @@ from one_fm.api.notification import create_notification_log
 from one_fm.api.v2.utils import response
 from one_fm.utils import query_db_list
 from calendar import day_name
+from one_fm.operations.doctype.operations_shift.operations_shift import get_active_supervisor
 
 
 
@@ -27,9 +28,7 @@ def assign_staff(employees, shift, request_employee_assignment=None):
     if not cint(request_employee_assignment):
         for emp in json.loads(employees):
             emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
-            supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
-            # if user_employee.name != supervisor:
-            # 	validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
+            
 
     if len(validation_logs) > 0:
         frappe.log_error(str(validation_logs))
@@ -668,12 +667,19 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
 
         if not cint(request_employee_schedule) and "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
             all_employee_shift_query = frappe.db.sql("""
-                SELECT DISTINCT es.shift, s.supervisor
-                FROM `tabEmployee Schedule` es JOIN `tabOperations Shift` s ON es.shift = s.name
-                WHERE
-                es.date BETWEEN '{start_date}' AND '{end_date}'
-                AND es.employee_availability='Working' AND es.employee IN {emp_tuple}
-                GROUP BY es.shift
+                SELECT DISTINCT es.shift, s.employee as supervisor
+                    FROM `tabEmployee Schedule` es 
+                    JOIN `tabOperations Shift Supervisors` s ON es.shift = s.parent
+                    JOIN (
+                        SELECT parent, MIN(hierarchy) as max_hierarchy
+                        FROM `tabOperations Shift Supervisors`
+                        GROUP BY parent
+                    ) max_hierarchies ON s.parent = max_hierarchies.parent AND s.hierarchy = max_hierarchies.max_hierarchy
+                    WHERE
+                        es.date BETWEEN '{start_date}' AND '{end_date}'
+                        AND es.employee_availability = 'Working' AND es.employee IN {emp_tuple}
+                    GROUP BY es.shift
+                    ORDER BY s.hierarchy
             """.format(start_date=start_date, end_date=end_date, emp_tuple=emp_tuple), as_dict=1)
 
             # for i in all_employee_shift_query:
@@ -906,7 +912,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             
             requester, requester_name = frappe.db.get_value("Employee", {"user_id":frappe.session.user}, ["name", "employee_name"])
             # get required shift supervisors and make as dict for easy hashing
-            shifts_dataset = frappe.db.get_list("Operations Shift", filters={"name": ["IN", [i.shift for i in from_schedule]]}, fields=["name", "supervisor", "supervisor_name"], order_by="name ASC")
+            shifts_dataset = frappe.db.get_list("Operations Shift", filters={"name": ["IN", [i.shift for i in from_schedule]]}, fields=["name"], order_by="name ASC")
             shift_datadict = {}
             for i in shifts_dataset:
                 shift_datadict[i.name] = i

@@ -6,6 +6,7 @@ import frappe
 from frappe.utils import getdate, get_last_day, get_first_day, date_diff
 from frappe.model.document import Document
 from one_fm.utils import get_week_start_end
+from one_fm.operations.doctype.operations_shift.operations_shift import get_active_supervisor
 
 class PostSchedulerChecker(Document):
 	def autoname(self):
@@ -29,12 +30,13 @@ class PostSchedulerChecker(Document):
 	def get_supervisor(self):
 		supervisor_doc = frappe.db.get_list("Operations Shift",
 			filters={'project': self.project},
-			fields=['supervisor', 'supervisor_name'],
+			fields=['name'],
 			limit=1
 		)
 		if supervisor_doc:
-			self.supervisor = supervisor_doc[0].supervisor
-			self.supervisor_name = supervisor_doc[0].supervisor_name
+			supervisor_dict = get_active_supervisor(supervisor_doc[0].name,with_name = 1)
+			self.supervisor = supervisor_dict.get('supervisor')
+			self.supervisor_name = supervisor_dict.get('supervisor_name')
 
 	def fill_items(self):
 		current_date = getdate()

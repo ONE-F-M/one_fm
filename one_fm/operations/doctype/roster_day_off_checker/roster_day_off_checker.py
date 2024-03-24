@@ -39,11 +39,18 @@ def check_roster_day_off():
 	""", as_dict=True)
 
 	# get project supervisors
-	project_supervisors = frappe.db.sql("""
-		SELECT supervisor, project FROM `tabOperations Shift` 
-		GROUP BY project
-	""", as_dict=1)
+	# project_supervisors = frappe.db.sql("""
+	# 	SELECT supervisor, project FROM `tabOperations Shift` 
+	# 	GROUP BY project
+	# """, as_dict=1)
 
+	
+	project_supervisors = frappe.db.sql("""SELECT ops.employee as supervisor,os.project from 
+                                           `tabOperations Shift`os JOIN `tabOperations Shift Supervisors`ops on ops.parent = os.name
+                                        where ops.hierarchy = 1 and os.status = 'Active'
+                                        GROUP by project""",as_dict=1)
+ 
+ 
 	project_supervisor_dict = {}
 	for ps in project_supervisors:
 		if not project_supervisor_dict.get(ps.supervisor):

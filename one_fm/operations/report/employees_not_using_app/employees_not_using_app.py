@@ -18,11 +18,23 @@ def execute(filters=None):
 def get_data(filters):
 	conditions = f""" sa.start_date='{filters.date}' AND sa.company="{filters.company}" """
 	if filters.supervisor:
-		conditions += f""" AND os.supervisor='{filters.supervisor}'"""
+		conditions += f""" AND os.employee='{filters.supervisor}'"""
+	# query = frappe.db.sql(f"""
+	# 	SELECT sa.employee, sa.employee_name, sa.start_date, os.supervisor, os.supervisor_name,
+	# 	sa.name as shift_assignment, sa.shift as operations_shift, em.employee_id
+	# 	FROM `tabShift Assignment` sa RIGHT JOIN `tabOperations Shift` os ON os.name=sa.shift
+	# 	RIGHT JOIN `tabEmployee` em ON sa.employee=em.name
+	# 	WHERE {conditions}
+	# 	AND sa.employee IN (
+	# 		SELECT employee FROM `tabAttendance`
+	# 		WHERE attendance_date='{filters.date}' AND status='Absent'
+	# 	)
+	# 	ORDER BY sa.employee_name
+	# """, as_dict=1)
 	query = frappe.db.sql(f"""
-		SELECT sa.employee, sa.employee_name, sa.start_date, os.supervisor, os.supervisor_name,
+		SELECT sa.employee, sa.employee_name, sa.start_date, os.employee as supervisor, os.employee_name as supervisor_name,
 		sa.name as shift_assignment, sa.shift as operations_shift, em.employee_id
-		FROM `tabShift Assignment` sa RIGHT JOIN `tabOperations Shift` os ON os.name=sa.shift
+		FROM `tabShift Assignment` sa RIGHT JOIN `tabOperations Shift Supervisors` os ON os.parent=sa.shift
 		RIGHT JOIN `tabEmployee` em ON sa.employee=em.name
 		WHERE {conditions}
 		AND sa.employee IN (
@@ -93,9 +105,9 @@ def get_columns():
 
 def get_supervisors():
 	frappe.db.sql("""
-		SELECT DISTINCT supervisor, supervisor_name
-		FROM `tabOperations Shift`
-		WHERE supervisor NOT IN ('')
+		SELECT DISTINCT employee as supervisor, employee_name as  supervisor_name
+		FROM `tabOperations Shift Supervisors`
+		WHERE employee NOT IN ('')
 	""", as_dict=1)
 
 

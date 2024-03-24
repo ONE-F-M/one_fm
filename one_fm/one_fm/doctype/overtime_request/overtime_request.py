@@ -7,6 +7,7 @@ from frappe.utils import time_diff_in_hours, getdate, cstr
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from frappe import _
 from frappe.utils import rounded
+from one_fm.operations.doctype.operations_shift.operations_shift import get_active_supervisor
 
 class OvertimeRequest(Document):
 
@@ -78,7 +79,8 @@ class OvertimeRequest(Document):
 
 			if self.request_type == "Operations":
 				shift_name, employee_name = frappe.db.get_value("Employee",{'name':self.employee},['shift', 'employee_name'])
-				supervisor= frappe.db.get_value("Operations Shift",{'name':shift_name},['supervisor'])
+				
+				supervisor = get_active_supervisor(shift_name)
 				supervisor_user_id = get_employee_user_id(supervisor)
 				subject = _("{employee} has Accepted The Overtime Request on {date}.".format(employee=employee_name, date=date))
 				message = _("{employee} has Accepted The Overtime Request on {date}.".format(employee=employee_name, date=date))
@@ -96,7 +98,8 @@ class OvertimeRequest(Document):
 
 			if self.request_type == "Operations":
 				shift_name, employee_name = frappe.db.get_value("Employee",{'name':self.employee},['shift', 'employee_name'])
-				supervisor= frappe.db.get_value("Operations Shift",{'name':shift_name},['supervisor'])
+				
+				supervisor = get_active_supervisor(shift_name)
 				supervisor_user_id = get_employee_user_id(supervisor)
 				subject = _("{employee} has Rejected The Overtime Request on {date}.".format(employee=employee_name, date=date))
 				message = _("{employee} has Rejected The Overtime Request on {date}.".format(employee=employee_name, date=date))

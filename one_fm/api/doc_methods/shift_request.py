@@ -13,6 +13,7 @@ from one_fm.api.notification import create_notification_log, get_employee_user_i
 from one_fm.operations.doctype.employee_schedule.employee_schedule import validate_operations_post_overfill
 from one_fm.api.doc_events import get_employee_user_id
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisors
 
 class OverlappingShiftError(frappe.ValidationError):
     pass
@@ -323,9 +324,9 @@ def validate_approver(self):
 
 
     if shift:
-            shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")
-            approvers.append(frappe.get_value("Employee", shift_supervisor, "user_id"))
-
+            shift_supervisors = get_supervisors(shift)
+            
+            approvers+=shift_supervisors
     if self.approver not in approvers:
         frappe.throw(_("Only Approvers can Approve this Request."))
 
@@ -407,7 +408,8 @@ def get_manager(doctype,employee):
     elif doctype =='Operations Site':
         field = 'account_supervisor'
     elif doctype =='Operations Shift':
-        field = 'supervisor'
+        values = frappe.get_all("Operations Shift Supervisors",{'employee':employee},['parent'])
+        return [i.parent for i in values]
     if field:
         values = frappe.get_all(doctype,{field:employee},['name'])
         if values:

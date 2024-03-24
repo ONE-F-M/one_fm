@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.utils import getdate
-
+from one_fm.operations.doctype.operations_shift.operations_shift import get_active_supervisor
 
 def execute(filters=None):
 	columns, data = get_columns(), get_data(filters)
@@ -23,17 +23,19 @@ def get_data(filters):
 	conditions = get_conditions(filters)
 	operations_shifts=frappe.db.sql("""select * from `tabOperations Shift` where docstatus < 2 {0}""".format(conditions), as_dict=1)
 	for operations_shift in operations_shifts:
+		
 		no_of_posts = frappe.db.count("Operations Post", {'site_shift': operations_shift.name})
 		total_staffs = frappe.db.count("Employee Schedule",
 			{'date': getdate(filters.get('date')), 'employee_availability': 'Working', 'shift': operations_shift.name}
 		)
 		if total_staffs > 0:
+			supervisor_dict = get_active_supervisor(operations_shift.name, with_name=1)
 			row = [
 				operations_shift.name,
 				operations_shift.start_time,
 				operations_shift.end_time,
-				operations_shift.supervisor,
-				operations_shift.supervisor_name,
+				supervisor_dict.get('supervisor'),
+				supervisor_dict.get('supervisor_name'),
 				operations_shift.duration,
 				operations_shift.shift_classification,
 				operations_shift.service_type,

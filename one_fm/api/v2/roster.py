@@ -369,8 +369,9 @@ def get_assigned_shifts(employee_id, project=None, site=None):
             return frappe.get_list("Operations Shift", filters, limit_page_length=9999, order_by="name asc")
 
         elif "Shift Supervisor" in user_roles:
-            filters.update({"supervisor": employee_id})
-            return frappe.get_list("Operations Shift", filters, limit_page_length=9999, order_by="name asc")
+            filters.update({"employee": employee_id})
+            return frappe.get_all("Operations Shift Supervisors", filters, ['parent as name'], order_by="name asc")
+            
         return []
 
     except Exception as e:

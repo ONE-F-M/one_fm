@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 from datetime import datetime, timedelta
 from itertools import chain
-
+from one_fm.operations.doctype.operations_shift.operations_shift import get_active_supervisor
 from frappe.model.document import Document
 import frappe,json
 from frappe import _
@@ -79,7 +79,8 @@ class AttendanceCheck(Document):
         if employee.reports_to:
             self.reports_to = employee.reports_to
         if employee.shift:
-            shift_supervisor = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
+            
+            shift_supervisor = get_active_supervisor(employee.shift)
             self.shift_supervisor = shift_supervisor 
         if employee.site:
             site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')

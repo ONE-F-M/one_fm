@@ -1,6 +1,8 @@
 import frappe
 from frappe import _
 from one_fm.api.notification import create_notification_log
+from one_fm.operations.doctype.operations_shift.operations_shift import get_active_supervisor
+
 
 # This method is creating shift permission record and setting the the shift details
 @frappe.whitelist()
@@ -12,7 +14,11 @@ def create_shift_permission(employee, permission_type, date, reason, leaving_tim
     Return: shift permission record
 	"""
     try:
-        shift, type, assigned_shift, shift_supervisor = get_shift_details(employee,date)
+        shift_details = get_shift_details(employee,date)
+        shift = shift_details['shift']
+        type = shift_details['type']
+        assigned_shift = shift_details['assigned_shift']
+        shift_supervisor = shift_details['shift_supervisor']
         if shift and type and assigned_shift and shift_supervisor:
             has_duplicate= validate_record(employee, date, assigned_shift, permission_type)
             if not has_duplicate:
@@ -55,15 +61,15 @@ def get_shift_details(employee, date):
     shift, type = frappe.db.get_value('Employee Schedule',{'employee':employee,'employee_availability':'Working','date':date,'roster_type':'Basic'},['shift','shift_type']) 
     if shift and type:
         reports_to = frappe.get_value("Employee", employee, ["reports_to"])
-        shift_supervisor = frappe.db.get_value('Operations Shift',{'name':shift},['supervisor'])
         
+        shift_supervisor = get_active_supervisor(shift)
         approver = reports_to if reports_to else shift_supervisor
             
         assigned_shift = frappe.db.get_value('Shift Assignment',{'employee':employee,'start_date':date},['name']) # start date and end date of HO employee are the same in the shift assignment
         if not assigned_shift:
             return response("You Don't Have Shift Assignment on {date}".format(date=date), {}, False, 400)
         elif assigned_shift:
-            return shift, type, assigned_shift, approver
+            return {'shift':shift,'type':type, 'assigned_shift':assigned_shift, 'approver':approver}
     elif not shift or not type:
         return response("You Don't Have Shift on {date}".format(date=date), {}, False, 400)
         
