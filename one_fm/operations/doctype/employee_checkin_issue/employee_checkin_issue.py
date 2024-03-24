@@ -8,8 +8,9 @@ from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr
 from frappe import _
 from one_fm.api.notification import get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
-from one_fm.api.utils import get_reports_to_employee_name
-from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
+from one_fm.utils import (
+	workflow_approve_reject, send_workflow_action_email, get_approver
+)
 
 class ExistAttendance(frappe.ValidationError):
 	pass
@@ -130,10 +131,10 @@ def fetch_approver(employee):
 	if employee:
 		employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
 		if employee_shift:
-			approver = get_reports_to_employee_name(employee)
+			approver = get_approver(employee)
 			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
 
-		frappe.throw("No approver found for {employee}".format(employee=employee))
+		frappe.throw("No shift assignment found for {employee}".format(employee=employee))
 
 # Approve pemding employee checkin issue before marking attendance
 def approve_open_employee_checkin_issue(start_date, end_date):

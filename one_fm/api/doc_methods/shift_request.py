@@ -8,7 +8,9 @@ from frappe.workflow.doctype.workflow_action.workflow_action import (
 )
 from frappe.utils import getdate, today, cstr, add_to_date, nowdate, add_days
 from frappe.model.workflow import apply_workflow
-from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
+from one_fm.utils import (
+    workflow_approve_reject, send_workflow_action_email, get_approver
+)
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from one_fm.operations.doctype.employee_schedule.employee_schedule import validate_operations_post_overfill
 
@@ -308,30 +310,11 @@ def validate_approver(self):
 
 @frappe.whitelist()
 def fetch_approver(employee):
-    project_list = frappe.db.get_all("Project List", {'parent':'Operation Settings'}, ['project'], pluck='project')
-    if employee:
-        employee_detail = frappe.get_all("Employee", {"employee":employee}, ["*"])
-        reports_to = employee_detail[0].reports_to
-        department = employee_detail[0].department
-        project_alloc = employee_detail[0].project
-        shift_worker = employee_detail[0].shift_working
-        if shift_worker == 0:
-            if reports_to:
-                return frappe.get_value("Employee", reports_to, "user_id")
-        else:
-            if project_alloc not in project_list and department == "Operations - ONEFM":
-                approvers = frappe.db.sql(
-                    """select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
-                    (department),
-                )
-                approvers = [approver[0] for approver in approvers]
-                return approvers[0]
-            else:
-                project_manager = frappe.get_value("Project", project_alloc, ["account_manager"])
-                if reports_to:
-                    return frappe.get_value("Employee", reports_to, "user_id")
-                elif project_manager:
-                    return frappe.get_value("Employee", project_manager, "user_id")
+    if not employee:
+        return
+    approver = get_approver(employee)
+    if approver:
+        return frappe.get_value("Employee", approver, ["user_id"])
 
 def fill_to_date(doc, method):
     if not doc.to_date:
