@@ -3018,34 +3018,13 @@ def get_today_leaves(cur_date):
     """, as_dict=1)]
 
 @frappe.whitelist()
-def has_super_user_role(user=None):
-    '''
-        A method to check the user is having super user role
-        Default it will be the role 'Director'
-        User having this role can be self approve configured documents like Shift Permission.
-        The user having this role no need reports to, since it will be the same employee linked to the user.
+def get_approver_user(employee):
+    approver = get_approver(employee)
+    if approver:
+        return frappe.db.get_value("Employee", approver, "user_id")
+    return None
 
-        args:
-            user: user ID, eg: employee123@one_fm.com
-
-        return boolean(True if super user role exists in the given user's role list)
-    '''
-    if not user:
-        user = frappe.session.user
-    if user:
-        # get the user roles
-        user_roles = frappe.get_roles(user)
-        # Check if the default super user role in the user role list
-        if "Director" in user_roles:
-            return True
-        else:
-            # Get configured super user in ONEFM General Setting
-            super_user_role = frappe.db.get_single_value("ONEFM General Setting", "super_user_role")
-            # Check if the super user role exists in the user role list
-            if super_user_role and super_user_role in user_roles:
-                return True
-    return False
-
+@frappe.whitelist()
 def get_approver(employee, date=False):
     '''
         Method to get the line manager employee of an employee with the priority
@@ -3086,6 +3065,35 @@ def get_approver(employee, date=False):
             )
 
     return line_manager
+
+@frappe.whitelist()
+def has_super_user_role(user=None):
+    '''
+        A method to check the user is having super user role
+        Default it will be the role 'Director'
+        User having this role can be self approve configured documents like Shift Permission.
+        The user having this role no need reports to, since it will be the same employee linked to the user.
+
+        args:
+            user: user ID, eg: employee123@one_fm.com
+
+        return boolean(True if super user role exists in the given user's role list)
+    '''
+    if not user:
+        user = frappe.session.user
+    if user:
+        # get the user roles
+        user_roles = frappe.get_roles(user)
+        # Check if the default super user role in the user role list
+        if "Director" in user_roles:
+            return True
+        else:
+            # Get configured super user in ONEFM General Setting
+            super_user_role = frappe.db.get_single_value("ONEFM General Setting", "super_user_role")
+            # Check if the super user role exists in the user role list
+            if super_user_role and super_user_role in user_roles:
+                return True
+    return False
 
 def get_shift_supervisor(shift, date=False):
     # Get all the shift supervisors assigned to the shift

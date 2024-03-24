@@ -1,37 +1,49 @@
 frappe.ui.form.on('Attendance Request', {
-    refresh: (frm)=>{
-      frm.trigger('check_workflow');
-			set_update_request_btn(frm);
-    },
-	validate: (frm) => {
-		validate_from_date(frm);
-	},
-    check_workflow: (frm)=>{
-      if(frm.doc.workflow_state=='Pending Approval'){
-        // Disable action button/worklow if not approver
-        frm.call('reports_to').then(res=>{
-          if(!res.message){
-            $('.actions-btn-group').hide();
-            frm.disable_form();
+  refresh: (frm)=>{
+    frm.trigger('check_workflow');
+    set_update_request_btn(frm);
+  },
+  validate: (frm) => {
+    validate_from_date(frm);
+  },
+  check_workflow: (frm)=>{
+    if(frm.doc.workflow_state=='Pending Approval'){
+      // Disable action button/worklow if not approver
+      frm.call('reports_to').then(res=>{
+        if(!res.message){
+          $('.actions-btn-group').hide();
+          frm.disable_form();
+        }
+      })
+    }
+  },
+  employee: (frm)=>{
+    // Set approver
+    frm.events.set_approver();
+  },
+  from_date: (frm) =>{
+    validate_from_date(frm);
+  },
+  set_approver: (frm) =>{
+    if(frm.doc.employee){
+      frappe.call({
+        method: 'one_fm.utils.get_approver_user',
+        args:{
+          'employee':frm.doc.employee
+        },
+        callback: function(r) {
+          let approver = "";
+          if(r.message){
+            approver = r.message;
           }
-        })
-      }
-    },
-	employee: (frm)=>{
-		// fetch approver
-		if(frm.doc.employee){
-			frappe.db.get_value("Employee", {'name':frm.doc.employee}, ['reports_to']).then(res=>{
-				if(res.message.reports_to){
-					frm.set_value('approver', res.message.reports_to)
-				} else {
-					frm.set_value('approver', '')
-				}
-			})
-		}
-	},
-	from_date: (frm) =>{
-		validate_from_date(frm);
-	}
+          frm.set_value("approver", approver);
+        }
+      });
+    }
+    else{
+      frm.set_value("approver", "");
+    }
+  }
 });
 
 function set_update_request_btn(frm) {
