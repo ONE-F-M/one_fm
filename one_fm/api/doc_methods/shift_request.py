@@ -25,6 +25,11 @@ def validate(doc, event=None):
     if doc.status == 'Draft' and doc.purpose == 'Assign Unrostered Employee':
         if check_for_roster(doc):
             frappe.throw("Employee Already has been rostered for the given dates")
+    if doc.status == 'Draft' and doc.purpose == 'Replace Existing Assignment':
+        if doc.replaced_employee:
+            shift_assignemnt_exists = frappe.get_list("Shift Assignment", filters = [['employee','=', doc.replaced_employee], ['start_date', 'between', [doc.from_date, doc.to_date]], ['roster_type','=',"Basic"]], fields=['name'])
+            if not shift_assignemnt_exists:
+                frappe.throw("Employee being replaced does not have existing shift.")
     process_shift_assignemnt(doc) # set shift assignment and employee schedule
 
 def shift_request_submit(self):
@@ -221,6 +226,7 @@ def replace_shift_assignment(shift_assignemnt, shift_request):
             shift_request: Object of shift request
             submit: Boolean
     '''
+    replaced_shift_assignment = frappe.db.get_value("Shift Assignment", {'employee':shift_request.replaced_employee,'start_date':shift_request.from_date,'roster_type':"Basic"}, 'name')
     #Replace Existing Assignment
     assignment_doc = frappe.get_doc('Shift Assignment', shift_assignemnt)
     project = frappe.db.get_value("Operations Shift", {'name':shift_request.operations_shift}, ['project'])
@@ -236,7 +242,8 @@ def replace_shift_assignment(shift_assignemnt, shift_request):
     assignment_doc.db_set("shift_request" , shift_request.name)
     assignment_doc.db_set("check_in_site" , shift_request.check_in_site)
     assignment_doc.db_set("check_out_site" , shift_request.check_out_site)
-    assignment_doc.db_set("employee_is_replaced",1)
+    assignment_doc.db_set("is_replaced",1)
+    assignment_doc.db_set("replaced_shift_assignment", replaced_shift_assignment)
     shift_type_data = frappe.get_doc("Shift Type",shift_request.shift_type)
     if shift_type_data:
         start_datetime = datetime.datetime.strptime(f"{shift_request.from_date} {(datetime.datetime.min + shift_type_data.start_time).time()}", '%Y-%m-%d %H:%M:%S')
@@ -249,17 +256,30 @@ def replace_shift_assignment(shift_assignemnt, shift_request):
         assignment_doc.db_set("end_datetime" , end_datetime)
     if shift_request.operations_role:
         assignment_doc.db_set("operations_role" , shift_request.operations_role)
-    employee_checkin_update = frappe.db.sql(f"""UPDATE `tabEmployee Checkin` SET employee_is_replaced=1 WHERE shift_assignment='{shift_assignemnt}'""")
+    #Update Employee Checkin 
+    frappe.db.sql(f"""UPDATE `tabEmployee Checkin`
+        SET is_replaced = 1,
+            replaced_employee_checkin = (
+                SELECT name
+                FROM `tabEmployee Checkin`
+                WHERE employee = '{shift_request.replaced_employee}'
+                AND shift_assignment = '{replaced_shift_assignment}'
+                LIMIT 1
+            )
+        WHERE shift_assignment = '{replaced_shift_assignment}'
+        AND employee = '{shift_request.replaced_employee}';
+        """)
 
 def replace_employee_schedule(doc, existing_schedules, schedule_date_range):
     try:
         # replace existing schedule
         for es in existing_schedules:
+            role_abbr = frappe.db.get_value("Operations Role",doc.operations_role,'post_abbrv')
             start_time, end_time = frappe.db.get_value("Shift Type", doc.shift_type, ['start_time', 'end_time'])
             end_date = es.date
             if start_time > end_time:
                 end_date = add_days(end_date, 1)
-
+            replaced_employee_schedule = frappe.db.get_value("Employee Schedule", {'employee':doc.replaced_employee, 'date':es.date}, ['name'])
             frappe.db.set_value('Employee Schedule', es.name, {
                 'shift':doc.operations_shift,
                 'shift_type':doc.shift_type,
@@ -273,7 +293,8 @@ def replace_employee_schedule(doc, existing_schedules, schedule_date_range):
                 'site':doc.site,
                 'reference_doctype': doc.doctype,
                 'reference_docname': doc.name,
-                'employee_is_replaced':1
+                'is_replaced':1,
+                'replaced_employee_schedule': replaced_employee_schedule
             })
     except Exception as e:
         frappe.throw(_("Error Replacing Employee Schedule"))
