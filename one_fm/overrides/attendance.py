@@ -485,6 +485,8 @@ def mark_overtime_attendance(from_date, to_date):
         mark_for_shift_assignment(employee.name, from_date, roster_type='Over-Time')
 
 
+
+
 def mark_all_attendance():
 	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
 	start_date = add_days(getdate(), -1)
@@ -500,13 +502,13 @@ def mark_daily_attendance(start_date, end_date):
         creation = now()
         owner = frappe.session.user
         naming_series = 'HR-ATT-.YYYY.-'
-        existing_attendance = [i.employee for i in frappe.get_list("Attendance", {
+        existing_attendance = frappe.get_list("Attendance", {
             'attendance_date':start_date,
             'roster_type':'Basic', 'status':['IN', ['Present', 'Holiday', 'On Leave',
             'Work From Home', 'On Hold', 'Day Off']]
             },
-            "employee"
-        )]
+            pluck="employee"
+        )
 
         query = """
             INSERT INTO `tabAttendance` (`name`, `naming_series`,`employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
@@ -605,16 +607,17 @@ def mark_daily_attendance(start_date, end_date):
                 ),"""
 
         attendance_request = frappe.db.sql(f"""
-                SELECT e.name, e.employee_name, e.company, e.department, ar.name as ar_name from `tabEmployee` e  
+                SELECT e.name, e.employee_name, e.company, e.department, ar.name as ar_name, ar.reason as ar_reason from `tabEmployee` e  
                 INNER JOIN `tabAttendance Request` ar ON ar.employee =e.name
                 WHERE '{start_date}' BETWEEN ar.from_date AND ar.to_date
                 AND ar.workflow_state='Approved'
                 AND e.status='Active'
                 """, as_dict=1
             )
-
+        
         # create BASIC DAY OFF
         for i in attendance_request:
+            status = "Work From Home" if i.ar_reason == "Work From Home" else "Present"
             if not i.get('ar_name'):
                 i.ar_name = i.description
             if not i.name in existing_attendance:
@@ -630,11 +633,17 @@ def mark_daily_attendance(start_date, end_date):
                     continue
                 query_body+= f"""
                 (
-                    "HR-ATT_{start_date}_{i.name}_Basic", "{naming_series}" , "{i.name}", "{i.employee_name}", 0,  "Work From Home", '', NULL,
+                    "HR-ATT_{start_date}_{i.name}_Basic", "{naming_series}" , "{i.name}", "{i.employee_name}", 0,  "{status}", '', NULL,
                     NULL, "", "", "", "", "{start_date}", "{i.company}",
                     "{i.department}", 0, 0, "", "", "Basic", 1, "{owner}",
                     "{owner}", "{creation}", "{creation}", "Attendance Request - {i.ar_name}"
                 ),"""
+
+            else:
+                att_name = frappe.db.get_value("Attendance", {"employee": i.name, "attendance_date": start_date}, "name")
+                if att_name:
+                    frappe.db.set_value("Attendance", att_name, "status", status)
+
 
         # UPDATE QUERY
         if query_body:
@@ -728,7 +737,7 @@ def update_day_off_ot(attendances):
 
 
 def mark_open_timesheet_and_create_attendance():
-    timesheets = frappe.get_list("Timesheet", {'workflow_state':'Open', 
+    timesheets = frappe.get_list("Timesheet", {'workflow_state':'Pending Approval', 
         'start_date':add_days(getdate(), -1)})
     for i in timesheets:
         try:
@@ -878,7 +887,7 @@ class AttendanceMarking():
         This class will be used to mark attendance
     """
 
-    def __ini__(self):
+    def __init__(self):
         self.attendance_type = None
         self.start = None
         self.end = None
@@ -950,6 +959,8 @@ class AttendanceMarking():
                 sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND e.shift_working=0""", as_dict=1)
             shifts.extend(non_shifts)
+
+
         if shifts:
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0].name))
             if checkins:
