@@ -216,7 +216,7 @@ def approve_open_shift_permission(start_date, end_date):
 			SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa
 			ON sa.name=sp.assigned_shift
 			WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}'
-			AND sp.workflow_state='Pending' AND sp.docstatus=0
+			AND sp.workflow_state='Pending Approver' AND sp.docstatus=0
 		""", as_dict=1)
 		# apply workflow
 		error_list = """"""
@@ -262,6 +262,7 @@ def create_checkin(shift_permission):
 		}):
 		if not shift_permission.workflow_state == 'Approved':
 			shift_permission.db_set('workflow_state', "Approved")
+			shift_permission.db_set("docstatus", 1)
 			shift_permission.reload()
 			frappe.db.commit()
 		# Get shift details for the employee shift_assignment = frappe.get_doc("Shift Assignment", shift_permission.assigned_shift)
