@@ -19,7 +19,6 @@ from one_fm.utils import (
 from one_fm.utils import get_current_shift
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
-from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import approve_open_employee_checkin_issue
 from hrms.hr.utils import get_holidays_for_employee
 
 class DeltaTemplate(Template):
@@ -922,7 +921,7 @@ def validate_shift_assignment():
 					IN (Select employee from `tabEmployee` E
 					WHERE E.name = SR.employee
 					AND E.status = 'Active')""".format(now_time=now_time,date=cstr(date), now=now), as_dict=1)
-	
+
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 				WHERE ES.start_datetime = '{now}'
@@ -954,7 +953,7 @@ def validate_shift_assignment():
 
 	if non_shift:
 		roster.extend(non_shift)
-	
+
 	if shift_request:
 		roster_emp = shift_request
 		employee_list = [i.employee for i in shift_request]
@@ -1094,7 +1093,7 @@ def process_overtime_shift(roster, date, time):
 		except Exception as e:
 			continue
 
-def create_overtime_shift_assignment(schedule, date):	
+def create_overtime_shift_assignment(schedule, date):
 		try:
 			shift_assignment = frappe.new_doc("Shift Assignment")
 			shift_assignment.start_date = date
