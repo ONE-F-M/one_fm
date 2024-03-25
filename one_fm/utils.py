@@ -50,6 +50,7 @@ from frappe.model.workflow import apply_workflow
 from deep_translator import GoogleTranslator
 from frappe.model.naming import make_autoname
 from erpnext.setup.doctype.employee.employee import get_all_employee_emails, get_employee_email
+from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 
 def get_common_email_args(doc):
 	doctype = doc.get("doctype")
@@ -3094,34 +3095,6 @@ def has_super_user_role(user=None):
             if super_user_role and super_user_role in user_roles:
                 return True
     return False
-
-def get_shift_supervisor(shift, date=False):
-    # Get all the shift supervisors assigned to the shift
-    supervisors = frappe.get_all(
-        "Operations Shift Supervisor",
-        fields=["shift_supervisor"],
-        filters={
-            "parent": shift, "parenttype": "Operations Shift"
-        },
-        order_by="idx"
-    )
-
-    if not date:
-        date = getdate()
-
-    for supervisor in supervisors:
-        # Return the supervisor if the supervisor working on the day
-        if frappe.db.exists(
-            "Employee Schedule",
-            {
-                "employee": supervisor.supervisor,
-                "date": date,
-                "availability": "Working"
-            }
-        ):
-            return supervisor.supervisor
-
-    return None
 
 def get_approver_for_many_employees(supervisor=None):
     """

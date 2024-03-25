@@ -13,6 +13,7 @@ from one_fm.utils import (
 )
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from one_fm.operations.doctype.employee_schedule.employee_schedule import validate_operations_post_overfill
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
 
 class OverlappingShiftError(frappe.ValidationError):
     pass
@@ -287,25 +288,7 @@ def cancel_shift_assignment_of_request(shift_request):
 
 
 def validate_approver(self):
-    shift, department = frappe.get_value("Employee", self.employee, ["shift","department"])
-
-    approvers = frappe.db.sql(
-        """select approver from `tabDepartment Approver` where parent= %s and parentfield = 'shift_request_approver'""",
-        (department),
-    )
-
-    approvers = [approver[0] for approver in approvers]
-
-    if frappe.db.exists("Employee", self.employee,["reports_to"]):
-        report_to = frappe.get_value("Employee", self.employee,["reports_to"])
-        approvers.append(frappe.get_value("Employee", report_to, "user_id"))
-
-
-    if shift:
-            shift_supervisor = frappe.get_value("Operations Shift", shift, "supervisor")
-            approvers.append(frappe.get_value("Employee", shift_supervisor, "user_id"))
-
-    if self.approver not in approvers:
+    if self.approver != frappe.session.user:
         frappe.throw(_("Only Approvers can Approve this Request."))
 
 @frappe.whitelist()
@@ -345,7 +328,7 @@ def _get_employee_from_user(user):
 	return employee_docname if employee_docname else None
 
 
-def get_manager(doctype,employee):
+def get_manager(doctype, employee):
     """Return the instances of the doctype where the employee is the supervisor
 
     Args:
@@ -355,17 +338,15 @@ def get_manager(doctype,employee):
     Returns:
         _type_: _description_
     """
-    field = None
-    if doctype =="Project":
-        field = 'account_manager'
-    elif doctype =='Operations Site':
-        field = 'account_supervisor'
-    elif doctype =='Operations Shift':
-        field = 'supervisor'
-    if field:
-        values = frappe.get_all(doctype,{field:employee},['name'])
-        if values:
-            return [i.name for i in values]
+    if doctype =="Operations Shift":
+        return get_supervisor_operations_shifts(employee)
+
+    else:
+        field_map = {"Project": "account_manager", "Operations Site": "account_supervisor"}
+        if doctype in field_map:
+            values = frappe.get_all(doctype, {field_map[doctype]:employee},['name'])
+            if values:
+                return [i.name for i in values]
 
 
 
