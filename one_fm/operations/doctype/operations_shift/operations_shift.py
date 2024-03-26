@@ -153,7 +153,7 @@ def get_shift_supervisor(shift, date=False):
     # Get all the shift supervisors assigned to the shift
     supervisors = frappe.get_all(
         "Operations Shift Supervisor",
-        fields=["shift_supervisor"],
+        fields=["supervisor"],
         filters={
             "parent": shift, "parenttype": "Operations Shift"
         },
@@ -170,7 +170,7 @@ def get_shift_supervisor(shift, date=False):
             {
                 "employee": supervisor.supervisor,
                 "date": date,
-                "availability": "Working"
+                "employee_availability": "Working"
             }
         ):
             return supervisor.supervisor

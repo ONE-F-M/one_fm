@@ -154,17 +154,20 @@ def create_employee_checkin_for_shift_permission(shift_permission):
 		frappe.log_error(frappe.get_traceback(), "Shift Permission")
 
 @frappe.whitelist()
-def fetch_approver(employee):
+def fetch_approver(employee, date=None):
 	if employee:
+		filters={"employee":employee}
+		if date:
+			filters["start_date"] = getdate(date)
 		employee_shift = frappe.get_list(
 			"Shift Assignment",
 			fields=["name", "shift", "shift_type"],
-			filters={"employee":employee},
+			filters=filters,
 			order_by='creation desc',
 			limit_page_length=1
 		)
 		if employee_shift and len(employee_shift)>0:
-			approver = get_approver(employee)
+			approver = get_approver(employee, date)
 			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
 
 		frappe.throw("No shift assigned to {employee}".format(employee=employee))

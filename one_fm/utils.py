@@ -3060,9 +3060,10 @@ def get_approver(employee, date=False):
                         line_manager = frappe.db.get_value('Project', project, 'account_manager')
         else:
             frappe.msgprint(
-                _("Please ensure that the Reports To is set for {0}".format(employee_data.employee_name)),
+                _("Please ensure that the Reports To is set for {0}, Since the employee is not shift working".format(employee_data.employee_name)),
                 title= "Missing Data",
-                indicator="orange"
+                indicator="orange",
+                alert=True
             )
 
     return line_manager

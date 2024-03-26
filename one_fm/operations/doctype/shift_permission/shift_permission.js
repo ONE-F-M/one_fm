@@ -16,10 +16,7 @@ frappe.ui.form.on('Shift Permission', {
 	},
 	date: function(frm) {
 		get_shift_assignment(frm);
-	},
-	permission_type: function(frm) {
-		get_shift_assignment(frm);
-	},
+	}
 });
 
 function set_employee_from_the_session_user(frm) {
@@ -53,11 +50,12 @@ function set_options_for_permission_type(frm) {
 };
 
 function get_shift_assignment(frm){
-	if(frm.doc.employee){
+	if(frm.doc.employee && frm.doc.date){
 		frappe.call({
 			method: 'one_fm.operations.doctype.shift_permission.shift_permission.fetch_approver',
 			args:{
-				'employee':employee
+				'employee':frm.doc.employee,
+				'date': frm.doc.date
 			},
 			callback: function(r) {
 				if(r.message){

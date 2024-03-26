@@ -47,7 +47,7 @@ function get_shift_assignment(frm){
 		frappe.call({
 			method: 'one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue.fetch_approver',
 			args:{
-				'employee':employee
+				'employee':frm.doc.employee
 			},
 			callback: function(r) {
 				if(r.message){
