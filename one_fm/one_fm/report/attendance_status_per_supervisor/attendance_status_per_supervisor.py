@@ -15,34 +15,34 @@ def execute(filters=None):
 
 def fetch_created_attendance_check(supervisor,filters):
     created_query = f"""
-            select  DATE_FORMAT(ac.date, '%d-%b') AS formatted_date, IFNULL(count(ac.name),0) as number from 
-            `tabAttendance Check`ac JOIN `tabEmployee`emp on ac.shift_supervisor = emp.name 
-               where emp.employee_name  = '{supervisor}' and ac.date BETWEEN 
-               '{filters.get("from_date")}' and '{filters.get("to_date")}' and ac.docstatus = 1 
+            select  DATE_FORMAT(ac.date, '%d-%b') AS formatted_date, IFNULL(count(ac.name),0) as number from
+            `tabAttendance Check`ac JOIN `tabEmployee`emp on ac.shift_supervisor = emp.name
+               where emp.employee_name  = '{supervisor}' and ac.date BETWEEN
+               '{filters.get("from_date")}' and '{filters.get("to_date")}' and ac.docstatus = 1
             GROUP BY ac.date
               """
-    
+
     present_query = f"""
-            select  DATE_FORMAT(ac.date, '%d-%b') AS formatted_date, IFNULL(count(ac.name),0) as number from 
-            `tabAttendance Check`ac JOIN `tabEmployee`emp on ac.shift_supervisor = emp.name 
-               where emp.employee_name  = '{supervisor}' and ac.date BETWEEN 
+            select  DATE_FORMAT(ac.date, '%d-%b') AS formatted_date, IFNULL(count(ac.name),0) as number from
+            `tabAttendance Check`ac JOIN `tabEmployee`emp on ac.shift_supervisor = emp.name
+               where emp.employee_name  = '{supervisor}' and ac.date BETWEEN
                '{filters.get("from_date")}' and '{filters.get("to_date")}' and ac.docstatus = 1 and ac.attendance_status = 'Present'
             GROUP BY ac.date
               """
-    
+
     created_rs = frappe.db.sql(created_query,as_dict=1)
     created_rd = {row.formatted_date:row.number for row in created_rs}
     present_rs = frappe.db.sql(present_query,as_dict=1)
     present_rd = {row.formatted_date:row.number for row in present_rs}
     return [created_rd,present_rd]
-    
+
 
 def fetch_daily_count(supervisor,filters):
     #Fetch the daily checkin and attendance check of each supervisor
-    
+
     query = f"""
-            select  DATE_FORMAT(ecn.date, '%d-%b') AS formatted_date, IFNULL(count(ecn.name),0) as number from `tabEmployee Checkin`ecn JOIN `tabOperations Shift`ops on ops.name = ecn.operations_shift 
-               where ecn.log_type = "IN" and ops.supervisor_name = '{supervisor}' and ecn.date BETWEEN 
+            select  DATE_FORMAT(ecn.date, '%d-%b') AS formatted_date, IFNULL(count(ecn.name),0) as number from `tabEmployee Checkin`ecn JOIN `tabOperations Shift Supervisor`ops on ops.parent = ecn.operations_shift 
+               where ecn.log_type = "IN" and ops.supervisor_name = '{supervisor}' and ecn.date BETWEEN
                '{filters.get("from_date")}' and '{filters.get("to_date")}'
             GROUP BY ecn.date
               """
@@ -59,8 +59,8 @@ def fetch_data(filters):
         init_dict[one] = 0
     query = f"""
                 SELECT DISTINCT ecn.operations_shift,ops.supervisor_name
-                FROM `tabEmployee Checkin`ecn JOIN `tabOperations Shift`ops ON 
-                ops.name = ecn.operations_shift  
+                FROM `tabEmployee Checkin`ecn JOIN `tabOperations Shift`ops ON
+                ops.name = ecn.operations_shift
                 WHERE ecn.date BETWEEN '{filters.get("from_date")}' and '{filters.get("to_date")}'
 
             """
@@ -76,7 +76,7 @@ def update_data(supervisors,filters,init_dict,column_names):
     # its_fine_pack= init_dict.copy() #Initialize 0 values
     # created_check_pack = init_dict.copy()
     # justification_pack = init_dict.copy()
-    
+
     for each in supervisors:
         its_fine_pack= init_dict.copy() #Initialize 0 values
         created_check_pack = init_dict.copy()
@@ -97,7 +97,7 @@ def update_data(supervisors,filters,init_dict,column_names):
         })
         daily_count = fetch_daily_count(each,filters)
         created_count,present_count = fetch_created_attendance_check(each,filters)
-        
+
         its_fine_pack.update(daily_count)
         created_check_pack.update(created_count)
         justification_pack.update(present_count)
@@ -115,14 +115,14 @@ def update_data(supervisors,filters,init_dict,column_names):
         })
         datapack.append(percentage_scores)
         datapack.append(its_fine_pack)
-        
+
         datapack.append(created_check_pack)
         datapack.append(justification_pack)
-        
-        
-        
+
+
+
     return datapack
-    
+
 
 
 def get_columns(filters):
@@ -158,9 +158,8 @@ def get_date_range(start_date, end_date,as_dict = False):
         else:
             dates[start_date + timedelta(n)]=(start_date + timedelta(n)).strftime('%d-%b')
     if not as_dict:
-        dates.append(end_date) if not as_dict else dates.append({end_date:end_date.strftime('%d-%b')}) 
+        dates.append(end_date) if not as_dict else dates.append({end_date:end_date.strftime('%d-%b')})
     else:
         dates[end_date]=(end_date).strftime('%d-%b')
-        
+
     return dates
-    

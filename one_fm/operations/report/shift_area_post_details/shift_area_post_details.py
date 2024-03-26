@@ -27,13 +27,15 @@ def get_data(filters):
 		total_staffs = frappe.db.count("Employee Schedule",
 			{'date': getdate(filters.get('date')), 'employee_availability': 'Working', 'shift': operations_shift.name}
 		)
+		shift_supervisor = get_shift_supervisor(operations_shift.name)
+		shift_supervisor_name = frappe.db.get_value("Employee", shift_supervisor, "employee_name")
 		if total_staffs > 0:
 			row = [
 				operations_shift.name,
 				operations_shift.start_time,
 				operations_shift.end_time,
-				operations_shift.supervisor,
-				operations_shift.supervisor_name,
+				shift_supervisor,
+				shift_supervisor_name,
 				operations_shift.duration,
 				operations_shift.shift_classification,
 				operations_shift.service_type,

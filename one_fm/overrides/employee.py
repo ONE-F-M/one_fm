@@ -16,6 +16,7 @@ from one_fm.processor import sendemail,send_whatsapp
 from one_fm.utils import get_domain, get_standard_notification_template, get_approver
 from six import string_types
 from frappe import _
+from one_fm.operations.doctype.operations_shift.operation_shift import get_supervisor_operations_shifts
 
 class EmployeeOverride(EmployeeMaster):
     def validate(self):
@@ -265,7 +266,7 @@ class NotifyAttendanceManagerOnStatusChange:
 
     @property
     def _operations_shift_supervisor(self) -> list:
-        operation_shifts = frappe.db.sql(""" SELECT name from `tabOperations Shift` WHERE supervisor = %s AND status = 'Active' """, (self.employee_object.name), as_list=1)
+        operation_shifts = get_supervisor_operations_shifts(self.employee_object.name)
         return list(chain.from_iterable(operation_shifts)) if operation_shifts else list()
 
     @property

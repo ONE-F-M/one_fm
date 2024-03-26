@@ -11,6 +11,7 @@ from one_fm.operations.doctype.operations_site.operations_site import create_not
 import datetime
 from frappe.permissions import remove_user_permission
 from hrms.hr.utils import get_holidays_for_employee
+from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor_user
 
 #Shift Type
 @frappe.whitelist()
@@ -36,15 +37,13 @@ def get_notification_user(doc, employee=None):
 	"""
 	if not doc.operations_shift:
 		return
-	
-	operations_shift = frappe.get_doc("Operations Shift", doc.operations_shift)
 
-	if operations_shift.supervisor:
-		supervisor = get_employee_user_id(operations_shift.supervisor)
-		if supervisor != doc.owner:
-			return supervisor
+	shift_supervisor = get_shift_supervisor_user(doc.operations_shift)
 
-	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
+	if shift_supervisor != doc.owner:
+		return shift_supervisor
+
+	operations_site = frappe.db.get_value("Operations Site", operations_shift.site)
 
 	if operations_site.account_supervisor:
 		account_supervisor = get_employee_user_id(operations_site.account_supervisor)
@@ -258,7 +257,7 @@ def on_project_update_switch_shift_site_post_to_inactive(doc, method):
                 frappe.db.set_value("Operations Site", site, {
                     "status": "Inactive"
                 })
-		
+
         if list_of_shift:
             for shift in list_of_shift:
                 frappe.db.set_value("Operations Shift", shift, {
@@ -278,5 +277,3 @@ def on_project_update_switch_shift_site_post_to_inactive(doc, method):
                 frappe.db.set_value("Operations Post", post, {
                     "status": "Inactive"
                 })
-
-
