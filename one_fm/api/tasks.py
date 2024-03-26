@@ -1780,7 +1780,7 @@ def fetch_employees_not_in_checkin():
 
 		# holiday list
 		holiday_list = [i for i,j in get_holiday_today(cur_date).items()]
-		holiday_list_tuple = str(tuple(shift_assignments_employees)).replace(',)', ')')
+		holiday_list_tuple = str(tuple(holiday_list_tuple)).replace(',)', ')')
 		holiday_list_employees = [i.name for i in frappe.db.sql(f"""SELECT name from `tabEmployee` WHERE
 			status = 'Active' AND
 			holiday_list IN {holiday_list_tuple}
