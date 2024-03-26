@@ -19,7 +19,7 @@ frappe.ui.form.on('Attendance Request', {
   },
   employee: (frm)=>{
     // Set approver
-    frm.events.set_approver();
+    frm.events.set_approver(frm);
   },
   from_date: (frm) =>{
     validate_from_date(frm);
@@ -37,11 +37,13 @@ frappe.ui.form.on('Attendance Request', {
             approver = r.message;
           }
           frm.set_value("approver", approver);
+          frm.refresh_field("approver");
         }
       });
     }
     else{
       frm.set_value("approver", "");
+      frm.refresh_field("approver");
     }
   }
 });

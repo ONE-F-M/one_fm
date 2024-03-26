@@ -128,11 +128,20 @@ def create_employee_checkin_for_employee_checkin_issue(employee_checkin_issue, f
 	frappe.db.commit()
 
 @frappe.whitelist()
-def fetch_approver(employee):
+def fetch_approver(employee, date=None):
 	if employee:
 		shift_detail = {"assigned_shift":'',"shift_supervisor":'', "shift":'',"shift_type":''}
-		employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-		if employee_shift:
+		filters={"employee":employee}
+		if date:
+			filters["start_date"] = getdate(date)
+		employee_shift = frappe.get_list(
+			"Shift Assignment",
+			fields=["name", "shift", "shift_type"],
+			filters=filters,
+			order_by='creation desc',
+			limit_page_length=1
+		)
+		if employee_shift and len(employee_shift)>0:
 			approver = get_approver(employee)
 			shift_detail['assigned_shift'] = employee_shift[0].name
 			shift_detail['shift_supervisor'] = approver
