@@ -244,7 +244,7 @@ class AttendanceCheck(Document):
                         "date":self.date,
                         "approver":approver_full_name,
                         "page_link":doc_url,
-                        "employee_name":doc.employee_name
+                        "employee_name":self.employee_name
                     }
                 )
                 frappe.throw(error_template)
@@ -254,12 +254,12 @@ class AttendanceCheck(Document):
                 frappe.throw(f"""
                     <p>
                         Please note that a shift request has not been created for
-                        <b>{doc.employee_name}</b> on <b>{doc.date}</b>
+                        <b>{self.employee_name}</b> on <b>{self.date}</b>
                     </p>
                     <hr>
                     To create a Shift Request
                     <a class="btn btn-primary btn-sm"
-                    href='{link_to_new_shift_request}?doc_id={doc.name}&doctype={doc.doctype}'
+                    href='{link_to_new_shift_request}?doc_id={self.name}&doctype={self.doctype}'
                     target="_blank" onclick=" ">
                         Click Here
                     </a>
