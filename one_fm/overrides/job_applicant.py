@@ -42,7 +42,7 @@ class JobApplicantOverride(JobApplicant):
 				"applicant_name": self.applicant_name,
 				"cv": frappe.utils.get_url(self.resume_attachment) if self.resume_attachment else None,
 				"passport_type": self.one_fm_passport_type,
-				"job_applicant": get_url(self.get_url()),
+				"job_applicant": frappe.utils.get_url(self.get_url()),
 				"contact_email": self.one_fm_email_id
 			}
 
