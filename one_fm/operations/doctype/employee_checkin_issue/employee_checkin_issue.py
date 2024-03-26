@@ -50,7 +50,15 @@ class EmployeeCheckinIssue(Document):
 			frappe.throw(msg)
 
 	def validate_attendance(self):
-		attendance = frappe.db.exists('Attendance',{'attendance_date': self.date, 'employee': self.employee, 'docstatus': 1})
+		attendance = frappe.db.exists(
+			"Attendance",
+			{
+				"attendance_date": self.date,
+				"employee": self.employee,
+				"docstatus": 1,
+				"roster_type": self.roster_type
+			}
+		)
 		if attendance:
 			frappe.throw(_('There is an Attendance {0} exists for the \
 			Employee {1} on {2}'.format(attendance, self.employee_name, format_date(self.date))), exc=ExistAttendance)
@@ -63,7 +71,8 @@ class EmployeeCheckinIssue(Document):
 			{
 				"log_type": self.log_type,
 				"time": ["between", [start_date, end_date]],
-				"employee": self.employee
+				"employee": self.employee,
+				"roster_type": self.roster_type
 			}
 		)
 		if employee_checkin:
