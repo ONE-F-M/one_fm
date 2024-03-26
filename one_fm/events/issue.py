@@ -19,6 +19,12 @@ def send_google_chat_notification(doc, method):
     # Fetch the Key and Token for the API
     default_api_integration = frappe.get_doc("Default API Integration")
 
+    if not default_api_integration:
+        return
+
+    if not default_api_integration.integration_setting:
+        return
+
     google_chat = frappe.get_doc("API Integration",
         [i for i in default_api_integration.integration_setting
             if i.app_name=='Google Chat'][0].app_name)
