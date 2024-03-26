@@ -23,6 +23,7 @@
   "column_break_9",
   "shift",
   "shift_type",
+  "roster_type",
   "section_break_17",
   "amended_from",
   "issue"
@@ -167,11 +168,18 @@
    "label": "Issue",
    "options": "Issue",
    "read_only": 1
+  },
+  {
+   "fetch_from": "assigned_shift.roster_type",
+   "fieldname": "roster_type",
+   "fieldtype": "Select",
+   "label": "Roster Type",
+   "options": "Basic\nOver-Time"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-01-24 12:30:38.577875",
+ "modified": "2024-03-26 12:33:18.742111",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Checkin Issue",
