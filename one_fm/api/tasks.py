@@ -705,6 +705,7 @@ def assign_am_shift():
 			WHERE
 			ES.date = '{date}'
 			AND ES.employee_availability = "Working"
+			AND ES.is_replaced = 0
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
@@ -730,6 +731,7 @@ def assign_pm_shift():
 			WHERE
 			ES.date = '{date}'
 			AND ES.employee_availability = "Working"
+			AND ES.is_replaced = 0
 			AND ES.roster_type = "Basic"
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
@@ -927,6 +929,7 @@ def validate_shift_assignment():
 			SELECT * from `tabEmployee Schedule` ES
 				WHERE ES.start_datetime = '{now}'
 				AND ES.employee_availability = "Working"
+				AND ES.is_replaced = 0
 				AND ES.employee
 					NOT IN (Select employee from `tabShift Assignment` tSA
 					WHERE tSA.employee = ES.employee
@@ -977,6 +980,7 @@ def validate_am_shift_assignment():
 			ES.date = '{date}'
 			AND ES.employee_availability = "Working"
 			AND ES.roster_type = "Basic"
+			AND ES.is_replaced = 0
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
 				WHERE st.start_time >= '01:00:00'
@@ -1022,6 +1026,7 @@ def validate_pm_shift_assignment():
 			ES.date = '{date}'
 			AND ES.employee_availability = "Working"
 			AND ES.roster_type = "Basic"
+			AND ES.is_replaced = 0
 			AND ES.shift_type IN(
 				SELECT name from `tabShift Type` st
 				WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
@@ -1066,7 +1071,7 @@ def overtime_shift_assignment():
 	"""
 	date = cstr(getdate())
 	now_time = add_to_date(now_datetime(), hours=1).strftime("%H:%M:00")
-	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Over-Time"}, ["*"])
+	roster = frappe.get_all("Employee Schedule", {"date": date, "employee_availability": "Working" , "roster_type": "Over-Time", "is_replaced": 0}, ["*"])
 	shift_request = frappe.db.sql(f"""SELECT sr.*, 'Shift Request' as doctype FROM `tabShift Request` sr
 								WHERE '{date}' between  sr.from_date and sr.to_date
 								AND sr.roster_type = 'Over-Time'

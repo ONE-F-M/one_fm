@@ -8460,7 +8460,7 @@
   "doctype": "Workflow",
   "document_type": "Timesheet",
   "is_active": 1,
-  "modified": "2024-03-12 09:36:38.712404",
+  "modified": "2024-03-26 09:02:55.302435",
   "name": "Timesheet",
   "override_status": 0,
   "send_email_alert": 0,
@@ -8541,7 +8541,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "Employee",
+    "allow_edit": "System Manager",
     "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
@@ -8632,10 +8632,10 @@
    {
     "action": "Cancel",
     "allow_self_approval": 1,
-    "allowed": "Employee",
-    "allowed_user_field": "approver",
+    "allowed": "System Manager",
+    "allowed_user_field": "",
     "allowed_user_id": null,
-    "condition": "frappe.session.user == doc.approver and doc.attendance_by_timesheet == 1",
+    "condition": "doc.attendance_by_timesheet == 1",
     "custom_confirm_message": null,
     "custom_confirm_transition": 0,
     "next_state": "Cancelled",
@@ -8650,8 +8650,8 @@
    {
     "action": "Cancel",
     "allow_self_approval": 1,
-    "allowed": "Employee",
-    "allowed_user_field": "approver",
+    "allowed": "System Manager",
+    "allowed_user_field": "",
     "allowed_user_id": null,
     "condition": "doc.attendance_by_timesheet == 0",
     "custom_confirm_message": null,
