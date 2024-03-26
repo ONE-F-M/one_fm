@@ -284,7 +284,6 @@ def replace_employee_schedule(doc, existing_schedules, schedule_date_range):
             end_date = es.date
             if start_time > end_time:
                 end_date = add_days(end_date, 1)
-            replaced_employee_schedule = frappe.db.get_value("Employee Schedule", {'employee':doc.replaced_employee, 'date':es.date}, ['name'])
             frappe.db.set_value('Employee Schedule', es.name, {
                 'shift':doc.operations_shift,
                 'shift_type':doc.shift_type,
@@ -298,9 +297,12 @@ def replace_employee_schedule(doc, existing_schedules, schedule_date_range):
                 'site':doc.site,
                 'reference_doctype': doc.doctype,
                 'reference_docname': doc.name,
-                'is_replaced':1,
-                'replaced_employee_schedule': replaced_employee_schedule
             })
+            
+            #Update Existing Employee Schedule
+            replaced_employee_schedule = frappe.get_doc("Employee Schedule", {'employee':doc.replaced_employee, 'date':es.date}, ['name'])
+            replaced_employee_schedule.db_set("is_replaced",1)
+            replaced_employee_schedule.db_set("replaced_employee_schedule", es.name)
     except Exception as e:
         frappe.throw(_("Error Replacing Employee Schedule"))
         frappe.log_error(frappe.get_traceback(), "Error Replacing Employee Schedule")
