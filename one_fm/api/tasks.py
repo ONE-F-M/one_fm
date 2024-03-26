@@ -1666,8 +1666,8 @@ def fetch_employees_not_in_checkin():
 	"""
 	if not production_domain():
 		return
-	if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
-		return
+	# if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_employee_checkin_checkout') and not production_domain():
+	# 	return
 
 	shift_start_time = f"{now_datetime().time().hour}:00:00"
 
