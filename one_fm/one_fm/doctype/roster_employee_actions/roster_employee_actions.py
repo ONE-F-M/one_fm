@@ -81,14 +81,14 @@ def create_roster_employee_actions():
     active_employees = frappe.db.sql("""select employee from `tabEmployee` where status = 'Active' AND shift_working = 1""", as_dict=1)
 
     active_employees_combinations = [(employee.employee, date) for employee in active_employees for date in [(start_date + timedelta(days=x)).strftime('%Y-%m-%d') for x in range((end_date - start_date).days + 1)]]
-    
+
     employees_rostered = frappe.db.sql(f"""SELECT s.employee, s.date
-                                    FROM `tabEmployee Schedule` s 
+                                    FROM `tabEmployee Schedule` s
                                     WHERE s.date >= '{start_date}' AND s.date <= '{end_date}'
                                     """, as_dict= True)
-    
+
     employees_rostered_combination = [(roster.employee, (roster.date).strftime('%Y-%m-%d')) for roster in employees_rostered]
-    
+
     employees_not_rostered = set(active_employees_combinations) - set(employees_rostered_combination)
     try:
         data_dict = {obj[0]: list() for obj in employees_not_rostered}
@@ -114,7 +114,7 @@ def create_roster_employee_actions():
     # fetch supervisors and list of employees(not rostered) under them
     result = frappe.db.sql("""select sv.employee, sv.site, group_concat(e.employee)
             from `tabEmployee` e
-            join `tabOperations Shift` sh on sh.name = e.shift
+            join `tabOperations Shift Supervisor` sh on sh.parent = e.shift
             join `tabEmployee` sv on sh.supervisor=sv.employee
             where e.employee in {employees}
 	    	AND sh.status='Active'

@@ -52,8 +52,10 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
         select
             distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality,
            usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site,
-         emp.project,opsite.account_supervisor_name as site_supervisor,opshift.supervisor_name as shift_supervisor
-        from `tabEmployee` as emp, `tabUser` as usr,`tabOperations Shift` as opshift,`tabOperations Site` as opsite
+         emp.project,opsite.account_supervisor_name as site_supervisor, ops.supervisor_name as shift_supervisor
+        from
+            `tabEmployee` as emp, `tabUser` as usr,`tabOperations Shift` as opshift,`tabOperations Site` as opsite,
+            `tabOperations Shift Supervisor` as ops
         where
         emp.project is not NULL
         and emp.site is not NULL
@@ -61,6 +63,7 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
         and emp.user_id=usr.name
         and emp.shift = opshift.name
         and emp.site = opsite.name
+        and ops.parent = op_shift.name
         {conds}
     """.format(date=date, conds=conds), as_dict=1)
     return data
@@ -356,7 +359,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
         if not cint(request_employee_schedule) and "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
             all_employee_shift_query = frappe.db.sql("""
                 SELECT DISTINCT es.shift, s.supervisor
-                FROM `tabEmployee Schedule` es JOIN `tabOperations Shift` s ON es.shift = s.name
+                FROM `tabEmployee Schedule` es JOIN `tabOperations Shift Supervisor` s ON es.shift = s.parent
                 WHERE
                 es.date BETWEEN '{start_date}' AND '{end_date}'
                 AND es.employee_availability='Working' AND es.employee IN {emp_tuple}
@@ -605,11 +608,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 roster_type = 'Over-Time'
 
             requester, requester_name = frappe.db.get_value("Employee", {"user_id":frappe.session.user}, ["name", "employee_name"])
-            # get required shift supervisors and make as dict for easy hashing
-            shifts_dataset = frappe.db.get_list("Operations Shift", filters={"name": ["IN", [i.shift for i in from_schedule]]}, fields=["name", "supervisor", "supervisor_name"], order_by="name ASC")
-            shift_datadict = {}
-            for i in shifts_dataset:
-                shift_datadict[i.name] = i
 
             for emp in from_schedule:
                 req_es_doc = frappe.new_doc("Request Employee Schedule")
@@ -1161,7 +1159,7 @@ def assign_staff(employees, shift, request_employee_assignment):
     if not cint(request_employee_assignment):
         for emp in json.loads(employees):
             emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
-            supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
+            # supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
             # if user_employee.name != supervisor:
             # 	validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
 

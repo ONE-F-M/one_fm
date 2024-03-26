@@ -22,7 +22,7 @@ def get_data(filters):
 	query = frappe.db.sql(f"""
 		SELECT sa.employee, sa.employee_name, sa.start_date, os.supervisor, os.supervisor_name,
 		sa.name as shift_assignment, sa.shift as operations_shift, em.employee_id
-		FROM `tabShift Assignment` sa RIGHT JOIN `tabOperations Shift` os ON os.name=sa.shift
+		FROM `tabShift Assignment` sa RIGHT JOIN `tabOperations Shift Supervisor` os ON os.parent=sa.shift
 		RIGHT JOIN `tabEmployee` em ON sa.employee=em.name
 		WHERE {conditions}
 		AND sa.employee IN (
@@ -92,11 +92,20 @@ def get_columns():
 
 
 def get_supervisors():
-	frappe.db.sql("""
-		SELECT DISTINCT supervisor, supervisor_name
-		FROM `tabOperations Shift`
-		WHERE supervisor NOT IN ('')
-	""", as_dict=1)
+	query = """
+		select
+			supervisor.supervisor
+		from
+			`tabOperations Shift Supervisor` supervisor,
+			`tabOperations Shift` shift
+		where
+			supervisor.parenttype='Operations Shift'
+			and
+			supervisor.parent=shift.name
+			and
+			status='Active'
+	"""
+	frappe.db.sql(query, as_dict=1)
 
 
 @frappe.whitelist()

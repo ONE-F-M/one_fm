@@ -21,6 +21,7 @@ from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import approve_open_employee_checkin_issue
 from hrms.hr.utils import get_holidays_for_employee
+from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor_user
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -374,39 +375,36 @@ def get_action_user(employee, shift):
 	"""
 			Shift > Site > Project > Reports to
 	"""
-	action_user = None
-	Role = None
-
-	operations_shift = frappe.get_doc("Operations Shift", shift)
-	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-	project = frappe.get_doc("Project", operations_site.project)
+	operations_shift = frappe.db.get_value("Operations Shift", shift, ["owner", "site"], as_dict=True)
+	operations_site = frappe.db.get_value(
+		"Operations Site",
+		operations_shift.site,
+		["account_supervisor", "project"],
+		as_dict=True
+	)
+	shift_supervisor_user = get_shift_supervisor_user(shift)
+	project_account_manager = frappe.db.get_value("Project", operations_site.project, "account_manager")
 	report_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
 	current_user = frappe.get_value("Employee", {"name":employee},["user_id"])
 
 	if report_to:
-		action_user = get_employee_user_id(report_to)
-		Role = "Report To"
+		return get_employee_user_id(report_to), "Report To"
 	else:
 		if operations_site.account_supervisor:
 			site_supervisor = get_employee_user_id(operations_site.account_supervisor)
 			if site_supervisor != operations_shift.owner and site_supervisor != current_user:
-				action_user = site_supervisor
-				Role = "Site Supervisor"
+				return site_supervisor, "Site Supervisor"
 
-		elif operations_shift.supervisor:
-			shift_supervisor = get_employee_user_id(operations_shift.supervisor)
-			if shift_supervisor != operations_shift.owner and shift_supervisor != current_user:
-				action_user = shift_supervisor
-				Role = "Shift Supervisor"
+		elif shift_supervisor_user:
+			if shift_supervisor_user != operations_shift.owner and shift_supervisor_user != current_user:
+				return shift_supervisor_user, "Shift Supervisor"
 
-		elif operations_site.project:
-			if project.account_manager:
-				project_manager = get_employee_user_id(project.account_manager)
-				if project_manager != operations_shift.owner and project_manager != current_user:
-					action_user = project_manager
-					Role = "Project Manager"
+		elif operations_site.project and project_account_manager:
+			project_manager = get_employee_user_id(project_account_manager)
+			if project_manager != operations_shift.owner and project_manager != current_user:
+				return project_manager, "Project Manager"
 
-	return action_user, Role
+	return None, None
 
 def issue_penalties():
 	"""This function to issue penalty to employee if employee checkin late without Shift Permission to Arrive Late.
@@ -455,19 +453,27 @@ def get_notification_user(employee, shift, Role):
 	"""
 			Shift > Site > Project > Reports to
 	"""
-	operations_shift = frappe.get_doc("Operations Shift", shift)
-	operations_site = frappe.get_doc("Operations Site", operations_shift.site)
-	project = frappe.get_doc("Project", operations_site.project)
+	notify_user = []
+	operations_shift = frappe.db.get_value("Operations Shift", shift, ["owner", "site"], as_dict=True)
+	operations_site = frappe.db.get_value(
+		"Operations Site",
+		operations_shift.site,
+		["account_supervisor", "project"],
+		as_dict=True
+	)
+	shift_supervisor_user = get_shift_supervisor_user(shift)
+
+	project_account_manager = frappe.db.get_value("Project", operations_site.project, "account_manager")
 	project_manager = site_supervisor = shift_supervisor = None
 
 	reports_to = frappe.get_value("Employee", {"name":employee},["reports_to"])
 
 	if operations_site.project and project.account_manager and get_employee_user_id(project.account_manager) != operations_shift.owner:
-		project_manager = get_employee_user_id(project.account_manager)
+		project_manager = get_employee_user_id(project_account_manager = frappe.db.get_value("Project", operations_site.project, "account_manager"))
 	if operations_site.account_supervisor and get_employee_user_id(operations_site.account_supervisor) != operations_shift.owner:
 		site_supervisor = get_employee_user_id(operations_site.account_supervisor)
-	elif operations_shift.supervisor and get_employee_user_id(operations_shift.supervisor) != operations_shift.owner:
-		shift_supervisor = get_employee_user_id(operations_shift.supervisor)
+	elif shift_supervisor_user != operations_shift.owner:
+		shift_supervisor = shift_supervisor_user
 
 	if Role == "Report To" and reports_to:
 		notify_user = [get_employee_user_id(reports_to)]
@@ -475,8 +481,6 @@ def get_notification_user(employee, shift, Role):
 		notify_user = [site_supervisor,project_manager]
 	elif Role == "Site Supervisor" and project_manager:
 		notify_user = [project_manager]
-	else:
-		notify_user = []
 
 	return notify_user
 
@@ -930,7 +934,7 @@ def validate_shift_assignment():
 					IN (Select employee from `tabEmployee` E
 					WHERE E.name = SR.employee
 					AND E.status = 'Active')""".format(now_time=now_time,date=cstr(date), now=now), as_dict=1)
-	
+
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 				WHERE ES.start_datetime = '{now}'
@@ -962,7 +966,7 @@ def validate_shift_assignment():
 
 	if non_shift:
 		roster.extend(non_shift)
-	
+
 	if shift_request:
 		roster_emp = shift_request
 		employee_list = [i.employee for i in shift_request]
@@ -1102,7 +1106,7 @@ def process_overtime_shift(roster, date, time):
 		except Exception as e:
 			continue
 
-def create_overtime_shift_assignment(schedule, date):	
+def create_overtime_shift_assignment(schedule, date):
 		try:
 			shift_assignment = frappe.new_doc("Shift Assignment")
 			shift_assignment.start_date = date
@@ -1705,21 +1709,7 @@ def fetch_employees_not_in_checkin():
 
 
 		# get employees from shift assignment, check them in checkins and substract
-		shift_assignments_employees_list = frappe.db.sql(f"""
-			SELECT DISTINCT sa.employee, sa.shift_type, sa.start_datetime, sa.end_datetime,
-			sa.shift as operations_shift, st.notification_reminder_after_shift_start,
-			st.notification_reminder_after_shift_end, st.supervisor_reminder_shift_start,
-			st.supervisor_reminder_start_ends, os.supervisor as shift_supervisor,
-			osi.account_supervisor as site_supervisor,sa.name as shift_assignment_id
-
-			FROM `tabShift Assignment` sa RIGHT JOIN `tabShift Type` st ON sa.shift_type=st.name
-			RIGHT JOIN `tabOperations Shift` os ON sa.shift=os.name RIGHT JOIN `tabOperations Site` osi
-			ON sa.site=osi.name
-
-			WHERE {'sa.start_datetime' if log_type=='IN' else 'sa.end_datetime'}='{cur_date} {shift_start_time}'
-			AND sa.status='Active' AND sa.docstatus=1
-			GROUP BY sa.employee
-		""", as_dict=1)
+		shift_assignments_employees_list = get_list_employees_assigned_in_shift(cur_date, shift_start_time, log_type)
 		if not shift_assignments_employees_list:
 			continue
 		shift_assignments_employees = [i.employee for i in shift_assignments_employees_list]
@@ -1824,6 +1814,41 @@ def fetch_employees_not_in_checkin():
 		# 'supervisor_reminder_minutes': supervisor_reminder_minutes,
 		'minute':minute, 'date':cur_date, 'total':len(return_data)
 	})
+
+def get_list_employees_assigned_in_shift(cur_date, shift_start_time, log_type):
+	query = f"""
+		SELECT DISTINCT
+		    sa.employee, sa.shift_type, sa.start_datetime, sa.end_datetime, sa.shift as operations_shift,
+			st.notification_reminder_after_shift_start, st.notification_reminder_after_shift_end,
+			st.supervisor_reminder_shift_start, st.supervisor_reminder_start_ends, osi.account_supervisor as site_supervisor,
+			sa.name as shift_assignment_id, supervisor.supervisor as shift_supervisor
+		FROM
+		    `tabShift Assignment` sa
+		    RIGHT JOIN `tabShift Type` st ON sa.shift_type = st.name
+		    RIGHT JOIN `tabOperations Shift` os ON sa.shift = os.name
+		    RIGHT JOIN `tabOperations Site` osi ON sa.site = osi.name
+		    LEFT JOIN (
+		        SELECT
+		            supervisor, parent
+		        FROM
+		            `tabOperations Shift Supervisor`
+		        WHERE EXISTS (
+		            SELECT 1
+		            FROM
+		                `tabEmployee Schedule` es
+		            WHERE
+		                es.availability = 'Working' AND es.employee = `tabOperations Shift Supervisor`.supervisor
+		                AND es.schedule_date = '{cur_date}'
+		        )
+		    ) supervisor ON os.name = supervisor.parent
+
+		WHERE
+		    {'sa.start_datetime' if log_type == 'IN' else 'sa.end_datetime'} = '{cur_date} {shift_start_time}'
+		    AND sa.status = 'Active' AND sa.docstatus = 1
+		GROUP BY
+		    sa.employee
+	"""
+	return frappe.db.sql(query, as_dict=True)
 
 def has_checkin_record(employee, log_type, date):
 	if frappe.db.exists('Employee Checkin', {

@@ -10,6 +10,7 @@ from itertools import product
 from one_fm.api.notification import create_notification_log
 from one_fm.api.v1.utils import response
 from one_fm.utils import query_db_list
+from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 
 
 @frappe.whitelist(allow_guest=True)
@@ -80,14 +81,14 @@ def get_staff_filters_data():
 
 
 @frappe.whitelist()
-def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled: int = 0, employee_search_id: str = None, 
-        employee_search_name: str = None, project: str = None, site: str = None, shift: str = None, department: str = None, 
+def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled: int = 0, employee_search_id: str = None,
+        employee_search_name: str = None, project: str = None, site: str = None, shift: str = None, department: str = None,
         operations_role: str = None, designation: str = None, isOt: str = None, limit_start: int = 0, limit_page_length: int  = 9999) -> dict:
     try:
         master_data, formatted_employee_data, post_count_data, employee_filters, additional_assignment_filters={}, {}, {}, {}, {}
         operations_roles_list = []
         employees = []
-        
+
         filters = {
             'date': ['between', (start_date, end_date)]
         }
@@ -171,7 +172,7 @@ def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled
             for record in v:
                 employees_data.append(record)
         master_data['employees_data'] = employees_data
-        
+
         # reformat operations role data
         operations_roles_data = []
         for k, v in master_data['operations_roles_data'].items():
@@ -303,7 +304,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
         if not cint(request_employee_schedule) and "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
             all_employee_shift_query = frappe.db.sql("""
                 SELECT DISTINCT es.shift, s.supervisor
-                FROM `tabEmployee Schedule` es JOIN `tabOperations Shift` s ON es.shift = s.name
+                FROM `tabEmployee Schedule` es JOIN `tabOperations Shift Supervisor` s ON es.shift = s.parent
                 WHERE
                 es.date BETWEEN '{start_date}' AND '{end_date}'
                 AND es.employee_availability='Working' AND es.employee IN {emp_tuple}
@@ -349,22 +350,22 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
         roster_type = 'Over-Time'
     elif otRoster or day_off_ot == 1:
         roster_type = 'Basic'
-        
+
 
     # get and structure employee dictionary for easy hashing
     employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employees]}, fields=['name', 'employee_name', 'department'])
     employees_dict = {}
     for i in employees_list:
         employees_dict[i.name] = i
-    
+
     if not cint(request_employee_schedule):
         """
             USE DIRECT SQL TO CREATE ROSTER SCHEDULE.
         """
         query = """
-            INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `employee_name`, `department`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`, 
+            INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `employee_name`, `department`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`,
             `operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `owner`, `modified_by`, `creation`, `modified`)
-            VALUES 
+            VALUES
         """
         if not cint(keep_days_off):
             _query = query
@@ -376,9 +377,9 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                     id_list.append(name)
                     _query += f"""
                         (
-                            "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{dr}", "{operations_shift.name}", 
-                            "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working", 
-                            "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+                            "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{dr}", "{operations_shift.name}",
+                            "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working",
+                            "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}",
                             "{cint(day_off_ot)}", "{owner}", "{owner}", "{creation}", "{creation}"
                         ),"""
 
@@ -411,8 +412,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                     id_list.append(name)
                     _query += f"""
                         (
-                            "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}", 
-                            '{operations_shift.shift_type}', "Working", "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}", 
+                            "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{dr}", "{operations_shift.name}", "{operations_shift.site}", "{operations_shift.project}",
+                            '{operations_shift.shift_type}', "Working", "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}",
                             "{day_off_ot}", "{owner}", "{owner}", "{creation}", "{creation}"
                         ),"""
             _query = _query.replace(", None", '')
@@ -453,15 +454,15 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 roster_type = 'Over-Time'
             elif otRoster or day_off_ot == 1:
                 roster_type = 'Basic'
-            
+
             requester, requester_name = frappe.db.get_value("Employee", {"user_id":frappe.session.user}, ["name", "employee_name"])
             # get required shift supervisors and make as dict for easy hashing
             shifts_dataset = frappe.db.get_list("Operations Shift", filters={"name": ["IN", [i.shift for i in from_schedule]]}, fields=["name", "supervisor", "supervisor_name"], order_by="name ASC")
             shift_datadict = {}
             for i in shifts_dataset:
                 shift_datadict[i.name] = i
-            
-            for emp in from_schedule:			
+
+            for emp in from_schedule:
                 req_es_doc = frappe.new_doc("Request Employee Schedule")
                 req_es_doc.employee = emp.employee
                 req_es_doc.from_shift = emp.shift
@@ -502,11 +503,11 @@ def update_employee_shift(employees, shift, owner, creation):
     if unmatched_record:
         query = """
             INSERT INTO `tabAdditional Shift Assignment` (`name`, `employee`, `employee_name`, `employee_id`, `site`, `shift`, `project`, `owner`, `modified_by`, `creation`, `modified`)
-            VALUES 
+            VALUES
         """
         for k, emp in unmatched_record.items():
             query += f"""(
-                    "{emp.name}|{shift}", "{emp.name}", "{emp.employee_name}", "{emp.employee_id}", "{site}", "{shift}", 
+                    "{emp.name}|{shift}", "{emp.name}", "{emp.employee_name}", "{emp.employee_id}", "{site}", "{shift}",
                     "{project}", "{owner}", "{owner}", "{creation}", "{creation}"
             ),"""
         query = query.replace(", None", '')
@@ -863,9 +864,9 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
         roster_type = "Basic"
         id_list = []
         query = """
-            INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`, 
+            INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`,
             `operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `owner`, `modified_by`, `creation`, `modified`)
-            VALUES 
+            VALUES
         """
         querycontent = """"""
 
@@ -880,8 +881,8 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                 name = f"{date}_{employee['employee']}_{roster_type}"
                 id_list.append(name)
                 querycontent += f"""(
-                    "{name}", "{employee["employee"]}", "{date}", "", "", "", 
-                    '', "Day Off", "", "", "Basic", 
+                    "{name}", "{employee["employee"]}", "{date}", "", "", "",
+                    '', "Day Off", "", "", "Basic",
                     0, "{owner}", "{owner}", "{creation}", "{creation}"
                 ),"""
         else:
@@ -904,8 +905,8 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             name = f"{date.date()}_{employee['employee']}_{roster_type}"
                             id_list.append(name)
                             querycontent += f"""(
-                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                '', "Day Off", "", "", "Basic", 
+                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "",
+                                '', "Day Off", "", "", "Basic",
                                 0, "{owner}", "{owner}", "{creation}", "{creation}"
                             ),"""
 
@@ -924,8 +925,8 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                                 name = f"{date.date()}_{employee['employee']}_{roster_type}"
                                 id_list.append(name)
                                 querycontent += f"""(
-                                    "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                    '', "Day Off", "", "", "Basic", 
+                                    "{name}", "{employee["employee"]}", "{date.date()}", "", "", "",
+                                    '', "Day Off", "", "", "Basic",
                                     0, "{owner}", "{owner}", "{creation}", "{creation}"
                                 ),"""
 
@@ -943,8 +944,8 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             name = f"{date.date()}_{employee['employee']}_{roster_type}"
                             id_list.append(name)
                             querycontent += f"""(
-                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                '', "Day Off", "", "", "Basic", 
+                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "",
+                                '', "Day Off", "", "", "Basic",
                                 0, "{owner}", "{owner}", "{creation}", "{creation}"
                             ),"""
 
@@ -962,8 +963,8 @@ def dayoff(employees, selected_dates=0, repeat=0, repeat_freq=None, week_days=[]
                             name = f"{date.date()}_{employee['employee']}_{roster_type}"
                             id_list.append(name)
                             querycontent += f"""(
-                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "", 
-                                '', "Day Off", "", "", "Basic", 
+                                "{name}", "{employee["employee"]}", "{date.date()}", "", "", "",
+                                '', "Day Off", "", "", "Basic",
                                 0, "{owner}", "{owner}", "{creation}", "{creation}"
                             ),"""
 
@@ -999,8 +1000,7 @@ def assign_staff(employees, shift, request_employee_assignment):
     if not cint(request_employee_assignment):
         for emp in json.loads(employees):
             emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
-            supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
-            if user_employee.name != supervisor:
+            if user_employee.name != get_shift_supervisor(emp_shift):
                 validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
 
     if len(validation_logs) > 0:

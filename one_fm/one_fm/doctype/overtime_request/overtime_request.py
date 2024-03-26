@@ -7,6 +7,7 @@ from frappe.utils import time_diff_in_hours, getdate, cstr
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from frappe import _
 from frappe.utils import rounded
+from one_fm.operations.doctype.operations_shift.operation_shift import get_shift_supervisor, get_shift_supervisor_user
 
 class OvertimeRequest(Document):
 
@@ -62,7 +63,7 @@ class OvertimeRequest(Document):
 
 			if self.request_type == "Operations":
 				shift_name = frappe.db.get_value("Employee",{'name':self.employee},['shift'])
-				supervisor_name = frappe.db.get_value("Operations Shift",{'name':shift_name},['supervisor_name'])
+				supervisor_name = get_shift_supervisor()
 				employee_user_id = get_employee_user_id(self.employee)
 				subject = _("{employee} has Requested for Overtime Shift on {date}.".format(employee=supervisor_name, date=date))
 				message = _("{employee} has Requested for Overtime Shift on {date}.".format(employee=supervisor_name, date=date))
@@ -78,8 +79,7 @@ class OvertimeRequest(Document):
 
 			if self.request_type == "Operations":
 				shift_name, employee_name = frappe.db.get_value("Employee",{'name':self.employee},['shift', 'employee_name'])
-				supervisor= frappe.db.get_value("Operations Shift",{'name':shift_name},['supervisor'])
-				supervisor_user_id = get_employee_user_id(supervisor)
+				supervisor_user_id = get_shift_supervisor_user(shift_name)
 				subject = _("{employee} has Accepted The Overtime Request on {date}.".format(employee=employee_name, date=date))
 				message = _("{employee} has Accepted The Overtime Request on {date}.".format(employee=employee_name, date=date))
 				create_notification_log(subject, message, [supervisor_user_id], self)
@@ -89,15 +89,13 @@ class OvertimeRequest(Document):
 			if self.request_type == "Head Office":
 				reports_to, employee_name = frappe.db.get_value("Employee",{'name':self.employee},['reports_to', 'employee_name'])
 				supervisor_user_id = get_employee_user_id(reports_to)
-				supervisor_user_id = get_employee_user_id(reports_to)
 				subject = _("{employee} has Rejected The Overtime Request for {hours} Hours on {date}.".format(employee=employee_name, hours=rounded(self.overtime_hours,1), date=date))
 				message = _("{employee} has Rejected The Overtime Request for {hours} Hours on {date}.".format(employee=employee_name, hours=rounded(self.overtime_hours,1), date=date))
 				create_notification_log(subject, message, [supervisor_user_id], self)
 
 			if self.request_type == "Operations":
 				shift_name, employee_name = frappe.db.get_value("Employee",{'name':self.employee},['shift', 'employee_name'])
-				supervisor= frappe.db.get_value("Operations Shift",{'name':shift_name},['supervisor'])
-				supervisor_user_id = get_employee_user_id(supervisor)
+				supervisor_user_id = get_shift_supervisor_user(shift_name)
 				subject = _("{employee} has Rejected The Overtime Request on {date}.".format(employee=employee_name, date=date))
 				message = _("{employee} has Rejected The Overtime Request on {date}.".format(employee=employee_name, date=date))
 				create_notification_log(subject, message, [supervisor_user_id], self)

@@ -114,7 +114,7 @@ class LeaveApplicationOverride(LeaveApplication):
                                 self.leave_type, leave_type.applicable_after
                             )
                         )
-                        
+
     def validate_reliever(self):
         if self.custom_reliever_ == self.employee:
             frappe.throw("Oops! You can't assign yourself as the reliever!")
@@ -559,7 +559,7 @@ def change_employee_status(employee_list, status):
                 reassign_to_applicant(employee=e.employee, leave_name=e.name)
         except:
             frappe.log_error(frappe.get_traceback(), "Error occurred while trying to reassign duties")
-        
+
     frappe.db.commit()
 
 
@@ -592,12 +592,13 @@ class ReassignDutiesToReliever(NotifyAttendanceManagerOnStatusChange):
         self._reliever = reliever
         self._reassigned_documents = dict()
         self._leave_name = leave_name
-    
+
     def reassign_operations_shift_supervisor(self):
         operation_shift_supervisors = self._operations_shift_supervisor
         if operation_shift_supervisors:
             for obj in operation_shift_supervisors:
-                frappe.db.set_value("Operations Shift", obj, "supervisor", self._reliever.name)
+                pass
+                # frappe.db.set_value("Operations Shift", obj, "supervisor", self._reliever.name)
             self._reassigned_documents.update({"Operations Shift": operation_shift_supervisors})
 
 
@@ -615,7 +616,7 @@ class ReassignDutiesToReliever(NotifyAttendanceManagerOnStatusChange):
             for obj in projects_manager:
                 frappe.db.set_value("Project", obj, "account_manager", self._reliever.name)
             self._reassigned_documents.update({"Project": projects_manager})
-    
+
     def reassign_reports_to(self):
         reports_to = self._employee_reports_to
         if reports_to:
@@ -651,7 +652,7 @@ class ReassignDutiesToReliever(NotifyAttendanceManagerOnStatusChange):
                 reassigned_documents.reassigned_doctype=key
                 reassigned_documents.names=str(value)
                 reassigned_documents.insert()
-                
+
 
 class ReassignDocumentToLeaveApplicant:
 
@@ -659,15 +660,16 @@ class ReassignDocumentToLeaveApplicant:
         self._employee = employee
         self._reassigned_documents = reassigned_documents
 
-    
+
     def reassign_operations_site(self, sites: list):
         for obj in sites:
             frappe.db.set_value("Operations Site", obj, "account_supervisor", self._employee.name)
 
-    
+
     def reassign_operation_shift(self, shifts: list):
         for obj in shifts:
-            frappe.db.set_value("Operations Shift", obj, "supervisor", self._employee.name)
+            pass
+            # frappe.db.set_value("Operations Shift", obj, "supervisor", self._employee.name)
 
     def reassign_projects(self, projects: list):
         for obj in projects:
@@ -676,22 +678,22 @@ class ReassignDocumentToLeaveApplicant:
     def reassign_reports_to(self, reports_to: list):
         for obj in reports_to:
             frappe.db.set_value("Employee", obj, "reports_to", self._employee.name)
-            
+
     def reassign_general_settings(self, settings: list):
         for obj in settings:
             frappe.db.set_value("Operation Settings", "Operation Settings", obj, self._employee.user_id)
-            
+
     def reassign_operation_settings(self, settings: list):
         for obj in settings:
             frappe.db.set_value("ONEFM General Setting", "ONEFM General Setting", obj, self._employee.name)
-            
-    
+
+
     def reassign(self):
         documents = {obj.get("reassigned_doctype"): literal_eval(obj.get("names"))for obj in self._reassigned_documents}
         for key, value in documents.items():
             if key == "Operations Site":
                 self.reassign_operations_site(sites=value)
-            
+
             if key == "Operations Shift":
                 self.reassign_operation_shift(shifts=value)
 
@@ -700,13 +702,9 @@ class ReassignDocumentToLeaveApplicant:
 
             if key == "Employee":
                 self.reassign_reports_to(reports_to=value)
-            
+
             if key == "Operation Settings":
                 self.reassign_general_settings(settings=value)
-            
+
             if key == "ONEFM General Setting":
                 self.reassign_operation_settings(settings=value)
-
-
-            
-

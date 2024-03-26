@@ -33,14 +33,19 @@ class RosterDayOffChecker(Document):
 def check_roster_day_off():
 	payroll_cycle = get_payroll_cycle()
 	employees = frappe.db.sql("""
-		SELECT * FROM `tabEmployee` 
+		SELECT * FROM `tabEmployee`
 			WHERE
-		status='Active' AND shift_working=1 
+		status='Active' AND shift_working=1
 	""", as_dict=True)
 
 	# get project supervisors
 	project_supervisors = frappe.db.sql("""
-		SELECT supervisor, project FROM `tabOperations Shift` 
+		SELECT
+            ch.supervisor, p.project
+        FROM
+            `tabOperations Shift` p, `tabOperations Shift Supplier` ch
+        WHERE
+            p.name=ch.parent and p.status='Active'
 		GROUP BY project
 	""", as_dict=1)
 
@@ -68,7 +73,7 @@ def create_record(supervisor, detail):
 	creation = now()
 	owner = frappe.session.user
 	date = str(getdate())
-	employee_list = frappe.db.get_list("Employee", 
+	employee_list = frappe.db.get_list("Employee",
 		fields=['name', 'employee_name', 'employee_id', 'day_off_category', 'number_of_days_off'])
 	employee_dict = {}
 	for i in employee_list:
@@ -87,19 +92,19 @@ def create_record(supervisor, detail):
 	}).insert(ignore_permissions=True)
 	frappe.db.commit()
 	query = query = """
-		INSERT INTO `tabRoster Day Off Detail` (`name`, `employee`, `employee_id`, `employee_name`, `monthweek`, 
-		`day_off_category`, `number_of_days_off`, `day_off_schedule`, `days_off_ot`, `day_off_difference`, 
+		INSERT INTO `tabRoster Day Off Detail` (`name`, `employee`, `employee_id`, `employee_name`, `monthweek`,
+		`day_off_category`, `number_of_days_off`, `day_off_schedule`, `days_off_ot`, `day_off_difference`,
 		`owner`, `modified_by`, `creation`, `modified`, `parent`, `parenttype`, `parentfield`, `idx`)
-		VALUES 
+		VALUES
 	"""
 	idx = 1
 	for i in detail:
 		emp = employee_dict[i['employee']]
 		child_name = f"{doc.name}-{emp.name}-{str(creation)}-{random.random()}"
 		query += f"""
-			("{child_name}", "{emp.name}", "{emp.employee_id}", "{emp.employee_name}", "{i['monthweek']}", 
-			"{emp.day_off_category}", {emp.number_of_days_off}, "{i['day_off_schedule']}", '{i['days_off_ot']}', 
-			"{i['day_off_difference']}", "{owner}", "{owner}", "{creation}", "{creation}", "{doc.name}", "{doc.doctype}", 
+			("{child_name}", "{emp.name}", "{emp.employee_id}", "{emp.employee_name}", "{i['monthweek']}",
+			"{emp.day_off_category}", {emp.number_of_days_off}, "{i['day_off_schedule']}", '{i['days_off_ot']}',
+			"{i['day_off_difference']}", "{owner}", "{owner}", "{creation}", "{creation}", "{doc.name}", "{doc.doctype}",
 			"detail", {idx}
 			),"""
 		idx += 1
@@ -195,7 +200,7 @@ def validate_offs(emp, project_cycle, supervisor):
 					'employee': emp.name,
 					'day_off_difference': day_off_diff
 				})
-				
+
 			start_date = add_days(end_date, 1)
 			end_date = add_days(start_date, 6)
 	return frappe._dict({'supervisor': supervisor, 'data': datalist})
