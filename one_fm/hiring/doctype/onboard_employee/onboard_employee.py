@@ -133,7 +133,7 @@ class OnboardEmployee(Document):
 		if self.duty_commencement_status == 'Applicant Signed and Uploaded' or self.employment_type == 'Service Provider' and not self.employee:
 			if not self.leave_policy:
 				frappe.throw(_("Select Leave Policy before Creating Employee!"))
-			if not self.reports_to:
+			if not self.reports_to and not self.shift_working:
 				frappe.throw(_("Select reports to user!"))
 			if self.job_offer:
 				employee_exists = get_employee_record_exists_for_job_offer_or_job_applicant(self.job_offer, self.job_applicant)

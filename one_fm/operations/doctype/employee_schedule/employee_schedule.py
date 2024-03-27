@@ -39,8 +39,8 @@ class EmployeeSchedule(Document):
 			self.start_datetime = ''
 			self.end_datetime = ''
 			self.project = ''
-
-		validate_operations_post_overfill({self.date: 1}, self.shift)
+		if self.employee_availability=='Working':
+			validate_operations_post_overfill({self.date: 1}, self.shift)
 
 	def validate_offs(self):
 		"""
