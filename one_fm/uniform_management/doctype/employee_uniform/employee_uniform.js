@@ -27,8 +27,8 @@ frappe.ui.form.on('Employee Uniform', {
 			// frappe.meta.get_docfield("Employee Uniform Item", 'quantity', frm.doc.name).label = 'Return Qty';
 		}
 	},
-	reason_for_return: function(frm) {
-
+	has_employee_left: function(frm) {
+		update_employees_list(frm)
 	},
 	get_item_data: function(frm, item) {
 		if (!item.item || frm.doc.type=='Return') return;
@@ -109,4 +109,14 @@ var set_uniform_details = function(frm) {
 			freeze_message: __('Fetching Uniform Details..')
 		});
 	}
+};
+
+var update_employees_list = function(frm) {
+	frm.set_query('employee', () => {
+		return {
+			filters: {
+				status: frm.doc.has_employee_left ? 'Left' : 'Active',
+			}
+		};
+	});
 };

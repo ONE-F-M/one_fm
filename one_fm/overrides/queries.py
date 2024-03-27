@@ -67,10 +67,14 @@ def employee_query(doctype, txt, searchfield, start, page_len, filters):
     conditions = []
     fields = get_fields(doctype, ["name", "employee_name", "employee_id"])
 
+    filters = filters or {}
+    
+    if not filters.get('status'):
+        filters['status'] = ['in', ['Active', 'Vacation']]
+
     return frappe.db.sql(
         """select {fields} from `tabEmployee`
-        where (status = 'Active' or status = 'Vacation')
-            and docstatus < 2
+        where docstatus < 2
             and ({key} like %(txt)s
                 or employee_name like %(txt)s
                 or employee_id like %(txt)s)
