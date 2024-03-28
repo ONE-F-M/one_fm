@@ -101,7 +101,7 @@ class JobApplicantOverride(JobApplicant):
 	def validate_transfer_reminder_date(self):
 		if self.custom_transfer_reminder_date:
 			try:
-				if datetime.strptime(self.custom_transfer_reminder_date, "%Y-%m-%d") <= datetime.strptime(str(getdate()), "%Y-%m-%d"):
+				if datetime.strptime(str(self.custom_transfer_reminder_date), "%Y-%m-%d") <= datetime.strptime(str(getdate()), "%Y-%m-%d"):
 					frappe.throw(_("Oops! You can't choose a date in the past or today. Please select a future date."))
 
 			except Exception as e:
