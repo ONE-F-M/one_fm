@@ -538,7 +538,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 end_datetime= VALUES(end_datetime)
             """
 
-            validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
+            # validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
 
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
@@ -580,7 +580,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 end_datetime= VALUES(end_datetime)
             """
 
-            validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
+            # validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
 
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
