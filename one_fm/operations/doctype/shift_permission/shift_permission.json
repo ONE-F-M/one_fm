@@ -47,7 +47,7 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.employee !=undefined && doc.date !=undefined && doc.permission_type!=\"\"",
+   "depends_on": "eval:doc.employee && doc.date",
    "fieldname": "section_break_5",
    "fieldtype": "Section Break",
    "label": "Shift Details"
@@ -215,7 +215,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-06-07 17:24:10.689160",
+ "modified": "2024-03-26 11:27:49.952758",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",

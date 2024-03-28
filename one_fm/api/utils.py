@@ -22,33 +22,6 @@ def response(code, title, msg, data=None):
         'data':data
     }
 
-
-def get_reports_to_employee_name(employee):
-    reports_to = frappe.db.get_value('Employee', employee, 'reports_to')
-    if reports_to: return reports_to
-    
-    if not reports_to:
-        site = frappe.db.get_value('Employee', employee, 'site')
-        if site:
-            return frappe.db.get_value('Operations Site', site, 'account_supervisor')
-
-    if not reports_to:
-        shift = frappe.db.get_list("Shift Assignment", filters={'employee':employee},
-            fields=['shift'], order_by="start_date DESC", page_length=1)
-        if len(shift):
-            return frappe.db.get_value("Operations Shift", shift[0].shift, 'supervisor')
-
-    # when no shift supervisor or reports to in employee use site and project
-
-    # if no site supervisor, get project manager 
-    if not reports_to:
-        project = frappe.db.get_value('Employee', employee, 'project')
-        if project:
-            return frappe.db.get_value('Project', project, 'account_manager')
-
-    if not reports_to:
-        frappe.throw(f"Employee {employee} have no reports to.")
-
 @frappe.whitelist()
 def set_up_face_recognition_server_credentials():
     try:
@@ -56,8 +29,8 @@ def set_up_face_recognition_server_credentials():
         with open(credpath, 'r') as f:
             cred = json.loads(f.read())
             res=requests.post(
-                frappe.local.conf.face_recognition_channel.get('url')+'/bigbang', 
-                json={'cred':cred, 'bucketpath':frappe.local.conf.face_recognition_channel.get('bucket')}, 
+                frappe.local.conf.face_recognition_channel.get('url')+'/bigbang',
+                json={'cred':cred, 'bucketpath':frappe.local.conf.face_recognition_channel.get('bucket')},
                 timeout=300)
         return {'error':False, 'message':'Face Recognition Server credentials setup successfully.'}
     except Exception as e:
