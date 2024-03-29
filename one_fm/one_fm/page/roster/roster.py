@@ -10,7 +10,7 @@ from itertools import product
 from one_fm.api.notification import create_notification_log
 from one_fm.api.v1.utils import response
 from one_fm.utils import query_db_list
-from one_fm.operations.doctype.employee_schedule.employee_schedule import validate_operations_post_overfill
+
 
 
 @frappe.whitelist(allow_guest=True)
@@ -488,7 +488,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             <hr>
         """
         frappe.throw(error_head+error_msg)
-
+    
+    
     if not cint(request_employee_schedule):
     # 	"""
     # 		USE DIRECT SQL TO CREATE ROSTER SCHEDULE.
@@ -498,26 +499,36 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             `operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `start_datetime`, `end_datetime`, `owner`, `modified_by`, `creation`, `modified`)
             VALUES
         """
+        list_of_date = date_range(start_date, end_date)
+        post_data = validate_overfilled_post(list_of_date,operations_shift.name)
+        post_number = post_data.get('post_number')
+        schedule_data  = post_data.get('schedule_dict')
+        if not post_number:post_number=0
+        number_to_add_daily = len(employees_dict)
+        omitted_days = []
+        
         no_of_schedules_on_date = {}
         if not cint(keep_days_off):
             id_list = [] #store for schedules list
-
+            
             for employee, date_values in employees_date_dict.items():
                 for datevalue in date_values:
-                    if datevalue['date'] in no_of_schedules_on_date:
-                        no_of_schedules_on_date[datevalue['date']] += 1
-                    else:
-                        no_of_schedules_on_date[datevalue['date']] = 1
-                    employee_doc = employees_dict.get(employee)
-                    name = f"{datevalue['date']}_{employee}_{roster_type}"
-                    id_list.append(name)
-                    query += f"""
-                        (
-                            "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{datevalue['date']}", "{operations_shift.name}",
-                            "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working",
-                            "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}",
-                            {day_off_ot}, "{datevalue.get('start_datetime')}", "{datevalue.get('end_datetime')}", "{owner}", "{owner}", "{creation}", "{creation}"
-                        ),"""
+                    if datevalue.get('date') not in omitted_days:
+                        already_scheduled = int(schedule_data.get(datevalue.get('date'),0))
+                        if number_to_add_daily+already_scheduled <= post_number:
+                            employee_doc = employees_dict.get(employee)
+                            name = f"{datevalue['date']}_{employee}_{roster_type}"
+                            id_list.append(name)
+                            query += f"""
+                                (
+                                    "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{datevalue['date']}", "{operations_shift.name}",
+                                    "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working",
+                                    "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}",
+                                    {day_off_ot}, "{datevalue.get('start_datetime')}", "{datevalue.get('end_datetime')}", "{owner}", "{owner}", "{creation}", "{creation}"
+                                ),"""
+                        else:
+                            omitted_days.append(datevalue['date'])
+                            
 
             query = query[:-1]
 
@@ -538,28 +549,36 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 end_datetime= VALUES(end_datetime)
             """
 
-            validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
+            # validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
 
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
+            if omitted_days:
+                frappe.msgprint(f"Employee Schedules were not created for {','.join(omitted_days)} because {operations_shift.name} will been overfilled for these days if {number_to_add_daily} schedule are added.  ")
         else:
             id_list = [] #store for schedules list
             for employee, date_values in employees_date_dict.items():
                 for datevalue in date_values:
-                    if datevalue['date'] in no_of_schedules_on_date:
-                        no_of_schedules_on_date[datevalue['date']] += 1
-                    else:
-                        no_of_schedules_on_date[datevalue['date']] = 1
-                    employee_doc = employees_dict.get(employee)
-                    name = f"{datevalue['date']}_{employee}_{roster_type}"
-                    id_list.append(name)
-                    query += f"""
-                        (
-                            "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{datevalue['date']}", "{operations_shift.name}",
-                            "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working",
-                            "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}",
-                            {day_off_ot}, "{datevalue.get('start_datetime')}", "{datevalue.get('end_datetime')}", "{owner}", "{owner}", "{creation}", "{creation}"
-                        ),"""
+                    if datevalue.get('date') not in omitted_days:
+                        already_scheduled = int(schedule_data.get(datevalue.get('date'),0))
+                        if number_to_add_daily+already_scheduled <= post_number:
+                            if datevalue['date'] in no_of_schedules_on_date:
+                                no_of_schedules_on_date[datevalue['date']] += 1
+                            else:
+                                no_of_schedules_on_date[datevalue['date']] = 1
+                            employee_doc = employees_dict.get(employee)
+                            name = f"{datevalue['date']}_{employee}_{roster_type}"
+                            id_list.append(name)
+                            query += f"""
+                                (
+                                    "{name}", "{employee}", "{employee_doc.employee_name}", "{employee_doc.department}", "{datevalue['date']}", "{operations_shift.name}",
+                                    "{operations_shift.site}", "{operations_shift.project}", '{operations_shift.shift_type}', "Working",
+                                    "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}",
+                                    {day_off_ot}, "{datevalue.get('start_datetime')}", "{datevalue.get('end_datetime')}", "{owner}", "{owner}", "{creation}", "{creation}"
+                                ),"""
+                        else:
+                            omitted_days.append(datevalue['date'])
+                            
 
             query = query[:-1]
 
@@ -580,10 +599,12 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 end_datetime= VALUES(end_datetime)
             """
 
-            validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
+            # validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
 
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
+            if omitted_days:
+                frappe.msgprint(f"Employee Schedules were not created for {','.join(omitted_days)} because {operations_shift.name} will been overfilled for these days if {number_to_add_daily} schedule are added.  ")
     else:
         """
             Handle request employee schedule
@@ -627,6 +648,25 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
     # update employee additional records
     frappe.enqueue(update_employee_shift, employees=employees, shift=shift, owner=owner, creation=creation)
+
+
+def validate_overfilled_post(date_list,operations_shift):
+    dates = list(set(date_list)) #Remove Duplicates
+    date_list = [e.strftime('%Y-%m-%d') for e in dates]
+    cond = False
+    schedule_dict = {}
+    base_query = f""" SELECT date ,count(name) as schedule_count from `tabEmployee Schedule`  WHERE shift = '{operations_shift}' """
+    post_number = frappe.db.sql(f""" SELECT count(name) as post_number from `tabOperations Post` where status = 'Active' and site_shift = '{operations_shift}'   """,as_dict=1)
+    post_number = post_number[0].get('post_number') if post_number else 0
+    if len(date_list)==1:
+        cond = f" AND date = {date_list[0]}"
+    elif len(date_list)>1:
+        cond = f" AND date in {tuple(date_list)}"
+    full_query = base_query+cond+" GROUP BY date"
+    schedule_number = frappe.db.sql(full_query,as_dict=1)
+    for each in schedule_number:
+        schedule_dict[each.get('date').strftime('%Y-%m-%d')] = each.schedule_count
+    return{'schedule_dict':schedule_dict,'post_number':post_number}
 
 def update_employee_shift(employees, shift, owner, creation):
     """Update employee assignment"""
