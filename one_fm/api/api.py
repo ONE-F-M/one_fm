@@ -193,7 +193,7 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
     Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
     """
     serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
-    employee_data = frappe.db.get_value("Employee", {"name": employee_id}, ["fcm_token", "device_os"])
+    employee_data = frappe.db.get_value("Employee", {"name": employee_id}, ["fcm_token", "device_os"],as_dict=1)
     deviceToken = employee_data.get("fcm_token")
     device_os = employee_data.get("device_os")
 
@@ -250,7 +250,7 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
     Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
     """
     serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
-    employee_data = frappe.db.get_value("Employee", {"name": employee_id}, ["fcm_token", "device_os"])
+    employee_data = frappe.db.get_value("Employee", {"name": employee_id}, ["fcm_token", "device_os"],as_dict=1)
     deviceToken = employee_data.get("fcm_token")
     device_os = employee_data.get("device_os")
 
