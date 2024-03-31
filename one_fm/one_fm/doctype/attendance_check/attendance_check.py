@@ -131,7 +131,13 @@ class AttendanceCheck(Document):
             self.site_supervisor = site_supervisor
 
     def validate(self):
+        self.validate_is_replaced_shift_assignment()
         self.validate_justification()
+
+    def validate_is_replaced_shift_assignment(self):
+        if self.attendance_status and self.attendance_status != "Absent" and self.shift_assignment:
+            if frappe.db.get_value("Shift Assignment", self.shift_assignment, "employee_is_replaced") == 1:
+                frappe.throw(_("You can mark Absent only for the employee, since the shift assignmet is replaced!"))
 
     def validate_justification(self):
         # The method is used to validate the justification and its dependend fields
@@ -238,7 +244,7 @@ class AttendanceCheck(Document):
                         "date":self.date,
                         "approver":approver_full_name,
                         "page_link":doc_url,
-                        "employee_name":doc.employee_name
+                        "employee_name":self.employee_name
                     }
                 )
                 frappe.throw(error_template)
@@ -248,12 +254,12 @@ class AttendanceCheck(Document):
                 frappe.throw(f"""
                     <p>
                         Please note that a shift request has not been created for
-                        <b>{doc.employee_name}</b> on <b>{doc.date}</b>
+                        <b>{self.employee_name}</b> on <b>{self.date}</b>
                     </p>
                     <hr>
                     To create a Shift Request
                     <a class="btn btn-primary btn-sm"
-                    href='{link_to_new_shift_request}?doc_id={doc.name}&doctype={doc.doctype}'
+                    href='{link_to_new_shift_request}?doc_id={self.name}&doctype={self.doctype}'
                     target="_blank" onclick=" ">
                         Click Here
                     </a>
