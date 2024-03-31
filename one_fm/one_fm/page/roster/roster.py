@@ -307,6 +307,7 @@ def get_employee_leave_attendance(employees,start_date):
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None, selected_days_only=0):
     try:
+        start_time = time.time()
         _start_date = getdate(start_date)
 
         validation_logs = []
@@ -373,12 +374,26 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
             frappe.throw(str(validation_logs))
         else:
             # extreme schedule
+            mid_time = time.time()
             extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
                 operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
                 request_employee_schedule=request_employee_schedule, employee_list=employee_list
             )
             # employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
             update_roster(key="roster_view")
+            end_time = time.time()
+            print('\n\n\n\n\n\n\n\n\n')
+            print('\n\n\n\n\n\n\n\n\n')
+            print('\n\n\n\n\n\n\n\n\n')
+            print("EXECUTION TIME FOR FULL FUNCTION")
+            print(end_time - start_time)
+            print("EXECUTION TIME FOR ONLY SCHEDULE FUNCTION")
+            print(mid_time - start_time)
+            print("EXECUTION TIME FOR ONLY EXTREME SCHEDULE FUNCTION")
+            print(end_time - mid_time)
+            print('\n\n\n\n\n\n\n\n\n')
+            print('\n\n\n\n\n\n\n\n\n')
+            print('\n\n\n\n\n\n\n\n\n')
             response("success", 200, {'message':'Successfully rostered employees'})
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Schedule Roster")
@@ -414,7 +429,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
         if new_employees:
             employees = new_employees.copy()
     # check keep days_off
-    if keep_days_off:
+    if cint(keep_days_off):
         days_off_list = frappe.db.get_list("Employee Schedule", filters={
             'employee':['IN', [i['employee'] for i in employees]],
             'date': ['IN', [i['date'] for i in employees]],
@@ -554,7 +569,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             frappe.db.sql(query, values=[], as_dict=1)
             frappe.db.commit()
             if omitted_days:
-                frappe.msgprint(f"Employee Schedules were not created for {','.join(omitted_days)} because {operations_shift.name} will been overfilled for these days if {number_to_add_daily} schedule are added.  ")
+                frappe.msgprint(f"Employee Schedules were not created for {','.join(omitted_days)} because {operations_shift.name} will been overfilled for these days if {number_to_add_daily} {'schedules' if int(number_to_add_daily)>1 else 'schedule'} are added.  ")
         else:
             id_list = [] #store for schedules list
             for employee, date_values in employees_date_dict.items():
@@ -651,6 +666,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
 
 def validate_overfilled_post(date_list,operations_shift):
+    start_time = time.time()
     dates = list(set(date_list)) #Remove Duplicates
     date_list = [e.strftime('%Y-%m-%d') for e in dates]
     cond = False
@@ -666,6 +682,15 @@ def validate_overfilled_post(date_list,operations_shift):
     schedule_number = frappe.db.sql(full_query,as_dict=1)
     for each in schedule_number:
         schedule_dict[each.get('date').strftime('%Y-%m-%d')] = each.schedule_count
+    end_time = time.time()
+    print('\n\n\n\n\n\n\n\n\n\n')
+    print('\n\n\n\n\n\n\n\n\n\n')
+    print('\n\n\n\n\n\n\n\n\n\n')
+    print('EXECUTION for VALIDATE FUNCTION')
+    print(end_time - start_time)
+    print('\n\n\n\n\n\n\n\n\n\n')
+    print('\n\n\n\n\n\n\n\n\n\n')
+    print('\n\n\n\n\n\n\n\n\n\n')
     return{'schedule_dict':schedule_dict,'post_number':post_number}
 
 def update_employee_shift(employees, shift, owner, creation):
@@ -1237,7 +1262,7 @@ def create_request_employee_assignment(employee, from_shift, to_shift):
 
 
 def assign_job(employee, shift, site, project):
-    start = time.time()
+    
     frappe.set_value("Employee", employee, "shift", shift)
     frappe.set_value("Employee", employee, "site", site)
     frappe.set_value("Employee", employee, "project", project)
