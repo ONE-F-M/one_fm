@@ -382,18 +382,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
             # employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
             update_roster(key="roster_view")
             end_time = time.time()
-            print('\n\n\n\n\n\n\n\n\n')
-            print('\n\n\n\n\n\n\n\n\n')
-            print('\n\n\n\n\n\n\n\n\n')
-            print("EXECUTION TIME FOR FULL FUNCTION")
-            print(end_time - start_time)
-            print("EXECUTION TIME FOR ONLY SCHEDULE FUNCTION")
-            print(mid_time - start_time)
-            print("EXECUTION TIME FOR ONLY EXTREME SCHEDULE FUNCTION")
-            print(end_time - mid_time)
-            print('\n\n\n\n\n\n\n\n\n')
-            print('\n\n\n\n\n\n\n\n\n')
-            print('\n\n\n\n\n\n\n\n\n')
+            
             response("success", 200, {'message':'Successfully rostered employees'})
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Schedule Roster")
@@ -685,14 +674,7 @@ def validate_overfilled_post(date_list,operations_shift):
     for each in schedule_number:
         schedule_dict[each.get('date').strftime('%Y-%m-%d')] = each.schedule_count
     end_time = time.time()
-    print('\n\n\n\n\n\n\n\n\n\n')
-    print('\n\n\n\n\n\n\n\n\n\n')
-    print('\n\n\n\n\n\n\n\n\n\n')
-    print('EXECUTION for VALIDATE FUNCTION')
-    print(end_time - start_time)
-    print('\n\n\n\n\n\n\n\n\n\n')
-    print('\n\n\n\n\n\n\n\n\n\n')
-    print('\n\n\n\n\n\n\n\n\n\n')
+    
     return{'schedule_dict':schedule_dict,'post_number':post_number}
 
 def update_employee_shift(employees, shift, owner, creation):
