@@ -414,7 +414,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
         if new_employees:
             employees = new_employees.copy()
     # check keep days_off
-    if keep_days_off:
+    if cint(keep_days_off):
         days_off_list = frappe.db.get_list("Employee Schedule", filters={
             'employee':['IN', [i['employee'] for i in employees]],
             'date': ['IN', [i['date'] for i in employees]],
@@ -432,7 +432,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             new_employees = []
             if employees and len(days_off_dict):
                 for i in employees:
-                    if not (i.get('date') in days_off_dict.get(i.get('employee'))):
+                    if not (i.get('date') in days_off_dict.get(i.get('employee'),[])):
                         new_employees.append(i)
                 if new_employees:
                     employees = new_employees.copy()
