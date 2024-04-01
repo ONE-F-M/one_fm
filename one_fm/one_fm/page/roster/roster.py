@@ -514,6 +514,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             `operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `start_datetime`, `end_datetime`, `owner`, `modified_by`, `creation`, `modified`)
             VALUES
         """
+        can_create = False
         list_of_date = date_range(start_date, end_date)
         post_data = validate_overfilled_post(list_of_date,operations_shift.name)
         post_number = post_data.get('post_number')
@@ -541,6 +542,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                                     "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}",
                                     {day_off_ot}, "{datevalue.get('start_datetime')}", "{datevalue.get('end_datetime')}", "{owner}", "{owner}", "{creation}", "{creation}"
                                 ),"""
+                            can_create = True
                         else:
                             omitted_days.append(datevalue['date'])
                             
@@ -565,11 +567,11 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             """
 
             # validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
-
-            frappe.db.sql(query, values=[], as_dict=1)
-            frappe.db.commit()
+            if  can_create:
+                frappe.db.sql(query, values=[], as_dict=1)
+                frappe.db.commit()
             if omitted_days:
-                frappe.msgprint(f"Employee Schedules were not created for {','.join(omitted_days)} because {operations_shift.name} will been overfilled for these days if {number_to_add_daily} {'schedules' if int(number_to_add_daily)>1 else 'schedule'} are added.  ")
+                frappe.msgprint(f"Employee Schedules were not created for {','.join(omitted_days)} because {operations_shift.name} will been overfilled for these days if {number_to_add_daily} {'schedules are' if int(number_to_add_daily)>1 else 'schedule is'}  added.  ")
         else:
             id_list = [] #store for schedules list
             for employee, date_values in employees_date_dict.items():
@@ -591,6 +593,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                                     "{operations_role.name}", "{operations_role.post_abbrv}", "{roster_type}",
                                     {day_off_ot}, "{datevalue.get('start_datetime')}", "{datevalue.get('end_datetime')}", "{owner}", "{owner}", "{creation}", "{creation}"
                                 ),"""
+                            can_create = True
                         else:
                             omitted_days.append(datevalue['date'])
                             
@@ -614,10 +617,9 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 end_datetime= VALUES(end_datetime)
             """
 
-            # validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
-
-            frappe.db.sql(query, values=[], as_dict=1)
-            frappe.db.commit()
+            if can_create:
+                frappe.db.sql(query, values=[], as_dict=1)
+                frappe.db.commit()
             if omitted_days:
                 frappe.msgprint(f"Employee Schedules were not created for {','.join(omitted_days)} because {operations_shift.name} will been overfilled for these days if {number_to_add_daily} schedule are added.  ")
     else:
@@ -671,7 +673,7 @@ def validate_overfilled_post(date_list,operations_shift):
     date_list = [e.strftime('%Y-%m-%d') for e in dates]
     cond = False
     schedule_dict = {}
-    base_query = f""" SELECT date ,count(name) as schedule_count from `tabEmployee Schedule`  WHERE shift = '{operations_shift}' """
+    base_query = f""" SELECT date ,count(name) as schedule_count from `tabEmployee Schedule`  WHERE shift = '{operations_shift}' and employee_availability = 'Working' """
     post_number = frappe.db.sql(f""" SELECT count(name) as post_number from `tabOperations Post` where status = 'Active' and site_shift = '{operations_shift}'   """,as_dict=1)
     post_number = post_number[0].get('post_number') if post_number else 0
     if len(date_list)==1:
