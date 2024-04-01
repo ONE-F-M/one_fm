@@ -490,13 +490,11 @@ def mark_all_attendance():
     from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
     start_date = add_days(getdate(), -1)
     end_date =  getdate()
-    print(start_date, end_date)
-    # approve_open_shift_permission(str(start_date), str(end_date))
-    approve_pending_employee_checkin_issue(date=start_date)
- 
-    # frappe.enqueue(mark_open_timesheet_and_create_attendance)
-    # frappe.enqueue(mark_leave_attendance)
-    # frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
+    approve_open_shift_permission(str(start_date), str(end_date))
+    frappe.enqueue(approve_pending_employee_checkin_issue)
+    frappe.enqueue(mark_open_timesheet_and_create_attendance)
+    frappe.enqueue(mark_leave_attendance)
+    frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_daily_attendance(start_date, end_date):
     try:
@@ -746,8 +744,8 @@ def mark_open_timesheet_and_create_attendance():
         except Exception as e:
             print(e)
 
-def approve_pending_employee_checkin_issue(date):
-    pending_eci = frappe.db.get_list("Employee Checkin Issue", {"workflow_state": "Pending Approval", "date": date}, pluck="name")
+def approve_pending_employee_checkin_issue():
+    pending_eci = frappe.db.get_list("Employee Checkin Issue", {"workflow_state": "Pending Approval", "date": add_days(getdate(), -1)}, pluck="name")
     if pending_eci:
         for obj in pending_eci:
             try:
@@ -1016,8 +1014,6 @@ class AttendanceMarking():
                                         status = "Present"
                                         comment = ""
                                 elif i.earliest_time and not i.latest_time:
-                                    print(i.shift_actual_end, i.earliest_time)
-                                    print((i.shift_actual_end - i.earliest_time).total_seconds() / (60*60))
                                     working_hours = (i.shift_actual_end - i.earliest_time).total_seconds() / (60*60)
                                     if working_hours < half_hour:
                                         status = "Absent"
@@ -1172,9 +1168,7 @@ def run_attendance_marking_hourly():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""
     attendance_marking = AttendanceMarking()
     attendance_marking.get_datetime()
-    print(attendance_marking.start, attendance_marking.end)
-    attendance_marking.mark_shift_attendance()
-    # frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
+    frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
 
 def mark_day_off_for_yesterday():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""
