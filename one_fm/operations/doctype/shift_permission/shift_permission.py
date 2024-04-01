@@ -173,6 +173,7 @@ def approve_open_shift_permission(start_date, end_date):
 			SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa
 			ON sa.name=sp.assigned_shift
 			WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}'
+			AND sa.is_replaced = 0
 			AND sp.workflow_state='Pending Approver' AND sp.docstatus=0
 		""", as_dict=1)
 		# apply workflow

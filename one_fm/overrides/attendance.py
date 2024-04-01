@@ -487,13 +487,16 @@ def mark_overtime_attendance(from_date, to_date):
 
 
 def mark_all_attendance():
-	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
-	start_date = add_days(getdate(), -1)
-	end_date =  getdate()
-	approve_open_shift_permission(str(start_date), str(end_date))
-	frappe.enqueue(mark_open_timesheet_and_create_attendance)
-	frappe.enqueue(mark_leave_attendance)
-	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
+    from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
+    start_date = add_days(getdate(), -1)
+    end_date =  getdate()
+    print(start_date, end_date)
+    # approve_open_shift_permission(str(start_date), str(end_date))
+    approve_pending_employee_checkin_issue(date=start_date)
+ 
+    # frappe.enqueue(mark_open_timesheet_and_create_attendance)
+    # frappe.enqueue(mark_leave_attendance)
+    # frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_daily_attendance(start_date, end_date):
     try:
@@ -743,6 +746,17 @@ def mark_open_timesheet_and_create_attendance():
         except Exception as e:
             print(e)
 
+def approve_pending_employee_checkin_issue(date):
+    pending_eci = frappe.db.get_list("Employee Checkin Issue", {"workflow_state": "Pending Approval", "date": date}, pluck="name")
+    if pending_eci:
+        for obj in pending_eci:
+            try:
+                apply_workflow(frappe.get_doc("Employee Checkin Issue", obj), "Approve")
+            except Exception as e:
+                print(e)
+            frappe.db.commit()
+
+
 def mark_leave_attendance():
     try:
         date = add_days(getdate(), -1)
@@ -907,8 +921,8 @@ class AttendanceMarking():
             client_shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
-                WHERE
-                sa.start_date='{self.start.date()}'
+                WHERE sa.is_replaced = 0
+                AND sa.start_date='{self.start.date()}'
                 AND op.attendance_by_client=1 AND op.docstatus=1
                 ;
             """, as_dict=1)
@@ -919,23 +933,23 @@ class AttendanceMarking():
             shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
-                WHERE
-                sa.start_date='{self.start.date()}'
+                WHERE sa.is_replaced = 0         
+                AND sa.start_date='{self.start.date()}'
                 AND op.attendance_by_client=0 AND op.status='Active'
             """, as_dict=1)
             non_shifts = frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabEmployee` e ON sa.employee=e.name
-                WHERE
-                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                WHERE sa.is_replaced = 0                   
+                AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND e.shift_working=0""", as_dict=1)
             shifts.extend(non_shifts)
         else:
             client_shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
-                WHERE
-                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                WHERE sa.is_replaced = 0
+                AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND op.attendance_by_client=1 AND op.status='Active'
                 ;
                 """, as_dict=1)
@@ -946,21 +960,21 @@ class AttendanceMarking():
             shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
-                WHERE
-                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                WHERE sa.is_replaced = 0
+                AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND op.attendance_by_client=0 AND op.status='Active'
             """, as_dict=1)
             non_shifts = frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabEmployee` e ON sa.employee=e.name
-                WHERE
-                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                WHERE sa.is_replaced = 0
+                AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND e.shift_working=0""", as_dict=1)
             shifts.extend(non_shifts)
 
-
+        
         if shifts:
-            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0].name))
+            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0].name, ))
             if checkins:
                 # employees = [i.employee for i in shifts]
                 checked_in_employees = [i.employee for i in checkins]
@@ -986,7 +1000,7 @@ class AttendanceMarking():
                                     "On Hold", "Work From Home"]]
                                 }):
                                 total_hours = (i.shift_actual_end - i.shift_actual_start).total_seconds() / (60*60)
-                                half_hour = total_hours/2
+                                half_hour = total_hours / 2
                                 working_hours = 0
                                 status = "Absent"
                                 comment = ""
@@ -1002,6 +1016,8 @@ class AttendanceMarking():
                                         status = "Present"
                                         comment = ""
                                 elif i.earliest_time and not i.latest_time:
+                                    print(i.shift_actual_end, i.earliest_time)
+                                    print((i.shift_actual_end - i.earliest_time).total_seconds() / (60*60))
                                     working_hours = (i.shift_actual_end - i.earliest_time).total_seconds() / (60*60)
                                     if working_hours < half_hour:
                                         status = "Absent"
@@ -1049,6 +1065,7 @@ class AttendanceMarking():
             ec.post_abbrv,
             ec.shift_permission,
             ec.actual_time,
+            ec.is_replaced,
             MIN(CASE WHEN ec.log_type = 'IN' THEN ec.time END) AS earliest_time,
             MAX(CASE WHEN ec.log_type = 'OUT' THEN ec.time END) AS latest_time,
             MIN(CASE WHEN ec.log_type = 'IN' THEN ec.name END) AS in_name,
@@ -1057,6 +1074,8 @@ class AttendanceMarking():
             `tabEmployee Checkin` ec
         WHERE
             ec.shift_assignment in {shift_assignments}
+            AND ec.is_replaced = 0
+            
         GROUP BY
             ec.shift_assignment;
         """
@@ -1064,7 +1083,7 @@ class AttendanceMarking():
 
     def mark_day_off(self):
         days_off = frappe.get_list("Employee Schedule", {
-            'date':self.start.date(), 'employee_availability':'Day Off'
+            'date':self.start.date(), 'employee_availability':'Day Off', "is_replaced": 0
         }, "*")
         for i in days_off:
             try:
@@ -1153,7 +1172,9 @@ def run_attendance_marking_hourly():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""
     attendance_marking = AttendanceMarking()
     attendance_marking.get_datetime()
-    frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
+    print(attendance_marking.start, attendance_marking.end)
+    attendance_marking.mark_shift_attendance()
+    # frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
 
 def mark_day_off_for_yesterday():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""

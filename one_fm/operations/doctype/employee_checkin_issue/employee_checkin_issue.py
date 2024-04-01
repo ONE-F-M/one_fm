@@ -22,7 +22,7 @@ class EmployeeCheckinIssue(Document):
 		self.check_shift_details_value()
 		self.validate_date()
 		self.validate_duplicate_record()
-		if self.workflow_state in ['Pending', 'Approved']:
+		if self.workflow_state in {'Pending Approval', 'Approved'}:
 			self.validate_attendance()
 			self.validate_employee_checkin()
 
