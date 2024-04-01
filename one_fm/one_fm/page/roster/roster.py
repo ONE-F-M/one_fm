@@ -307,7 +307,7 @@ def get_employee_leave_attendance(employees,start_date):
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None, selected_days_only=0):
     try:
-        start_time = time.time()
+   
         _start_date = getdate(start_date)
 
         validation_logs = []
@@ -374,14 +374,14 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
             frappe.throw(str(validation_logs))
         else:
             # extreme schedule
-            mid_time = time.time()
+            
             extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
                 operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
                 request_employee_schedule=request_employee_schedule, employee_list=employee_list
             )
             # employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
             update_roster(key="roster_view")
-            end_time = time.time()
+            
             
             response("success", 200, {'message':'Successfully rostered employees'})
     except Exception as e:
@@ -657,7 +657,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
 
 def validate_overfilled_post(date_list,operations_shift):
-    start_time = time.time()
+    
     dates = list(set(date_list)) #Remove Duplicates
     date_list = [e.strftime('%Y-%m-%d') for e in dates]
     cond = False
@@ -673,7 +673,7 @@ def validate_overfilled_post(date_list,operations_shift):
     schedule_number = frappe.db.sql(full_query,as_dict=1)
     for each in schedule_number:
         schedule_dict[each.get('date').strftime('%Y-%m-%d')] = each.schedule_count
-    end_time = time.time()
+    
     
     return{'schedule_dict':schedule_dict,'post_number':post_number}
 
@@ -1219,7 +1219,7 @@ def assign_staff(employees, shift, request_employee_assignment):
         frappe.log_error(str(validation_logs))
     else:
         try:
-            start = time.time()
+            
             for employee in json.loads(employees):
                 if not cint(request_employee_assignment):
                     frappe.enqueue(assign_job, employee=employee, shift=shift, site=site, project=project, is_async=True, queue="long")
