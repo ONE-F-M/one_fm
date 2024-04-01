@@ -484,27 +484,30 @@ def mark_overtime_attendance(from_date, to_date):
         mark_for_shift_assignment(employee.name, from_date, roster_type='Over-Time')
 
 
+
+
 def mark_all_attendance():
-	from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
-	start_date = add_days(getdate(), -1)
-	end_date =  getdate()
-	approve_open_shift_permission(str(start_date), str(end_date))
-	frappe.enqueue(mark_open_timesheet_and_create_attendance)
-	frappe.enqueue(mark_leave_attendance)
-	frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
+    from one_fm.operations.doctype.shift_permission.shift_permission import approve_open_shift_permission
+    start_date = add_days(getdate(), -1)
+    end_date =  getdate()
+    approve_open_shift_permission(str(start_date), str(end_date))
+    frappe.enqueue(approve_pending_employee_checkin_issue)
+    frappe.enqueue(mark_open_timesheet_and_create_attendance)
+    frappe.enqueue(mark_leave_attendance)
+    frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_daily_attendance(start_date, end_date):
     try:
         creation = now()
         owner = frappe.session.user
         naming_series = 'HR-ATT-.YYYY.-'
-        existing_attendance = [i.employee for i in frappe.get_list("Attendance", {
+        existing_attendance = frappe.get_list("Attendance", {
             'attendance_date':start_date,
             'roster_type':'Basic', 'status':['IN', ['Present', 'Holiday', 'On Leave',
             'Work From Home', 'On Hold', 'Day Off']]
             },
-            "employee"
-        )]
+            pluck="employee"
+        )
 
         query = """
             INSERT INTO `tabAttendance` (`name`, `naming_series`,`employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
@@ -603,16 +606,17 @@ def mark_daily_attendance(start_date, end_date):
                 ),"""
 
         attendance_request = frappe.db.sql(f"""
-                SELECT e.name, e.employee_name, e.company, e.department, ar.name as ar_name from `tabEmployee` e
+                SELECT e.name, e.employee_name, e.company, e.department, ar.name as ar_name, ar.reason as ar_reason from `tabEmployee` e  
                 INNER JOIN `tabAttendance Request` ar ON ar.employee =e.name
                 WHERE '{start_date}' BETWEEN ar.from_date AND ar.to_date
                 AND ar.workflow_state='Approved'
                 AND e.status='Active'
                 """, as_dict=1
             )
-
+        
         # create BASIC DAY OFF
         for i in attendance_request:
+            status = "Work From Home" if i.ar_reason == "Work From Home" else "Present"
             if not i.get('ar_name'):
                 i.ar_name = i.description
             if not i.name in existing_attendance:
@@ -628,11 +632,17 @@ def mark_daily_attendance(start_date, end_date):
                     continue
                 query_body+= f"""
                 (
-                    "HR-ATT_{start_date}_{i.name}_Basic", "{naming_series}" , "{i.name}", "{i.employee_name}", 0,  "Work From Home", '', NULL,
+                    "HR-ATT_{start_date}_{i.name}_Basic", "{naming_series}" , "{i.name}", "{i.employee_name}", 0,  "{status}", '', NULL,
                     NULL, "", "", "", "", "{start_date}", "{i.company}",
                     "{i.department}", 0, 0, "", "", "Basic", 1, "{owner}",
                     "{owner}", "{creation}", "{creation}", "Attendance Request - {i.ar_name}"
                 ),"""
+
+            else:
+                att_name = frappe.db.get_value("Attendance", {"employee": i.name, "attendance_date": start_date}, "name")
+                if att_name:
+                    frappe.db.set_value("Attendance", att_name, "status", status)
+
 
         # UPDATE QUERY
         if query_body:
@@ -726,13 +736,24 @@ def update_day_off_ot(attendances):
 
 
 def mark_open_timesheet_and_create_attendance():
-    timesheets = frappe.get_list("Timesheet", {'workflow_state':'Open',
+    timesheets = frappe.get_list("Timesheet", {'workflow_state':'Pending Approval', 
         'start_date':add_days(getdate(), -1)})
     for i in timesheets:
         try:
             apply_workflow(frappe.get_doc("Timesheet", i.name), 'Approve')
         except Exception as e:
             print(e)
+
+def approve_pending_employee_checkin_issue():
+    pending_eci = frappe.db.get_list("Employee Checkin Issue", {"workflow_state": "Pending Approval", "date": add_days(getdate(), -1)}, pluck="name")
+    if pending_eci:
+        for obj in pending_eci:
+            try:
+                apply_workflow(frappe.get_doc("Employee Checkin Issue", obj), "Approve")
+            except Exception as e:
+                print(e)
+            frappe.db.commit()
+
 
 def mark_leave_attendance():
     try:
@@ -876,7 +897,7 @@ class AttendanceMarking():
         This class will be used to mark attendance
     """
 
-    def __ini__(self):
+    def __init__(self):
         self.attendance_type = None
         self.start = None
         self.end = None
@@ -898,8 +919,8 @@ class AttendanceMarking():
             client_shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
-                WHERE
-                sa.start_date='{self.start.date()}'
+                WHERE sa.is_replaced = 0
+                AND sa.start_date='{self.start.date()}'
                 AND op.attendance_by_client=1 AND op.docstatus=1
                 ;
             """, as_dict=1)
@@ -910,23 +931,23 @@ class AttendanceMarking():
             shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
-                WHERE
-                sa.start_date='{self.start.date()}'
+                WHERE sa.is_replaced = 0         
+                AND sa.start_date='{self.start.date()}'
                 AND op.attendance_by_client=0 AND op.status='Active'
             """, as_dict=1)
             non_shifts = frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabEmployee` e ON sa.employee=e.name
-                WHERE
-                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                WHERE sa.is_replaced = 0                   
+                AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND e.shift_working=0""", as_dict=1)
             shifts.extend(non_shifts)
         else:
             client_shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
-                WHERE
-                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                WHERE sa.is_replaced = 0
+                AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND op.attendance_by_client=1 AND op.status='Active'
                 ;
                 """, as_dict=1)
@@ -937,19 +958,21 @@ class AttendanceMarking():
             shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
-                WHERE
-                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                WHERE sa.is_replaced = 0
+                AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND op.attendance_by_client=0 AND op.status='Active'
             """, as_dict=1)
             non_shifts = frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabEmployee` e ON sa.employee=e.name
-                WHERE
-                sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
+                WHERE sa.is_replaced = 0
+                AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND e.shift_working=0""", as_dict=1)
             shifts.extend(non_shifts)
+
+        
         if shifts:
-            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0].name))
+            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0].name, ))
             if checkins:
                 # employees = [i.employee for i in shifts]
                 checked_in_employees = [i.employee for i in checkins]
@@ -975,7 +998,7 @@ class AttendanceMarking():
                                     "On Hold", "Work From Home"]]
                                 }):
                                 total_hours = (i.shift_actual_end - i.shift_actual_start).total_seconds() / (60*60)
-                                half_hour = total_hours/2
+                                half_hour = total_hours / 2
                                 working_hours = 0
                                 status = "Absent"
                                 comment = ""
@@ -1038,6 +1061,7 @@ class AttendanceMarking():
             ec.post_abbrv,
             ec.shift_permission,
             ec.actual_time,
+            ec.is_replaced,
             MIN(CASE WHEN ec.log_type = 'IN' THEN ec.time END) AS earliest_time,
             MAX(CASE WHEN ec.log_type = 'OUT' THEN ec.time END) AS latest_time,
             MIN(CASE WHEN ec.log_type = 'IN' THEN ec.name END) AS in_name,
@@ -1046,6 +1070,8 @@ class AttendanceMarking():
             `tabEmployee Checkin` ec
         WHERE
             ec.shift_assignment in {shift_assignments}
+            AND ec.is_replaced = 0
+            
         GROUP BY
             ec.shift_assignment;
         """
@@ -1053,7 +1079,7 @@ class AttendanceMarking():
 
     def mark_day_off(self):
         days_off = frappe.get_list("Employee Schedule", {
-            'date':self.start.date(), 'employee_availability':'Day Off'
+            'date':self.start.date(), 'employee_availability':'Day Off', "is_replaced": 0
         }, "*")
         for i in days_off:
             try:

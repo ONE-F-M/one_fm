@@ -56,7 +56,7 @@ class TimesheetOveride(Timesheet):
             frappe.throw("Total Hours cannot be 0 or less.")
 
     def on_update(self):
-        if self.workflow_state == 'Open':
+        if self.workflow_state == 'Pending Approval':
             send_workflow_action_email(self, [self.approver])
             message = "The timesheet {0} of {1}, Open for your Approval".format(self.name, self.employee_name)
             create_notification_log("Pending - Workflow Action on Timesheet", message, [self.approver], self)
@@ -67,7 +67,7 @@ class TimesheetOveride(Timesheet):
         if self.workflow_state == "Approved":
             self.check_approver()
             self.create_attendance()
-        elif self.workflow_state == "Rejected":
+        elif self.workflow_state == "Canceled":
             self.check_approver()
             self.notify_the_employee()
 
