@@ -13,7 +13,7 @@ from one_fm.utils import (
 class AttendanceRequestOverride(AttendanceRequest):
 	def validate(self):
 		validate_active_employee(self.employee)
-		validate_dates(self, self.from_date, self.to_date)
+		# validate_dates(self, self.from_date, self.to_date)
 		if self.half_day:
 			if not getdate(self.from_date) <= getdate(self.half_day_date) <= getdate(self.to_date):
 				frappe.throw(_("Half day date should be in between from date and to date"))
@@ -84,7 +84,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 			working_hours = frappe.db.get_value('Shift Type', shift_assignment.shift_type, 'duration')  if shift_assignment  else 8
 			# check if attendance exists
 			attendance_name = super(AttendanceRequestOverride, self).get_attendance_record(attendance_date)
-			status = "Work From Home"
+			status = "Present" if self.reason == "On Duty" else "Work From Home"
 			if attendance_name:
 				# update existing attendance, change the status
 				doc = frappe.get_doc("Attendance", attendance_name)
