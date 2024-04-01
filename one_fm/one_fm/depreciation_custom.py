@@ -3,7 +3,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, today, getdate, cint
 from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import get_checks_for_pl_and_bs_accounts
-from erpnext.assets.doctype.asset.depreciation import get_depreciable_assets
+from erpnext.assets.doctype.asset.depreciation import get_depreciable_asset_depr_schedules_data
 
 def post_depreciation_entries(date=None):
 	# Return if automatic booking of asset depreciation is disabled
@@ -12,7 +12,7 @@ def post_depreciation_entries(date=None):
 
 	if not date:
 		date = today()
-	for asset in get_depreciable_assets(date):
+	for asset in get_depreciable_asset_depr_schedules_data(date):
 		make_depreciation(asset, date)
 		frappe.db.commit()
 

@@ -1,12 +1,14 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "naming_series:",
  "creation": "2023-11-13 14:43:01.670150",
  "default_view": "List",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "naming_series",
   "date",
   "shift_section",
   "operations_shift",
@@ -118,14 +120,22 @@
   {
    "fieldname": "section_break_djoqr",
    "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "MSC-.YYYY.-.MM.-.DD.-.####"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-11-14 13:52:30.358763",
+ "modified": "2023-12-08 18:14:26.576378",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Missing Checkin",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {

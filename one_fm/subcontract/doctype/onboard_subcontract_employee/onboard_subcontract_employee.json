@@ -38,9 +38,10 @@
   "day_off_category",
   "number_of_days_off",
   "date_of_joining",
-  "column_break_ci4ac",
   "employment_type",
+  "column_break_ci4ac",
   "department",
+  "designation",
   "basic_salary",
   "section_break_9kwnq",
   "provide_accommodation_by_company",
@@ -379,6 +380,7 @@
    "fetch_if_empty": 1,
    "fieldname": "department",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Department",
    "options": "Department",
    "reqd": 1
@@ -388,16 +390,22 @@
    "fieldtype": "Currency",
    "hidden": 1,
    "label": "Basic Salary"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Designation",
+   "options": "Designation"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-12-05 09:43:37.699957",
+ "modified": "2024-01-26 19:58:54.149573",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Onboard Subcontract Employee",
- "name_case": "UPPER CASE",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [

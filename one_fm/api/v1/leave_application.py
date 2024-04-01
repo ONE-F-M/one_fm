@@ -28,16 +28,16 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
             error (str): Any error handled.
         }
     """
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee_id must be of type str.")
-
-    if leave_id and not isinstance(leave_id, str):
-        return response("Bad Request", 400, None, "leave_id must be of type str.")
-
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee_id must be of type str.")
+
+        if leave_id and not isinstance(leave_id, str):
+            return response("Bad Request", 400, None, "leave_id must be of type str.")
+
         employee = frappe.db.get_value("Employee", {'employee_id':employee_id})
 
         if not employee:
@@ -66,6 +66,7 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
                 return response("Resource Not Found", 404, None, "No leave data found for {leave_id}".format(leave_id=leave_id))
 
     except Exception as error:
+        frappe.log_error(title="API Leave Detail", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
@@ -108,6 +109,7 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
             error (str): Any error handled.
         }
     """
+    return response("Success", 200, [])
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
 

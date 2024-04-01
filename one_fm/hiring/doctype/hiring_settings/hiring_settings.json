@@ -17,10 +17,14 @@
   "performance_profile_guid",
   "job_offer_section",
   "notify_finance_department_for_job_offer_salary_advance",
+  "default_terms_and_conditions",
   "job_applicaion_section",
+  "default_hr_manager",
+  "default_hr_manager_name",
   "easy_apply_to",
   "subcontract_hiring_settings_section",
-  "subcontract_employment_type"
+  "subcontract_employment_type",
+  "subcontract_residency_status"
  ],
  "fields": [
   {
@@ -76,7 +80,7 @@
    "collapsible": 1,
    "fieldname": "job_applicaion_section",
    "fieldtype": "Section Break",
-   "label": "Job Applicaion"
+   "label": "Job Application"
   },
   {
    "fieldname": "easy_apply_to",
@@ -114,11 +118,36 @@
    "fieldtype": "Link",
    "label": "Subcontract Employment Type",
    "options": "Employment Type"
+  },
+  {
+   "default": "0",
+   "fieldname": "subcontract_residency_status",
+   "fieldtype": "Check",
+   "label": "Subcontract Residency Status"
+  },
+  {
+   "fieldname": "default_hr_manager",
+   "fieldtype": "Link",
+   "label": "Default HR Manager",
+   "options": "User"
+  },
+  {
+   "fetch_from": "default_hr_manager.full_name",
+   "fieldname": "default_hr_manager_name",
+   "fieldtype": "Data",
+   "label": "Default HR Manager Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "default_terms_and_conditions",
+   "fieldtype": "Link",
+   "label": "Default Terms and Conditions",
+   "options": "Terms and Conditions"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-12-05 09:34:45.053425",
+ "modified": "2024-02-27 08:29:05.173163",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

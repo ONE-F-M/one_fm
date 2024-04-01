@@ -6,10 +6,11 @@
  "engine": "InnoDB",
  "field_order": [
   "subject",
+  "user",
   "column_break_2",
   "priority",
+  "due_date",
   "column_break_4",
-  "send_notification",
   "section_break_4",
   "description"
  ],
@@ -40,22 +41,28 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "fieldname": "send_notification",
-   "fieldtype": "Check",
-   "in_list_view": 1,
-   "label": "Send Notification"
-  },
-  {
    "fieldname": "subject",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Subject"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Due Date"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2023-02-21 17:06:59.667061",
+ "modified": "2024-02-05 16:23:52.271957",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM Action",

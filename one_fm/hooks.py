@@ -111,6 +111,7 @@ doctype_js = {
     "Workflow": "public/js/doctype_js/workflow.js",
     "Stock Entry": "public/js/doctype_js/stock_entry.js",
     "Gratuity": "public/js/doctype_js/gratuity.js",
+    "Goal": "public/js/doctype_js/goal.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -190,11 +191,13 @@ has_permission = {
  	"Penalty": "one_fm.legal.doctype.penalty.penalty.has_permission",
  	"Penalty Issuance": "one_fm.legal.doctype.penalty_issuance.penalty_issuance.has_permission",
 	"Issue": "one_fm.utils.has_permission_to_issue",
+	"Notification Settings":'one_fm.overrides.notification_settings.has_permission_'
 }
 
 standard_queries = {
 	"Operations Role": "one_fm.operations.doctype.operations_role.operations_role.get_operations_role_list",
 	"Warehouse": "one_fm.overrides.queries.warehouse_query",
+    "Employee": "one_fm.overrides.queries.employee_query",
 }
 
 doc_events = {
@@ -213,8 +216,11 @@ doc_events = {
 		"on_submit": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"on_cancel": "one_fm.purchase.doctype.request_for_material.request_for_material.update_completed_purchase_qty",
 		"after_insert": "one_fm.purchase.utils.set_quotation_attachment_in_po",
-		"validate":"one_fm.purchase.utils.set_po_approver",
-		'on_update':"one_fm.purchase.utils.on_update",
+		"validate":[
+			"one_fm.purchase.utils.set_po_approver",
+			"one_fm.overrides.purchase_order.validate_purchase_uom"
+		],
+		# 'on_update':"one_fm.purchase.utils.on_update",
 		"on_update_after_submit": "one_fm.purchase.utils.set_po_letter_head"
 	},
 	"Leave Application": {
@@ -230,6 +236,10 @@ doc_events = {
 	"Leave Type": {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
+	"HD Ticket": {
+		"after_insert": "one_fm.api.doc_methods.hd_ticket.assign_to_bug_buster",
+		"validate": "one_fm.api.doc_methods.hd_ticket.validate_hd_ticket"
+	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
 	},
@@ -239,8 +249,7 @@ doc_events = {
 	"Job Applicant": {
 		"validate": "one_fm.utils.validate_job_applicant",
 		"onload": "one_fm.utils.validate_pam_file_number_and_pam_designation",
-		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter",
-		"after_insert": "one_fm.hiring.utils.after_insert_job_applicant"
+		"on_update": "one_fm.one_fm.utils.send_notification_to_grd_or_recruiter"
 	},
 	"Warehouse": {
 		"autoname": "one_fm.utils.warehouse_naming_series",
@@ -374,7 +383,8 @@ doc_events = {
 	"Shift Request":{
 		"before_save":[
 			"one_fm.api.doc_methods.shift_request.fill_to_date",
-			"one_fm.utils.send_shift_request_mail"
+			"one_fm.utils.send_shift_request_mail",
+			"one_fm.api.doc_methods.shift_request.validate_from_date"
 		],
 		# "on_update_after_submit":[
 			# "one_fm.api.doc_methods.shift_request.on_update_after_submit",
@@ -403,9 +413,9 @@ doc_events = {
 	"ToDo": {
 		"validate": "one_fm.overrides.todo.validate_todo"
 	},
-	"Wiki Page": {
-		"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
-	},
+	# "Wiki Page": {
+	# 	"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
+	# },
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
 	# }
@@ -485,8 +495,10 @@ override_doctype_class = {
     "Notification Log": "one_fm.overrides.notification_log.NotificationLogOverride",
     "Job Applicant": "one_fm.overrides.job_applicant.JobApplicantOverride",
     "Job Opening": "one_fm.overrides.job_opening.JobOpeningOverride",
-    "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride"
-	# "User": "one_fm.overrides.user.UserOverrideLMS",
+    "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
+    "Goal": "one_fm.overrides.goal.GoalOverride",
+    "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
+    # "User": "one_fm.overrides.user.UserOverride"
 }
 
 
@@ -520,7 +532,9 @@ scheduler_events = {
 	"hourly": [
 		# "one_fm.api.tasks.send_checkin_hourly_reminder",
 		'one_fm.utils.send_gp_letter_attachment_reminder3',
-		'one_fm.utils.send_gp_letter_reminder'
+		'one_fm.utils.send_gp_letter_reminder',
+        "one_fm.overrides.attendance.run_attendance_marking_hourly",
+		"one_fm.api.tasks.validate_shift_assignment"
 	],
 
 	"weekly": [
@@ -625,7 +639,8 @@ scheduler_events = {
 			'one_fm.utils.check_pam_visa_approval_submission_seven'
 		],
 		"30 12 * * *": [
-			'one_fm.utils.check_upload_original_visa_submission_reminder1'
+			'one_fm.utils.check_upload_original_visa_submission_reminder1',
+            "one_fm.overrides.job_applicant.notify_hr_manager_about_local_transfer"
 		],
 		"25 13 * * *": [ #“At 13:25"
 			'one_fm.utils.check_upload_original_visa_submission_reminder2'
@@ -655,12 +670,9 @@ scheduler_events = {
 			'one_fm.api.tasks.validate_am_shift_assignment'
 		],
 		"15 13 * * *":[ # Attendance Check
-			'one_fm.one_fm.doctype.attendance_check.attendance_check.create_attendance_check',
-			'one_fm.one_fm.doctype.attendance_check.attendance_check.assign_attendance_manager_after_48_hours'
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.schedule_attendance_check',
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.attendance_check_pending_approval_check'
 		],
-		# "07 13 * * *":[ # Auto approve attendance check
-			# 'one_fm.one_fm.doctype.attendance_check.attendance_check.approve_attendance_check'
-		# ],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
 		],
@@ -670,11 +682,14 @@ scheduler_events = {
 		"15 3 * * *": [ # create shift assignment
 			'one_fm.overrides.employee_checkin.auto_generate_checkin'
 		],
-		"25 0 * * *": [ # mark day attendance 11:15 pm
-			'one_fm.overrides.attendance.mark_day_attendance'
+		"45 12 * * *": [ # mark all attendance for previous day at 12:45 pm today
+			'one_fm.overrides.attendance.mark_all_attendance'
 		],
-		"45 12 * * *": [ # mark night attendance for previous day at 12:45 pm today
-			'one_fm.overrides.attendance.mark_night_attendance'
+        "45 00 * * *": [ # mark all days off for previous day at 12:45 am today
+			'one_fm.overrides.attendance.mark_day_off_for_yesterday'
+		],
+        "55 12 * * *": [ # mark attendance for previous day mark_for_active_employees at 12:45 pm today
+			'one_fm.overrides.attendance.mark_for_active_employees'
 		],
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
@@ -752,8 +767,11 @@ fixtures = [
 		"dt": "Assignment Rule",
 		"filters": [["name", "in",
 			[
-				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
-				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request"
+				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To", "Shift Permission Approver",
+				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request",
+				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action",
+				"Timesheet Return to Draft", "Timesheet Approval Assignment",
+				"Attendance Request Return to Draft", "Attendance Request Approval", "Employee Checkin Issue Approval"
 			]
 		]]
 	},
@@ -768,15 +786,6 @@ fixtures = [
 				)
 			)
 		}
-	},
-	{
-		"dt": "Dashboard",
-	},
-	{
-		"dt": "Dashboard Chart"
-	},
-	{
-		"dt": "Number Card"
 	}
 ]
 
@@ -788,12 +797,18 @@ fixtures = [
 override_whitelisted_methods = {
     "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
 	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
-	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.api.v1.leave_application.fetch_leave_approver",
-	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_approver",
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.overrides.leave_application.get_leave_approver",
+	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_details",
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate"
 }
+
+
+override_doctype_dashboards = {
+    'Project': 'one_fm.overrides.project_dashboard.get_data',
+}
+
 #ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation
@@ -815,6 +830,7 @@ after_migrate = [
     "one_fm.after_migrate.execute.disable_workflow_emails",
     "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
+    "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
 ]
 
 before_migrate = [

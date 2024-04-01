@@ -168,7 +168,7 @@ class ERF(Document):
 
 	def notify_recruitment_manager(self):
 		try:
-			role_profile = frappe.db.get_list("Role Profile", {"role_profile": ["IN", ["Recruitment Manager", "Director"]]}, pluck="name")
+			role_profile = frappe.db.get_list("Role Profile", {"role_profile": ["IN", ["Recruitment Manager", "Director"]]}, pluck="name", ignore_permissions=True)
 			if role_profile:
 				manager_emails = frappe.db.get_list("User", {"role_profile_name": ["IN", role_profile]}, pluck="name")
 				if manager_emails:
@@ -436,7 +436,7 @@ def get_job_openig_description_template():
 def send_email(doc, recipients):
 	page_link = get_url(doc.get_url())
 	message = "<p>Here is the ERF <a href='{0}'>{1}</a> requested by {2}. Please Review it and take action.</p>".format(page_link, doc.name,doc.erf_requested_by_name)
-	mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
+	mandatory_field, labels = get_mandatory_fields(doc)
 
 	if mandatory_field and labels:
 		message = create_message_with_details(message, mandatory_field, labels)
@@ -533,13 +533,6 @@ def set_event_for_okr_workshop(doc):
 @frappe.whitelist()
 def set_user_fullname(user):
 	return get_user_fullname(user)
-
-@frappe.whitelist()
-def recruitment_manager_check(user: str):
-	role_profile = frappe.db.get_value('Role Profile', {"role_profile":["in",['Recruitment Team Leader',"Recruitment Manager"]]}, "name")
-	if role_profile:
-		return frappe.db.exists('User', {"role_profile_name": role_profile, "name": user})
-	return False
 
 @frappe.whitelist()
 def interview_round_filter(doctype, txt, searchfield, start, page_len, filters):

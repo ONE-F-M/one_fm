@@ -8,6 +8,7 @@ import csv
 import os
 import re
 import json
+import time
 
 import frappe
 import frappe.permissions
@@ -174,17 +175,17 @@ class DataExporter:
 		
 		if not self.link:
 			self.create()
-
-		if self.build_connection_with_sheet() == False:
+		sheet = self.build_connection_with_sheet()
+		if not sheet:
 			frappe.msgprint(frappe._("We do not have access to this sheet. Kindly, share your sheet with the following:<br><br> <b>{0}</b>").format(str(self.client_id)), 
 					indicator="red", 
 					title = "Warning")
 		else:
-			if not self.check_if_sheet_exist():
+			if not self.check_if_sheet_exist(sheet):
 				self.add_sheet()
 
 			self.update_sheet(values)
-			self.batch_update()
+			self.batch_update(sheet)
 
 		if self.with_data and not values:
 			frappe.respond_as_web_page(
@@ -328,7 +329,7 @@ class DataExporter:
 				value = remove_quotes(value)
 				# check if value size is greater than 50000
 				if len(value) >= 50000:
-					cell_colour.append({'column':_column_start_end.start + i, 'row':row_index})
+					cell_colour.append({'column':_column_start_end.start + i, 'row':row_index+1})
 					row[_column_start_end.start + i] = f"ERROR - Description Length is more than 50,000 so can not import Data"
 				else:
 					row[_column_start_end.start + i] = value
@@ -352,8 +353,8 @@ class DataExporter:
 		service = api["service"]
 		try:
 			if self.google_sheet_id:
-				service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
-				return True
+				sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id,ranges=[], includeGridData=False).execute()
+				return sheet
 			if not self.google_sheet_id:
 				return True
 		except HttpError as err:
@@ -410,10 +411,10 @@ class DataExporter:
 		self.google_sheet_id = request["spreadsheetId"]
 		self.link = request["spreadsheetUrl"]
 
-	def check_if_sheet_exist(self):
+	def check_if_sheet_exist(self, sheet_metadata):
 		service = self.service
 		try:
-			sheet_metadata = service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
+			# sheet_metadata = service.spreadsheets().get(spreadsheetId=self.google_sheet_id).execute()
 			
 			sheets = sheet_metadata.get('sheets', '')
 			sheetNames = []
@@ -464,7 +465,7 @@ class DataExporter:
 
 			# clear sheet
 			service.spreadsheets().values().clear(spreadsheetId=self.google_sheet_id, 
-				range='{0}!A1:Z'.format(self.sheet_name), body={}).execute()
+				range='{0}'.format(self.sheet_name), body={}).execute()
 
 			# add new value
 			result = service.spreadsheets().values().update(
@@ -479,7 +480,7 @@ class DataExporter:
 		except HttpError as err:
 			frappe.log_error(err)
 
-	def batch_update(self):
+	def batch_update(self, sheet):
 		'''
 			This method is to update the cell that have errors in displaying the value.
 		'''
@@ -489,7 +490,7 @@ class DataExporter:
 		spreadsheet = client.open_by_key(self.google_sheet_id)	
 
 		# get list of worksheets
-		sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id, ranges=[], includeGridData=False).execute()
+		# sheet = service.spreadsheets().get(spreadsheetId=self.google_sheet_id, ranges=[], includeGridData=False).execute()
 		sheets= sheet['sheets']
 		
 		# define sheetId of the give sheet name
@@ -500,7 +501,6 @@ class DataExporter:
 				sheetId = properties['sheetId']
 		
 		if sheetId:
-			
 			# clear sheet design
 			spreadsheet.batch_update({
 				"requests": [
@@ -528,8 +528,8 @@ class DataExporter:
 							{
 								"range": {
 									"sheetId": sheetId,
-									"startRowIndex": e["row"]-1,
-									"endRowIndex": e["row"],
+									"startRowIndex": e["row"],
+									"endRowIndex": e["row"]+1,
 									"startColumnIndex":e["column"],
 									"endColumnIndex": e["column"]+1
 								},
@@ -560,22 +560,20 @@ def update_google_sheet_daily():
 	list_of_export = frappe.get_list("Google Sheet Data Export",{"enable_auto_update":1}, ['name'])
 
 	for e in list_of_export:
+		time.sleep(20)
 		doc = frappe.get_doc("Google Sheet Data Export",e.name)
-
-		select_columns = doc.field_cache
-		filters = doc.filter_cache
 
 		frappe.enqueue(export_data, 
 			doctype= doc.reference_doctype,
-			select_columns= select_columns,
-			filters= filters,
+			select_columns= doc.field_cache,
+			filters= doc.filter_cache,
 			with_data = 1,
 			link= doc.link,
 			google_sheet_id= doc.google_sheet_id,
 			sheet_name= doc.sheet_name,
 			owner= doc.owner, 
 			client_id= doc.client_id,
-			is_async=True, queue="long")
+			is_async=True, queue="long", timeout=9000)
 
 @frappe.whitelist()
 def get_client_id():
@@ -591,4 +589,39 @@ def remove_quotes(value):
 	if value.endswith('"'):
 		value = value[:-1]
 	return value
+
+def export_from_excel():
+	# '/private/files/Employee (25) - Sheet1.csv'
+	# Import libraries
+	import pandas as pd
+	from googleapiclient.discovery import build
+	from google.auth.transport.requests import Request
+
+	spreadsheet_id = "1DMAkvDKbLlka8ATxjZlOxUEsBUDlBlcRYJhyiYuETg8"
+	sheet_name = "Sheet2"
+	# Define Excel file path
+	excel_file = os.getcwd()+"/"+cstr(frappe.local.site) + "/private/files/Employee.xlsx"
+
+	# Read Excel data
+	data = pd.read_excel(excel_file)
+	headers = list(data.columns)
+	# data = data.values.tolist()
+	print(data.shape)
+	# Build Google Sheets API service
+	SERVICE_ACCOUNT_FILE = os.getcwd()+"/"+cstr(frappe.local.site) + frappe.local.conf.google_sheet
+	scopes = ["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+	creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
+	service = discovery.build('sheets', 'v4', credentials=creds)
+
+	# Define range based on Excel data dimensions
+	range_ = f"{sheet_name}!A1:{chr(65 + data.shape[1] - 1)}{data.shape[0] + 1}"
 	
+	body_data = {
+		'values': [headers] + data.values.tolist()
+	}
+
+	# Update the sheet with Excel data
+	request = service.spreadsheets().values().update(spreadsheetId=spreadsheet_id, range=range_, valueInputOption="USER_ENTERED", body=body_data)
+	response = request.execute()
+
+	print(f"Sheet updated with {response['updatedCells']:,} cells.")

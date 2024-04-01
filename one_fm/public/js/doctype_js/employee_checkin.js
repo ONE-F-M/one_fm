@@ -4,6 +4,10 @@ frappe.ui.form.on('Employee Checkin', {
 		    frm.disable_form();
 	    }
 	},
+	validate: (frm) => {
+		validate_source_of_checkin(frm);
+
+	},
 	employee: frm=>{
 		frm.set_query('shift_assignment', () => {
 			return {
@@ -14,3 +18,11 @@ frappe.ui.form.on('Employee Checkin', {
 		})
 	}
 });
+
+
+var validate_source_of_checkin = (frm) => {
+	var allowed_sources = ['Mobile App', 'Mobile Web']
+	if(!allowed_sources.includes(frm.doc.source)){
+		frappe.throw("Employee Checkin can only be via the Mobile App or Mobile Web App")
+	}
+}

@@ -16,6 +16,7 @@ from frappe.model.naming import set_name_by_naming_series
 from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
     expire_allocation, create_leave_ledger_entry
 )
+from frappe.desk.form.assign_to import add as add_assignment
 from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
 from dateutil.relativedelta import relativedelta
 from frappe.utils import (
@@ -1445,7 +1446,10 @@ def validate_job_applicant(doc, method):
     # update night shift
     if doc.one_fm_night_shift:
         frappe.db.set_value("Job Applicant", doc.name, "one_fm_night_shift", doc.one_fm_night_shift)
-    doc.applicant_name = doc.one_fm_first_name + " " +doc.one_fm_last_name or ''
+
+    # Because first name and last name are mandatory so merge both to generate applicant name
+    doc.applicant_name = doc.one_fm_first_name + " " + doc.one_fm_last_name
+
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     # validate_pam_file_number_and_pam_designation(doc, method)
@@ -1570,8 +1574,9 @@ def set_job_applicant_fields(doc):
 
 def validate_mandatory_fields(doc):
     field_list = [{'First Name':'one_fm_first_name'}, {'Last Name':'one_fm_last_name'}, {'Passport Number':'one_fm_passport_number'},
-                {'Place of Birth':'one_fm_place_of_birth'}, {'Email ID':'one_fm_email_id'},{"First Name in Arabic": "one_fm_first_name_in_arabic"},
-                {"Last Name in Arabic": "one_fm_last_name_in_arabic"},{'Marital Status':'one_fm_marital_status'}, {'Passport Holder of':'one_fm_passport_holder_of'},
+                {'Place of Birth':'one_fm_place_of_birth'}, {'Email ID':'one_fm_email_id'},
+                # {"First Name in Arabic": "one_fm_first_name_in_arabic"}, {"Last Name in Arabic": "one_fm_last_name_in_arabic"},
+                {'Marital Status':'one_fm_marital_status'}, {'Passport Holder of':'one_fm_passport_holder_of'},
                 {'Passport Issued on':'one_fm_passport_issued'}, {'Passport Expires on ':'one_fm_passport_expire'},
                 {'Gender':'one_fm_gender'}, {'Religion':'one_fm_religion'},
                 {'Date of Birth':'one_fm_date_of_birth'}, {'Educational Qualification':'one_fm_educational_qualification'},
@@ -1677,6 +1682,9 @@ def set_erf_details(job_offer, erf, job_app):
         job_offer.designation = erf.designation
     job_offer.one_fm_provide_accommodation_by_company = erf.provide_accommodation_by_company
     job_offer.one_fm_provide_transportation_by_company = erf.provide_transportation_by_company
+    job_offer.reports_to = erf.reports_to
+    job_offer.shift_working = erf.shift_working
+    job_offer.operations_shift = erf.operations_shift
     set_salary_details(job_offer, erf)
     set_other_benefits_to_terms(job_offer, erf, job_app)
 
@@ -1899,6 +1907,9 @@ def validate_iban_is_filled(doc, method):
 
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
+    if doc.workflow_state == "Open Request":
+        notify_hr_manager(doc)
+
 
 def bank_account_on_trash(doc, method):
     if doc.onboard_employee:
@@ -1930,6 +1941,21 @@ def update_onboarding_doc_for_bank_account(doc):
         if oe.workflow_state == 'Duty Commencement':
             oe.workflow_state = 'Bank Account'
         oe.save(ignore_permissions=True)
+
+def notify_hr_manager(doc):
+    try:
+        hr_manager = frappe.db.get_single_value("HR Settings", 'custom_hr_manager')
+        if hr_manager:
+            add_assignment({
+                    'doctype': doc.doctype,
+                    'name': doc.name,
+                    'assign_to': [hr_manager],
+                    'description': (_("The Following Bank Acccount needs to be processed. Kindly, proceed with the action. ").format(doc.name))
+                })
+        else:
+            frappe.throw("Please add HR Manager in the HR Settings")
+    except:
+        frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
 
 def send_roster_report():
     # Enqueue roster report generation to background
@@ -2665,7 +2691,6 @@ def override_frappe_send_workflow_action_email(users_data, doc):
 def send_workflow_action_email(doc, recipients):
     frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
 
-
 def queue_send_workflow_action_email(doc, recipients):
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
@@ -2675,8 +2700,7 @@ def queue_send_workflow_action_email(doc, recipients):
 
     common_args = get_common_email_args(doc)
     common_args.pop('attachments')
-
-    mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
+    mandatory_field, labels = get_mandatory_fields(doc)
     message = common_args.pop("message", None)
     subject = f"Workflow Action on {_(doc.doctype)} - {_(doc.workflow_state)}"
     pdf_link = get_url_to_form(doc.get("doctype"), doc.name)
@@ -2731,10 +2755,10 @@ def workflow_approve_reject(doc, recipients=None,message= None):
     frappe.enqueue(method=sendemail, queue="short", **email_args)
 
 @frappe.whitelist()
-def get_mandatory_fields(doctype, doc_name):
-	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doctype)
+def get_mandatory_fields(doc_obj):
+	mandatory_fields, employee_fields, labels = get_doctype_mandatory_fields(doc_obj.doctype)
 
-	doc = frappe.get_value(doctype, {'name':doc_name}, mandatory_fields, as_dict=True)
+	doc = {key: value for key, value in vars(doc_obj).items() if key in mandatory_fields}
 	if doc:
 		for employee_field in employee_fields:
 			if doc[employee_field]:
@@ -2742,6 +2766,7 @@ def get_mandatory_fields(doctype, doc_name):
 				if employee_details.employee_name and  employee_details.employee_id:
 					doc[employee_field] += ' : ' + ' - '.join([employee_details.employee_name, employee_details.employee_id])
 		return doc, labels
+	return {}, {}
 
 def get_doctype_mandatory_fields(doctype):
 	meta = frappe.get_meta(doctype)
@@ -2977,7 +3002,7 @@ def get_domain():
         return ''
 
 def production_domain():
-    return get_domain() == 'one-fm.com'
+    return frappe.db.get_single_value("ONEFM General Setting", "is_production")
 
 def check_employee_attendance_dependents(employee):
     """
@@ -2993,30 +3018,83 @@ def get_today_leaves(cur_date):
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
 
+@frappe.whitelist()
+def has_super_user_role(user=None):
+    '''
+        A method to check the user is having super user role
+        Default it will be the role 'Director'
+        User having this role can be self approve configured documents like Shift Permission.
+        The user having this role no need reports to, since it will be the same employee linked to the user.
+
+        args:
+            user: user ID, eg: employee123@one_fm.com
+
+        return boolean(True if super user role exists in the given user's role list)
+    '''
+    if not user:
+        user = frappe.session.user
+    if user:
+        # get the user roles
+        user_roles = frappe.get_roles(user)
+        # Check if the default super user role in the user role list
+        if "Director" in user_roles:
+            return True
+        else:
+            # Get configured super user in ONEFM General Setting
+            super_user_role = frappe.db.get_single_value("ONEFM General Setting", "super_user_role")
+            # Check if the super user role exists in the user role list
+            if super_user_role and super_user_role in user_roles:
+                return True
+    return False
+
+@frappe.whitelist()
 def get_approver(employee):
-    """
-        Get document approver for employee by
-        reports_to, shift_approver, site_approver
-    """
-    if employee=="HR-EMP-00001":return "HR-EMP-00001" # for Abdullah
-    operations_site, operations_shift = '', ''
-    if not frappe.db.exists("Employee", {'name':employee}):frappe.throw(f"Employee {employee} does not exists")
-    emp_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
-    # Get for IT - ONEFM
-    if emp_data.department=='IT - ONEFM':
-         return emp_data.reports_to
+    '''
+        Method to get reports_to user of an employee with the priority
+        1. reports_to linked in the employee
+        2. If no reports_to linked in the employee, then supervisor linked in the Operation Shift(Linked in the employee)
+        3. If no shift linked in the employee or no supervisor linked in the shift,
+            then account_supervisor linked in the Operation Site(Linked in the employee)
+        4. If no Supervisor is set for the linked Operations Site,
+            then account_manager linked in the project field of the Employee site
 
-    if emp_data.shift:
-        operations_shift = frappe.db.get_value('Operations Shift', emp_data.shift, 'supervisor')
-    elif emp_data.site:
-        operations_site = frappe.db.get_value('Operations Site', emp_data.site, 'account_supervisor')
-    elif emp_data.reports_to:
-        return emp_data.reports_to
-    if operations_site:return operations_site
-    if operations_shift:return operations_shift
-    if not (operations_shift and operations_site and operations_shift):
-        frappe.throw("No approver found for {employee} in reports_to, site or shift".format(employee=employee))
+        args:
+            employee: name of Employee object
 
+        return: user of the reports to employee or False
+    '''
+
+    if not frappe.db.exists("Employee", {'name':employee}):
+        frappe.throw(f"Employee {employee} does not exists")
+
+    employee_user = frappe.get_value("Employee", {"name": employee}, "user_id")
+    if employee_user and has_super_user_role(employee_user):
+        return employee
+
+    employee_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department', 'project'], as_dict=1)
+
+    reports_to = None
+    if employee_data.reports_to:
+        reports_to = employee_data.reports_to
+    if not reports_to and employee_data.shift:
+        shift_supervisor = frappe.db.get_value('Operations Shift', employee_data.shift, 'supervisor')
+        if shift_supervisor:
+            reports_to = shift_supervisor
+    if not reports_to and employee_data.site:
+        site_supervisor = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
+        if site_supervisor:
+            reports_to = site_supervisor
+        if not reports_to:
+            project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
+            if project:
+                account_manager = frappe.db.get_value('Project', project, 'account_manager')
+                if account_manager:
+                    reports_to = account_manager
+    if not reports_to and employee_data.project:
+        account_manager = frappe.db.get_value('Project', employee_data.project, 'account_manager')
+        if account_manager:
+            reports_to = account_manager
+    return reports_to
 
 def get_approver_for_many_employees(supervisor=None):
     """
@@ -3046,7 +3124,10 @@ def check_employee_permission_on_doc(doc):
         based on employee field.
     """
     try:
-        if frappe.session.user not in ["Administrator", 'administrator', 'abdullah@one-fm.com']:
+        if has_super_user_role(frappe.session.user):
+            return
+
+        if frappe.session.user not in ["Administrator", 'administrator']:
             session_employee = frappe.cache().get_value(frappe.session.user).employee
             roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail`", as_dict=1)]
             has_roles = any([item in roles for item in frappe.get_roles()])
@@ -3225,7 +3306,7 @@ def get_current_shift(employee):
     """
     sql = f"""
         SELECT * FROM `tabShift Assignment`
-        WHERE employee="{employee}" AND status="Active" AND
+        WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
         ('{now()}' BETWEEN start_datetime AND end_datetime)
     """
     shift = frappe.db.sql(sql, as_dict=1)
@@ -3236,7 +3317,7 @@ def get_current_shift(employee):
         curtime_plus_1 = dt + timedelta(hours=1)
         sql = f"""
             SELECT * FROM `tabShift Assignment`
-            WHERE employee="{employee}" AND status="Active" AND
+            WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
             ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
         """
         shift = frappe.db.sql(sql, as_dict=1)
@@ -3246,7 +3327,7 @@ def get_current_shift(employee):
             curtime_plus_1 = dt + timedelta(hours=-1)
             sql = f"""
                 SELECT * FROM `tabShift Assignment`
-                WHERE employee="{employee}" AND status="Active" AND
+                WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
                 ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
             """
             shift = frappe.db.sql(sql, as_dict=1)
@@ -3300,9 +3381,57 @@ def check_existing():
         return response("success", 200, True, "")
     return response("success", 200, False, "")
 
-def fetch_attendance_manager_user_obj() -> str:
-    attendance_manager = frappe.get_doc("ONEFM General Setting").get("attendance_manager")
+def fetch_attendance_manager_user() -> str:
+    attendance_manager = frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
     if attendance_manager:
         attendance_manager_user = frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
-        return attendance_manager_user
+        if attendance_manager_user:
+            return attendance_manager_user
     return ""
+
+def custom_toggle_notifications(user: str, enable: bool = False):
+    try:
+        settings = frappe.get_doc("Notification Settings", user)
+    except frappe.DoesNotExistError:
+        frappe.clear_last_message()
+        return
+
+    if settings.enabled != enable:
+        settings.enabled = enable
+        settings.flags.ignore_permissions = 1
+        settings.save()
+
+def get_standard_notification_template(description, doc_link):
+    message_html = '<p>{{message_heading}}'
+    msg_details = [
+        {'label':'Document Type', 'value': '{{doctype}}'},
+        {'label':'Document Name', 'value': '{{name}}'},
+        {'label':'Description', 'value': description},
+        {'label':'Content', 'value': '{{name}} Employee ID has changed to {{employee_id}}'},
+        {'label':'Document Link', 'value': doc_link},
+    ]
+    if msg_details:
+        message_html += '''
+        <br/>
+        The details are as follows:
+        <br/>
+        <table cellpadding="0" cellspacing="0" border="1" style="border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+                    <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+                </tr>
+            </thead>
+        <tbody>
+        '''
+        for msg_detail in msg_details:
+            message_html += '''
+            <tr>
+                <td style="padding: 10px;">'''+msg_detail['label']+'''</td>
+                <td style="padding: 10px;">'''+msg_detail['value']+'''</td>
+            </tr>
+            '''
+        message_html += '</tbody></table>'
+    message_html += '</p>'
+
+    return message_html

@@ -33,6 +33,7 @@
   "day_off_category",
   "column_break_tqyqa",
   "number_of_days_off",
+  "designation",
   "is_uniform_needed_for_this_job",
   "provide_accommodation_by_company",
   "provide_transport_by_company"
@@ -217,16 +218,21 @@
   {
    "fieldname": "column_break_tqyqa",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-11-28 20:23:28.228612",
+ "modified": "2024-01-26 16:01:21.816652",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Subcontract Staff Shortlist Detail",
- "name_case": "UPPER CASE",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",

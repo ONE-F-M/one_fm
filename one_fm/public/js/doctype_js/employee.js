@@ -1,13 +1,13 @@
 frappe.ui.form.on('Employee', {
 	refresh: function(frm) {
 		hideFields(frm);
+
 		set_grd_fields(frm)
 		frm.trigger('set_queries');
 		set_mandatory(frm);
         set_shift_working_btn(frm);
         filterDefaultShift(frm);
         setProjects(frm);
-		setReadOnly(frm);
 		if(frappe.user.has_role('HR Manager') && !frm.doc.employee_id){
 			frm.add_custom_button(__('Run Employee ID Generation Method'), function() {
 				frappe.call({
@@ -47,6 +47,7 @@ frappe.ui.form.on('Employee', {
 	},
 	onload: function(frm) {
         frm.trigger('mandatory_reports_to');
+		is_employee_master(frm);
     },
 	designation: function(frm) {
 		frm.trigger('mandatory_reports_to');
@@ -62,9 +63,10 @@ frappe.ui.form.on('Employee', {
         }
 	},
 	under_company_residency: function(frm){
-		change_employee_id(frm);
+		if(frm.doc.employee_id){
+			update_employee_id_based_on_residency(frm);
+		}
 	}
-
 });
 
 
@@ -101,26 +103,71 @@ let toggle_required = (frm, state) => {
 	});
 }
 
-var change_employee_id = function(frm) {
-	if(frm.doc.under_company_residency == 1){
-		frappe.call({
-			method: 'one_fm.overrides.employee.get_new_employee_id',
-			args: {
-			employee_id:frm.doc.employee_id,
-			},
-			callback: function (r) {
-				if (r && r.message) {
-					frm.set_value('employee_id',  r.message)
-				}
+var update_employee_id_based_on_residency = function(frm) {
+	frappe.db.get_value('Employee', frm.doc.name, 'under_company_residency', function(r) {
+		if(r.under_company_residency != frm.doc.under_company_residency){
+			frappe.call({
+				method: 'one_fm.overrides.employee.get_employee_id_based_on_residency',
+				args: {
+					employee_id: frm.doc.employee_id,
+					residency: frm.doc.under_company_residency,
+					employee: frm.doc.name,
+					employment_type: frm.doc.employment_type
+				},
+				callback: function (r) {
+					if (r && r.message) {
 
-			}
-		});
-	}
+						if(frm.doc.employee_id == r.message){
+							return
+						}
+
+						let empid_msg = __(
+							'<b>{0}<u style="color: red;">{1}</u>{2}</b>',
+							[frm.doc.employee_id.substring(0, 9), frm.doc.employee_id.substring(9, 10), frm.doc.employee_id.substring(10, 12)]
+						)
+						let new_empid_msg = __(
+							'<b>{0}<u style="color: green;">{1}</u>{2}</b>',
+							[r.message.substring(0, 9), r.message.substring(9, 10), r.message.substring(10, 12)]
+						)
+						let msg = __('This action will change the employee id from {0} to {1}.<br/>Are you sure you want to proceed?', [empid_msg, new_empid_msg])
+
+						frappe.confirm(msg,
+							() => {
+								// action to perform if Yes is selected
+								frm.set_value('employee_id',  r.message);
+								frappe.show_alert({
+									message: __("Employee ID is set to {0}, on saving the doc it will reflect on the employee record", [frm.doc.employee_id]),
+									indicator:'green'
+								});
+							}, () => {
+								// action to perform if No is selected
+								frm.set_value('under_company_residency', !frm.doc.under_company_residency);
+							}
+						);
+					}
+				}
+			});
+		}
+	})
+
 }
+
 // Hide un-needed fields
 const hideFields = frm => {
     $("[data-doctype='Employee Checkin']").hide();
 }
+
+let is_employee_master = frm =>{
+	frappe.call({
+		method: "one_fm.overrides.employee.is_employee_master",
+		args: {"user": frappe.session.user},
+		callback: function (r) {
+			if (!parseInt(r.message)){
+				frm.disable_form()
+			}
+		}
+	});
+};
 
 let set_grd_fields= frm=>{
 	frm.set_df_property('custom_employee_photo',"hidden",1)
@@ -190,18 +237,4 @@ const TransferToNonShift = frm => {
 function setCharAt(str,index,chr) {
     if(index > str.length-1) return str;
     return str.substring(0,index) + chr + str.substring(index+1);
-}
-
-
-let setReadOnly = (frm) => {
-	frappe.call({
-		method: "one_fm.overrides.employee.check_employee_access",
-		args: {"email": frappe.session.user},
-		callback: function (r) {
-			if (!r.message){
-				frm.set_df_property("status", "read_only", 1)
-			}
-		}
-
-	})
 }

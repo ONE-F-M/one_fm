@@ -65,7 +65,14 @@ def is_app_user(emp):
         pass
 
 
-class LeaveApplicationOverride(LeaveApplication): 
+class LeaveApplicationOverride(LeaveApplication):
+    def onload(self):
+        leave_attendances = frappe.db.get_all("Attendance", {"leave_application": self.name}, "name")
+        attendance_not_created = False
+        if self.total_leave_days > len(leave_attendances):
+            attendance_not_created = True
+        self.set_onload("attendance_not_created", attendance_not_created)
+
     def validate(self):
         self.validate_applicable_after()
 
@@ -84,7 +91,6 @@ class LeaveApplicationOverride(LeaveApplication):
     def on_submit(self):
         self.close_todo()
         self.close_shifts()
-        self.update_attendance()
         return super().on_submit()
         self.db_set('status', 'Approved')
 
@@ -165,37 +171,14 @@ class LeaveApplicationOverride(LeaveApplication):
             self.validate_optional_leave()
         self.validate_applicable_after()
 
+    @frappe.whitelist()
     def update_attendance(self):
         if self.status != "Approved":
             return
-
-        holiday_dates = []
-        if self.leave_type == 'Annual Leave' :
-            holidays = get_holidays_for_employee(employee=self.employee, start_date=self.from_date, end_date=self.to_date, only_non_weekly=True)
-            holiday_dates = [cstr(h.holiday_date) for h in holidays]
-
-        for dt in daterange(getdate(self.from_date), getdate(self.to_date)):
-            date = dt.strftime("%Y-%m-%d")
-            attendance_name = frappe.db.exists(
-                "Attendance", dict(employee=self.employee, attendance_date=date, docstatus=("!=", 2))
-            )
-
-            # don't mark attendance for holidays
-            # if leave type does not include holidays within leaves as leaves
-            if date in holiday_dates:
-                if attendance_name:
-                    # cancel and delete existing attendance for holidays
-                    attendance = frappe.get_doc("Attendance", attendance_name)
-                    attendance.flags.ignore_permissions = True
-                    if attendance.docstatus == 1:
-                        print('True')
-                        attendance.db_set('status','Holiday')
-                        frappe.db.commit()
-                else:
-                    self.create_or_update_attendance(attendance_name, date, 'Holiday')
-            else:
-                self.create_or_update_attendance(attendance_name, date, 'On Leave')
-
+        if self.total_leave_days > 20:
+            frappe.enqueue(update_attendance_recods, self=self, is_async=True)
+        else:
+            update_attendance_recods(self)
 
     def create_or_update_attendance(self, attendance_name, date, status):
         if attendance_name:
@@ -379,6 +362,24 @@ class LeaveApplicationOverride(LeaveApplication):
         self.cancel_attendance()
 
 
+    def validate_attendance_check(self):
+        """
+            Validate if there are any draft attendance checks for the period and update
+        """
+        try:
+            if frappe.db.exists("Attendance Check",{'docstatus':0,'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]}):
+                att_checks = frappe.get_all("Attendance Check",{'docstatus':0,'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]},['name'])
+                if att_checks:
+                    for each in att_checks:
+                        att_check = frappe.get_doc("Attendance Check",each.name)
+                        att_check.attendance_status= 'On Leave'
+                        att_check.workflow_state = "Approved"
+                        att_check.submit()
+            frappe.db.commit()
+        except:
+            frappe.log_error(title = "Error Updating Attendance Check",message=frappe.get_traceback())
+            frappe.throw("An Error Occured while updating Attendance Checks. Please review the error logs")
+
     def on_update(self):
         if self.status=='Rejected':
             self.notify_employee()
@@ -410,12 +411,54 @@ class LeaveApplicationOverride(LeaveApplication):
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 # frappe.db.set_value(), will not call the validate.
                 frappe.db.set_value("Employee", self.employee, "status", "Vacation")
-            if frappe.db.exists("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]}):
-                att_check = frappe.get_doc("Attendance Check",{'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]})
-                att_check.attendance_status= 'On Leave'
-                att_check.workflow_state = "Approved"
-                att_check.submit()
-            frappe.db.commit()
+            self.validate_attendance_check()
+        self.clear_employee_schedules()
+
+
+    def clear_employee_schedules(self):
+        last_doc = self.get_doc_before_save()
+        if last_doc and last_doc.get('workflow_state') != self.workflow_state:
+            if self.workflow_state == "Approved":
+                frappe.db.sql(
+                    '''
+                    DELETE FROM `tabEmployee Schedule` WHERE
+                    employee = %s AND
+                    date BETWEEN %s AND %s;
+                    ''', (self.employee, self.from_date, self.to_date)
+                )
+
+
+def update_attendance_recods(self):
+    if self.status != "Approved":
+        return
+
+    holiday_dates = []
+    if self.leave_type == 'Annual Leave' :
+        holidays = get_holidays_for_employee(employee=self.employee, start_date=self.from_date, end_date=self.to_date, only_non_weekly=True)
+        holiday_dates = [cstr(h.holiday_date) for h in holidays]
+
+    for dt in daterange(getdate(self.from_date), getdate(self.to_date)):
+        date = dt.strftime("%Y-%m-%d")
+        attendance_name = frappe.db.exists(
+            "Attendance", dict(employee=self.employee, attendance_date=date, docstatus=("!=", 2))
+        )
+
+        # don't mark attendance for holidays
+        # if leave type does not include holidays within leaves as leaves
+        if date in holiday_dates:
+            if attendance_name:
+                # cancel and delete existing attendance for holidays
+                attendance = frappe.get_doc("Attendance", attendance_name)
+                attendance.flags.ignore_permissions = True
+                if attendance.docstatus == 1:
+                    attendance.db_set('status','Holiday')
+                    frappe.db.commit()
+            else:
+                self.create_or_update_attendance(attendance_name, date, 'Holiday')
+        else:
+            self.create_or_update_attendance(attendance_name, date, 'On Leave')
+
+    frappe.msgprint(_("Attendance are created for the leave Appication {0}!".format(self.name)), alert=True)
 
 @frappe.whitelist()
 def get_leave_details(employee, date):
@@ -459,6 +502,7 @@ def get_leave_approver(employee):
     reports_to = employee_details[0].reports_to
     department = employee_details[0].department
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
+    approver = False
     if reports_to:
         approver = frappe.get_value("Employee", reports_to, ["user_id"])
     elif len(employee_shift) > 0 and employee_shift[0].shift:
@@ -468,8 +512,9 @@ def get_leave_approver(employee):
                 """select approver from `tabDepartment Approver` where parent= %s and parentfield = 'leave_approvers'""",
                 (department),
             )
-        approvers = [approver[0] for approver in approvers]
-        approver = approvers[0]
+        if approvers and len(approvers) > 0:
+            approvers = [approver[0] for approver in approvers]
+            approver = approvers[0]
     return approver
 
 @frappe.whitelist()

@@ -35,26 +35,7 @@ frappe.ui.form.on('Job Applicant', {
 		set_mandatory_fields_of_job_applicant(frm);
 		set_field_properties_on_agency_applying(frm);
 		set_mandatory_fields_for_current_employment(frm);
-
-		if(frm.doc.one_fm_hiring_method == 'Bulk Recruitment' && frm.doc.interview_round){
-			let args = {interview_round: frm.doc.interview_round}
-			if(frm.doc.bulk_interview){
-				frappe.db.get_value('Interview', frm.doc.bulk_interview, 'docstatus', function(r) {
-					if(r.docstatus == 0){
-						args['interviewer'] = frappe.session.user
-						args['interview_name'] = frm.doc.bulk_interview
-						frm.add_custom_button(__('Submit Interview and Feedback'), function() {
-							frm.events.submit_interview_and_feedback(frm, args)
-						});
-					}
-				})
-			}
-			else{
-				frm.add_custom_button(__('Submit Interview and Feedback'), function() {
-					frm.events.submit_interview_and_feedback(frm, args)
-				});
-			}
-		}
+		frm.events.bulk_interview_feedback_submit(frm);
 
 		if(!frm.doc.__islocal){
 			frm.set_df_property('one_fm_erf', 'read_only', true);
@@ -172,6 +153,35 @@ frappe.ui.form.on('Job Applicant', {
 					copy_to_clipboard("Career History", frm.doc.career_history_ml_url);
 		    });
 			}
+		}
+	},
+	bulk_interview_feedback_submit: function(frm) {
+		if(frm.doc.one_fm_hiring_method == 'Bulk Recruitment'){
+			var drop_down_menu = 'Submit Interview and Feedback';
+			let no_of_interview_rounds = frm.doc.interview_rounds.length;
+			frm.doc.interview_rounds.forEach((item, i) => {
+				var btn_name = item.interview_round;
+				if(no_of_interview_rounds == 1){
+					drop_down_menu = '';
+					btn_name = 'Submit Interview and Feedback';
+				}
+				let args = {interview_round: item.interview_round, interviewer: frappe.session.user}
+				if(item.interview){
+					frappe.db.get_value('Interview', item.interview, 'docstatus', function(r) {
+						if(r.docstatus == 0){
+							args['interview_name'] = item.interview
+							frm.add_custom_button(__(btn_name), function() {
+								frm.events.submit_interview_and_feedback(frm, args, item.name)
+							}, drop_down_menu);
+						}
+					})
+				}
+				else{
+					frm.add_custom_button(__(btn_name), function() {
+						frm.events.submit_interview_and_feedback(frm, args, item.name)
+					}, drop_down_menu);
+				}
+			});
 		}
 	},
 	one_fm_change_pam_file_number: function(frm){
@@ -328,6 +338,14 @@ frappe.ui.form.on('Job Applicant', {
 					frm.set_value('one_fm_is_transferable', '');
 				}
 			)
+		}
+	},
+	custom_transfer_reminder_date: function(frm){
+		var the_date = frm.doc.custom_transfer_reminder_date
+		if (the_date){
+			if(the_date < frappe.datetime.now_date()){
+				frappe.throw("Oops! You can't choose a date in the past or today. Please select a future date.")
+			  }
 		}
 	},
 	one_fm_nationality: function(frm) {

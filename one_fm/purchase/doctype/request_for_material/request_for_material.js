@@ -2,7 +2,8 @@
 // For license information, please see license.txt
 
 // eslint-disable-next-line
-{% include 'erpnext/public/js/controllers/buying.js' %};
+frappe.provide("erpnext.accounts.dimensions");
+erpnext.buying.setup_buying_controller();
 
 frappe.ui.form.on('Request for Material', {
 	before_workflow_action: function(frm){
@@ -11,6 +12,7 @@ frappe.ui.form.on('Request for Material', {
 		}
 	},
 	setup: function(frm) {
+		
 		// formatter for material request item
 		frm.set_indicator_formatter('item_code',
 			function(doc) { return (doc.qty<=doc.ordered_qty) ? "green" : "orange"; });
@@ -39,11 +41,13 @@ frappe.ui.form.on('Request for Material', {
 		set_item_field_property(frm);
 	},
 	onload: function(frm) {
-
+		
 		erpnext.utils.add_item(frm);
-		if(!frm.doc.requested_by){
+		
+		if(frm.is_new() && !frm.doc.requested_by){
 			frm.set_value('requested_by', frappe.session.user);
 		}
+
 		set_t_warehouse_hidden(frm);
 		// set schedule_date
 		set_schedule_date(frm);
@@ -57,6 +61,7 @@ frappe.ui.form.on('Request for Material', {
 		frm.get_field("items").grid.set_multiple_add("item_code", "qty");
 	},
 	refresh: function(frm) {
+		
 		frm.events.make_custom_buttons(frm);
 		set_item_field_property(frm);
 		let status = ['Draft', 'Accepted', 'Approved', 'Rejected', 'Transferred'];
@@ -70,6 +75,10 @@ frappe.ui.form.on('Request for Material', {
 			else{
 				frm.set_df_property('type', 'options', "\nIndividual\nDepartment\nProject\nOnboarding");
 			}
+		}
+		if(frm.doc.workflow_state == "Approved" || frm.doc.workflow_state == "Rejected"){
+			frm.set_df_property('items', 'allow_on_submit', 0);
+			frm.set_df_property('items', 'read_only', 1);
 		}
 		if(frm.is_new()){
 			frappe.call({
@@ -787,7 +796,8 @@ frappe.ui.form.on("Request for Material Item", {
 	}
 });
 
-erpnext.buying.MaterialRequestController = class MaterialRequestController extends erpnext.buying.BuyingController{
+
+erpnext.buying.MaterialRequestController = class MaterialRequestController extends erpnext.buying.BuyingController {
 	tc_name() {
 		this.get_terms();
 	}
@@ -831,6 +841,7 @@ erpnext.buying.MaterialRequestController = class MaterialRequestController exten
 	}
 };
 
+
 // for backward compatibility: combine new and previous states
 extend_cscript(cur_frm.cscript, new erpnext.buying.MaterialRequestController({frm: cur_frm}));
 
@@ -845,3 +856,6 @@ function set_t_warehouse(frm){
 		erpnext.utils.copy_value_in_all_rows(frm.doc, frm.doc.doctype, frm.doc.name, "items", "t_warehouse");
 	}
 };
+
+
+

@@ -123,7 +123,7 @@ function load_js(page) {
 			if (page.employee_search_id) {
 				$(wrapper_element).find(".search-employee-id").val(page.employee_search_id);
 			}
-			
+
 			get_roster_data(page, true);
 
 		};
@@ -395,13 +395,13 @@ function load_js(page) {
 					primary_action_label: 'Submit',
 					primary_action(values) {
 						$('#cover-spin').show(0);
-						
+
 						frappe.call({
 							method: 'one_fm.one_fm.page.roster.roster.edit_post',
 							// method: 'one_fm.api.v2.flutter.roster.edit_post',
 							args: { posts, values },
 							callback: function (r) {
-							
+
 								d.hide();
 								$('#cover-spin').hide();
 								let element = get_wrapper_element().slice(1);
@@ -466,11 +466,11 @@ function load_js(page) {
 			$(".selectclass").map(function () {
 				if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
 					if (isMonth == 1) {
-						
+
 						classgrt.push($(this).attr("data-selectid"));
 					}
 					else {
-						
+
 						classgrtw.push($(this).attr("data-selectid"));
 					}
 				}
@@ -687,7 +687,7 @@ function setup_topbar_events(page) {
 	});
 
 	$('.assignchangemodal').on('click', function () {
-		
+
 		unschedule_staff(page);
 	});
 	$('.dayoff').on('click', function () {
@@ -700,7 +700,7 @@ function bind_events(page) {
 	let d1 = performance.now();
 	let wrapper_element = $(get_wrapper_element());
 	paginateTable(page);
-	
+
 	wrapper_element.find('#paginate-parent').pageMe({ pagerSelector: '#myPager', showPrevNext: false, hidePageNumbers: false, perPage: 9999 });
 	if (["Operations Manager", "Site Supervisor", "Shift Manager", "Shift Supervisor", "Projects Manager"].some(i => frappe.user_roles.includes(i))) {
 		let $rosterMonth = $('.rosterMonth');
@@ -711,7 +711,7 @@ function bind_events(page) {
 		$postMonth.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it
-			
+
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 			if (classgrt.join(",") === "") {
@@ -725,7 +725,7 @@ function bind_events(page) {
 		$postWeek.find(".hoverselectclass").on("click", function () {
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it
-			
+
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 
 			if (classgrt.join(",") === "") {
@@ -750,7 +750,7 @@ function bind_events(page) {
 
 			// If the id is not already in the array, add it. If it is, remove it
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-			
+
 			if (classgrt.join(",") === "") {
 				$(".filterhideshow").addClass("d-none");
 			}
@@ -768,7 +768,7 @@ function bind_events(page) {
 
 			// If the id is not already in the array, add it. If it is, remove it
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-			
+
 			if (classgrt.join(",") === "") {
 				$(".filterhideshow").addClass("d-none");
 			}
@@ -813,7 +813,7 @@ function bind_events(page) {
 				$(".Postfilterhideshow").addClass("d-none");
 			}
 			$(".selectclass").map(function () {
-				
+
 				classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
 
@@ -840,7 +840,7 @@ function bind_events(page) {
 				$(".Postfilterhideshow").addClass("d-none");
 			}
 			$(".selectclass").map(function () {
-				
+
 			    classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
 			});
@@ -893,7 +893,7 @@ function bind_events(page) {
 
 			if ($(this).is(":checked")) {
 				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
-					
+
 					let [employee, date] = $(v).attr('data-selectid').split('|');
 					classgrt.push($(v).attr('data-selectid'));
 					var r = Date.parse(date)
@@ -902,7 +902,7 @@ function bind_events(page) {
 					if (moment(roster_stop_date).isAfter(moment())) {
 						$(v).addClass("selectclass");
 					}
-					
+
 				});
 				$(".filterhideshow").removeClass("d-none");
 			}
@@ -914,7 +914,7 @@ function bind_events(page) {
 				$(".filterhideshow").addClass("d-none");
 			}
 			$(".selectclass").map(function () {
-				
+
 				classgrt.push($(this).attr("data-selectid"));
 				classgrt = [... new Set(classgrt)];
 				// if (($(this).attr("data-selectid") != undefined) && ($(this).attr("data-selectid") != null) && ($(this).attr("data-selectid") != "")) {
@@ -936,7 +936,7 @@ function bind_events(page) {
 			$(".scheduleleave").hide();
 			if ($(this).is(":checked")) {
 				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
-					
+
 					let [employee, date] = $(v).attr('data-selectid').split('|');
 					var r = Date.parse(date)
 					let roster_stop_date = new Date(r);
@@ -948,7 +948,7 @@ function bind_events(page) {
 				$(".filterhideshow").removeClass("d-none");
 			}
 			else {
-				
+
 				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
 					classgrt.splice(classgrt.indexOf($(v).attr('data-selectid')), 1);
 				});
@@ -956,9 +956,9 @@ function bind_events(page) {
 				$(".filterhideshow").addClass("d-none");
 			}
 			$(".selectclass").map(function () {
-				
+
 				classgrt.push($(this).attr("data-selectid"));
-				
+
 				classgrt = [... new Set(classgrt)];
 			});
 		});
@@ -980,7 +980,7 @@ function bind_events(page) {
 				$('.Postfilterhideshow').addClass('d-none');
 			}
 			$('.selectclass').map(function () {
-				
+
 				classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
 			});
 			if ($(this).parent().parent().parent().children('td').children().hasClass('redboxcolor')) {
@@ -1099,17 +1099,17 @@ function get_roster_data(page, isOt) {
 	let { project, site, shift, department, operations_role, designation } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
 	if (project || site || shift || department || operations_role || designation){
-		
+
 		$('#cover-spin').show(0);
 		frappe.call({
 			method: "one_fm.one_fm.page.roster.roster.get_roster_view", //dotted path to server method
 			type: "POST",
-			args: { start_date, end_date, employee_search_id, employee_search_name, project, site, 
-				shift, department, operations_role, designation, isOt, limit_start, limit_page_length 
+			args: { start_date, end_date, employee_search_id, employee_search_name, project, site,
+				shift, department, operations_role, designation, isOt, limit_start, limit_page_length
 			},
 			callback: function(res) {
 				// code snippet
-				
+
 				error_handler(res);
 				render_roster(res.data, page, isOt);
 			}
@@ -1117,7 +1117,7 @@ function get_roster_data(page, isOt) {
 	}
 }
 // Function responsible for Rendering the Table
-let classmap = { 
+let classmap = {
 	'Working': 'bluebox',
 	'Day Off': 'greyboxcolor',
 	'Sick Leave': 'purplebox',
@@ -1131,6 +1131,7 @@ let leavemap = {
 	'Sick Leave': 'SL',
 	'Annual Leave': 'AL',
 	'Emergency Leave': 'EL',
+	'Leave Without Pay': 'LWP',
 	'Working': '!'
 };
 let attendancemap = {
@@ -1153,7 +1154,7 @@ let attendance_abbr_map = {
 };
 // Renders on get_roster_data function
 function render_roster(res, page, isOt) {
-	console.log("here2")
+
 	let { operations_roles_data, employees_data, total } = res;
 	page.pagination.total = total;
 	let b1 = performance.now();
@@ -1195,7 +1196,7 @@ function render_roster(res, page, isOt) {
 		$rosterMonth.find(`#calenderviewtable tbody tr[data-name='${escape_values(operations_roles_data[operations_role_name][i - 1]["operations_role"])}']`).append(`<td></td>`);
 	}
 	let b2 = performance.now();
-	
+
 
 	let c1 = performance.now();
 
@@ -1219,9 +1220,9 @@ function render_roster(res, page, isOt) {
 		if(employees_data[employee_key][0]['number_of_days_off']){
 			employee_day_off += " " + employees_data[employee_key][0]['number_of_days_off'] + " Day(s) off"
 		}
-		
-		
-		
+
+
+
 		let emp_row = `
 		<tr data-name="${employee}">
 			<td class="sticky">
@@ -1247,24 +1248,24 @@ function render_roster(res, page, isOt) {
 		while (day <= end_date) {
 			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 			let sch = ``;
-			
-			
+
+
 			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, actual_shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application,relieving_date } = employees_data[employee_key][i];
 			//OT schedule view
 			var r = Date.parse(date)
 			let roster_stop_date = new Date(r);
 			roster_stop_date.setDate(roster_stop_date.getDate() - parseInt(2))
-			
+
 			if (isOt) {
 				if ((actual_shift && shift) && (actual_shift!=shift) && roster_type == 'Over-Time' && day_off_ot==0) {
-					
+
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				} else if (post_abbrv && roster_type == 'Over-Time' && !asa && day_off_ot==0) {
-					
+
 					j++;
 					sch = `
 					<td>
@@ -1272,7 +1273,7 @@ function render_roster(res, page, isOt) {
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
 				} else if(post_abbrv && roster_type == 'Over-Time' && asa && day_off_ot==0){
-					
+
 					j++;
 					sch = `
 					<td>
@@ -1280,7 +1281,7 @@ function render_roster(res, page, isOt) {
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Over-Time' && day_off_ot==1){
-					
+
 					j++;
 					sch = `
 					<td>
@@ -1289,24 +1290,24 @@ function render_roster(res, page, isOt) {
 					</td>`;
 				}
 				else if (employee_availability && !post_abbrv) {
-					
+
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else if (attendance && !employee_availability) {
-					
+
 					if (attendance == 'Present') { j++; }
 					sch = `
 					<td>
-						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+						<div class="forbidden tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 					</td>`;
 				} else {
-					
+
 					if(moment(date)>=moment(relieving_date)){
-						
+
 						sch = `
 					<td>
 						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
@@ -1314,7 +1315,7 @@ function render_roster(res, page, isOt) {
 					</td>`;
 					}
 					else{
-						
+
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
@@ -1329,25 +1330,25 @@ function render_roster(res, page, isOt) {
 			}
 			//Basic schedule view
 			else {
-				
+
 			 	if ((actual_shift && shift) && (actual_shift!=shift) && day_off_ot==0) {
-				sch = `
+									sch = `
 				<td>
 					<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
 						data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 				</td>`;
-				} 
+				}
 				else if (post_abbrv && roster_type == 'Basic' && !asa && day_off_ot==0) {
-					
+
 					j++;
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}</span></div>
 					</td>`;
-				} 
+				}
 				else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
-					
+
 					j++;
 					sch = `
 					<td>
@@ -1355,7 +1356,7 @@ function render_roster(res, page, isOt) {
 							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
 					</td>`;
 				}else if(post_abbrv && roster_type == 'Basic' && day_off_ot==1){
-					
+
 					j++;
 					sch = `
 					<td>
@@ -1364,38 +1365,38 @@ function render_roster(res, page, isOt) {
 					</td>`;
 				}
 				else if (employee_availability && !post_abbrv) {
-					
+
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
 							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
 					</td>`;
 				} else if (attendance && !employee_availability) {
-					
+
 					if(day_off_ot){
-						sch = `
+												sch = `
 					<td>
 						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkgreenbox d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 					</td>`;
 					}
 					else{
-						if (attendance == 'Present') { 
-								sch = `
+												if (attendance == 'Present') {
+															sch = `
 						<td>
 							<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
 								data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 						</td>`;
-							j++; 
+							j++;
 
 						}
 						else if (attendance == "On Leave"){
-							sch = `
+														sch = `
 						<td>
-							<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
-								data-selectid="${employee + "|" + date + "|" + attendance}">${leavemap[leave_type]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
+							<div class="forbidden tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
+								data-selectid="${employee + "|" + date + "|" + attendance}">${leavemap[leave_type]?leavemap[leave_type]:'LV'}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift}</span></div>
 						</td>`;
-							
+
 						}
 						else{
 							sch = `
@@ -1406,13 +1407,13 @@ function render_roster(res, page, isOt) {
 
 						}
 					}
-					
-					
-					
+
+
+
 				} else {
-					
+
 					if(moment(date)>=moment(relieving_date)){
-						
+
 						sch = `
 					<td>
 						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
@@ -1420,7 +1421,7 @@ function render_roster(res, page, isOt) {
 					</td>`;
 					}
 					else{
-						
+
 					sch = `
 					<td>
 						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
@@ -1438,7 +1439,7 @@ function render_roster(res, page, isOt) {
 
 	}
 	let c2 = performance.now();
-	
+
 	// frappe.show_alert({message:__("Roster updated"), indicator:'green'});
 	bind_events(page);
 
@@ -1460,7 +1461,7 @@ function get_roster_week_data(page, isOt) {
 	let { start_date, end_date } = page;
 	let { project, site, shift, department, operations_role } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	
+
 
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_name, project, site, shift, department, operations_role, isOt, limit_start, limit_page_length })
 		.then(res => {
@@ -1496,7 +1497,7 @@ function get_roster_week_data(page, isOt) {
 				while (day <= end_date) {
 					// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 					let { date, operations_role, count, highlight } = operations_roles_data[operations_role_name][i];
-					
+
 					let pt_count = `
 				<td class="${highlight}">
 					<div class="text-center" data-selectid="${operations_role + "|" + date}">${count}</div>
@@ -1558,6 +1559,7 @@ function get_roster_week_data(page, isOt) {
 						'Sick Leave': 'SL',
 						'Annual Leave': 'AL',
 						'Emergency Leave': 'EL',
+						'Leave Without Pay': 'LWP',
 						'Working': '!'
 					};
 					let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift } = employees_data[employee_key][i];
@@ -1613,7 +1615,7 @@ function get_post_data(page) {
 	let { limit_start, limit_page_length } = page.pagination;
 	if (project || site || shift || department || operations_role){
 		$('#cover-spin').show(0);
-		
+
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 			.then(res => {
 				$('#cover-spin').hide();
@@ -1700,7 +1702,7 @@ function get_post_week_data(page) {
 	classgrtw = [];
 	let { start_date, end_date } = page;
 	let { project, site, shift, operations_role } = page.filters;
-	
+
 	let { limit_start, limit_page_length } = page.pagination;
 	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
 		.then(res => {
@@ -2334,8 +2336,8 @@ function render_staff_list_view(data) {
 	}
 	let $staffdatatable = $('#staffdatatable tbody');
 	data.forEach(function (employee) {
-		
-		
+
+
 		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department,site_supervisor,shift_supervisor } = employee;
 		let row = `
 		<tr>
@@ -2408,7 +2410,7 @@ function render_staff_list_view(data) {
 function render_staff_card_view(data) {
 	$('.staff-card-wrapper').empty();
 	data.forEach(function (employee, i) {
-		
+
 		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department, image } = employee;
 		let row = `
 		<div class="col-xs-12 col-sm-12 col-md-6 col-lg-4 mb30">
@@ -2676,7 +2678,7 @@ function staff_edit_dialog() {
 				method: 'one_fm.one_fm.page.roster.roster.assign_staff',
 				args: { employees, shift, request_employee_assignment},
 				callback: function (r) {
-					
+
 					d.hide();
 					$('#cover-spin').hide();
 					update_staff_view();
@@ -2935,7 +2937,7 @@ function unschedule_staff(page) {
 			} else if (element == ".rosterMonth") {
 				otRoster = false;
 			}
-			
+
 			frappe.call({
 				method: "one_fm.one_fm.page.roster.roster.unschedule_staff",
 				type: "POST",
@@ -3041,9 +3043,9 @@ function schedule_change_post(page) {
 	if (selected.length > 0) {
 		selected.forEach(function (i) {
 			let [employee, date] = i.split("|");
-			employees.push({employee, date});
-			employees = [... new Set(employees)];
-		});
+							employees.push({employee, date});
+				employees = [... new Set(employees)];
+					});
 	}
 	var hide_day_off_ot_check = 0;
 	var hide_keep_days_off_check = 0;
@@ -3090,7 +3092,7 @@ function schedule_change_post(page) {
 						d.fields_dict.project_end_date.value  = '';
 						d.fields_dict.end_date.refresh()
 						d.fields_dict.start_date.refresh()
-						d.fields_dict.project_end_date.refresh()	
+						d.fields_dict.project_end_date.refresh()
 					} else {
 						d.fields_dict.end_date.df.read_only  = 0;
 						d.fields_dict.start_date.df.read_only  = 0;
@@ -3376,7 +3378,7 @@ function dayoff(page) {
 					args["repeat_freq"] = repeat_freq;
 				}
 			}
-			
+
 			frappe.call({
 				method: "one_fm.one_fm.page.roster.roster.dayoff",
 				type: "POST",
@@ -3594,4 +3596,4 @@ let error_handler = (res) => {
 	} else {
 		$('#cover-spin').hide();
 	}
-} 
+}

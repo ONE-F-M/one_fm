@@ -42,49 +42,6 @@ def employee_validate_attendance_by_timesheet(doc, method):
 		doc.default_shift = ''
 		doc.site = ''
 
-def after_insert_job_applicant(doc, method):
-    notify_recruiter_and_requester_from_job_applicant(doc, method)
-
-def notify_recruiter_and_requester_from_job_applicant(doc, method):
-    if doc.one_fm_erf and doc.one_fm_hiring_method == "A la carte Recruitment":
-        recipients = []
-        erf_details = frappe.db.get_values('ERF', filters={'name': doc.one_fm_erf},
-        fieldname=["erf_requested_by", "recruiter_assigned", "secondary_recruiter_assigned"], as_dict=True)
-        if erf_details and len(erf_details) == 1:
-            if erf_details[0].erf_requested_by and erf_details[0].erf_requested_by != 'Administrator':
-                recipients.append(erf_details[0].erf_requested_by)
-            if erf_details[0].recruiter_assigned:
-                recipients.append(erf_details[0].recruiter_assigned)
-            if erf_details[0].secondary_recruiter_assigned:
-                recipients.append(erf_details[0].secondary_recruiter_assigned)
-        designation = frappe.db.get_value('Job Opening', doc.job_title, 'designation')
-        context = {
-            "designation": designation,
-            "status": doc.status,
-            "applicant_name": doc.applicant_name,
-            "cv": frappe.utils.get_url(doc.resume_attachment) if doc.resume_attachment else None,
-            "passport_type": doc.one_fm_passport_type,
-            "job_applicant": get_url(doc.get_url()),
-            "contact_email": doc.one_fm_email_id
-        }
-
-        message = frappe.render_template('one_fm/templates/emails/job_application_notification.html', context=context)
-        # page_link = get_url(doc.get_url())
-        # mandatory_field, labels = get_mandatory_fields(doc.doctype, doc.name)
-        # message = "<p>There is a Job Application created for the position {2} <a href='{0}'>{1}</a></p>".format(page_link, doc.name, designation)
-
-        # if mandatory_field and labels:
-            # message = create_message_with_details(message, mandatory_field, labels, cv=cv_link)
-
-        if recipients:
-            sendemail(
-                recipients=recipients,
-                subject='Job Application created for {0}'.format(designation),
-                message=message,
-                reference_doctype=doc.doctype,
-                reference_name=doc.name,
-            )
-
 @frappe.whitelist()
 def make_employee(source_name, target_doc=None):
     def set_missing_values(source, target):
@@ -186,8 +143,9 @@ def employee_after_insert(doc, method):
     update_erf_close_with(doc)
 
 def employee_before_insert(doc, method):
+    ...
     # check for nationality, then set residency
-    if doc.one_fm_nationality != "Kuwaiti":
+    if doc.one_fm_nationality != "Kuwaiti" and doc.employment_type != "Subcontractor":
         doc.under_company_residency = 1
 
 def create_employee_user_from_company_email(doc):
@@ -267,9 +225,20 @@ def generate_employee_id(doc):
 		count = count + 1
 		serial_number = str(count).zfill(3)
 
-	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{1 if doc.under_company_residency else 0}{doc.date_of_birth.strftime('%y')}".upper())
+	residency_digit = 1 if doc.under_company_residency else 0
+
+	if is_subcontract_employee(doc.name, doc.employment_type):
+		residency_digit = 'S'
+
+	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{residency_digit}{doc.date_of_birth.strftime('%y')}".upper())
 	doc.reload()
 
+def is_subcontract_employee(employee, employment_type=False):
+    if frappe.db.exists("Onboard Subcontract Employee", {"employee": employee}):
+        return True
+    elif employment_type == frappe.db.get_single_value('Hiring Settings', 'subcontract_employment_type'):
+        return True
+    return False
 
 def create_leave_policy_assignment(doc):
     """
@@ -546,17 +515,12 @@ def create_onboarding_from_job_offer(job_offer):
                     else:
                         o_employee.set(od, job_applicant.get('one_fm_'+od))
 
-                #set employee's name in arabic
-                employee_name_in_arabic = False
-                if job_applicant.get('one_fm_first_name_in_arabic'):
-                    if job_applicant.get('one_fm_last_name_in_arabic'):
-                        employee_name_in_arabic = job_applicant.get('one_fm_lasst_name_in_arabic')
-                    if employee_name_in_arabic:
-                        employee_name_in_arabic += " "+job_applicant.get('one_fm_first_name_in_arabic')
-                    else:
-                        employee_name_in_arabic = job_applicant.get('one_fm_first_name_in_arabic')
-                if employee_name_in_arabic:
-                    o_employee.set('employee_name_in_arabic', employee_name_in_arabic)
+                # set employee's name in arabic
+                o_employee.set('first_name_in_arabic', job_applicant.get('one_fm_first_name_in_arabic') or job_applicant.get('one_fm_first_name'))
+                o_employee.set('second_name_in_arabic', job_applicant.get('one_fm_second_name_in_arabic') or '')
+                o_employee.set('third_name_in_arabic', job_applicant.get('one_fm_third_name_in_arabic') or '')
+                o_employee.set('forth_name_in_arabic', job_applicant.get('one_fm_forth_name_in_arabic') or '')
+                o_employee.set('last_name_in_arabic', job_applicant.get('one_fm_last_name_in_arabic') or job_applicant.get('one_fm_last_name'))
 
                 # Set Documents attached in the Job Applicant to Onboard Employee document
                 for applicant_document in job_applicant.one_fm_documents_required:
@@ -724,7 +688,6 @@ def create_interview_and_feedback(data, interview_round, interviewer, job_applic
 		interview.to_time = now()
 		interview.append('interview_details', {'interviewer': interviewer})
 		interview.save(ignore_permissions=True)
-		frappe.db.set_value('Job Applicant', job_applicant, 'bulk_interview', interview.name)
 		interview_name = interview.name
 	if interview_name:
 		create_interview_feedback(data, interview_name, interviewer, job_applicant, method, feedback_exists)
@@ -788,25 +751,33 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 		get_link_to_form('Interview Feedback', interview_feedback.name), method.title()))
 
 def calculate_interview_feedback_average_rating(doc, method):
-    total_skill_rating = doc.average_rating if doc.average_rating else 0
-    total_score = 0
-    total_questions = 0
-    for d in doc.interview_question_assessment:
-        d.weight = d.weight if d.weight else 0
-        if d.weight > 0 and d.score:
-            total_score += get_score_out_of_five(d.score, d.weight)
-            total_questions += 1
+    total_rating = 0
+    for d in doc.skill_assessment:
+        if d.rating:
+            total_rating += d.rating
 
-    average_score = flt(total_score / total_questions if total_questions else 0)
-    if total_score > 0:
-        if total_skill_rating > 0:
-            doc.average_rating = flt((total_skill_rating + average_score) / 2)
-        else:
-            doc.average_rating = flt(average_score)
+    total_skill_rating = flt(
+        total_rating / len(doc.skill_assessment) if len(doc.skill_assessment) else 0
+    )
 
-def get_score_out_of_five(score, weight):
-    return (score * 5) / weight
+    total_question_rating = 0
+    if doc.interview_question_assessment and len(doc.interview_question_assessment) > 0:
+        total_rating = 0
+        for d in doc.interview_question_assessment:
+            d.weight = d.weight if d.weight else 0
+            if d.weight > 0 and d.score:
+                total_rating += get_rating_from_the_score(d.score, d.weight)
 
+        total_question_rating = flt(total_rating / len(doc.interview_question_assessment))
+
+    if total_question_rating > 0:
+        doc.average_rating = (total_skill_rating + total_question_rating) / 2
+    else:
+        doc.average_rating = total_skill_rating
+
+def get_rating_from_the_score(score, weight):
+    score_per = score / weight
+    return score_per if score_per else 0
 
 def get_employee_record_exists_for_job_offer_or_job_applicant(job_offer=False, job_applicant=False, status='Active'):
 	"""

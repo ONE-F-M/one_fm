@@ -24,7 +24,10 @@ jobs:
         port: 22
         script: |
           cd /home/frappe/frappe-bench/apps/one_fm # we move into our app's folder
-          git pull upstream staging # we pull any changes from git
+          # git pull upstream staging # we pull any changes from git
+          git pull
+          cd /home/frappe          
+          pip3 install --upgrade frappe-bench
           cd /home/frappe/frappe-bench
           # bench setup requirements
           bench migrate # sync database

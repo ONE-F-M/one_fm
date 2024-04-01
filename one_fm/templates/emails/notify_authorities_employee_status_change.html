@@ -1,0 +1,141 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, .employee_status_change td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      width: 30%;
+      text-align: left;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #ddd;
+    }
+    
+</style>
+    
+<p>Hello, due to a change in the employee status of, {{ employee_name }} with ID, {{ employee_id }}. The following documents needs your action. </p><br>
+<p>New Status: {{ status }}</p><br>
+
+{% if operations_shift %}
+    <h3>Operations Shift</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Operations Shift</th>
+                <th>Link to form</th>
+            </tr>
+        </thead>
+        <tbody class="employee_status_change">
+            {% for key, value in operations_shift.items() %}  
+                <tr>
+                    <th>{{ key }}</th>
+                    <th><a href={{ value }}>Link</a></th>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+{% endif %}
+
+
+
+{% if operations_site %}
+    <h3>Operations Site</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Operations Site</th>
+                <th>Link to form</th>
+            </tr>
+        </thead>
+        <tbody class="employee_status_change">
+            {% for key, value in operations_site.items() %}  
+                <tr>
+                    <th>{{ key }}</th>
+                    <th><a href={{ value }}>Link</a></th>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+{% endif %}
+
+
+
+{% if projects %}
+    <h3>Projects</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Projects</th>
+                <th>Link to form</th>
+            </tr>
+        </thead>
+        <tbody class="employee_status_change">
+            {% for key, value in projects.items() %}  
+                <tr>
+                    <th>{{ key }}</th>
+                    <th><a href={{ value }}>Link</a></th>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+{% endif %}
+
+
+{% if reports_to %}
+    <h3>Employee Reports To</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Employee Name</th>
+                <th>Link to form</th>
+            </tr>
+        </thead>
+        <tbody class="employee_status_change">
+            {% for obj in reports_to %}
+                <tr>
+                    <th>{{ obj.get("name") }}</th>
+                    <th>{{ obj.get("employee_name") }}</th>
+                    <th><a href={{ obj.get("url") }}>Link</a></th>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+{% endif %}
+
+{% if to_do %}
+    <h3>To Do</h3>
+    <p>To get the linked To Do documents, click <a href={{ to_do }}>here</a></p>
+    <br>
+{% endif %}
+
+{% if operations_manager %}
+    <h3>Operations Manager</h3>
+    <p>The employee is the current Operations Manager, click <a href={{ operations_manager }}>here</a> to make changes</p>
+    <br>
+{% endif %}
+
+{% if attendance_manager %}
+    <h3>Attendance Manager</h3>
+    <p>The employee is the current Attendance Manager, click <a href={{ attendance_manager }}>here</a> to make changes</p>
+    <br>
+{% endif %}
+

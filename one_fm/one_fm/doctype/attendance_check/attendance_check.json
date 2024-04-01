@@ -11,6 +11,7 @@
   "employee_name",
   "department",
   "roster_type",
+  "attendance_by_timesheet",
   "column_break_1",
   "date",
   "reports_to",
@@ -31,33 +32,23 @@
   "screenshot",
   "other_reason",
   "employee_checkin_details_section",
-  "has_checkin_record",
-  "has_checkout_record",
-  "section_break_o6yav",
   "checkin_record",
-  "column_break_k9wny",
+  "column_break_eekf",
   "checkout_record",
-  "shift_assignment_details_section",
-  "has_shift_assignment",
+  "shift_permission",
   "section_break_nirwm",
   "shift_assignment",
   "column_break_2",
   "start_time",
   "column_break_3",
   "end_time",
-  "section_break_pidnl",
-  "has_shift_pemission",
-  "shift_permission",
-  "attendance_details_section",
-  "attendance_marked",
   "section_break_qe614",
   "attendance",
   "attendance_comment",
   "column_break_ujiag",
   "marked_attendance_status",
-  "section_break_xzkb1",
-  "has_attendance_request",
   "attendance_request",
+  "section_break_xzkb1",
   "comment",
   "amended_from",
   "is_unscheduled"
@@ -139,19 +130,6 @@
    "options": "\nPresent\nAbsent\nOn Leave\nDay Off"
   },
   {
-   "fieldname": "shift_assignment_details_section",
-   "fieldtype": "Section Break",
-   "hide_border": 1,
-   "label": "Shift Assignment Details"
-  },
-  {
-   "default": "0",
-   "fieldname": "has_shift_assignment",
-   "fieldtype": "Check",
-   "label": "Has Shift Assignment?",
-   "read_only": 1
-  },
-  {
    "fieldname": "shift_assignment",
    "fieldtype": "Link",
    "label": "Shift Assignment",
@@ -180,25 +158,11 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "has_shift_pemission",
-   "fieldtype": "Check",
-   "label": "Has Shift Pemission?",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:doc.has_shift_pemission==1;",
    "fieldname": "shift_permission",
    "fieldtype": "Link",
    "label": "Shift Permission",
    "options": "Shift Permission",
    "read_only": 1
-  },
-  {
-   "fieldname": "attendance_details_section",
-   "fieldtype": "Section Break",
-   "hide_border": 1,
-   "label": "Attendance Details"
   },
   {
    "fetch_from": "attendance.status",
@@ -216,13 +180,6 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "has_attendance_request",
-   "fieldtype": "Check",
-   "label": "Has Attendance Request?",
-   "read_only": 1
-  },
-  {
    "depends_on": "eval:doc.has_attendance_request==1;",
    "fieldname": "attendance_request",
    "fieldtype": "Link",
@@ -233,7 +190,6 @@
   {
    "fieldname": "employee_checkin_details_section",
    "fieldtype": "Section Break",
-   "hide_border": 1,
    "label": "Employee Checkin Details"
   },
   {
@@ -266,14 +222,9 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.has_shift_assignment == 1;",
    "fieldname": "section_break_nirwm",
    "fieldtype": "Section Break",
-   "hide_border": 1
-  },
-  {
-   "fieldname": "section_break_pidnl",
-   "fieldtype": "Section Break"
+   "label": "Shift Detail"
   },
   {
    "fieldname": "column_break_wtkg0",
@@ -281,10 +232,10 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.attendance_marked==1;",
    "fieldname": "section_break_qe614",
    "fieldtype": "Section Break",
-   "hide_border": 1
+   "hide_border": 1,
+   "label": "Attendance Detail"
   },
   {
    "fieldname": "column_break_ujiag",
@@ -296,25 +247,9 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "0",
-   "fieldname": "has_checkin_record",
-   "fieldtype": "Check",
-   "label": "Has Checkin Record?",
-   "read_only": 1
-  },
-  {
-   "depends_on": "eval:doc.has_checkin_record==1 || doc.has_checkout_record==1",
-   "fieldname": "section_break_o6yav",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "column_break_k9wny",
-   "fieldtype": "Column Break",
-   "read_only": 1
-  },
-  {
    "fieldname": "justification_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Justification Section"
   },
   {
    "fetch_from": "reports_to.user_id",
@@ -347,13 +282,6 @@
    "read_only": 1
   },
   {
-   "default": "0",
-   "fieldname": "attendance_marked",
-   "fieldtype": "Check",
-   "label": "Attendance marked?",
-   "read_only": 1
-  },
-  {
    "default": "Basic",
    "fieldname": "roster_type",
    "fieldtype": "Select",
@@ -361,13 +289,6 @@
    "in_standard_filter": 1,
    "label": "Roster Type",
    "options": "Basic\nOver-Time",
-   "read_only": 1
-  },
-  {
-   "default": "0",
-   "fieldname": "has_checkout_record",
-   "fieldtype": "Check",
-   "label": "Has Checkout Record",
    "read_only": 1
   },
   {
@@ -422,12 +343,12 @@
    "mandatory_depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\""
   },
   {
-   "depends_on": "eval:[\"Invalid media content\",\"Out-of-site location\", \"User not assigned to shift\", \"Suddenly, the App stop working!\",\"Other\"].includes(doc.justification)",
+   "depends_on": "justification",
    "description": "Upload screenshot with the same issue!",
    "fieldname": "screenshot",
    "fieldtype": "Attach",
    "label": "Screenshot",
-   "mandatory_depends_on": "eval:[\"Invalid media content\",\"Out-of-site location\", \"User not assigned to shift\", \"Suddenly, the App stop working!\"].includes(doc.justification)"
+   "mandatory_depends_on": "justification"
   },
   {
    "depends_on": "eval:doc.justification == \"Other\"",
@@ -442,6 +363,18 @@
    "fieldtype": "Check",
    "label": "Is Unscheduled",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_eekf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fetch_from": "employee.attendance_by_timesheet",
+   "fieldname": "attendance_by_timesheet",
+   "fieldtype": "Check",
+   "label": "Attendance By Timesheet",
+   "read_only": 1
   }
  ],
  "in_create": 1,
@@ -452,7 +385,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2023-12-03 11:32:52.002023",
+ "modified": "2024-03-18 12:01:32.877623",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",

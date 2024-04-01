@@ -12,7 +12,7 @@ from frappe.model.utils.user_settings import get_user_settings
 from frappe.permissions import get_doc_permissions
 from frappe.utils.data import cstr
 from one_fm.utils import (
-    check_employee_permission_on_doc, get_approver_for_many_employees,
+    check_employee_permission_on_doc, get_approver_for_many_employees, has_super_user_role
 )
 
 @frappe.whitelist()
@@ -116,9 +116,9 @@ def get_docinfo(doc=None, doctype=None, name=None):
 			"automated_messages": automated_messages,
 			"total_comments": len(json.loads(doc.get("_comments") or "[]")),
 			"versions": get_versions(doc),
-			"assignments": get_assignments(doc.doctype, doc.name),
+			"assignments": get_assignments(doc.doctype, str(doc.name)),
 			"permissions": get_doc_permissions(doc),
-			"shared": frappe.share.get_users(doc.doctype, doc.name),
+			"shared": frappe.share.get_users(doc.doctype, str(doc.name)),
 			"views": get_view_logs(doc.doctype, doc.name),
 			"energy_point_logs": get_point_logs(doc.doctype, doc.name),
 			"additional_timeline_content": get_additional_timeline_content(doc.doctype, doc.name),
@@ -513,8 +513,12 @@ def leave_application_list(user):
 	"""
 		Filter leave application list based on permision
 	"""
-	if frappe.session.user in ["Administrator", "abdullah@one-fm.com"]:
+	if frappe.session.user in ["Administrator"]:
 		return
+
+	if has_super_user_role(frappe.session.user):
+		return
+
 	if not user: user = frappe.session.user
 	try:
 		supervisor = frappe.cache().get_value(frappe.session.user).employee

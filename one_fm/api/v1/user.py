@@ -11,14 +11,13 @@ from frappe.utils import cint, cstr, getdate
 
 @frappe.whitelist()
 def get_user_details(employee_id: str = None):
-
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee_id must be of type str.")
-
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee_id must be of type str.")
+
         employee = frappe.get_doc("Employee", {"employee_id": employee_id})
 
         if not employee:
@@ -38,6 +37,7 @@ def get_user_details(employee_id: str = None):
         return response("Success", 200, data)
 
     except Exception as error:
+        frappe.log_error(title="API User", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
@@ -101,30 +101,33 @@ def get_user_roles(employee_id: str = None):
             error (str): Any error handled.
         }
     """
-    employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
+    try:
+        employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
 
-    if not employee_user:
-        return response("Resource Not Found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
-    
-    user_roles = frappe.get_roles(employee_user)
-    
-    return response("Success", 200, user_roles)
+        if not employee_user:
+            return response("Resource Not Found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
+        
+        user_roles = frappe.get_roles(employee_user)
+        
+        return response("Success", 200, user_roles)
+    except Exception as e:
+        frappe.log_error(title="API User roles", message=frappe.get_traceback())
 
 @frappe.whitelist()
 def store_fcm_token(employee_id: str = None , fcm_token: str = None, device_os: str = None):
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not fcm_token:
-        return response("Bad Request", 400, None, "fcm_token required.")
-
-    if not device_os:
-        return response("Bad Request", 400, None, "device_os required.")
-
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee_id must be of type str.")
-    
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not fcm_token:
+            return response("Bad Request", 400, None, "fcm_token required.")
+
+        if not device_os:
+            return response("Bad Request", 400, None, "device_os required.")
+
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee_id must be of type str.")
+    
         employee = frappe.get_doc("Employee", {"employee_id": employee_id})
     
         if not employee:
@@ -137,4 +140,5 @@ def store_fcm_token(employee_id: str = None , fcm_token: str = None, device_os: 
         return response("Success", 201, employee.as_dict())
 
     except Exception as error:
+        frappe.log_error(title="API FCM Token", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)

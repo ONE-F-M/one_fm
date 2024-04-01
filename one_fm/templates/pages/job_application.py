@@ -49,7 +49,7 @@ def easy_apply(first_name, second_name, third_name, last_name, nationality, civi
     applicant_name += " "+last_name
     job = frappe.get_doc('Job Opening', job_opening)
     erf_link = get_url("/app/erf/" + job.one_fm_erf)
-    job_link = get_url(doc.get_url())
+    job_link = get_url(job.get_url())
     subject = """Application for {0}""".format(job.designation)
     message_details = """
         <b>Name:</b> {0}<br>
@@ -173,7 +173,7 @@ def create_job_applicant_from_job_portal(applicant_name, country, applicant_emai
                 applicant_language.read = float(language['read'])
                 applicant_language.speak = float(language['speak'])
                 applicant_language.write = float(language['write'])
-
+        job_applicant.flags.ignore_mandatory = 1
         job_applicant.save(ignore_permissions=True)
         if name_of_file:
             frappe.enqueue(update_file_name, dt=job_applicant.doctype, dn=job_applicant.name, fn=name_of_file, at_front=True, is_async=True)

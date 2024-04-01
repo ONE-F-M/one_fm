@@ -73,7 +73,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 	try:
 		site = frappe.utils.cstr(frappe.local.conf.app_url)
 		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
-
+		
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
 		
@@ -86,7 +86,6 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 		headers = {'Accept': 'application/json'}
 		session = requests.Session()
 		auth_api = site + "api/method/frappe.integrations.oauth2.get_token"
-		
 		auth_api_response = session.post(
             auth_api,
             data=args, headers=headers
@@ -114,6 +113,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 			return response("Bad Request", auth_api_response.status_code, None, json.loads(auth_api_response.content))
 
 	except Exception as error:
+		frappe.log_error(title="API Login", message=frappe.get_traceback())
 		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist(allow_guest=True)
@@ -175,6 +175,7 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		return response("Success", 201, result)
 	
 	except Exception as error:
+		frappe.log_error(title="API Forgot password", message=frappe.get_traceback())
 		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist(allow_guest=True)
@@ -195,6 +196,7 @@ def update_password(otp, id, employee_id, new_password):
 			'message': _('Password Updated!')
 		}
 	except Exception as e:
+		frappe.log_error(title="API Update password", message=frappe.get_traceback())
 		return frappe.utils.response.report_error(e.http_status_code)
 
 		
@@ -327,46 +329,50 @@ def fetch_employee_checkin_list(from_date=None, to_date=None, limit=20, page_num
 	number_of_check_in - total number of check in objects
 	
 	"""
-	user_id = frappe.session.user
-	if user_id is None:
-		return response("Invalid authentication Credentials", 400, None, "Valid Authentication credentials is Required !")
-	employee = frappe.get_doc("Employee", {"user_id": user_id})
-	if employee is None:
-		return response("The user_Id doesnt belong to an employee", 400)
-	if not isinstance(page_number, int):
-		return response("Invalid page number", 400, None, "Page Number must be an Integer !")
-	if not isinstance(limit, int):
-		return response("Invalid Data Type ! ", 400, None, "Enter an integer! ")
-	if from_date is not None and to_date is None:
-		to_date = from_date 
-	if from_date is not None:
-		try:
-			from_date = getdate(from_date)
-		except:
-			from_date = None
-	if to_date is not None:
-		try:
-			to_date = getdate(to_date)
-		except:
-			to_date = None
-	if from_date and to_date:
-		if from_date > to_date:
-			return response("Bad request", 400, None, "From_date cannot be greater than to date")
-	check_list = frappe.db.get_list("Employee Checkin", filters={"employee": employee.name, "time": ["between", (from_date, to_date)]}, fields=["name", "time", "log_type"])
-	if len(check_list) < 1:
-		return response("No check in for this employee in this time range !", 200)
-	no_of_pages = len(check_list) // limit if len(check_list) % limit == 0 and len(check_list) // limit > 0 else (len(check_list) // limit) + 1
-	if page_number > no_of_pages or page_number < 1:
-		return response("Page not found !", 404, None, f"Enter a page number within 1 - {no_of_pages}")
-	end = page_number * limit
-	check_in = check_list[(end - limit): end]
-	data = {
-		"no_of_pages": no_of_pages,
-		"current_page": page_number,
-		"data": check_in,
-		"number of checkin": len(check_list)
-	}
-	return response("Successfully Retrieved !", 200, data)
+	try:
+		user_id = frappe.session.user
+		if user_id is None:
+			return response("Invalid authentication Credentials", 400, None, "Valid Authentication credentials is Required !")
+		employee = frappe.get_doc("Employee", {"user_id": user_id})
+		if employee is None:
+			return response("The user_Id doesnt belong to an employee", 400)
+		if not isinstance(page_number, int):
+			return response("Invalid page number", 400, None, "Page Number must be an Integer !")
+		if not isinstance(limit, int):
+			return response("Invalid Data Type ! ", 400, None, "Enter an integer! ")
+		if from_date is not None and to_date is None:
+			to_date = from_date 
+		if from_date is not None:
+			try:
+				from_date = getdate(from_date)
+			except:
+				from_date = None
+		if to_date is not None:
+			try:
+				to_date = getdate(to_date)
+			except:
+				to_date = None
+		if from_date and to_date:
+			if from_date > to_date:
+				return response("Bad request", 400, None, "From_date cannot be greater than to date")
+		check_list = frappe.db.get_list("Employee Checkin", filters={"employee": employee.name, "time": ["between", (from_date, to_date)]}, fields=["name", "time", "log_type"])
+		if len(check_list) < 1:
+			return response("No check in for this employee in this time range !", 200)
+		no_of_pages = len(check_list) // limit if len(check_list) % limit == 0 and len(check_list) // limit > 0 else (len(check_list) // limit) + 1
+		if page_number > no_of_pages or page_number < 1:
+			return response("Page not found !", 404, None, f"Enter a page number within 1 - {no_of_pages}")
+		end = page_number * limit
+		check_in = check_list[(end - limit): end]
+		data = {
+			"no_of_pages": no_of_pages,
+			"current_page": page_number,
+			"data": check_in,
+			"number of checkin": len(check_list)
+		}
+		return response("Successfully Retrieved !", 200, data)
+	except Exception as e:
+		frappe.log_error(title="API Authentication", message=frappe.get_traceback())
+		response("Internal Server Error", 500, None, str(e))
 
 @frappe.whitelist(allow_guest=True)
 def new_forgot_password(employee_id=None):
@@ -467,3 +473,38 @@ def set_password(employee_user_id, new_password):
 			'message': _('Password Updated!')
 		}
 	return response("Success", 200, message)
+
+@frappe.whitelist(allow_guest=True)
+def user_login(employee_id, password):
+	try:
+		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+		if not username:
+			return response("Unauthorized", 401, None, "Invalid employee ID")
+		auth = frappe.auth.LoginManager()
+		auth.authenticate(user=username, pwd=password)
+		auth.post_login()
+		msg={'status':200, 'text':frappe.local.response.message, 'user': frappe.session.user}
+		user = frappe.get_doc('User', frappe.session.user)
+		if(user.api_key and user.api_secret):
+			msg['token'] = f"token {user.api_key}:{user.get_password('api_secret')}"
+		else:
+			session_user = frappe.session.user
+			frappe.set_user('Administrator')
+			generate_keys(user.name)
+			user.reload()
+			msg['token'] = f"token {user.api_key}:{user.get_password('api_secret')}"
+			frappe.set_user(session_user)
+		user, user_roles, user_employee =  get_current_user_details()
+		msg.update(user_employee)
+		msg.update({"roles": user_roles})
+		if "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles:
+			msg.update({"supervisor": 1})
+		else:
+			msg.update({"supervisor": 0})
+		response("success", 200, msg)
+	except frappe.exceptions.AuthenticationError:
+		print('auth eror')
+		response("error", 401, None, frappe.local.response.message)
+	except Exception as e:
+		print(frappe.get_traceback(), 'Email Login')
+		response("error", 500, None, str(e))

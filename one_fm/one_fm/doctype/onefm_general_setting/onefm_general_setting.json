@@ -2,24 +2,29 @@
  "actions": [],
  "allow_rename": 1,
  "creation": "2022-06-09 12:09:59.006662",
+ "description": "Settings Doctype",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "mobile_app_version",
   "column_break_xyl05",
-  "mark_atttendance_per_employee",
+  "is_production",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
   "section_break_nsc7h",
   "document_access_roles",
   "section_break_7yvzt",
+  "super_user_role",
   "mark_atttendance_per_employee",
   "attendance_manager",
   "attendance_manager_name",
+  "attendance_check_exclusion",
+  "column_break_xudp",
+  "att_check_approver_penalty_type",
   "employee_section",
-  "employee_access",
+  "employee_master_role",
   "wiki_page_access"
  ],
  "fields": [
@@ -46,19 +51,10 @@
    "label": "Zenquotes API Key"
   },
   {
-   "fieldname": "column_break_xyl05",
-   "fieldtype": "Column Break"
-  },
-  {
    "default": "0",
    "fieldname": "mark_atttendance_per_employee",
    "fieldtype": "Check",
    "label": "Mark Atttendance Per Employee"
-  },
-  {
-   "collapsible": 1,
-   "fieldname": "section_break_nsc7h",
-   "fieldtype": "Section Break"
   },
   {
    "description": "Roles that have access to documents regardless of employee field restriction.",
@@ -75,6 +71,7 @@
    "options": "ONEFM Document Access Roles Detail"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_7yvzt",
    "fieldtype": "Section Break",
    "label": "Attendance"
@@ -93,20 +90,58 @@
    "read_only": 1
   },
   {
+   "description": "All users with this role have edit access on the Employee Form",
+   "fieldname": "employee_master_role",
+   "fieldtype": "Table",
+   "label": "Employee Master Role",
+   "options": "ONEFM Document Access Roles Detail"
+  },
+  {
+   "fieldname": "column_break_xyl05",
+   "fieldtype": "Column Break"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "section_break_nsc7h",
+   "fieldtype": "Section Break"
+  },
+  {
    "fieldname": "employee_section",
    "fieldtype": "Section Break",
    "label": "Employee"
   },
   {
-   "fieldname": "employee_access",
+   "fieldname": "super_user_role",
+   "fieldtype": "Link",
+   "label": "Super User Role",
+   "options": "Role"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_production",
+   "fieldtype": "Check",
+   "label": "Is Production"
+  },
+  {
+   "fieldname": "attendance_check_exclusion",
    "fieldtype": "Table",
-   "label": "Employee Access",
-   "options": "ONEFM Employee Access"
+   "label": "Attendance Check Exclusion",
+   "options": "Attendance Check Exclusion"
+  },
+  {
+   "fieldname": "column_break_xudp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "att_check_approver_penalty_type",
+   "fieldtype": "Link",
+   "label": "Attendance Check Approver Penalty Type",
+   "options": "Penalty Type"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2023-10-19 17:06:21.594157",
+ "modified": "2024-03-18 11:25:38.533972",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

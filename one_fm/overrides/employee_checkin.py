@@ -31,7 +31,7 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		validate_active_employee(self.employee)
 		self.validate_duplicate_log()
 		if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin'):
-			try:			
+			try:
 				existing_perm = None
 				checkin_time = get_datetime(self.time)
 				curr_shift = get_current_shift(self.employee)
@@ -81,8 +81,29 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		self.reload()
 		if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
 			frappe.enqueue(after_insert_background, self=self.name)
+
 		if self.log_type == "IN":
 			frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
+
+def exists_checkin(current_shift_assignment, checkin_name, log_type="IN"):
+	'''
+		Method to check exsit any employee checkin for the shift assignment
+		args:
+			current_shift_assignment: name(ID) of the current shift assignment
+			checkin_name: name(ID) of the current Employee Checkin
+			log_type: type of checkin(IN or OUT)
+		result: Boolean(return True if the an employee checkin exist for the given shift assignment)
+	'''
+	if frappe.db.exists("Employee Checkin",
+		{
+			"shift_assignment": current_shift_assignment,
+			"name": ["not in", [checkin_name]],
+			"log_type": log_type
+		}
+	):
+		return True
+
+	return False
 
 def after_insert_background(self):
 	self = frappe.get_doc("Employee Checkin", self)
@@ -110,7 +131,7 @@ def after_insert_background(self):
 				shift_assignment="{curr_shift.name}", operations_shift="{curr_shift.shift}", shift_type='{curr_shift.shift_type}',
 				shift='{curr_shift.shift_type}', shift_actual_start="{curr_shift.start_datetime}", shift_actual_end="{curr_shift.end_datetime}",
 				shift_start="{curr_shift.start_datetime.date()}", shift_end="{curr_shift.end_datetime.date()}", early_exit={early_exit},
-				late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}', 
+				late_entry={late_entry}, date='{curr_shift.start_date if self.log_type=='IN' else curr_shift.end_datetime}',
 				operations_site="{curr_shift.site}", post_abbrv="{curr_shift.post_abbrv}", project="{curr_shift.project}",
 				company="{curr_shift.company}", operations_role="{curr_shift.operations_role}",
 				roster_type='{curr_shift.roster_type}'
@@ -120,11 +141,11 @@ def after_insert_background(self):
 			frappe.db.commit()
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
-	
+
 	# send notification
 	# continue to notification
 	# These are returned according to dates. Time is not taken into account
-	
+
 	start_time = get_datetime(cstr(getdate()) + " 00:00:00")
 	end_time = get_datetime(cstr(getdate()) + " 23:59:59")
 
@@ -221,8 +242,8 @@ def get_shift_from_checkin(checkin):
 		This method returns shift assignment for a specific checkin based on a specific date
 	"""
 	shifts = frappe.db.get_list(
-		"Shift Assignment", 
-		filters={'employee':checkin.employee, 
+		"Shift Assignment",
+		filters={'employee':checkin.employee,
 			'start_date': ["BETWEEN", [str(add_days(checkin.time.date(), -1)), str(checkin.time.date())]], 'docstatus':1},
 		fields="*",
 		ignore_permissions=1
@@ -239,9 +260,10 @@ def notify_supervisor_about_late_entry(checkin):
 	try:
 		auto_attendance_employee = frappe.get_value("Employee", {'name':checkin.employee}, ['auto_attendance'])
 		if auto_attendance_employee == 0:
-			shift_permission = frappe.db.sql(f""" select name from `tabShift Permission` where employee = '{checkin.employee}' and date = '{now_datetime().date()}' and log_type = 'IN' and permission_type = 'Arrive Late' and workflow_state = 'Approved' ;  """)
+			shift_permission = frappe.db.sql(f""" select name from `tabShift Permission` where employee = '{checkin.employee}' and date = '{now_datetime().date()}' and log_type = 'IN' and permission_type = 'Arrive Late' and workflow_state IN ('Pending','Approved') ;  """)
+			checkin_shift_assignment = False
 			if checkin.shift_assignment:
-				last_shift_assignment = checkin.shift_assignment
+				checkin_shift_assignment = last_shift_assignment = checkin.shift_assignment
 				shift_late_minutes = frappe.db.get_value("Shift Type", {"name": checkin.shift_type}, ['supervisor_reminder_shift_start', 'start_time'], as_dict=1)
 				the_roster_type = checkin.roster_type
 				op_shift = frappe.get_doc("Operations Shift", checkin.operations_shift)
@@ -249,11 +271,16 @@ def notify_supervisor_about_late_entry(checkin):
 			else:
 				last_shift_assignment = get_shift_from_checkin(checkin)
 				if last_shift_assignment:
+					checkin_shift_assignment = last_shift_assignment.name
 					shift_late_minutes = frappe.db.get_value("Shift Type", {"name": last_shift_assignment["shift_type"]}, ['supervisor_reminder_shift_start', 'start_time'], as_dict=1)
 					the_roster_type = last_shift_assignment.roster_type
 					op_shift = frappe.get_doc("Operations Shift", last_shift_assignment.shift)
 
-			if last_shift_assignment and not shift_permission:
+			notify_late_arrival = True
+			if checkin_shift_assignment:
+				notify_late_arrival = False if exists_checkin(checkin_shift_assignment, checkin.name) else True
+
+			if last_shift_assignment and notify_late_arrival and not shift_permission:
 				if checkin.time.time() > datetime.strptime(str(shift_late_minutes["start_time"] + timedelta(minutes=shift_late_minutes['supervisor_reminder_shift_start'])), "%H:%M:%S").time():
 					time_diff = calculate_time_diffrence_for_checkin(shift_late_minutes["start_time"], checkin.time)
 					time_of_arrival = parse(str(checkin.time)).time()
@@ -291,7 +318,7 @@ def send_push_notification_for_late_entry(recipient, culprit_name, shift, time_o
 def calculate_time_diffrence_for_checkin(shift_time, checkin_time):
 	datetime_shift = datetime.strptime(str(now_datetime().date()) + " " + str(shift_time), '%Y-%m-%d %H:%M:%S')
 	time_diff_in_minutes = (checkin_time - datetime_shift).seconds // 60
-	the_diff = divmod(time_diff_in_minutes, 60) 
+	the_diff = divmod(time_diff_in_minutes, 60)
 	if the_diff[0] < 1:
 		return [the_diff[1]]
 	return list(the_diff)
@@ -305,7 +332,7 @@ def auto_generate_checkin():
 									AND sa.employee = e.name
 									AND sa.start_date = '{date}'
 					""", as_dict=1)
-	
+
 	if employee_list:
 		frappe.enqueue(process_list, employee_list=employee_list, is_async=True, queue='long')
 
@@ -327,4 +354,3 @@ def create_checkin_record(employee, log_type, time, shift_assignment):
 	employee_checkin.db_set('creation', str(time))
 	employee_checkin.db_set('actual_time', str(time))
 	frappe.db.commit()
-		

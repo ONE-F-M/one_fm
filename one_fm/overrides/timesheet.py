@@ -1,12 +1,12 @@
 import frappe
 import itertools
-from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate
+from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate, get_datetime_in_timezone
 from calendar import monthrange
 from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
 from frappe import _
 from one_fm.processor import sendemail
-from one_fm.utils import send_workflow_action_email
+from one_fm.utils import send_workflow_action_email, get_approver
 
 
 class TimesheetOveride(Timesheet):
@@ -19,6 +19,28 @@ class TimesheetOveride(Timesheet):
         self.calculate_percentage_billed()
         self.set_dates()
         self.set_approver()
+        self.validate_start_date()
+
+    def validate_start_date(self):
+        start_date = getdate(self.start_date)
+        if start_date > getdate():
+            frappe.throw(_("Please note that Timesheets cannot be created for a future date"), title="Invalid Start Date")
+        if start_date < getdate():
+            if self.is_new():
+                msg = _("Please note that Timesheets cannot be created for a past date")
+            else:
+                msg = _("Please note that Timesheets cannot be updated for a past date")
+            frappe.throw(msg, title="Invalid Start Date")
+
+    def before_save(self):
+        if not self.is_new():
+            self.set_dates()
+            date_in_ast = get_datetime_in_timezone("Asia/Kuwait").date()
+            # 1. Check if value of start_date is changed and it is before current date according to AST.
+            # 2. Check if value of end_date is changed and it is before current date according to AST.
+            # If any of the above criteria is fulfilled then throw an error.
+            if (self.has_value_changed("start_date") and date_in_ast > self.get('start_date')) or (self.has_value_changed("end_date") and date_in_ast > self.get('end_date')):
+                frappe.throw(_("Please note that timesheets cannot be updated to a previous date."), title="Invalid Start Date")
 
     def set_approver(self):
         if self.attendance_by_timesheet:
@@ -30,9 +52,11 @@ class TimesheetOveride(Timesheet):
         if allowed_role not in frappe.get_roles(frappe.session.user):
             if self.start_date != current_date or self.end_date != current_date:
                 frappe.throw("Not allowed to submit doc for previous date")
+        if self.total_hours <= 0:
+            frappe.throw("Total Hours cannot be 0 or less.")
 
     def on_update(self):
-        if self.workflow_state == 'Open':
+        if self.workflow_state == 'Pending Approval':
             send_workflow_action_email(self, [self.approver])
             message = "The timesheet {0} of {1}, Open for your Approval".format(self.name, self.employee_name)
             create_notification_log("Pending - Workflow Action on Timesheet", message, [self.approver], self)
@@ -43,7 +67,7 @@ class TimesheetOveride(Timesheet):
         if self.workflow_state == "Approved":
             self.check_approver()
             self.create_attendance()
-        elif self.workflow_state == "Rejected":
+        elif self.workflow_state == "Canceled":
             self.check_approver()
             self.notify_the_employee()
 
@@ -96,10 +120,16 @@ class TimesheetOveride(Timesheet):
             att.reference_docname = self.name
             att.insert(ignore_permissions=True)
             att.submit()
-    
+
     def check_approver(self):
-        if frappe.session.user != self.approver:
+        if frappe.session.user not in [self.approver, "Administrator"]:
             frappe.throw(_("Only Approver can Approve/Reject the timesheet"))
+
+@frappe.whitelist()
+def fetch_approver(employee):
+    approver = get_approver(employee)
+    if approver:
+        return frappe.get_value("Employee", approver, ["user_id"])
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
     filters = {
@@ -221,15 +251,6 @@ def add_time_log(timesheet, attendance, start, end, post, billable, billing_hour
     })
     return timesheet
 
-@frappe.whitelist()
-def fetch_approver(employee):
-    if employee:
-        approver = get_reports_to_employee_name(employee)
-        if approver:
-            return frappe.get_value("Employee", approver, ["user_id"])
-        else:
-            frappe.throw("No approver found for {employee}".format(employee=employee))
-
 def validate_timesheet_count(doc, event):
     if doc.workflow_state == "Approved":
         employee_shift = frappe.get_value("Employee", doc.employee,["default_shift"])
@@ -241,7 +262,7 @@ def validate_timesheet_count(doc, event):
 def validate_date(doc, method):
     current_date = getdate()
     allowed_role = "HR Manager"
-    if allowed_role not in frappe.get_roles(frappe.session.user):
+    if (allowed_role not in frappe.get_roles(frappe.session.user)) or (frappe.session.user!="Administrator"):
         if doc.start_date != current_date or doc.end_date != current_date:
             frappe.throw("Not allowed to submit doc for previous date")
 
