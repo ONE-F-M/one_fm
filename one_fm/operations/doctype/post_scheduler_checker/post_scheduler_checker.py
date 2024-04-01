@@ -6,7 +6,7 @@ import frappe
 from frappe.utils import getdate, get_last_day, get_first_day, date_diff
 from frappe.model.document import Document
 from one_fm.utils import get_week_start_end
-from one_fm.operations.doctype.operation_shift.operation_shift import get_supervisor_operations_shifts, get_shift_supervisor
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts, get_shift_supervisor
 
 class PostSchedulerChecker(Document):
 	def autoname(self):

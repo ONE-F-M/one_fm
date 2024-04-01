@@ -7,7 +7,7 @@ from frappe.utils import time_diff_in_hours, getdate, cstr
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from frappe import _
 from frappe.utils import rounded
-from one_fm.operations.doctype.operations_shift.operation_shift import get_shift_supervisor, get_shift_supervisor_user
+from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor, get_shift_supervisor_user
 
 class OvertimeRequest(Document):
 

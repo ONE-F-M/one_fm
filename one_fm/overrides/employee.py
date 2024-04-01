@@ -16,7 +16,7 @@ from one_fm.processor import sendemail,send_whatsapp
 from one_fm.utils import get_domain, get_standard_notification_template, get_approver_user
 from six import string_types
 from frappe import _
-from one_fm.operations.doctype.operations_shift.operation_shift import get_supervisor_operations_shifts
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
 
 class EmployeeOverride(EmployeeMaster):
     def validate(self):
