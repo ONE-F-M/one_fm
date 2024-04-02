@@ -1402,7 +1402,7 @@
   "doctype": "Workflow",
   "document_type": "Purchase Order",
   "is_active": 1,
-  "modified": "2024-02-19 12:46:55.051711",
+  "modified": "2024-03-24 09:58:08.631967",
   "name": "Purchase Order",
   "override_status": 0,
   "send_email_alert": 0,
