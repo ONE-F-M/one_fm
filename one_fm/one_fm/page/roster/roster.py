@@ -307,7 +307,7 @@ def get_employee_leave_attendance(employees,start_date):
 @frappe.whitelist()
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None, selected_days_only=0):
     try:
-   
+
         _start_date = getdate(start_date)
 
         validation_logs = []
@@ -374,15 +374,15 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
             frappe.throw(str(validation_logs))
         else:
             # extreme schedule
-            
+
             extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
                 operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
                 request_employee_schedule=request_employee_schedule, employee_list=employee_list
             )
             # employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
             update_roster(key="roster_view")
-            
-            
+
+
             response("success", 200, {'message':'Successfully rostered employees'})
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Schedule Roster")
@@ -492,8 +492,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             <hr>
         """
         frappe.throw(error_head+error_msg)
-    
-    
+
+
     if not cint(request_employee_schedule):
     # 	"""
     # 		USE DIRECT SQL TO CREATE ROSTER SCHEDULE.
@@ -511,11 +511,11 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
         if not post_number:post_number=0
         number_to_add_daily = len(employees_dict)
         omitted_days = []
-        
+
         no_of_schedules_on_date = {}
         if not cint(keep_days_off):
             id_list = [] #store for schedules list
-            
+
             for employee, date_values in employees_date_dict.items():
                 for datevalue in date_values:
                     if datevalue.get('date') not in omitted_days:
@@ -534,7 +534,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                             can_create = True
                         else:
                             omitted_days.append(datevalue['date'])
-                            
+
 
             query = query[:-1]
 
@@ -585,7 +585,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                             can_create = True
                         else:
                             omitted_days.append(datevalue['date'])
-                            
+
 
             query = query[:-1]
 
@@ -657,7 +657,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
 
 def validate_overfilled_post(date_list,operations_shift):
-    
+
     dates = list(set(date_list)) #Remove Duplicates
     date_list = [e.strftime('%Y-%m-%d') for e in dates]
     cond = False
@@ -673,8 +673,8 @@ def validate_overfilled_post(date_list,operations_shift):
     schedule_number = frappe.db.sql(full_query,as_dict=1)
     for each in schedule_number:
         schedule_dict[each.get('date').strftime('%Y-%m-%d')] = each.schedule_count
-    
-    
+
+
     return{'schedule_dict':schedule_dict,'post_number':post_number}
 
 def update_employee_shift(employees, shift, owner, creation):
@@ -1219,7 +1219,7 @@ def assign_staff(employees, shift, request_employee_assignment):
         frappe.log_error(str(validation_logs))
     else:
         try:
-            
+
             for employee in json.loads(employees):
                 if not cint(request_employee_assignment):
                     frappe.enqueue(assign_job, employee=employee, shift=shift, site=site, project=project, is_async=True, queue="long")
@@ -1246,7 +1246,7 @@ def create_request_employee_assignment(employee, from_shift, to_shift):
 
 
 def assign_job(employee, shift, site, project):
-    
+
     frappe.set_value("Employee", employee, "shift", shift)
     frappe.set_value("Employee", employee, "site", site)
     frappe.set_value("Employee", employee, "project", project)
