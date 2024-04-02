@@ -7,6 +7,8 @@ from frappe.model.document import Document
 from frappe.utils import getdate, get_datetime, add_to_date, format_date
 from frappe import _
 from one_fm.api.utils import get_reports_to_employee_name
+from one_fm.api.v1.utils import response
+from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 
 class ExistAttendance(frappe.ValidationError):
 	pass
@@ -110,9 +112,64 @@ class EmployeeCheckinIssue(Document):
 @frappe.whitelist()
 def fetch_approver(employee):
 	if employee:
+		shift_detail = {"assigned_shift":'',"shift_supervisor":'', "shift":'',"shift_type":''}
 		employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
 		if employee_shift:
 			approver = get_reports_to_employee_name(employee)
-			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
-
+			shift_detail['assigned_shift'] = employee_shift[0].name
+			shift_detail['shift_supervisor'] = approver
+			shift_detail['shift'] = employee_shift[0].shift
+			shift_detail['shift_type'] = employee_shift[0].shift_type
+			return shift_detail
 		frappe.throw("No approver found for {employee}".format(employee=employee))
+
+# Approve pemding employee checkin issue before marking attendance
+def approve_open_employee_checkin_issue(start_date, end_date):
+	try:
+		employee_checkin_issue_list = frappe.db.sql(f"""
+			SELECT eci.name FROM `tabEmployee Checkin Issue` eci JOIN `tabShift Assignment` sa
+			ON sa.name=eci.assigned_shift
+			WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}'
+			AND eci.workflow_state='Pending' AND eci.docstatus=0
+		""", as_dict=1)
+		error_list = """"""
+		for employee_checkin_issue in employee_checkin_issue_list:
+			try:
+				# Apply workflow
+				employee_checkin_issue_doc = frappe.get_doc("Employee Checkin Issue", employee_checkin_issue.name)
+				employee_checkin_issue_doc.db_set('workflow_state', 'Approved')
+				employee_checkin_issue_doc.db_set('docstatus', 1)
+				employee_checkin_issue_doc.add_comment("Info", "This record is System Aprroved")
+				employee_checkin_issue_doc.reload()
+				# Create checkin from employee checkin issue
+				create_employee_checkin_for_employee_checkin_issue(employee_checkin_issue_doc, True)
+			except Exception as e:
+				error_list += str(e)+'\n\n'
+		if error_list:frappe.log_error(error_list, 'Employee Checkin Issue')
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), 'Employee Checkin Issue')
+
+@frappe.whitelist()
+def create_checkin_issue(employee, issue_type, log_type, latitude, longitude, reason):
+	try:
+		shift_detail = fetch_approver(employee)
+		checkin_issue_doc = frappe.new_doc("Employee Checkin Issue")
+		checkin_issue_doc.employee = employee
+		checkin_issue_doc.date = getdate()
+		checkin_issue_doc.issue_type = issue_type
+		checkin_issue_doc.log_type = log_type
+		checkin_issue_doc.longitude = longitude
+		checkin_issue_doc.latitude = latitude
+		checkin_issue_doc.assigned_shift = shift_detail['assigned_shift']
+		checkin_issue_doc.shift_supervisor = shift_detail['shift_supervisor']
+		checkin_issue_doc.shift = shift_detail['shift']
+		checkin_issue_doc.shift_type = shift_detail['shift_type']
+		if reason:
+			checkin_issue_doc.issue_details = reason
+		checkin_issue_doc.save(ignore_permissions=True)
+		frappe.db.commit()
+		response("Success", 200, checkin_issue_doc.as_dict())
+	except:
+		frappe.log_error(frappe.get_traceback(), 'Employee Checkin Issue')
+		response("Bad Request", 400, None, "Employee Checkin Issue")
+
