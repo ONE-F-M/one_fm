@@ -51,7 +51,6 @@ function get_shift_assignment(frm){
 			},
 			callback: function(r) {
 				let val = r.message
-				console.log(val['assigned_shift'])
 				let assigned_shift, shift_supervisor, shift, shift_type = "";
 				if(val){
 					assigned_shift = val['assigned_shift']
