@@ -8,6 +8,7 @@ from frappe.utils import getdate, get_datetime, add_to_date, format_date
 from frappe import _
 from one_fm.api.utils import get_reports_to_employee_name
 from one_fm.api.v1.utils import response
+from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 
 class ExistAttendance(frappe.ValidationError):
 	pass
@@ -144,4 +145,28 @@ def create_checkin_issue(employee, issue_type, log_type, latitude, longitude, re
 		response("Success", 200, checkin_issue_doc.as_dict())
 	except:
 		frappe.log_error(frappe.get_traceback(), 'Employee Checkin Issue')
+
+@frappe.whitelist()
+def create_checkin_issue(employee, issue_type, log_type, latitude, longitude, reason):
+	try:
+		shift_detail = fetch_approver(employee)
+		checkin_issue_doc = frappe.new_doc("Employee Checkin Issue")
+		checkin_issue_doc.employee = employee
+		checkin_issue_doc.date = getdate()
+		checkin_issue_doc.issue_type = issue_type
+		checkin_issue_doc.log_type = log_type
+		checkin_issue_doc.longitude = longitude
+		checkin_issue_doc.latitude = latitude
+		checkin_issue_doc.assigned_shift = shift_detail['assigned_shift']
+		checkin_issue_doc.shift_supervisor = shift_detail['shift_supervisor']
+		checkin_issue_doc.shift = shift_detail['shift']
+		checkin_issue_doc.shift_type = shift_detail['shift_type']
+		if reason:
+			checkin_issue_doc.issue_details = reason
+		checkin_issue_doc.save(ignore_permissions=True)
+		frappe.db.commit()
+		response("Success", 200, checkin_issue_doc.as_dict())
+	except:
+		frappe.log_error(frappe.get_traceback(), 'Employee Checkin Issue')
 		response("Bad Request", 400, None, "Employee Checkin Issue")
+
