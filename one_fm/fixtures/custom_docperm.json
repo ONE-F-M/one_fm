@@ -19,7 +19,6 @@
   "report": 0,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -44,7 +43,6 @@
   "report": 0,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -69,7 +67,6 @@
   "report": 0,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -94,8 +91,463 @@
   "report": 0,
   "role": "Expense Approver",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 0,
+  "delete": 0,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2023-07-10 08:47:01.495248",
+  "name": "1866c1c212",
+  "parent": "Employee",
+  "permlevel": 1,
+  "print": 0,
+  "read": 1,
+  "report": 0,
+  "role": "HR User",
+  "select": 0,
+  "share": 0,
+  "submit": 0,
+  "write": 0
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 1,
+  "modified": "2022-01-24 14:58:26.845578",
+  "name": "57e801ff66",
+  "parent": "Employee",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "HR User",
+  "select": 1,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2023-12-28 11:51:10.498423",
+  "name": "32f1510e37",
+  "parent": "Holiday List",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Payroll Operator",
+  "select": 1,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 1,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-01-07 13:11:20.296544",
+  "name": "3a2d097fe0",
+  "parent": "Onboard Subcontract Employee",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Onboarding Officer",
+  "select": 0,
+  "share": 1,
+  "submit": 1,
+  "write": 1
+ },
+ {
+  "amend": 1,
+  "cancel": 1,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 1,
+  "modified": "2024-02-05 11:49:02.782310",
+  "name": "e610f30b57",
+  "parent": "Payroll Entry",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Payroll Operator",
+  "select": 1,
+  "share": 1,
+  "submit": 1,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 0,
+  "delete": 0,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-06 08:51:10.680454",
+  "name": "b5f1420f83",
+  "parent": "Batch",
+  "permlevel": 0,
+  "print": 0,
+  "read": 1,
+  "report": 0,
+  "role": "Stock User",
+  "select": 1,
+  "share": 0,
+  "submit": 0,
+  "write": 0
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 0,
+  "delete": 0,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-15 10:08:04.206849",
+  "name": "34910dfe46",
+  "parent": "Terms and Conditions",
+  "permlevel": 0,
+  "print": 0,
+  "read": 1,
+  "report": 0,
+  "role": "Purchase Officer",
+  "select": 0,
+  "share": 0,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 0,
+  "delete": 0,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-15 10:08:16.856896",
+  "name": "2ada5238ef",
+  "parent": "Terms and Conditions",
+  "permlevel": 0,
+  "print": 0,
+  "read": 1,
+  "report": 0,
+  "role": "Purchase Manager",
+  "select": 0,
+  "share": 0,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 0,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-29 11:34:44.797717",
+  "name": "51f7f02996",
+  "parent": "Interview Type",
+  "permlevel": 0,
+  "print": 0,
+  "read": 1,
+  "report": 0,
+  "role": "Hiring Manager",
+  "select": 0,
+  "share": 0,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 0,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-29 11:56:17.090588",
+  "name": "6dace68cd5",
+  "parent": "Interview Round",
+  "permlevel": 0,
+  "print": 0,
+  "read": 1,
+  "report": 0,
+  "role": "Hiring Manager",
+  "select": 0,
+  "share": 0,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 0,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 0,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-03-20 12:58:16.367584",
+  "name": "afc9a6018e",
+  "parent": "ERF",
+  "permlevel": 0,
+  "print": 0,
+  "read": 1,
+  "report": 0,
+  "role": "Projects Manager",
+  "select": 0,
+  "share": 0,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-01-07 13:11:20.072503",
+  "name": "c7cea5df0c",
+  "parent": "Onboard Subcontract Employee",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "System Manager",
+  "select": 0,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 1,
+  "modified": "2024-02-06 08:51:10.546921",
+  "name": "d9e631b009",
+  "parent": "Batch",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Item Manager",
+  "select": 0,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-29 11:34:44.774736",
+  "name": "209c95cc59",
+  "parent": "Interview Type",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "System Manager",
+  "select": 0,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-29 11:56:17.028035",
+  "name": "b05ca7746d",
+  "parent": "Interview Round",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "HR User",
+  "select": 0,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-29 11:34:44.653909",
+  "name": "287d45460b",
+  "parent": "Interview Type",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "HR Manager",
+  "select": 0,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-29 11:56:16.826940",
+  "name": "2843cbc6d6",
+  "parent": "Interview Round",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "HR Manager",
+  "select": 0,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-29 11:34:44.754659",
+  "name": "de9d4eb7ab",
+  "parent": "Interview Type",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "HR User",
+  "select": 0,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-02-29 11:56:17.057479",
+  "name": "bf6859d5e3",
+  "parent": "Interview Round",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Interviewer",
+  "select": 1,
+  "share": 1,
   "submit": 0,
   "write": 1
  },
@@ -119,7 +571,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -144,7 +595,6 @@
   "report": 0,
   "role": "Penalty Issuer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -169,7 +619,6 @@
   "report": 1,
   "role": "Penalty Issuer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -194,7 +643,6 @@
   "report": 0,
   "role": "Senior Recruiter",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -219,7 +667,6 @@
   "report": 1,
   "role": "Senior Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -244,7 +691,6 @@
   "report": 1,
   "role": "Senior Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -269,7 +715,6 @@
   "report": 0,
   "role": "Expense Approver",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -294,7 +739,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -319,7 +763,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -344,7 +787,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -369,7 +811,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -394,7 +835,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -419,7 +859,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -444,7 +883,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -469,7 +907,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -494,7 +931,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -519,7 +955,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -544,7 +979,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -569,7 +1003,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -594,7 +1027,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -619,7 +1051,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -644,7 +1075,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -669,7 +1099,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -694,7 +1123,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -719,7 +1147,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -744,7 +1171,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -769,7 +1195,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -794,7 +1219,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -819,7 +1243,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -844,7 +1267,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -869,7 +1291,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -894,7 +1315,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -919,7 +1339,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -944,7 +1363,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -969,7 +1387,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -994,7 +1411,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -1019,7 +1435,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1044,7 +1459,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1069,7 +1483,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1094,7 +1507,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1119,7 +1531,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1144,7 +1555,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1169,7 +1579,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1194,7 +1603,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1219,7 +1627,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1244,7 +1651,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -1269,7 +1675,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1294,7 +1699,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1319,7 +1723,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1344,7 +1747,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1369,7 +1771,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1394,7 +1795,6 @@
   "report": 1,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -1419,7 +1819,6 @@
   "report": 1,
   "role": "Onboarding Officer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -1444,7 +1843,6 @@
   "report": 0,
   "role": "Onboarding Officer",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -1469,7 +1867,6 @@
   "report": 0,
   "role": "Recruiter",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1494,7 +1891,6 @@
   "report": 0,
   "role": "Onboarding Officer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1519,7 +1915,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -1544,7 +1939,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -1569,7 +1963,6 @@
   "report": 0,
   "role": "Onboarding Officer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1594,7 +1987,6 @@
   "report": 0,
   "role": "Recruiter",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1619,7 +2011,6 @@
   "report": 1,
   "role": "Onboarding Officer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -1644,7 +2035,6 @@
   "report": 1,
   "role": "Legal Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -1669,7 +2059,6 @@
   "report": 0,
   "role": "Legal Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1694,7 +2083,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -1719,7 +2107,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1744,7 +2131,6 @@
   "report": 0,
   "role": "GRD Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -1769,7 +2155,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -1794,7 +2179,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1819,7 +2203,6 @@
   "report": 1,
   "role": "Legal Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -1844,7 +2227,6 @@
   "report": 0,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -1869,7 +2251,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1894,7 +2275,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1919,7 +2299,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -1944,7 +2323,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -1969,7 +2347,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -1994,7 +2371,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -2019,7 +2395,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -2044,7 +2419,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -2069,7 +2443,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2094,7 +2467,6 @@
   "report": 0,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -2119,7 +2491,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2144,7 +2515,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2169,7 +2539,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2194,7 +2563,6 @@
   "report": 0,
   "role": "Hiring Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2219,7 +2587,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2244,7 +2611,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2269,7 +2635,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2294,7 +2659,6 @@
   "report": 0,
   "role": "GRD Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2319,7 +2683,6 @@
   "report": 1,
   "role": "Recruiter",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2344,7 +2707,6 @@
   "report": 0,
   "role": "Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2369,7 +2731,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2394,7 +2755,6 @@
   "report": 1,
   "role": "Trainer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2419,7 +2779,6 @@
   "report": 1,
   "role": "Trainer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2444,7 +2803,6 @@
   "report": 1,
   "role": "Trainer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -2469,7 +2827,6 @@
   "report": 1,
   "role": "Trainer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2494,7 +2851,6 @@
   "report": 1,
   "role": "Trainer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -2519,7 +2875,6 @@
   "report": 0,
   "role": "Trainer",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2544,7 +2899,6 @@
   "report": 1,
   "role": "Trainer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2569,7 +2923,6 @@
   "report": 1,
   "role": "Trainer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -2594,7 +2947,6 @@
   "report": 0,
   "role": "Hiring Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2619,7 +2971,6 @@
   "report": 0,
   "role": "Hiring Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2644,7 +2995,6 @@
   "report": 0,
   "role": "Hiring Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2669,7 +3019,6 @@
   "report": 0,
   "role": "Hiring Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2694,7 +3043,6 @@
   "report": 0,
   "role": "Guest",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2719,7 +3067,6 @@
   "report": 1,
   "role": "Payroll Operator",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2744,7 +3091,6 @@
   "report": 0,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -2769,7 +3115,6 @@
   "report": 0,
   "role": "Payroll Operator",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -2794,7 +3139,6 @@
   "report": 0,
   "role": "Accommodation User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2819,7 +3163,6 @@
   "report": 1,
   "role": "Uniform Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -2844,7 +3187,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 1,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -2869,7 +3211,6 @@
   "report": 1,
   "role": "Uniform Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2894,7 +3235,6 @@
   "report": 0,
   "role": "Penalty Issuer",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -2919,7 +3259,6 @@
   "report": 0,
   "role": "Uniform Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -2944,7 +3283,6 @@
   "report": 0,
   "role": "Mandoop Operator",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -2969,7 +3307,6 @@
   "report": 1,
   "role": "Purchase Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -2994,7 +3331,6 @@
   "report": 0,
   "role": "Purchase User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3019,7 +3355,6 @@
   "report": 0,
   "role": "Mandoop Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -3044,7 +3379,6 @@
   "report": 0,
   "role": "Mandoop Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -3069,7 +3403,6 @@
   "report": 0,
   "role": "Mandoop Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -3094,7 +3427,6 @@
   "report": 0,
   "role": "Mandoop Operator",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -3119,7 +3451,6 @@
   "report": 0,
   "role": "Legal Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3144,7 +3475,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -3169,7 +3499,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -3194,7 +3523,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3219,7 +3547,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3244,7 +3571,6 @@
   "report": 1,
   "role": "Recruiter",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -3269,7 +3595,6 @@
   "report": 0,
   "role": "Stock User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -3294,7 +3619,6 @@
   "report": 0,
   "role": "Accommodation User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3319,7 +3643,6 @@
   "report": 1,
   "role": "Purchase Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -3344,7 +3667,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -3369,7 +3691,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -3394,7 +3715,6 @@
   "report": 0,
   "role": "Guest",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3419,7 +3739,6 @@
   "report": 0,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -3444,7 +3763,6 @@
   "report": 0,
   "role": "Data Migrator",
   "select": 1,
-  "set_user_permissions": 1,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -3469,7 +3787,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3494,7 +3811,6 @@
   "report": 0,
   "role": "Accommodation User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -3519,7 +3835,6 @@
   "report": 0,
   "role": "Fleet Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3544,7 +3859,6 @@
   "report": 1,
   "role": "GRD Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -3569,7 +3883,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -3594,7 +3907,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -3619,7 +3931,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -3644,7 +3955,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -3669,7 +3979,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -3694,7 +4003,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -3719,7 +4027,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -3744,7 +4051,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -3769,7 +4075,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3794,7 +4099,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -3819,7 +4123,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3844,7 +4147,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3869,7 +4171,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3894,7 +4195,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3919,7 +4219,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3944,7 +4243,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3969,7 +4267,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -3994,7 +4291,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4019,7 +4315,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4044,7 +4339,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4069,7 +4363,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4094,7 +4387,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4119,7 +4411,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4144,7 +4435,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4169,7 +4459,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4194,7 +4483,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4219,7 +4507,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4244,7 +4531,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4269,7 +4555,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4294,7 +4579,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4319,7 +4603,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4344,7 +4627,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4369,7 +4651,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4394,7 +4675,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4419,7 +4699,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4444,7 +4723,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4469,7 +4747,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4494,7 +4771,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4519,7 +4795,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4544,7 +4819,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4569,7 +4843,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4594,7 +4867,6 @@
   "report": 0,
   "role": "Agent",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4619,7 +4891,6 @@
   "report": 0,
   "role": "Agent",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4644,7 +4915,6 @@
   "report": 0,
   "role": "Onboarding",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4669,7 +4939,6 @@
   "report": 1,
   "role": "Interviewer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -4694,7 +4963,6 @@
   "report": 0,
   "role": "Stock User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -4719,7 +4987,6 @@
   "report": 1,
   "role": "Onboarding Officer",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4744,7 +5011,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4769,7 +5035,6 @@
   "report": 1,
   "role": "Payroll Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -4794,7 +5059,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -4819,7 +5083,6 @@
   "report": 0,
   "role": "GRD Operator",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -4844,7 +5107,6 @@
   "report": 0,
   "role": "GRD Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -4869,7 +5131,6 @@
   "report": 0,
   "role": "GRD Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -4894,7 +5155,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4919,7 +5179,6 @@
   "report": 0,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -4944,7 +5203,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -4969,7 +5227,6 @@
   "report": 0,
   "role": "HR Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -4994,7 +5251,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -5019,7 +5275,6 @@
   "report": 1,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5044,7 +5299,6 @@
   "report": 1,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5069,7 +5323,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5094,7 +5347,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5119,7 +5371,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5144,7 +5395,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5169,7 +5419,6 @@
   "report": 0,
   "role": "Payroll Operator",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -5194,7 +5443,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5219,7 +5467,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5244,7 +5491,6 @@
   "report": 0,
   "role": "Payroll Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5269,7 +5515,6 @@
   "report": 0,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5294,7 +5539,6 @@
   "report": 1,
   "role": "GRD User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -5319,7 +5563,6 @@
   "report": 0,
   "role": "Legal User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -5344,7 +5587,6 @@
   "report": 0,
   "role": "Legal Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -5369,7 +5611,6 @@
   "report": 0,
   "role": "Legal Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5394,7 +5635,6 @@
   "report": 1,
   "role": "Legal User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5419,7 +5659,6 @@
   "report": 0,
   "role": "Legal User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5444,7 +5683,6 @@
   "report": 0,
   "role": "Legal User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5469,7 +5707,6 @@
   "report": 0,
   "role": "Data Importer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5494,7 +5731,6 @@
   "report": 0,
   "role": "Finance Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5519,7 +5755,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5544,7 +5779,6 @@
   "report": 0,
   "role": "Operation Admin",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5569,7 +5803,6 @@
   "report": 0,
   "role": "Operation Admin",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5594,7 +5827,6 @@
   "report": 0,
   "role": "Operation Admin",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5619,7 +5851,6 @@
   "report": 0,
   "role": "Operation Admin",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5644,7 +5875,6 @@
   "report": 0,
   "role": "Operation Admin",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5669,7 +5899,6 @@
   "report": 0,
   "role": "Operation Admin",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5694,7 +5923,6 @@
   "report": 0,
   "role": "Operation Admin",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5719,7 +5947,6 @@
   "report": 0,
   "role": "Operation Admin",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5744,7 +5971,6 @@
   "report": 1,
   "role": "Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -5769,7 +5995,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5794,7 +6019,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5819,7 +6043,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5844,7 +6067,6 @@
   "report": 0,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5869,7 +6091,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5894,7 +6115,6 @@
   "report": 0,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -5919,7 +6139,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -5944,7 +6163,6 @@
   "report": 0,
   "role": "Internal Project Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5969,7 +6187,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -5994,7 +6211,6 @@
   "report": 1,
   "role": "Internal Project Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6019,7 +6235,6 @@
   "report": 0,
   "role": "Purchase Officer",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -6044,7 +6259,6 @@
   "report": 0,
   "role": "Internal Project Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6069,7 +6283,6 @@
   "report": 0,
   "role": "Finance User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -6094,7 +6307,6 @@
   "report": 0,
   "role": "Stock Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6119,7 +6331,6 @@
   "report": 1,
   "role": "Purchase Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6144,7 +6355,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6169,7 +6379,6 @@
   "report": 1,
   "role": "Internal Project Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6194,7 +6403,6 @@
   "report": 0,
   "role": "Senior Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -6219,7 +6427,6 @@
   "report": 0,
   "role": "Senior Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -6244,7 +6451,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6269,7 +6475,6 @@
   "report": 1,
   "role": "Internal Project Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6294,7 +6499,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6319,7 +6523,6 @@
   "report": 1,
   "role": "Internal Project Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6344,7 +6547,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -6369,7 +6571,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6394,7 +6595,6 @@
   "report": 1,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -6419,7 +6619,6 @@
   "report": 0,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6444,7 +6643,6 @@
   "report": 0,
   "role": "Payroll Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -6469,7 +6667,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -6494,7 +6691,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6519,7 +6715,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6544,7 +6739,6 @@
   "report": 0,
   "role": "Recruiter",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6569,7 +6763,6 @@
   "report": 0,
   "role": "Projects Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6594,7 +6787,6 @@
   "report": 0,
   "role": "Projects User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6619,7 +6811,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -6644,7 +6835,6 @@
   "report": 0,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6669,7 +6859,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -6694,7 +6883,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6719,7 +6907,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6744,7 +6931,6 @@
   "report": 1,
   "role": "Onboarding",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6769,7 +6955,6 @@
   "report": 0,
   "role": "Agent",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -6794,7 +6979,6 @@
   "report": 0,
   "role": "Onboarding Officer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6819,7 +7003,6 @@
   "report": 0,
   "role": "Recruiter",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -6844,7 +7027,6 @@
   "report": 1,
   "role": "Course Instructor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6869,7 +7051,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6894,7 +7075,6 @@
   "report": 0,
   "role": "All",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -6919,7 +7099,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6944,7 +7123,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6969,7 +7147,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -6994,7 +7171,6 @@
   "report": 0,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7019,7 +7195,6 @@
   "report": 1,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -7044,7 +7219,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7069,7 +7243,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7094,7 +7267,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7119,7 +7291,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7144,7 +7315,6 @@
   "report": 1,
   "role": "Sales Master Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7169,7 +7339,6 @@
   "report": 1,
   "role": "Item Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7194,7 +7363,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7219,7 +7387,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7244,7 +7411,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7269,7 +7435,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7294,7 +7459,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -7319,7 +7483,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7344,7 +7507,6 @@
   "report": 1,
   "role": "Support Team",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7369,7 +7531,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7394,7 +7555,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -7419,7 +7579,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7444,7 +7603,6 @@
   "report": 1,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7469,7 +7627,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7494,7 +7651,6 @@
   "report": 1,
   "role": "Projects User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7519,7 +7675,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7544,7 +7699,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -7569,7 +7723,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7594,7 +7747,6 @@
   "report": 1,
   "role": "Item Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7619,7 +7771,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7644,7 +7795,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7669,7 +7819,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7694,7 +7843,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -7719,7 +7867,6 @@
   "report": 1,
   "role": "Manufacturing Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7744,7 +7891,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7769,7 +7915,6 @@
   "report": 1,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7794,7 +7939,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7819,7 +7963,6 @@
   "report": 0,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -7844,7 +7987,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7869,7 +8011,6 @@
   "report": 1,
   "role": "Administrator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7894,7 +8035,6 @@
   "report": 1,
   "role": "Manufacturing Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7919,7 +8059,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -7944,7 +8083,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7969,7 +8107,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -7994,7 +8131,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8019,7 +8155,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8044,7 +8179,6 @@
   "report": 1,
   "role": "Fleet Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8069,7 +8203,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8094,7 +8227,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8119,7 +8251,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8144,7 +8275,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8169,7 +8299,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8194,7 +8323,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8219,7 +8347,6 @@
   "report": 1,
   "role": "Fulfillment User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8244,7 +8371,6 @@
   "report": 0,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8269,7 +8395,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8294,7 +8419,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8319,7 +8443,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8344,7 +8467,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8369,7 +8491,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8394,7 +8515,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8418,8 +8538,7 @@
   "read": 1,
   "report": 1,
   "role": "HR Manager",
-  "select": 0,
-  "set_user_permissions": 0,
+  "select": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8444,7 +8563,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8469,7 +8587,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8494,7 +8611,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8519,7 +8635,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8544,7 +8659,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8569,7 +8683,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8594,7 +8707,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8619,7 +8731,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8644,7 +8755,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8669,7 +8779,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8694,7 +8803,6 @@
   "report": 0,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8719,7 +8827,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8744,7 +8851,6 @@
   "report": 1,
   "role": "Loan Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8769,7 +8875,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8794,7 +8899,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8819,7 +8923,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8844,7 +8947,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8869,7 +8971,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8894,7 +8995,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8919,7 +9019,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8944,7 +9043,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -8969,7 +9067,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -8994,7 +9091,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9019,7 +9115,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9044,7 +9139,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9069,7 +9163,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9094,7 +9187,6 @@
   "report": 1,
   "role": "Purchase Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9119,7 +9211,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9144,7 +9235,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9169,7 +9259,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9194,7 +9283,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9219,7 +9307,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9244,7 +9331,6 @@
   "report": 1,
   "role": "GRD Operator",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9269,7 +9355,6 @@
   "report": 0,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9294,7 +9379,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9319,7 +9403,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9344,7 +9427,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9369,7 +9451,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9394,7 +9475,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9419,7 +9499,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9444,7 +9523,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9469,7 +9547,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9494,7 +9571,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9519,7 +9595,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9544,7 +9619,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9569,7 +9643,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9594,7 +9667,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9619,7 +9691,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9644,7 +9715,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9669,7 +9739,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9694,7 +9763,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9719,7 +9787,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9744,7 +9811,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9769,7 +9835,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9794,7 +9859,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9819,7 +9883,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9844,7 +9907,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9869,7 +9931,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9894,7 +9955,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9919,7 +9979,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9944,7 +10003,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -9969,7 +10027,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -9994,7 +10051,6 @@
   "report": 1,
   "role": "Loan Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -10019,7 +10075,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -10044,7 +10099,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10069,7 +10123,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10094,7 +10147,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10119,7 +10171,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -10144,7 +10195,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10169,7 +10219,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10194,7 +10243,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10219,7 +10267,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10244,7 +10291,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10269,7 +10315,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10294,7 +10339,6 @@
   "report": 1,
   "role": "Item Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10319,7 +10363,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10344,7 +10387,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10369,7 +10411,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10394,7 +10435,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10419,7 +10459,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10444,7 +10483,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10469,7 +10507,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10494,7 +10531,6 @@
   "report": 1,
   "role": "Purchase Manager",
   "select": 1,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -10519,7 +10555,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10544,7 +10579,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10569,7 +10603,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10594,7 +10627,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10619,7 +10651,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10644,7 +10675,6 @@
   "report": 1,
   "role": "Website Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10669,7 +10699,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10694,7 +10723,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -10719,7 +10747,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10744,7 +10771,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10769,7 +10795,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10794,7 +10819,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10819,7 +10843,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -10844,7 +10867,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10869,7 +10891,6 @@
   "report": 0,
   "role": "Stock Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10894,7 +10915,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -10919,7 +10939,6 @@
   "report": 0,
   "role": "Projects User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10944,7 +10963,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10969,7 +10987,6 @@
   "report": 1,
   "role": "All",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -10994,7 +11011,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -11019,7 +11035,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -11044,7 +11059,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11069,7 +11083,6 @@
   "report": 0,
   "role": "All",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11094,7 +11107,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11119,7 +11131,6 @@
   "report": 0,
   "role": "All",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11144,7 +11155,6 @@
   "report": 1,
   "role": "Purchase Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -11169,7 +11179,6 @@
   "report": 0,
   "role": "Sales User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11194,7 +11203,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -11219,7 +11227,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -11244,7 +11251,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11269,7 +11275,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11294,7 +11299,6 @@
   "report": 0,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11319,7 +11323,6 @@
   "report": 0,
   "role": "All",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11344,7 +11347,6 @@
   "report": 1,
   "role": "Auditor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11369,7 +11371,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11394,7 +11395,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11419,7 +11419,6 @@
   "report": 1,
   "role": "Auditor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11444,7 +11443,6 @@
   "report": 1,
   "role": "Academics User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -11469,7 +11467,6 @@
   "report": 1,
   "role": "Administrator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -11494,7 +11491,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11519,7 +11515,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11544,7 +11539,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -11569,7 +11563,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11594,7 +11587,6 @@
   "report": 1,
   "role": "Projects User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -11619,7 +11611,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11644,7 +11635,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11669,7 +11659,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11694,7 +11683,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -11719,7 +11707,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11744,7 +11731,6 @@
   "report": 1,
   "role": "Purchase Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11769,7 +11755,6 @@
   "report": 1,
   "role": "Purchase Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11794,7 +11779,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11819,7 +11803,6 @@
   "report": 0,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11844,7 +11827,6 @@
   "report": 0,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -11869,7 +11851,6 @@
   "report": 0,
   "role": "Inbox User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11894,7 +11875,6 @@
   "report": 1,
   "role": "Purchase Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11919,7 +11899,6 @@
   "report": 1,
   "role": "Quality Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -11944,7 +11923,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -11969,7 +11947,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -11994,7 +11971,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12019,7 +11995,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -12044,7 +12019,6 @@
   "report": 0,
   "role": "All",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -12069,7 +12043,6 @@
   "report": 0,
   "role": "All",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -12094,7 +12067,6 @@
   "report": 1,
   "role": "Expense Approver",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12119,7 +12091,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12144,7 +12115,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12169,7 +12139,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12194,7 +12163,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12219,7 +12187,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12244,7 +12211,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12268,8 +12234,7 @@
   "read": 1,
   "report": 1,
   "role": "Employee",
-  "select": 0,
-  "set_user_permissions": 0,
+  "select": 1,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -12294,7 +12259,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12319,7 +12283,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12344,7 +12307,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12369,7 +12331,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12394,7 +12355,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12419,7 +12379,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12444,7 +12403,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12469,7 +12427,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -12494,7 +12451,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -12519,7 +12475,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -12544,7 +12499,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12569,7 +12523,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12594,7 +12547,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12619,7 +12571,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12644,7 +12595,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12669,7 +12619,6 @@
   "report": 1,
   "role": "PAM Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12694,7 +12643,6 @@
   "report": 1,
   "role": "All",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12719,7 +12667,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12744,7 +12691,6 @@
   "report": 1,
   "role": "GRD Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12769,7 +12715,6 @@
   "report": 1,
   "role": "GRD Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12794,7 +12739,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12819,7 +12763,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12844,7 +12787,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12869,7 +12811,6 @@
   "report": 1,
   "role": "GRD Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12894,7 +12835,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12919,7 +12859,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -12944,7 +12883,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12969,7 +12907,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -12994,7 +12931,6 @@
   "report": 1,
   "role": "Onboarding Officer",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -13019,7 +12955,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13044,7 +12979,6 @@
   "report": 1,
   "role": "Loan Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -13069,7 +13003,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13094,7 +13027,6 @@
   "report": 1,
   "role": "Support Team",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13119,7 +13051,6 @@
   "report": 1,
   "role": "Prepared Report User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -13144,7 +13075,6 @@
   "report": 1,
   "role": "Accommodation User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13169,7 +13099,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13194,7 +13123,6 @@
   "report": 1,
   "role": "Wiki Approver",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13219,7 +13147,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13244,7 +13171,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13269,7 +13195,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13294,7 +13219,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -13319,7 +13243,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13344,7 +13267,6 @@
   "report": 1,
   "role": "Blogger",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13369,7 +13291,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13394,7 +13315,6 @@
   "report": 1,
   "role": "Accommodation User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -13419,7 +13339,6 @@
   "report": 1,
   "role": "GRD Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -13444,7 +13363,6 @@
   "report": 1,
   "role": "Manufacturing User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -13469,7 +13387,6 @@
   "report": 1,
   "role": "Manufacturing Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13494,7 +13411,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -13519,7 +13435,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13544,7 +13459,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13569,7 +13483,6 @@
   "report": 1,
   "role": "GRD Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -13594,7 +13507,6 @@
   "report": 1,
   "role": "All",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13619,7 +13531,6 @@
   "report": 1,
   "role": "Purchase Master Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13644,7 +13555,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13669,7 +13579,6 @@
   "report": 0,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13694,7 +13603,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13719,7 +13627,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13744,7 +13651,6 @@
   "report": 0,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13769,7 +13675,6 @@
   "report": 1,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13794,7 +13699,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13819,7 +13723,6 @@
   "report": 0,
   "role": "All",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13844,7 +13747,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13869,7 +13771,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13894,7 +13795,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 1,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13919,7 +13819,6 @@
   "report": 1,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13944,7 +13843,6 @@
   "report": 1,
   "role": "Auditor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -13969,7 +13867,6 @@
   "report": 1,
   "role": "Item Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -13994,7 +13891,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -14019,7 +13915,6 @@
   "report": 1,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14044,7 +13939,6 @@
   "report": 1,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14069,7 +13963,6 @@
   "report": 0,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -14094,7 +13987,6 @@
   "report": 1,
   "role": "Sales Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -14119,7 +14011,6 @@
   "report": 1,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14144,7 +14035,6 @@
   "report": 1,
   "role": "Quality Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14169,7 +14059,6 @@
   "report": 1,
   "role": "Administrator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14194,7 +14083,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14219,7 +14107,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14244,7 +14131,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14269,7 +14155,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14294,7 +14179,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14319,7 +14203,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14344,7 +14227,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14369,7 +14251,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14394,7 +14275,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14419,7 +14299,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14444,7 +14323,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14469,7 +14347,6 @@
   "report": 1,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14494,7 +14371,6 @@
   "report": 1,
   "role": "Hiring Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14519,7 +14395,6 @@
   "report": 1,
   "role": "Hiring Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14544,7 +14419,6 @@
   "report": 1,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14569,7 +14443,6 @@
   "report": 1,
   "role": "PAM Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14594,7 +14467,6 @@
   "report": 1,
   "role": "GRD Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14619,7 +14491,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14644,7 +14515,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14669,7 +14539,6 @@
   "report": 1,
   "role": "Onboarding Officer",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14694,7 +14563,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14719,7 +14587,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14744,7 +14611,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14769,7 +14635,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14794,7 +14659,6 @@
   "report": 1,
   "role": "Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14819,7 +14683,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14844,7 +14707,6 @@
   "report": 1,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14869,7 +14731,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14894,7 +14755,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14919,7 +14779,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14944,7 +14803,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -14969,7 +14827,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -14994,7 +14851,6 @@
   "report": 1,
   "role": "Projects User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -15019,7 +14875,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15044,7 +14899,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15069,7 +14923,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15094,7 +14947,6 @@
   "report": 1,
   "role": "Manufacturing Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15119,7 +14971,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15144,7 +14995,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15169,7 +15019,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15194,7 +15043,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15219,7 +15067,6 @@
   "report": 0,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15244,7 +15091,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15269,7 +15115,6 @@
   "report": 0,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15294,7 +15139,6 @@
   "report": 0,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15319,7 +15163,6 @@
   "report": 1,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15344,7 +15187,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15369,7 +15211,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -15394,7 +15235,6 @@
   "report": 1,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15419,7 +15259,6 @@
   "report": 1,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15444,7 +15283,6 @@
   "report": 0,
   "role": "Sales User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15469,7 +15307,6 @@
   "report": 0,
   "role": "Purchase Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -15494,7 +15331,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15519,7 +15355,6 @@
   "report": 0,
   "role": "All",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15544,7 +15379,6 @@
   "report": 1,
   "role": "Sales Master Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15569,7 +15403,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -15594,7 +15427,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15619,7 +15451,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15644,7 +15475,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15669,7 +15499,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15694,7 +15523,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15719,7 +15547,6 @@
   "report": 1,
   "role": "Hiring Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15744,7 +15571,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -15769,7 +15595,6 @@
   "report": 1,
   "role": "PAM Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15794,7 +15619,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15819,7 +15643,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15844,7 +15667,6 @@
   "report": 1,
   "role": "Senior Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15869,7 +15691,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -15894,7 +15715,6 @@
   "report": 1,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15919,7 +15739,6 @@
   "report": 1,
   "role": "Projects User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -15944,7 +15763,6 @@
   "report": 1,
   "role": "Finance User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -15969,7 +15787,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -15994,7 +15811,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16019,7 +15835,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16044,7 +15859,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16069,7 +15883,6 @@
   "report": 0,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16094,7 +15907,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16119,7 +15931,6 @@
   "report": 1,
   "role": "Leave Approver",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -16144,7 +15955,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -16169,7 +15979,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16194,7 +16003,6 @@
   "report": 1,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16219,7 +16027,6 @@
   "report": 0,
   "role": "Purchase User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16244,7 +16051,6 @@
   "report": 0,
   "role": "Sales Master Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -16269,7 +16075,6 @@
   "report": 1,
   "role": "Senior Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -16294,7 +16099,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16319,7 +16123,6 @@
   "report": 1,
   "role": "Onboarding Officer",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -16344,7 +16147,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16369,7 +16171,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -16394,7 +16195,6 @@
   "report": 0,
   "role": "GRD Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16419,7 +16219,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16444,7 +16243,6 @@
   "report": 0,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16469,7 +16267,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -16494,7 +16291,6 @@
   "report": 0,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -16519,7 +16315,6 @@
   "report": 0,
   "role": "Manufacturing User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16544,7 +16339,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16569,7 +16363,6 @@
   "report": 0,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16594,7 +16387,6 @@
   "report": 1,
   "role": "Stock User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16619,7 +16411,6 @@
   "report": 0,
   "role": "All",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16644,7 +16435,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16669,7 +16459,6 @@
   "report": 1,
   "role": "Projects User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16694,7 +16483,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16719,7 +16507,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16744,7 +16531,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16769,7 +16555,6 @@
   "report": 1,
   "role": "Leave Approver",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -16794,7 +16579,6 @@
   "report": 1,
   "role": "All",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -16819,7 +16603,6 @@
   "report": 0,
   "role": "Projects User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16844,7 +16627,6 @@
   "report": 1,
   "role": "Stock Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -16869,7 +16651,6 @@
   "report": 1,
   "role": "GRD Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -16894,7 +16675,6 @@
   "report": 1,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -16919,7 +16699,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16944,7 +16723,6 @@
   "report": 1,
   "role": "Finance User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -16969,7 +16747,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -16994,7 +16771,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17019,7 +16795,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17044,7 +16819,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17069,7 +16843,6 @@
   "report": 1,
   "role": "Wiki Editor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -17094,7 +16867,6 @@
   "report": 0,
   "role": "Wiki Editor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17119,7 +16891,6 @@
   "report": 1,
   "role": "Wiki Editor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17144,7 +16915,6 @@
   "report": 0,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17169,7 +16939,6 @@
   "report": 0,
   "role": "Support Team",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17194,7 +16963,6 @@
   "report": 0,
   "role": "Support Team",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17219,7 +16987,6 @@
   "report": 1,
   "role": "Projects User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -17244,7 +17011,6 @@
   "report": 1,
   "role": "Projects User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17269,7 +17035,6 @@
   "report": 0,
   "role": "Employee",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17294,7 +17059,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -17319,7 +17083,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -17344,7 +17107,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17369,7 +17131,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17394,7 +17155,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17419,7 +17179,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17444,7 +17203,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17469,7 +17227,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17494,7 +17251,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17519,7 +17275,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17544,7 +17299,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17569,7 +17323,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17594,7 +17347,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17619,7 +17371,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17644,7 +17395,6 @@
   "report": 0,
   "role": "Employee Self Service",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17669,7 +17419,6 @@
   "report": 0,
   "role": "Support Team",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17694,7 +17443,6 @@
   "report": 1,
   "role": "Payroll Operator",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17719,7 +17467,6 @@
   "report": 0,
   "role": "Support Team",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17744,7 +17491,6 @@
   "report": 0,
   "role": "Support Team",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17769,7 +17515,6 @@
   "report": 0,
   "role": "HR User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17794,7 +17539,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17819,7 +17563,6 @@
   "report": 0,
   "role": "Purchase Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -17844,7 +17587,6 @@
   "report": 0,
   "role": "Data Importer",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -17869,7 +17611,6 @@
   "report": 0,
   "role": "Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -17894,7 +17635,6 @@
   "report": 0,
   "role": "Senior Recruiter",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17919,7 +17659,6 @@
   "report": 0,
   "role": "Item Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17944,7 +17683,6 @@
   "report": 0,
   "role": "Purchase Officer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17969,7 +17707,6 @@
   "report": 0,
   "role": "Purchase Officer",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -17994,7 +17731,6 @@
   "report": 0,
   "role": "Projects User",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -18019,7 +17755,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18044,7 +17779,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -18069,7 +17803,6 @@
   "report": 0,
   "role": "Payroll Operator",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -18094,7 +17827,6 @@
   "report": 0,
   "role": "Operations Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -18119,7 +17851,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -18144,7 +17875,6 @@
   "report": 0,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -18169,7 +17899,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18194,7 +17923,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18219,32 +17947,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
-  "share": 0,
-  "submit": 0,
-  "write": 0
- },
- {
-  "amend": 0,
-  "cancel": 0,
-  "create": 0,
-  "delete": 0,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 0,
-  "export": 1,
-  "if_owner": 0,
-  "import": 0,
-  "modified": "2023-02-15 09:02:28.944917",
-  "name": "659ce63a63",
-  "parent": "Shift Type",
-  "permlevel": 0,
-  "print": 0,
-  "read": 1,
-  "report": 0,
-  "role": "Operations Manager",
-  "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -18269,7 +17971,6 @@
   "report": 1,
   "role": "Shift Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -18294,7 +17995,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -18319,7 +18019,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18344,7 +18043,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -18369,7 +18067,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18394,7 +18091,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18419,7 +18115,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18444,7 +18139,6 @@
   "report": 0,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18469,7 +18163,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -18494,7 +18187,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 1,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -18519,7 +18211,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -18544,7 +18235,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -18569,7 +18259,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -18594,7 +18283,6 @@
   "report": 0,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -18619,7 +18307,6 @@
   "report": 0,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -18644,7 +18331,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -18669,7 +18355,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -18694,7 +18379,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -18719,7 +18403,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -18744,7 +18427,6 @@
   "report": 1,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18769,7 +18451,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18794,7 +18475,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18819,7 +18499,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18844,7 +18523,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18869,7 +18547,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18894,7 +18571,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18919,7 +18595,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18944,7 +18619,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -18969,7 +18643,6 @@
   "report": 0,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -18977,7 +18650,7 @@
  {
   "amend": 0,
   "cancel": 0,
-  "create": 1,
+  "create": 0,
   "delete": 1,
   "docstatus": 0,
   "doctype": "Custom DocPerm",
@@ -18993,11 +18666,10 @@
   "read": 1,
   "report": 0,
   "role": "Shift Supervisor",
-  "select": 0,
-  "set_user_permissions": 0,
+  "select": 1,
   "share": 0,
   "submit": 0,
-  "write": 1
+  "write": 0
  },
  {
   "amend": 0,
@@ -19019,7 +18691,6 @@
   "report": 1,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -19044,7 +18715,6 @@
   "report": 0,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19069,7 +18739,6 @@
   "report": 0,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19094,7 +18763,6 @@
   "report": 0,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19119,7 +18787,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19144,7 +18811,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -19169,7 +18835,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19194,7 +18859,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19219,7 +18883,6 @@
   "report": 1,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19244,7 +18907,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19269,7 +18931,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -19294,7 +18955,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19319,7 +18979,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19327,7 +18986,7 @@
  {
   "amend": 0,
   "cancel": 0,
-  "create": 1,
+  "create": 0,
   "delete": 1,
   "docstatus": 0,
   "doctype": "Custom DocPerm",
@@ -19343,11 +19002,10 @@
   "read": 1,
   "report": 1,
   "role": "Site Supervisor",
-  "select": 0,
-  "set_user_permissions": 0,
+  "select": 1,
   "share": 0,
   "submit": 0,
-  "write": 1
+  "write": 0
  },
  {
   "amend": 0,
@@ -19369,7 +19027,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19394,7 +19051,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19419,7 +19075,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19444,7 +19099,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19452,7 +19106,7 @@
  {
   "amend": 0,
   "cancel": 0,
-  "create": 1,
+  "create": 0,
   "delete": 1,
   "docstatus": 0,
   "doctype": "Custom DocPerm",
@@ -19468,11 +19122,10 @@
   "read": 1,
   "report": 1,
   "role": "Projects Manager",
-  "select": 0,
-  "set_user_permissions": 0,
+  "select": 1,
   "share": 0,
   "submit": 0,
-  "write": 1
+  "write": 0
  },
  {
   "amend": 0,
@@ -19494,7 +19147,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19519,7 +19171,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -19544,7 +19195,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19569,7 +19219,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19594,7 +19243,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19619,7 +19267,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -19644,7 +19291,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19669,7 +19315,6 @@
   "report": 0,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19694,7 +19339,6 @@
   "report": 0,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19719,7 +19363,6 @@
   "report": 0,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19744,7 +19387,6 @@
   "report": 0,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19769,7 +19411,6 @@
   "report": 0,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19794,7 +19435,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19819,7 +19459,6 @@
   "report": 0,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19844,7 +19483,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19869,7 +19507,6 @@
   "report": 0,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19894,7 +19531,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19919,7 +19555,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -19944,7 +19579,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -19969,7 +19603,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -19994,7 +19627,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20019,7 +19651,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -20044,7 +19675,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20069,7 +19699,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20094,7 +19723,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -20119,7 +19747,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20144,7 +19771,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -20169,7 +19795,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
   "write": 1
@@ -20194,7 +19819,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -20219,34 +19843,8 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 1,
-  "write": 1
- },
- {
-  "amend": 0,
-  "cancel": 0,
-  "create": 1,
-  "delete": 1,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 1,
-  "export": 1,
-  "if_owner": 0,
-  "import": 0,
-  "modified": "2020-06-06 19:58:27.722402",
-  "name": "4c0dd55654",
-  "parent": "Shift Type",
-  "permlevel": 0,
-  "print": 1,
-  "read": 1,
-  "report": 1,
-  "role": "Operations Manager",
-  "select": 0,
-  "set_user_permissions": 0,
-  "share": 0,
-  "submit": 0,
   "write": 1
  },
  {
@@ -20269,7 +19867,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -20294,7 +19891,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -20319,7 +19915,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20344,7 +19939,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20369,7 +19963,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20394,7 +19987,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20419,7 +20011,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20444,7 +20035,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20469,7 +20059,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20494,7 +20083,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20519,7 +20107,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20544,7 +20131,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20569,7 +20155,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20594,7 +20179,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20619,7 +20203,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20644,7 +20227,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20669,7 +20251,6 @@
   "report": 0,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20694,7 +20275,6 @@
   "report": 1,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -20719,7 +20299,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -20744,7 +20323,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -20769,7 +20347,6 @@
   "report": 1,
   "role": "Shift Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -20794,7 +20371,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -20819,7 +20395,6 @@
   "report": 1,
   "role": "Site Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -20844,7 +20419,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -20869,7 +20443,6 @@
   "report": 1,
   "role": "Shift Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -20894,7 +20467,6 @@
   "report": 1,
   "role": "Projects Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -20919,7 +20491,6 @@
   "report": 0,
   "role": "Employee",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -20944,7 +20515,6 @@
   "report": 0,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
@@ -20969,59 +20539,8 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
-  "write": 1
- },
- {
-  "amend": 1,
-  "cancel": 1,
-  "create": 1,
-  "delete": 1,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 1,
-  "export": 1,
-  "if_owner": 0,
-  "import": 0,
-  "modified": "2021-03-02 14:33:40.441545",
-  "name": "fbf1e20c0c",
-  "parent": "Expense Claim",
-  "permlevel": 0,
-  "print": 1,
-  "read": 1,
-  "report": 1,
-  "role": "HR Manager",
-  "select": 0,
-  "set_user_permissions": 0,
-  "share": 1,
-  "submit": 1,
-  "write": 1
- },
- {
-  "amend": 1,
-  "cancel": 1,
-  "create": 1,
-  "delete": 1,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 1,
-  "export": 0,
-  "if_owner": 0,
-  "import": 0,
-  "modified": "2020-10-26 14:49:02.292459",
-  "name": "ee319b6b12",
-  "parent": "Delivery Note",
-  "permlevel": 0,
-  "print": 1,
-  "read": 1,
-  "report": 1,
-  "role": "Stock User",
-  "select": 0,
-  "set_user_permissions": 0,
-  "share": 1,
-  "submit": 1,
   "write": 1
  },
  {
@@ -21044,7 +20563,6 @@
   "report": 1,
   "role": "HR Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -21069,7 +20587,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -21094,7 +20611,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21119,7 +20635,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21144,7 +20659,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21169,7 +20683,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21194,7 +20707,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21219,7 +20731,6 @@
   "report": 0,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21244,7 +20755,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -21269,7 +20779,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21294,7 +20803,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21319,7 +20827,6 @@
   "report": 1,
   "role": "Sales Master Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21344,7 +20851,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 1,
-  "set_user_permissions": 1,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -21369,7 +20875,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21394,7 +20899,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21419,7 +20923,6 @@
   "report": 0,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21444,57 +20947,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 1,
-  "share": 1,
-  "submit": 1,
-  "write": 1
- },
- {
-  "amend": 0,
-  "cancel": 0,
-  "create": 1,
-  "delete": 0,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 1,
-  "export": 0,
-  "if_owner": 0,
-  "import": 0,
-  "modified": "2021-03-02 14:33:40.398168",
-  "name": "6809fd2e94",
-  "parent": "Expense Claim",
-  "permlevel": 0,
-  "print": 1,
-  "read": 1,
-  "report": 1,
-  "role": "Employee",
-  "select": 0,
-  "set_user_permissions": 0,
-  "share": 1,
-  "submit": 0,
-  "write": 1
- },
- {
-  "amend": 1,
-  "cancel": 1,
-  "create": 1,
-  "delete": 1,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 1,
-  "export": 0,
-  "if_owner": 0,
-  "import": 0,
-  "modified": "2020-10-26 14:49:02.431319",
-  "name": "fb94dc405f",
-  "parent": "Delivery Note",
-  "permlevel": 0,
-  "print": 1,
-  "read": 1,
-  "report": 1,
-  "role": "Stock Manager",
-  "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -21519,7 +20971,6 @@
   "report": 1,
   "role": "Accounts Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21544,7 +20995,6 @@
   "report": 1,
   "role": "Shift Supervisor",
   "select": 1,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -21569,7 +21019,6 @@
   "report": 1,
   "role": "Wiki Approver",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21594,7 +21043,6 @@
   "report": 1,
   "role": "Wiki Approver",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21619,7 +21067,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -21644,7 +21091,6 @@
   "report": 1,
   "role": "Purchase Master Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21669,7 +21115,6 @@
   "report": 1,
   "role": "Operations Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21694,59 +21139,8 @@
   "report": 0,
   "role": "Operations Supervisor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
-  "write": 1
- },
- {
-  "amend": 1,
-  "cancel": 1,
-  "create": 1,
-  "delete": 1,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 1,
-  "export": 0,
-  "if_owner": 0,
-  "import": 0,
-  "modified": "2021-03-02 14:33:40.349014",
-  "name": "4620e3b1aa",
-  "parent": "Expense Claim",
-  "permlevel": 0,
-  "print": 1,
-  "read": 1,
-  "report": 1,
-  "role": "Expense Approver",
-  "select": 0,
-  "set_user_permissions": 0,
-  "share": 1,
-  "submit": 1,
-  "write": 1
- },
- {
-  "amend": 1,
-  "cancel": 1,
-  "create": 1,
-  "delete": 1,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 1,
-  "export": 0,
-  "if_owner": 0,
-  "import": 0,
-  "modified": "2020-10-26 14:49:02.507479",
-  "name": "9b9024bbe6",
-  "parent": "Delivery Note",
-  "permlevel": 0,
-  "print": 1,
-  "read": 1,
-  "report": 1,
-  "role": "Sales User",
-  "select": 0,
-  "set_user_permissions": 0,
-  "share": 1,
-  "submit": 1,
   "write": 1
  },
  {
@@ -21769,7 +21163,6 @@
   "report": 1,
   "role": "Auditor",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 0
@@ -21794,7 +21187,6 @@
   "report": 1,
   "role": "System Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 0,
   "write": 1
@@ -21819,7 +21211,6 @@
   "report": 1,
   "role": "Operations Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -21844,7 +21235,222 @@
   "report": 0,
   "role": "Onboarding Officer",
   "select": 0,
-  "set_user_permissions": 0,
+  "share": 1,
+  "submit": 1,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2023-10-03 08:40:18.997493",
+  "name": "04947780cc",
+  "parent": "Communication",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 0,
+  "role": "Inbox User",
+  "select": 0,
+  "share": 0,
+  "submit": 0,
+  "write": 0
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 0,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 0,
+  "if_owner": 1,
+  "import": 0,
+  "modified": "2023-10-03 08:40:18.749964",
+  "name": "f2d473e759",
+  "parent": "Communication",
+  "permlevel": 0,
+  "print": 0,
+  "read": 1,
+  "report": 0,
+  "role": "All",
+  "select": 0,
+  "share": 0,
+  "submit": 0,
+  "write": 0
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 0,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2024-04-01 11:48:23.649034",
+  "name": "3c8f0cbc7a",
+  "parent": "Shift Type",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Operations Manager",
+  "select": 1,
+  "share": 0,
+  "submit": 0,
+  "write": 0
+ },
+ {
+  "amend": 1,
+  "cancel": 1,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 1,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2021-03-02 14:33:40.441545",
+  "name": "fbf1e20c0c",
+  "parent": "Expense Claim",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "HR Manager",
+  "select": 0,
+  "share": 1,
+  "submit": 1,
+  "write": 1
+ },
+ {
+  "amend": 1,
+  "cancel": 1,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 0,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2020-10-26 14:49:02.292459",
+  "name": "ee319b6b12",
+  "parent": "Delivery Note",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Stock User",
+  "select": 0,
+  "share": 1,
+  "submit": 1,
+  "write": 1
+ },
+ {
+  "amend": 0,
+  "cancel": 0,
+  "create": 1,
+  "delete": 0,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 0,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2021-03-02 14:33:40.398168",
+  "name": "6809fd2e94",
+  "parent": "Expense Claim",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Employee",
+  "select": 0,
+  "share": 1,
+  "submit": 0,
+  "write": 1
+ },
+ {
+  "amend": 1,
+  "cancel": 1,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 0,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2020-10-26 14:49:02.431319",
+  "name": "fb94dc405f",
+  "parent": "Delivery Note",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Stock Manager",
+  "select": 0,
+  "share": 1,
+  "submit": 1,
+  "write": 1
+ },
+ {
+  "amend": 1,
+  "cancel": 1,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 0,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2021-03-02 14:33:40.349014",
+  "name": "4620e3b1aa",
+  "parent": "Expense Claim",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Expense Approver",
+  "select": 0,
+  "share": 1,
+  "submit": 1,
+  "write": 1
+ },
+ {
+  "amend": 1,
+  "cancel": 1,
+  "create": 1,
+  "delete": 1,
+  "docstatus": 0,
+  "doctype": "Custom DocPerm",
+  "email": 1,
+  "export": 0,
+  "if_owner": 0,
+  "import": 0,
+  "modified": "2020-10-26 14:49:02.507479",
+  "name": "9b9024bbe6",
+  "parent": "Delivery Note",
+  "permlevel": 0,
+  "print": 1,
+  "read": 1,
+  "report": 1,
+  "role": "Sales User",
+  "select": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -21869,7 +21475,6 @@
   "report": 1,
   "role": "HR User",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 1,
   "submit": 1,
   "write": 1
@@ -21894,32 +21499,6 @@
   "report": 1,
   "role": "Accounts User",
   "select": 0,
-  "set_user_permissions": 0,
-  "share": 0,
-  "submit": 0,
-  "write": 0
- },
- {
-  "amend": 0,
-  "cancel": 0,
-  "create": 1,
-  "delete": 1,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 1,
-  "export": 1,
-  "if_owner": 0,
-  "import": 0,
-  "modified": "2023-10-03 08:40:18.997493",
-  "name": "04947780cc",
-  "parent": "Communication",
-  "permlevel": 0,
-  "print": 1,
-  "read": 1,
-  "report": 0,
-  "role": "Inbox User",
-  "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 0
@@ -21944,34 +21523,8 @@
   "report": 0,
   "role": "Stock Manager",
   "select": 0,
-  "set_user_permissions": 0,
   "share": 0,
   "submit": 0,
   "write": 1
- },
- {
-  "amend": 0,
-  "cancel": 0,
-  "create": 0,
-  "delete": 1,
-  "docstatus": 0,
-  "doctype": "Custom DocPerm",
-  "email": 1,
-  "export": 0,
-  "if_owner": 1,
-  "import": 0,
-  "modified": "2023-10-03 08:40:18.749964",
-  "name": "f2d473e759",
-  "parent": "Communication",
-  "permlevel": 0,
-  "print": 0,
-  "read": 1,
-  "report": 0,
-  "role": "All",
-  "select": 0,
-  "set_user_permissions": 0,
-  "share": 0,
-  "submit": 0,
-  "write": 0
  }
 ]

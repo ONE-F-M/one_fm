@@ -9,6 +9,7 @@ from frappe import _
 from one_fm.api.notification import get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
 from one_fm.api.utils import get_reports_to_employee_name
+from one_fm.api.v1.utils import response
 from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
 
 class ExistAttendance(frappe.ValidationError):
@@ -128,11 +129,15 @@ def create_employee_checkin_for_employee_checkin_issue(employee_checkin_issue, f
 @frappe.whitelist()
 def fetch_approver(employee):
 	if employee:
+		shift_detail = {"assigned_shift":'',"shift_supervisor":'', "shift":'',"shift_type":''}
 		employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
 		if employee_shift:
 			approver = get_reports_to_employee_name(employee)
-			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
-
+			shift_detail['assigned_shift'] = employee_shift[0].name
+			shift_detail['shift_supervisor'] = approver
+			shift_detail['shift'] = employee_shift[0].shift
+			shift_detail['shift_type'] = employee_shift[0].shift_type
+			return shift_detail
 		frappe.throw("No approver found for {employee}".format(employee=employee))
 
 # Approve pemding employee checkin issue before marking attendance
@@ -160,3 +165,28 @@ def approve_open_employee_checkin_issue(start_date, end_date):
 		if error_list:frappe.log_error(error_list, 'Employee Checkin Issue')
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), 'Employee Checkin Issue')
+
+@frappe.whitelist()
+def create_checkin_issue(employee, issue_type, log_type, latitude, longitude, reason):
+	try:
+		shift_detail = fetch_approver(employee)
+		checkin_issue_doc = frappe.new_doc("Employee Checkin Issue")
+		checkin_issue_doc.employee = employee
+		checkin_issue_doc.date = getdate()
+		checkin_issue_doc.issue_type = issue_type
+		checkin_issue_doc.log_type = log_type
+		checkin_issue_doc.longitude = longitude
+		checkin_issue_doc.latitude = latitude
+		checkin_issue_doc.assigned_shift = shift_detail['assigned_shift']
+		checkin_issue_doc.shift_supervisor = shift_detail['shift_supervisor']
+		checkin_issue_doc.shift = shift_detail['shift']
+		checkin_issue_doc.shift_type = shift_detail['shift_type']
+		if reason:
+			checkin_issue_doc.issue_details = reason
+		checkin_issue_doc.save(ignore_permissions=True)
+		frappe.db.commit()
+		response("Success", 200, checkin_issue_doc.as_dict())
+	except:
+		frappe.log_error(frappe.get_traceback(), 'Employee Checkin Issue')
+		response("Bad Request", 400, None, "Employee Checkin Issue")
+
