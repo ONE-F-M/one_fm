@@ -52,8 +52,12 @@ function get_shift_assignment(frm){
 			callback: function(r) {
 				let val = r.message
 				let assigned_shift, shift_supervisor, shift, shift_type = "";
-				if(val && val.includes(null) != true){
-					[assigned_shift, shift_supervisor, shift, shift_type] = r.message;
+				if(val){
+					assigned_shift = val['assigned_shift']
+					shift_supervisor = val['shift_supervisor']
+					shift = val['shift']
+					shift_type = val['shift_type']
+					
 				}
 				else{
 					frappe.msgprint(__(`No shift assigned to ${frm.doc.employee_name}. Please check again.`));

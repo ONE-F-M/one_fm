@@ -3068,6 +3068,14 @@ function schedule_change_post(page) {
 								d.set_value('project', project);
 							});
 					}
+				}, get_query: function () {
+					
+					
+						return {
+							"filters": { 'status':"Active" },
+							"page_len": 9999
+						};
+					
 				}
 			},
 			{ 'label': 'Site', 'fieldname': 'site', 'fieldtype': 'Link', 'options': 'Operations Site', 'read_only': 1 },
