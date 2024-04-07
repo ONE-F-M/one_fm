@@ -8,6 +8,7 @@ from frappe.client import attach_file
 from one_fm.api.v1.utils import response
 from one_fm.utils import query_db_list
 from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view#, get_roster_view as _get_roster_view
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
 
 # @frappe.whitelist()
 # def get_roster_view(start_date, end_date, all=1, assigned=0, scheduled=0, project=None, site=None, shift=None, department=None, operations_role=None):
@@ -23,13 +24,13 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
 			'date': date
 		}
 		if project:
-			filters.update({'project': project})	
+			filters.update({'project': project})
 		if site:
-			filters.update({'site': site})	
+			filters.update({'site': site})
 		if shift:
-			filters.update({'shift': shift})	
+			filters.update({'shift': shift})
 		if department:
-			filters.update({'department': department})	
+			filters.update({'department': department})
 
 		fields = ["employee", "employee_name", "date", "operations_role", "post_abbrv", "employee_availability", "shift"]
 		user, user_roles, user_employee = get_current_user_details()
@@ -84,7 +85,7 @@ def get_roster_view(date, shift=None, site=None, project=None, department=None):
 def get_weekly_staff_roster(start_date, end_date):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
-	
+
 		roster = frappe.db.sql("""
 			SELECT shift, employee, date, employee_availability, operations_role
 			FROM `tabEmployee Schedule`
@@ -112,13 +113,13 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 			'date': date
 		}
 		if project:
-			filters.update({'project': project})	
+			filters.update({'project': project})
 		if site:
-			filters.update({'site': site})	
+			filters.update({'site': site})
 		if shift:
-			filters.update({'shift': shift})	
+			filters.update({'shift': shift})
 		if department:
-			filters.update({'department': department})	
+			filters.update({'department': department})
 
 		fields = ["post", "post_status", "date", "operations_role",  "shift"]
 		user, user_roles, user_employee = get_current_user_details()
@@ -169,7 +170,7 @@ def get_post_view(date, shift=None, site=None, project=None, department=None):
 			for post in roster:
 				post.update({"count": 1})
 			return roster
-		
+
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
@@ -280,7 +281,7 @@ def day_off(employee, date, repeat=0, repeat_freq=None, repeat_till=None):
 		frappe.db.commit()
 		return True
 	except Exception as e:
-		return frappe.utils.response.report_error(e.http_status_code)	
+		return frappe.utils.response.report_error(e.http_status_code)
 
 
 def month_range(start, end):
@@ -305,7 +306,7 @@ def create_day_off(employee, date):
 		roster = frappe.new_doc("Employee Schedule")
 		roster.employee = employee
 		roster.date = date
-	roster.employee_availability = "Day Off"				
+	roster.employee_availability = "Day Off"
 	roster.save(ignore_permissions=True)
 
 
@@ -316,22 +317,22 @@ def get_unassigned_project_employees(project, date, limit_start=None, limit_page
 		return frappe.get_list("Employee", fields=["name", "employee_name"], filters={"project": project}, order_by="name asc",
 			limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
 	except Exception as e:
-		return frappe.utils.response.report_error(e.http_status_code)	
+		return frappe.utils.response.report_error(e.http_status_code)
 
 
 @frappe.whitelist()
 def get_unscheduled_employees(date, shift):
 	try:
 		employees = frappe.db.sql("""
-			select name as employee_id, employee_name 
+			select name as employee_id, employee_name
 			from `tabEmployee`
-			where 
+			where
 				shift="{shift}"
 			and name not in(select employee from `tabEmployee Schedule` where date="{date}" and shift="{shift}")
 		""".format(date=date, shift=shift), as_dict=1)
 		return employees
 	except Exception as e:
-		return frappe.utils.response.report_error(e.http_status_code)	
+		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def get_assigned_employees(shift, date, limit_start=None, limit_page_length=20):
@@ -355,7 +356,7 @@ def get_assigned_projects(employee_id):
 		return []
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-	
+
 
 @frappe.whitelist()
 def get_assigned_sites(employee_id, project=None):
@@ -374,32 +375,25 @@ def get_assigned_sites(employee_id, project=None):
 			filters.update({"account_supervisor": employee_id})
 			return frappe.get_list("Operations Site", filters, limit_page_length=9999, order_by="name asc")
 		return []
-	
+
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
-	
+
 
 @frappe.whitelist()
 def get_assigned_shifts(employee_id, project=None, site=None):
 	try:
-		user, user_roles, user_employee = get_current_user_details()
-		filters = {}
-		if project:
-			filters.update({"project": project})
-		if site:
-			filters.update({"site": site})
-
-		if site is None and ("Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles):
-			return frappe.get_list("Operations Shift", limit_page_length=9999, order_by="name asc")
-
-		elif "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles:
-			return frappe.get_list("Operations Shift", filters, limit_page_length=9999, order_by="name asc")
-
+		user_roles = frappe.get_roles(frappe.session.user)
+		user_roles_set = set(user_roles)
+		allowed_roles = ["Operations Manager", "Projects Manager", "Site Supervisor"]
+		if any(role in user_roles_set for role in allowed_roles):
+			if not site:
+				return get_supervisor_operations_shifts()
+			return get_supervisor_operations_shifts(project, site)
 		elif "Shift Supervisor" in user_roles:
-			filters.update({"supervisor": employee_id})
-			return frappe.get_list("Operations Shift", filters, limit_page_length=9999, order_by="name asc")
+			return get_supervisor_operations_shifts(employee_id, project, site)
 		return []
-	
+
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
@@ -408,7 +402,7 @@ def get_assigned_shifts(employee_id, project=None, site=None):
 def get_departments():
 	try:
 		return frappe.get_list("Department",{"is_group": 0}, limit_page_length=9999, order_by="name asc")
-	
+
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
 
@@ -432,7 +426,7 @@ def get_designations():
 	try:
 		return frappe.db.get_list("Designation", limit_page_length=9999, order_by="name asc")
 	except Exception as e:
-		return frappe.utils.response.report_error(e.http_status_code)	
+		return frappe.utils.response.report_error(e.http_status_code)
 
 @frappe.whitelist()
 def get_post_details(post_name):
@@ -512,9 +506,9 @@ def schedule_staff(employee, shift, operations_role, start_date, end_date=None, 
 					roster = frappe.new_doc("Employee Schedule")
 					roster.employee = employee
 					roster.date = cstr(date.date())
-				
+
 				if day_off and date.date().strftime('%A') == day_off:
-					roster.employee_availability = "Day Off"				
+					roster.employee_availability = "Day Off"
 				else:
 					roster.employee_availability = "Working"
 					roster.shift = shift
@@ -522,7 +516,7 @@ def schedule_staff(employee, shift, operations_role, start_date, end_date=None, 
 				print(roster.as_dict())
 				roster.save(ignore_permissions=True)
 			return True
-		else:		
+		else:
 			for date in	pd.date_range(start=start_date, end=end_date):
 				if frappe.db.exists("Employee Schedule", {"employee": employee, "date":  cstr(date.date())}):
 					roster = frappe.get_doc("Employee Schedule", {"employee": employee, "date":  cstr(date.date())})
@@ -531,7 +525,7 @@ def schedule_staff(employee, shift, operations_role, start_date, end_date=None, 
 					roster.employee = employee
 					roster.date =  cstr(date.date())
 				if day_off and date.date().strftime('%A') == day_off:
-					roster.employee_availability = "Day Off"				
+					roster.employee_availability = "Day Off"
 				else:
 					roster.employee_availability = "Working"
 					roster.shift = shift
@@ -606,7 +600,7 @@ def get_handover_posts(shift=None):
 @frappe.whitelist()
 def get_current_shift(employee):
 	"""This function is to return employee's current Shift,
-	based on Shift Assignment. 
+	based on Shift Assignment.
 
 	Args:
 		employee (str): Employee's ERP ID
@@ -626,7 +620,7 @@ def get_current_shift(employee):
 		#convert to datetime
 		time = time.split(":")
 		time = datetime.timedelta(hours=cint(time[0]), minutes=cint(time[1]), seconds=cint(time[2]))
-		
+
 		if len(last_shift) > 0:
 			shift = last_shift[0]
 			start_date = (shift.start_date).strftime("%Y-%m-%d")
@@ -634,11 +628,11 @@ def get_current_shift(employee):
 			#start date could be previous day if night shift
 			if start_date == date or start_date == prev_date:
 				start_time, end_time ,before_time, after_time= frappe.get_value("Shift Type", shift.shift_type, ["start_time", "end_time","begin_check_in_before_shift_start_time","allow_check_out_after_shift_end_time"])
-				
+
 				#include early entry and late exit time
 				start_time = start_time - datetime.timedelta(minutes=before_time)
 				end_time = end_time + datetime.timedelta(minutes=after_time)
-				
+
 				#if start time is larger than end time, from either afternoon, evening or night shift.
 				if start_time > end_time:
 					if start_time <= time >= end_time or start_time >= time <= end_time:

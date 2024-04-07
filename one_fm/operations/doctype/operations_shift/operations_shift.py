@@ -180,7 +180,7 @@ def get_shift_supervisor(shift, date=False):
 def get_supervisor_operations_shifts(supervisor=None, project=None, site=None):
 	query = """
 		select
-			shift.name
+			distinct shift.name
 		from
 			`tabOperations Shift Supervisor` supervisor,
 			`tabOperations Shift` shift
@@ -200,4 +200,4 @@ def get_supervisor_operations_shifts(supervisor=None, project=None, site=None):
 
 	shifts = frappe.db.sql(query, as_dict=True)
 
-	return [shift.parent for shift in shifts]
+	return [shift.name for shift in shifts]
