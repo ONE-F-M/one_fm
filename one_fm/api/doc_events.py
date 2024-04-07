@@ -48,8 +48,12 @@ def get_notification_user(doc, employee=None):
 				project = frappe.db.get_value('Operations Site', site, 'project')
 				if project:
 					line_manager = frappe.db.get_value('Project', project, 'account_manager')
+	if not line_manager and employee:
+		line_manager = frappe.db.get_value("Employee", employee, "report_to")
 
-	return get_employee_user_id(line_manager)
+	if line_manager:
+		return get_employee_user_id(line_manager)
+	return
 
 def validate_location(doc):
 	checkin_lat, checkin_lng = doc.device_id.split(",") if doc.device_id else (0, 0)
