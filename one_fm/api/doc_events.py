@@ -49,7 +49,7 @@ def get_notification_user(doc, employee=None):
 				if project:
 					line_manager = frappe.db.get_value('Project', project, 'account_manager')
 	if not line_manager and employee:
-		line_manager = frappe.db.get_value("Employee", employee, "report_to")
+		line_manager = frappe.db.get_value("Employee", employee, "reports_to")
 
 	if line_manager:
 		return get_employee_user_id(line_manager)
