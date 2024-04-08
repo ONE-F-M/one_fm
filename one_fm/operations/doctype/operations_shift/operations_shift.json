@@ -15,10 +15,10 @@
   "shift_details_section",
   "shift_number",
   "shift_type",
-  "column_break_8",
   "supervisor",
-  "column_break_14",
   "supervisor_name",
+  "column_break_8",
+  "shift_supervisor",
   "section_break_12",
   "start_time",
   "end_time",
@@ -80,10 +80,6 @@
   },
   {
    "fieldname": "column_break_8",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_14",
    "fieldtype": "Column Break"
   },
   {
@@ -154,6 +150,12 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "shift_supervisor",
+   "fieldtype": "Table",
+   "label": "Shift Supervisor",
+   "options": "Operations Shift Supervisor"
   }
  ],
  "links": [
@@ -163,7 +165,7 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2023-06-08 09:37:28.458764",
+ "modified": "2024-03-23 21:02:09.742609",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",
