@@ -19,7 +19,7 @@ def validate_updated_fields(doc):
     if doc.has_value_changed('status'):
         if doc.status not in USER_ALLOWED_STATUSES:
             frappe.throw(_("Insufficient permission for updating status."))
-    if doc.has_value_changed('priority') or doc.has_value_changed('completed_on'):
+    if not doc.is_new and (doc.has_value_changed('priority') or doc.has_value_changed('completed_on')):
         frappe.throw(_("Insufficient permission for updating {0}").format("Priority" if doc.has_value_changed('priority') else 'Completed On'))
 
 def is_project_manager(project):
