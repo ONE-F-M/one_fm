@@ -85,7 +85,7 @@ html5lib==1.1
 httplib2==0.22.0
 huggingface-hub==0.17.3
 humbug==0.3.2
-idna==3.4
+idna==3.7
 ipython==8.15.0
 isodate==0.6.1
 jedi==0.19.1
