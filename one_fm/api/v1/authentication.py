@@ -526,15 +526,21 @@ def enrollment_status(employee_id: str):
 	"""
 	if not employee_id:
 		return response("error", 404, "Employee ID is required")
-	employee = frappe.db.get_value('Employee', {'employee_id':employee_id} ,['status', 'enrolled'], as_dict=1)
+	employee = frappe.db.get_value(
+		'Employee', 
+		{'employee_id':employee_id} 
+		,['status', 'enrolled', 'employee_name'], as_dict=1)
 	if employee:
 		if (employee.status == 'Active' and employee.enrolled==1):
-			return  response("success", 200, {"enrolled": True}, "User Enrolled")
+			return  response("success", 200, {
+				"enrolled": True, "employee_name":employee.employee_name}, "User Enrolled")
 		elif (employee.status == 'Active' and employee.enrolled==0):
-			return  response("success", 200, {"enrolled": False}, "User Enrolled")
+			return  response("success", 200, {
+				"enrolled": False, "employee_name":employee.employee_name}, "User Not Enrolled")
 		elif (employee.status == 'Left'):
 			return  response("error", 404, {}, f"Employee is not active")
 		else:
-			return response("success", 200, {"enrolled": employee.enrolled}, "")
+			return response("success", 200, {
+				"enrolled": employee.enrolled, "employee_name":employee.employee_name}, "User Enrolled")
 	else:
 		return  response("error", 404, {}, f"Employee ID {employee_id} not not found")
