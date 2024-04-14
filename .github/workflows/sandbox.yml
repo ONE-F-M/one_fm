@@ -23,10 +23,10 @@ jobs:
         key: ${{ secrets.STAGING_KEY }}
         port: 22
         script: |
-          cd /home/frappe/sanbox-bench/apps/one_fm # we move into our app's folder
+          cd /home/frappe/sandbox-bench/apps/one_fm # we move into our app's folder
           # git pull upstream staging # we pull any changes from git
           git pull upstream sandbox
-          cd /home/frappe/sanbox-bench 
+          cd /home/frappe/sandbox-bench 
           bench setup requirements one_fm
           bench --site all migrate # sync database
           bench restart #${{secrets.PASSKEY}}
