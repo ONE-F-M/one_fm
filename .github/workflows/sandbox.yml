@@ -11,22 +11,24 @@ jobs:
   build:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     - name: Deploy to Sandbox
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.SANDBOX_HOST }}
+        host: ${{ secrets.STAGING_HOST }}
         username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SANDBOX_KEY }}
+        key: ${{ secrets.STAGING_KEY }}
         port: 22
         script: |
-          cd /home/frappe/frappe-bench/apps/one_fm # we move into our app's folder
-          git pull upstream sandbox # we pull any changes from git
-          cd /home/frappe/frappe-bench
-          bench setup requirements
-          bench migrate # sync database
-          bench restart # we remove any unused dependencies
+          cd /home/frappe/sanbox-bench/apps/one_fm # we move into our app's folder
+          # git pull upstream staging # we pull any changes from git
+          git pull upstream sandbox
+          cd /home/frappe/sanbox-bench 
+          bench setup requirements one_fm
+          bench --site all migrate # sync database
+          bench restart #${{secrets.PASSKEY}}
+          # we remove any unused dependencies
           bench doctor
