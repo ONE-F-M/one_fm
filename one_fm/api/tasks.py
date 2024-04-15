@@ -1603,7 +1603,9 @@ def get_current_schedules(employee, log_type=None):
 	# Attendance Request, Leaves
 	employee_doc = frappe.db.get_value("Employee", employee, ['name', 'holiday_list'])
 	start_date = str(getdate())
-	curr_shift = get_current_shift(employee)
+	shift_exists = get_current_shift(employee)
+	if shift_exists['type'] == "On Time":
+		curr_shift = shift_exists['data']
 	# check day off
 	if frappe.db.exists('Employee Schedule', {
 			'employee':employee,
