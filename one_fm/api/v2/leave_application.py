@@ -7,7 +7,6 @@ import collections
 from one_fm.api.api import upload_file
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
-from one_fm.utils import get_current_shift
 from frappe.utils import cint, cstr, getdate
 from one_fm.utils import check_if_backdate_allowed
 from one_fm.api.utils import validate_sick_leave_attachment

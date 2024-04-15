@@ -240,7 +240,6 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         shift_exists = get_current_shift(employee)
-        print(shift_exists['type'])
         if shift_exists['type'] == "Early":
             # check if user can checkin with the correct time
             return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
