@@ -65,7 +65,7 @@ def verify():
 		skip_attendance = frappe.local.form_dict.skip_attendance
 		latitude = frappe.local.form_dict.latitude
 		longitude = frappe.local.form_dict.longitude
-		employee_id = frappe.local.form_dict.longitude
+		employee_id = frappe.local.form_dict.employee_id
 		# timestamp = frappe.local.form_dict.timestamp
 		files = frappe.request.files
 		file = files['file']
@@ -80,10 +80,11 @@ def verify():
 		content_base64_bytes = base64.b64encode(content_bytes)
 		video_content = content_base64_bytes.decode('ascii')
 
-		verify_checkin_checkout(
+		res = verify_checkin_checkout(
 			employee_id, video_content, log_type, skip_attendance,
 			latitude, longitude
 		)
+		print(res)
 		
 		response("Success", 200, check_in(log_type, skip_attendance, latitude, longitude, "Mobile Web"))        
 	except Exception as exc:

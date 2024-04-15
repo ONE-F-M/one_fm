@@ -101,6 +101,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         }
     """
     try:
+        
         # ensure skip attendance is correctly formated
         try:
             skip_attendance = int(skip_attendance) if skip_attendance else 0
@@ -118,8 +119,8 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if not log_type:
             return response("Bad Request", 400, None, "log_type required.")
 
-        if not skip_attendance:
-            return response("Bad Request", 400, None, "skip_attendance required.")
+        # if not skip_attendance:
+        #     return response("Bad Request", 400, None, "skip_attendance required.")
 
         if not latitude:
             return response("Bad Request", 400, None, "latitdue required.")
@@ -159,6 +160,8 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         # setup stub
         # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
         # request body
+        
+        print(frappe.local.conf.face_recognition_service_url)
         req = facial_recognition_pb2.FaceRecognitionRequest(
             username = frappe.session.user,
             media_type = "video",
@@ -166,6 +169,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         )
         # Call service stub and get response
         res = random.choice(stubs).FaceRecognition(req)
+        print(res, 999999999999)
         data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
             'message':res.message, 'data':res.data, 'source': 'Checkin'}
         if res.verification == "FAILED" and 'Invalid media content' in res.data:
