@@ -288,8 +288,9 @@ def cancel_shift_assignment_of_request(shift_request):
 
 
 def validate_approver(self):
-    if self.approver != frappe.session.user:
-        frappe.throw(_("Only Approvers can Approve this Request."))
+    if not self.is_new() and self.workflow_state == "Approved":
+        if self.approver != frappe.session.user:
+            frappe.throw(_("Only Approvers can Approve this Request."))
 
 @frappe.whitelist()
 def fetch_approver(employee):
