@@ -147,7 +147,7 @@ def create_checkin_issue(employee, issue_type, log_type, latitude, longitude, re
 		frappe.log_error(frappe.get_traceback(), 'Employee Checkin Issue')
 
 @frappe.whitelist()
-def create_checkin_issue(employee, issue_type, log_type, latitude, longitude, reason):
+def create_checkin_issue(employee: str = None,issue_type: str = None,log_type: str = None, latitude: float = None, longitude: float = None, reason: str = None):
 	try:
 		shift_detail = fetch_approver(employee)
 		checkin_issue_doc = frappe.new_doc("Employee Checkin Issue")
