@@ -3368,36 +3368,37 @@ def custom_validate_interviewer(self):
 def get_current_shift(employee):
     """
         Get current shift employee should be logged into
+        This Method Checks if Employee has a shift and is within the checkin Range.
+        args:
+			employee: Employee ID
+		return dict (type, data)
     """
+    nowtime = now_datetime()
     sql = f"""
-        SELECT * FROM `tabShift Assignment`
-        WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-        ('{now()}' BETWEEN start_datetime AND end_datetime)
-    """
-    shift = frappe.db.sql(sql, as_dict=1)
-    if shift: # shift was checked in between start and end time
-        return frappe.get_doc("Shift Assignment", shift[0])
-    else: # we look right and left (right for next shift)
-        dt = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
-        curtime_plus_1 = dt + timedelta(hours=1)
-        sql = f"""
-            SELECT * FROM `tabShift Assignment`
-            WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-            ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
+        SELECT sa.*, 
+            DATE_SUB(sa.start_datetime, INTERVAL st.begin_check_in_before_shift_start_time MINUTE) as checkin_time, 
+            DATE_ADD(sa.end_datetime, INTERVAL st.allow_check_out_after_shift_end_time MINUTE) as checkout_time
+        FROM `tabShift Assignment` sa
+        JOIN `tabShift Type` st ON sa.shift_type = st.name
+        WHERE sa.employee="{employee}" 
+        AND sa.status="Active" 
+        AND sa.docstatus=1
+        AND DATE('{nowtime}') = sa.start_date
         """
-        shift = frappe.db.sql(sql, as_dict=1)
-        if shift: # shift was checked 1hr ahead
-            return frappe.get_doc("Shift Assignment", shift[0])
+
+    shift = frappe.db.sql(sql, as_dict=1)
+    
+    if shift: # shift was checked in between start and end time
+        if shift[0].checkin_time > nowtime:
+            minutes = int((shift[0].checkin_time - nowtime).total_seconds() / 60)
+            return {"type":"Early", "data":minutes} 
+        elif shift[0].checkout_time < nowtime:
+            minutes = int((nowtime - shift[0].checkout_time).total_seconds() / 60)
+            return {"type":"Late", "data":minutes}
+        elif shift[0].checkin_time <= nowtime <= shift[0].checkout_time:
+            return {"type":"On Time", "data":frappe.get_doc("Shift Assignment", shift[0].name)}
         else:
-            curtime_plus_1 = dt + timedelta(hours=-1)
-            sql = f"""
-                SELECT * FROM `tabShift Assignment`
-                WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-                ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
-            """
-            shift = frappe.db.sql(sql, as_dict=1)
-            if shift: # shift was checked 1hr in the past
-                return frappe.get_doc("Shift Assignment", shift[0])
+            return False
     return False
 
 
@@ -3438,7 +3439,10 @@ def check_existing():
     employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
     if not employee:
         return response("Employee not found", 404, None, "Employee not found")
-    curr_shift = get_current_shift(employee)
+    shift_exists = get_current_shift(employee)
+    if shift_exists['type'] == "On Time":
+        curr_shift = shift_exists['data']
+    print(curr_shift)
     if not curr_shift:
         return response("Employee not found", 404, None, "Employee not found")
     log_type = check_existing_checking(curr_shift)

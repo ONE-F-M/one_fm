@@ -239,15 +239,20 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
-        shift = get_current_shift(employee)
+        shift_exists = get_current_shift(employee)
+        if shift_exists['type'] == "Early":
+            # check if user can checkin with the correct time
+            return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
+        elif shift_exists['type'] == "Late":
+            return response("Resource Not Found", 404, None, f"You are checking out too late, checkout was allowed {shift_exists['data']} minutes ago ")
+        elif shift_exists['type'] == "On Time":
+            shift = shift_exists['data']
+        else:
+            shift = None
         date = cstr(getdate())
         
         site, location = None, None
         if shift:
-            if not shift.can_checkin_out:
-                # check if user can checkin with the correct time
-                return response("Resource Not Found", 404, None, "Your are outside shift hours")
-            
             log_type = shift.check_existing_checking()
             if log_type=='IN':
                 if shift.after_4hrs():
