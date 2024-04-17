@@ -80,3 +80,4 @@ one_fm.patches.v15_0.migrate_data_for_job_offer_term_templates
 one_fm.patches.v15_0.delete_offer_term_templates_field
 one_fm.patches.v15_0.replicate_issue_types_to_hd_ticket_types
 one_fm.patches.v15_0.update_employee_status
+one_fm.patches.v15_0.move_employee_id_to_employee_number
