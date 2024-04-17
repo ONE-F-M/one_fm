@@ -38,7 +38,8 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 				employee_id (str), 
 				employee_name (str), 
 				image (str), 
-				enrolled (int) -> 0/1, 
+				enrolled (int) -> 0/1,
+				registered (int) -> 0/1,  
 				designation (str), 
 				roles (List[str]), 
 				supervisor (int) -> 0/1
@@ -307,7 +308,8 @@ def validate_employee_id(employee_id=None):
 		"name in english": doc.employee_name,
 		"is_registered": True if registration_status else False,
 		"client_id": client_id,
-		"is_enrolled": True if doc.enrolled else False
+		"is_enrolled": True if doc.enrolled else False,
+		"is_registered": True if doc.registered else False
 	}
 	return response("Success", 200, data)
 
@@ -469,11 +471,15 @@ def set_password(employee_user_id, new_password):
 	success message
 	
 	"""
-	_update_password(employee_user_id, new_password)
-	message =  {
-			'message': _('Password Updated!')
-		}
-	return response("Success", 200, message)
+	try:
+		_update_password(employee_user_id, new_password)
+		frappe.db.set_value("Employee", {'employee_id':employee_user_id}, "registered", 1)
+		message =  {
+				'message': _('Password Updated!')
+			}
+		return response("Success", 200, message)
+	except Exception as e:
+		return response("Error", 500, {}, str(e))
 
 @frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):
@@ -524,23 +530,25 @@ def enrollment_status(employee_id: str):
 	enrroled - True/False
 	
 	"""
-	if not employee_id:
-		return response("error", 404, "Employee ID is required")
-	employee = frappe.db.get_value(
-		'Employee', 
-		{'employee_id':employee_id} 
-		,['status', 'enrolled', 'employee_name'], as_dict=1)
-	if employee:
-		if (employee.status == 'Active' and employee.enrolled==1):
-			return  response("success", 200, {
-				"enrolled": True, "employee_name":employee.employee_name}, "User Enrolled")
-		elif (employee.status == 'Active' and employee.enrolled==0):
-			return  response("success", 200, {
-				"enrolled": False, "employee_name":employee.employee_name}, "User Not Enrolled")
-		elif (employee.status == 'Left'):
-			return  response("error", 404, {}, f"Employee is not active")
+	try:
+		if not employee_id:
+			return response("error", 404, "Employee ID is required")
+		employee = frappe.db.get_value(
+			'Employee', 
+			{'employee_id':employee_id} 
+			,['status', 'enrolled', 'registered', 'employee_name', 'user_id'], as_dict=1)
+		if employee:
+			if (employee.status in ['Left', 'Court Case']):
+				return response("error", 404, {}, f"Employee is not active")
+			elif (not employee.user_id):
+				return response("error", 404, {}, f"Employee no active user account or login email.")
+			else:
+				return response("success", 200, {
+					"enrolled": employee.enrolled,
+					"registered": employee.registered, 
+					"employee_name":employee.employee_name},
+				)
 		else:
-			return response("success", 200, {
-				"enrolled": employee.enrolled, "employee_name":employee.employee_name}, "User Enrolled")
-	else:
-		return  response("error", 404, {}, f"Employee ID {employee_id} not not found")
+			return response("error", 404, {}, f"Employee ID {employee_id} not not found")
+	except Exception as e:
+		return response("error", 500, {}, str(e))
