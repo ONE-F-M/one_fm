@@ -73,7 +73,7 @@ def create_roster_employee_actions():
 		It computes employees not scheduled for the span of two weeks, starting from tomorrow.
 	"""
 
-	start_date = getdate(add_to_date(cstr(getdate()), days=-2)) # start date to be from tomorrow
+	start_date = getdate(add_to_date(cstr(getdate()), days=1)) # start date to be from tomorrow
 	end_date = getdate(add_to_date(start_date, days=4)) # end date to be 14 days after start date
 
 	employees_not_rostered = get_employees_not_rostered(start_date, end_date)
