@@ -78,7 +78,6 @@ def create_roster_employee_actions():
 
 	employees_not_rostered = get_employees_not_rostered(start_date, end_date)
 	supervisors_not_rostered_employees = get_supervisors_not_rostered_employees(employees_not_rostered, start_date)
-	print(supervisors_not_rostered_employees)
 
 	# for each supervisor, create a roster action
 	for supervisor in supervisors_not_rostered_employees:
