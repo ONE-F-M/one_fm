@@ -493,7 +493,6 @@ def mark_all_attendance():
     approve_open_shift_permission(str(start_date), str(end_date))
     frappe.enqueue(approve_pending_employee_checkin_issue)
     frappe.enqueue(mark_open_timesheet_and_create_attendance)
-    frappe.enqueue(mark_leave_attendance)
     frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_daily_attendance(start_date, end_date):
@@ -503,8 +502,8 @@ def mark_daily_attendance(start_date, end_date):
         naming_series = 'HR-ATT-.YYYY.-'
         existing_attendance = frappe.get_list("Attendance", {
             'attendance_date':start_date,
-            'roster_type':'Basic', 'status':['IN', ['Present', 'Holiday', 'On Leave',
-            'Work From Home', 'On Hold', 'Day Off']]
+            'roster_type':'Basic', 
+            'status':['IN', ['Present', 'Holiday', 'On Leave','Work From Home', 'On Hold', 'Day Off']]
             },
             pluck="employee"
         )
