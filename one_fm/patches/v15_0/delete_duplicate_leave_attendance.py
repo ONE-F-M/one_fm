@@ -23,6 +23,5 @@ def execute() :
             else:
                 delete_list.append (atts[1].name)
 
-    delete_list = tuple(delete_list)
-    frappe.db.sql(f"""DELETE FROM `tabAttendance Check` where attendance IN {delete_list}""")
+    delete_list = str(tuple(delete_list)).replace(',)', ')')
     frappe.db.sql(f"""DELETE FROM `tabAttendance` where name IN {delete_list}""")
