@@ -30,5 +30,5 @@ def revoke_password_tokens():
 		UPDATE `tabPassword Reset Token` 
 		SET status='Revoked', modified=NOW()
 		WHERE 
-		expiration_time>NOW();
+		expiration_time<NOW() AND status IN ("Active", "Inactive");
 	""")
