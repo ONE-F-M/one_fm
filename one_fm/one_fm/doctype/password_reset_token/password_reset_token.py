@@ -22,3 +22,8 @@ class PasswordResetToken(Document):
 			self.status = "Revoked"
 
 
+def revoke_password_tokens():
+	"""
+	Revoke all password tokens where expiration_time is less than NOW
+	"""
+	frappe.db.sql("UPDATE `tabPassword Reset Token` SET status='Revoked' WHERE expiration_time>NOW();")
