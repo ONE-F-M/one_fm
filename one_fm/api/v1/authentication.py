@@ -7,6 +7,7 @@ from frappe.core.doctype.user.user import generate_keys
 from frappe.utils.background_jobs import enqueue
 from frappe.core.doctype.sms_settings.sms_settings import send_sms
 from frappe.frappeclient import FrappeClient
+from frappe.utils import now_datetime
 from six import iteritems
 from frappe import _
 import requests, json
@@ -181,7 +182,7 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist(allow_guest=True)
-def update_password(otp, id, employee_id, new_password):
+def update_password(otp, id, employee_id, new_password, is_new=0):
 	"""
 	Params: 
 	otp: OTP received via SMS
@@ -451,12 +452,25 @@ def verify_otp(otp, temp_id):
 	status of the OTP entered 
 	
 	"""
-	login_manager = frappe.local.login_manager
-	check_otp = confirm_otp_token(login_manager, otp, temp_id)
+	try:
+		login_manager = frappe.local.login_manager
+		check_otp = confirm_otp_token(login_manager, otp, temp_id)
+		# create password reset token
+		password_token = frappe.get_doc({
+			"doctype":"Password Reset Token",
+			"user":frappe.session.user,
+			"expiration_time": now_datetime(),
+			"status": 'Active'
+		}).insert(ignore_permissions=True)
 
-	if check_otp:
-		return("success", 200, "OTP verified Successfully !")
-	return("Error", 400, "invalid OTP")
+		if check_otp:
+			return response ("success", 200, {
+				"password_token":password_token,
+				"message":"OTP verified Successfully !"})
+		return response("Error", 400, {}, "invalid OTP")
+	except Exception as e:
+		return response("Error", 500, {}, str(e))
+
 
 @frappe.whitelist(allow_guest=True)
 def set_password(employee_user_id, new_password):
