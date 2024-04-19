@@ -237,7 +237,7 @@ def change_password(employee_id, new_password, password_token):
 		password_token_info = frappe.db.get_value(
 			"Password Reset Token",
 			{"name":password_token}, 
-			['name', 'status', 'expiration_time', 'user'],
+			['name', 'status', 'expiration_time', 'user', 'new_password'],
 			as_dict=1
 		)
 		if (employee_user!=password_token_info.user):
@@ -247,6 +247,8 @@ def change_password(employee_id, new_password, password_token):
 
 		_update_password(employee_user, new_password)
 		frappe.db.set_value("Password Reset Token", password_token, "status", "Revoked")
+		if password_token_info.new_password:
+			frappe.db.set_value("Employee", employee_id, "registered", 1)
 		return response ("Success", 200, {
 			"message": "Password Reset Successful, please login to continue."
 		}, "")
