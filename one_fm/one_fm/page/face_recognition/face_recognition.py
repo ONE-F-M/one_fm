@@ -247,13 +247,14 @@ def update_onboarding_employee(employee):
 # 	frappe.db.commit()
 
 def update_onboarding_employee(employee):
-    onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
-    if onboard_employee_exist:
-        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist)
-        onboard_employee.enrolled = True
-        onboard_employee.enrolled_on = now_datetime()
-        onboard_employee.save(ignore_permissions=True)
-        frappe.db.commit()
+	onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
+	if onboard_employee_exist:
+		onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist)
+		onboard_employee.enrolled = True
+		onboard_employee.enrolled_on = now_datetime()
+		onboard_employee.flags.ignore_mandatory = True
+		onboard_employee.save(ignore_permissions=True)
+		frappe.db.commit()
 
 # def create_encodings(directory, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
 # 	"""
