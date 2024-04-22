@@ -24,7 +24,6 @@ class EmployeeOverride(EmployeeMaster):
         """
         Generate employee ID
         """
-        ###
         try:
             count = len(frappe.db.sql(f"""
                 SELECT name FROM tabEmployee
