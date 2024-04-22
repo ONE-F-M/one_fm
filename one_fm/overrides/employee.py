@@ -1,9 +1,10 @@
 from itertools import chain
 
 import frappe
-from frappe.utils import getdate, add_days, get_url_to_form, get_url
+from frappe.utils import getdate, add_days, get_url_to_form, get_url, get_first_day, get_last_day
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import remove_user_permission
+
 from one_fm.api.api import  push_notification_rest_api_for_checkin
 from one_fm.api.tasks import send_notification
 from hrms.overrides.employee_master import *
@@ -19,6 +20,35 @@ from frappe import _
 from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
 
 class EmployeeOverride(EmployeeMaster):
+    def autoname(self):
+        """
+        Generate employee ID
+        """
+        ###
+        try:
+            count = len(frappe.db.sql(f"""
+                SELECT name FROM tabEmployee
+                WHERE date_of_joining BETWEEN '{get_first_day(self.date_of_joining)}' AND '{get_last_day(self.date_of_joining)}'""",
+                as_dict=1))
+            
+            if count == 0:
+                count = count + 1
+
+            split_date_of_joining = self.date_of_joining.split("-")
+            
+            joining_year = split_date_of_joining[0][-2:].zfill(2)
+            joining_month = split_date_of_joining[1].zfill(2)
+            serial_number = str(count).zfill(3)
+
+            while frappe.db.get_list("Employee", {"name": ["LIKE", f"{joining_year}{joining_month}{serial_number}%"]}):
+                count = count + 1
+                serial_number = str(count).zfill(3)
+
+            self.name = f"{joining_year}{joining_month}{serial_number}".upper()
+        except Exception:
+            print(frappe.get_traceback())
+            frappe.throw(frappe.get_traceback())
+
     def validate(self):
         from erpnext.controllers.status_updater import validate_status
         validate_status(self.status, ["Active", "Court Case", "Absconding", "Left","Vacation"])
