@@ -98,31 +98,31 @@ class EmployeeCheckinIssue(Document):
 			frappe.throw(_("Oops! You cannot create Employee Checkin Issue for a previous date."))
 
 	@frappe.whitelist()
-	def create_issue(self):
-		if not self.issue:
-			issue_type = self.get_issue_type()
-			issue = frappe.new_doc('Issue')
-			issue.subject = "Employee Checkin Issue - {0}".format(self.issue_type)
-			issue.raised_by = frappe.session.user
+	def create_hd_ticket(self):
+		if not self.ticket:
+			ticket_type = self.get_ticket_type()
+			ticket = frappe.new_doc('HD Ticket')
+			ticket.subject = "Employee Checkin Issue - {0}".format(self.issue_type)
+			ticket.raised_by = frappe.session.user
 			doc_link = frappe.utils.get_url(self.get_url())
-			description = issue.subject + "<br/><p>The user found an issue in the app \
+			description = ticket.subject + "<br/><p>The user found an issue in the app \
 				and recorded in <a href='{0}'>Employee Checkin Issue</a>.</p>".format(doc_link)
-			issue.description = description
-			issue.issue_type = issue_type
-			issue.save(ignore_permissions=True)
-			self.issue = issue.name
+			ticket.description = description
+			ticket.ticket_type = ticket_type
+			ticket.save(ignore_permissions=True)
+			self.ticket = ticket.name
 			self.save(ignore_permissions=True)
 			self.reload()
 
-	def get_issue_type(self):
-		if not frappe.db.exists('Issue Type', {'name': 'Checkin Issue'}):
-			issue_type_doc = frappe.get_doc(
+	def get_ticket_type(self):
+		if not frappe.db.exists('HD Ticket Type', {'name': 'Checkin Issue'}):
+			ticket_type_doc = frappe.get_doc(
 				{
-					"doctype": "Issue Type",
+					"doctype": "HD Ticket Type",
 					"__newname": "Checkin Issue"
 				}
 			).insert()
-			return issue_type_doc.name
+			return ticket_type_doc.name
 		return 'Checkin Issue'
 
 @frappe.whitelist()

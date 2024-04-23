@@ -26,7 +26,7 @@
   "roster_type",
   "section_break_17",
   "amended_from",
-  "issue"
+  "ticket"
  ],
  "fields": [
   {
@@ -162,24 +162,24 @@
    "mandatory_depends_on": "eval:doc.issue_type==\"Other\""
   },
   {
-   "allow_on_submit": 1,
-   "fieldname": "issue",
-   "fieldtype": "Link",
-   "label": "Issue",
-   "options": "Issue",
-   "read_only": 1
-  },
-  {
    "fetch_from": "assigned_shift.roster_type",
    "fieldname": "roster_type",
    "fieldtype": "Select",
    "label": "Roster Type",
    "options": "Basic\nOver-Time"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "ticket",
+   "fieldtype": "Link",
+   "label": "Ticket",
+   "options": "HD Ticket",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-26 12:33:18.742111",
+ "modified": "2024-04-23 09:04:39.452102",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Checkin Issue",
