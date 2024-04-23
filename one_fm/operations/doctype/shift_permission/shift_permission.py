@@ -8,10 +8,8 @@ from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr, 
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
-from one_fm.api.tasks import get_action_user
-from one_fm.api.utils import get_reports_to_employee_name
 from one_fm.processor import sendemail
-from one_fm.utils import has_super_user_role
+from one_fm.utils import has_super_user_role, get_approver
 
 class PermissionTypeandLogTypeError(frappe.ValidationError):
 	pass
@@ -156,14 +154,23 @@ def create_employee_checkin_for_shift_permission(shift_permission):
 		frappe.log_error(frappe.get_traceback(), "Shift Permission")
 
 @frappe.whitelist()
-def fetch_approver(employee):
+def fetch_approver(employee, date=None):
 	if employee:
-		employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-		if employee_shift:
-			approver = get_reports_to_employee_name(employee)
+		filters={"employee":employee}
+		if date:
+			filters["start_date"] = getdate(date)
+		employee_shift = frappe.get_list(
+			"Shift Assignment",
+			fields=["name", "shift", "shift_type"],
+			filters=filters,
+			order_by='creation desc',
+			limit_page_length=1
+		)
+		if employee_shift and len(employee_shift)>0:
+			approver = get_approver(employee, date)
 			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
 
-		frappe.throw("No approver found for {employee}".format(employee=employee))
+		frappe.throw("No shift assigned to {employee}".format(employee=employee))
 
 
 # approve open shift permission before marking attendance

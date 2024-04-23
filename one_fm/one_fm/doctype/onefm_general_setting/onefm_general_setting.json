@@ -24,7 +24,8 @@
   "attendance_check_exclusion",
   "employee_section",
   "employee_master_role",
-  "wiki_page_access"
+  "wiki_page_access",
+  "employee_info_access"
  ],
  "fields": [
   {
@@ -132,11 +133,18 @@
    "fieldname": "extend_user_permissions",
    "fieldtype": "Check",
    "label": "Extend User Permissions"
+  },
+  {
+   "description": "Table of roles allowed to view employee info",
+   "fieldname": "employee_info_access",
+   "fieldtype": "Table",
+   "label": "Employee Info Access",
+   "options": "ONEFM Document Access Roles Detail"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-03-04 08:35:52.740118",
+ "modified": "2024-04-22 14:07:13.837364",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
