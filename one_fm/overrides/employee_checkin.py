@@ -32,10 +32,11 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		self.validate_duplicate_log()
 		if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin'):
 			try:
+				curr_shift = None
 				existing_perm = None
 				checkin_time = get_datetime(self.time)
 				shift_exists = get_current_shift(self.employee)
-				if shift_exists['type'] == "On Time":
+				if shift_exists and shift_exists['type'] == "On Time":
 					curr_shift = shift_exists['data']
 				if curr_shift:
 					curr_shift = curr_shift.as_dict()
@@ -111,8 +112,9 @@ def after_insert_background(self):
 	self = frappe.get_doc("Employee Checkin", self)
 	try:
 		# update shift if not exists
+		curr_shift = False
 		shift_exists = get_current_shift(self.employee)
-		if shift_exists['type'] == "On Time":
+		if shift_exists and shift_exists['type'] == "On Time":
 			curr_shift = shift_exists['data']
 		if curr_shift:
 			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
