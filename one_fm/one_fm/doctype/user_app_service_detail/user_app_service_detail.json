@@ -6,20 +6,24 @@
  "engine": "InnoDB",
  "field_order": [
   "service",
+  "service_status",
+  "service_icon",
+  "auto_assign",
   "column_break_dcya",
-  "service_group"
+  "service_group",
+  "service_group_status",
+  "service_group_icon"
  ],
  "fields": [
   {
-   "fetch_from": "service.group_name",
+   "fetch_from": "service.service_group",
    "fetch_if_empty": 1,
    "fieldname": "service_group",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Service Group",
    "options": "App Service Group",
-   "read_only": 1,
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "service",
@@ -32,12 +36,57 @@
   {
    "fieldname": "column_break_dcya",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fetch_from": "service.status",
+   "fetch_if_empty": 1,
+   "fieldname": "service_status",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Service Status",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "service.icon",
+   "fetch_if_empty": 1,
+   "fieldname": "service_icon",
+   "fieldtype": "Data",
+   "label": "Service Icon",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "service_group.status",
+   "fetch_if_empty": 1,
+   "fieldname": "service_group_status",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Service Group Status",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "service_group.icon",
+   "fetch_if_empty": 1,
+   "fieldname": "service_group_icon",
+   "fieldtype": "Data",
+   "label": "Service Group Icon",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "service.auto_assign",
+   "fetch_if_empty": 1,
+   "fieldname": "auto_assign",
+   "fieldtype": "Check",
+   "label": "Auto Assign",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-04-21 19:58:17.068067",
+ "modified": "2024-04-24 02:11:37.359895",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "User App Service Detail",
