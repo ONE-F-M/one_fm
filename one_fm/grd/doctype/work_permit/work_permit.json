@@ -94,7 +94,6 @@
   "salary_certificate",
   "column_break_64",
   "iqrar",
-  "section_break_50",
   "documents_required_section",
   "documents_required",
   "amended_from",
@@ -559,8 +558,9 @@
    "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_religion",
    "fieldname": "religion",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Religion",
+   "options": "Religion",
    "read_only": 1
   },
   {
@@ -668,10 +668,6 @@
   {
    "depends_on": "eval:doc.work_permit_type != \"Cancellation\" && doc.work_permit_type != \"New Kuwaiti\"",
    "fieldname": "section_break_46",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "section_break_50",
    "fieldtype": "Section Break"
   },
   {
@@ -900,7 +896,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-05-14 16:13:28.882651",
+ "modified": "2024-04-24 12:20:03.593026",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
