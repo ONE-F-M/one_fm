@@ -475,6 +475,10 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
+	{
+		"from_route": "/employee-info/<path:employee_id>",
+		"to_route": "employee-info"
+	},
     # {"from_route": "/job_applicant_magic_link/<path:app_path>", "to_route": "job_applicant_magic_link"},
 
 ]
@@ -592,7 +596,8 @@ scheduler_events = {
 			# "one_fm.api.tasks.checkin_checkout_final_reminder",
 			# "one_fm.api.tasks.checkin_deadline",
 			"one_fm.api.tasks.overtime_shift_assignment",
-			#"one_fm.api.tasks.automatic_checkout"
+			#"one_fm.api.tasks.automatic_checkout",
+			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
 		],
 		"0/15 * * * *": [
 			"one_fm.api.tasks.update_shift_type"

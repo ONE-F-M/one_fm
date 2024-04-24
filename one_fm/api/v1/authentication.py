@@ -1,12 +1,13 @@
 import frappe
 import pyotp
 from frappe.utils import getdate
-from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token,get_email_subject_for_2fa,get_email_body_for_2fa
+from frappe.twofactor import get_otpsecret_for_, process_2fa_for_sms, confirm_otp_token, get_email_subject_for_2fa,get_email_body_for_2fa
 from frappe.integrations.oauth2 import get_token
 from frappe.core.doctype.user.user import generate_keys
 from frappe.utils.background_jobs import enqueue
 from frappe.core.doctype.sms_settings.sms_settings import send_sms
 from frappe.frappeclient import FrappeClient
+from frappe.utils import now_datetime
 from six import iteritems
 from frappe import _
 import requests, json
@@ -38,7 +39,8 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 				employee_id (str), 
 				employee_name (str), 
 				image (str), 
-				enrolled (int) -> 0/1, 
+				enrolled (int) -> 0/1,
+				registered (int) -> 0/1,  
 				designation (str), 
 				roles (List[str]), 
 				supervisor (int) -> 0/1
@@ -118,7 +120,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist(allow_guest=True)
-def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
+def forgot_password(employee_id: str = None, otp_source: str = None, is_new: int = 0) -> dict:
 	"""Sends an OTP to mobile number assosciated with user.	
 
 	Args:
@@ -168,6 +170,14 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		elif otp_source.lower() == "whatsapp":
 			verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
 		
+		password_token = frappe.get_doc({
+			"doctype":"Password Reset Token",
+			"user":employee_user_id,
+			"status": 'Inactive',
+			"temp_id":tmp_id,
+			"new_password": 1 if is_new else 0
+		}).insert(ignore_permissions=True)
+
 		result = {
 			"message": "Password reset instructions sent via {otp_source}".format(otp_source=otp_source),
 			"temp_id": tmp_id
@@ -178,6 +188,74 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 	except Exception as error:
 		frappe.log_error(title="API Forgot password", message=frappe.get_traceback())
 		return response("Internal Server Error", 500, None, error)
+
+
+@frappe.whitelist(allow_guest=True)
+def verify_otp(otp, temp_id):
+	"""
+	verifies the OTP entered by the employee
+
+	params
+	otp
+	temp_id
+
+
+	returns
+	status of the OTP entered 
+	"""
+	try:
+		login_manager = frappe.local.login_manager
+		check_otp = confirm_otp_token(login_manager, otp, temp_id)
+		#  get password reset
+		password_token = frappe.db.get_value(
+			"Password Reset Token",
+			{"temp_id":temp_id}, 
+			['name', 'status', 'expiration_time'],
+			as_dict=1
+		)
+		if check_otp:
+			frappe.db.set_value("Password Reset Token", {"temp_id":temp_id}, "status", "Active")
+			return response ("success", 200, {
+				"password_token":password_token.name,
+				"message":"OTP verified Successfully !"})
+		frappe.db.set_value("Password Reset Token", {"temp_id":temp_id}, "status", "Revoked")
+		return response("Error", 400, {}, "invalid OTP")
+	except Exception as e:
+		response("Error", 500, {}, str(e) or "OTP Verification Failed!")
+
+
+@frappe.whitelist(allow_guest=True)
+def change_password(employee_id, new_password, password_token):
+	"""
+	Params: 
+	Employee ID: The ID of the employee
+	new_password: new password to update
+	password_token: will be used to verify the password reset and user
+	"""
+	try:
+		employee_user = frappe.get_value("Employee", {'employee_id':employee_id}, ["user_id"])
+		password_token_info = frappe.db.get_value(
+			"Password Reset Token",
+			{"name":password_token}, 
+			['name', 'status', 'expiration_time', 'user', 'new_password'],
+			as_dict=1
+		)
+		if (employee_user!=password_token_info.user):
+			return response ("Error", 400, {}, "Invalid password reset user does not match.")
+		elif password_token_info.status != "Active":
+			return response ("Error", 400, {}, "Password token has expired.")
+
+		_update_password(employee_user, new_password)
+		frappe.db.set_value("Password Reset Token", password_token, "status", "Revoked")
+		if password_token_info.new_password:
+			frappe.db.set_value("Employee", {"employee_id":employee_id}, "registered", 1)
+		return response ("Success", 200, {
+			"message": "Password Reset Successful, please login to continue."
+		}, "")
+	except Exception as e:
+		frappe.log_error(title="API Change password", message=frappe.get_traceback())
+		return response ("Error", 500, {}, str(e))
+
 
 @frappe.whitelist(allow_guest=True)
 def update_password(otp, id, employee_id, new_password):
@@ -307,7 +385,8 @@ def validate_employee_id(employee_id=None):
 		"name in english": doc.employee_name,
 		"is_registered": True if registration_status else False,
 		"client_id": client_id,
-		"is_enrolled": True if doc.enrolled else False
+		"is_enrolled": True if doc.enrolled else False,
+		"is_registered": True if doc.registered else False
 	}
 	return response("Success", 200, data)
 
@@ -427,34 +506,12 @@ def get_otp(employee_user_id: str=None, otp_source: str=None):
 		verification_obj = process_2fa_for_whatsapp(employee_user_id, token, otp_secret)
 
 	result = {
-			"message": "Password reset instructions sent via {otp_source}".format(otp_source=otp_source),
-			"temp_id": tmp_id,
-		
-		}
+		"message": "Password reset instructions sent via {otp_source}".format(otp_source=otp_source),
+		"temp_id": tmp_id,
+	}
 
 	return response("Success", 201, result)
 
-
-@frappe.whitelist(allow_guest=True)
-def verify_otp(otp, temp_id):
-	"""
-	verifies the OTP entered by the employee
-
-	params
-	otp
-	temp_id
-
-
-	returns
-	status of the OTP entered 
-	
-	"""
-	login_manager = frappe.local.login_manager
-	check_otp = confirm_otp_token(login_manager, otp, temp_id)
-
-	if check_otp:
-		return("success", 200, "OTP verified Successfully !")
-	return("Error", 400, "invalid OTP")
 
 @frappe.whitelist(allow_guest=True)
 def set_password(employee_user_id, new_password):
@@ -469,11 +526,15 @@ def set_password(employee_user_id, new_password):
 	success message
 	
 	"""
-	_update_password(employee_user_id, new_password)
-	message =  {
-			'message': _('Password Updated!')
-		}
-	return response("Success", 200, message)
+	try:
+		_update_password(employee_user_id, new_password)
+		frappe.db.set_value("Employee", {'employee_id':employee_user_id}, "registered", 1)
+		message =  {
+				'message': _('Password Updated!')
+			}
+		return response("Success", 200, message)
+	except Exception as e:
+		return response("Error", 500, {}, str(e))
 
 @frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):
@@ -524,23 +585,25 @@ def enrollment_status(employee_id: str):
 	enrroled - True/False
 	
 	"""
-	if not employee_id:
-		return response("error", 404, "Employee ID is required")
-	employee = frappe.db.get_value(
-		'Employee', 
-		{'employee_id':employee_id} 
-		,['status', 'enrolled', 'employee_name'], as_dict=1)
-	if employee:
-		if (employee.status == 'Active' and employee.enrolled==1):
-			return  response("success", 200, {
-				"enrolled": True, "employee_name":employee.employee_name}, "User Enrolled")
-		elif (employee.status == 'Active' and employee.enrolled==0):
-			return  response("success", 200, {
-				"enrolled": False, "employee_name":employee.employee_name}, "User Not Enrolled")
-		elif (employee.status == 'Left'):
-			return  response("error", 404, {}, f"Employee is not active")
+	try:
+		if not employee_id:
+			return response("error", 404, "Employee ID is required")
+		employee = frappe.db.get_value(
+			'Employee', 
+			{'employee_id':employee_id} 
+			,['status', 'enrolled', 'registered', 'employee_name', 'user_id'], as_dict=1)
+		if employee:
+			if (employee.status in ['Left', 'Court Case']):
+				return response("error", 404, {}, f"Employee is not active")
+			elif (not employee.user_id):
+				return response("error", 404, {}, f"Employee no active user account or login email.")
+			else:
+				return response("success", 200, {
+					"enrolled": employee.enrolled,
+					"registered": employee.registered, 
+					"employee_name":employee.employee_name},
+				)
 		else:
-			return response("success", 200, {
-				"enrolled": employee.enrolled, "employee_name":employee.employee_name}, "User Enrolled")
-	else:
-		return  response("error", 404, {}, f"Employee ID {employee_id} not not found")
+			return response("error", 404, {}, f"Employee ID {employee_id} not not found")
+	except Exception as e:
+		return response("error", 500, {}, str(e))
