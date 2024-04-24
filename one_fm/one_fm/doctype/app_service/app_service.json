@@ -22,7 +22,7 @@
   },
   {
    "fieldname": "icon",
-   "fieldtype": "Attach Image",
+   "fieldtype": "Data",
    "label": "Icon",
    "reqd": 1
   },
@@ -55,7 +55,7 @@
   }
  ],
  "links": [],
- "modified": "2024-04-24 00:48:14.156455",
+ "modified": "2024-04-24 13:52:28.657491",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "App Service",
