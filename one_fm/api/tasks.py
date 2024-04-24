@@ -37,7 +37,6 @@ def strfdelta(tdelta, fmt):
 
 @frappe.whitelist()
 def send_checkin_hourly_reminder():
-	
 	now_time = now_datetime().strftime("%Y-%m-%d %H:%M")
 	shifts_list = get_active_shifts(now_time)
 
