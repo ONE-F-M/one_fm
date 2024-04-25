@@ -2,6 +2,13 @@ import frappe
 from datetime import datetime
 
 def get_context(context):
+    employee_id = frappe.form_dict.employee_id
+
+    # If user is not logged in
+    if(frappe.session.user == 'Guest'):
+        frappe.local.flags.redirect_location = f"/login?redirect-to=%2Femployee-info%2F{employee_id}"
+        raise frappe.Redirect
+    
     user_roles = frappe.get_user().get_roles()
     allowed_roles = get_allowed_roles()
 
@@ -10,7 +17,6 @@ def get_context(context):
         frappe.local.flags.redirect_location = '/'
         raise frappe.Redirect
 
-    employee_id = frappe.form_dict.employee_id
     employee_details = frappe.get_doc("Employee", {'name': employee_id})
     employee_details.age = calculate_age(employee_details.date_of_birth)        
     context.employee = employee_details
