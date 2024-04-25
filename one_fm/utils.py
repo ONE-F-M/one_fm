@@ -3384,6 +3384,7 @@ def get_current_shift(employee):
         AND sa.status="Active" 
         AND sa.docstatus=1
         AND DATE('{nowtime}') = sa.start_date
+            OR DATE_ADD(DATE('{nowtime}'), INTERVAL 1 DAY) = sa.start_date
         """
 
     shift = frappe.db.sql(sql, as_dict=1)

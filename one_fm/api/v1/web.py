@@ -14,7 +14,7 @@ from json import JSONEncoder
 import json
 # from imutils import face_utils, paths
 from one_fm.api.doc_events import haversine
-from one_fm.api.v1.roster import get_current_shift
+from one_fm.utils import get_current_shift
 from one_fm.api.v1.utils import response
 from one_fm.api.v1.face_recognition import (
     create_checkin_log, verify_checkin_checkout,
@@ -93,7 +93,17 @@ def verify():
 @frappe.whitelist()
 def user_within_site_geofence(employee, log_type, user_latitude, user_longitude):
 	""" This method checks if user's given coordinates fall within the geofence radius of the user's assigned site in Shift Assigment. """
-	shift = get_current_shift(employee)
+	shift_exists = get_current_shift(employee)
+	if shift_exists:
+		if shift_exists['type'] == "Early":
+			# check if user can checkin with the correct time
+			return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
+		elif shift_exists['type'] == "Late":
+			return response("Resource Not Found", 404, None, f"You are checking out too late, checkout was allowed {shift_exists['data']} minutes ago ")
+		else:
+			shift = shift_exists['data']
+	else:
+		shift = None
 	date = cstr(getdate())
 	if shift:
 		if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
