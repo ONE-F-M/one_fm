@@ -42,43 +42,8 @@ let improve_my_erp = () => {
 	let improveBTN = document.createElement('a');
 	improveBTN.classList = "btn btn-default btn-xs improve-my-erp";
 	improveBTN.textContent = "Improve";
+  improveBTN.href = '/helpdesk/tickets/new'
 	document.querySelector(".form-inline.fill-width.justify-content-end").prepend(improveBTN);
-	$('.improve-my-erp').on('click', function() {
-		var dialog = new frappe.ui.Dialog({
-			title: __("Tell us, How can we improve our ONEERP?"),
-			fields: [
-				{
-					"fieldtype": "Small Text",
-					"fieldname": "suggestions",
-					"label": "Suggestions",
-					"reqd": true
-				}
-			],
-			primary_action_label: 'Submit',
-			primary_action(values) {
-				frappe.confirm('Are you sure you want to proceed?',
-				() => {
-					// action to perform if Yes is selected
-					frappe.call({
-						method: 'one_fm.utils.mark_suggestions_to_issue',
-						args: values,
-						callback: function(r) {
-							if(!r.exc){
-								frappe.show_alert({
-			            message:__('Thanks for your suggestions and are added to the feedback!'),
-			            indicator:'green'
-			          }, 20);
-							}
-						}
-					});
-					dialog.hide();
-				}, () => {
-					// action to perform if No is selected
-				})
-			}
-		});
-		dialog.show();
-	});
 }
 
 // KNOWLEDGE BASE
