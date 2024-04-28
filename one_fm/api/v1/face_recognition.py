@@ -317,3 +317,25 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
     except Exception as error:
         frappe.log_error(title="API Site location", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
+
+
+@frappe.whitelist()
+def checkin_list(employee_id, from_date, to_date):
+    """
+    This method retrives employee checkin list
+    """
+    try:
+        employee = frappe.db.get_value("Employee", {"employee_id":employee_id}, "name")
+        if not employee:
+            return response("Success", 404, None, "Employee ID not found")
+        checkins = frappe.get_all("Employee Checkin", filters={
+            "employee": employee,
+            "time": ["BETWEEN", [f"{from_date} 00:00:00", f"{to_date} 23:59:59"]]
+            },
+            fields=["name", "employee_name", "time", "log_type"],
+            order_by="time DESC"
+        )
+        return response("success", 200, checkins)
+    except Exception as e:
+        return response("error", 500, None, str(e))
+    
