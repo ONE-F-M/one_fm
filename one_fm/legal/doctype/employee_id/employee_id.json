@@ -19,7 +19,6 @@
   "employee_details_section",
   "employee_name",
   "employee_name_in_arabic",
-  "employee_id",
   "designation",
   "designation_in_arabic",
   "column_break_6",
@@ -78,13 +77,6 @@
   {
    "fieldname": "column_break_6",
    "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "label": "Employee ID",
-   "read_only": 1
   },
   {
    "fetch_from": "employee.date_of_joining",
@@ -242,7 +234,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-06-25 15:56:59.865748",
+ "modified": "2024-04-24 08:10:43.231715",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Employee ID",
