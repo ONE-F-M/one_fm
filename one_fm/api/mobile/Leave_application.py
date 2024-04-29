@@ -18,7 +18,7 @@ from one_fm.api.utils import validate_sick_leave_attachment
 @frappe.whitelist()
 def get_leave_detail(employee_id):
     try:
-        employee=frappe.get_value("Employee", {'employee_id':employee_id})
+        employee=frappe.get_value("Employee", {'name':employee_id})
         leaves = frappe.get_all("Leave Application", filters={'employee':employee}, fields=["name","leave_type", "status","from_date", "total_leave_days"] )
         return leaves
     except Exception as e:
@@ -154,7 +154,7 @@ def create_new_leave_application(employee_id,from_date,to_date,leave_type,reason
         import hashlib
         import base64, json
 
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", {"name": employee_id})
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 

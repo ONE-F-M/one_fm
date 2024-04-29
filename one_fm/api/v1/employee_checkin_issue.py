@@ -69,7 +69,7 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 		if not validate_date(date):
 			return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
 		
-		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+		employee = frappe.db.get_value("Employee", {"name": employee_id})
 
 		if not employee:
 			return response("Resource Not Found", 404, None, "No employee found with {employee_id}"
@@ -141,7 +141,7 @@ def list_employee_checkin_issue(employee_id: str = None):
 		return response("Bad Request", 400, None, "employee_id must be of type str.")
 
 	try:
-		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+		employee = frappe.db.get_value("Employee", {"name": employee_id})
 
 		if not employee:
 			return response("Resource Not Found", 404, None, "No employee found with {employee_id}"
@@ -187,7 +187,7 @@ def approve_employee_checkin_issue(employee_id: str = None, employee_checkin_iss
 		return response("Bad Request", 400, None, "employee_checkin_issue_id must be of type str.")
 
 	try:
-		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+		employee = frappe.db.get_value("Employee", {"name": employee_id})
 
 		if not employee:
 			return response("Resource Not Found", 404, None, "No employee found with {employee_id}"
@@ -241,7 +241,7 @@ def reject_employee_checkin_issue(employee_id: str = None, employee_checkin_issu
 		return response("Bad Request", 400, None, "employee_checkin_issue_id must be of type str.")
 
 	try:
-		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+		employee = frappe.db.get_value("Employee", {"name": employee_id})
 
 		if not employee:
 			return response("Resource Not Found", 404, None, "No employee found with {employee_id}"

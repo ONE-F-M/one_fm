@@ -49,7 +49,7 @@ def get_data(filters):
 
 	active_employees = frappe.get_all("Employee",
 		filters=conditions,
-		fields=["name", "employee_name", "department", "user_id", "leave_approver", "employee_id",
+		fields=["name", "employee_name", "department", "user_id", "leave_approver",
 			"date_of_joining", "one_fm_basic_salary", "relieving_date"])
 
 	data = []
@@ -62,7 +62,7 @@ def get_data(filters):
 
 			if indemnity_allcn and indemnity_amount:
 				if (user in ["Administrator", employee.user_id]) or ("HR Manager" in frappe.get_roles(user)):
-					row = [employee.name, employee.employee_id, employee.employee_name, employee.date_of_joining, employee.department, indemnity_amount]
+					row = [employee.name, employee.employee_name, employee.date_of_joining, employee.department, indemnity_amount]
 					
 					per_day_amount = indemnity_amount/26
 					

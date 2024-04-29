@@ -74,7 +74,7 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 	
 	try:
 		site = frappe.utils.get_url()+'/'
-		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+		username =  frappe.db.get_value("Employee", {'name': employee_id}, 'user_id')
 
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
@@ -150,7 +150,7 @@ def forgot_password(employee_id: str = None, otp_source: str = None) -> dict:
 		return response("Bad Request", 400, None, "Invalid OTP source. OTP source must be either 'sms', 'email' or 'whatsapp'.")
 	
 	try:
-		employee_user_id =  frappe.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+		employee_user_id =  frappe.get_value("Employee", {'name': employee_id}, 'user_id')
 		
 		if not employee_user_id:
 			return response("Bad Request", 404, None, "No user ID found for employee ID {employee_id}.".format(employee_id=employee_id))
@@ -191,7 +191,7 @@ def update_password(otp, id, employee_id, new_password):
 	try:
 		login_manager = frappe.local.login_manager
 		if confirm_otp_token(login_manager, otp, id):
-			user_id = frappe.get_value("Employee", {'employee_id':employee_id}, ["user_id"])
+			user_id = frappe.get_value("Employee", {'name':employee_id}, ["user_id"])
 			_update_password(user_id, new_password)
 		return {
 			'message': _('Password Updated!')
@@ -296,7 +296,7 @@ def validate_employee_id(employee_id=None):
 	"""
 	if employee_id is None:
 		return response("Employee ID cannot be None", 401, None, "Employee ID is required !")
-	doc = frappe.get_doc("Employee",{ "employee_id": employee_id})
+	doc = frappe.get_doc("Employee", employee_id)
 	if not doc:
 		return response("Employee Not Found", 404, None, "Employee ID of an active Employee is required")
 	registration_status = frappe.db.get_value("User", doc.user_id, "last_password_reset_date")
@@ -385,7 +385,7 @@ def new_forgot_password(employee_id=None):
 	if not employee_id:
 		return response("Bad Request", 400, None, "Employee ID required.")
 
-	employee_user_id =  frappe.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+	employee_user_id =  frappe.get_value("Employee", {'name': employee_id}, 'user_id')
 	
 	if not employee_user_id:
 		return response("Bad Request", 404, None, "No user ID found for employee ID {employee_id}.".format(employee_id=employee_id))
@@ -474,7 +474,7 @@ def set_password(employee_user_id, new_password):
 @frappe.whitelist(allow_guest=True)
 def user_login(employee_id, password):
 	try:		
-		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
+		username =  frappe.db.get_value("Employee", {'name': employee_id}, 'user_id')
 		if not username:
 			return response("Unauthorized", 401, None, "Invalid employee ID")
 		auth = frappe.auth.LoginManager()

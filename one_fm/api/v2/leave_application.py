@@ -38,7 +38,7 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
         return response("Bad Request", 400, None, "leave_id must be of type str.")
 
     try:
-        employee = frappe.db.get_value("Employee", {'employee_id':employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee record found for {employee_id}".format(employee_id=employee_id))
@@ -124,7 +124,7 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
     today=date.today()
 
     try:
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
@@ -173,7 +173,7 @@ def get_leave_types(employee_id: str = None) -> dict:
         return response("Bad Request", 400, None, "employee_id must be of type str")
 
     try:
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
@@ -256,7 +256,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         import hashlib
         import base64, json
 
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 

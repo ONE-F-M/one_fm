@@ -65,26 +65,24 @@ def warehouse_query(doctype, txt, searchfield, start, page_len, filters, as_dict
 def employee_query(doctype, txt, searchfield, start, page_len, filters):
     doctype = "Employee"
     conditions = []
-    fields = get_fields(doctype, ["name", "employee_name", "employee_id"])
+    fields = get_fields(doctype, ["name", "employee_name"])
 
     filters = filters or {}
     
     if not filters.get('status'):
         filters['status'] = ['in', ['Active', 'Vacation']]
-
     return frappe.db.sql(
         """select {fields} from `tabEmployee`
         where docstatus < 2
             and ({key} like %(txt)s
                 or employee_name like %(txt)s
-                or employee_id like %(txt)s)
+                or name like %(txt)s)
             {fcond}
         order by
             (case when locate(%(_txt)s, name) > 0 then locate(%(_txt)s, name) else 99999 end),
             (case when locate(%(_txt)s, employee_name) > 0 then locate(%(_txt)s, employee_name) else 99999 end),
-            (case when locate(%(_txt)s, employee_id) > 0 then locate(%(_txt)s, employee_id) else 99999 end),
             idx desc,
-            name, employee_name, employee_id
+            name, employee_name
         limit %(page_len)s offset %(start)s""".format(
             **{
                 "fields": ", ".join(fields),

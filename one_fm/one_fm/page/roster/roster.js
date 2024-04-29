@@ -1213,16 +1213,15 @@ function render_roster(res, page, isOt) {
 	for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
 		// let { employee_name, employee, date } = employees_data[employee_key];
 
-
+		
 		let employee = employees_data[employee_key][0]['employee']
-		let employee_id = employees_data[employee_key][0]['employee_id']
+		let employee_id = employees_data[employee_key][0]['employee']
 		let employee_day_off = employees_data[employee_key][0]['day_off_category']
 		if(employees_data[employee_key][0]['number_of_days_off']){
 			employee_day_off += " " + employees_data[employee_key][0]['number_of_days_off'] + " Day(s) off"
 		}
 
-
-
+		console.log(employee, employee_id, employee_day_off);
 		let emp_row = `
 		<tr data-name="${employee}">
 			<td class="sticky">
@@ -3415,12 +3414,6 @@ function editMobileNumber(){
             fieldname: "employee", fieldtype: "Link",
             in_list_view: 1, label: "Employee",
             options: "Employee", reqd: 1
-        },
-        {
-            fieldname: "employee_id", fieldtype: "Data",
-            in_list_view: 1, label: "Employee ID", reqd:1,
-            read_only: 1, depends_on: "employee",
-            fetch_from: "employee.employee_id"
         },
         {
             fieldname: "employee_name", fieldtype: "Data",

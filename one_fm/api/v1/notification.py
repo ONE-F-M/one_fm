@@ -34,7 +34,7 @@ def get_notification_list(employee_id: str = None) -> dict:
         site = frappe.local.conf.app_url
 
 		# notifications created for mobile app
-        employee_user_email = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
+        employee_user_email = frappe.db.get_value("Employee", {"name": employee_id}, ["user_id"])
 
         if not employee_user_email:
             return response("Resource not found", 404, None, "No employee email found with {employee_id}".format(employee_id=employee_id))

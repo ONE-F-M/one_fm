@@ -143,7 +143,7 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
                 frappe.log_error(title="API Shift Permission", message='MEssage 7')
                 return response("Bad Request", 400, None, "leaving_time must be of type hh:mm:ss.")
 
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
 
         if not employee:
 
@@ -224,7 +224,7 @@ def list_shift_permission(employee_id: str = None):
         if not isinstance(employee_id, str):
             return response("Bad Request", 400, None, "employee_id must be of type str.")
 
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
@@ -273,7 +273,7 @@ def approve_shift_permission(employee_id: str = None, shift_permission_id: str =
         return response("Bad Request", 400, None, "shift_permission_id must be of type str.")
 
     try:
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
@@ -325,7 +325,7 @@ def reject_shift_permission(employee_id: str = None, shift_permission_id: str = 
         return response("Bad Request", 400, None, "shift_permission_id must be of type str.")
 
     try:
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))

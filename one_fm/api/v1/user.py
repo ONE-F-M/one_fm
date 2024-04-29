@@ -18,10 +18,12 @@ def get_user_details(employee_id: str = None):
         if not isinstance(employee_id, str):
             return response("Bad Request", 400, None, "employee_id must be of type str.")
 
-        employee = frappe.get_doc("Employee", {"employee_id": employee_id})
-
-        if not employee:
+        if not frappe.db.exists("Employee", employee_id):
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+
+        employee = frappe.get_doc("Employee", employee_id)
+
+
 
         user = frappe.get_doc("User", employee.user_id)
 
@@ -66,7 +68,7 @@ def change_user_profile_image(employee_id: str = None, image: str = None):
         fh.write(content)
 
     try:
-        employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
+        employee_user = frappe.db.get_value("Employee", {"name": employee_id}, ["user_id"])
 
         if not employee_user:
             return response("Resource Not Found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
@@ -102,7 +104,7 @@ def get_user_roles(employee_id: str = None):
         }
     """
     try:
-        employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
+        employee_user = frappe.db.get_value("Employee", {"name": employee_id}, ["user_id"])
 
         if not employee_user:
             return response("Resource Not Found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
@@ -128,11 +130,11 @@ def store_fcm_token(employee_id: str = None , fcm_token: str = None, device_os: 
         if not isinstance(employee_id, str):
             return response("Bad Request", 400, None, "employee_id must be of type str.")
     
-        employee = frappe.get_doc("Employee", {"employee_id": employee_id})
-    
-        if not employee:
+        if not frappe.db.exists("Employee", employee_id):
             return response("Resource Not Found", 404, None, "No resource found with {employee_id}".format(employee_id = employee_id))
-        
+
+        employee = frappe.get_doc("Employee", employee_id)
+            
         employee.fcm_token = fcm_token
         employee.device_os = device_os
         employee.save()

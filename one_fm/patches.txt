@@ -1,3 +1,4 @@
+[pre_model_sync]
 #one_fm.patches.v1_0.schedule_posts #2021-06-23
 one_fm.patches.v1_0.change_title_in_grd #2021-07-11
 one_fm.patches.v1_0.delete_fields #2021-07-11
@@ -40,7 +41,6 @@ one_fm.patches.v14_0._update_non_kuwaiti_residents_in_employee__
 #one_fm.patches.v14_0.update_employee_checkin_record
 one_fm.patches.v14_0.employee_id_arabic_name #2023-06-25
 one_fm.patches.v14_0.leave_policy_carry_forward #2023-06-22
-one_fm.patches.v14_0.leave_policy_carry_forward #2023-06-22
 one_fm.patches.v14_0.update_recruiter_name_in_erf
 one_fm.patches.v14_0.close_shift_perm_todo #2023-07-06
 one_fm.patches.v14_0.update_job_offer_status
@@ -81,7 +81,6 @@ one_fm.patches.v15_0.delete_offer_term_templates_field
 one_fm.patches.v15_0.replicate_issue_types_to_hd_ticket_types
 one_fm.patches.v15_0.update_employee_status
 one_fm.patches.v15_0.move_employee_id_to_employee_number
-
 
 [post_model_sync]
 one_fm.patches.v15_0.preserve_legacy_employee_naming_series

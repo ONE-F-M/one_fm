@@ -8,21 +8,6 @@ frappe.ui.form.on('Employee', {
         set_shift_working_btn(frm);
         filterDefaultShift(frm);
         setProjects(frm);
-		if(frappe.user.has_role('HR Manager') && !frm.doc.employee_id){
-			frm.add_custom_button(__('Run Employee ID Generation Method'), function() {
-				frappe.call({
-					doc: frm.doc,
-					method: 'run_employee_id_generation',
-					callback: function(r) {
-						if(!r.exc) {
-							frm.reload_doc();
-						}
-					},
-					freaze: true,
-					freaze_message: __("Running Employee ID Generation Method..")
-				});
-			});
-		}
 	},
 	status: function(frm){
 		set_mandatory(frm);

@@ -1,11 +1,11 @@
 {
+ "actions": [],
  "creation": "2021-06-05 09:45:16.045133",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "employee",
-  "employee_id",
   "employee_name",
   "subscription_amount",
   "column_break_4",
@@ -15,12 +15,6 @@
   "amount"
  ],
  "fields": [
-  {
-   "fetch_from": "employee.name",
-   "fieldname": "employee_id",
-   "fieldtype": "Read Only",
-   "label": "Employee Id"
-  },
   {
    "columns": 3,
    "fetch_from": "employee.employee_name",
@@ -75,7 +69,8 @@
   }
  ],
  "istable": 1,
- "modified": "2021-06-12 08:48:48.005700",
+ "links": [],
+ "modified": "2024-04-23 12:38:36.255526",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Social Security",
@@ -84,5 +79,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

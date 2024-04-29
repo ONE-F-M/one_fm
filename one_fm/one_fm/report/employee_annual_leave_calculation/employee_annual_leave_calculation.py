@@ -60,7 +60,7 @@ def get_data(filters, leave_types):
 
 	active_employees = frappe.get_all("Employee",
 		filters=conditions,
-		fields=["name", "employee_name", "department", "user_id", "leave_approver", "employee_id", "date_of_joining", "one_fm_basic_salary", "relieving_date"])
+		fields=["name", "employee_name", "department", "user_id", "leave_approver", "date_of_joining", "one_fm_basic_salary", "relieving_date"])
 
 	department_approver_map = get_department_leave_approver_map(filters.get('department'))
 
@@ -77,7 +77,7 @@ def get_data(filters, leave_types):
 			leave_approvers.append(employee.leave_approver)
 
 		if (len(leave_approvers) and user in leave_approvers) or (user in ["Administrator", employee.user_id]) or ("HR Manager" in frappe.get_roles(user)):
-			row = [employee.name, employee.employee_id, employee.employee_name, employee.date_of_joining, employee.department, employee.one_fm_basic_salary]
+			row = [employee.name, employee.employee_name, employee.date_of_joining, employee.department, employee.one_fm_basic_salary]
 			# Calculating the salary per day, assuming that 30 days of month
 			salary_per_day = employee.one_fm_basic_salary/30
 

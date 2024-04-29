@@ -128,7 +128,7 @@ def get_penalties(employee_id: str = None, role: str = None) -> dict:
 		if not isinstance(role, str):
 			return response("Bad Request", 400, None ,"role must be of type str.")
 	try:
-		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+		employee = frappe.db.get_value("Employee", employee_id)
 
 		if not employee:
 			return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))

@@ -17,8 +17,8 @@ def execute(filters=None):
 def get_columns(filters):
 	return [
 		{
-			"label": ("Employee ID"),
-			"fieldname": "employee_id",
+			"label": ("Employee"),
+			"fieldname": "employee",
 			"fieldtype": "Link",
 			"options": "Employee",
 			"width": 120,
@@ -249,7 +249,7 @@ def get_data(filters):
 	first_day_of_month = str(get_first_day(report_date))
 	last_day_of_month = str(get_last_day(report_date))
 	query = frappe.db.sql(f"""
-		SELECT DISTINCT e.name as employee_id, e.employee_name, e.project, e.work_permit_salary, e.one_fm_civil_id, e.bank_ac_no,
+		SELECT DISTINCT e.name as employee, e.employee_name, e.project, e.work_permit_salary, e.one_fm_civil_id, e.bank_ac_no,
 		e.day_off_category, e.shift_working as shift_work_type, e.attendance_by_timesheet as att_by_timesheet, e.auto_attendance, 
 		e.holiday_list, e.number_of_days_off , e.pam_file_number as shoon_file, ssa.base, pe.start_date, pe.end_date
 		FROM `tabEmployee` e JOIN `tabSalary Structure Assignment` ssa ON e.name=ssa.employee
@@ -271,7 +271,7 @@ def get_data(filters):
 
 	for i in query:
 		i.days_in_period = (i.end_date - i.start_date).days + 1
-		att_project = attendance_by_employee.get(i.employee_id)
+		att_project = attendance_by_employee.get(i.employee)
 		if att_project:
 			i.do_ot = att_project['do_ot']
 			i.present_days = att_project['present_days']
@@ -306,9 +306,9 @@ def get_data(filters):
 def get_employee_list(query):
 	employee = {}
 	for q in query:
-		employee[q.employee_id] = {}
-		employee[q.employee_id]['start_date'] = q.start_date
-		employee[q.employee_id]['end_date'] = q.end_date
+		employee[q.employee] = {}
+		employee[q.employee]['start_date'] = q.start_date
+		employee[q.employee]['end_date'] = q.end_date
 	return employee
 
 

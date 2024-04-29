@@ -19,7 +19,7 @@ def get_user_details(employee_id: str = None):
         return response("Bad Request", 400, None, "employee_id must be of type str.")
 
     try:
-        employee = frappe.get_doc("Employee", {"employee_id": employee_id})
+        employee = frappe.get_doc("Employee", employee_id)
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
@@ -66,7 +66,7 @@ def change_user_profile_image(employee_id: str = None, image: str = None):
         fh.write(content)
 
     try:
-        employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
+        employee_user = frappe.db.get_value("Employee", {"name": employee_id}, ["user_id"])
 
         if not employee_user:
             return response("Resource Not Found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
@@ -101,7 +101,7 @@ def get_user_roles(employee_id: str = None):
             error (str): Any error handled.
         }
     """
-    employee_user = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["user_id"])
+    employee_user = frappe.db.get_value("Employee", {"name": employee_id}, ["user_id"])
 
     if not employee_user:
         return response("Resource Not Found", 404, None, "No user found with {employee_id}".format(employee_id=employee_id))
@@ -125,7 +125,7 @@ def store_fcm_token(employee_id: str = None , fcm_token: str = None, device_os: 
         return response("Bad Request", 400, None, "employee_id must be of type str.")
     
     try:
-        employee = frappe.get_doc("Employee", {"employee_id": employee_id})
+        employee = frappe.get_doc("Employee", {"name": employee_id})
     
         if not employee:
             return response("Resource Not Found", 404, None, "No resource found with {employee_id}".format(employee_id = employee_id))

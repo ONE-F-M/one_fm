@@ -29,7 +29,7 @@ def login(client_id, grant_type, employee_id, password):
 	try:
 		site = "https://"+frappe.utils.cstr(frappe.local.site)
 		# username = frappe.get_value("Employee", employee_id, "user_id")
-		username =  frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
+		username =  frappe.get_value("Employee", {'name':employee_id}, 'user_id')
 		if not username:
 			return {'error': _('Employee ID is incorrect. Please check again.')}
 		args = {
@@ -85,7 +85,7 @@ def forgot_password(employee_id,OTP_source):
 	"""
 	try:
 		# employee_user_id = frappe.get_value("Employee", employee_id, "user_id")
-		employee_user_id =  frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
+		employee_user_id =  frappe.get_value("Employee", {'name':employee_id}, 'user_id')
 		otp_secret = get_otpsecret_for_(employee_user_id)
 		token = int(pyotp.TOTP(otp_secret).now())
 		tmp_id = frappe.generate_hash(length=8)
@@ -130,7 +130,7 @@ def update_password(otp, id, employee_id, new_password):
 	try:
 		login_manager = frappe.local.login_manager
 		if confirm_otp_token(login_manager, otp, id):
-			user_id = frappe.get_value("Employee", {'employee_id':employee_id}, ["user_id"])
+			user_id = frappe.get_value("Employee", {'name':employee_id}, ["user_id"])
 			_update_password(user_id, new_password)
 		return {
 			'message': _('Password Updated!')
@@ -157,7 +157,7 @@ def cache_2fa_data(user, token, otp_secret, tmp_id):
 #Not needed or being used
 def signup(employee_id):
 	try:
-		user = frappe.get_value("Employee", {'employee_id':employee_id}, 'user_id')
+		user = frappe.get_value("Employee", {'name':employee_id}, 'user_id')
 		if user=="Administrator":
 			return 'not allowed'
 
@@ -199,37 +199,37 @@ def reset_password(user, password_expired=False):
 
 
 def process_2fa_for_whatsapp(user, token, otp_secret):
-    '''Process sms method for 2fa.'''
-    phone = frappe.db.get_value('User', user, ['phone', 'mobile_no'], as_dict=1)
-    phone = phone.mobile_no or phone.phone
-    status = send_token_via_whatsapp(otp_secret, token=token, phone_no=phone)
-    verification_obj = {
-        'token_delivery': status,
-        'prompt': status and 'Enter verification code sent to {}'.format(phone[:4] + '******' + phone[-3:]),
-        'method': 'SMS',
-        'setup': status
-    }
-    return verification_obj
+	'''Process sms method for 2fa.'''
+	phone = frappe.db.get_value('User', user, ['phone', 'mobile_no'], as_dict=1)
+	phone = phone.mobile_no or phone.phone
+	status = send_token_via_whatsapp(otp_secret, token=token, phone_no=phone)
+	verification_obj = {
+		'token_delivery': status,
+		'prompt': status and 'Enter verification code sent to {}'.format(phone[:4] + '******' + phone[-3:]),
+		'method': 'SMS',
+		'setup': status
+	}
+	return verification_obj
 
 
 def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
-    Twilio= frappe.db.get_value('Twilio Setting', filters=None, fieldname=['sid','token','t_number'])
-    account_sid = Twilio[0]
-    auth_token = Twilio[2]
-    client = Client(account_sid, auth_token)
-    From = 'whatsapp:' + Twilio[1]
-    to = 'whatsapp:+' + phone_no
-    hotp = pyotp.HOTP(otpsecret)
-    body= 'Your verification code {}.'.format(hotp.at(int(token)))
-    
-    message = client.messages.create( 
-                              from_=From,  
-                              body=body,      
-                              to=to 
-                          ) 
+	Twilio= frappe.db.get_value('Twilio Setting', filters=None, fieldname=['sid','token','t_number'])
+	account_sid = Twilio[0]
+	auth_token = Twilio[2]
+	client = Client(account_sid, auth_token)
+	From = 'whatsapp:' + Twilio[1]
+	to = 'whatsapp:+' + phone_no
+	hotp = pyotp.HOTP(otpsecret)
+	body= 'Your verification code {}.'.format(hotp.at(int(token)))
+	
+	message = client.messages.create( 
+							  from_=From,  
+							  body=body,      
+							  to=to 
+						  ) 
  
-    print(message.sid)
-    return True
+	print(message.sid)
+	return True
 
 def process_2fa_for_email(user, token, otp_secret, method='Email'):
 	otp_issuer = frappe.db.get_value('System Settings', 'System Settings', 'otp_issuer_name')

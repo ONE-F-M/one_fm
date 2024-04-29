@@ -124,7 +124,7 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
     if not cint(assigned):
         data = frappe.db.sql("""
             select
-                distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.project
+                distinct emp.name, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.project
             from `tabEmployee` as emp, `tabUser` as usr
             where
             emp.project is NULL
@@ -137,7 +137,7 @@ def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, pr
 
     data = frappe.db.sql("""
         select
-            distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site, emp.project
+            distinct emp.name, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site, emp.project
         from `tabEmployee` as emp, `tabUser` as usr
         where
         emp.project is not NULL
@@ -186,7 +186,7 @@ def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled
             str_filters +=' and es.operations_role = "{}"'.format(operations_role)
 
         if employee_search_id:
-            employee_filters.update({'employee_id': employee_search_id})
+            employee_filters.update({'employee': employee_search_id})
 
         if employee_search_name:
             employee_filters.update({'employee_name': ("like", "%" + employee_search_name + "%")})
@@ -229,7 +229,7 @@ def get_roster_view(start_date: str, end_date: str, assigned: int = 0, scheduled
         if employee_search_name:
             employee_filters.pop('employee_name')
         if employee_search_id:
-            employee_filters.pop('employee_id')
+            employee_filters.pop('employee')
         if department:
             employee_filters.pop('department', None)
         if operations_role:
@@ -351,7 +351,7 @@ def get_filtered_operations_role(doctype, txt, searchfield, start, page_len, fil
 def get_current_user_details():
     user = frappe.session.user
     user_roles = frappe.get_roles(user)
-    user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_id", "employee_name", "image", "enrolled", "designation"], as_dict=1)
+    user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_name", "image", "enrolled", "designation"], as_dict=1)
     return user, user_roles, user_employee
 
 
@@ -416,7 +416,7 @@ def get_current_user_details():
 # 				request_employee_schedule=request_employee_schedule, employee_list=employee_list,
 # 				repeat_days=repeat_days, day_off=day_off
 # 			)
-# 			# employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
+# 			# employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_name"])
 # 			update_roster(key="roster_view")
 # 			response("success", 200, {'message':'Successfully rostered employees'})
 # 	except Exception as e:
@@ -690,7 +690,7 @@ def schedule_staff(employees, shift, operations_role, start_date, otRoster=0, pr
                 operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
                 request_employee_schedule=request_employee_schedule, employee_list=employee_list, repeat_days=repeat_days, day_off=day_off
             )
-            # employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
+            # employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_name"])
             update_roster(key="roster_view")
             print(resp)
             if type(resp) == dict:
@@ -935,7 +935,7 @@ def update_employee_shift(employees, shift, owner, creation):
     site, project = frappe.get_value("Operations Shift", shift, ["site", "project"])
     # structure employee record
     # filter and sort, check if employee site and project match retrieved
-    employees_data = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_name", "employee_id", "project", "site", "shift"])
+    employees_data = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_name", "project", "site", "shift"])
     unmatched_record = {}
     matched_record = []
     no_shift_assigned = []
@@ -951,12 +951,12 @@ def update_employee_shift(employees, shift, owner, creation):
     # start with unmatched
     if unmatched_record:
         query = """
-            INSERT INTO `tabAdditional Shift Assignment` (`name`, `employee`, `employee_name`, `employee_id`, `site`, `shift`, `project`, `owner`, `modified_by`, `creation`, `modified`)
+            INSERT INTO `tabAdditional Shift Assignment` (`name`, `employee`, `employee_name`, `site`, `shift`, `project`, `owner`, `modified_by`, `creation`, `modified`)
             VALUES 
         """
         for k, emp in unmatched_record.items():
             query += f"""(
-                    "{emp.name}|{shift}", "{emp.name}", "{emp.employee_name}", "{emp.employee_id}", "{site}", "{shift}", 
+                    "{emp.name}|{shift}", "{emp.name}", "{emp.employee_name}", "{site}", "{shift}", 
                     "{project}", "{owner}", "{owner}", "{creation}", "{creation}"
             ),"""
         query = query.replace(", None", '')
@@ -1486,7 +1486,7 @@ def search_staff(key, search_term):
     if key == "customer" and search_term:
         conds += 'and prj.customer like "%{customer}%" and emp.project=prj.name'.format(customer=search_term)
     elif key == "employee_id" and search_term:
-        conds += 'and emp.employee_id like "%{employee_id}%" '.format(employee_id=search_term)
+        conds += 'and emp.name like "%{employee_id}%" '.format(employee_id=search_term)
     elif key == "project" and search_term:
         conds += 'and emp.project like "%{project}%" '.format(project=search_term)
     elif key == "site" and search_term:
@@ -1496,7 +1496,7 @@ def search_staff(key, search_term):
 
     data = frappe.db.sql("""
         select
-            distinct emp.name, emp.employee_id, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site, emp.project
+            distinct emp.name, emp.employee_name, emp.image, emp.one_fm_nationality as nationality, usr.mobile_no, usr.name as email, emp.designation, emp.department, emp.shift, emp.site, emp.project
         from `tabEmployee` as emp, `tabUser` as usr, `tabProject` as prj
         where
         emp.user_id=usr.name
@@ -1507,8 +1507,8 @@ def search_staff(key, search_term):
 @frappe.whitelist()
 def get_employee_detail(employee_pk):
     if employee_pk:
-        pk, employee_id, employee_name, enrolled, cell_number = frappe.db.get_value("Employee", employee_pk, ["name", "employee_id", "employee_name", "enrolled", "cell_number"])
-        return {'pk':pk, 'employee_id': employee_id, 'employee_name': employee_name, 'enrolled': enrolled, "cell_number": cell_number}
+        pk, employee_name, enrolled, cell_number = frappe.db.get_value("Employee", employee_pk, ["name", "employee_name", "enrolled", "cell_number"])
+        return {'pk':pk, 'employee_id': pk, 'employee_name': employee_name, 'enrolled': enrolled, "cell_number": cell_number}
 
 
 @frappe.whitelist()
@@ -1527,11 +1527,11 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
                 ignore_permissions=True
             )
             employees = frappe.db.get_list("Employee", filters={'project':project, 'site':site, 'shift':shift}, 
-                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                fields=["name", "project", "site", "shift", "employee_name"], 
                 ignore_permissions=True)
         elif project and site and employee:
             employee_data = frappe.db.get_list("Employee", filters={'name':employee, 'project':project, 'site':site}, 
-                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                fields=["name", "project", "site", "shift", "employee_name"], 
                 ignore_permissions=True)
             if employee_data:
                 employee_data = employee_data[0]
@@ -1546,7 +1546,7 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
                 ignore_permissions=True
             )
             employees = frappe.db.get_list("Employee", filters={'project':project, 'site':site, 'status':'Active', 'shift_working':1}, 
-                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                fields=["name", "project", "site", "shift", "employee_name"], 
                 ignore_permissions=True)
         elif project and shift:
             shifts_data = frappe.db.get_list("Operations Shift",
@@ -1555,11 +1555,11 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
                 ignore_permissions=True
             )
             employees = frappe.db.get_list("Employee", filters={'project':project, 'shift':shift, 'status':'Active', 'shift_working':1}, 
-                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                fields=["name", "project", "site", "shift", "employee_name"], 
                 ignore_permissions=True)
         elif project and employee:
             employee_data = frappe.db.get_list("Employee", filters={'name':employee, 'project':project, 'status':'Active', 'shift_working':1}, 
-                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                fields=["name", "project", "site", "shift", "employee_name"], 
                 ignore_permissions=True)
             if employee_data:
                 employee_data = employee_data[0]
@@ -1574,7 +1574,7 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
                 ignore_permissions=True
             )
             employees = frappe.db.get_list("Employee", filters={'project':project, 'status':'Active', 'shift_working':1}, 
-                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                fields=["name", "project", "site", "shift", "employee_name"], 
                 ignore_permissions=True)
         elif site:
             shifts_data = frappe.db.get_list("Operations Shift",
@@ -1583,7 +1583,7 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
                 ignore_permissions=True
             )
             employees = frappe.db.get_list("Employee", filters={'site':site, 'status':'Active', 'shift_working':1}, 
-            fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+            fields=["name", "project", "site", "shift", "employee_name"], 
             ignore_permissions=True)
         elif shift:
             shifts_data = frappe.db.get_list("Operations Shift",
@@ -1592,11 +1592,11 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
                 ignore_permissions=True
             )
             employees = frappe.db.get_list("Employee", filters={'shift':shift, 'status':'Active', 'shift_working':1}, 
-                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                fields=["name", "project", "site", "shift", "employee_name"], 
                 ignore_permissions=True)
         elif employee:
             employee_data = frappe.db.get_list("Employee", filters={'name':employee,'status':'Active', 'shift_working':1}, 
-                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                fields=["name", "project", "site", "shift", "employee_name"], 
                 ignore_permissions=True)
             if employee_data:
                 employee_data = employee_data[0]
@@ -1609,7 +1609,7 @@ def roster_search_bar(project=None, site=None, shift=None, employee=None):
             sites = [i.name for i in frappe.db.get_list("Operations Site", ignore_permissions=True)]
             shifts = [i.name for i in frappe.db.get_list("Operations Shift", ignore_permissions=True)]
             employees = frappe.db.get_list("Employee", filters={'status':'Active', 'shift_working':1}, 
-                fields=["name", "project", "site", "shift", "employee_id", "employee_name"], 
+                fields=["name", "project", "site", "shift", "employee_name"], 
                 ignore_permissions=True)
         # sort data
         for i in shifts_data:

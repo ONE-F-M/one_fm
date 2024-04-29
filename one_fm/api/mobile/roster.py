@@ -102,7 +102,7 @@ def get_weekly_staff_roster(start_date, end_date):
 def get_current_user_details():
 	user = frappe.session.user
 	user_roles = frappe.get_roles(user)
-	user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_id", "employee_name", "image", "enrolled", "designation"], as_dict=1)
+	user_employee = frappe.get_value("Employee", {"user_id": user}, ["name", "employee_name", "image", "enrolled", "designation"], as_dict=1)
 	return user, user_roles, user_employee
 
 

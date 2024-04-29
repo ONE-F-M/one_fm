@@ -148,7 +148,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if not isinstance(longitude, float):
             return response("Bad Request", 400, None, "longitude must be of type float.")
 
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
@@ -235,7 +235,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if not isinstance(employee_id, str):
             return response("Bad Request", 400, None, "employee must be of type str.")
         
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", employee_id)
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 

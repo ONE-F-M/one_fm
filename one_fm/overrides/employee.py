@@ -55,7 +55,9 @@ class EmployeeOverride(EmployeeMaster):
         self.employee = self.name
         self.set_employee_name()
         set_employee_name(self, method=None)
-        self.set_employee_id_based_on_residency()
+
+        # Disabled due to new Employee PK
+        # self.set_employee_id_based_on_residency()
         self.validate_date()
         self.validate_email()
         self.validate_status()
@@ -75,11 +77,11 @@ class EmployeeOverride(EmployeeMaster):
         employee_validate_attendance_by_timesheet(self, method=None)
         validate_leaves(self)
 
-    def set_employee_id_based_on_residency(self):
-        if self.employee_id:
-            residency_employee_id = get_employee_id_based_on_residency(self.employee_id, self.under_company_residency, self.name, self.employment_type)
-            if self.employee_id != residency_employee_id:
-                self.employee_id = residency_employee_id
+    # def set_employee_id_based_on_residency(self):
+    #     if self.employee_id:
+    #         residency_employee_id = get_employee_id_based_on_residency(self.employee_id, self.under_company_residency, self.name, self.employment_type)
+    #         if self.employee_id != residency_employee_id:
+    #             self.employee_id = residency_employee_id
 
     def before_save(self):
         self.assign_role_profile_based_on_designation()
@@ -206,7 +208,6 @@ class EmployeeOverride(EmployeeMaster):
             if self.status != "Active":
                 status_validate = StatusChangeVaccumValidate(employee_object=self)
                 message = status_validate.message()
-                print(message)
                 if message:
                     frappe.throw(message)
 
@@ -391,7 +392,7 @@ class NotifyAttendanceManagerOnStatusChange:
         #         the_recipient = get_users_with_role("HR Manager")
         #         data_update = dict(
         #             employee_name=self.employee_object.employee_name,
-        #             employee_id=self.employee_object.employee_id,
+        #             employee=self.employee_object.employee,
         #             status=self.employee_object.status
         #         )
         #         data.update(data_update)

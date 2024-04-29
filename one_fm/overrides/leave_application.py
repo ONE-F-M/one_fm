@@ -1,7 +1,7 @@
 from ast import literal_eval
 import frappe,json
 from frappe import _
-from frappe.utils import get_fullname, nowdate, add_to_date
+from frappe.utils import get_fullname, nowdate, add_to_date, cstr
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
 from frappe.desk.form.assign_to import add
@@ -57,10 +57,10 @@ def is_app_user(emp):
     #Returns true if an employee is an app user or has a valid email address
     try:
         is_app_user = False
-        user_details = frappe.get_all("Employee",{'name':emp},['user_id','employee_id'])
+        user_details = frappe.get_all("Employee",{'name':emp},['user_id','name'])
         if user_details:
             user_id = user_details[0].get("user_id")
-            emp_id = user_details[0].get("employee_id")
+            emp_id = user_details[0].get("name")
             if user_id.split("@")[0].lower() == emp_id.lower():
                 is_app_user = True
         return is_app_user
@@ -247,7 +247,7 @@ class LeaveApplicationOverride(LeaveApplication):
             sendemail(recipients= [self.leave_approver], subject="Leave Application", message=message,
                     reference_doctype=self.doctype, reference_name=self.name, attachments = [])
 
-            employee_id = frappe.get_value("Employee", {"user_id":self.leave_approver}, ["name"])
+            employee = frappe.get_value("Employee", {"user_id":self.leave_approver}, ["name"])
 
             if self.total_leave_days == 1:
                 date = "for "+cstr(self.from_date)
@@ -255,7 +255,7 @@ class LeaveApplicationOverride(LeaveApplication):
                 date = "from "+cstr(self.from_date)+" to "+cstr(self.to_date)
 
             push_notication_message = self.employee_name+" has applied for "+self.leave_type+" "+date+". Kindly, take action."
-            push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, self.name)
+            push_notification_rest_api_for_leave_application(employee ,"Leave Application", push_notication_message, self.name)
 
     def after_insert(self):
         self.assign_to_leave_approver()

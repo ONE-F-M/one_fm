@@ -1783,7 +1783,7 @@ def fetch_employees_not_in_checkin():
 
 		employee_details = frappe.db.get_list("Employee", filters={
 			'name': ['IN', employees_yet_to_checkin]},
-			fields=['name', 'employee_id', 'employee_name', 'user_id', 'prefered_contact_email',
+			fields=['name', 'employee_name', 'user_id', 'prefered_contact_email',
 			'prefered_email', 'reports_to']
 		)
 
