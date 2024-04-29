@@ -210,6 +210,7 @@ def update_onboarding_employee(employee):
         onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
         onboard_employee.enrolled = True
         onboard_employee.enrolled_on = now_datetime()
+        onboard_employee.flags.ignore_mandatory = True
         onboard_employee.save(ignore_permissions=True)
         frappe.db.commit()
 
@@ -242,6 +243,7 @@ def update_onboarding_employee(employee):
         onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist)
         onboard_employee.enrolled = True
         onboard_employee.enrolled_on = now_datetime()
+        onboard_employee.flags.ignore_mandatory = True
         onboard_employee.save(ignore_permissions=True)
         frappe.db.commit()
 
