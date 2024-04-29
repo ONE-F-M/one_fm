@@ -153,6 +153,13 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
+        get_site_location(employee_id, latitude, longitude)
+        checkin_location = frappe.local.response
+        if checkin_location.status_code != 200:
+            return response("Resource Not Found", 404, None, "User not assigned to the shift")
+        if not checkin_location.data['user_within_geofence_radius']:
+            return response("Resource Not Found", 404, None, "You are outside the site location. Please try again")
+
         # setup channel
         # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
         # channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
@@ -240,17 +247,18 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
         shift_exists = get_current_shift(employee)
-        if shift_exists['type'] == "Early":
-            # check if user can checkin with the correct time
-            return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
-        elif shift_exists['type'] == "Late":
-            return response("Resource Not Found", 404, None, f"You are checking out too late, checkout was allowed {shift_exists['data']} minutes ago ")
-        elif shift_exists['type'] == "On Time":
-            shift = shift_exists['data']
+        if shift_exists:
+            if shift_exists['type'] == "Early":
+                # check if user can checkin with the correct time
+                return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
+            elif shift_exists['type'] == "Late":
+                return response("Resource Not Found", 404, None, f"You are checking out too late, checkout was allowed {shift_exists['data']} minutes ago ")
+            else:
+                shift = shift_exists['data']
         else:
             shift = None
         date = cstr(getdate())
-        
+
         site, location = None, None
         if shift:
             log_type = shift.check_existing_checking()
