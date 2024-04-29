@@ -12,10 +12,10 @@ class AccommodationAssetandConsumable(Document):
 			self.naming_series = 'AACR-.YYYY.-'
 		else:
 			self.naming_series = 'AACI-.YYYY.-'
-		if not self.employee and self.employee_id:
-			employee = frappe.db.get_value('Employee', {'employee_id': self.employee_id})
-			if employee:
-				self.employee = employee
+		# if not self.employee and self.employee_id:
+		# 	employee = frappe.db.get_value('Employee', {'employee_id': self.employee_id})
+		# 	if employee:
+		# 		self.employee = employee
 
 	def set_assets_and_consumables_details(self):
 		assets_and_consumables = False

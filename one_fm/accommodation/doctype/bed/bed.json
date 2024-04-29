@@ -34,7 +34,6 @@
   "accommodation_objects",
   "occupancy_details_section",
   "employee",
-  "employee_id",
   "local_or_overseas",
   "passport_number",
   "full_name",
@@ -334,13 +333,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "label": "Employee ID",
-   "read_only": 1
-  },
-  {
    "fetch_from": "employee.designation",
    "fieldname": "designation",
    "fieldtype": "Link",
@@ -366,7 +358,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-18 10:03:47.482957",
+ "modified": "2024-04-24 08:13:44.230955",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Bed",
@@ -399,5 +391,6 @@
  ],
  "search_fields": "accommodation_name, governorate, area, bed_type, gender, status",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }

@@ -12,7 +12,6 @@
   "reason_for_return",
   "warehouse",
   "employee",
-  "employee_id",
   "employee_name",
   "column_break_4",
   "civil_id",
@@ -67,13 +66,6 @@
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
-  },
-  {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "label": "Employee ID",
-   "read_only": 1
   },
   {
    "fetch_from": "employee.employee_name",
@@ -193,10 +185,11 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-05-18 10:04:24.906943",
+ "modified": "2024-04-24 08:12:22.607026",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Asset and Consumable",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -217,5 +210,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

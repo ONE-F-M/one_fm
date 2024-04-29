@@ -37,7 +37,6 @@
   "project",
   "nationality",
   "column_break_7",
-  "employee_id",
   "civil_id",
   "employment_type",
   "employee_status",
@@ -263,15 +262,6 @@
    "reqd": 1
   },
   {
-   "fetch_from": "employee.employee_id",
-   "fetch_if_empty": 1,
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Employee ID"
-  },
-  {
    "fieldname": "tenant_category",
    "fieldtype": "Select",
    "label": "Tenant Category",
@@ -413,10 +403,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2022-05-18 10:03:25.617357",
+ "modified": "2024-04-24 08:13:15.390558",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Accommodation Checkin Checkout",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -444,8 +435,9 @@
    "write": 1
   }
  ],
- "search_fields": "employee, employee_id, full_name, civil_id, passport_number, bed",
+ "search_fields": "employee, full_name, civil_id, passport_number, bed",
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

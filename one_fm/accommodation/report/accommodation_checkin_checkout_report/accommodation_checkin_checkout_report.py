@@ -41,12 +41,6 @@ def get_columns(filters):
 				   'options': "Bed",
 			   },
 			   {
-				   'fieldname': 'employee_id',
-				   'label': _('Employee ID'),
-				   'fieldtype': 'Data',
-				   'width': 120,
-			   },
-			   {
 				   'fieldname': 'full_name',
 				   'label': _('Employee Name'),
 				   'fieldtype': 'Data',
@@ -127,7 +121,7 @@ def get_columns(filters):
 
 def get_conditions(filters):
 	conditions = ""
-	fields = ['accommodation', 'accommodation_unit', 'accommodation_space', 'bed', 'employee', 'employee_id', 'tenant_category']
+	fields = ['accommodation', 'accommodation_unit', 'accommodation_space', 'bed', 'employee', 'tenant_category']
 	for field in fields:
 		if filters.get(field):
 			conditions += " and {0}='{1}' ".format(field, filters.get(field))
@@ -165,7 +159,6 @@ def get_data(filters):
 				'accommodation_unit':acc.accommodation_unit,
 				'accommodation_space':acc.accommodation_space,
 				'bed':acc.bed,
-				'employee_id':acc.employee_id,
 				'full_name':acc.full_name,
 				'civil_id':acc.civil_id,
 				'checkin_checkout_date_time':acc.checkin_checkout_date_time,
