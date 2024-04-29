@@ -22,7 +22,7 @@
   <tbody>
     {% for i in header %}
         <th>{{loop.index}}</th>
-        <th>{{i.employee_id}}</th>
+        <th>{{i.employee}}</th>
         <th style="width:25%">{{i.employee_name}}</th>
         {% for day in i.days_worked %}
             {% for k, v in day.items() %}
@@ -35,7 +35,7 @@
     <tr>
       <th scope="">{{loop.index}}</th>
 
-          <td>{{i.employee_id}}</td>
+          <td>{{i.employee}}</td>
           <td style="width:25%">{{i.employee_name}}</td>
           {% for day in i.days_worked %}
             <td>{{day}}</td>

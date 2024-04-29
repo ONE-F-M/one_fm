@@ -115,7 +115,7 @@ def sic_attendance_absent_present(doc):
 
 
             attendances = frappe.db.sql(f"""
-                SELECT at.employee, em.employee_id, em.employee_name,
+                SELECT at.employee, em.employee_name,
                 at.operations_role, at.status, at.project, at.site, at.attendance_date
                 FROM `tabAttendance` at JOIN `tabEmployee` em
                 ON at.employee=em.name WHERE at.attendance_date
@@ -180,7 +180,7 @@ def sic_attendance_absent_present(doc):
                         days_worked.append(employee_dict[k]['days_worked'].get(month_day))
                 # push ready employee data
                 results.append({
-                'sn':count_loop, 'employee_id':v.get('employee_id'),
+                'sn':count_loop, 'employee_id':v.get('employee'),
                 'employee_name':v.get('employee_name'),
                 'days_worked':days_worked
                 })
@@ -254,7 +254,7 @@ def sic_separate_invoice_attendance(doc):
 
 
             attendances = frappe.db.sql(f"""
-                SELECT at.employee, em.employee_id, em.employee_name,
+                SELECT at.employee, em.employee_name,
                 at.operations_role, at.status, at.project, at.site, at.attendance_date
                 FROM `tabAttendance` at JOIN `tabEmployee` em
                 ON at.employee=em.name WHERE at.attendance_date
@@ -320,7 +320,7 @@ def sic_separate_invoice_attendance(doc):
                         days_worked.append(employee_dict[k]['days_worked'].get(month_day))
                 # push ready employee data
                 results.append({
-                'sn':count_loop, 'employee_id':v.get('employee_id'),
+                'sn':count_loop, 'employee_id':v.get('employee'),
                 'employee_name':v.get('employee_name'),
                 'days_worked':days_worked
                 })
@@ -402,7 +402,7 @@ def sic_single_invoice_separate_attendance(doc):
 
 
             attendances = frappe.db.sql(f"""
-                SELECT at.employee, em.employee_id, em.employee_name,
+                SELECT at.employee, em.employee_name,
                 at.operations_role, at.status, at.project, at.site, at.attendance_date
                 FROM `tabAttendance` at JOIN `tabEmployee` em
                 ON at.employee=em.name WHERE at.attendance_date
@@ -473,7 +473,7 @@ def sic_single_invoice_separate_attendance(doc):
 
                 # push ready employee data
                 sites[v.get('site')]['employees'].append({
-                'sn':count_loop, 'employee_id':v.get('employee_id'),
+                'sn':count_loop, 'employee_id':v.get('employee'),
                 'site':v.get('site'), 'operations_role':v.get('operations_role'),
                 'employee_name':v.get('employee_name'),
                 'days_worked':days_worked
