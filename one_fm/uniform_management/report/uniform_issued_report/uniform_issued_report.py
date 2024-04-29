@@ -14,7 +14,6 @@ def execute(filters=None):
 def get_columns():
     return [
 		_("Employee") + ":Link/Employee:120",
-		_("Employee ID") + ":Data:120",
 		_("Employee Name") + ":Data:180",
 		_("Item") + ":Data:120",
 		_("Issued") + ":Date:90",
@@ -31,7 +30,7 @@ def get_data(filters):
 
 	query = """
 		select
-			u.employee, u.employee_id, u.employee_name, ui.item, ui.issued_on, ui.quantity, ui.returned, ui.rate, ui.expire_on
+			u.employee, u.employee_name, ui.item, ui.issued_on, ui.quantity, ui.returned, ui.rate, ui.expire_on
 		from
 			`tabEmployee Uniform` u, `tabEmployee Uniform Item` ui
 		where
@@ -47,7 +46,7 @@ def get_data(filters):
 		uniform_status = "Valid"
 		if getdate(uniform.expire_on) <= getdate(filters.returned_on):
 			uniform_status = "Expired"
-		row = [uniform.employee, uniform.employee_id, uniform.employee_name, uniform.item, uniform.issued_on,
+		row = [uniform.employee, uniform.employee_name, uniform.item, uniform.issued_on,
 			uniform.quantity, uniform.returned, uniform.expire_on, uniform_status, pay_back]
 		data.append(row)
 

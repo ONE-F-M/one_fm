@@ -17,10 +17,6 @@ class EmployeeUniform(Document):
 			self.naming_series = 'EUR-.YYYY.-'
 		else:
 			self.naming_series = 'EUI-.YYYY.-'
-		if not self.employee and self.employee_id:
-			employee = frappe.db.get_value('Employee', {'employee_id': self.employee_id})
-			if employee:
-				self.employee = employee
 
 	def on_submit(self):
 		self.validate_handover_form()
@@ -256,10 +252,10 @@ def get_project_uniform_details(designation_id, project_id=''):
 			return profile.uniforms if profile.uniforms else False
 	return False
 
-def get_items_to_return(employee_id):
-	return get_issued_items_not_returned(employee_id)
+def get_items_to_return(employee):
+	return get_issued_items_not_returned(employee)
 
-def get_issued_items_not_returned(employee_id, item=False):
+def get_issued_items_not_returned(employee, item=False):
 	query = """
 		select
 			i.item, i.item_name, (i.quantity - i.returned) as quantity, i.uom, i.expire_on, i.rate,
@@ -272,7 +268,7 @@ def get_issued_items_not_returned(employee_id, item=False):
 	"""
 	if item:
 		query += " and %(item)s"
-	return frappe.db.sql(query,{'employee': employee_id, 'item': item}, as_dict=True)
+	return frappe.db.sql(query,{'employee': employee, 'item': item}, as_dict=True)
 
 @frappe.whitelist()
 def issued_items_not_returned(doctype, txt, searchfield, start, page_len, filters):
