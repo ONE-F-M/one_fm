@@ -170,7 +170,7 @@ var set_employee_details = function(frm){
                 filters: {
                 name: frm.doc.employee
                 },
-                fieldname:["one_fm_duration_of_work_permit","employee_name","one_fm_nationality","one_fm_civil_id","gender","date_of_birth","work_permit_salary","pam_file_number","employee_id","valid_upto","first_name","middle_name","one_fm_third_name","last_name","one_fm_first_name_in_arabic","one_fm_second_name_in_arabic","one_fm_third_name_in_arabic","one_fm_last_name_in_arabic","one_fm_religion","marital_status","one_fm_passport_type","passport_number","one_fm_date_of_entry_in_kuwait","one_fm__highest_educational_qualification","one_fm_date_of_issuance_of_visa","one_fm_pam_designation","one_fm_salary_type","work_permit_salary","one_fm_visa_reference_number"]
+                fieldname:["one_fm_duration_of_work_permit","employee_name","one_fm_nationality","one_fm_civil_id","gender","date_of_birth","work_permit_salary","pam_file_number","valid_upto","first_name","middle_name","one_fm_third_name","last_name","one_fm_first_name_in_arabic","one_fm_second_name_in_arabic","one_fm_third_name_in_arabic","one_fm_last_name_in_arabic","one_fm_religion","marital_status","one_fm_passport_type","passport_number","one_fm_date_of_entry_in_kuwait","one_fm__highest_educational_qualification","one_fm_date_of_issuance_of_visa","one_fm_pam_designation","one_fm_salary_type","work_permit_salary","one_fm_visa_reference_number"]
             }, 
             callback: function(r) { 
         
@@ -182,7 +182,6 @@ var set_employee_details = function(frm){
                 frm.set_value('date_of_birth', r.message.date_of_birth);
                 frm.set_value('work_permit_salary', r.message.work_permit_salary);
                 frm.set_value('pam_file_number', r.message.pam_file_number);
-                frm.set_value('employee_id', r.message.employee_id);
                 frm.set_value('passport_expiry_date', r.message.valid_upto);
                 frm.set_value('religion', r.message.one_fm_religion);
                 frm.set_value('marital_status', r.message.work_permit_salary);

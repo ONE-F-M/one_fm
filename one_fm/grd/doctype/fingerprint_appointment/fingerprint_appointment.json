@@ -39,7 +39,6 @@
   "last_name_arabic",
   "moi_reference_number",
   "column_break_18",
-  "employee_id",
   "nationality",
   "first_name_english",
   "second_name_english",
@@ -230,15 +229,6 @@
   {
    "fieldname": "section_break_24",
    "fieldtype": "Section Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee ID",
-   "read_only": 1
   },
   {
    "fieldname": "grd_supervisor",
@@ -440,10 +430,11 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-26 19:26:39.276865",
+ "modified": "2024-04-23 12:35:34.981766",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Fingerprint Appointment",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -501,5 +492,6 @@
  ],
  "sort_field": "date_of_application",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

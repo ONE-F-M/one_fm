@@ -17,7 +17,6 @@
   "category",
   "preparation",
   "column_break_5",
-  "employee_id",
   "centeralized_number",
   "renewal_or_extend",
   "completed_on",
@@ -461,15 +460,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee ID",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "date_of_application",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -527,7 +517,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-03-07 10:15:12.819781",
+ "modified": "2024-04-23 12:37:57.997963",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MOI Residency Jawazat",

@@ -87,7 +87,6 @@ def map_to_mgrp(source_name, target_doc=None):
                 "first_name":"first_name",
                 "civil_id":"civil_id",
                 "last_name":"last_name",
-                "employee_id":"employee_id",
                 "end_of_service_date":"end_of_service_date",
             }
         }

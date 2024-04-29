@@ -33,7 +33,6 @@
   "civil_id",
   "column_break_9",
   "last_name",
-  "employee_id",
   "end_of_service_details_section",
   "end_of_service_reason",
   "end_of_service_date",
@@ -110,13 +109,6 @@
    "fieldname": "last_name",
    "fieldtype": "Data",
    "label": "Last Name",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "label": "Employee ID",
    "read_only": 1
   },
   {
@@ -303,7 +295,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2022-10-30 19:55:23.289737",
+ "modified": "2024-04-23 10:15:43.323316",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "MGRP",
@@ -339,6 +331,6 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "employee_id",
+ "title_field": "employee",
  "track_changes": 1
 }

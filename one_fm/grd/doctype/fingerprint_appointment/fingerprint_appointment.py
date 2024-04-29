@@ -130,7 +130,7 @@ class FingerprintAppointment(Document):
     def notify_transportation(self):
         """Notify transportation with the employee's appointment"""
         user_email = "I.ANWARE@one-fm.com"
-        content="<h4>Dear "+ user_email +",</h4><p> This email to inform you that Fingerprint Appointment for employee Name: {0} - {1} Required Transportation at {2}.</p>".format(self.full_name,self.employee_id,self.date_and_time_confirmation)
+        content="<h4>Dear "+ user_email +",</h4><p> This email to inform you that Fingerprint Appointment for employee Name: {0} - {1} Required Transportation at {2}.</p>".format(self.full_name,self.employee,self.date_and_time_confirmation)
         sendemail(recipients=[user_email],
             sender=self.grd_supervisor,
             subject="Transportation Required For Fingerprint Appointment", content=content)
@@ -201,10 +201,10 @@ def to_do_to_grd_users(subject, description, user):
 
 def send_email_notification(doc, recipients):
 	page_link = get_url(doc.get_url())
-	message = "<p>Please Review the Fingerprint Appointment for employee: {0} at {1}<a href='{2}'>{3}</a>.</p>".format(doc.employee_id,doc.date_and_time_confirmation,page_link, doc.name)
+	message = "<p>Please Review the Fingerprint Appointment for employee: {0} at {1}<a href='{2}'>{3}</a>.</p>".format(doc.employee,doc.date_and_time_confirmation,page_link, doc.name)
 	sendemail(
 		recipients= recipients,
-		subject='{0} Fingerprint Appointment for employee Name:{1} - {2}'.format(doc.workflow_state, doc.full_name,doc.employee_id),
+		subject='{0} Fingerprint Appointment for employee Name:{1} - {2}'.format(doc.workflow_state, doc.full_name,doc.employee),
 		message=message,
 		reference_doctype=doc.doctype,
 		reference_name=doc.name

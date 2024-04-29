@@ -72,15 +72,14 @@ def create_mi_record(WorkPermit):
     new_medical_insurance.preparation = WorkPermit.preparation
     new_medical_insurance.insurance_status = Insurance_status
     new_medical_insurance.passport_expiry_date = WorkPermit.passport_expiry_date
-    new_medical_insurance.employee_id = WorkPermit.employee_id
     new_medical_insurance.employee = WorkPermit.employee
     new_medical_insurance.insert()
 
 @frappe.whitelist()
 def get_employee_data_from_civil_id(civil_id):
-    employee_id = frappe.db.exists('Employee', {'one_fm_civil_id': civil_id})
-    if employee_id:
-        return frappe.get_doc('Employee', employee_id)
+    employee = frappe.db.exists('Employee', {'one_fm_civil_id': civil_id})
+    if employee:
+        return frappe.get_doc('Employee', employee)
 
 #=======================================================================> Reminder Notification
 def system_remind_renewal_operator_to_apply_mi():

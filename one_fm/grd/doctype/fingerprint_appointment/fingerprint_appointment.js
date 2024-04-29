@@ -19,7 +19,7 @@ var set_employee_details = function(frm){
                 filters: {
                 name: frm.doc.employee
                 },
-                fieldname:["employee_name","one_fm_duration_of_work_permit","employee_name","one_fm_nationality","one_fm_civil_id","gender","date_of_birth","work_permit_salary","pam_file_number","employee_id","valid_upto"]
+                fieldname:["employee_name","one_fm_duration_of_work_permit","employee_name","one_fm_nationality","one_fm_civil_id","gender","date_of_birth","work_permit_salary","pam_file_number","valid_upto"]
             }, 
             callback: function(r) { 
         
@@ -30,7 +30,6 @@ var set_employee_details = function(frm){
                 frm.set_value('second_name_arabic', r.message.one_fm_second_name_in_arabic);
                 frm.set_value('third_name_arabic', r.message.one_fm_third_name_in_arabic);
                 frm.set_value('last_name_arabic', r.message.one_fm_last_name_in_arabic);
-                frm.set_value('employee_id',r.message.employee_id);
                 frm.set_value('first_name_english', r.message.first_name);
                 frm.set_value('second_name_english', r.message.middle_name);
                 frm.set_value('third_name_english', r.message.one_fm_third_name);

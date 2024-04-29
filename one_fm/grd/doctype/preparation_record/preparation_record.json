@@ -7,7 +7,6 @@
  "engine": "InnoDB",
  "field_order": [
   "employee",
-  "employee_id",
   "full_name",
   "civil_id",
   "nationality",
@@ -32,12 +31,6 @@
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
-  },
-  {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "label": "Employee ID"
   },
   {
    "fetch_from": "employee.employee_name",
@@ -131,14 +124,16 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2022-09-27 09:33:38.303078",
+ "modified": "2024-04-23 12:37:17.661138",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Preparation Record",
+ "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [],
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

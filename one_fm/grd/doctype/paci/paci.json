@@ -24,7 +24,6 @@
   "second_name_english",
   "third_name_english",
   "last_name_english",
-  "employee_id",
   "section_break_13",
   "nationality",
   "passport_number",
@@ -255,14 +254,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee ID",
-   "read_only": 1
-  },
-  {
    "fieldname": "date_of_application",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -313,7 +304,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-11-14 14:14:29.601882",
+ "modified": "2024-04-23 12:36:13.949746",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",
@@ -358,7 +349,7 @@
    "write": 1
   }
  ],
- "search_fields": "civil_id,date_of_application,employee_id",
+ "search_fields": "civil_id,date_of_application",
  "sort_field": "date_of_application",
  "sort_order": "DESC",
  "states": [],

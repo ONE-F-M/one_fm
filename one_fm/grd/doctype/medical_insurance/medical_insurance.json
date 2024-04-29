@@ -22,7 +22,6 @@
   "civil_id",
   "passport_expiry_date",
   "column_break_11",
-  "employee_id",
   "nationality",
   "no_of_years",
   "pam_file_number",
@@ -213,15 +212,6 @@
    "options": "Preparation"
   },
   {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee ID",
-   "read_only": 1
-  },
-  {
    "fieldname": "upload_payment_invoice_on",
    "fieldtype": "Datetime",
    "hidden": 1,
@@ -289,7 +279,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-11-08 07:38:16.062987",
+ "modified": "2024-04-23 12:37:43.242933",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Medical Insurance",
@@ -336,7 +326,7 @@
    "write": 1
   }
  ],
- "search_fields": "civil_id,employee_id,date_of_application",
+ "search_fields": "civil_id,date_of_application",
  "sort_field": "date_of_application",
  "sort_order": "DESC",
  "states": [],

@@ -66,7 +66,6 @@
   "second_name_in_arabic",
   "third_name_in_arabic",
   "last_name_in_arabic",
-  "employee_id",
   "section_break_32",
   "nationality",
   "date_of_birth",
@@ -94,7 +93,6 @@
   "salary_certificate",
   "column_break_64",
   "iqrar",
-  "section_break_50",
   "documents_required_section",
   "documents_required",
   "amended_from",
@@ -423,15 +421,6 @@
    "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'"
   },
   {
-   "allow_on_submit": 1,
-   "fetch_from": "employee.employee_id",
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee ID",
-   "read_only": 1
-  },
-  {
    "fieldname": "grd_supervisor",
    "fieldtype": "Link",
    "label": "GRD Supervisor",
@@ -671,10 +660,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "section_break_50",
-   "fieldtype": "Section Break"
-  },
-  {
    "fieldname": "column_break_62",
    "fieldtype": "Column Break"
   },
@@ -900,7 +885,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-05-14 16:13:28.882651",
+ "modified": "2024-04-23 12:36:54.599003",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",
@@ -966,7 +951,7 @@
    "write": 1
   }
  ],
- "search_fields": "date_of_application,employee_id,civil_id",
+ "search_fields": "date_of_application,civil_id",
  "sort_field": "date_of_application",
  "sort_order": "DESC",
  "states": [],
