@@ -597,7 +597,7 @@ var set_shift_hours_btn = function(frm) {
 	$wrapper
 		.html(shift_hours_html);
 	$wrapper.on('click', '.shift_hours_btn_html', function() {
-		if(frm.doc.docstatus == 0){
+		
 			var $btn = $(this);
 			$wrapper.find('.shift_hours_btn_html').removeClass('btn-primary');
 			$btn.addClass('btn-primary');
@@ -609,7 +609,7 @@ var set_shift_hours_btn = function(frm) {
 				frm.set_df_property('shift_hours', 'hidden', true);
 				frm.set_value('shift_hours', $btn.attr('data-shift_hours'));
 			}
-		}
+		
 	});
 };
 
