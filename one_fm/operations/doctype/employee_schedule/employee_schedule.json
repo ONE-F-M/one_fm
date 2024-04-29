@@ -8,6 +8,7 @@
  "field_order": [
   "employee",
   "employee_name",
+  "employment_type",
   "department",
   "column_break_3",
   "date",
@@ -205,10 +206,18 @@
    "fieldtype": "Link",
    "label": "Replaced Employee Schedule",
    "options": "Employee Schedule"
+  },
+  {
+   "fetch_from": "employee.employment_type",
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2024-03-25 10:13:24.450748",
+ "modified": "2024-04-25 14:15:04.404489",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",
