@@ -9,7 +9,6 @@
  "field_order": [
   "employee",
   "employee_name",
-  "employee_id",
   "site",
   "project",
   "column_break_4",
@@ -30,14 +29,6 @@
   "map"
  ],
  "fields": [
-  {
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Employee ID",
-   "read_only": 1
-  },
   {
    "fieldname": "employee",
    "fieldtype": "Link",
@@ -179,7 +170,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-02-02 18:30:01.427792",
+ "modified": "2024-04-23 12:46:38.411826",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Checkin Radius Log",

@@ -21,7 +21,7 @@ def get_data(filters):
 		conditions += f""" AND os.supervisor='{filters.supervisor}'"""
 	query = frappe.db.sql(f"""
 		SELECT sa.employee, sa.employee_name, sa.start_date, os.supervisor, os.supervisor_name,
-		sa.name as shift_assignment, sa.shift as operations_shift, em.employee_id
+		sa.name as shift_assignment, sa.shift as operations_shift
 		FROM `tabShift Assignment` sa RIGHT JOIN `tabOperations Shift` os ON os.name=sa.shift
 		RIGHT JOIN `tabEmployee` em ON sa.employee=em.name
 		WHERE {conditions}
@@ -47,12 +47,6 @@ def get_columns():
 			'label': _('Employee Name'),
 			'fieldtype': 'Data',
 			'width': 200
-		},
-		{
-			'fieldname': 'employee_id',
-			'label': _('Employee ID'),
-			'fieldtype': 'Data',
-			'width': 120
 		},
 		{
 			'fieldname': 'start_date',

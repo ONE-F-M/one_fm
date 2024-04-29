@@ -8,7 +8,6 @@
  "field_order": [
   "employee",
   "employee_name",
-  "employee_id",
   "log_type",
   "verification",
   "source",
@@ -27,13 +26,6 @@
    "label": "Employee",
    "options": "Employee",
    "reqd": 1
-  },
-  {
-   "fetch_from": "employee.employee_id",
-   "fetch_if_empty": 1,
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "label": "Employee ID"
   },
   {
    "fieldname": "message",
@@ -92,7 +84,7 @@
  ],
  "in_create": 1,
  "links": [],
- "modified": "2023-02-02 18:26:10.157626",
+ "modified": "2024-04-23 12:46:20.333330",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Face Recognition Log",

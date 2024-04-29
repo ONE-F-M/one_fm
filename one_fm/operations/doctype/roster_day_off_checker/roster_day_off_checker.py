@@ -69,7 +69,7 @@ def create_record(supervisor, detail):
 	owner = frappe.session.user
 	date = str(getdate())
 	employee_list = frappe.db.get_list("Employee", 
-		fields=['name', 'employee_name', 'employee_id', 'day_off_category', 'number_of_days_off'])
+		fields=['name', 'employee_name', 'day_off_category', 'number_of_days_off'])
 	employee_dict = {}
 	for i in employee_list:
 		employee_dict[i.name] = i
@@ -87,7 +87,7 @@ def create_record(supervisor, detail):
 	}).insert(ignore_permissions=True)
 	frappe.db.commit()
 	query = query = """
-		INSERT INTO `tabRoster Day Off Detail` (`name`, `employee`, `employee_id`, `employee_name`, `monthweek`, 
+		INSERT INTO `tabRoster Day Off Detail` (`name`, `employee`, `employee_name`, `monthweek`, 
 		`day_off_category`, `number_of_days_off`, `day_off_schedule`, `days_off_ot`, `day_off_difference`, 
 		`owner`, `modified_by`, `creation`, `modified`, `parent`, `parenttype`, `parentfield`, `idx`)
 		VALUES 
@@ -97,7 +97,7 @@ def create_record(supervisor, detail):
 		emp = employee_dict[i['employee']]
 		child_name = f"{doc.name}-{emp.name}-{str(creation)}-{random.random()}"
 		query += f"""
-			("{child_name}", "{emp.name}", "{emp.employee_id}", "{emp.employee_name}", "{i['monthweek']}", 
+			("{child_name}", "{emp.name}", "{emp.employee_name}", "{i['monthweek']}", 
 			"{emp.day_off_category}", {emp.number_of_days_off}, "{i['day_off_schedule']}", '{i['days_off_ot']}', 
 			"{i['day_off_difference']}", "{owner}", "{owner}", "{creation}", "{creation}", "{doc.name}", "{doc.doctype}", 
 			"detail", {idx}

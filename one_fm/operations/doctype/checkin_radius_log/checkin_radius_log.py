@@ -20,9 +20,9 @@ class CheckinRadiusLog(Document):
 
 	def set_employee(self):
 		try:
-			self.employee = frappe.db.get_value("Employee", {'employee_id':self.employee_id}, ['name'])
+			self.employee = frappe.db.get_value("Employee", {'name':self.employee}, ['name'])
 		except Exception as e:
-			frappe.log_error(str(e), 'Log checkin raius')
+			frappe.log_error(str(e), 'Log checkin radius')
 
 	@staticmethod
 	def clear_old_logs(days=30):
@@ -40,7 +40,7 @@ def create_checkin_radius_log(data):
 		doctype='Checkin Radius Log',
 		latitude = data['latitude'],
 		longitude = data['longitude'],
-		employee_id = data['employee'],
+		employee = data['employee'],
 		user_within_geofence_radius= data['user_within_geofence_radius'],
 		geofence_radius= data['geofence_radius'],
 		site=data['site_name'],
