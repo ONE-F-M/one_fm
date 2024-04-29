@@ -835,11 +835,11 @@ jenv = {
 }
 
 after_migrate = [
-    "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
+    # "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.replace_send_birthday_reminder",
     "one_fm.after_migrate.execute.replace_send_anniversary_reminder",
     "one_fm.after_migrate.execute.disable_workflow_emails",
-    "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
+    # "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
     "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
 ]
