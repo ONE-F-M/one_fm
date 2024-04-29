@@ -132,8 +132,6 @@ def employee_after_insert(doc, method):
     create_salary_structure_assignment(doc, method)
     create_wp_for_transferable_employee(doc)
     create_leave_policy_assignment(doc)
-    if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_generate_employee_id_on_employee_creation") and not doc.employee_id:
-        generate_employee_id(doc)
 
     if frappe.db.get_single_value("HR and Payroll Additional Settings", "auto_create_erpnext_user_on_employee_creation_using_employee_id"):
         if not doc.company_email:
@@ -158,11 +156,9 @@ def create_employee_user_from_employee_id(doc):
 	Create user account for employee if no user_id or employee while importing
 	"""
 	try:
-		if not doc.employee_id:
-			generate_employee_id(doc)
-		if not doc.user_id and doc.employee_id:
+		if not doc.user_id:
 			doc.reload()
-			create_employee_user(doc, f"{doc.employee_id.upper()}@one-fm.com")
+			create_employee_user(doc, f"{doc.name}@one-fm.com")
 	except Exception as e:
 		frappe.log_error(str(e), 'CREATE USER')
 
@@ -191,47 +187,6 @@ def create_employee_user(doc, email):
     except Exception as e:
         frappe.log_error(str(e), 'CREATE USER')
 
-
-def generate_employee_id(doc):
-	"""
-	Generate employee ID
-	"""
-	try:
-		if doc.one_fm_nationality=='No Nationality':
-			country = 'XX'
-		elif doc.one_fm_nationality == 'Non Kuwaiti':
-			country = 'NK'
-		elif doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
-			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
-		else:
-			country = 'XX'
-	except Exception as e:
-		frappe.throw(_(str(e)))
-
-	count = len(frappe.db.sql(f"""
-		SELECT name FROM tabEmployee
-		WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
-		as_dict=1))
-
-	if count == 0:
-		count = count + 1
-
-	doc.reload()
-	joining_year = str(doc.date_of_joining.year)[-2:].zfill(2)
-	joining_month = str(doc.date_of_joining.month).zfill(2)
-	serial_number = str(count).zfill(3)
-
-	while frappe.db.get_list("Employee", {"employee_id": ["LIKE", f"{joining_year}{joining_month}{serial_number}%"]}):
-		count = count + 1
-		serial_number = str(count).zfill(3)
-
-	residency_digit = 1 if doc.under_company_residency else 0
-
-	if is_subcontract_employee(doc.name, doc.employment_type):
-		residency_digit = 'S'
-
-	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{residency_digit}{doc.date_of_birth.strftime('%y')}".upper())
-	doc.reload()
 
 def is_subcontract_employee(employee, employment_type=False):
     if frappe.db.exists("Onboard Subcontract Employee", {"employee": employee}):
