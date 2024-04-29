@@ -54,7 +54,6 @@ class AttendanceRequestOverride(AttendanceRequest):
 				attendance_obj.cancel()
 
 	def on_update(self):
-		return
 		self.send_notification()
 
 	def on_update_after_submit(self):
