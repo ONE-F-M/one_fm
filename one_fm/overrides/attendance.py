@@ -502,7 +502,7 @@ def mark_daily_attendance(start_date, end_date):
         naming_series = 'HR-ATT-.YYYY.-'
         existing_attendance = frappe.get_list("Attendance", {
             'attendance_date':start_date,
-            'roster_type':'Basic', 
+            'roster_type':'Basic',
             'status':['IN', ['Present', 'Holiday', 'On Leave','Work From Home', 'On Hold', 'Day Off']]
             },
             pluck="employee"
@@ -832,12 +832,15 @@ def mark_timesheet_daily_attendance(timesheet_employees,start_date):
     try:
 
         query = """
-            INSERT INTO `tabAttendance` (`name`, `naming_series`,`employee`, `employee_name`, `working_hours`, `status`, `shift`, `in_time`, `out_time`,
-            `shift_assignment`, `operations_shift`, `site`, `project`, `attendance_date`, `company`,
-            `department`, `late_entry`, `early_exit`, `operations_role`, `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`,
-            `creation`, `modified`, `comment`)
+            INSERT INTO
+                `tabAttendance`
+                (
+                    `name`, `naming_series`,`employee`, `employee_name`, `employment_type`, `working_hours`, `status`,
+                    `shift`, `in_time`, `out_time`, `shift_assignment`, `operations_shift`, `site`, `project`,
+                    `attendance_date`, `company`, `department`, `late_entry`, `early_exit`, `operations_role`,
+                    `post_abbrv`, `roster_type`, `docstatus`, `modified_by`, `owner`, `creation`, `modified`, `comment`
+                )
             VALUES
-
         """
         employees = frappe.get_all("Employee",filters={"name":["IN",timesheet_employees]},fields="*")
         employees_dict = frappe._dict()
@@ -853,7 +856,7 @@ def mark_timesheet_daily_attendance(timesheet_employees,start_date):
             name = f"HR-ATT_{start_date}_{i}_Basic"
             query_body+= f"""
             (
-                "{name}", "{naming_series}", "{i}", "{emp.employee_name}", 0, "Absent", '{emp.shift}', NULL,
+                "{name}", "{naming_series}", "{i}", "{emp.employee_name}", "{emp.employment_type}", 0, "Absent", '{emp.shift}', NULL,
                 NULL, "NULL", "NULL", "{emp.site}", "{emp.project}", "{start_date}", "{emp.company}",
                 "{emp.department}", 0, 0, "NULL", "NULL", "Basic", {1}, "{owner}",
                 "{owner}", "{creation}", "{creation}", "No Timesheet record found"
@@ -865,6 +868,7 @@ def mark_timesheet_daily_attendance(timesheet_employees,start_date):
                 naming_series = VALUES(naming_series),
                 employee = VALUES(employee),
                 employee_name = VALUES(employee_name),
+                employment_type = VALUES(employment_type),
                 working_hours = VALUES(working_hours),
                 status = VALUES(status),
                 shift = VALUES(shift),
@@ -930,14 +934,14 @@ class AttendanceMarking():
             shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
-                WHERE sa.is_replaced = 0         
+                WHERE sa.is_replaced = 0
                 AND sa.start_date='{self.start.date()}'
                 AND op.attendance_by_client=0 AND op.status='Active'
             """, as_dict=1)
             non_shifts = frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabEmployee` e ON sa.employee=e.name
-                WHERE sa.is_replaced = 0                   
+                WHERE sa.is_replaced = 0
                 AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
                 AND e.shift_working=0""", as_dict=1)
             shifts.extend(non_shifts)
@@ -969,7 +973,7 @@ class AttendanceMarking():
                 AND e.shift_working=0""", as_dict=1)
             shifts.extend(non_shifts)
 
-        
+
         if shifts:
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0].name, ))
             if checkins:
@@ -1070,7 +1074,7 @@ class AttendanceMarking():
         WHERE
             ec.shift_assignment in {shift_assignments}
             AND ec.is_replaced = 0
-            
+
         GROUP BY
             ec.shift_assignment;
         """
@@ -1135,6 +1139,11 @@ class AttendanceMarking():
                 doc.shift = record.shift_type
                 doc.operations_shift = record.shift
                 doc.site = record.site
+                doc.custom_employment_type = record.custom_employment_type
+            if record.dt=="Employee Schedule":
+                doc.custom_employment_type = record.employment_type
+            if record.dt=="Employee Checkin":
+                doc.custom_employment_type = frappe.db.get_value("Employee", doc.employee, "employment_type")
             if record.late_entry:
                 doc.late_entry= record.late_entry
             if record.early_exit:
