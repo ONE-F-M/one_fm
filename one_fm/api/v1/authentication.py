@@ -305,13 +305,12 @@ def process_2fa_for_whatsapp(user, token, otp_secret):
     }
     return verification_obj
 
-@frappe.whitelist(allow_guest=True)
-def send_token_via_whatsapp():
+def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
   
     hotp = pyotp.HOTP(otpsecret)
-    content_variables= json.dumps({
-	                              '1': hotp.at(int(token))
-                              })
+    content_variables= {
+	                    	'1': hotp.at(int(token))
+                    	}
     message = send_whatsapp(sender_id=phone_no,template_name='authentication_code', content_variables=content_variables)
 
     return True

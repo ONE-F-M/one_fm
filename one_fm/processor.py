@@ -97,9 +97,10 @@ def send_whatsapp(sender_id, template_name, content_variables):
 	if content_sid:
 		message = client.messages.create(
 								from_='whatsapp:' + twilio.t_number,
+								messaging_service_sid=twilio.messaging_service_sid,
 								content_sid=content_sid,
 								content_variables=json.dumps(content_variables),
-								to='whatsapp:+96590042238'
+								to='whatsapp:+'+sender_id
 							)
 
 	print(f"Message sent: {message}")
