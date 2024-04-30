@@ -357,11 +357,17 @@ def add_remove_salary_advance(names, dialog):
                 job_offer_list.append(job_offer)
 
     if job_offer_list and len(job_offer_list) > 0:
-        notify_finance_job_offer_salary_advance(job_offer_list=job_offer_list)
+        notify_finance_job_offer_salary_advance(job_offer_list=job_offer_list, is_scheduled_event=False)
 
 # Notify Daily
 @frappe.whitelist()
-def notify_finance_job_offer_salary_advance(job_offer_id=None, job_offer_list=None):
+def notify_finance_job_offer_salary_advance(job_offer_id=None, job_offer_list=None, is_scheduled_event=True):
+    """
+    Args:
+        job_offer_id -> Job Offer ID to notify
+        job_offer_list -> Target Job Offers List
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     if not job_offer_list:
         if job_offer_id:
             filters = {'name': job_offer_id}
@@ -387,6 +393,7 @@ def notify_finance_job_offer_salary_advance(job_offer_id=None, job_offer_list=No
             subject=_('Advance Salary for Job Offer'),
             message=message,
             header=['Payment Request for Job Offer Advance Salary', 'yellow'],
+            is_scheduler_email=is_scheduled_event
         )
 
 @frappe.whitelist()

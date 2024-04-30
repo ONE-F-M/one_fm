@@ -19,7 +19,7 @@ from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
-from one_fm.utils import send_workflow_action_email, get_holiday_today, workflow_approve_reject
+from one_fm.utils import send_workflow_action_email, is_scheduler_emails_enabled
 
 # from PyPDF2 import PdfFileReader
 
@@ -469,7 +469,9 @@ def system_remind_renewal_operator_to_apply():
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     work_permit_list = frappe.db.get_list('Work Permit',
     {'date_of_application':['<=',today()],'workflow_state':['in',('Draft','Apply Online by PRO')],'work_permit_type':['in',('Renewal Non Kuwaiti','Renewal Kuwaiti')]},['civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
-    notification_reminder(work_permit_list,supervisor,renewal_operator,"Renewal")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(work_permit_list,supervisor,renewal_operator,"Renewal")
 
 def system_remind_transfer_operator_to_apply():
     """
@@ -479,7 +481,9 @@ def system_remind_transfer_operator_to_apply():
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     work_permit_list = frappe.db.get_list('Work Permit',
     {'date_of_application':['<=',today()],'workflow_state':['in',('Draft','Apply Online by PRO')],'work_permit_type':['=',('Local Transfer')]},['civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
-    notification_reminder(work_permit_list,supervisor,transfer_operator,"Local Transfer")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(work_permit_list,supervisor,transfer_operator,"Local Transfer")
 
 
 def notification_reminder(work_permit_list,supervisor,operator,type):

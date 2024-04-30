@@ -294,7 +294,11 @@ def issued_items_not_returned(doctype, txt, searchfield, start, page_len, filter
 		}
 	)
 
-def notify_gsd_and_employee_before_uniform_expiry():
+def notify_gsd_and_employee_before_uniform_expiry(is_scheduled_event=True):
+	"""
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
 	query = """
 		select
 			i.item, i.item_name, (i.quantity - i.returned) as quantity, i.uom, i.expire_on, i.rate,
@@ -345,6 +349,7 @@ def notify_gsd_and_employee_before_uniform_expiry():
 				subject=_('Expiring Uniforms in seven days'),
 				message=message,
 				header=['Expiring Uniforms in seven days', 'yellow'],
+				is_scheduler_email=is_scheduled_event
 			)
 		if message_to_gsd:
 			sendemail(
@@ -352,4 +357,5 @@ def notify_gsd_and_employee_before_uniform_expiry():
 				subject=_('Expiring Uniforms in seven days'),
 				message=message_to_gsd,
 				header=['Expiring Uniforms in seven days', 'yellow'],
+				is_scheduler_email=is_scheduled_event
 			)
