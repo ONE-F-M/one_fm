@@ -24,10 +24,15 @@ def validate_updated_fields(doc):
 
 def is_project_manager(project):
     project_manager = frappe.get_value("Project", project, "account_manager")
+    project_users = frappe.get_all("Project User",{'parent':project},['user'])
     user_employee = frappe.get_value("Employee", {"user_id": frappe.session.user}) if frappe.db.exists("Employee", {"user_id": frappe.session.user}) else None
 
     if user_employee and project_manager and user_employee == project_manager:
         return True
+    if project_users:
+        all_users = [i.user for i in project_users]
+        if frappe.session.user in all_users:
+            return True
     return False
 
 
