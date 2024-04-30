@@ -8,7 +8,9 @@
   "sid",
   "token",
   "column_break_2",
-  "t_number"
+  "t_number",
+  "section_break_kbex",
+  "content_template"
  ],
  "fields": [
   {
@@ -33,11 +35,21 @@
    "fieldtype": "Data",
    "label": "Twilio Number",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_kbex",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "content_template",
+   "fieldtype": "Table",
+   "label": "Content Template",
+   "options": "Content Template"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2022-03-17 12:50:35.442319",
+ "modified": "2024-04-30 09:49:07.490104",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Twilio Setting",
@@ -56,5 +68,6 @@
  ],
  "quick_entry": 1,
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }
