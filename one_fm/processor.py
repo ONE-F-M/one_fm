@@ -4,7 +4,6 @@ import json
 from twilio.rest import Client as TwilioClient
 import xml.etree.ElementTree as ET
 from frappe.utils.jinja import (get_email_from_template)
-from one_fm.utils import is_scheduler_emails_enabled
 
 @frappe.whitelist()
 def sendemail(recipients, subject, header=None, message=None,
@@ -22,7 +21,9 @@ def sendemail(recipients, subject, header=None, message=None,
 
 	# If scheduler event email then check for its trigger from "ONEFM General Setting"
 	if is_scheduler_email:
-		if not is_scheduler_emails_enabled():
+		is_scheduler_emails_enabled = frappe.db.get_single_value("ONEFM General Setting", "send_scheduler_event_emails")
+
+		if not is_scheduler_emails_enabled:
 			return
         
 
