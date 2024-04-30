@@ -21,7 +21,7 @@ def sendemail(recipients, subject, header=None, message=None,
 
 	# If scheduler event email then check for its trigger from "ONEFM General Setting"
 	if is_scheduler_email:
-		is_scheduler_emails_enabled = frappe.db.get_single_value("ONEFM General Setting", "send_scheduler_event_emails")
+		is_scheduler_emails_enabled = frappe.db.get_single_value("ONEFM General Setting", "enable_scheduler_event_emails")
 
 		if not is_scheduler_emails_enabled:
 			return
@@ -44,6 +44,8 @@ def sendemail(recipients, subject, header=None, message=None,
 	if type(recipients) == str:
 		recipients = [recipients]
 
+	print("Reciepient: ", recipients)
+
 	if not is_external_mail:
 		for recipient in recipients:
 			if not is_user_id_company_prefred_email_in_employee(recipient):
@@ -51,8 +53,10 @@ def sendemail(recipients, subject, header=None, message=None,
 		if not sender:
 			sender = "Administrator"
 	
-	if recipients and len(recipients) > 0:
-		frappe.sendmail(template = template,
+	try:
+		print("Reciepient: ", recipients)
+		if recipients and len(recipients) > 0:
+			frappe.sendmail(template = template,
 			recipients=recipients,
 			sender= sender,
 			cc=cc,
@@ -75,6 +79,8 @@ def sendemail(recipients, subject, header=None, message=None,
 			attachments = attachments,
 			delayed=delayed
 		)
+	except Exception as e:
+		print("Error:", str(e))
 
 @frappe.whitelist()
 def is_user_id_company_prefred_email_in_employee(user_id):

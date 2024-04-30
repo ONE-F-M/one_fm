@@ -3039,7 +3039,7 @@ def production_domain():
     return frappe.db.get_single_value("ONEFM General Setting", "is_production")
 
 def is_scheduler_emails_enabled():
-    return frappe.db.get_single_value("ONEFM General Setting", "send_scheduler_event_emails")
+    return frappe.db.get_single_value("ONEFM General Setting", "enable_scheduler_event_emails")
 
 def check_employee_attendance_dependents(employee):
     """
@@ -3638,3 +3638,4 @@ def send_work_anniversary_reminders():
                     others = [d for d in anniversary_persons if d != person]
                     reminder_text = get_work_anniversary_reminder_text(others)
                     send_work_anniversary_reminder(person_email, reminder_text, others, message, sender)
+                    

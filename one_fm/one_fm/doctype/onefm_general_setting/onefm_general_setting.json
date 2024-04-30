@@ -10,7 +10,7 @@
   "mobile_app_version",
   "column_break_xyl05",
   "is_production",
-  "send_scheduler_event_emails",
+  "enable_scheduler_event_emails",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
@@ -25,7 +25,8 @@
   "attendance_check_exclusion",
   "employee_section",
   "employee_master_role",
-  "wiki_page_access"
+  "wiki_page_access",
+  "employee_info_access"
  ],
  "fields": [
   {
@@ -135,15 +136,22 @@
    "label": "Extend User Permissions"
   },
   {
+   "description": "Table of roles allowed to view employee info",
+   "fieldname": "employee_info_access",
+   "fieldtype": "Table",
+   "label": "Employee Info Access",
+   "options": "ONEFM Document Access Roles Detail"
+  },
+  {
    "default": "0",
-   "fieldname": "send_scheduler_event_emails",
+   "fieldname": "enable_scheduler_event_emails",
    "fieldtype": "Check",
-   "label": "Send Scheduler Event Emails"
+   "label": "Enable Scheduler Event Emails"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-04-30 09:41:01.682353",
+ "modified": "2024-04-30 15:23:33.591201",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
