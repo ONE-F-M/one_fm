@@ -44,8 +44,6 @@ def sendemail(recipients, subject, header=None, message=None,
 	if type(recipients) == str:
 		recipients = [recipients]
 
-	print("Reciepient: ", recipients)
-
 	if not is_external_mail:
 		for recipient in recipients:
 			if not is_user_id_company_prefred_email_in_employee(recipient):
@@ -53,10 +51,8 @@ def sendemail(recipients, subject, header=None, message=None,
 		if not sender:
 			sender = "Administrator"
 	
-	try:
-		print("Reciepient: ", recipients)
-		if recipients and len(recipients) > 0:
-			frappe.sendmail(template = template,
+	if recipients and len(recipients) > 0:
+		frappe.sendmail(template = template,
 			recipients=recipients,
 			sender= sender,
 			cc=cc,
@@ -79,8 +75,6 @@ def sendemail(recipients, subject, header=None, message=None,
 			attachments = attachments,
 			delayed=delayed
 		)
-	except Exception as e:
-		print("Error:", str(e))
 
 @frappe.whitelist()
 def is_user_id_company_prefred_email_in_employee(user_id):
