@@ -103,7 +103,6 @@ def send_whatsapp(sender_id, template_name, content_variables):
 								to='whatsapp:+'+sender_id
 							)
 
-	print(f"Message sent: {message}")
 	return message
 
 @frappe.whitelist(allow_guest=True)

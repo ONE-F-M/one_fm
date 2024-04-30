@@ -229,7 +229,7 @@ def process_2fa_for_whatsapp(user, token, otp_secret):
 
 def send_token_via_whatsapp(otpsecret, token=None, phone_no=None):
   
-     hotp = pyotp.HOTP(otpsecret)
+    hotp = pyotp.HOTP(otpsecret)
     content_variables= json.dumps({
                                   '1': hotp.at(int(token))
                               })
