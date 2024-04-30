@@ -9,6 +9,7 @@
   "token",
   "column_break_2",
   "t_number",
+  "messaging_service_sid",
   "section_break_kbex",
   "content_template"
  ],
@@ -45,11 +46,16 @@
    "fieldtype": "Table",
    "label": "Content Template",
    "options": "Content Template"
+  },
+  {
+   "fieldname": "messaging_service_sid",
+   "fieldtype": "Data",
+   "label": "Messaging Service SID"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-04-30 09:49:07.490104",
+ "modified": "2024-04-30 12:14:15.463945",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Twilio Setting",
