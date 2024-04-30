@@ -156,7 +156,7 @@ class EmployeeOverride(EmployeeMaster):
                             '2':self.get_doc_before_save().employee_id,
                             '3':self.employee_id,
                     	}
-                send_whatsapp(sender_id=phone_no,template_name='authentication_code', content_variables=content_variables)
+                send_whatsapp(sender_id=cell_number,template_name='employee_id_change', content_variables=content_variables)
         except:
             frappe.log_error(title = "Error Notifying Employee",message = frappe.get_traceback())
             frappe.msgprint("Error Notifying Employee, Please check Error Log for Details")
