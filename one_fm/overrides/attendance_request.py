@@ -91,7 +91,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 			working_hours = frappe.db.get_value('Shift Type', shift_assignment.shift_type, 'duration')  if shift_assignment  else 8
 			# check if attendance exists
 			attendance_name = super(AttendanceRequestOverride, self).get_attendance_record(attendance_date)
-			status = "Work From Home"
+			status = "Work From Home" if self.reason == "Work From Home" else "Present"
 			if attendance_name:
 				# update existing attendance, change the status
 				doc = frappe.get_doc("Attendance", attendance_name)
