@@ -88,16 +88,21 @@ def is_user_id_company_prefred_email_in_employee(user_id):
 	return user_id_company_prefred_in_employee
 
 @frappe.whitelist()
-def send_whatsapp(sender_id, body):
-	twilio = frappe.get_doc('Twilio Setting' )
+def send_whatsapp(sender_id, template_name, content_variables):
+	twilio = frappe.get_doc('Twilio Setting')
+	content_sid = frappe.get_value('Content Template', {'template_name':template_name}, ['content_sid'])
 
 	client =  TwilioClient(twilio.sid, twilio.token)
 
-	message = client.messages.create(
-		from_='whatsapp:' + twilio.t_number,
-		body=body,
-		to= 'whatsapp:+'+ sender_id
-	)
+	if content_sid:
+		message = client.messages.create(
+								from_='whatsapp:' + twilio.t_number,
+								content_sid=content_sid,
+								content_variables=json.dumps(content_variables),
+								to='whatsapp:+96590042238'
+							)
+
+	print(f"Message sent: {message}")
 	return message
 
 @frappe.whitelist(allow_guest=True)
