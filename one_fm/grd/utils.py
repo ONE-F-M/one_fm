@@ -26,7 +26,7 @@ def sendmail_reminder_to_book_appointment_for_pifss(): #before 1 week of the new
         content = content
         sendemail(recipients=[operator],
             sender=supervisor,
-            subject="Book Apointment For PIFSS", content=content)
+            subject="Book Apointment For PIFSS", content=content, is_scheduler_email=True)
 
 def sendmail_reminder_to_collect_pifss_documents(): # before 1 day of the new month
     today = date.today()
@@ -40,7 +40,7 @@ def sendmail_reminder_to_collect_pifss_documents(): # before 1 day of the new mo
         content = content
         sendemail(recipients=[operator],
             sender=supervisor,
-            subject="Collect PIFSS Documents", content=content)
+            subject="Collect PIFSS Documents", content=content, is_scheduler_email=True)
 
 @frappe.whitelist()
 def mappe_to_work_permit_cancellation(source_name, target_doc=None):

@@ -10,6 +10,7 @@ from frappe import _
 # import face_recognition
 from one_fm.api.notification import create_notification_log
 from one_fm.processor import sendemail
+from one_fm.utils import is_scheduler_emails_enabled
 from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datetime
 from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
 import grpc
@@ -290,12 +291,14 @@ def automatic_reject():
 				penalty.workflow_state = "Penalty Rejected"
 				penalty.save(ignore_permissions=True)
 				notify_employee_autoreject(penalty)
-				send_email_to_legal(penalty, _("Penalty was rejected after 48 hours automatically. Please review."))
+
+				if is_scheduler_emails_enabled():
+					send_email_to_legal(penalty, _("Penalty was rejected after 48 hours automatically. Please review."))
 			except Exception as e:
 				frappe.log_error(str(e), 'Auto Penalty Reject Failed')
 				error_list += f"""{penalty.name}, {penalty.recipient_employee}<br>"""
 
 		frappe.set_user(session_user) #restore session user
 		if error_list:
-			sendemail([get_legal_manager()], subject='Auto Penalty Rejection - Failed', message=error_list)
+			sendemail([get_legal_manager()], subject='Auto Penalty Rejection - Failed', message=error_list, is_scheduler_email=True)
 		frappe.db.commit()

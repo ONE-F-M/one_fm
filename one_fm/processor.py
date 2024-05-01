@@ -8,7 +8,7 @@ from frappe.utils.jinja import (get_email_from_template)
 @frappe.whitelist()
 def sendemail(recipients, subject, header=None, message=None,
 	content=None, reference_name=None, reference_doctype=None,
-	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None, is_external_mail=False):
+	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None, is_external_mail=False,is_scheduler_email=False):
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
 	actions=pdf_link=workflow_state=""
@@ -18,6 +18,14 @@ def sendemail(recipients, subject, header=None, message=None,
 	head = header[0] if header else ""
 	if not message:
 		message = " "
+
+	# If scheduler event email then check for its trigger from "ONEFM General Setting"
+	if is_scheduler_email:
+		is_scheduler_emails_enabled = frappe.db.get_single_value("ONEFM General Setting", "enable_scheduler_event_emails")
+
+		if not is_scheduler_emails_enabled:
+			return
+        
 
 	if "Administrator" in recipients:
 		recipients.remove("Administrator")
