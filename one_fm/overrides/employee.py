@@ -151,8 +151,12 @@ class EmployeeOverride(EmployeeMaster):
                         cell_number = "".join(i for i in self.cell_number if i.isdigit())
                     else:
                         cell_number = self.cell_number
-                whatsapp_message = f"Dear {context.first_name}, Your residency registration process has been completed and your employee ID has been updated from {self.get_doc_before_save().employee_id} to {self.employee_id}.",
-                send_whatsapp(sender_id=cell_number,body = whatsapp_message)
+                content_variables= {
+	                    	'1':context.first_name,
+                            '2':self.get_doc_before_save().employee_id,
+                            '3':self.employee_id,
+                    	}
+                send_whatsapp(sender_id=cell_number,template_name='employee_id_change', content_variables=content_variables)
         except:
             frappe.log_error(title = "Error Notifying Employee",message = frappe.get_traceback())
             frappe.msgprint("Error Notifying Employee, Please check Error Log for Details")
