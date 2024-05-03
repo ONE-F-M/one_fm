@@ -23,12 +23,11 @@ stubs = [
 
 
 @frappe.whitelist()
-def enroll(employee_id: str = None, video: str = None) -> dict:
+def enroll(employee_id: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
 
     Args:
         employee_id (str): employee_id of user
-        video (str): Base64 encoded string of the video captured of user's face.
 
     Returns:
         response (dict): {
@@ -41,32 +40,8 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
 
-    # if not video:
-    #     return response("Bad Request", 400, None, "Base64 encoded video content required.")
-
-    # if not isinstance(video, str):
-    #     return response("Bad Request", 400, None, "video type must be str.")
-
     try:
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
-        # Setup channel
-        # face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
-        # channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials(), options=[('grpc.max_message_length', 100 * 1024 * 1024* 10)])
-        # # setup stub
-        # stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
-        # # request body
-        # req = enroll_pb2.EnrollRequest(
-        #     username = frappe.session.user,
-        #     user_encoded_video = video,
-        # )
-
-        # res = stub.FaceRecognitionEnroll(req)
-        # data = {'employee':doc.name, 'log_type':'Enrollment', 'verification':res.enrollment,
-        #         'message':res.message, 'data':res.data, 'source': 'Enroll'}
-        # #frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-        # if res.enrollment == "FAILED":
-        #     return response(res.message, 400, None, res.data)
-
         doc.enrolled = 1
         doc.save(ignore_permissions=True)
         update_onboarding_employee(doc)
@@ -80,13 +55,12 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
 
 @frappe.whitelist()
-def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None,
+def verify_checkin_checkout(employee_id: str = None, log_type: str = None,
         skip_attendance: str = None, latitude: str = None, longitude: str = None):
     """This method verifies user checking in/checking out.
 
     Args:
         employee_id (srt): employee_id of user
-        video (str, optional): base64 encoded video of user checking in/checking out.
         log_type (str, optional): IN/OUT
         skip_attendance (int, optional): 0/1.
         latitude (float, optional): Latitude od user.
@@ -112,9 +86,6 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if not employee_id:
             return response("Bad Request", 400, None, "employee_id required.")
 
-        # if not video:
-        #     return response("Bad Request", 400, None, "video required.")
-
         if not log_type:
             return response("Bad Request", 400, None, "log_type required.")
 
@@ -127,19 +98,16 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if not longitude:
             return response("Bad Request", 400, None, "longitude required.")
 
-        # if not isinstance(video, str):
-        #     return response("Bad Request", 400, None, "video must be of type str.")
-
         if not isinstance(log_type, str):
             return response("Bad Request", 400, None, "log_type must be of type str.")
 
-        if log_type not in ["IN", "OUT"]:
+        if log_type not in {"IN", "OUT"}:
             return response("Bad Request", 400, None, "Invalid log_type. log_type must be IN/OUT.")
 
         if not isinstance(skip_attendance, int):
             return response("Bad Request", 400, None, "skip_attendance must be of type int.")
 
-        if skip_attendance not in [0, 1]:
+        if skip_attendance not in {0, 1}:
             return response("Bad Request", 400, "Invalid skip_attendance. skip_attendance must be 0 or 1.")
 
         if not isinstance(latitude, float):
@@ -160,35 +128,6 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         if not checkin_location.data['user_within_geofence_radius']:
             return response("Resource Not Found", 404, None, "You are outside the site location. Please try again")
 
-        # setup channel
-        # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-        # channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-        # setup stub
-        # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
-        # request body
-        # req = facial_recognition_pb2.FaceRecognitionRequest(
-        #     username = frappe.session.user,
-        #     media_type = "video",
-        #     media_content = video
-        # )
-        # Call service stub and get response
-        # res = random.choice(stubs).FaceRecognition(req)
-        # data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
-        #     'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        # if res.verification == "FAILED" and 'Invalid media content' in res.data:
-        #     frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
-        #     **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
-        #         'message':res.message, 'data':res.data, 'source': 'Checkin'}})
-
-        #     doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, "Mobile App")
-        #     return response("Success", 201, doc, None)
-
-        # if res.verification == "FAILED":
-        #     msg = res.message
-        #     if not res.verification == "OK":
-        #         frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-        #     return response(msg, 400, None, data)
-        # elif res.verification == "OK":
         doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, "Mobile App")
         return response("Success", 201, doc, None)
     except Exception as error:
@@ -295,8 +234,18 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             if is_employee_on_leave(employee, date):
                 return response("Resource Not Found", 404, None, "You are currently on leave, see you soon!")
 
+
+        distance = float(haversine(result.latitude, result.longitude, latitude, longitude))
+        if distance > float(result.geofence_radius):
+            result['user_within_geofence_radius'] = False
+            
+
+        result['site_name'] = site
+        if shift:
+            result['shift'] = shift
             if is_holiday(employee, date):
                 return response("Resource Not Found", 404, None, "Today is your holiday, have fun")
+
 
             return response("Resource Not Found", 404, None, "User not assigned to a shift.")
 
