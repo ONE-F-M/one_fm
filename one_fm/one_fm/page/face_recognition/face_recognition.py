@@ -148,7 +148,17 @@ def verify():
 @frappe.whitelist()
 def user_within_site_geofence(employee, log_type, user_latitude, user_longitude):
 	""" This method checks if user's given coordinates fall within the geofence radius of the user's assigned site in Shift Assigment. """
-	shift = get_current_shift(employee)
+	shift_exists = get_current_shift(employee)
+	if shift_exists['type'] == "Early":
+		# check if user can checkin with the correct time
+		return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
+	elif shift_exists['type'] == "Late":
+		return response("Resource Not Found", 404, None, f"You are checking out too late, checkout was allowed {shift_exists['data']} minutes ago ")
+	elif shift_exists['type'] == "On Time":
+		shift = shift_exists['data']
+	else:
+		shift = None
+
 	date = cstr(getdate())
 	if shift:
 		if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
@@ -321,7 +331,16 @@ def check_existing():
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
 
-	shift = get_current_shift(employee)
+	shift_exists = get_current_shift(employee)
+	if shift_exists['type'] == "Early":
+		# check if user can checkin with the correct time
+		return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
+	elif shift_exists['type'] == "Late":
+		return response("Resource Not Found", 404, None, f"You are checking out too late, checkout was allowed {shift_exists['data']} minutes ago ")
+	elif shift_exists['type'] == "On Time":
+		shift = shift_exists['data']
+	else:
+		shift = None
 	#if employee schedule is linked with the previous Checkin doc
 
 	if shift:
