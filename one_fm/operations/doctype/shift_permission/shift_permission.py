@@ -43,11 +43,11 @@ class ShiftPermission(Document):
 			frappe.throw(_('There is an Attendance {0} exists for the Employee {1} on {2}'.format(attendance, self.emp_name, format_date(self.date))), exc=ExistAttendance)
 
 	def validate_permission_type(self):
-		if self.log_type == 'IN' and self.permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
-			frappe.throw(_('Permission Type cannot be {0}. It should be one of "Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(self.permission_type)),
+		if self.log_type == 'IN' and self.permission_type not in ['Arrive Late', ]:
+			frappe.throw(_('Permission Type cannot be {0}. It should be "Arrive Late", for Log Type "IN"'.format(self.permission_type)),
 				exc = PermissionTypeandLogTypeError)
-		if self.log_type == 'OUT' and self.permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
-			frappe.throw(_('Permission Type cannot be {0}. It should be one of "Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(self.permission_type)),
+		if self.log_type == 'OUT' and self.permission_type not in ['Leave Early',]:
+			frappe.throw(_('Permission Type cannot be {0}. It should be "Leave Early", for Log Type "OUT"'.format(self.permission_type)),
 				exc = PermissionTypeandLogTypeError)
 		if self.permission_type == "Arrive Late":
 			field_list = [{'Arrival Time':'arrival_time'}]
@@ -143,9 +143,9 @@ def create_employee_checkin_for_shift_permission(shift_permission):
 	try:
 		if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin')\
 			and not frappe.db.exists('Employee Checkin', {'shift_permission': shift_permission.name, 'docstatus': 1}):
-			if shift_permission.permission_type in ["Arrive Late", "Forget to Checkin", "Checkin Issue"] and not shift_permission.log_type:
+			if shift_permission.permission_type in ["Arrive Late", ] and not shift_permission.log_type:
 				shift_permission.db_set('log_type', "IN")
-			elif shift_permission.permission_type in ["Leave Early", "Forget to Checkout", "Checkout Issue"] and not shift_permission.log_type:
+			elif shift_permission.permission_type in ["Leave Early", ] and not shift_permission.log_type:
 				shift_permission.db_set('log_type', "OUT")
 			shift_permission.reload()
 			if not shift_permission.log_type:
@@ -173,7 +173,8 @@ def approve_open_shift_permission(start_date, end_date):
 			SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa
 			ON sa.name=sp.assigned_shift
 			WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}'
-			AND sp.workflow_state='Pending' AND sp.docstatus=0
+			AND sa.is_replaced = 0
+			AND sp.workflow_state='Pending Approver' AND sp.docstatus=0
 		""", as_dict=1)
 		# apply workflow
 		error_list = """"""
@@ -219,6 +220,7 @@ def create_checkin(shift_permission):
 		}):
 		if not shift_permission.workflow_state == 'Approved':
 			shift_permission.db_set('workflow_state', "Approved")
+			shift_permission.db_set("docstatus", 1)
 			shift_permission.reload()
 			frappe.db.commit()
 		# Get shift details for the employee shift_assignment = frappe.get_doc("Shift Assignment", shift_permission.assigned_shift)
