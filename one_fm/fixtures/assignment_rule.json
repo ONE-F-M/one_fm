@@ -448,7 +448,7 @@
   "users": []
  },
  {
-  "assign_condition": "workflow_state == 'Pending'",
+  "assign_condition": "workflow_state == 'Pending Approver'",
   "assignment_days": [
    {
     "day": "Monday",
@@ -508,7 +508,7 @@
   "name": "Shift Permission Approver",
   "priority": 0,
   "rule": "Based on Field",
-  "unassign_condition": "workflow_state == 'Approved'",
+  "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
   "users": []
  },
  {
