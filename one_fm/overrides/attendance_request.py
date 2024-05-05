@@ -71,7 +71,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 	def create_attendance(self):
 		date_range = pd.date_range(self.from_date, self.to_date)
 		for d in date_range:
-			if d.date()<= getdate():
+			if d.date() <= getdate():
 				self.mark_attendance(str(d.date()))
 
 	def get_employee(self):
