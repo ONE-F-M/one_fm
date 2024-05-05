@@ -25,9 +25,6 @@
   "section_break_12",
   "arrival_time",
   "leaving_time",
-  "latitude",
-  "column_break_20",
-  "longitude",
   "section_break_17",
   "reason",
   "amended_from"
@@ -90,7 +87,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Permission Type",
-   "options": "\nArrive Late\nLeave Early\nForget to Checkin\nForget to Checkout\nCheckin Issue\nCheckout Issue",
+   "options": "\nArrive Late\nLeave Early",
    "reqd": 1
   },
   {
@@ -153,18 +150,6 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.permission_type == \"Checkin Issue\" || doc.permission_type == \"Checkout Issue\"",
-   "fieldname": "latitude",
-   "fieldtype": "Float",
-   "label": "Latitude"
-  },
-  {
-   "depends_on": "eval:doc.permission_type == \"Checkin Issue\" || doc.permission_type == \"Checkout Issue\"",
-   "fieldname": "longitude",
-   "fieldtype": "Float",
-   "label": "Longitude"
-  },
-  {
    "fieldname": "section_break_17",
    "fieldtype": "Section Break"
   },
@@ -199,10 +184,6 @@
    "label": "Log Type",
    "options": "\nIN\nOUT",
    "reqd": 1
-  },
-  {
-   "fieldname": "column_break_20",
-   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "assigned_shift.roster_type",
