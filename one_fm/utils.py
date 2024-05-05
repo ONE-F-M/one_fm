@@ -1445,10 +1445,10 @@ def validate_job_applicant(doc, method):
     # update night shift
     if doc.one_fm_night_shift:
         frappe.db.set_value("Job Applicant", doc.name, "one_fm_night_shift", doc.one_fm_night_shift)
-    
+
     # Because first name and last name are mandatory so merge both to generate applicant name
     doc.applicant_name = doc.one_fm_first_name + " " + doc.one_fm_last_name
-    
+
     from one_fm.one_fm.utils import check_mendatory_fields_for_grd_and_recruiter
     check_mendatory_fields_for_grd_and_recruiter(doc, method)#fix visa 22
     # validate_pam_file_number_and_pam_designation(doc, method)
@@ -3046,6 +3046,7 @@ def has_super_user_role(user=None):
                 return True
     return False
 
+@frappe.whitelist()
 def get_approver(employee):
     '''
         Method to get reports_to user of an employee with the priority
@@ -3069,7 +3070,7 @@ def get_approver(employee):
     if employee_user and has_super_user_role(employee_user):
         return employee
 
-    employee_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department'], as_dict=1)
+    employee_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department', 'project'], as_dict=1)
 
     reports_to = None
     if employee_data.reports_to:
@@ -3088,6 +3089,10 @@ def get_approver(employee):
                 account_manager = frappe.db.get_value('Project', project, 'account_manager')
                 if account_manager:
                     reports_to = account_manager
+    if not reports_to and employee_data.project:
+        account_manager = frappe.db.get_value('Project', employee_data.project, 'account_manager')
+        if account_manager:
+            reports_to = account_manager
     return reports_to
 
 def get_approver_for_many_employees(supervisor=None):
@@ -3127,7 +3132,7 @@ def get_other_managers(employee):
                     UNION
                     SELECT account_manager as manager FROM `tabProject`
                     WHERE name = '{emp_data.get('project')}'
-                    
+
                     """
             else:
                 query = f"""
@@ -3138,38 +3143,38 @@ def get_other_managers(employee):
                 query+=f"""
 
                     UNION
-                    
+
                     SELECT account_supervisor  as manager FROM `tabOperations Site`
                     WHERE name = '{emp_data.get('site')}' AND status = 'Active'
-                    
+
                     """
             else:
                 query = f"""
                     SELECT account_supervisor as manager FROM `tabOperations Site`
                 WHERE name = '{emp_data.get('site')}' AND status = 'Active'
-                
+
                 """
         if emp_data.get('shift'):
             if query:
                 query+=f"""
 
                     UNION
-                    
-                    SELECT supervisor as manager FROM `tabOperations Shift` 
+
+                    SELECT supervisor as manager FROM `tabOperations Shift`
                 WHERE name = '{emp_data.get('shift')}'  AND status = 'Active'
-                    
+
                     """
             else:
                 query = f"""
-                    SELECT supervisor  as manager FROM `tabOperations Shift` 
+                    SELECT supervisor  as manager FROM `tabOperations Shift`
                 WHERE name = '{emp_data.get('shift')}' AND status = 'Active'
-                
+
                 """
         if not query:
             return []
         result_set = frappe.db.sql(query,as_dict=1)
         return [i.manager for  i in result_set] if result_set else []
-        
+
     else:
         return []
 
@@ -3184,7 +3189,7 @@ def check_employee_permission_on_doc(doc):
         approver_list = []
         if frappe.session.user not in ["Administrator", 'administrator']:
             session_employee = frappe.cache().get_value(frappe.session.user).employee
-            
+
             roles = [i.role for i in frappe.db.sql("SELECT role FROM `tabONEFM Document Access Roles Detail` where parentfield = 'document_access_roles'", as_dict=1)]
             has_roles = any([item in roles for item in frappe.get_roles()])
             if not has_roles and (session_employee!=doc.employee):
@@ -3194,7 +3199,7 @@ def check_employee_permission_on_doc(doc):
                         approver_list = get_other_managers(doc.employee)
                     approver_list.append(approver)
                     if session_employee not in approver_list:
-                    
+
                         frappe.throw("You do not have permissions to access this document.")
     except Exception as e:
         pass
@@ -3363,64 +3368,38 @@ def custom_validate_interviewer(self):
 def get_current_shift(employee):
     """
         Get current shift employee should be logged into
+        This Method Checks if Employee has a shift and is within the checkin Range.
+        args:
+			employee: Employee ID
+		return dict (type, data)
     """
+    nowtime = now_datetime()
     sql = f"""
-        SELECT * FROM `tabShift Assignment`
-        WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-        ('{now()}' BETWEEN start_datetime AND end_datetime)
-    """
-    shift = frappe.db.sql(sql, as_dict=1)
-    if shift: # shift was checked in between start and end time
-        return frappe.get_doc("Shift Assignment", shift[0])
-    else: # we look right and left (right for next shift)
-        dt = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
-        curtime_plus_1 = dt + timedelta(hours=1)
-        sql = f"""
-            SELECT * FROM `tabShift Assignment`
-            WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-            ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
+        SELECT sa.*,
+            DATE_SUB(sa.start_datetime, INTERVAL st.begin_check_in_before_shift_start_time MINUTE) as checkin_time,
+            DATE_ADD(sa.end_datetime, INTERVAL st.allow_check_out_after_shift_end_time MINUTE) as checkout_time
+        FROM `tabShift Assignment` sa
+        JOIN `tabShift Type` st ON sa.shift_type = st.name
+        WHERE sa.employee="{employee}"
+        AND sa.status="Active"
+        AND sa.docstatus=1
+        AND DATE('{nowtime}') = sa.start_date
         """
-        shift = frappe.db.sql(sql, as_dict=1)
-        if shift: # shift was checked 1hr ahead
-            return frappe.get_doc("Shift Assignment", shift[0])
+
+    shift = frappe.db.sql(sql, as_dict=1)
+
+    if shift: # shift was checked in between start and end time
+        if shift[0].checkin_time > nowtime:
+            minutes = int((shift[0].checkin_time - nowtime).total_seconds() / 60)
+            return {"type":"Early", "data":minutes}
+        elif shift[0].checkout_time < nowtime:
+            minutes = int((nowtime - shift[0].checkout_time).total_seconds() / 60)
+            return {"type":"Late", "data":minutes}
+        elif shift[0].checkin_time <= nowtime <= shift[0].checkout_time:
+            return {"type":"On Time", "data":frappe.get_doc("Shift Assignment", shift[0].name)}
         else:
-            curtime_plus_1 = dt + timedelta(hours=-1)
-            sql = f"""
-                SELECT * FROM `tabShift Assignment`
-                WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-                ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
-            """
-            shift = frappe.db.sql(sql, as_dict=1)
-            if shift: # shift was checked 1hr in the past
-                return frappe.get_doc("Shift Assignment", shift[0])
+            return False
     return False
-
-
-@frappe.whitelist()
-def check_existing_checking(shift):
-    """API to determine the applicable Log type.
-    The api checks employee's last lcheckin log type. and determine what next log type needs to be
-    Returns:
-        True: The log in was "IN", so his next Log Type should be "OUT".
-        False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
-    """
-    checkin = frappe.db.get_list("Employee Checkin", filters={
-        'employee':shift.employee, 'shift_assignment':shift.name,
-        'shift_actual_start':shift.start_datetime,
-        'shift_actual_end':shift.end_datetime,
-        'roster_type':shift.roster_type
-        },
-        fields='log_type',
-        order_by="actual_time DESC"
-    )
-    if checkin:
-        # #For Check IN
-        if checkin[0].log_type=='OUT':
-            return "IN"
-        #For Check OUT
-        else:
-            return "OUT"
-    return "IN"
 
 @frappe.whitelist()
 def check_existing():
@@ -3433,21 +3412,24 @@ def check_existing():
     employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
     if not employee:
         return response("Employee not found", 404, None, "Employee not found")
-    curr_shift = get_current_shift(employee)
+    shift_exists = get_current_shift(employee)
+    if shift_exists['type'] == "On Time":
+        curr_shift = shift_exists['data']
+    print(curr_shift)
     if not curr_shift:
         return response("Employee not found", 404, None, "Employee not found")
-    log_type = check_existing_checking(curr_shift)
+    log_type = curr_shift.get_next_checkin_log_type()
     if log_type=='IN':
         return response("success", 200, True, "")
     return response("success", 200, False, "")
 
-def fetch_attendance_manager_user_obj() -> str:
-    attendance_manager = frappe.get_doc("ONEFM General Setting").get("attendance_manager")
+def fetch_attendance_manager_user() -> str:
+    attendance_manager = frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
     if attendance_manager:
         attendance_manager_user = frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
-        return attendance_manager_user
+        if attendance_manager_user:
+            return attendance_manager_user
     return ""
-
 
 def custom_toggle_notifications(user: str, enable: bool = False):
     try:
@@ -3503,7 +3485,7 @@ def get_sender_email() -> str | None:
 def send_birthday_reminders():
     """Send Employee birthday reminders if no 'Stop Birthday Reminders' is not set."""
     from hrms.controllers.employee_reminders import send_birthday_reminder, get_employees_who_are_born_today,get_birthday_reminder_text_and_message
-    
+
     to_send = int(frappe.db.get_single_value("HR Settings", "send_birthday_reminders"))
     if not to_send:
         return
@@ -3513,7 +3495,7 @@ def send_birthday_reminders():
 
     for company, birthday_persons in employees_born_today.items():
         employee_emails = get_all_employee_emails(company,is_birthday = True)
-        
+
         birthday_person_emails = [get_employee_email(doc) for doc in birthday_persons]
         recipients = list(set(employee_emails) - set(birthday_person_emails))
 
@@ -3533,7 +3515,7 @@ def send_birthday_reminders():
 
 def get_all_employee_emails(company,is_birthday=False,is_anniversary = False):
     """Returns list of employee emails either based on user_id or company_email"""
- 
+
     if not is_birthday and not is_anniversary:
         return []
     all_users=[]
@@ -3548,7 +3530,7 @@ def get_all_employee_emails(company,is_birthday=False,is_anniversary = False):
     employee_list = frappe.get_all(
         "Employee", fields=["name", "employee_name"], filters={'user_id':['IN',all_users],"status": "Active", "company": company}
     )
-    
+
     employee_emails = []
     for employee in employee_list:
         if not employee:
@@ -3572,14 +3554,14 @@ def send_work_anniversary_reminders():
 
     sender = get_sender_email()
     employees_joined_today = get_employees_having_an_event_today("work_anniversary")
-    
+
     message = _("A friendly reminder of an important date for our team.")
     message += "<br>"
     message += _("Everyone, let’s congratulate them on their work anniversary!")
 
     for company, anniversary_persons in employees_joined_today.items():
         employee_emails = get_all_employee_emails(company,is_anniversary=True)
-        
+
         anniversary_person_emails = [get_employee_email(doc) for doc in anniversary_persons]
         recipients = list(set(employee_emails) - set(anniversary_person_emails))
 

@@ -8,6 +8,7 @@
  "field_order": [
   "employee",
   "employee_name",
+  "employment_type",
   "department",
   "column_break_3",
   "date",
@@ -19,6 +20,8 @@
   "shift_type",
   "start_datetime",
   "end_datetime",
+  "is_replaced",
+  "replaced_employee_schedule",
   "column_break_6",
   "site",
   "project",
@@ -190,10 +193,31 @@
   {
    "fieldname": "column_break_d2pic",
    "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_replaced",
+   "fieldtype": "Check",
+   "label": "Is Replaced"
+  },
+  {
+   "depends_on": "eval:doc.is_replaced;",
+   "fieldname": "replaced_employee_schedule",
+   "fieldtype": "Link",
+   "label": "Replaced Employee Schedule",
+   "options": "Employee Schedule"
+  },
+  {
+   "fetch_from": "employee.employment_type",
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2023-11-19 11:22:45.889268",
+ "modified": "2024-04-25 14:15:04.404489",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",

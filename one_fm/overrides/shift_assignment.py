@@ -5,7 +5,7 @@ from hrms.hr.doctype.shift_assignment.shift_assignment import *
 
 
 class ShiftAssignmentOverride(ShiftAssignment):
-        
+
     def validate(self):
         self.set_datetime()
         super(ShiftAssignmentOverride, self).validate()
@@ -25,7 +25,7 @@ class ShiftAssignmentOverride(ShiftAssignment):
         self.set_datetime()
         if not frappe.db.exists("Employee", {'name':self.employee, 'status':'Active'}):
             frappe.throw(f"{self.employee} - {self.employee_name} is not active and cannot be assigned to a shift")
-        
+
     def set_datetime(self):
         if self.shift_type:
             shift = frappe.get_doc("Shift Type", self.shift_type)
@@ -48,7 +48,7 @@ class ShiftAssignmentOverride(ShiftAssignment):
             'start':start_cutoff,
             'end':end_cutoff,
         })
-    
+
     def can_checkin_out(self):
         """
             Check if user can checkin or our based on earliest and latest in or out.
@@ -57,7 +57,7 @@ class ShiftAssignmentOverride(ShiftAssignment):
         if ((now_datetime() < cutoff.start) or (now_datetime() > cutoff.end)):
             return False
         return True
-    
+
     def after_4hrs(self):
         """
             Check if checkin time has exceeded 4hrs, which mean employee is late.
@@ -68,29 +68,40 @@ class ShiftAssignmentOverride(ShiftAssignment):
             return True
         return False
 
-    def check_existing_checking(self):
-        """API to determine the applicable Log type.
-        The api checks employee's last lcheckin log type. and determine what next log type needs to be
-        Returns:
-            True: The log in was "IN", so his next Log Type should be "OUT".
-            False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
+    def get_last_checkin_log_type(self):
         """
-        checkin = frappe.db.get_list("Employee Checkin", filters={
-            'employee':self.employee, 'shift_assignment':self.name,
-            'shift_actual_start':self.start_datetime,
-            'shift_actual_end':self.end_datetime,
-            'roster_type':self.roster_type
-            }, 
-            fields='log_type',
+            The method checks employee's last checkin log type
+            Returns:
+                The last log_type if a checkin recod exist for the shift assignment
+                Else return False
+        """
+        checkin = frappe.db.get_list(
+            "Employee Checkin",
+            filters={
+                "employee":self.employee,
+                "shift_assignment":self.name,
+                "shift_actual_start":self.start_datetime,
+                "shift_actual_end":self.end_datetime,
+                "roster_type":self.roster_type
+            },
+            fields="log_type",
             order_by="actual_time DESC"
         )
-        if checkin:
-            # #For Check IN
-            if checkin[0].log_type=='OUT':
-                return "IN"
-            #For Check OUT
-            else:
-                return "OUT"
+        if checkin and len(checkin) > 0:
+            return checkin[0].log_type
+        return False
+
+    def get_next_checkin_log_type(self):
+        """
+            Method to determine the applicable Log type.
+            The method checks employee's last lcheckin log type. and determine what next log type needs to be
+            Returns:
+                The last log_type if a checkin recod exist for the shift assignment
+                Else return IN
+        """
+        last_log_type = self.get_last_checkin_log_type()
+        if last_log_type and last_log_type == "IN":
+            return "OUT"
         return "IN"
 
 def has_overlapping_timings(self) -> bool:
@@ -104,7 +115,7 @@ def has_overlapping_timings(self) -> bool:
         SELECT * FROM `tabShift Assignment` WHERE
         employee="{self.employee}" AND status='Active' AND docstatus=1 AND (
         (start_datetime BETWEEN '{self.start_datetime}' AND '{self.end_datetime}')
-        OR 
+        OR
         (end_datetime BETWEEN '{self.start_datetime}' AND '{self.end_datetime}')
         )
 
@@ -117,4 +128,3 @@ def has_overlapping_timings(self) -> bool:
         """)
         return True
     return False
-	
