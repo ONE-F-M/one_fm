@@ -217,7 +217,7 @@ urllib3==1.26.18
 wcwidth==0.2.8
 weasyprint==59.0
 webencodings==0.5.1
-Werkzeug==3.0.1
+Werkzeug==3.0.3
 Whoosh==2.7.4
 wrapt==1.15.0
 xlrd==2.0.1
