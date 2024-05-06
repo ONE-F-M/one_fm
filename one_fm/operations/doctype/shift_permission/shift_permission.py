@@ -120,18 +120,17 @@ class ShiftPermission(Document):
 
 	def on_submit(self):
 		employee_user = frappe.get_value('Employee', self.employee, 'user_id')
-		subject = _('Your shift request {0} has been {1} by {2}'.format(self.name, self.workflow_state, self.approver_name))
+		subject = _('Your shift permission {0} has been {1} by {2}'.format(self.name, self.workflow_state, self.approver_name))
 		if self.workflow_state == 'Approved':
-			create_employee_checkin_for_shift_permission(self)
 			if employee_user:
 				create_notification_log(subject, subject, [employee_user], self)
 
 		if self.workflow_state == 'Rejected':
 			message = False
 			if self.log_type == 'IN':
-				message = _('Your shift request has been rejected, Please checkin once you arrive to the site before [half way mark] or your attendance will be marked absent!')
+				message = _('Your shift permission has been rejected, Please checkin once you arrive to the site before [half way mark] or your attendance will be marked absent!')
 			if self.log_type == 'OUT':
-				message = _('Your shift request has been rejected, Please make sure to checkout!')
+				message = _('Your shift permission has been rejected, Please make sure to checkout!')
 			if message and employee_user:
 				create_notification_log(subject, message, [employee_user], self)
 
