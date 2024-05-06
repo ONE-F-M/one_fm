@@ -201,7 +201,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             site = frappe.get_value("Operations Shift", shift.shift, "site")
 
             if location:
-                result=location[0]
+                result=location
                 result['user_within_geofence_radius'] = True
 
                 distance = float(haversine(result.latitude, result.longitude, latitude, longitude))
