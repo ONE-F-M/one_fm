@@ -246,7 +246,7 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
         # response = requests.post(frappe.get_site_config().get("firebase_api"),headers = headers, data=json.dumps(body))
         return v1_api.utils.response("success", 200, {'response': str(res)})
     except Exception as e:
-        return v1_api.utils.response("error", 400, {}, str(e))
+        return v1_api.utils.response("error", 500, {}, str(e))
 
 @frappe.whitelist()
 def push_notification_rest_api_for_leave_application(employee_id, title, body, leave_id):
