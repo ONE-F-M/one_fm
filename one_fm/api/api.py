@@ -25,7 +25,6 @@ def _one_fm():
 
 def set_posts_active():
     posts = frappe.get_all("Operations Post", {"site": "Head Office"})
-    print(posts)
     for post in posts:
         for date in pd.date_range(start="2021-03-01", end="2021-03-31"):
             sch = frappe.new_doc("Post Schedule")
@@ -185,7 +184,7 @@ def push_notification_for_checkin(employee_id, title, body, checkin, arriveLate 
 def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, arriveLate ,checkout ):
     """ 
     This function is used to send notification through Firebase CLoud Message. 
-    It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
+    It is a rest API that sends request to frappe.get_site_config().get("firebase_api")
     
     Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message"
 
@@ -193,14 +192,14 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
     Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
     """
     serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
-    employee_data = frappe.db.get_value("Employee", {"name": employee_id}, ["fcm_token", "device_os"],as_dict=1)
+    employee_data = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["fcm_token", "device_os"],as_dict=1)
     deviceToken = employee_data.get("fcm_token")
     device_os = employee_data.get("device_os")
 
     headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'key=' + serverToken,
-        }
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + serverToken,
+    }
 
     #Body in json form defining a message payload to send through API. 
     # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
@@ -234,15 +233,15 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
                 "mutable_content": True
             }
 
-    #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
-    response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
+    #request is sent through frappe.get_site_config().get("firebase_api") along with params above.
+    response = requests.post(frappe.get_site_config().get("firebase_api"),headers = headers, data=json.dumps(body))
     return response
 
 @frappe.whitelist()
 def push_notification_rest_api_for_leave_application(employee_id, title, body, leave_id):
     """ 
     This function is used to send notification through Firebase CLoud Message. 
-    It is a rest API that sends request to "https://fcm.googleapis.com/fcm/send"
+    It is a rest API that sends request to frappe.get_site_config().get("firebase_api")
     
     Params: employee_id e.g. HR_EMP_00001, , title:"Title of your message", body:"Body of your message", leave_id: Leave Application ID
 
@@ -256,7 +255,7 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
 
     headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'key=' + serverToken,
+            'Authorization': 'Bearer ' + serverToken,
         }
 
     #Body in json form defining a message payload to send through API. 
@@ -292,6 +291,6 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
                 },
                 "mutable_content": True
             }
-    #request is sent through "https://fcm.googleapis.com/fcm/send" along with params above.
-    response = requests.post("https://fcm.googleapis.com/fcm/send",headers = headers, data=json.dumps(body))
+    #request is sent through frappe.get_site_config().get("firebase_api") along with params above.
+    response = requests.post(frappe.get_site_config().get("firebase_api"),headers = headers, data=json.dumps(body))
     return response

@@ -8,7 +8,7 @@ from one_fm.api.api import upload_file
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
 from one_fm.utils import get_current_shift
-from frappe.utils import cint, cstr, getdate
+from frappe.utils import cint, cstr, getdate, add_months
 from one_fm.utils import check_if_backdate_allowed
 from one_fm.api.utils import validate_sick_leave_attachment
 
@@ -195,7 +195,6 @@ def get_leave_types(employee_id: str = None) -> dict:
 
 
 
-
 @frappe.whitelist()
 def create_new_leave_application(employee_id: str = None, from_date: str = None, to_date: str = None, leave_type: str = None, reason: str = None, proof_document = {}) -> dict:
     """[summary]
@@ -375,3 +374,65 @@ def leave_approver_action(leave_id: str,status: str) -> dict:
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
         frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
+
+@frappe.whitelist()
+def leave_application_list(employee_id: str, from_date: str = None, to_date: str = None) -> dict:
+    """
+    this method retrived list of leave application for both employee and reports to
+    """
+    try:
+        if not employee_id:
+            return response("error", 400, {}, "Employee ID is required.")
+        employee = frappe.get_value("Employee", {"employee_id": employee_id}, ["name", "user_id"], as_dict=1)
+        if not employee:
+            return response("error", 404, {}, "Employee not found.")
+        
+        if not(from_date and to_date):
+            posting_date = ["BETWEEN", [add_months(getdate(), -2), getdate()]]
+        else:
+            posting_date = ["BETWEEN", [from_date, to_date]]
+        my_leaves_query = frappe.get_all("Leave Application", 
+            filters = {
+            "employee": employee.name,
+            "posting_date": posting_date
+            },
+            fields=["*"]
+        )
+        my_leaves = [{
+            "name":i.name,"employee_name":i.employee_name, "workflow_state":i.workflow_state,
+            "leave_type":i.leave_type, "total_leave_days":i.total_leave_days,
+            "posting_date":i.posting_date, "from_date":i.from_date, "to_date":i.to_date, 
+            "leave_approver_name":i.leave_approver_name, "description":i.description, 
+            "proof_documents":i.proof_documents or []
+            } for i in my_leaves_query
+        ]
+        reports_to_query = frappe.get_all("Leave Application", 
+            filters = {
+            "leave_approver": employee.user_id,
+            "posting_date": posting_date,
+            },
+            fields=["*"
+            ]
+        )
+        reports_to = [{
+            "name":i.name,"employee_name":i.employee_name, "workflow_state":i.workflow_state,
+            "leave_type":i.leave_type, "total_leave_days":i.total_leave_days,
+            "posting_date":i.posting_date, "from_date":i.from_date, "to_date":i.to_date, 
+            "leave_approver_name":i.leave_approver_name, "description":i.description, 
+            "proof_documents":clean_proof_documents(i.proof_documents)
+            } for i in reports_to_query
+        ]
+        return response("success", 200, {"my_leaves":my_leaves, "reports_to": reports_to})
+    except Exception as e:
+        return response("error", 500, {}, str(frappe.get_traceback()))
+
+def clean_proof_documents(proof_documents):
+    """
+    This filters out attachments
+    """
+    if proof_documents:
+        attachments = [i.attachments for i in proof_documents]
+    else:
+        attachments = []
+    return attachments
+
