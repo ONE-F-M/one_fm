@@ -1,14 +1,12 @@
-import frappe, base64
+import frappe, base64, requests, firebase_admin, json
 from frappe import _
 import pandas as pd
 from frappe.utils import cstr, cint
 from frappe.model.rename_doc import rename_doc
-import requests
-import firebase_admin
 from firebase_admin import messaging, credentials
-import json
 from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap_data, get_user_rank
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
+import one_fm.api.v1 as v1_api
 
 @frappe.whitelist()
 def initialize_firebase():
@@ -16,7 +14,7 @@ def initialize_firebase():
         Initialize Firebase-Admin
     """
     #fetch credential file to initilize Firebase SDK
-    cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/private/files/one-fm-70641-firebase-adminsdk-nuf6h-667458c1a5.json")
+    cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/one-fm-70641-b59ee5eae480.json")
     firebase_admin.initialize_app(cred)
 
 @frappe.whitelist()
@@ -109,7 +107,6 @@ def rename_posts():
 def rename_post(posts):
     for post in posts:
         new_name = "{post_name}-{gender}|{site_shift}".format(post_name=post.post_name, gender=post.gender, site_shift=post.site_shift)
-        print(new_name)
         try:
             rename_doc("Operations Post", post.name, new_name, force=True)
         except Exception as e:
@@ -191,51 +188,63 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
     serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
     Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
     """
-    serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
-    employee_data = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["fcm_token", "device_os"],as_dict=1)
-    deviceToken = employee_data.get("fcm_token")
-    device_os = employee_data.get("device_os")
+    try:
+        initialize_firebase()
+        serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
+        employee_data = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["fcm_token", "device_os"],as_dict=1)
+        deviceToken = employee_data.get("fcm_token")
+        device_os = employee_data.get("device_os")
+        print(deviceToken)
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + serverToken,
+        }
 
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + serverToken,
-    }
-
-    #Body in json form defining a message payload to send through API. 
-    # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
-    if device_os == "android":
-         body = {       
-            "to":deviceToken,
-            "data": {
-                "title": title,
-                "body" : body,
-                "showButtonCheckIn": checkin,
-                "showButtonCheckOut": checkout,
-                "showButtonArrivingLate": arriveLate
+        #Body in json form defining a message payload to send through API. 
+        # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
+        if device_os == "android":
+            body = {       
+                "to":deviceToken,
+                "data": {
+                    "title": title,
+                    "body" : body,
+                    "showButtonCheckIn": checkin,
+                    "showButtonCheckOut": checkout,
+                    "showButtonArrivingLate": arriveLate
+                    }
                 }
-            }
-    else:
-        body = {       
-            "to":deviceToken,
-            "data": {
-                "title": title,
-                "body" : body,
-                "showButtonCheckIn": checkin,
-                "showButtonCheckOut": checkout,
-                "showButtonArrivingLate": arriveLate
-                },
-            "notification": {
-                "body": body,
-                "title": title,
-                "badge": 0,
-                "click_action": "oneFmNotificationCategory1"
-                },
-                "mutable_content": True
-            }
-
-    #request is sent through frappe.get_site_config().get("firebase_api") along with params above.
-    response = requests.post(frappe.get_site_config().get("firebase_api"),headers = headers, data=json.dumps(body))
-    return response
+        else:
+            body = {       
+                "to":deviceToken,
+                "data": {
+                    "title": title,
+                    "body" : body,
+                    "showButtonCheckIn": checkin,
+                    "showButtonCheckOut": checkout,
+                    "showButtonArrivingLate": arriveLate
+                    },
+                "notification": {
+                    "body": body,
+                    "title": title,
+                    "badge": 0,
+                    "click_action": "oneFmNotificationCategory1"
+                    },
+                    "mutable_content": True
+                }
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title='hello',
+                body='dsds'
+            ),
+            token=deviceToken
+        )
+        res = messaging.send(message)
+        # print(dict(response))
+        #request is sent through frappe.get_site_config().get("firebase_api") along with params above.
+        # response = requests.post(frappe.get_site_config().get("firebase_api"),headers = headers, data=json.dumps(body))
+        return v1_api.utils.response("success", 200, {'response': str(res)})
+    except Exception as e:
+        return v1_api.utils.response("error", 400, {}, str(e))
 
 @frappe.whitelist()
 def push_notification_rest_api_for_leave_application(employee_id, title, body, leave_id):
