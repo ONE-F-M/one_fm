@@ -857,6 +857,8 @@ before_migrate = [
 ]
 
 # add more info to session on boot
-# on_session_creation = "one_fm.session_hooks.on_session_creation"
+on_session_creation = [
+    # "one_fm.api.api.initialize_firebase"
+]
 # auth_hooks = "one_fm.session_hooks.auth_hooks"
 # on_login = "one_fm.session_hooks.on_login"
