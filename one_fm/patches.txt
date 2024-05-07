@@ -84,4 +84,3 @@ one_fm.patches.v15_0.move_employee_id_to_employee_number
 
 [post_model_sync]
 one_fm.patches.v15_0.preserve_legacy_employee_naming_series
-one_fm.patches.v15_0.rename_employee_records
