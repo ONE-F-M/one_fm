@@ -194,7 +194,6 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
         employee_data = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["fcm_token", "device_os"],as_dict=1)
         deviceToken = employee_data.get("fcm_token")
         device_os = employee_data.get("device_os")
-        print(deviceToken)
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + serverToken,
