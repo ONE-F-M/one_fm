@@ -201,3 +201,11 @@ def get_employee_by_id(employee_id):
         return frappe._dict({'status': False, 'message': f'Employee with ID {employee_id} does not exist', 'http_status_code':404})
     except Exception as e:
         frappe._dict({'status': False, 'message': str(e), 'http_status_code':500})
+
+@frappe.whitelist()
+def google_map_api():
+    try:
+        return response("success", 200, {
+            "google_map_api":frappe.db.get_single_value("Google Settings", "api_key")})
+    except Exception as e:
+        return response("error", 500, {}, str(e))
