@@ -233,20 +233,9 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
 
             if is_employee_on_leave(employee, date):
                 return response("Resource Not Found", 404, None, "You are currently on leave, see you soon!")
-
-
-        distance = float(haversine(result.latitude, result.longitude, latitude, longitude))
-        if distance > float(result.geofence_radius):
-            result['user_within_geofence_radius'] = False
             
-
-        result['site_name'] = site
-        if shift:
-            result['shift'] = shift
             if is_holiday(employee, date):
                 return response("Resource Not Found", 404, None, "Today is your holiday, have fun")
-
-
             return response("Resource Not Found", 404, None, "User not assigned to a shift.")
 
     except Exception as error:
