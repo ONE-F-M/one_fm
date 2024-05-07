@@ -239,7 +239,8 @@ doc_events = {
 		"validate": "one_fm.utils.validate_leave_type_for_one_fm_paid_leave"
 	},
 	"HD Ticket": {
-		"validate": "one_fm.overrides.hd_ticket.validate_hd_ticket"
+		"validate": "one_fm.overrides.hd_ticket.validate_hd_ticket",
+		"after_insert":"one_fm.overrides.hd_ticket.send_google_chat_notification"
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -363,8 +364,8 @@ doc_events = {
 	"Issue": {
 		"after_insert": [
 			"one_fm.utils.assign_issue",
-			"one_fm.api.doc_methods.issue.notify_issue_raiser",
-			"one_fm.events.issue.send_google_chat_notification"
+			"one_fm.api.doc_methods.issue.notify_issue_raiser"
+			
 		],
     "on_update": "one_fm.utils.notify_on_close",
 	},
@@ -840,11 +841,11 @@ jenv = {
 }
 
 after_migrate = [
-    "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
+    # "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.replace_send_birthday_reminder",
     "one_fm.after_migrate.execute.replace_send_anniversary_reminder",
     "one_fm.after_migrate.execute.disable_workflow_emails",
-    "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
+    # "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
     "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
 ]

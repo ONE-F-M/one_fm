@@ -148,7 +148,10 @@ def fetch_approver(employee, date=None):
 			shift_detail['shift'] = employee_shift[0].shift
 			shift_detail['shift_type'] = employee_shift[0].shift_type
 			return shift_detail
-		frappe.throw("No shift assignment found for {employee}".format(employee=employee))
+		tail_end = ""
+		if date:
+			tail_end = "on {0}".format(date)
+		frappe.throw("No shift assignment found for {employee} {tail_end}".format(employee=employee, tail_end=tail_end))
 
 # Approve pemding employee checkin issue before marking attendance
 def approve_open_employee_checkin_issue(start_date, end_date):

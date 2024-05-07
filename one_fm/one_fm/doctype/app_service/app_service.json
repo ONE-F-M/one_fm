@@ -22,7 +22,7 @@
   },
   {
    "fieldname": "icon",
-   "fieldtype": "Attach Image",
+   "fieldtype": "Data",
    "label": "Icon",
    "reqd": 1
   },
@@ -31,11 +31,13 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "1",
+   "fetch_from": "service_group.status",
+   "fetch_if_empty": 1,
    "fieldname": "status",
-   "fieldtype": "Check",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Status"
+   "label": "Status",
+   "options": "Active\nInactive"
   },
   {
    "fieldname": "service_group",
@@ -55,7 +57,7 @@
   }
  ],
  "links": [],
- "modified": "2024-04-24 00:48:14.156455",
+ "modified": "2024-04-26 00:02:30.868707",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "App Service",

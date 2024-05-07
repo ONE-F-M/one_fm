@@ -21,7 +21,7 @@
   },
   {
    "fieldname": "icon",
-   "fieldtype": "Attach Image",
+   "fieldtype": "Data",
    "label": "icon",
    "reqd": 1
   },
@@ -30,14 +30,14 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "1",
    "fieldname": "status",
-   "fieldtype": "Check",
-   "label": "Status"
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nInactive"
   }
  ],
  "links": [],
- "modified": "2024-04-23 21:26:56.168526",
+ "modified": "2024-04-25 23:55:27.469697",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "App Service Group",

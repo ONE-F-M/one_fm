@@ -125,12 +125,10 @@ class OvertimeRequest(Document):
 			as_dict = True
 		)
 		if employee.shift:
-			supervisor = get_shift_supervisor(employee.shift)
-			if supervisor:
-				supervisor_user = get_employee_user_id(supervisor)
-				if supervisor_user:
-					message = _(message.format(employee=employee.employee_name, date=date))
-					create_notification_log(message, message, [supervisor_user], self)
+			supervisor_user = get_shift_supervisor_user(employee.shift)
+			if supervisor_user:
+				message = _(message.format(employee=employee.employee_name, date=date))
+				create_notification_log(message, message, [supervisor_user], self)
 
 	# Method creating employee Schedula on The Acceptance of OT Request for Operations Employee
 	def create_employee_schedule(self):

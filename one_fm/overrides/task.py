@@ -19,15 +19,20 @@ def validate_updated_fields(doc):
     if doc.has_value_changed('status'):
         if doc.status not in USER_ALLOWED_STATUSES:
             frappe.throw(_("Insufficient permission for updating status."))
-    if not doc.is_new and (doc.has_value_changed('priority') or doc.has_value_changed('completed_on')):
+    if not doc.is_new() and (doc.has_value_changed('priority') or doc.has_value_changed('completed_on')):
         frappe.throw(_("Insufficient permission for updating {0}").format("Priority" if doc.has_value_changed('priority') else 'Completed On'))
 
 def is_project_manager(project):
     project_manager = frappe.get_value("Project", project, "account_manager")
+    project_users = frappe.get_all("Project User",{'parent':project},['user'])
     user_employee = frappe.get_value("Employee", {"user_id": frappe.session.user}) if frappe.db.exists("Employee", {"user_id": frappe.session.user}) else None
 
     if user_employee and project_manager and user_employee == project_manager:
         return True
+    if project_users:
+        all_users = [i.user for i in project_users]
+        if frappe.session.user in all_users:
+            return True
     return False
 
 
