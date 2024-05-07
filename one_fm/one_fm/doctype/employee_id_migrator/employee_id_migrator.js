@@ -13,7 +13,6 @@ frappe.ui.form.on("Employee ID Migrator", {
 
 	},
     migrate_remaining_employees(frm) {
-        // frappe.msgprint("MIGRATE");
         let d = new frappe.ui.Dialog({
             title: "Employee PK Migrator",
             fields: [
@@ -25,19 +24,14 @@ frappe.ui.form.on("Employee ID Migrator", {
                     description: "Migration will be executed for the selected status of employees."
                 }
             ],
-            size: "small", // small, large, extra-large 
+            size: "small",
             primary_action_label: "Run migration",
             primary_action(values) {
                 d.hide();
                 let {status} = values;
                 var result = Object.groupBy(frm.doc.remaining_employees, emp => emp.status == status)
                 let records = result.true;
-                console.log(result.true);
                 frm.call('execute_migration', {'employees': records});
-                // .then(
-                //     res => {
-                //         frappe.msgprint(__("Migration is being executed in the background."))
-                // })
             }
         });
         
