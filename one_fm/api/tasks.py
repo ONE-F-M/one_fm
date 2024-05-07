@@ -910,7 +910,11 @@ def create_shift_assignment(roster, date, time):
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Shift Assignment Failed", delayed=False)
 
-def validate_shift_assignment():
+def validate_shift_assignment(is_scheduled_event=True):
+	"""
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
 	date = cstr(getdate())
 	now = datetime.strptime(format(datetime.now() + timedelta(hours=1), "%d-%m-%Y %H:00:00"), "%d-%m-%Y %H:00:00")
 	now_time = now.time()
@@ -974,9 +978,13 @@ def validate_shift_assignment():
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Develop"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False)
+		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False, is_scheduler_email=is_scheduled_event)
 
-def validate_am_shift_assignment():
+def validate_am_shift_assignment(is_scheduled_event=True):
+	"""
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
 	date = cstr(getdate())
 	end_previous_shifts("PM")
 	roster = frappe.db.sql("""
@@ -1018,7 +1026,7 @@ def validate_am_shift_assignment():
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False)
+		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False, is_scheduler_email=True)
 		frappe.enqueue(create_shift_assignment, roster = roster, date = date, time='AM', is_async=True, queue='long')
 
 def validate_pm_shift_assignment():
@@ -2045,10 +2053,14 @@ def run_checkin_reminder():
 
 
 
-def notify_approver_about_pending_shift_request():
-    date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
-    one_hour = date_time + timedelta(minutes=60)
-    pending_shift_request = frappe.db.sql("""
+def notify_approver_about_pending_shift_request(is_scheduled_event=True):
+	"""
+    Args:
+		is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
+	date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
+	one_hour = date_time + timedelta(minutes=60)
+	pending_shift_request = frappe.db.sql("""
 												SELECT sr.name, shift_approver, employee_name
 												FROM `tabShift Request` sr
 												LEFT JOIN `tabOperations Shift` os ON sr.operations_shift = os.name
@@ -2056,17 +2068,17 @@ def notify_approver_about_pending_shift_request():
 												AND sr.from_date = %s
 												AND os.start_time BETWEEN %s AND %s
 											""", (date_time.date(), date_time.time(), one_hour.time()), as_dict=1)
-
-    if pending_shift_request:
-        data_dict = dict()
-        for obj in pending_shift_request:
-            if not data_dict.get(obj["shift_approver"]):
-                data_dict.update({obj["shift_approver"]: list()})
-
-        for obj in pending_shift_request:
-            data_dict.get(obj["shift_approver"]).append({obj.get("employee_name"): get_url_to_form("Shift Request", obj.get("name"))})
-
-        for key, value in data_dict.items():
-            title = "Pending Shift Request for upcoming shift"
-            msg = frappe.render_template('one_fm/templates/emails/notify_shift_request_approver.html', context={"data": value})
-            sendemail(recipients=key, subject=title, content=msg)
+	
+	if pending_shift_request:
+		data_dict = dict()
+		for obj in pending_shift_request:
+			if not data_dict.get(obj["shift_approver"]):
+				data_dict.update({obj["shift_approver"]: list()})
+		
+		for obj in pending_shift_request:
+			data_dict.get(obj["shift_approver"]).append({obj.get("employee_name"): get_url_to_form("Shift Request", obj.get("name"))})
+			
+		for key, value in data_dict.items():
+			title = "Pending Shift Request for upcoming shift"
+			msg = frappe.render_template('one_fm/templates/emails/notify_shift_request_approver.html', context={"data": value})
+			sendemail(recipients=key, subject=title, content=msg, is_scheduler_email=is_scheduled_event)

@@ -374,9 +374,11 @@
    "label": "Date of Birth"
   },
   {
+   "fetch_from": "job_applicant.one_fm_religion",
    "fieldname": "religion",
-   "fieldtype": "Data",
-   "label": "Religion"
+   "fieldtype": "Link",
+   "label": "Religion",
+   "options": "Religion"
   },
   {
    "fieldname": "column_break_20",
@@ -1564,7 +1566,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-04 09:51:08.981949",
+ "modified": "2024-04-24 13:56:25.574043",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",

@@ -4,10 +4,13 @@ from frappe import _
 from one_fm.processor import sendemail
 
 
-def due_purchase_order_payment_terms():
+def due_purchase_order_payment_terms(is_scheduled_event=True):
     """
     Send notifications to Finance Office about due payment in terms
     for purchase order
+
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
     """
     try:
         query = frappe.db.sql(f"""
@@ -39,6 +42,6 @@ def due_purchase_order_payment_terms():
             sendemail(
                 recipients=recipients,
                 subject="Due Purchase Order Payment",
-                message=content)
+                message=content, is_scheduler_email=is_scheduled_event)
     except Exception as e:
         frappe.log_error(str(e), 'Purchase Order payment schedule')

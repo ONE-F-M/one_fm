@@ -47,27 +47,27 @@ function get_shift_assignment(frm){
 		frappe.call({
 			method: 'one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue.fetch_approver',
 			args:{
-				'employee':frm.doc.employee
+				'employee': frm.doc.employee,
+				'date': frm.doc.date
 			},
 			callback: function(r) {
 				let val = r.message
-				let assigned_shift, shift_supervisor, shift, shift_type = "";
+				let assigned_shift, approver, shift, shift_type = "";
 				if(val){
 					assigned_shift = val['assigned_shift']
-					shift_supervisor = val['shift_supervisor']
+					approver = val['shift_supervisor']
 					shift = val['shift']
 					shift_type = val['shift_type']
-					
 				}
-				else{
-					frappe.msgprint(__(`No shift assigned to ${frm.doc.employee_name}. Please check again.`));
-				}
-				frappe.model.set_value(frm.doctype, frm.docname, "assigned_shift", assigned_shift);
-				frappe.model.set_value(frm.doctype, frm.docname, "shift_supervisor", shift_supervisor);
-				frappe.model.set_value(frm.doctype, frm.docname, "shift", shift);
-				frappe.model.set_value(frm.doctype, frm.docname, "shift_type", shift_type);
-				frm.refresh_fields();
+				set_shift_details(frm, assigned_shift, approver, shift, shift_type);
 			}
 		});
 	}
-};
+}
+
+function set_shift_details(frm, assigned_shift, approver, shift, shift_type){
+	frappe.model.set_value(frm.doctype, frm.docname, "assigned_shift", assigned_shift);
+	frappe.model.set_value(frm.doctype, frm.docname, "shift_supervisor", approver);
+	frappe.model.set_value(frm.doctype, frm.docname, "shift", shift);
+	frappe.model.set_value(frm.doctype, frm.docname, "shift_type", shift_type);
+}

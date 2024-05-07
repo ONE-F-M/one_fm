@@ -11,6 +11,7 @@ from frappe.utils import today, add_days, get_url, date_diff
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
+from one_fm.utils import is_scheduler_emails_enabled
 
 class PACI(Document):
     def validate(self):
@@ -120,7 +121,9 @@ def notify_operator_to_take_hawiyati_renewal():# cron job at 8am in working days
     for paci in paci_list_renewal:
         if date_diff(date.today(),getdate(paci.upload_civil_id_payment_datetime))>=2:
             renewal_list.append(paci)
-    email_notification_reminder(renewal_operator,paci_list_renewal,"Reminder","Upload Hawiyati for","Renewal", supervisor)
+
+    if is_scheduler_emails_enabled():
+        email_notification_reminder(renewal_operator,paci_list_renewal,"Reminder","Upload Hawiyati for","Renewal", supervisor)
 
 def notify_operator_to_take_hawiyati_transfer(): # cron job at 8am in working days
     transfer_list=[]
@@ -130,7 +133,9 @@ def notify_operator_to_take_hawiyati_transfer(): # cron job at 8am in working da
     for paci in paci_list_transfer:
         if date_diff(date.today(),getdate(paci.upload_civil_id_payment_datetime))>=2:
             transfer_list.append(paci)
-    email_notification_reminder(transfer_operator,paci_list_transfer,"Reminder","Upload Hawiyati for","Transfer", supervisor)
+    
+    if is_scheduler_emails_enabled():
+        email_notification_reminder(transfer_operator,paci_list_transfer,"Reminder","Upload Hawiyati for","Transfer", supervisor)
 
 def system_remind_renewal_operator_to_apply():# cron job at 8am in working days
     """
@@ -140,7 +145,9 @@ def system_remind_renewal_operator_to_apply():# cron job at 8am in working days
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     paci_list = frappe.db.get_list('PACI',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Renewal')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
-    notification_reminder(paci_list,supervisor,renewal_operator,"Renewal")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(paci_list,supervisor,renewal_operator,"Renewal")
 
 
 def system_remind_transfer_operator_to_apply():# cron job at 8am in working days
@@ -151,7 +158,9 @@ def system_remind_transfer_operator_to_apply():# cron job at 8am in working days
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     paci_list = frappe.db.get_list('PACI',
     {'date_of_application':['<=',today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
-    notification_reminder(paci_list,supervisor,transfer_operator,"Transfer")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(paci_list,supervisor,transfer_operator,"Transfer")
 
 
 def notification_reminder(paci_list,supervisor,operator,type):

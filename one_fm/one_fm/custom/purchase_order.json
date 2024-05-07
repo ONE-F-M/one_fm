@@ -667,7 +667,7 @@
    "description": null,
    "docstatus": 0,
    "dt": "Purchase Order",
-   "fetch_from": null,
+   "fetch_from": "one_fm_request_for_purchase.request_for_material",
    "fetch_if_empty": 0,
    "fieldname": "request_for_material",
    "fieldtype": "Link",

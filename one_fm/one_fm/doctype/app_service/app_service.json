@@ -1,0 +1,88 @@
+{
+ "actions": [],
+ "autoname": "field:service",
+ "creation": "2024-04-21 19:48:35.852620",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "service_group",
+  "service",
+  "icon",
+  "column_break_iidf",
+  "status",
+  "auto_assign"
+ ],
+ "fields": [
+  {
+   "fieldname": "service",
+   "fieldtype": "Data",
+   "label": "Service",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "icon",
+   "fieldtype": "Data",
+   "label": "Icon",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_iidf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "service_group.status",
+   "fetch_if_empty": 1,
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "service_group",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Service Group",
+   "options": "App Service Group",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "To be auto assigned to user",
+   "fieldname": "auto_assign",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Auto Assign"
+  }
+ ],
+ "links": [],
+ "modified": "2024-04-26 00:02:30.868707",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "App Service",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Employee",
+   "select": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

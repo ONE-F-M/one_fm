@@ -24,20 +24,17 @@ class AttendanceRequestOverride(AttendanceRequest):
 		check_for_attendance(self)
 
 	def set_approver(self):
-		if not self.approver:
-			approver_id = frappe.db.get_value("Employee", {'name':self.employee}, ['reports_to'])
-			if approver_id:
-				self.approver = approver_id
-				approver = frappe.db.get_value("Employee", {'name':approver_id}, ['user_id', 'employee_name'], as_dict=1)
+		if not self.approver and self.employee:
+			self.approver = get_approver(self.employee)
+			if self.approver:
+				approver = frappe.db.get_value(
+					"Employee",
+					{'name':self.approver},
+					['user_id', 'employee_name'],
+					as_dict=1
+				)
 				self.approver_user = approver.user_id
 				self.approver_name = approver.employee_name
-			else:
-				self.approver = get_approver(self.employee)
-				approver = frappe.db.get_value("Employee", {'name':self.approver}, ['user_id', 'employee_name'], as_dict=1)
-				self.approver_user = approver.user_id
-				self.approver_name = approver.employee_name
-		if not self.approver_user:
-			self.approver_user = frappe.db.get_value("Employee", self.approver, 'user_id')
 
 	def on_submit(self):
 		if not self.reports_to():
@@ -94,7 +91,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 			working_hours = frappe.db.get_value('Shift Type', shift_assignment.shift_type, 'duration')  if shift_assignment  else 8
 			# check if attendance exists
 			attendance_name = super(AttendanceRequestOverride, self).get_attendance_record(attendance_date)
-			status = "Work From Home"
+			status = "Work From Home" if self.reason == "Work From Home" else "Present"
 			if attendance_name:
 				# update existing attendance, change the status
 				doc = frappe.get_doc("Attendance", attendance_name)
@@ -194,17 +191,13 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 		return False
 
-	def get_reports_to(self):
-		return frappe.db.get_value("Employee", {'name':frappe.db.get_value("Employee", {'name':self.employee}, ['reports_to'])}, ['user_id'])
-
 	@frappe.whitelist()
 	def reports_to(self):
 		employee_user = frappe.get_value("Employee", {"name": self.employee}, "user_id")
 		if employee_user and frappe.session.user == employee_user and has_super_user_role(employee_user):
 			return True
 
-		reports_to_user = self.get_reports_to()
-		if reports_to_user and frappe.session.user in [reports_to_user, 'administrator', 'Administrator']:
+		if self.approver_user and frappe.session.user in [self.approver_user, 'administrator', 'Administrator']:
 			return True
 
 		frappe.msgprint('This Attendance Request can only be approved by the employee supervisor')

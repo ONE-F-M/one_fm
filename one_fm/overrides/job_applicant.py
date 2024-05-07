@@ -6,6 +6,7 @@ from frappe.utils import getdate, get_url_to_form
 from hrms.hr.doctype.job_applicant.job_applicant import *
 from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, send_magic_link
 from one_fm.processor import sendemail
+from one_fm.utils import is_scheduler_emails_enabled
 
 from one_fm.utils import production_domain
 
@@ -118,7 +119,7 @@ class JobApplicantOverride(JobApplicant):
 
 
 def notify_hr_manager_about_local_transfer() -> None:
-	if production_domain():
+	if production_domain() and is_scheduler_emails_enabled():
 		NotifyLocalTransfer().notify_hr_manager_recruiter()
 
 class NotifyLocalTransfer:
