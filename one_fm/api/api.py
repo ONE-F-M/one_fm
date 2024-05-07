@@ -14,7 +14,7 @@ def initialize_firebase():
         Initialize Firebase-Admin
     """
     #fetch credential file to initilize Firebase SDK
-    cred = credentials.Certificate(frappe.utils.cstr(frappe.local.site)+"/one-fm-70641-b59ee5eae480.json")
+    cred = credentials.Certificate(''.join([frappe.utils.get_bench_path(), '/sites', frappe.get_site_path().replace('.', '')])+"/one-fm-70641-b59ee5eae480.json")
     firebase_admin.initialize_app(cred)
 
 @frappe.whitelist()
@@ -190,6 +190,10 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
     """
     try:
         initialize_firebase()
+    except:
+        pass
+    
+    try:
         serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
         employee_data = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["fcm_token", "device_os"],as_dict=1)
         deviceToken = employee_data.get("fcm_token")
@@ -235,7 +239,7 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
                 title='hello',
                 body='dsds'
             ),
-            token=deviceToken
+            token=serverToken
         )
         res = messaging.send(message)
         # print(dict(response))
@@ -302,3 +306,4 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
     #request is sent through frappe.get_site_config().get("firebase_api") along with params above.
     response = requests.post(frappe.get_site_config().get("firebase_api"),headers = headers, data=json.dumps(body))
     return response
+
