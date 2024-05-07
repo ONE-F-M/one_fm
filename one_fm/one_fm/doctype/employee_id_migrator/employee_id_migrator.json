@@ -1,0 +1,81 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-05-02 10:42:47.793647",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "html_lrnd",
+  "section_break_nvyh",
+  "get_remaining_employees",
+  "column_break_bnee",
+  "migrate_remaining_employees",
+  "column_break_uzbi",
+  "section_break_aajj",
+  "remaining_employees"
+ ],
+ "fields": [
+  {
+   "description": "Executes renaming for the remaining employees mentioned in the table. ",
+   "fieldname": "migrate_remaining_employees",
+   "fieldtype": "Button",
+   "label": "Migrate Remaining Employees"
+  },
+  {
+   "fieldname": "section_break_aajj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "remaining_employees",
+   "fieldtype": "Table",
+   "label": "Remaining Employees",
+   "options": "Employee ID Migrator Employees"
+  },
+  {
+   "description": "Populates the remaining employees table with the list of records whose rename is still pending. ",
+   "fieldname": "get_remaining_employees",
+   "fieldtype": "Button",
+   "label": "Get Remaining Employees"
+  },
+  {
+   "fieldname": "column_break_bnee",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_nvyh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_uzbi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "html_lrnd",
+   "fieldtype": "HTML",
+   "options": "<div class=\"form-message blue\">\n    <div>Migrator to rename Employee records from Employee ID (13 digits) to Employee PK (7 digits) and use Employee PK as naming series.</div> \n    <div>This migrator renames existing employee records only.</div>\n    <div class=\"text-danger\">Before using the migrator, add the below custom queue in common_site_config.json.</div>\n    <pre><code style=\"font-size: 0.9rem;\">\n    \"workers\": {<br>\n        \"migration\": {<br>\n            \"background_workers\": 1,<br>\n            \"timeout\": 5000<br>\n        }<br>\n    }\n    </code></pre>\n    Then run the below commands for the changes to take place.\n    <br>\n    1. bench setup supervisor\n    <br>\n    2. sudo supervisorctl reread\n    <br>\n    3. sudo supervisorctl update\n    <br>\n    4. bench restart\n</div>"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2024-05-07 11:24:59.004344",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Employee ID Migrator",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
