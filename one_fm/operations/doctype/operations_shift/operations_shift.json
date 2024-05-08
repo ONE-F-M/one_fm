@@ -65,6 +65,7 @@
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
+   "hidden": 1,
    "ignore_user_permissions": 1,
    "label": "Shift Supervisor",
    "options": "Employee"
@@ -73,6 +74,7 @@
    "fetch_from": "supervisor.employee_name",
    "fieldname": "supervisor_name",
    "fieldtype": "Data",
+   "hidden": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Supervisor Name",
@@ -166,7 +168,7 @@
    "link_fieldname": "shift"
   }
  ],
- "modified": "2024-04-12 14:13:00.167206",
+ "modified": "2024-05-08 21:24:18.202969",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Shift",
