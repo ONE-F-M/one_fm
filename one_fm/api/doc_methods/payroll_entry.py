@@ -780,7 +780,11 @@ def seperate_salary_slip(employees, start_date, end_date):
 
 	return parm
 
-def notify_for_open_leave_application():
+def notify_for_open_leave_application(is_scheduled_event=True):
+	"""
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
 	try:
 		if not frappe.db.get_single_value('HR and Payroll Additional Settings', 'remind_open_leave_application') and not production_domain():
 			return
@@ -803,6 +807,6 @@ def notify_for_open_leave_application():
 				message += "<li>"+doc_url+"</li>"
 			message += "</ul>"
 
-			sendemail(recipients= recipient , subject="Leave Application need approval", message=message)
+			sendemail(recipients= recipient , subject="Leave Application need approval", message=message, is_scheduler_email=is_scheduled_event)
 	except Exception as error:
 		frappe.log_error(str(error), 'Open Leave Application reminder failed')

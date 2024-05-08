@@ -6,6 +6,7 @@ import frappe
 from frappe.utils import getdate, get_last_day, get_first_day, date_diff
 from frappe.model.document import Document
 from one_fm.utils import get_week_start_end
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts, get_shift_supervisor
 
 class PostSchedulerChecker(Document):
 	def autoname(self):
@@ -27,14 +28,11 @@ class PostSchedulerChecker(Document):
 		frappe.db.commit()
 
 	def get_supervisor(self):
-		supervisor_doc = frappe.db.get_list("Operations Shift",
-			filters={'project': self.project},
-			fields=['supervisor', 'supervisor_name'],
-			limit=1
-		)
-		if supervisor_doc:
-			self.supervisor = supervisor_doc[0].supervisor
-			self.supervisor_name = supervisor_doc[0].supervisor_name
+		shifts = get_supervisor_operations_shifts(project=self.project)
+		if shifts and len(shifts) > 0:
+			self.supervisor = get_shift_supervisor(shifts[0])
+			if self.supervisor:
+				self.supervisor_name = frappe.db.get_value("Employee", self.supervisor, "employee_name")
 
 	def fill_items(self):
 		current_date = getdate()
@@ -50,9 +48,9 @@ class PostSchedulerChecker(Document):
 			if not item.no_of_days_off:item.no_of_days_off = 0
 			else:item.no_of_days_off=int(item.no_of_days_off)
 			if item.subitem_group == "Service" and item.rate_type=='Monthly':
-				roles = [i.name for i in frappe.db.sql(f""" 
-					SELECT name FROM `tabOperations Role` 
-					WHERE sale_item="{item.item_code}" AND project="{self.project}" 
+				roles = [i.name for i in frappe.db.sql(f"""
+					SELECT name FROM `tabOperations Role`
+					WHERE sale_item="{item.item_code}" AND project="{self.project}"
 				""", as_dict=1)]
 				roles_dict = {}
 				schedule_count = 0

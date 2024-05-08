@@ -13,9 +13,10 @@ from one_fm.hiring.utils import (
     is_subcontract_employee
 )
 from one_fm.processor import sendemail,send_whatsapp
-from one_fm.utils import get_domain, get_standard_notification_template, get_approver
+from one_fm.utils import get_domain, get_standard_notification_template, get_approver_user
 from six import string_types
 from frappe import _
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
 
 class EmployeeOverride(EmployeeMaster):
     def validate(self):
@@ -98,7 +99,7 @@ class EmployeeOverride(EmployeeMaster):
         self.update_subcontract_onboard()
         self.inform_employee_id_update()
         self.notify_employee_id_update()
-        
+
 
 
     def inform_employee_id_update(self):
@@ -125,14 +126,14 @@ class EmployeeOverride(EmployeeMaster):
         except:
             frappe.log_error(title = "Error Notifying Manager",message = frappe.get_traceback())
             frappe.msgprint("Error Notifying Manager, Please check Error Log for Details")
-        
+
     def notify_employee_id_update(self):
         try:
             if self.has_value_changed('employee_id'):
                 context = self.as_dict()
                 subject = f"Your  Employee ID changed"
                 if self.prefered_contact_email == "Company Email":
-                    
+
                     description = f'''
                         Dear {self.employee_name},
                         Your residency registration process has been completed and your employee id has been update from {self.get_doc_before_save().employee_id} to {self.employee_id}
@@ -142,7 +143,7 @@ class EmployeeOverride(EmployeeMaster):
                     msg = frappe.render_template(get_standard_notification_template(description, doc_link), context)
                     # sendemail(recipients=[self.user_id], subject=subject, content=msg)
                     send_notification(title=subject,subject=subject,message=msg,category="Alert",recipients=[self.user_id])
-                
+
                 push_message = f"Dear {context.first_name}, Your residency registration process has been completed and your employee ID has been updated  to {self.employee_id}."
                 push_notification_rest_api_for_checkin(employee_id=self.name,title=subject,body=push_message,checkin=False,arriveLate=False,checkout=False)
                 if self.cell_number:
@@ -150,16 +151,18 @@ class EmployeeOverride(EmployeeMaster):
                         cell_number = "".join(i for i in self.cell_number if i.isdigit())
                     else:
                         cell_number = self.cell_number
-                whatsapp_message = f"Dear {context.first_name}, Your residency registration process has been completed and your employee ID has been updated from {self.get_doc_before_save().employee_id} to {self.employee_id}.",
-                send_whatsapp(sender_id=cell_number,body = whatsapp_message)
+                content_variables= {
+	                    	'1':context.first_name,
+                            '2':self.get_doc_before_save().employee_id,
+                            '3':self.employee_id,
+                    	}
+                send_whatsapp(sender_id=cell_number,template_name='employee_id_change', content_variables=content_variables)
         except:
             frappe.log_error(title = "Error Notifying Employee",message = frappe.get_traceback())
             frappe.msgprint("Error Notifying Employee, Please check Error Log for Details")
 
     def get_reports_to_user(self):
-        approver = get_approver(self.name)
-        if approver:
-            return frappe.db.get_value('Employee', approver, 'user_id')
+        return get_approver_user(self.name)
 
     def update_subcontract_onboard(self):
         subcontract_onboard = frappe.db.exists("Onboard Subcontract Employee", {"employee": self.name, "enrolled": ['!=', '1']})
@@ -171,7 +174,7 @@ class EmployeeOverride(EmployeeMaster):
         if last_doc and last_doc.get('status') == "Active":
             if self.status != "Active":
                 NotifyAttendanceManagerOnStatusChange(employee_object=self).notify_authorities()
-                
+
     def validate_status_change(self):
         last_doc = self.get_doc_before_save()
         if last_doc and last_doc.get('status') == "Active":
@@ -181,7 +184,7 @@ class EmployeeOverride(EmployeeMaster):
                 print(message)
                 if message:
                     frappe.throw(message)
-        
+
 
     def clear_schedules(doc):
         # clear future employee schedules
@@ -265,7 +268,7 @@ class NotifyAttendanceManagerOnStatusChange:
 
     @property
     def _operations_shift_supervisor(self) -> list:
-        operation_shifts = frappe.db.sql(""" SELECT name from `tabOperations Shift` WHERE supervisor = %s AND status = 'Active' """, (self.employee_object.name), as_list=1)
+        operation_shifts = get_supervisor_operations_shifts(self.employee_object.name)
         return list(chain.from_iterable(operation_shifts)) if operation_shifts else list()
 
     @property
@@ -375,92 +378,88 @@ class NotifyAttendanceManagerOnStatusChange:
 
 
 class StatusChangeVaccumValidate(NotifyAttendanceManagerOnStatusChange):
-    
-    
+
+
     def __init__(self, employee_object: EmployeeOverride):
         super().__init__(employee_object=employee_object)
         self._message = ""
-        
+
     @property
     def message_header(self):
         return f"""
                 <div>
                     <h3>This employee has responsibilities in the following document</h3> """
-        
-        
-    
+
+
+
     def construct_operations_shift_supervisor_message(self):
         shifts = self._operations_shift_supervisor
         if shifts:
             self._message += "<h5>Operations Shift</h5> <ul>"
             for obj in shifts:
                 self._message += f""" <li>{obj}</li>"""
-            
+
             self._message += f""" </ul><br><br>"""
-    
+
     def construct_operations_site_supervisor_message(self):
         sites = self._operations_site_supervisor
         if sites:
             self._message += "<h5>Operations Site</h5> <ul>"
             for obj in sites:
                 self._message += f""" <li>{obj}</li>"""
-            
+
             self._message += f""" </ul><br><br>"""
-            
-    
+
+
     def construct_projects_manager_message(self):
         projects = self._projects_manager
         if projects:
             self._message += "<h5>Project</h5> <ul>"
             for obj in projects:
                 self._message += f""" <li>{obj}</li>"""
-            
+
             self._message += f""" </ul><br><br>"""
-            
-    
+
+
     def construct_reports_to_message(self):
         reports_to = self._employee_reports_to
         if reports_to:
             self._message += "<h5>Employee Reports To</h5> <ul>"
             for obj in reports_to:
                 self._message += f""" <li>{obj.name} -- {obj.employee_name}</li>"""
-            
+
             self._message += f""" </ul><br><br>"""
-            
-    
-    
+
+
+
     def construct_attendance_manager_message(self):
         if self._attendance_manager:
             self._message += "<h5>This employee is the attendance manager.</h5> <br><br>"
 
-    
+
     def construct_operations_manager_message(self):
         if self._operation_manager:
             self._message += "<h5>This employee is the Operations manager.</h5> <br><br>"
-        
-    
-    
+
+
+
     def message(self):
-        if any((self._operations_shift_supervisor, self._operations_site_supervisor, self._projects_manager, 
+        if any((self._operations_shift_supervisor, self._operations_site_supervisor, self._projects_manager,
                self._employee_reports_to, self._attendance_manager, self._operation_manager)):
             self._message = self.message_header
-            
+
             self.construct_operations_shift_supervisor_message()
-            
+
             self.construct_operations_site_supervisor_message()
-            
+
             self.construct_projects_manager_message()
-            
+
             self.construct_reports_to_message()
-            
+
             self.construct_attendance_manager_message()
-            
+
             self.construct_operations_manager_message()
-            
+
             self._message += "<div>"
-            
+
             return self._message
-            
-            
-        
-        

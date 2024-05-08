@@ -159,33 +159,33 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
         # setup stub
         # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
         # request body
-        req = facial_recognition_pb2.FaceRecognitionRequest(
-            username = frappe.session.user,
-            media_type = "video",
-            media_content = video
-        )
+        # req = facial_recognition_pb2.FaceRecognitionRequest(
+        #     username = frappe.session.user,
+        #     media_type = "video",
+        #     media_content = video
+        # )
         # Call service stub and get response
-        res = random.choice(stubs).FaceRecognition(req)
-        data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
-            'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        if res.verification == "FAILED" and 'Invalid media content' in res.data:
-            frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
-            **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
-                'message':res.message, 'data':res.data, 'source': 'Checkin'}})
+        # res = random.choice(stubs).FaceRecognition(req)
+        # data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
+        #     'message':res.message, 'data':res.data, 'source': 'Checkin'}
+        # if res.verification == "FAILED" and 'Invalid media content' in res.data:
+        #     frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
+        #     **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
+        #         'message':res.message, 'data':res.data, 'source': 'Checkin'}})
                 
-            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, "Mobile App")
-            return response("Success", 201, doc, None)
+        doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, "Mobile App")
+        return response("Success", 201, doc, None)
         
-        if res.verification == "FAILED":
-            msg = res.message
-            if not res.verification == "OK":
-                frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-            return response(msg, 400, None, data)
-        elif res.verification == "OK":
-            doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, "Mobile App")
-            return response("Success", 201, doc, None)
-        else:
-            return response("Success", 400, None, "No response from face recognition server")
+        # if res.verification == "FAILED":
+        #     msg = res.message
+        #     if not res.verification == "OK":
+        #         frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
+        #     return response(msg, 400, None, data)
+        # elif res.verification == "OK":
+        #     doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, "Mobile App")
+        #     return response("Success", 201, doc, None)
+        # else:
+        #     return response("Success", 400, None, "No response from face recognition server")
     except Exception as error:
         frappe.log_error(frappe.get_traceback(), 'Verify Checkin')
         return response("Internal Server Error", 500, None, error)
@@ -317,3 +317,25 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
     except Exception as error:
         frappe.log_error(title="API Site location", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
+
+
+@frappe.whitelist()
+def checkin_list(employee_id, from_date, to_date):
+    """
+    This method retrives employee checkin list
+    """
+    try:
+        employee = frappe.db.get_value("Employee", {"employee_id":employee_id}, "name")
+        if not employee:
+            return response("Success", 404, None, "Employee ID not found")
+        checkins = frappe.get_all("Employee Checkin", filters={
+            "employee": employee,
+            "time": ["BETWEEN", [f"{from_date} 00:00:00", f"{to_date} 23:59:59"]]
+            },
+            fields=["name", "employee_name", "time", "log_type"],
+            order_by="time DESC"
+        )
+        return response("success", 200, checkins)
+    except Exception as e:
+        return response("error", 500, None, str(e))
+    

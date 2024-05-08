@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from frappe.utils.print_format import download_pdf, print_by_server
+from frappe.utils.background_jobs import enqueue
 from one_fm.processor import sendemail
 
 @frappe.whitelist()
@@ -23,7 +24,6 @@ def accommodation_qr_code_live_details(docname):
 
 @frappe.whitelist()
 def send_bulk_accommodation_policy_one_by_one(accommodation, recipients = ['j.poil@armor-services.com']):
-    from frappe.utils.background_jobs import enqueue
     checkin_list = frappe.db.get_list('Accommodation Checkin Checkout', filters={'accommodation': accommodation, 'type':'IN'}, fields=['name', 'employee_id'])
     i = 0
     for checkin in checkin_list:
@@ -63,7 +63,6 @@ def send_bulk_accommodation_policy(accommodation, recipients = ['j.poil@armor-se
         send_policy(recipients, accommodation, attachments)
 
 def send_policy(recipients, accommodation, attachments):
-    from frappe.utils.background_jobs import enqueue
     email_args = {
         "recipients": recipients,
         "message": _("Accommodation Policy and Procedure"),
@@ -75,7 +74,11 @@ def send_policy(recipients, accommodation, attachments):
 def execute_monthly():
     remind_accommodation_meter_reading()
 
-def remind_accommodation_meter_reading():
+def remind_accommodation_meter_reading(is_scheduled_event=False):
+    """
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     meter_list = frappe.db.get_list('Accommodation Meter Reading', fields=['name', 'meter_type', 'meter_reference', 'parent', 'parenttype'])
     recipients = ['j.poil@armor-services.com']
     for meter in meter_list:
@@ -84,6 +87,7 @@ def remind_accommodation_meter_reading():
             "subject": _("Reminder to Record Accommodation Meter Reading"),
             "message": _("Please record {0} Meter Reading for {1}".format(meter.meter_type, meter.meter_reference)),
             "reference_doctype": meter.parenttype,
-            "reference_name": meter.parent
+            "reference_name": meter.parent,
+            "is_scheduler_email": is_scheduled_event
         }
         enqueue(method=sendemail, queue='short', timeout=300, is_async=True, **email_args)

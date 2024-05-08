@@ -175,9 +175,9 @@
   },
   {
    "fieldname": "religion",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Religion",
-   "options": "\nChristian\nHindu\nIslam\nParsi",
+   "options": "Religion",
    "read_only": 1
   },
   {
@@ -605,7 +605,7 @@
   }
  ],
  "links": [],
- "modified": "2022-11-03 07:20:15.600923",
+ "modified": "2024-04-24 12:12:06.605384",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "PAM Visa",
