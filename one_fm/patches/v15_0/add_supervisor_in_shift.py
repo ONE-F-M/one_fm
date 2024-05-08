@@ -4,7 +4,7 @@ def execute():
     shifts = frappe.get_all("Operations Shift",{"status": "Active"})
     for shift in shifts:
         operations_shift = frappe.get_doc("Operations Shift", shift.name)
-        if not operations_shift.shift_supervisor:
+        if not operations_shift.shift_supervisor and operations_shift.supervisor:
             operations_shift.append("shift_supervisor",{
                 "supervisor": operations_shift.supervisor,
                 "supervisor_name": operations_shift.supervisor_name
