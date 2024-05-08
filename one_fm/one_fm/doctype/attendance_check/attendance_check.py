@@ -184,7 +184,6 @@ class AttendanceCheck(Document):
     def check_on_leave_record(self):
         if self.attendance_status == "On Leave":
             draft_leave_records = self.get_draft_leave_records()
-            print(draft_leave_records)
             if draft_leave_records and len(draft_leave_records) > 0:
                 doc_url = get_url_to_form('Leave Application',draft_leave_records[0].get('name'))
                 error_template = frappe.render_template(
@@ -366,8 +365,7 @@ class AttendanceCheck(Document):
         return working_hours
 
 def create_attendance_check(attendance_date=None):
-    # if production_domain():
-    if True:
+    if production_domain():
         if not attendance_date:
             attendance_date = add_days(today(), -1)
         attendance_date = getdate(attendance_date)
