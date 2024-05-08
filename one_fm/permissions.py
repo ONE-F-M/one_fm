@@ -60,9 +60,8 @@ def get_custom_user_permissions(user=None):
 	if not user or user in ("Administrator", "Guest"):
 		return {}
 
-	cached_user_permissions = frappe.cache.hget("user_permissions", user)
-	
-	
+	cached_user_permissions = frappe.cache().hget("user_permissions", user)
+	 	 
 	if cached_user_permissions is not None:
 		return cached_user_permissions
 
@@ -104,7 +103,7 @@ def get_custom_user_permissions(user=None):
 				if data:
 					for each in data:
 						out['Employee'].append({'doc':each.name,'applicable_for':None,'is_default':0})
-		frappe.cache.hset("user_permissions", user, out)
+		frappe.cache().hset("user_permissions", user, out)
 		
 	except frappe.db.SQLError as e:
 		if frappe.db.is_table_missing(e):
