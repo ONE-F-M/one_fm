@@ -28,7 +28,6 @@ class ShiftDetailsMissing(frappe.ValidationError):
 
 class ShiftPermission(Document):
 	def validate(self):
-		self.validate_permission_type()
 		self.check_shift_details_value()
 		self.validate_date()
 		self.validate_record()
@@ -46,25 +45,6 @@ class ShiftPermission(Document):
 	def on_update(self):
 		self.update_shift_assignment_checkin()
 
-	def validate_permission_type(self):
-		if self.log_type == 'IN' and self.permission_type not in ['Arrive Late', ]:
-			frappe.throw(_('Permission Type cannot be {0}. It should be "Arrive Late", for Log Type "IN"'.format(self.permission_type)),
-				exc = PermissionTypeandLogTypeError)
-		if self.log_type == 'OUT' and self.permission_type not in ['Leave Early',]:
-			frappe.throw(_('Permission Type cannot be {0}. It should be "Leave Early", for Log Type "OUT"'.format(self.permission_type)),
-				exc = PermissionTypeandLogTypeError)
-		if self.permission_type == "Arrive Late":
-			field_list = [{'Arrival Time':'arrival_time'}]
-			self.leaving_time = ''
-			self.set_mandatory_fields(field_list)
-		if self.permission_type == "Leave Early":
-			field_list = [{'Leaving Time':'leaving_time'}]
-			self.arrival_time = ''
-			self.set_mandatory_fields(field_list)
-		if self.permission_type not in ['Arrive Late', 'Leave Early']:
-			self.arrival_time = ''
-			self.leaving_time = ''
-
 	# This method validates the shift details availability for employee
 	def check_shift_details_value(self):
 		if not self.assigned_shift or not self.shift or not self.shift_supervisor or not self.shift_type:
@@ -80,9 +60,9 @@ class ShiftPermission(Document):
 		date = getdate(self.date).strftime('%d-%m-%Y')
 		if self.docstatus==0 and frappe.db.exists("Shift Permission", {
 			"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift,
-			"permission_type": self.permission_type, "workflow_state":"Pending", 'name':['!=', self.name]
+			"workflow_state":"Pending", 'name':['!=', self.name]
 			}):
-			frappe.throw(_("{employee} has already applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date)))
+			frappe.throw(_("{employee} has already applied for permission on {date}.".format(employee=self.emp_name,date=date)))
 
 	# This method will display the mandatory fields for the user
 	def set_mandatory_fields(self,field_list):
@@ -107,8 +87,8 @@ class ShiftPermission(Document):
 	def send_notification(self):
 		date = getdate(self.date).strftime('%d-%m-%Y')
 		user = get_employee_user_id(self.shift_supervisor)
-		subject = _("{employee} has applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date))
-		message = _("{employee} has applied for permission to {type} on {date}.".format(employee=self.emp_name, type=self.permission_type.lower(), date=date))
+		subject = _("{employee} has applied for permission on {date}.".format(employee=self.emp_name, date=date))
+		message = _("{employee} has applied for permission on {date}.".format(employee=self.emp_name, date=date))
 		create_notification_log(subject, message, [user], self)
 
 	def validate_approver(self):
@@ -175,26 +155,6 @@ class ShiftPermission(Document):
 
 			frappe.db.commit()
 
-def create_employee_checkin_for_shift_permission(shift_permission):
-	"""
-		Method to create Employee Checkin from the Shift Permission
-		args:
-			shift_permission: Object of Shift Permission
-	"""
-	try:
-		if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin')\
-			and not frappe.db.exists('Employee Checkin', {'shift_permission': shift_permission.name, 'docstatus': 1}):
-			if shift_permission.permission_type in ["Arrive Late", ] and not shift_permission.log_type:
-				shift_permission.db_set('log_type', "IN")
-			elif shift_permission.permission_type in ["Leave Early", ] and not shift_permission.log_type:
-				shift_permission.db_set('log_type', "OUT")
-			shift_permission.reload()
-			if not shift_permission.log_type:
-				return False
-			# Get shift details for the employee
-			create_checkin(shift_permission)
-	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), "Shift Permission")
 
 @frappe.whitelist()
 def fetch_approver(employee):

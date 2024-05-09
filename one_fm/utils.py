@@ -3416,7 +3416,6 @@ def check_existing():
     shift_exists = get_current_shift(employee)
     if shift_exists['type'] == "On Time":
         curr_shift = shift_exists['data']
-    print(curr_shift)
     if not curr_shift:
         return response("Employee not found", 404, None, "Employee not found")
     log_type = curr_shift.get_next_checkin_log_type()
