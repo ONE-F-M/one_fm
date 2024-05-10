@@ -8,6 +8,7 @@ from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
 import one_fm.api.v1 as v1_api
 
+
 @frappe.whitelist()
 def initialize_firebase():
     """
@@ -240,7 +241,7 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
     #Body in json form defining a message payload to send through API. 
     # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
     if device_os == "android":
-         body = {       
+        body = {       
             "to":deviceToken,
             "data": {
                 "title": title,

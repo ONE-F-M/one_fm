@@ -860,5 +860,8 @@ before_migrate = [
 on_session_creation = [
     # "one_fm.api.api.initialize_firebase"
 ]
+app_startup = [
+    "one_fm.api.api.initialize_firebase"
+]
 # auth_hooks = "one_fm.session_hooks.auth_hooks"
 # on_login = "one_fm.session_hooks.on_login"
