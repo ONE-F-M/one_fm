@@ -197,8 +197,8 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
     try:
         initialize_firebase()
         employee_data = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["fcm_token", "device_os"],as_dict=1)
-        deviceToken = employee_data.get("fcm_token")
-        device_os = employee_data.get("device_os")
+        deviceToken = employee_data.fcm_token
+        device_os = employee_data.device_os
         
         #Body in json form defining a message payload to send through API. 
         # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
@@ -228,8 +228,8 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
     try:
         initialize_firebase()
         employee_data = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["fcm_token", "device_os"],as_dict=1)
-        deviceToken = employee_data.get("fcm_token")
-        device_os = employee_data.get("device_os")
+        deviceToken = employee_data.fcm_token
+        device_os = employee_data.device_os
         
         #Body in json form defining a message payload to send through API. 
         # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
