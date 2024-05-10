@@ -294,7 +294,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment)
         return response("Success", 201, doc)
     except Exception as error:
-        frappe.log_error(message=frappe.get_tracebacK(), title='Leave API')
+        frappe.log_error(message=frappe.get_traceback(), title='Leave API')
         return response("Internal Server Error", 500, None, error)
     
 def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachments = {}) -> dict:
