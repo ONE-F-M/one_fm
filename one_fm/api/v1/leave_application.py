@@ -267,14 +267,13 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
-        employee_doc = frappe.get_doc("Employee", employee)
         leave_approver = get_approver_user(get_approver(employee))
         if not leave_approver:
             return response("Resource Not Found", 404, None, "No leave approver found for {employee}.".format(employee=employee_id))
 
         if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['BETWEEN', [from_date, to_date]],'to_date' : ['BETWEEN', [from_date, to_date]]}):
             return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
-        attachment_paths = []
+
         if proof_document_required_for_leave_type(leave_type):
             if not proof_document:
                 return response("Missing", 400, None, "Proof document is required for {leave_type}".format(leave_type=leave_type))
