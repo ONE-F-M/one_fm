@@ -291,7 +291,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                 'attachments':content
             })          
         else:
-            doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment)
+            doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver)
         return response("Success", 201, doc)
     except Exception as error:
         frappe.log_error(message=frappe.get_traceback(), title='Leave API')
@@ -308,6 +308,7 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.follow_via_email=1
     leave.status=status
     leave.leave_approver = leave_approver
+    leave.leave_approver_name = frappe.db.get_value("User", leave_approver, 'full_name')
     leave.save(ignore_permissions=True)
     if attachments:
         _file = upload_file(leave, "", attachments['description'], "", attachments['attachments'], is_private=True)
