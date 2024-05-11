@@ -267,7 +267,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
-        leave_approver = get_approver_user(get_approver(employee))
+        leave_approver = frappe.db.get_value("Employee", get_approver(employee), "user_id")
         if not leave_approver:
             return response("Resource Not Found", 404, None, "No leave approver found for {employee}.".format(employee=employee_id))
 
