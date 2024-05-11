@@ -229,9 +229,7 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
     """
     try:
         initialize_firebase()
-        print(employee_id)
         employee_data = frappe.db.get_value("Employee", employee_id, ["fcm_token", "device_os"],as_dict=1)
-        print(employee_data)
         deviceToken = employee_data.fcm_token
         device_os = employee_data.device_os
         
