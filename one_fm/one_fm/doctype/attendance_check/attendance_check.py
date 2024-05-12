@@ -184,7 +184,7 @@ class AttendanceCheck(Document):
     def check_on_leave_record(self):
         if self.attendance_status == "On Leave":
             draft_leave_records = self.get_draft_leave_records()
-            if draft_leave_records and len(draft_leave_records)>0:
+            if draft_leave_records and len(draft_leave_records) > 0:
                 doc_url = get_url_to_form('Leave Application',draft_leave_records[0].get('name'))
                 error_template = frappe.render_template(
                     'one_fm/templates/emails/attendance_check_alert.html',
@@ -233,7 +233,7 @@ class AttendanceCheck(Document):
         if self.attendance_status == "Day Off":
             # Check if shift request for that day exists
             draft_shift_request = self.get_draft_shift_request()
-            if draft_shift_request and len(draft_shift_request)>0:
+            if draft_shift_request and len(draft_shift_request) > 0:
                 doc_url = get_url_to_form('Shift Request',draft_shift_request[0].get('name'))
                 approver_full_name = frappe.db.get_value("User",draft_shift_request[0].get('approver'), 'full_name')
                 error_template = frappe.render_template(
@@ -439,7 +439,10 @@ def insert_attendance_check_records(details, attendance_date, is_unscheduled=Fal
                 "attendance_marked": 1 if "attendance" in data else 0,
                 "comment": data["attendance_comment"] if "attendance_comment" in data else ""
             }
-            doc = frappe.get_doc(filters).insert(ignore_permissions=1)
+            
+            doc = frappe.get_doc(filters)
+            doc.flags.ignore_mandatory = 1
+            doc.insert(ignore_permissions=1)
         except Exception as e:
             if not "Attendance Check already exist for" in str(e):
                 frappe.log_error(message=frappe.get_traceback(), title="Attendance Check Creation")
@@ -453,7 +456,7 @@ def check_attendance_manager(email: str) -> bool:
 
 def attendance_check_pending_approval_check():
     pending_approval_attendance_checks = get_pending_approval_attendance_check(48)
-    if pending_approval_attendance_checks and len(pending_approval_attendance_checks)>0:
+    if pending_approval_attendance_checks and len(pending_approval_attendance_checks) > 0:
         # Issue Penalty to the assigned approver
         issue_penalty_to_the_assigned_approver(pending_approval_attendance_checks)
         # Assign the attendance checks to attendance manager for approval

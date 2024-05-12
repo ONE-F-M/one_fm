@@ -3383,11 +3383,12 @@ def get_current_shift(employee):
         WHERE sa.employee="{employee}"
         AND sa.status="Active"
         AND sa.docstatus=1
-        AND DATE('{nowtime}') = sa.start_date
+        AND (DATE('{nowtime}') = sa.start_date
+            OR DATE_ADD(DATE('{nowtime}'), INTERVAL 1 DAY) = sa.start_date
+            OR DATE('{nowtime}') = sa.end_date)
         """
 
     shift = frappe.db.sql(sql, as_dict=1)
-
     if shift: # shift was checked in between start and end time
         if shift[0].checkin_time > nowtime:
             minutes = int((shift[0].checkin_time - nowtime).total_seconds() / 60)
@@ -3415,7 +3416,6 @@ def check_existing():
     shift_exists = get_current_shift(employee)
     if shift_exists['type'] == "On Time":
         curr_shift = shift_exists['data']
-    print(curr_shift)
     if not curr_shift:
         return response("Employee not found", 404, None, "Employee not found")
     log_type = curr_shift.get_next_checkin_log_type()
