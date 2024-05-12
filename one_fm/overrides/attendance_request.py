@@ -194,10 +194,9 @@ class AttendanceRequestOverride(AttendanceRequest):
 	@frappe.whitelist()
 	def reports_to(self):
 		employee_user = frappe.get_value("Employee", {"name": self.employee}, "user_id")
-		if employee_user and frappe.session.user == employee_user and has_super_user_role(employee_user):
-			return True
-
-		if self.approver_user and frappe.session.user in [self.approver_user, 'administrator', 'Administrator']:
+		if frappe.session.user == self.approver or has_super_user_role(employee_user) or (
+			frappe.session.user == "administrator"
+		):
 			return True
 
 		frappe.msgprint('This Attendance Request can only be approved by the employee supervisor')

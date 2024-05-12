@@ -1,56 +1,58 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 from __future__ import unicode_literals
+import os, json, math, pymysql, requests, datetime
+from datetime import timedelta, datetime
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
+import pandas as pd
+from six import string_types
+
+
+import frappe
+from frappe import _
 from frappe.auth import validate_ip_address
 from frappe.utils.nestedset import validate_loop
-from one_fm.api.notification import create_notification_log
-from frappe import _
-import frappe, os, erpnext, json, math, itertools, pymysql, requests
-from frappe.model.document import Document
-from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
-from frappe.utils.csvutils import read_csv_content
-from datetime import tzinfo, timedelta, datetime
-from dateutil import parser
-from datetime import date
-from frappe.model.naming import set_name_by_naming_series
-from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
-    expire_allocation, create_leave_ledger_entry
-)
 from frappe.desk.form.assign_to import add as add_assignment
-from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
-from dateutil.relativedelta import relativedelta
+from frappe.desk.notifications import extract_mentions
+from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
+from frappe.core.doctype.doctype.doctype import validate_series
+from frappe.utils.user import get_users_with_role
+from frappe.permissions import has_permission
+from frappe.model.workflow import apply_workflow
+from frappe.desk.form import assign_to
+from frappe.model.naming import make_autoname
+from deep_translator import GoogleTranslator
 from frappe.utils import (
     cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
     comma_or, get_fullname, add_years, add_months, add_days,
     nowdate,get_first_day,get_last_day, today, now_datetime, rounded, get_url,
     get_datetime, add_to_date, time_diff, get_time, get_url_to_form, strip_html, now
 )
-import datetime
-from datetime import datetime, time
-from frappe import utils
-import pandas as pd
-from hrms.hr.utils import get_holidays_for_employee
-from one_fm.processor import sendemail
-from frappe.desk.form import assign_to
-from one_fm.one_fm.payroll_utils import get_user_list_by_role
-from frappe.desk.notifications import extract_mentions
-from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
-from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_email_template, deduplicate_actions, get_next_possible_transitions,
     get_doc_workflow_state, get_workflow_name, get_workflow_action_url
 )
-from six import string_types
-from frappe.core.doctype.doctype.doctype import validate_series
-from frappe.utils.user import get_users_with_role
-from frappe.permissions import has_permission
-from frappe.desk.form.linked_with import get_linked_fields
-from frappe.model.workflow import apply_workflow
 
-from deep_translator import GoogleTranslator
-from frappe.model.naming import make_autoname
-from erpnext.setup.doctype.employee.employee import get_all_employee_emails, get_employee_email
+import erpnext
+from erpnext.setup.doctype.employee.employee import (
+    get_holiday_list_for_employee, get_all_employee_emails, get_employee_email
+)
+
+
+from hrms.hr.utils import get_holidays_for_employee
+from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
+from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
+    expire_allocation, create_leave_ledger_entry
+)
+
+from one_fm.api.notification import create_notification_log
+from one_fm.processor import sendemail
+from one_fm.one_fm.payroll_utils import get_user_list_by_role
 from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
+from one_fm.api import api
+
+
 
 def get_common_email_args(doc):
 	doctype = doc.get("doctype")
@@ -620,7 +622,7 @@ def notify_employee(doc, method):
             date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
 
         message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
-        push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, doc.name)
+        api.push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, doc.name)
 
 @frappe.whitelist()
 def leave_appillication_on_cancel(doc, method):
