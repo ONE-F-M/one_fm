@@ -463,3 +463,46 @@ class StatusChangeVaccumValidate(NotifyAttendanceManagerOnStatusChange):
             self._message += "<div>"
 
             return self._message
+
+def has_day_off(employee, date):
+    """
+        Checks if an employee has a scheduled day off on a specific date.
+        Args:
+            employee (str): The name of the employee to check for a day off.
+            date (str): The date for which to check if the employee has a scheduled day off.
+                        Format: "YYYY-MM-DD"
+        Returns:
+            bool: True if the employee has a scheduled day off on the given date, False otherwise.
+    """
+    if frappe.db.exists(
+        "Employee Schedule",
+        {
+            "employee":employee,
+            "date":date,
+            "employee_availability":"Day Off"
+        }
+    ):
+        return True
+    return False
+
+def is_employee_on_leave(employee, date):
+    """
+        Checks if an employee is on leave on a specific date.
+        Args:
+            employee (str): The name of the employee to check for leave.
+            date (str): The date for which to check if the employee is on leave.
+                        Format: "YYYY-MM-DD"
+        Returns:
+            bool: True if the employee is on leave on the given date, False otherwise.
+    """
+    if frappe.db.exists(
+        "Attendance",
+        {
+            "status": "On Leave",
+            "docstatus": 1,
+            "employee": employee,
+            "attendance_date": date
+        }
+    ):
+        return True
+    return False

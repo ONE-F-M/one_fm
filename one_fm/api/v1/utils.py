@@ -1,6 +1,5 @@
 import frappe, datetime
 from frappe.utils import getdate, cint, cstr, random_string, now_datetime
-from one_fm.utils import get_current_shift
 
 def response(message, status_code, data=None, error=None):
     """This method generates a response for an API call with appropriate data and status code.

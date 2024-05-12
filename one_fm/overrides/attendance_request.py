@@ -3,9 +3,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_days, date_diff, getdate, nowdate, get_link_to_form, format_date
 from erpnext.setup.doctype.employee.employee import is_holiday
-from hrms.hr.utils import validate_active_employee, validate_dates
+from hrms.hr.utils import validate_active_employee
 from hrms.hr.doctype.attendance_request.attendance_request import AttendanceRequest
-from frappe.model.workflow import apply_workflow
 from one_fm.utils import (
 	send_workflow_action_email, get_holiday_today, workflow_approve_reject, get_approver, has_super_user_role
 )
@@ -14,7 +13,7 @@ from one_fm.utils import (
 class AttendanceRequestOverride(AttendanceRequest):
 	def validate(self):
 		validate_active_employee(self.employee)
-		validate_future_dates(self, self.from_date, self.to_date)
+		validate_dates(self, self.from_date, self.to_date)
 		if self.half_day:
 			if not getdate(self.from_date) <= getdate(self.half_day_date) <= getdate(self.to_date):
 				frappe.throw(_("Half day date should be in between from date and to date"))
@@ -24,17 +23,13 @@ class AttendanceRequestOverride(AttendanceRequest):
 		check_for_attendance(self)
 
 	def set_approver(self):
-		if not self.approver and self.employee:
+		if not self.approver:
 			self.approver = get_approver(self.employee)
-			if self.approver:
-				approver = frappe.db.get_value(
-					"Employee",
-					{'name':self.approver},
-					['user_id', 'employee_name'],
-					as_dict=1
-				)
-				self.approver_user = approver.user_id
-				self.approver_name = approver.employee_name
+			approver = frappe.db.get_value("Employee", {'name':self.approver}, ['user_id', 'employee_name'], as_dict=1)
+			self.approver_user = approver.user_id
+			self.approver_name = approver.employee_name
+		if not self.approver_user:
+			self.approver_user = frappe.db.get_value("Employee", self.approver, 'user_id')
 
 	def on_submit(self):
 		if not self.reports_to():
@@ -61,8 +56,6 @@ class AttendanceRequestOverride(AttendanceRequest):
 		if self.update_request:
 			if self.workflow_state == 'Approved':
 				self.create_attendance()
-			if self.workflow_state == 'Update Request':
-				self.cancel_requested_attendance()
 
 	def get_shift_assignment(self, attendance_date):
 		"""
@@ -78,7 +71,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 	def create_attendance(self):
 		date_range = pd.date_range(self.from_date, self.to_date)
 		for d in date_range:
-			if d.date()<= getdate():
+			if d.date() <= getdate():
 				self.mark_attendance(str(d.date()))
 
 	def get_employee(self):
@@ -91,7 +84,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 			working_hours = frappe.db.get_value('Shift Type', shift_assignment.shift_type, 'duration')  if shift_assignment  else 8
 			# check if attendance exists
 			attendance_name = super(AttendanceRequestOverride, self).get_attendance_record(attendance_date)
-			status = "Work From Home" if self.reason == "Work From Home" else "Present"
+			status = "Present" if self.reason == "On Duty" else "Work From Home"
 			if attendance_name:
 				# update existing attendance, change the status
 				doc = frappe.get_doc("Attendance", attendance_name)
@@ -163,7 +156,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 	def send_notification(self):
 		if self.workflow_state in ['Pending Approval']:
 			send_workflow_action_email(self, self.approver_user)
-		if self.workflow_state in ['Rejected', 'Approved', 'Update Request', 'Cancelled']:
+		if self.workflow_state in ['Rejected', 'Approved', 'Cancelled']:
 			workflow_approve_reject(self, recipients=None)
 
 	def validate_if_attendance_not_applicable(self, attendance_date):
@@ -208,30 +201,22 @@ def check_for_attendance(doc):
 	if att:
 		frappe.msgprint("Your attendance is marked for today as "+ att[0].status )
 
-def validate_future_dates(doc, from_date, to_date):
+def validate_dates(doc, from_date, to_date):
 	date_of_joining, relieving_date = frappe.db.get_value(
 		"Employee", doc.employee, ["date_of_joining", "relieving_date"]
 	)
 	if getdate(from_date) > getdate(to_date):
-		frappe.throw(_("To date can not be less than from date"))
+		frappe.throw(_("To date can not be less than from date"), title="Invalid From Date")
 	elif date_of_joining and getdate(from_date) < getdate(date_of_joining):
-		frappe.throw(_("From date can not be less than employee's joining date"))
+		frappe.throw(_("From date can not be less than employee's joining date"), title="Invalid From Date")
 	elif relieving_date and getdate(to_date) > getdate(relieving_date):
-		frappe.throw(_("To date can not greater than employee's relieving date"))
-
-
-
-@frappe.whitelist()
-def update_request(attendance_request, from_date, to_date):
-	from_date = getdate(from_date)
-	to_date = getdate(to_date)
-	attendance_request_obj = frappe.get_doc('Attendance Request', attendance_request)
-	validate_future_dates(attendance_request_obj, from_date, to_date)
-	attendance_request_obj.db_set("from_date", from_date)
-	attendance_request_obj.db_set("to_date", to_date)
-	attendance_request_obj.db_set("update_request", True)
-	apply_workflow(attendance_request_obj, "Update Request")
-
+		frappe.throw(_("To date can not greater than employee's relieving date"), title="Invalid From Date")
+	if getdate(from_date) < getdate():
+		if doc.is_new():
+			msg = _("Please note that Attendance Request cannot be created for a past date")
+		else:
+			msg = _("Please note that Attendance Request cannot be updated for a past date")
+		frappe.throw(msg, title="Invalid From Date")
 
 
 def mark_future_attendance_request():

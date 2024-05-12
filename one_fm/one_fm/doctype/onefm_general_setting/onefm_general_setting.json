@@ -23,6 +23,8 @@
   "attendance_manager",
   "attendance_manager_name",
   "attendance_check_exclusion",
+  "column_break_xudp",
+  "att_check_approver_penalty_type",
   "employee_section",
   "employee_master_role",
   "wiki_page_access",
@@ -72,6 +74,7 @@
    "options": "ONEFM Document Access Roles Detail"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_7yvzt",
    "fieldtype": "Section Break",
    "label": "Attendance"
@@ -147,6 +150,12 @@
    "fieldname": "enable_scheduler_event_emails",
    "fieldtype": "Check",
    "label": "Enable Scheduler Event Emails"
+  },
+  {
+   "fieldname": "att_check_approver_penalty_type",
+   "fieldtype": "Link",
+   "label": "Attendance Check Approver Penalty Type",
+   "options": "Penalty Type"
   }
  ],
  "issingle": 1,

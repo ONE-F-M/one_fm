@@ -3134,6 +3134,55 @@ def has_super_user_role(user=None):
                 return True
     return False
 
+@frappe.whitelist()
+def get_approver(employee):
+    '''
+        Method to get reports_to user of an employee with the priority
+        1. reports_to linked in the employee
+        2. If no reports_to linked in the employee, then supervisor linked in the Operation Shift(Linked in the employee)
+        3. If no shift linked in the employee or no supervisor linked in the shift,
+            then account_supervisor linked in the Operation Site(Linked in the employee)
+        4. If no Supervisor is set for the linked Operations Site,
+            then account_manager linked in the project field of the Employee site
+
+        args:
+            employee: name of Employee object
+
+        return: user of the reports to employee or False
+    '''
+
+    if not frappe.db.exists("Employee", {'name':employee}):
+        frappe.throw(f"Employee {employee} does not exists")
+
+    employee_user = frappe.get_value("Employee", {"name": employee}, "user_id")
+    if employee_user and has_super_user_role(employee_user):
+        return employee
+
+    employee_data = frappe.db.get_value('Employee', employee, ['reports_to', 'shift', 'site', 'department', 'project'], as_dict=1)
+
+    reports_to = None
+    if employee_data.reports_to:
+        reports_to = employee_data.reports_to
+    if not reports_to and employee_data.shift:
+        shift_supervisor = frappe.db.get_value('Operations Shift', employee_data.shift, 'supervisor')
+        if shift_supervisor:
+            reports_to = shift_supervisor
+    if not reports_to and employee_data.site:
+        site_supervisor = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
+        if site_supervisor:
+            reports_to = site_supervisor
+        if not reports_to:
+            project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
+            if project:
+                account_manager = frappe.db.get_value('Project', project, 'account_manager')
+                if account_manager:
+                    reports_to = account_manager
+    if not reports_to and employee_data.project:
+        account_manager = frappe.db.get_value('Project', employee_data.project, 'account_manager')
+        if account_manager:
+            reports_to = account_manager
+    return reports_to
+
 def get_approver_for_many_employees(supervisor=None):
     """
         Get document approver for employee by
@@ -3407,64 +3456,39 @@ def custom_validate_interviewer(self):
 def get_current_shift(employee):
     """
         Get current shift employee should be logged into
+        This Method Checks if Employee has a shift and is within the checkin Range.
+        args:
+			employee: Employee ID
+		return dict (type, data)
     """
+    nowtime = now_datetime()
     sql = f"""
-        SELECT * FROM `tabShift Assignment`
-        WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-        ('{now()}' BETWEEN start_datetime AND end_datetime)
-    """
+        SELECT sa.*,
+            DATE_SUB(sa.start_datetime, INTERVAL st.begin_check_in_before_shift_start_time MINUTE) as checkin_time,
+            DATE_ADD(sa.end_datetime, INTERVAL st.allow_check_out_after_shift_end_time MINUTE) as checkout_time
+        FROM `tabShift Assignment` sa
+        JOIN `tabShift Type` st ON sa.shift_type = st.name
+        WHERE sa.employee="{employee}"
+        AND sa.status="Active"
+        AND sa.docstatus=1
+        AND (DATE('{nowtime}') = sa.start_date
+            OR DATE_ADD(DATE('{nowtime}'), INTERVAL 1 DAY) = sa.start_date
+            OR DATE('{nowtime}') = sa.end_date)
+        """
+
     shift = frappe.db.sql(sql, as_dict=1)
     if shift: # shift was checked in between start and end time
-        return frappe.get_doc("Shift Assignment", shift[0])
-    else: # we look right and left (right for next shift)
-        dt = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
-        curtime_plus_1 = dt + timedelta(hours=1)
-        sql = f"""
-            SELECT * FROM `tabShift Assignment`
-            WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-            ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
-        """
-        shift = frappe.db.sql(sql, as_dict=1)
-        if shift: # shift was checked 1hr ahead
-            return frappe.get_doc("Shift Assignment", shift[0])
+        if shift[0].checkin_time > nowtime:
+            minutes = int((shift[0].checkin_time - nowtime).total_seconds() / 60)
+            return {"type":"Early", "data":minutes}
+        elif shift[0].checkout_time < nowtime:
+            minutes = int((nowtime - shift[0].checkout_time).total_seconds() / 60)
+            return {"type":"Late", "data":minutes}
+        elif shift[0].checkin_time <= nowtime <= shift[0].checkout_time:
+            return {"type":"On Time", "data":frappe.get_doc("Shift Assignment", shift[0].name)}
         else:
-            curtime_plus_1 = dt + timedelta(hours=-1)
-            sql = f"""
-                SELECT * FROM `tabShift Assignment`
-                WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-                ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
-            """
-            shift = frappe.db.sql(sql, as_dict=1)
-            if shift: # shift was checked 1hr in the past
-                return frappe.get_doc("Shift Assignment", shift[0])
+            return False
     return False
-
-
-@frappe.whitelist()
-def check_existing_checking(shift):
-    """API to determine the applicable Log type.
-    The api checks employee's last lcheckin log type. and determine what next log type needs to be
-    Returns:
-        True: The log in was "IN", so his next Log Type should be "OUT".
-        False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
-    """
-    checkin = frappe.db.get_list("Employee Checkin", filters={
-        'employee':shift.employee, 'shift_assignment':shift.name,
-        'shift_actual_start':shift.start_datetime,
-        'shift_actual_end':shift.end_datetime,
-        'roster_type':shift.roster_type
-        },
-        fields='log_type',
-        order_by="actual_time DESC"
-    )
-    if checkin:
-        # #For Check IN
-        if checkin[0].log_type=='OUT':
-            return "IN"
-        #For Check OUT
-        else:
-            return "OUT"
-    return "IN"
 
 @frappe.whitelist()
 def check_existing():
@@ -3477,21 +3501,23 @@ def check_existing():
     employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
     if not employee:
         return response("Employee not found", 404, None, "Employee not found")
-    curr_shift = get_current_shift(employee)
+    shift_exists = get_current_shift(employee)
+    if shift_exists['type'] == "On Time":
+        curr_shift = shift_exists['data']
     if not curr_shift:
         return response("Employee not found", 404, None, "Employee not found")
-    log_type = check_existing_checking(curr_shift)
+    log_type = curr_shift.get_next_checkin_log_type()
     if log_type=='IN':
         return response("success", 200, True, "")
     return response("success", 200, False, "")
 
-def fetch_attendance_manager_user_obj() -> str:
-    attendance_manager = frappe.get_doc("ONEFM General Setting").get("attendance_manager")
+def fetch_attendance_manager_user() -> str:
+    attendance_manager = frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
     if attendance_manager:
         attendance_manager_user = frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
-        return attendance_manager_user
+        if attendance_manager_user:
+            return attendance_manager_user
     return ""
-
 
 def custom_toggle_notifications(user: str, enable: bool = False):
     try:
