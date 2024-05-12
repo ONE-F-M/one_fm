@@ -504,7 +504,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
         """
         can_create = False
         if not end_date:
-        end_date = start_date
+            end_date = start_date
         list_of_date = date_range(start_date, end_date)
         post_data = validate_overfilled_post(list_of_date,operations_shift.name)
         post_number = post_data.get('post_number')
