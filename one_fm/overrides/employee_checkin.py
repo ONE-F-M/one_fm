@@ -175,7 +175,7 @@ def after_insert_background(self):
 
 				if self.log_type == "IN" and self.skip_auto_attendance == 0:
 					# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
-					if shift_type.enable_entry_grace_period == 1 and get_datetime(self.time) > (get_datetime(self.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
+					if shift_type.enable_entry_grace_period == 1 and get_datetime(self.time) > (get_datetime(self.shift_actual_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
 						time_diff = get_datetime(self.time) - get_datetime(self.shift_actual_start)
 						hrs, mins, secs = cstr(time_diff).split(":")
 						delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
@@ -200,7 +200,7 @@ def after_insert_background(self):
 						for_users = [supervisor_user]
 						send_notification(title, subject, message, category, for_users)
 					#EARLY: Checkout time is before [Shift End - Early grace exit time]
-					elif shift_type.enable_exit_grace_period == 1 and self.device_id and get_datetime(self.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
+					elif shift_type.enable_exit_grace_period == 1 and self.device_id and get_datetime(self.time) < (get_datetime(self.shift_actual_end) - timedelta(minutes=shift_type.early_exit_grace_period)):
 						time_diff = get_datetime(self.shift_actual_end) - get_datetime(self.time)
 						hrs, mins, secs = cstr(time_diff).split(":")
 						early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
