@@ -137,7 +137,7 @@ class AttendanceCheck(Document):
     def validate_is_replaced_shift_assignment(self):
         if self.attendance_status and self.attendance_status != "Absent" and self.shift_assignment:
             if frappe.db.get_value("Shift Assignment", self.shift_assignment, "is_replaced") == 1:
-                frappe.throw(_("You can mark Absent only for the employee, since the shift assignmet is replaced!"))
+                frappe.throw(_(f"{self.employee_name} was replaced for this shift and cannot be marked present."))
 
     def validate_justification(self):
         # The method is used to validate the justification and its dependend fields
