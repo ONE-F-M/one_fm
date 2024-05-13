@@ -119,21 +119,21 @@ def accept_penalty(file, retries, docname):
 	penalty = frappe.get_doc("Penalty", docname)
 	
 	# request body
-	req = facial_recognition_pb2.FaceRecognitionRequest(
-		username = frappe.session.user,
-		media_type = "image",
-		media_content = file,
-	)
-	# Call service stub and get response
-	res = random.choice(stubs).FaceRecognition(req)
-	if res.verification == "OK":
-		if retries_left == 0:
-			penalty.verified = 0
-			send_email_to_legal(penalty)
-		else:
-			penalty.verified = 1
-			penalty.workflow_state = "Penalty Accepted"
-		penalty.save(ignore_permissions=True)
+	# req = facial_recognition_pb2.FaceRecognitionRequest(
+	# 	username = frappe.session.user,
+	# 	media_type = "image",
+	# 	media_content = file,
+	# )
+	# # Call service stub and get response
+	# res = random.choice(stubs).FaceRecognition(req)
+	# if res.verification == "OK":
+	if retries_left == 0:
+		penalty.verified = 0
+		send_email_to_legal(penalty)
+	else:
+		penalty.verified = 1
+		penalty.workflow_state = "Penalty Accepted"
+	penalty.save(ignore_permissions=True)
 
 		# file_doc = frappe.get_doc({
 		# 	"doctype": "File",
@@ -147,17 +147,17 @@ def accept_penalty(file, retries, docname):
 		# file_doc.flags.ignore_permissions = True
 		# file_doc.insert()
 
-		frappe.db.commit()
+	frappe.db.commit()
 
-		return {
-			'message': 'success'
-		}
-	else:
-		penalty.db_set("retries", retries_left)
-		return {
-			'message': 'error',
-			'retries': retries_left
-		}
+	return {
+		'message': 'success'
+	}
+	# else:
+	# 	penalty.db_set("retries", retries_left)
+	# 	return {
+	# 		'message': 'error',
+	# 		'retries': retries_left
+	# 	}
 
 @frappe.whitelist()
 def reject_penalty(rejection_reason, docname):
