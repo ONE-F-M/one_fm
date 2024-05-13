@@ -36,15 +36,13 @@ def get_approver_details(employee_id):
 
 
 @frappe.whitelist()
-def create_shift_permission(employee_id: str = None, log_type: str = None, permission_type: str = None, date: str = None,
-    reason: str = None, leaving_time: str = None, arrival_time: str = None, latitude: str = None,
-    longitude: str = None) -> dict:
+def create_shift_permission(employee_id: str = None, log_type: str = None,  date: str = None,
+    reason: str = None, leaving_time: str = None, arrival_time: str = None) -> dict:
     """This method creates a shift permission for a given employee.
 
     Args:
         employee (str): employee id
         log_type (str): type of log(IN/OUT).
-        permission_type (str): type of permission requested.
         date (str): yyyy-mm-dd
         reason (str): reason to create a shift permission
         leaving_time (str): time for leave in hh:mm:ss
@@ -66,8 +64,6 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
         if not employee_id:
             return response("Bad Request", 400, None, "employee_id required.")
 
-        if not permission_type:
-            return response("Bad Request", 400, None, "permission_type required.")
 
         if not date:
             return response("Bad Request", 400, None, "date required.")
@@ -76,42 +72,20 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
             return response("Bad Request", 400, None, "reason required.")
 
         if not log_type:
-            if permission_type in ['Arrive Late', ]:
-                log_type='IN'
-            elif permission_type in ['Leave Early', ]:
-                log_type='OUT'
-            else:
-                return response("Bad Request", 400, None, "log_type required.")
+            return response("Bad Request", 400, None, "log_type required.")
 
-        if log_type == "IN" and permission_type not in ['Arrive Late', ]:
-            
-            return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be \
-                "Arrive Late" for Log Type "IN"'.format(permission_type)))
 
-        if log_type == "OUT" and permission_type not in ['Leave Early',]:
-            
-            return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be  \
-                "Leave Early" for Log Type "OUT"'.format(permission_type)))
-
-        if permission_type == "Arrive Late" and not arrival_time:
+        if log_type == "IN" and not arrival_time:
             
             return response("Bad Request", 400, None, "Arrival time required for late arrival shift permission.")
 
-        if permission_type == "Leave Early" and not leaving_time:
+        if log_type == "OUT" and not leaving_time:
             
             return response("Bad Request", 400, None, "Leaving time required for early exit shift permission")
 
         if not isinstance(employee_id, str):
             
             return response("Bad Request", 400, None, "employee must be of type str.")
-
-        if not isinstance(permission_type, str):
-            
-            return response("Bad Request", 400, None, "permission_type must be of type str.")
-
-        if permission_type not in ["Arrive Late", "Leave Early",]:
-            
-            return response("Bad Request", 400, None, "permission type must be either 'Arrive Late' or 'Leave Early' .")
        
         if not isinstance(date, str):
             
@@ -171,20 +145,16 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
             
             return response("Resource Not Found", 404, None, "shift supervisor not found for {employee}".format(employee=employee_id))
 
-        if not frappe.db.exists("Shift Permission", {"employee": employee, "date": date, "assigned_shift": shift_assignment, "permission_type": permission_type}):
+        if not frappe.db.exists("Shift Permission", {"employee": employee, "date": date, "assigned_shift": shift_assignment}):
             shift_permission_doc = frappe.new_doc('Shift Permission')
             shift_permission_doc.employee = employee
             shift_permission_doc.date = date
             shift_permission_doc.log_type = log_type
-            shift_permission_doc.permission_type = permission_type
             shift_permission_doc.reason = reason
-            if permission_type == "Arrive Late" and arrival_time:
+            if log_type == "IN" and arrival_time:
                 shift_permission_doc.arrival_time = arrival_time
-            if permission_type == "Leave Early" and leaving_time:
+            if log_type == "OUT" and leaving_time:
                 shift_permission_doc.leaving_time = leaving_time
-            if permission_type in ["Checkin Issue", "ue"]:
-                shift_permission_doc.latitude = latitude if latitude else 0.0
-                shift_permission_doc.longitude = longitude if longitude else 0.0
             shift_permission_doc.assigned_shift = shift_assignment
             shift_permission_doc.shift_supervisor = shift_supervisor
             shift_permission_doc.shift = shift
@@ -231,8 +201,8 @@ def list_shift_permission(employee_id: str = None):
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
-        shift_permission_list = frappe.get_list("Shift Permission", filters={'docstatus':['<',2],'employee': employee}, fields=["name", "date",'log_type','permission_type','emp_name', "workflow_state",'docstatus'])
-        line_manager_shift_permission = frappe.get_list("Shift Permission", filters={'docstatus':['<',2],'shift_supervisor': employee}, fields=["name", "date",'log_type','permission_type','emp_name', "workflow_state"])
+        shift_permission_list = frappe.get_list("Shift Permission", filters={'docstatus':['<',2],'employee': employee}, fields=["name", "date",'log_type','emp_name', "workflow_state",'docstatus'])
+        line_manager_shift_permission = frappe.get_list("Shift Permission", filters={'docstatus':['<',2],'shift_supervisor': employee}, fields=["name", "date",'log_type','emp_name', "workflow_state"])
         
         return response("Success", 200, shift_permission_list+line_manager_shift_permission)
 
@@ -299,8 +269,8 @@ def approve_shift_permission(employee_id: str = None, shift_permission_id: str =
             frappe.db.commit()
 
             user_id, supervisor_name = frappe.db.get_value('Employee', {'name': shift_supervisor}, ['user_id', 'employee_name'])
-            subject = _("{name} has approved the permission to {type} on {date}.".format(name=supervisor_name, type=shift_permission_doc.permission_type.lower(), date=shift_permission_doc.date))
-            message = _("{name} has approved the permission to {type} on {date}.".format(name=supervisor_name, type=shift_permission_doc.permission_type.lower(), date=shift_permission_doc.date))
+            subject = _("{name} has approved the permission raised on {date}.".format(name=supervisor_name,  date=shift_permission_doc.date))
+            message = _("{name} has approved the permission raised on {date}.".format(name=supervisor_name, date=shift_permission_doc.date))
             notify_for_shift_permission_status(subject, message, user_id, shift_permission_doc, 1)
 
             return response("Success", 201, shift_permission_doc.as_dict())
@@ -349,8 +319,8 @@ def reject_shift_permission(employee_id: str = None, shift_permission_id: str = 
             frappe.db.commit()
 
             user_id, supervisor_name= frappe.db.get_value('Employee',{'name':shift_supervisor},['user_id','employee_name'])
-            subject = _("{name} has rejected the permission to {type} on {date}.".format(name=supervisor_name, type=shift_permission_doc.permission_type.lower(), date=shift_permission_doc.date))
-            message = _("{name} has rejected the permission to {type} on {date}.".format(name=supervisor_name, type=shift_permission_doc.permission_type.lower(), date=shift_permission_doc.date))
+            subject = _("{name} has rejected the permission raised on {date}.".format(name=supervisor_name, date=shift_permission_doc.date))
+            message = _("{name} has rejected the permission raised on {date}.".format(name=supervisor_name, date=shift_permission_doc.date))
             notify_for_shift_permission_status(subject, message,user_id, shift_permission_doc, 1)
 
             return response("Success", 201, shift_permission_doc.as_dict())
