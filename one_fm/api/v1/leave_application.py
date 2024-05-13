@@ -191,10 +191,14 @@ def get_leave_types(employee_id: str = None) -> dict:
         if not leave_type_list or len(leave_type_list) == 0:
             return response("Resource Not Found", 404, None, "No leave allocated to {employee}".format(employee=employee_id))
 
+        leave_types = frappe.get_all("Leave Type", fields=["name", "is_proof_document_required"])
+        leave_types_dict = {}
+        for i in leave_types:
+            leave_types_dict[i.name] = i.is_proof_document_required
+        leave_type_documents = {}
         for leave_type in leave_type_list:
-            leave_types_set.add(leave_type.leave_type)
-
-        return response("Success", 200, list(leave_types_set))
+            leave_type_documents[leave_type.leave_type] = leave_types_dict[leave_type.leave_type]
+        return response("Success", 200, leave_type_documents)
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
