@@ -11,15 +11,17 @@ from erpnext.setup.doctype.employee.employee import is_holiday
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-options = [('grpc.max_message_length', 100 * 1024 * 1024* 10)]
-channels = [
-    grpc.secure_channel(i, grpc.ssl_channel_credentials(), options=options) for i in face_recognition_service_url
-]
+# options = [('grpc.max_message_length', 100 * 1024 * 1024* 10)]
+# channels = [
+#     grpc.secure_channel(i, grpc.ssl_channel_credentials(), options=options) for i in face_recognition_service_url
+# ]
 
 # setup stub for face recognition
-stubs = [
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
-]
+# stubs = [
+#     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+# ]
+
+stubs = list()
 
 
 @frappe.whitelist()
