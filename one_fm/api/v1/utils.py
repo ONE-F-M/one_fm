@@ -200,3 +200,10 @@ def get_employee_by_id(employee_id):
         return frappe._dict({'status': False, 'message': f'Employee with ID {employee_id} does not exist', 'http_status_code':404})
     except Exception as e:
         frappe._dict({'status': False, 'message': str(e), 'http_status_code':500})
+
+
+
+@frappe.whitelist()
+def log_error_via_api(traceback: str, message: str, medium: str):
+    frappe.log_error(title=f"Error from {medium} -- {frappe.session.user}", message=f"{traceback} -- {message}")
+    return response(message="Error Logged Successfully", status_code=201)

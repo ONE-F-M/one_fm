@@ -209,7 +209,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                 distance = float(haversine(result.latitude, result.longitude, latitude, longitude))
                 if distance > float(result.geofence_radius):
                     result['user_within_geofence_radius'] = False
-
+                
                 result['site_name'] = site
                 if shift:
                     result['shift'] = shift
