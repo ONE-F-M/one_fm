@@ -291,8 +291,9 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             content = base64.b64decode(attachment)
             filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, {
-                'description':filename,
-                'attachments':content
+                'attachment_name':attachment_name,
+                'attachment_hashed_name':filename,
+                'attachment_file':content
             })          
         else:
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver)
@@ -315,8 +316,8 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.leave_approver_name = frappe.db.get_value("User", leave_approver, 'full_name')
     leave.save(ignore_permissions=True)
     if attachments:
-        _file = upload_file(leave, "", attachments['description'], "", attachments['attachments'], is_private=True)
-        leave.append('proof_documents', {'description':attachments['description'], 
+        _file = upload_file(leave, "", attachments['attachment_hashed_name'], "", attachments['attachment_file'], is_private=True)
+        leave.append('proof_documents', {'description':attachments['attachment_name'], 
             "attachments":_file.file_url})
         leave.save()
     # add the files to File doctype
