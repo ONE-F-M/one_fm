@@ -12,7 +12,7 @@ USER_ALLOWED_STATUSES = ["Open", "Working", "Pending Review"]
 def validate_task(doc, method):
     roles = get_user_roles()
     is_manager = is_project_manager(doc.project) if doc.project else False
-    if "Projects User" in roles and "Projects Manager" not in roles and not is_manager:
+    if "Projects User" in roles and "Projects Manager" not in roles and not is_manager and (doc.project or doc.owner != frappe.session.user):
         validate_updated_fields(doc)
 
 def validate_updated_fields(doc):
