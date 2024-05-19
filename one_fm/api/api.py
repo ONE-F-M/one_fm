@@ -8,14 +8,19 @@ from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
 import one_fm.api.v1 as v1_api
 
+
 @frappe.whitelist()
 def initialize_firebase():
     """
         Initialize Firebase-Admin
     """
     #fetch credential file to initilize Firebase SDK
-    cred = credentials.Certificate(frappe.utils.cstr(frappe.get_site_path())+"/one-fm-70641-b59ee5eae480.json")
-    firebase_admin.initialize_app(cred)
+    try:
+        firebase_admin.get_app()
+    except:
+        cred = credentials.Certificate(frappe.utils.cstr(frappe.get_site_path())+"/one-fm-70641-b59ee5eae480.json")
+        firebase_admin.initialize_app(cred)
+
 
 @frappe.whitelist()
 def _one_fm():
@@ -188,62 +193,25 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
     serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
     Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
     """
+    
     try:
-        try:
-            initialize_firebase()
-        except:
-            pass
-        serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
+        initialize_firebase()
         employee_data = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["fcm_token", "device_os"],as_dict=1)
-        deviceToken = employee_data.get("fcm_token")
-        device_os = employee_data.get("device_os")
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + serverToken,
-        }
-
+        if not employee_data:
+            employee_data = frappe.db.get_value("Employee", employee_id, ["fcm_token", "device_os"],as_dict=1)
+        deviceToken = employee_data.fcm_token
+        device_os = employee_data.device_os
+        
         #Body in json form defining a message payload to send through API. 
         # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
-        if device_os == "android":
-            body = {       
-                "to":deviceToken,
-                "data": {
-                    "title": title,
-                    "body" : body,
-                    "showButtonCheckIn": checkin,
-                    "showButtonCheckOut": checkout,
-                    "showButtonArrivingLate": arriveLate
-                    }
-                }
-        else:
-            body = {       
-                "to":deviceToken,
-                "data": {
-                    "title": title,
-                    "body" : body,
-                    "showButtonCheckIn": checkin,
-                    "showButtonCheckOut": checkout,
-                    "showButtonArrivingLate": arriveLate
-                    },
-                "notification": {
-                    "body": body,
-                    "title": title,
-                    "badge": 0,
-                    "click_action": "oneFmNotificationCategory1"
-                    },
-                    "mutable_content": True
-                }
         message = messaging.Message(
             notification=messaging.Notification(
-                title='hello',
-                body='dsds'
+                title=title,
+                body=body
             ),
-            token=serverToken
+            token=deviceToken
         )
         res = messaging.send(message)
-        # print(dict(response))
-        #request is sent through frappe.get_site_config().get("firebase_api") along with params above.
-        # response = requests.post(frappe.get_site_config().get("firebase_api"),headers = headers, data=json.dumps(body))
         return v1_api.utils.response("success", 200, {'response': str(res)})
     except Exception as e:
         return v1_api.utils.response("error", 500, {}, str(e))
@@ -259,49 +227,23 @@ def push_notification_rest_api_for_leave_application(employee_id, title, body, l
     serverToken is fetched from firebase -> project settings -> Cloud Messaging -> Project credentials
     Device Token and Device OS is store in employee doctype using 'store_fcm_token' on device end.
     """
-    serverToken = frappe.get_value("Firebase Cloud Message",filters=None, fieldname=['server_token'])
-    employee_data = frappe.db.get_value("Employee", {"name": employee_id}, ["fcm_token", "device_os"],as_dict=1)
-    deviceToken = employee_data.get("fcm_token")
-    device_os = employee_data.get("device_os")
-
-    headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + serverToken,
-        }
-
-    #Body in json form defining a message payload to send through API. 
-    # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
-    if device_os == "android":
-         body = {       
-            "to":deviceToken,
-            "data": {
-                "title": title,
-                "body" : body,
-                "showButtonCheckIn": False,
-                "showButtonCheckOut": False,
-                "showButtonArrivingLate": False,
-                "type": leave_id
-                }
-            }
-    else:
-        body = {       
-            "to":deviceToken,
-            "data": {
-                "title": title,
-                "body" : body,
-                "showButtonCheckIn": False,
-                "showButtonCheckOut": False,
-                "showButtonArrivingLate": False,
-                "type": leave_id
-                },
-            "notification": {
-                "body": body,
-                "title": title,
-                "badge": 0,
-                "click_action": "oneFmNotificationCategory1"
-                },
-                "mutable_content": True
-            }
-    #request is sent through frappe.get_site_config().get("firebase_api") along with params above.
-    response = requests.post(frappe.get_site_config().get("firebase_api"),headers = headers, data=json.dumps(body))
-    return response
+    try:
+        initialize_firebase()
+        employee_data = frappe.db.get_value("Employee", employee_id, ["fcm_token", "device_os"],as_dict=1)
+        deviceToken = employee_data.fcm_token
+        device_os = employee_data.device_os
+        
+        #Body in json form defining a message payload to send through API. 
+        # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body
+            ),
+            token=deviceToken
+        )
+        res = messaging.send(message)
+        return v1_api.utils.response("success", 200, {'response': str(res)})
+    except Exception as e:
+        return v1_api.utils.response("error", 500, {}, str(e))
+    

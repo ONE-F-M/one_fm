@@ -1868,8 +1868,7 @@ function get_shifts(page) {
 			let parent = $('[data-page-route="roster"] #rosteringshiftselect');
 			let shift_data = [{ 'id': '', 'text': 'Select Shift' }];
 			res.forEach(element => {
-				let { name } = element;
-				shift_data.push({ 'id': name, 'text': name });
+				shift_data.push({ 'id': element, 'text': element });
 			});
 			parent.empty().trigger("change");
 			parent.select2({ data: shift_data });
@@ -3069,13 +3068,13 @@ function schedule_change_post(page) {
 							});
 					}
 				}, get_query: function () {
-					
-					
+
+
 						return {
 							"filters": { 'status':"Active" },
 							"page_len": 9999
 						};
-					
+
 				}
 			},
 			{ 'label': 'Site', 'fieldname': 'site', 'fieldtype': 'Link', 'options': 'Operations Site', 'read_only': 1 },
