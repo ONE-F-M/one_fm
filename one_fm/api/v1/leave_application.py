@@ -64,6 +64,10 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
             else:
                 is_leave_approver = 0
             data = leave_details.as_dict()
+
+            for d in data.proof_documents:
+                filename = frappe.get_value("File",{'file_url':d.attachments},['file_name'])
+                d.update({"file_name":filename})
             data.update({"is_leave_approver":is_leave_approver})
 
             if leave_details:
@@ -442,3 +446,19 @@ def clean_proof_documents(proof_documents):
         attachments = []
     return attachments
 
+@frappe.whitelist()
+def fetch_proof_document(file_url: str, docname: str, doctype: str) -> dict:
+    try:
+        file_doc = frappe.get_doc("File",{"attached_to_name":docname, "attached_to_doctype":doctype, 'file_url':file_url})
+        content = frappe.get_doc("File", file_doc.name).get_content()
+        base64EncodedStr = base64.b64encode(content).decode('utf-8')
+        data = {
+            "file_name": file_doc.file_name,
+            "file_type":  file_doc.file_type,
+            "content": base64EncodedStr,
+        }
+        return response("Success", 200, data)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback())
+        frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
+        return response("Bad Request", 404, None, "Unable to fetch data")
