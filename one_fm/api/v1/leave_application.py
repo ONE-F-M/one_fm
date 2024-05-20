@@ -289,7 +289,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, {
                 'description':filename,
                 'attachments':content
-            })          
+            })
         else:
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver)
         return response("Success", 201, doc)
