@@ -154,7 +154,7 @@ pydantic_core==2.6.3
 pydyf==0.8.0
 Pygments==2.16.1
 PyJWT==2.8.0
-PyMySQL==1.1.0
+PyMySQL==1.1.1
 pyngrok==5.1.0
 pyOpenSSL==23.2.0
 pyotp==2.8.0
