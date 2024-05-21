@@ -447,13 +447,13 @@ def clean_proof_documents(proof_documents):
     return attachments
 
 @frappe.whitelist()
-def fetch_proof_document(file_url: str, docname: str, doctype: str) -> dict:
+def fetch_proof_document(file_name: str, docname: str, doctype: str) -> dict:
     try:
-        file_doc = frappe.get_doc("File",{"attached_to_name":docname, "attached_to_doctype":doctype, 'file_url':file_url})
+        file_doc = frappe.get_doc("File",{"attached_to_name":docname, "attached_to_doctype":doctype, 'file_name':file_name})
         content = frappe.get_doc("File", file_doc.name).get_content()
         base64EncodedStr = base64.b64encode(content).decode('utf-8')
         data = {
-            "file_name": file_doc.file_name,
+            "file_url": file_doc.file_url,
             "file_type":  file_doc.file_type,
             "content": base64EncodedStr,
         }
