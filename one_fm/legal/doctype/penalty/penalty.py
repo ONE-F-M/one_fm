@@ -15,14 +15,14 @@ from frappe.utils import cint, getdate, add_to_date, get_link_to_form, now_datet
 from one_fm.proto import facial_recognition_pb2_grpc, facial_recognition_pb2
 import grpc
 
-# face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-# channels = [
-#     grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
-# ]
-# # setup stub for face recognition
-# stubs = [
-#     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
-# ]
+face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+channels = [
+    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+]
+# setup stub for face recognition
+stubs = [
+    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+]
 
 class Penalty(Document):
 	def after_insert(self):
@@ -119,21 +119,21 @@ def accept_penalty(file, retries, docname):
 	penalty = frappe.get_doc("Penalty", docname)
 	
 	# request body
-	# req = facial_recognition_pb2.FaceRecognitionRequest(
-	# 	username = frappe.session.user,
-	# 	media_type = "image",
-	# 	media_content = file,
-	# )
-	# # Call service stub and get response
-	# res = random.choice(stubs).FaceRecognition(req)
-	# if res.verification == "OK":
-	if retries_left == 0:
-		penalty.verified = 0
-		send_email_to_legal(penalty)
-	else:
-		penalty.verified = 1
-		penalty.workflow_state = "Penalty Accepted"
-	penalty.save(ignore_permissions=True)
+	req = facial_recognition_pb2.FaceRecognitionRequest(
+		username = frappe.session.user,
+		media_type = "image",
+		media_content = file,
+	)
+	# Call service stub and get response
+	res = random.choice(stubs).FaceRecognition(req)
+	if res.verification == "OK":
+		if retries_left == 0:
+			penalty.verified = 0
+			send_email_to_legal(penalty)
+		else:
+			penalty.verified = 1
+			penalty.workflow_state = "Penalty Accepted"
+		penalty.save(ignore_permissions=True)
 
 		# file_doc = frappe.get_doc({
 		# 	"doctype": "File",
