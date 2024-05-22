@@ -285,7 +285,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         if proof_document_required_for_leave_type(leave_type):
             if not proof_document:
                 return response("Missing", 400, None, "Proof document is required for {leave_type}".format(leave_type=leave_type))
-            proof_doc_json = json.loads(proof_document)
+            proof_doc_json = json.loads(proof_document)[0]
             attachment = proof_doc_json.get('attachment')
             attachment_name = proof_doc_json.get('attachment_name')
             if not attachment or not attachment_name:
@@ -298,7 +298,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
                 'attachment_name':attachment_name,
                 'attachment_hashed_name':filename,
                 'attachment_file':content
-            })          
+            })
         else:
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver)
         return response("Success", 201, doc)
