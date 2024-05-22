@@ -7,6 +7,7 @@ import datetime
 import collections
 
 from frappe.utils import cint, cstr, getdate, add_months
+from frappe.model.workflow import apply_workflow
 from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
 
 from one_fm.api.api import upload_file
@@ -202,7 +203,7 @@ def get_leave_types(employee_id: str = None) -> dict:
 
 
 @frappe.whitelist()
-def create_new_leave_application(employee_id: str = None, from_date: str = None, 
+def create_new_leave_application(employee_id: str = None, from_date: str = None,
     to_date: str = None, leave_type: str = None, reason: str = None, proof_document = {}) -> dict:
     """[summary]
     Args:
@@ -261,7 +262,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
 
         if not check_if_backdate_allowed(leave_type, from_date):
             return response("Bad Request", 400, None, "You are not allowed to apply for later or previous date.")
-        
+
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
         if not employee:
@@ -296,7 +297,7 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
     except Exception as error:
         frappe.log_error(message=frappe.get_traceback(), title='Leave API')
         return response("Internal Server Error", 500, None, error)
-    
+
 def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachments = {}) -> dict:
     leave = frappe.new_doc("Leave Application")
     leave.employee=employee
@@ -312,7 +313,7 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.save(ignore_permissions=True)
     if attachments:
         _file = upload_file(leave, "", attachments['description'], "", attachments['attachments'], is_private=True)
-        leave.append('proof_documents', {'description':attachments['description'], 
+        leave.append('proof_documents', {'description':attachments['description'],
             "attachments":_file.file_url})
         leave.save()
     # add the files to File doctype
@@ -358,13 +359,26 @@ def proof_document_required_for_leave_type(leave_type):
 def leave_approver_action(leave_id: str,status: str) -> dict:
     try:
         doc = frappe.get_doc("Leave Application",{"name":leave_id})
-        doc.status = status
+        if doc:
+            if not doc.leave_approver in [frappe.session.user, 'administrator']:
+                return response("error", 401, {}, "Unauthorised.")
+            if status == "Approved":
+                doc.status = status
+                doc.save()
+            elif status == "Rejected":
+                doc.db_set('status', 'Rejected')
+                doc.db_set('workflow_state', 'Rejected')
+                doc.reload()
+            else:
+                return response("error", 400, {}, "expected Approved or Rejected")
+        else:
+            return response("error", 404, {}, f"Leave ID {leave_id} not found")
         doc.submit()
         frappe.db.commit()
         return response("Success", 201, doc)
-        #return response('Leave Application was'+status,doc, 201)
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
+        return response("error", 500, {}, str(e))
         frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
 
 @frappe.whitelist()
@@ -381,7 +395,7 @@ def leave_application_list(
         employee = frappe.get_value("Employee", {"employee_id": employee_id}, ["name", "user_id"], as_dict=1)
         if not employee:
             return response("error", 404, {}, "Employee not found.")
-        
+
         if not(from_date and to_date):
             posting_date = ["BETWEEN", [add_months(getdate(), -2), getdate()]]
         else:
@@ -394,7 +408,7 @@ def leave_application_list(
             extra_filters["status"] = status
 
 
-        my_leaves_query = frappe.get_all("Leave Application", 
+        my_leaves_query = frappe.get_all("Leave Application",
             filters = {**{
                 "employee": employee.name,
                 "posting_date": posting_date
@@ -404,12 +418,12 @@ def leave_application_list(
         my_leaves = [{
             "name":i.name,"employee_name":i.employee_name, "workflow_state":i.workflow_state,
             "leave_type":i.leave_type, "total_leave_days":i.total_leave_days,
-            "posting_date":i.posting_date, "from_date":i.from_date, "to_date":i.to_date, 
-            "leave_approver_name":i.leave_approver_name, "description":i.description, 
+            "posting_date":i.posting_date, "from_date":i.from_date, "to_date":i.to_date,
+            "leave_approver_name":i.leave_approver_name, "description":i.description,
             "proof_documents":i.proof_documents or []
             } for i in my_leaves_query
         ]
-        reports_to_query = frappe.get_all("Leave Application", 
+        reports_to_query = frappe.get_all("Leave Application",
             filters = {**{
                 "leave_approver": employee.user_id,
                 "posting_date": posting_date,
@@ -419,8 +433,8 @@ def leave_application_list(
         reports_to = [{
             "name":i.name,"employee_name":i.employee_name, "workflow_state":i.workflow_state,
             "leave_type":i.leave_type, "total_leave_days":i.total_leave_days,
-            "posting_date":i.posting_date, "from_date":i.from_date, "to_date":i.to_date, 
-            "leave_approver_name":i.leave_approver_name, "description":i.description, 
+            "posting_date":i.posting_date, "from_date":i.from_date, "to_date":i.to_date,
+            "leave_approver_name":i.leave_approver_name, "description":i.description,
             "proof_documents":clean_proof_documents(i.proof_documents)
             } for i in reports_to_query
         ]
