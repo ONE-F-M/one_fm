@@ -64,6 +64,10 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
             else:
                 is_leave_approver = 0
             data = leave_details.as_dict()
+
+            for d in data.proof_documents:
+                filename = frappe.get_value("File",{'file_url':d.attachments},['file_name'])
+                d.update({"file_name":filename})
             data.update({"is_leave_approver":is_leave_approver})
 
             if leave_details:
@@ -191,10 +195,14 @@ def get_leave_types(employee_id: str = None) -> dict:
         if not leave_type_list or len(leave_type_list) == 0:
             return response("Resource Not Found", 404, None, "No leave allocated to {employee}".format(employee=employee_id))
 
+        leave_types = frappe.get_all("Leave Type", fields=["name", "is_proof_document_required"])
+        leave_types_dict = {}
+        for i in leave_types:
+            leave_types_dict[i.name] = i.is_proof_document_required
+        leave_type_documents = {}
         for leave_type in leave_type_list:
-            leave_types_set.add(leave_type.leave_type)
-
-        return response("Success", 200, list(leave_types_set))
+            leave_type_documents[leave_type.leave_type] = leave_types_dict[leave_type.leave_type]
+        return response("Success", 200, leave_type_documents)
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
@@ -287,8 +295,9 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             content = base64.b64decode(attachment)
             filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, {
-                'description':filename,
-                'attachments':content
+                'attachment_name':attachment_name,
+                'attachment_hashed_name':filename,
+                'attachment_file':content
             })
         else:
             doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver)
@@ -311,8 +320,8 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.leave_approver_name = frappe.db.get_value("User", leave_approver, 'full_name')
     leave.save(ignore_permissions=True)
     if attachments:
-        _file = upload_file(leave, "", attachments['description'], "", attachments['attachments'], is_private=True)
-        leave.append('proof_documents', {'description':attachments['description'], 
+        _file = upload_file(leave, "", attachments['attachment_hashed_name'], "", attachments['attachment_file'], is_private=True)
+        leave.append('proof_documents', {'description':attachments['attachment_name'], 
             "attachments":_file.file_url})
         leave.save()
     # add the files to File doctype
@@ -438,3 +447,19 @@ def clean_proof_documents(proof_documents):
         attachments = []
     return attachments
 
+@frappe.whitelist()
+def fetch_proof_document(file_name: str, docname: str, doctype: str) -> dict:
+    try:
+        file_doc = frappe.get_doc("File",{"attached_to_name":docname, "attached_to_doctype":doctype, 'file_name':file_name})
+        content = frappe.get_doc("File", file_doc.name).get_content()
+        base64EncodedStr = base64.b64encode(content).decode('utf-8')
+        data = {
+            "file_url": file_doc.file_url,
+            "file_type":  file_doc.file_type,
+            "content": base64EncodedStr,
+        }
+        return response("Success", 200, data)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback())
+        frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
+        return response("Bad Request", 404, None, "Unable to fetch data")
