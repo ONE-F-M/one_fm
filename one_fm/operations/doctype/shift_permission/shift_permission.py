@@ -109,8 +109,8 @@ class ShiftPermission(Document):
 		if self.workflow_state in ["Approved", "Rejected"]:
 			if has_super_user_role(frappe.session.user):
 				return
-			if frappe.session.user not in [self.approver_user_id, 'administrator', 'Administrator']:
-				frappe.throw(_("This document can only be approved/rejected by the approver."))
+			#if frappe.session.user not in [self.approver_user_id, 'administrator', 'Administrator']:
+			#	frappe.throw(_("This document can only be approved/rejected by the approver."))
 
 	def on_submit(self):
 		employee_user = frappe.get_value('Employee', self.employee, 'user_id')
