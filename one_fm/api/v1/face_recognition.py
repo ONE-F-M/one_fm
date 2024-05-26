@@ -2,7 +2,7 @@ import frappe, ast, base64, time, grpc, json, random
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.utils import get_current_shift
-from one_fm.api.v1.utils import response
+from one_fm.api.v1.utils import response, verify_via_face_recogniton_service
 from frappe.utils import cstr, getdate,now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
@@ -25,7 +25,7 @@ stubs = list()
 
 
 @frappe.whitelist()
-def enroll(employee_id: str = None) -> dict:
+def enroll(employee_id: str = None, filename: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
 
     Args:
@@ -39,11 +39,31 @@ def enroll(employee_id: str = None) -> dict:
             error (str): Any error handled.
         }
     """
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
     try:
-        doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+        
+        # filename = frappe.form_dict.get('filename')    
+        if not filename:
+            return response("Bad Request", 400, None, "File name is required.")
+        
+        video_file = frappe.request.files.get("video_file")
+        if not video_file:
+            return response("Bad Request", 400, None, "Video File is required.")
+            
+
+        face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
+        if not face_recog_base_url:
+            return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+        
+        status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": employee_id, "filename": filename}, files={"video_file": video_file})
+        if not status:
+            return response("Bad Request", 400, None, message)
+    
+        doc = frappe.get_doc("Employee", {"employee_id": employee_id})
+        if not doc:
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        
         doc.enrolled = 1
         doc.save(ignore_permissions=True)
         update_onboarding_employee(doc)
@@ -58,7 +78,7 @@ def enroll(employee_id: str = None) -> dict:
 
 @frappe.whitelist()
 def verify_checkin_checkout(employee_id: str = None, log_type: str = None,
-        skip_attendance: str = None, latitude: str = None, longitude: str = None):
+        skip_attendance: str = None, latitude: str = None, longitude: str = None, filename: str = None):
     """This method verifies user checking in/checking out.
 
     Args:
@@ -99,6 +119,9 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,
 
         if not longitude:
             return response("Bad Request", 400, None, "longitude required.")
+        
+        if not filename:
+            return response("Bad Request", 400, None, "Filename is required.")
 
         if not isinstance(log_type, str):
             return response("Bad Request", 400, None, "log_type must be of type str.")
@@ -117,11 +140,23 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,
 
         if not isinstance(longitude, float):
             return response("Bad Request", 400, None, "longitude must be of type float.")
+        
+        video_file = frappe.request.files.get("video_file")
+        if not video_file:
+            return response("Bad Request", 400, None, "Video File is required.")
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        
+        face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
+        if not face_recog_base_url:
+            return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+        
+        status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "verify", data={"username": employee_id, "filename": filename}, files={"video_file": video_file})
+        if not status:
+            return response("Bad Request", 400, None, message)
 
         get_site_location(employee_id, latitude, longitude)
         checkin_location = frappe.local.response
