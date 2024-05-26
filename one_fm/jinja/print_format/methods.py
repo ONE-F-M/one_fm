@@ -1,8 +1,44 @@
 import frappe, json
 from datetime import date, datetime
-from frappe.utils import cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day, get_last_day, get_datetime, flt
+from frappe.utils import cstr,month_diff,today,getdate,get_date_str,date_diff,add_years, cint, add_to_date, get_first_day, get_last_day, get_datetime, flt
 from frappe import _
 
+def get_approval_data(purchase_order):
+    """
+        Generate the approval dates of the purchase order during workflow:
+         the follow approval dates are required:
+         - Approval by Purchase Officer
+         - Approval by Purchase Manager
+         - Approval by Finance Supervisor
+    Args:
+        purchase_order (string): Valid Purchase Order
+
+    Returns:
+        dict: A dictionary containing the approval dates of the purchase order
+    """
+    base_template = {"purchase_officer":'',
+                        "purchase_manager":'',
+                        "finance_manager":''}
+    try:
+        existing_versions = frappe.get_all("Version",{'docname':purchase_order,'data':['like','%workflow_state%']},['creation','data'])
+        if existing_versions:
+            for each in existing_versions:
+                version_data_dict = json.loads(each.data)
+                version_workflow_state_changes = version_data_dict['changed']
+                for one in version_workflow_state_changes:
+                    if "Pending Approver" == one[2]:
+                        base_template['purchase_officer'] = get_date_str(getdate(each.creation))
+                    elif 'Pending Finance Manager' == one[2]:
+                        base_template['purchase_manager'] = get_date_str(getdate(each.creation))
+                    elif 'Approved' == one[2]:
+                        base_template['finance_manager'] = get_date_str(getdate(each.creation))
+    except:
+        frappe.log_error(title = "Error Generating PO Print format",message = frappe.get_traceback())
+    finally:
+        return base_template
+    
+    
+    
 class PrintFormat:
     """
     Print format class

@@ -830,6 +830,12 @@ override_doctype_dashboards = {
 required_apps = ['frappe', 'erpnext']
 
 # jinja env
+jinja = {
+		"methods": [
+			"one_fm.jinja.print_format.methods"
+		]
+		}
+
 jenv = {
     "methods": [
         "pf:one_fm.jinja.print_format.methods.pf",
