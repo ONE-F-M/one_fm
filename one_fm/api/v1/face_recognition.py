@@ -1,4 +1,4 @@
-import frappe, ast, base64, time, grpc, json, random, requests
+import frappe, ast, base64, time, grpc, json, random
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.utils import get_current_shift
