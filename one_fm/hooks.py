@@ -240,7 +240,10 @@ doc_events = {
 	},
 	"HD Ticket": {
 		"validate": "one_fm.overrides.hd_ticket.validate_hd_ticket",
-		"after_insert":"one_fm.overrides.hd_ticket.send_google_chat_notification"
+		"after_insert":[
+      					"one_fm.overrides.hd_ticket.send_google_chat_notification",
+                  		"one_fm.overrides.hd_ticket.notify_ticket_raiser_of_receipt"
+                    	], 
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"

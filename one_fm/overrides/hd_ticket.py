@@ -4,6 +4,8 @@ from json import dumps
 from httplib2 import Http
 from frappe.desk.form.assign_to import add as add_assignment
 
+from one_fm.processor import sendemail
+
 def send_google_chat_notification(doc, method):
     """Hangouts Chat incoming webhook to send the Issues Created, in Card Format."""
 
@@ -80,3 +82,14 @@ def validate_hd_ticket(doc, event):
         emp_user = frappe.get_value("Employee",bug_buster[0].employee,'user_id')
         if emp_user:
             doc.custom_bug_buster = emp_user
+
+
+def notify_ticket_raiser_of_receipt(doc, event):
+    subject = f"HelpDesk Ticket - {doc.name}"
+    context = dict(
+        document_name=doc.name,
+        document_link=frappe.utils.get_url(doc.get_url()),
+        document_subject=doc.subject
+    )
+    msg = frappe.render_template('one_fm/templates/emails/notify_ticket_raiser_receipt.html', context=context)
+    frappe.enqueue(method=sendemail, queue="short", recipients=doc.raised_by, subject=subject, content=msg, is_external_mail=True, is_scheduler_email=True)
