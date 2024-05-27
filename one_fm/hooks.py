@@ -244,6 +244,7 @@ doc_events = {
       					"one_fm.overrides.hd_ticket.send_google_chat_notification",
                   		"one_fm.overrides.hd_ticket.notify_ticket_raiser_of_receipt"
                     	], 
+		"on_change": "one_fm.overrides.hd_ticket.notify_issue_raiser_about_priority"
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
