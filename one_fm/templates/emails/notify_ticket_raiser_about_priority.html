@@ -1,0 +1,55 @@
+<style>
+    table {
+      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    th, .notify_ticket_raiser td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      color: #333;
+      width: 30%;
+      text-align: left;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #ddd;
+    }
+    
+    </style>
+    
+    <h3>{{ header}}</h3>
+    <table>
+      <tbody class="notify_ticket_raiser">
+        <tr>
+          <th>Document Name</th>
+          <td>{{ document_name }}</td>
+        </tr>
+        <tr>
+          <th>Document Type</th>
+          <td>{{ document_type }}</td>
+        </tr>
+        <tr>
+          <th>Description</th>
+          <td>Priority Assigned</td>
+        </tr>
+        <tr>
+          <th>Content</th>
+          <td>The Ticket {{ document_name }} with Subject,  {{ title }} has been assigned {{ priority }} priority. {{ content_prefix }}</td>
+        </tr>
+        <tr>
+          <th>Document Link</th>
+          <td><a href={{document_link}}>Link</a></td>
+        </tr>
+      </tbody>
+    </table>
+    

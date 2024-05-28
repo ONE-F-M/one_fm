@@ -367,14 +367,26 @@ def proof_document_required_for_leave_type(leave_type):
 def leave_approver_action(leave_id: str,status: str) -> dict:
     try:
         doc = frappe.get_doc("Leave Application",{"name":leave_id})
-        doc.status = status
+        if doc:
+            if not doc.leave_approver in [frappe.session.user, 'administrator']:
+                return response("error", 401, {}, "Unauthorised.")
+            if status == "Approved":
+                doc.status = status
+                doc.save()
+            elif status == "Rejected":
+                doc.db_set('status', 'Rejected')
+                doc.db_set('workflow_state', 'Rejected')
+                doc.reload()
+            else:
+                return response("error", 400, {}, "expected Approved or Rejected")
+        else:
+            return response("error", 404, {}, f"Leave ID {leave_id} not found")
         doc.submit()
         frappe.db.commit()
         return response("Success", 201, doc)
-        #return response('Leave Application was'+status,doc, 201)
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
-        frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
+        return response("error", 500, {}, str(e))
 
 @frappe.whitelist()
 def leave_application_list(
