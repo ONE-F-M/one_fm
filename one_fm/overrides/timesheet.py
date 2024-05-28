@@ -5,7 +5,7 @@ from calendar import monthrange
 from hrms.overrides.employee_timesheet import *
 from frappe import _
 from one_fm.processor import sendemail
-from one_fm.utils import send_workflow_action_email, get_approver_user
+from one_fm.utils import send_workflow_action_email
 
 
 class TimesheetOveride(Timesheet):
@@ -23,13 +23,13 @@ class TimesheetOveride(Timesheet):
     def validate_start_date(self):
         start_date = getdate(self.start_date)
         if start_date > getdate():
-            frappe.throw(_("Please note that timesheets cannot be created for a date in the future"))
-
-    def before_insert(self):
-        self.set_dates()
-        start_date = getdate(self.start_date)
-        if start_date < get_datetime_in_timezone("Asia/Kuwait").date():
-            frappe.throw(_("Please note that timesheets cannot be created for a previous date."))
+            frappe.throw(_("Please note that Timesheets cannot be created for a future date"), title="Invalid Start Date")
+        if start_date < getdate():
+            if self.is_new():
+                msg = _("Please note that Timesheets cannot be created for a past date")
+            else:
+                msg = _("Please note that Timesheets cannot be updated for a past date")
+            frappe.throw(msg, title="Invalid Start Date")
 
     def before_save(self):
         if not self.is_new():
@@ -39,7 +39,7 @@ class TimesheetOveride(Timesheet):
             # 2. Check if value of end_date is changed and it is before current date according to AST.
             # If any of the above criteria is fulfilled then throw an error.
             if (self.has_value_changed("start_date") and date_in_ast > self.get('start_date')) or (self.has_value_changed("end_date") and date_in_ast > self.get('end_date')):
-                frappe.throw(_("Please note that timesheets cannot be updated to a previous date."))
+                frappe.throw(_("Please note that timesheets cannot be updated to a previous date."), title="Invalid Start Date")
 
     def set_approver(self):
         if self.attendance_by_timesheet:
@@ -55,7 +55,7 @@ class TimesheetOveride(Timesheet):
             frappe.throw("Total Hours cannot be 0 or less.")
 
     def on_update(self):
-        if self.workflow_state == 'Open':
+        if self.workflow_state == 'Pending Approval':
             send_workflow_action_email(self, [self.approver])
             message = "The timesheet {0} of {1}, Open for your Approval".format(self.name, self.employee_name)
             create_notification_log("Pending - Workflow Action on Timesheet", message, [self.approver], self)
@@ -66,7 +66,7 @@ class TimesheetOveride(Timesheet):
         if self.workflow_state == "Approved":
             self.check_approver()
             self.create_attendance()
-        elif self.workflow_state == "Rejected":
+        elif self.workflow_state == "Canceled":
             self.check_approver()
             self.notify_the_employee()
 
@@ -123,6 +123,12 @@ class TimesheetOveride(Timesheet):
     def check_approver(self):
         if frappe.session.user not in [self.approver, "Administrator"]:
             frappe.throw(_("Only Approver can Approve/Reject the timesheet"))
+
+@frappe.whitelist()
+def fetch_approver(employee):
+    approver = get_approver(employee)
+    if approver:
+        return frappe.get_value("Employee", approver, ["user_id"])
 
 def timesheet_automation(start_date=None,end_date=None,project=None):
     filters = {
@@ -247,11 +253,11 @@ def add_time_log(timesheet, attendance, start, end, post, billable, billing_hour
 @frappe.whitelist()
 def fetch_approver(employee):
     if employee:
-        approver_user = get_approver_user(employee)
-        if approver_user:
-            return approver_user
-
-    frappe.throw("No approver found for {employee}".format(employee=employee))
+        approver = get_reports_to_employee_name(employee)
+        if approver:
+            return frappe.get_value("Employee", approver, ["user_id"])
+        else:
+            frappe.throw("No approver found for {employee}".format(employee=employee))
 
 def validate_timesheet_count(doc, event):
     if doc.workflow_state == "Approved":

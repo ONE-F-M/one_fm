@@ -14,14 +14,14 @@ from one_fm.utils import get_holiday_today
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-channels = [
-    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
-]
+# channels = [
+#     grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+# ]
 
 # setup stub for face recognition
-stubs = [
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
-]
+# stubs = [
+#     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+# ]
 
 
 @frappe.whitelist()
@@ -321,7 +321,16 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if has_attendance(employee, date):
             return response("Resource Not Found", 404, None, "Your attendance has been marked For the Day")
 
-        shift = get_current_shift(employee)
+        shift_exists = get_current_shift(employee)
+        if shift_exists['type'] == "Early":
+            # check if user can checkin with the correct time
+            return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
+        elif shift_exists['type'] == "Late":
+            return response("Resource Not Found", 404, None, f"You are checking out too late, checkout was allowed {shift_exists['data']} minutes ago ")
+        elif shift_exists['type'] == "On Time":
+            shift = shift_exists['data']
+        else:
+            shift = None
 
         site, location, shift_assignment = None, None, None
         if shift:

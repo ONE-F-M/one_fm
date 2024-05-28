@@ -691,11 +691,8 @@ scheduler_events = {
 		],
 		"15 13 * * *":[ # Attendance Check
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.schedule_attendance_check',
-			'one_fm.one_fm.doctype.attendance_check.attendance_check.assign_attendance_manager_after_48_hours'
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.attendance_check_pending_approval_check'
 		],
-		# "07 13 * * *":[ # Auto approve attendance check
-			# 'one_fm.one_fm.doctype.attendance_check.attendance_check.approve_attendance_check'
-		# ],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
 		],
@@ -787,9 +784,11 @@ fixtures = [
 		"dt": "Assignment Rule",
 		"filters": [["name", "in",
 			[
-				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
+				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To", "Shift Permission Approver",
 				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request",
-				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action"
+				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action",
+				"Timesheet Return to Draft", "Timesheet Approval Assignment",
+				"Attendance Request Return to Draft", "Attendance Request Approval", "Employee Checkin Issue Approval"
 			]
 		]]
 	},
