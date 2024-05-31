@@ -213,7 +213,10 @@ def has_day_off(employee,date):
         Confirm if the employee schedule for that day and employee is set to day off
     """
     is_day_off = False
-    existing_schedule = frappe.get_value("Employee Schedule",{'employee':employee,'date':date},['employee_availability'])
+
+    schedule = frappe.db.exists("Employee Schedule", {'employee':employee,'date':date})
+    existing_schedule = frappe.get_value("Employee Schedule", schedule, ['employee_availability']) if schedule else None
+
     if existing_schedule:
         if existing_schedule == 'Day Off':
             is_day_off = True
