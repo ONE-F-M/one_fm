@@ -48,6 +48,10 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
             filename = employee_id+'.mp4'
         
         video_file = frappe.request.files.get("video_file") or video
+
+        if ";base64," in video_file:
+            video_file = video_file.split(';base64,')[-1]
+
         with open('video.txt', 'w') as v:
             v.write(video_file)
 
