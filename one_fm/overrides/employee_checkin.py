@@ -204,7 +204,6 @@ def after_insert_background(self):
 						subject = _("{employee} has checked out early by {early}. {location}".format(employee=self.employee_name, early=early, location=message_suffix))
 						message = _("{employee_name} has checked out early by {early}. {location} <br><br><div class='btn btn-primary btn-danger early-punch-out' id='{employee}_{date}_{shift}'>Issue Penalty</div>".format(employee_name=self.employee_name, shift=self.operations_shift, date=cstr(self.time), employee=self.employee_name, early=early, location=message_suffix))
 						for_users = [supervisor_user]
-						print(message, subject)
 						create_notification_log(subject, message, for_users, self)
 
 			else:
