@@ -223,7 +223,7 @@ def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tup
         if api_response.get("error"):
             traceback = api_response.get("traceback")
             message = api_response.get("message")
-            frappe.log_error(title=f"Error from face recognition system -- {frappe.session.user}", message=f"{traceback} -- {message}") if traceback else None
+            frappe.log_error(title=f"Error from face recognition system -- {frappe.session.user}", message=f"{traceback} -- {message}")
             frappe.db.commit()
             return False, message
         return True, ""
