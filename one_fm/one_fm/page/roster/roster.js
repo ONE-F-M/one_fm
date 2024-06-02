@@ -897,8 +897,7 @@ function bind_events(page) {
 					let [employee, date] = $(v).attr('data-selectid').split('|');
 					classgrt.push($(v).attr('data-selectid'));
 					var r = Date.parse(date)
-					let roster_stop_date = new Date(r);
-					roster_stop_date.setDate(roster_stop_date.getDate() - parseInt(2))
+					
 					
 					if (moment(date).isAfter(moment())) {
 						$(v).addClass("selectclass");
@@ -940,8 +939,7 @@ function bind_events(page) {
 
 					let [employee, date] = $(v).attr('data-selectid').split('|');
 					var r = Date.parse(date)
-					let roster_stop_date = new Date(r);
-					roster_stop_date.setDate(roster_stop_date.getDate() - parseInt(2))
+					
 					if (moment(date).isAfter(moment())) {
 						$(v).addClass("selectclass");
 					}
@@ -1254,8 +1252,7 @@ function render_roster(res, page, isOt) {
 			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, actual_shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application,relieving_date } = employees_data[employee_key][i];
 			//OT schedule view
 			var r = Date.parse(date)
-			let roster_stop_date = new Date(r);
-			roster_stop_date.setDate(roster_stop_date.getDate() - parseInt(2))
+			
 
 			if (isOt) {
 				if ((actual_shift && shift) && (actual_shift!=shift) && roster_type == 'Over-Time' && day_off_ot==0) {
@@ -1764,7 +1761,7 @@ function get_post_week_data(page) {
 					else {
 						schedule = `
 					<td>
-						<div class="${moment().isBefore(moment(roster_stop_date)) ? 'hoverselectclass' : 'forbidden'} hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
+						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
 							data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"
 							data-date="${start_date.format('YYYY-MM-DD')}"
 							data-post="${post_name}"
