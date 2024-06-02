@@ -25,7 +25,7 @@ stubs = list()
 
 
 @frappe.whitelist()
-def enroll(employee_id: str = None, filename: str = None) -> dict:
+def enroll(employee_id: str = None, filename: str = None, video: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
 
     Args:
@@ -47,7 +47,7 @@ def enroll(employee_id: str = None, filename: str = None) -> dict:
         if not filename:
             filename = employee_id+'.mp4'
         
-        video_file = frappe.request.files.get("video_file")
+        video_file = frappe.request.files.get("video_file") or video
         if not video_file:
             return response("Bad Request", 400, None, "Video File is required.")
             
