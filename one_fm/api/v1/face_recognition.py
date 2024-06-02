@@ -51,7 +51,6 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
         if not video_file:
             return response("Bad Request", 400, None, "Video File is required.")
             
-
         face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
         if not face_recog_base_url:
             return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
@@ -73,6 +72,7 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
 
     except Exception as error:
         frappe.log_error(message=error, title="Enrollment")
+        frappe.db.commit()
         return response("Internal Server Error", 500, None, error)
 
 
