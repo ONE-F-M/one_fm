@@ -294,3 +294,114 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
     except Exception as error:
         frappe.log_error(title="API Site location", message=frappe.get_traceback())
         return response("Internal Server Error", 500, None, error)
+
+def is_attendance_request_exists(employee, date):
+    return frappe.db.exists(
+        "Attendance Request",
+        {
+            "employee": employee,
+            "from_date": ["<=", date],
+            "to_date": [">=", date],
+            "docstatus": 1
+        }
+    )
+
+def get_shift_site_location(shift, date, log_type):
+    """
+        Method to retrieves the site location details (latitude, longitude, and optionally geofence radius)
+        for a given shift on a specific date, considering both shift and shift request information.
+
+        Args:
+            shift (object): A object of Shift Assignment
+            date (str): The date (YYYY-MM-DD format) for which to retrieve the location.
+            log_type (str): "IN" or "OUT".
+
+        Return:
+            dict (or None): If a valid location is found, a dictionary containing the following keys is returned:
+                latitude (float): The latitude of the site location.
+                longitude (float): The longitude of the site location.
+                geofence_radius (float, optional): The geofence radius of the site location.
+            None: If no valid location information is found.
+    """
+    location = get_shift_request_site_location(shift.employee, date, log_type)
+    if not location:
+        if shift.site_location:
+            return frappe.get_value(
+                "Location",
+                {"name": shift.site_location},
+                ["latitude","longitude", "geofence_radius"],
+                as_dict = True
+            )
+        elif shift.shift:
+            # Fetch the site from Operations Shift to get the location of the Site
+            site = frappe.get_value("Operations Shift", shift.shift, "site")
+            return frappe.db.sql("""
+                SELECT
+                    loc.latitude, loc.longitude, loc.geofence_radius
+                FROM
+                    `tabLocation` as loc
+                WHERE
+                    loc.name IN (
+                        SELECT site_location FROM `tabOperations Site` where name="{site}"
+                    )
+            """.format(site=site), as_dict=1)
+    return location
+
+def get_shift_request_site_location(employee, date, log_type):
+    """
+        This function retrieves the site location details for an employee's approved shift request on a specific date.
+        It checks for an "Approved" shift request that overlaps with the provided date and returns the corresponding check-in
+        or check-out site location (depending on the log_type) along with its latitude, longitude, and geofence radius.
+
+        Args:
+            employee (str): The employee ID for whom to fetch the shift request details.
+            date (str): The date (YYYY-MM-DD format) for which to check the shift request.
+            log_type (str): "IN" or "OUT". This specifies whether to retrieve the check-in
+                or check-out site location from the shift request.
+
+        Return:
+            dict (or None): If an approved shift request is found overlapping the provided date and log_type,
+                a dictionary containing the following keys is returned:
+                latitude (float): The latitude of the site location.
+                longitude (float): The longitude of the site location.
+                geofence_radius (float): The geofence radius of the site location (optional, depending on your data model).
+            None: If no approved shift request is found or there's an error retrieving the location details.
+    """
+
+    location = False
+    shift_request_exists = frappe.db.exists(
+        "Shift Request",
+        {
+            "employee":employee,
+            "from_date":["<=",date],
+            "to_date":[">=",date],
+            "status": "Approved"
+        }
+    )
+    if shift_request_exists:
+        shift_request_details = frappe.get_value(
+            "Shift Request",
+            {
+                "employee":employee,
+                "from_date":["<=",date],
+                "to_date":[">=",date],
+                "status": "Approved"
+            },
+            ["check_in_site", "check_out_site"],
+            as_dict = True
+        )
+        if log_type == "IN":
+            # Fetch check in site location from shift request
+            location = shift_request_details.check_in_site
+        else:
+            # Fetch check out site location from shift request
+            location = shift_request_details.check_out_site
+        if location:
+            # Return the location details
+            return frappe.get_value(
+                "Location",
+                {"name": location},
+                ["latitude","longitude", "geofence_radius"],
+                as_dict = True
+            )
+    return None
