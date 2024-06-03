@@ -707,6 +707,7 @@ def fetch_non_shift(date, s_type):
 def assign_am_shift():
 	date = cstr(getdate())
 	end_previous_shifts("AM")
+	employment_type = ["Full-time", "Part-time", "Intern", "Subcontractor"]
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
@@ -720,8 +721,9 @@ def assign_am_shift():
 				AND  st.start_time < '13:00:00')
 			AND ES.employee IN(
 				SELECT name from `tabEmployee`
-				WHERE status = "Active")
-	""".format(date=cstr(date)), as_dict=1)
+				WHERE status = "Active"
+    			AND employment_type IN {employment_type})
+	""".format(date=cstr(date), employment_type=tuple(employment_type)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "AM")
 	if non_shift:
@@ -733,6 +735,7 @@ def assign_am_shift():
 def assign_pm_shift():
 	date = cstr(getdate())
 	end_previous_shifts("PM")
+	employment_type = ["Full-time", "Part-time", "Intern", "Subcontractor"]
 	roster = frappe.db.sql("""
 			SELECT * from `tabEmployee Schedule` ES
 			WHERE
@@ -746,8 +749,9 @@ def assign_pm_shift():
 				)
 			AND ES.employee IN(
 				SELECT name from `tabEmployee`
-				WHERE status = "Active")
-	""".format(date=cstr(date)), as_dict=1)
+				WHERE status = "Active"
+    			AND employment_type IN {employment_type})
+	""".format(date=cstr(date), employment_type=tuple(employment_type)), as_dict=1)
 
 	non_shift = fetch_non_shift(date, "PM")
 	if non_shift:
@@ -1091,7 +1095,7 @@ def process_overtime_shift(roster, date, time):
 	for schedule in roster:
 		#Check for employee's shift assignment of the day, if he has any.
 		try:
-			if frappe.db.exists('Employee', {'employee':schedule.employee, 'status':'Active'}):
+			if frappe.db.exists('Employee', {'employee':schedule.employee, 'status':'Active', "employment_type": ["IN", ["Full-time", "Part-time", "Intern", "Subcontractor"]]}):
 				shift_assignment = frappe.db.sql(f"""SELECT name, shift_type, end_datetime, roster_type from `tabShift Assignment` WHERE employee = '{schedule.employee}' AND date(end_datetime) = '{date}'""", as_dict=1)
 				if shift_assignment:
 					shift_end_time = frappe.get_value("Shift Type",shift_assignment[0].shift_type, "end_time")
