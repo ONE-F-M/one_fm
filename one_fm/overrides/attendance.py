@@ -495,8 +495,10 @@ def mark_all_attendance():
     frappe.enqueue(mark_open_timesheet_and_create_attendance)
     frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
-def mark_daily_attendance(start_date, end_date):
+def mark_daily_attendance():
     try:
+        start_date = add_days(getdate(), -1)
+        end_date =  getdate()
         creation = now()
         owner = frappe.session.user
         naming_series = 'HR-ATT-.YYYY.-'
@@ -504,7 +506,6 @@ def mark_daily_attendance(start_date, end_date):
             'attendance_date':start_date,
             'roster_type':'Basic',
             'status':['IN', ['Present', 'Holiday', 'On Leave','Work From Home', 'On Hold', 'Day Off']],
-            "employment_type": ["IN", ["Full-time", "Part-time", "Intern", "Subcontractor"]]
             },
             pluck="employee"
         )
