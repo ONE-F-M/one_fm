@@ -12,3 +12,4 @@ google-cloud-vision==3.4.5
 datefinder==0.7.3
 html2text==2020.1.16
 qrcode==7.4.2
+paramiko==3.4.0
