@@ -1,37 +1,46 @@
 frappe.ui.form.on('Interview', {
 	refresh: function (frm) {
-		frm.remove_custom_button('Submit Feedback');
-		remove_custom_button_from_mobile_view(frm, "Submit Feedback");
-		let allowed_interviewers = [];
-		frm.doc.interview_details.forEach(values => {
-			allowed_interviewers.push(values.interviewer);
-		});
-		if (frm.doc.docstatus != 2 && !frm.doc.__islocal) {
-			if ((allowed_interviewers.includes(frappe.session.user))) {
-				frappe.db.get_value('Interview Feedback', {'interviewer': frappe.session.user, 'interview': frm.doc.name, 'docstatus': 1}, 'name', (r) => {
-					if (Object.keys(r).length === 0) {
-						frm.add_custom_button(__('Submit Interview Feedback'), function () {
-							frappe.call({
-								method: 'one_fm.hiring.utils.get_interview_skill_and_question_set',
-								args: {
-									interview_round: frm.doc.interview_round,
-									interviewer: frappe.session.user,
-									interview_name: frm.doc.name,
-								},
-								callback: function (r) {
-									if(r.message){
-										frm.events.show_custom_feedback_dialog(frm, r.message[1], r.message[0], r.message[2]);
-									}
-									frm.refresh();
-								},
-								freeze: true,
-								freeze_message: __("Fecth interview details..!")
-							});
-						}).addClass('btn-primary');
-					}
+		frappe.model.get_value("Job Applicant", {"name": frm.doc.job_applicant}, "one_fm_hiring_method", 
+		function(res) {
+			// If hiring method != Bulk Recruitment, show "Submit Interview Feedback" button.
+			// If hiring method == Bulk Recruitment, show standard "Submit Feeback" button. 
+			if(res.one_fm_hiring_method != "Bulk Recruitment"){
+				frm.remove_custom_button('Submit Feedback');
+				remove_custom_button_from_mobile_view(frm, "Submit Feedback");	
+
+				let allowed_interviewers = [];
+				frm.doc.interview_details.forEach(values => {
+					allowed_interviewers.push(values.interviewer);
 				});
-			}
-		}
+		
+				if (frm.doc.docstatus != 2 && !frm.doc.__islocal){
+					if ((allowed_interviewers.includes(frappe.session.user))) {
+						frappe.db.get_value('Interview Feedback', {'interviewer': frappe.session.user, 'interview': frm.doc.name, 'docstatus': 1}, 'name', (r) => {
+							if (Object.keys(r).length === 0) {
+								frm.add_custom_button(__('Submit Interview Feedback'), function () {
+									frappe.call({
+										method: 'one_fm.hiring.utils.get_interview_skill_and_question_set',
+										args: {
+											interview_round: frm.doc.interview_round,
+											interviewer: frappe.session.user,
+											interview_name: frm.doc.name,
+										},
+										callback: function (r) {
+											if(r.message){
+												frm.events.show_custom_feedback_dialog(frm, r.message[1], r.message[0], r.message[2]);
+											}
+											frm.refresh();
+										},
+										freeze: true,
+										freeze_message: __("Fetch interview details..!")
+									});
+								}).addClass('btn-primary');
+							}
+						});
+					}							
+				}				
+			}	
+		})
 	},
 	show_custom_feedback_dialog: function (frm, data, question_data, feedback_exists) {
 		let fields = frm.events.get_fields_for_feedback();
