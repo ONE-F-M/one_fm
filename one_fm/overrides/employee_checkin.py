@@ -106,7 +106,7 @@ def exists_checkin(current_shift_assignment, checkin_name, log_type="IN"):
 	return False
 
 def after_insert_background(self):
-	self = frappe.get_doc("Employee Checkin", self)
+	self = frappe.get_doc("Employee Checkin", self.name)
 	try:
 		# update shift if not exists
 		curr_shift = get_current_shift(self.employee)
@@ -162,15 +162,18 @@ def after_insert_background(self):
 				'start_datetime': self.shift_start,
 				'shift_type': shift_type
 			})
+
+
 			if curr_shift:
 				supervisor_user = get_notification_user(self, self.employee)
 				distance, radius = validate_location(self)
 				message_suffix = _("Location logged is inside the site.") if distance <= radius else _("Location logged is {location}m outside the site location.").format(location=cstr(cint(distance)- radius))
 
+
 				if self.log_type == "IN" and self.skip_auto_attendance == 0:
 					# LATE: Checkin time is after [Shift Start + Late Grace Entry period]
-					if shift_type.enable_entry_grace_period == 1 and get_datetime(self.time) > (get_datetime(self.shift_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
-						time_diff = get_datetime(self.time) - get_datetime(self.shift_start)
+					if shift_type.enable_entry_grace_period == 1 and get_datetime(self.time) > (get_datetime(self.shift_actual_start) + timedelta(minutes=shift_type.late_entry_grace_period)):
+						time_diff = get_datetime(self.time) - get_datetime(self.shift_actual_start)
 						hrs, mins, secs = cstr(time_diff).split(":")
 						delay = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 						subject = _("{employee} has checked in late by {delay}. {location}".format(employee=self.employee_name, delay=delay, location=message_suffix))
@@ -194,8 +197,8 @@ def after_insert_background(self):
 						for_users = [supervisor_user]
 						send_notification(title, subject, message, category, for_users)
 					#EARLY: Checkout time is before [Shift End - Early grace exit time]
-					elif shift_type.enable_exit_grace_period == 1 and self.device_id and get_datetime(self.time) < (get_datetime(curr_shift.end_datetime) - timedelta(minutes=shift_type.early_exit_grace_period)):
-						time_diff = get_datetime(curr_shift.end_datetime) - get_datetime(self.time)
+					elif shift_type.enable_exit_grace_period == 1 and self.device_id and get_datetime(self.time) < (get_datetime(self.shift_actual_end) - timedelta(minutes=shift_type.early_exit_grace_period)):
+						time_diff = get_datetime(self.shift_actual_end) - get_datetime(self.time)
 						hrs, mins, secs = cstr(time_diff).split(":")
 						early = "{hrs} hrs {mins} mins".format(hrs=hrs, mins=mins) if cint(hrs) > 0 else "{mins} mins".format(mins=mins)
 						subject = _("{employee} has checked out early by {early}. {location}".format(employee=self.employee_name, early=early, location=message_suffix))
