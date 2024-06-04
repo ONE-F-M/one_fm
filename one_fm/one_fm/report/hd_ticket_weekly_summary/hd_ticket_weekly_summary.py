@@ -27,6 +27,8 @@ def execute(filters=None):
 		"status": "Resolved"
 	})
 
+	other_tickets_count = total_tickets_count - (open_tickets_count + closed_tickets_count + resolved_tickets_count)
+
 	columns = [
 		{
 			"fieldname": "total",
@@ -52,6 +54,12 @@ def execute(filters=None):
 			"label": "Resolved",
 			"width": 200
 		},
+		{
+			"fieldname": "other",
+			"fieldtype": "Data",
+			"label": "Other",
+			"width": 200
+		},
 	]
 	
 	data = [
@@ -60,20 +68,21 @@ def execute(filters=None):
 			"open": open_tickets_count,
 			"closed": closed_tickets_count,
 			"resolved": resolved_tickets_count,
+			"other": other_tickets_count,
 		}
 	]
 
 	chart = {
 		"data": {
-			"labels": ["Open","Closed","Resolved"],
+			"labels": ["Open","Closed","Resolved","Other"],
 			"datasets": [
 				{
 					"name": "HD Ticket Weekly Summary",
-					"values": [open_tickets_count,closed_tickets_count,resolved_tickets_count]
+					"values": [open_tickets_count, closed_tickets_count, resolved_tickets_count, other_tickets_count]
 				}
 			]
 		},
 		"type": "pie",
-    	"colors": ['#FF8C00', '#808080', '#228B22']
+    	"colors": ['#AACCFF', '#4CBB17', '#90EE90', '#FF9933']
 	}
 	return columns, data, None, chart, None
