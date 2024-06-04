@@ -610,7 +610,7 @@ frappe.ui.form.on('Job Applicant', {
 				frm.refresh();
 			},
 			freeze: true,
-			freeze_message: __("Fecth interview details..!")
+			freeze_message: __("Fetch interview details..!")
 		});
 	},
 	show_custom_feedback_dialog: function (frm, args, data, question_data) {
@@ -639,7 +639,7 @@ frappe.ui.form.on('Job Applicant', {
 				data: data
 			}
 		]
-		if(question_data && question_data.length > 0){
+		if(question_data && question_data.length > 0 && frm.doc.one_fm_hiring_method != "Bulk Recruitment"){
 			let question_fields = frm.events.get_fields_for_questions();
 			dialog_fields.push({
 				fieldname: 'questions',
