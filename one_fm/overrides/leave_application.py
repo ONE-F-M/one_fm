@@ -139,8 +139,7 @@ class LeaveApplicationOverride(LeaveApplication):
             frappe.db.set_value("Attendance Check", attcheck_exists, {'shift_assignment': "",'has_shift_assignment': 0})
         frappe.db.commit()
 
-
-    def notify_employee(self):
+    def custom_notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
         if not template:
             frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
@@ -159,7 +158,10 @@ class LeaveApplicationOverride(LeaveApplication):
             sendemail(recipients= [employee.user_id], subject="Leave Application", message=message,
                     reference_doctype=self.doctype, reference_name=self.name, attachments = [])
             frappe.msgprint("Email Sent to Employee {}".format(employee.employee_name))
-
+            
+            
+    def notify_employee(self):
+        self.enqueue_notification_method(self.custom_notify_employee)
 
     def validate(self):
         validate_active_employee(self.employee)
@@ -223,6 +225,7 @@ class LeaveApplicationOverride(LeaveApplication):
         It's a action that takes place on update of Leave Application.
         """
         #If Leave Approver Exist
+        
         if self.leave_approver:
             parent_doc = frappe.get_doc('Leave Application', self.name)
             args = parent_doc.as_dict() #fetch fields from the doc.
@@ -260,8 +263,11 @@ class LeaveApplicationOverride(LeaveApplication):
     def after_insert(self):
         self.assign_to_leave_approver()
         self.update_attachment_name()
-        self.notify_leave_approver()
-
+        self.enqueue_notification_method(self.notify_leave_approver)
+        
+    def enqueue_notification_method(self,method):
+        frappe.enqueue(method,is_async=True, job_name= str("Leave Notification"),  queue="short")
+        
     def update_attachment_name(self):
         if self.proof_documents:
             for each in self.proof_documents:
