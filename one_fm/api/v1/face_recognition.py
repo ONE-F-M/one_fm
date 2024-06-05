@@ -51,16 +51,16 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
             error (str): Any error handled.
         }
     """
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not video:
-        return response("Bad Request", 400, None, "Base64 encoded video content required.")
-
-    if not isinstance(video, str):
-        return response("Bad Request", 400, None, "video type must be str.")
-
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not video:
+            return response("Bad Request", 400, None, "Base64 encoded video content required.")
+
+        if not isinstance(video, str):
+            return response("Bad Request", 400, None, "video type must be str.")
+
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
         if ';base64,' in video:
             video = video.split(';base64;')[-1]
