@@ -24,6 +24,17 @@ face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 stubs = list()
 
 
+
+def base64_to_mp4(base64_string):
+    # Decode the Base64 string to bytes
+    video_data = base64.b64decode(base64_string)
+    
+    # Write the bytes to an MP4 file
+    with open(frappe.utils.get_site_path()+"/public/files/video.mp4", 'wb') as mp4_file:
+        mp4_file.write(video_data)
+    #print(f"MP4 file has been saved as {output_file_path}")
+
+
 @frappe.whitelist()
 def enroll(employee_id: str = None, filename: str = None, video: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
@@ -52,8 +63,7 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
         if ";base64," in video_file:
             video_file = video_file.split(';base64,')[-1]
 
-        with open('video.txt', 'w') as v:
-            v.write(video_file)
+        base64_to_mp4(video_file)
 
         if not video_file:
             return response("Bad Request", 400, None, "Video File is required.")
