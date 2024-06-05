@@ -10,4 +10,5 @@ def execute():
                 frappe.db.set_value("Stock Ledger Entry",each.name,'posting_datetime',combined_datetime)
             except:
                 frappe.log_error(title = "Error Update SLE",message = frappe.get_traceback())
+                continue
             
