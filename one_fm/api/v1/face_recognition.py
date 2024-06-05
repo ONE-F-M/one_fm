@@ -1,4 +1,4 @@
-import frappe, ast, base64, time, grpc, json, random
+import frappe, ast, base64, time, grpc, json, random, os
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.utils import get_current_shift
@@ -20,6 +20,19 @@ channels = [
 stubs = [
     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
 ]
+
+site_path = os.getcwd()+frappe.utils.get_site_path().replace('./', '/')
+vide_path = site_path + '/public/files/video.mp4'
+
+def base64_to_mp4(base64_string):
+    # Decode the Base64 string to bytes
+    video_data = base64.b64decode(base64_string)
+    try:os.remove(vide_path)
+    except:pass
+    # Write the bytes to an MP4 file
+    with open(vide_path, 'wb') as mp4_file:
+        mp4_file.write(video_data)
+
 
 
 @frappe.whitelist()
@@ -49,6 +62,9 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
     try:
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+        if ';base64,' in video:
+            video = video.split(';base64;')[-1]
+        base64_to_mp4(video)
         # Setup channel
         # face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
         # channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials(), options=[('grpc.max_message_length', 100 * 1024 * 1024* 10)])
