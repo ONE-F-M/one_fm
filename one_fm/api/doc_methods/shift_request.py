@@ -473,8 +473,9 @@ def fill_to_date(doc, method):
 def validate_from_date(doc, method):
     if doc.purpose != 'Assign Day Off' and not (frappe.session.user == get_employee_user_id(frappe.db.get_single_value("ONEFM General Setting","attendance_manager"))):
         if getdate(today()) > getdate(doc.from_date):
+            message = "Please note that Shift Requests cannot be created for a past date." if doc.is_new() else "Please note that Shift Requests cannot be updated to a past date."
             frappe.throw(
-                _("Please note that Shift Requests cannot be created for a past date."),
+                _(message),
                 title=_("Invalid Start Date"),
 		    )
 

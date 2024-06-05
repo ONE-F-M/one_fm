@@ -755,22 +755,22 @@ fixtures = [
 	# 	"dt": "Custom Field",
 	# 	'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
 	# },
-	{
-		"dt": "Property Setter"
-	},
-	{
-		"dt": "Workflow State"
-	},
-	{
-		"dt": "Workflow Action Master"
-	},
+	# {
+	# 	"dt": "Property Setter"
+	# },
+	# {
+	# 	"dt": "Workflow State"
+	# },
+	# {
+	# 	"dt": "Workflow Action Master"
+	# },
 	{
 		"dt": "Workflow"
 	},
-	{
-		"dt": "Role",
-		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	},
+	# {
+	# 	"dt": "Role",
+	# 	"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	# },
 	{
 		"dt": "Assignment Rule",
 		"filters": [["name", "in",
@@ -783,18 +783,18 @@ fixtures = [
 			]
 		]]
 	},
-	{
-		"dt": "Email Template"
-	},
-	{
-		"doctype": "DocType Layout",
-		"filters": {
-			"name": ("in", (
-					"Employee",
-				)
-			)
-		}
-	}
+	# {
+	# 	"dt": "Email Template"
+	# },
+	# {
+	# 	"doctype": "DocType Layout",
+	# 	"filters": {
+	# 		"name": ("in", (
+	# 				"Employee",
+	# 			)
+	# 		)
+	# 	}
+	# }
 ]
 
 # before_tests = "one_fm.install.before_tests"
