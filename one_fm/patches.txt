@@ -86,3 +86,4 @@ one_fm.patches.v15_0.update_employee_status
 one_fm.patches.v15_0.update_employee_id_qr_code_generator
 one_fm.patches.v15_0.update_religion_field_options
 one_fm.patches.v15_0.add_supervisor_in_shift #1
+one_fm.patches.v15_0.fix_sle
