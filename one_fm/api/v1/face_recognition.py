@@ -59,11 +59,11 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
             filename = employee_id+'.mp4'
         
         video_file = frappe.request.files.get("video_file") or video
-
+	with open(video_path, 'wb') as mp4_file:mp4_file.write(video_file)
         if ";base64," in video_file:
             video_file = video_file.split(';base64,')[-1]
 
-        base64_to_mp4(video_file)
+        #base64_to_mp4(video_file)
 
         if not video_file:
             return response("Bad Request", 400, None, "Video File is required.")
