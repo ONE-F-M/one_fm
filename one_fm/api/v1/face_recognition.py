@@ -1,4 +1,4 @@
-import frappe, ast, base64, time, grpc, json, random
+import frappe, ast, base64, time, grpc, json, random, os
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.utils import get_current_shift
@@ -24,13 +24,15 @@ face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 stubs = list()
 
 
+video_path = frappe.utils.get_site_path()+"/public/files/video.mp4"
 
 def base64_to_mp4(base64_string):
     # Decode the Base64 string to bytes
     video_data = base64.b64decode(base64_string)
+    os.remove(video_path)
     
     # Write the bytes to an MP4 file
-    with open(frappe.utils.get_site_path()+"/public/files/video.mp4", 'wb') as mp4_file:
+    with open(, 'wb') as mp4_file:
         mp4_file.write(video_data)
     #print(f"MP4 file has been saved as {output_file_path}")
 
