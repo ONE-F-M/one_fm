@@ -29,7 +29,7 @@ video_path = frappe.utils.get_site_path()+"/public/files/video.mp4"
 def base64_to_mp4(base64_string):
 	# Decode the Base64 string to bytes
 	video_data = base64.b64decode(base64_string)
-	os.remove(video_path)
+	#os.remove(video_path)
 	
 	# Write the bytes to an MP4 file
 	with open(video_data, 'wb') as mp4_file:mp4_file.write(video_data)
