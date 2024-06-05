@@ -77,8 +77,6 @@ class ShiftAssignmentOverride(ShiftAssignment):
         """
         checkin = frappe.db.get_list("Employee Checkin", filters={
             'employee':self.employee, 'shift_assignment':self.name,
-            'shift_actual_start':self.start_datetime,
-            'shift_actual_end':self.end_datetime,
             'roster_type':self.roster_type
             }, 
             fields='log_type',

@@ -1,5 +1,6 @@
 bleach==6.0.0
 bleach-allowlist==1.0.3
+gspread
 mindee==3.11.1
 twilio==9.0.5
 pandas==2.1.2

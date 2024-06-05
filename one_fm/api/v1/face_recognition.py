@@ -1,4 +1,4 @@
-import frappe, ast, base64, time, grpc, json, random
+import frappe, ast, base64, time, grpc, json, random, os
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
 from one_fm.utils import get_current_shift
@@ -21,6 +21,22 @@ stubs = [
     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
 ]
 
+site_path = os.getcwd()+frappe.utils.get_site_path().replace('./', '/')
+video_path = site_path + '/public/files/video.mp4'
+video_txt_path = site_path + '/public/files/video.txt'
+
+def base64_to_mp4(base64_string):
+    # Decode the Base64 string to bytes
+    video_data = base64.b64decode(base64_string)
+    try:os.remove(video_path)
+    except:pass
+    # Write the bytes to an MP4 file
+    with open(video_path, 'wb') as mp4_file:
+        mp4_file.write(video_data)
+    
+
+
+
 
 @frappe.whitelist()
 def enroll(employee_id: str = None, video: str = None) -> dict:
@@ -38,17 +54,24 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
             error (str): Any error handled.
         }
     """
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not video:
-        return response("Bad Request", 400, None, "Base64 encoded video content required.")
-
-    if not isinstance(video, str):
-        return response("Bad Request", 400, None, "video type must be str.")
-
     try:
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not video:
+            return response("Bad Request", 400, None, "Base64 encoded video content required.")
+
+        if not isinstance(video, str):
+            return response("Bad Request", 400, None, "video type must be str.")
+
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+
+        with open(video_txt_path, 'w') as text_file:
+            text_file.write(video)
+
+        if ';base64,' in video:
+            video = video.split(';base64;')[-1]
+        base64_to_mp4(video)
         # Setup channel
         # face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
         # channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials(), options=[('grpc.max_message_length', 100 * 1024 * 1024* 10)])
@@ -213,7 +236,10 @@ def has_day_off(employee,date):
         Confirm if the employee schedule for that day and employee is set to day off
     """
     is_day_off = False
-    existing_schedule = frappe.get_value("Employee Schedule",{'employee':employee,'date':date},['employee_availability'])
+
+    schedule = frappe.db.exists("Employee Schedule", {'employee':employee,'date':date})
+    existing_schedule = frappe.get_value("Employee Schedule", schedule, ['employee_availability']) if schedule else None
+
     if existing_schedule:
         if existing_schedule == 'Day Off':
             is_day_off = True
