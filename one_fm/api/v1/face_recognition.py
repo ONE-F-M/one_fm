@@ -29,11 +29,11 @@ video_path = frappe.utils.get_site_path()+"/public/files/video.mp4"
 def base64_to_mp4(base64_string):
 	# Decode the Base64 string to bytes
 	video_data = base64.b64decode(base64_string)
-	os.remove(video_path)
-	
+	try:os.remove(video_path)
+	except:pass
 	# Write the bytes to an MP4 file
 	with open(video_data, 'wb') as mp4_file:
-		mp4_file.write(video_data)
+		mp4_file.write(video_data)_file.write(video_data)
 
 @frappe.whitelist()
 def enroll(employee_id: str = None, filename: str = None, video: str = None) -> dict:
