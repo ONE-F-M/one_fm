@@ -22,16 +22,19 @@ stubs = [
 ]
 
 site_path = os.getcwd()+frappe.utils.get_site_path().replace('./', '/')
-vide_path = site_path + '/public/files/video.mp4'
+video_path = site_path + '/public/files/video.mp4'
+video_txt_path = site_path + '/public/files/video.txt'
 
 def base64_to_mp4(base64_string):
     # Decode the Base64 string to bytes
     video_data = base64.b64decode(base64_string)
-    try:os.remove(vide_path)
+    try:os.remove(video_path)
     except:pass
     # Write the bytes to an MP4 file
-    with open(vide_path, 'wb') as mp4_file:
+    with open(video_path, 'wb') as mp4_file:
         mp4_file.write(video_data)
+    
+
 
 
 
@@ -62,6 +65,10 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
             return response("Bad Request", 400, None, "video type must be str.")
 
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
+
+        with open(video_txt_path, 'w') as text_file:
+            text_file.write(video)
+
         if ';base64,' in video:
             video = video.split(';base64;')[-1]
         base64_to_mp4(video)
