@@ -25,7 +25,7 @@ stubs = list()
 
 
 @frappe.whitelist()
-def enroll(employee_id: str = None, filename: str = None) -> dict:
+def enroll(employee_id: str = None, filename: str = None, video: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
 
     Args:
@@ -44,10 +44,13 @@ def enroll(employee_id: str = None, filename: str = None) -> dict:
             return response("Bad Request", 400, None, "employee_id required.")
         
         # filename = frappe.form_dict.get('filename')    
-        if not filename:
-            return response("Bad Request", 400, None, "File name is required.")
+        if not (filename or video):
+            return response("Bad Request", 400, None, "Filename or video is required.")
         
-        video_file = frappe.request.files.get("video_file")
+        if ";base64," in video:video = video.split(';base64,')[-1]
+
+        video_file = frappe.request.files.get("video_file") or video
+	    
         if not video_file:
             return response("Bad Request", 400, None, "Video File is required.")
             
@@ -71,9 +74,6 @@ def enroll(employee_id: str = None, filename: str = None) -> dict:
 
         return response("Success", 201, "User enrolled successfully.<br>Please wait for 10sec, you will be redirected to checkin.")
 
-    except Exception as error:
-        frappe.log_error(message=error, title="Enrollment")
-        return response("Internal Server Error", 500, None, error)
 
 
 @frappe.whitelist()
