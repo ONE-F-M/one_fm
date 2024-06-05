@@ -121,18 +121,20 @@ class AttendanceCheck(Document):
                 if not self.mobile_model:
                     frappe.throw("Please Select Mobile Model")
 
-            if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Other"]:
+            """if self.justification not in ["Invalid media content","Out-of-site location", "User not assigned to shift", "Other"]:
                 self.screenshot = ""
 
             if self.justification in ["Invalid media content","Out-of-site location", "User not assigned to shift"]:
                 if not self.screenshot:
                     frappe.throw("Please Attach ScreenShot")
+            """
         else:
             self.justification = ""
 
-        if self.justification == "Approved by Administrator":
+        """if self.justification == "Approved by Administrator":
             if not check_attendance_manager(email=frappe.session.user):
                 frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
+        """
 
 
     def validate_unscheduled_check(self):
