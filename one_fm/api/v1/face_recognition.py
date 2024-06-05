@@ -55,19 +55,17 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
             return response("Bad Request", 400, None, "employee_id required.")
         
         # filename = frappe.form_dict.get('filename')    
-        if not filename:
-            filename = employee_id+'.mp4'
+        if not (filename or video):
+            return response("Bad Request", 400, None, "Filename or video is required.")
         
+        if ";base64," in video:video = video_file.split(';base64,')[-1]
+
         video_file = frappe.request.files.get("video_file") or video
-	with open(video_path, 'wb') as mp4_file:mp4_file.write(video_file)
-        if ";base64," in video_file:
-            video_file = video_file.split(';base64,')[-1]
-
-        #base64_to_mp4(video_file)
-
+	    
         if not video_file:
             return response("Bad Request", 400, None, "Video File is required.")
             
+
         face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
         if not face_recog_base_url:
             return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
@@ -87,10 +85,6 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
 
         return response("Success", 201, "User enrolled successfully.<br>Please wait for 10sec, you will be redirected to checkin.")
 
-    except Exception as error:
-        frappe.log_error(message=error, title="Enrollment")
-        frappe.db.commit()
-        return response("Internal Server Error", 500, None, error)
 
 
 @frappe.whitelist()
