@@ -32,9 +32,8 @@ def base64_to_mp4(base64_string):
 	os.remove(video_path)
 	
 	# Write the bytes to an MP4 file
-	with open(, 'wb') as mp4_file:mp4_file.write(video_data)
+	with open(video_data, 'wb') as mp4_file:mp4_file.write(video_data)
 	#print(f"MP4 file has been saved as {output_file_path}")
-
 
 @frappe.whitelist()
 def enroll(employee_id: str = None, filename: str = None, video: str = None) -> dict:
