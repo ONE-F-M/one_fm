@@ -66,7 +66,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
         doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
 
-        with open(video_txt_path, 'wb') as text_file:
+        with open(video_txt_path, 'w') as text_file:
             text_file.write(video)
 
         # if ';base64,' in video:
