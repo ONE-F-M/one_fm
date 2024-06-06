@@ -56,7 +56,7 @@ def enroll(employee_id: str = None, video: str = None, filename: str = None) -> 
         if not filename:
             filename = employee_id+'.mp4'
         
-        video_file = frappe.request.files.get("video_file") or video
+        video_file = frappe.request.files.get("video_file") or video or frappe.request.files.get("video")
 	    
         if not video_file:
             return response("Bad Request", 400, None, "Video File is required.")
