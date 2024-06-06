@@ -1,7 +1,7 @@
 import frappe, ast, base64, time, grpc, json, random, os
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
-from one_fm.utils import get_current_shift
+from one_fm.utils import get_current_shift, verify_via_face_recogniton_service
 from one_fm.api.v1.utils import response
 from frappe.utils import cstr, getdate,now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
@@ -11,15 +11,7 @@ from one_fm.api.doc_events import haversine
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-options = [('grpc.max_message_length', 100 * 1024 * 1024* 10)]
-channels = [
-    grpc.secure_channel(i, grpc.ssl_channel_credentials(), options=options) for i in face_recognition_service_url
-]
-
-# setup stub for face recognition
-stubs = [
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
-]
+face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
 
 site_path = os.getcwd()+frappe.utils.get_site_path().replace('./', '/')
 video_path = site_path + '/public/files/video.mp4'
@@ -31,15 +23,15 @@ def base64_to_mp4(base64_string):
     try:os.remove(video_path)
     except:pass
     # Write the bytes to an MP4 file
+    with open(video_txt_path, 'w') as text_file:
+            text_file.write(base64_string)
+
     with open(video_path, 'wb') as mp4_file:
         mp4_file.write(video_data)
     
 
-
-
-
 @frappe.whitelist()
-def enroll(employee_id: str = None, video: str = None) -> dict:
+def enroll(employee_id: str = None, video: str = None, filename: str = None) -> dict:
     """This method enrolls the user face into the system for future face recognition use cases.
 
     Args:
@@ -58,36 +50,27 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         if not employee_id:
             return response("Bad Request", 400, None, "employee_id required.")
 
-        if not video:
-            return response("Bad Request", 400, None, "Base64 encoded video content required.")
-
-        if not isinstance(video, str):
-            return response("Bad Request", 400, None, "video type must be str.")
-
-        doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
-
-        with open(video_txt_path, 'w') as text_file:
-            text_file.write(video)
-        
         base64_to_mp4(video)
-        # Setup channel
-        # face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
-        # channel = grpc.secure_channel(face_recognition_enroll_service_url, grpc.ssl_channel_credentials(), options=[('grpc.max_message_length', 100 * 1024 * 1024* 10)])
-        # # setup stub
-        # stub = enroll_pb2_grpc.FaceRecognitionEnrollmentServiceStub(channel)
-        # # request body
-        # req = enroll_pb2.EnrollRequest(
-        #     username = frappe.session.user,
-        #     user_encoded_video = video,
-        # )
 
-        # res = stub.FaceRecognitionEnroll(req)
-        # data = {'employee':doc.name, 'log_type':'Enrollment', 'verification':res.enrollment,
-        #         'message':res.message, 'data':res.data, 'source': 'Enroll'}
-        # #frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-        # if res.enrollment == "FAILED":
-        #     return response(res.message, 400, None, res.data)
-
+        if not filename:
+            filename = employee_id+'.mp4'
+        video_file = frappe.request.files.get("video_file") or video
+	    
+        if not video_file:
+            return response("Bad Request", 400, None, "Video File is required.")
+        
+        if not face_recog_base_url:
+            return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+        
+        doc = frappe.get_doc("Employee", {"employee_id": employee_id})
+        if not doc:
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        
+        status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": employee_id, "filename": filename}, files={"video_file": video_file})
+        if not status:
+            return response("Bad Request", 400, None, message)
+        
+        
         # doc.enrolled = 1
         # doc.save(ignore_permissions=True)
         # update_onboarding_employee(doc)
