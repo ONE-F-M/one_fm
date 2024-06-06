@@ -68,9 +68,7 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
 
         with open(video_txt_path, 'w') as text_file:
             text_file.write(video)
-
-        # if ';base64,' in video:
-        #     video = video.split(';base64;')[-1]
+        
         base64_to_mp4(video)
         # Setup channel
         # face_recognition_enroll_service_url = frappe.local.conf.face_recognition_enroll_service_url
