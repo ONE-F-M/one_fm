@@ -50,10 +50,9 @@ def enroll(employee_id: str = None, video: str = None, filename: str = None) -> 
         if not employee_id:
             return response("Bad Request", 400, None, "employee_id required.")
 
-        base64_to_mp4(video)
-
         if not filename:
             filename = employee_id+'.mp4'
+        
         video_file = frappe.request.files.get("video_file") or video
 	    
         if not video_file:
@@ -66,6 +65,8 @@ def enroll(employee_id: str = None, video: str = None, filename: str = None) -> 
         if not doc:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
+        base64_to_mp4(video_file)
+
         status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": employee_id, "filename": filename}, files={"video_file": video_file})
         if not status:
             return response("Bad Request", 400, None, message)
@@ -79,7 +80,7 @@ def enroll(employee_id: str = None, video: str = None, filename: str = None) -> 
         return response("Success", 201, "User enrolled successfully.<br>Please wait for 10sec, you will be redirected to checkin.")
 
     except Exception as error:
-        frappe.log_error(message=error, title="Enrollment")
+        frappe.log_error(message=frappe.get_tracebck(), title="Enrollment")
         return response("Internal Server Error", 500, None, error)
 
 
