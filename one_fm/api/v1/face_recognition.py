@@ -90,10 +90,10 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         # if res.enrollment == "FAILED":
         #     return response(res.message, 400, None, res.data)
 
-        doc.enrolled = 1
-        doc.save(ignore_permissions=True)
-        update_onboarding_employee(doc)
-        frappe.db.commit()
+        # doc.enrolled = 1
+        # doc.save(ignore_permissions=True)
+        # update_onboarding_employee(doc)
+        # frappe.db.commit()
 
         return response("Success", 201, "User enrolled successfully.<br>Please wait for 10sec, you will be redirected to checkin.")
 
