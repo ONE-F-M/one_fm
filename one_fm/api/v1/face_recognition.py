@@ -1,7 +1,10 @@
 import frappe, ast, base64, time, grpc, json, random, os
 from frappe import _
-from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
-from one_fm.utils import get_current_shift, verify_via_face_recogniton_service
+from one_fm.one_fm.page.face_recognition.face_recognition import (
+    update_onboarding_employee, check_existing,
+    verify_via_face_recogniton_service
+)
+from one_fm.utils import get_current_shift
 from one_fm.api.v1.utils import response
 from frappe.utils import cstr, getdate,now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
@@ -10,7 +13,6 @@ from one_fm.api.doc_events import haversine
 
 
 # setup channel for face recognition
-face_recognition_service_url = frappe.local.conf.face_recognition_service_url
 face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
 
 site_path = os.getcwd()+frappe.utils.get_site_path().replace('./', '/')
@@ -49,7 +51,7 @@ def enroll(employee_id: str = None, video: str = None, filename: str = None) -> 
     try:
         if not employee_id:
             return response("Bad Request", 400, None, "employee_id required.")
-
+        
         if not filename:
             filename = employee_id+'.mp4'
         
