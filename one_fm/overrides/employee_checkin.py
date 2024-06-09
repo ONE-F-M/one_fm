@@ -43,6 +43,8 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 					self.operations_shift = curr_shift["shift"]
 					self.roster_type = curr_shift['roster_type']
 					self.shift_type = curr_shift["shift_type"]
+					self.shift_actual_start = curr_shift["start_datetime"]
+					self.shift_actual_end = curr_shift["end_datetime"]
 
 					if curr_shift["start_datetime"] and curr_shift["end_datetime"] and existing_perm:
 						perm_doc = frappe.db.sql(f"""select date, arrival_time, leaving_time from `tabShift Permission` where name = %s """, existing_perm[0]["name"], as_dict=1)[0]

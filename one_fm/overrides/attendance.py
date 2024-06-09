@@ -675,16 +675,18 @@ def mark_daily_attendance(start_date, end_date):
             end=p_datetime.strptime(f'{end_date} 00:00:00', '%Y-%m-%d %H:%M:%S'),
             attendance_type=True,
         )
-        frappe.enqueue(
-            attendance_marking.mark_day_off,
-            queue="long",
-            timeout=7000
-        )
-        frappe.enqueue(
-            attendance_marking.mark_shift_attendance,
-            queue="long",
-            timeout=7000
-        )
+        attendance_marking.mark_day_off()
+        # frappe.enqueue(
+        #     attendance_marking.mark_day_off,
+        #     queue="long",
+        #     timeout=7000
+        # )
+        attendance_marking.mark_shift_attendance()
+        # frappe.enqueue(
+        #     attendance_marking.mark_shift_attendance,
+        #     queue="long",
+        #     timeout=7000
+        # )
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Attendance Marking")    
 
@@ -880,7 +882,7 @@ class AttendanceMarking():
 
     def __ini__(self):
         self.attendance_type = None
-        self.start = None
+        self.start =None
         self.end = None
 
     def get_datetime(self, start=None, end=None, attendance_type=None):
