@@ -736,7 +736,7 @@ def mark_open_timesheet_and_create_attendance():
         try:
             apply_workflow(frappe.get_doc("Timesheet", i.name), 'Approve')
         except Exception as e:
-            print(e)
+            pass
    
 def mark_leave_attendance():
     try:
@@ -1009,7 +1009,7 @@ class AttendanceMarking():
                                         "status":status, "comment":comment, "working_hours":working_hours,
                                         "dt":"Employee Checkin"}}))
                                 except Exception as e:
-                                    print(e)
+                                    pass
 
     def get_checkins(self, shift_assignments):
         query = f"""
@@ -1138,7 +1138,6 @@ class AttendanceMarking():
                     frappe.db.set_value("Employee Checkin", record.out_name, 'attendance', doc.name)
             frappe.db.commit()
         except Exception as e:
-            print(e)
             frappe.log_error(message=str(e), title="Hourly Attendance Marking")
 
 
