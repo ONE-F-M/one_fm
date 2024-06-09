@@ -880,7 +880,7 @@ class AttendanceMarking():
 
     def __ini__(self):
         self.attendance_type = None
-        self.start =None
+        self.start = None
         self.end = None
 
     def get_datetime(self, start=None, end=None, attendance_type=None):
