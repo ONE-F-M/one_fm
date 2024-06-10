@@ -512,9 +512,14 @@ def get_leave_details(employee, date):
 
 @frappe.whitelist()
 def get_leave_approver(employee):
-    employee_details = frappe.db.get_list("Employee", {"name":employee}, ["reports_to", "department"])
-    reports_to = employee_details[0].reports_to
-    department = employee_details[0].department
+    employee_details = frappe.db.get_value(
+			"Employee",
+			{"name": employee},
+			["reports_to", "department"],
+			as_dict = True
+		)
+    reports_to = employee_details.get('reports_to')
+    department = employee_details.get('department')
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
     approver = False
     if reports_to:

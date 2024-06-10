@@ -1,4 +1,4 @@
-import frappe, datetime
+import frappe, requests
 from frappe.utils import getdate, cint, cstr, random_string, now_datetime
 from one_fm.utils import get_current_shift
 
@@ -209,3 +209,16 @@ def google_map_api():
             "google_map_api":frappe.db.get_single_value("Google Settings", "api_key")})
     except Exception as e:
         return response("error", 500, {}, str(e))
+    
+
+def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tuple:
+    res = requests.post(url=url, data=data, files=files)
+    if res.status_code == 200:
+        api_response = res.json()
+        if api_response.get("error"):
+            traceback = api_response.get("traceback")
+            message = api_response.get("message")
+            frappe.log_error(title=f"Error from face recognition system -- {frappe.session.user}", message=f"{traceback} -- {message}")# if traceback else None
+            return False, message
+        return True, ""
+    return False, "Facial Recogniton Service is currently available"
