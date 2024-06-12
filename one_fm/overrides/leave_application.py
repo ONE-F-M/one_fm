@@ -424,7 +424,8 @@ class LeaveApplicationOverride(LeaveApplication):
         if self.status == "Approved":
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 # frappe.db.set_value(), will not call the validate.
-                frappe.db.set_value("Employee", self.employee, "status", "Vacation")
+                if self.leave_type !='Sick Leave':
+                    frappe.db.set_value("Employee", self.employee, "status", "Vacation")
             self.validate_attendance_check()
         self.clear_employee_schedules()
 
