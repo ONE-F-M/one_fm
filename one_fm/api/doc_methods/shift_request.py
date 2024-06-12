@@ -120,7 +120,7 @@ def process_shift_assignemnt(doc, event=None):
     role_abbr = frappe.db.get_value("Operations Role", doc.operations_role, 'post_abbrv')
     shift_worker = frappe.db.get_value("Employee", doc.employee, 'shift_working')
     if doc.workflow_state == 'Approved' and doc.docstatus == 1:
-        if any((doc.assign_day_off == 1, doc.purpose == "Assign Day Off")):
+        if  doc.purpose == "Assign Day Off":
             assign_day_off(doc)
         elif doc.purpose == 'Replace Existing Assignment':
             if doc.roster_type == "Basic" and cstr(doc.from_date) <= cstr(getdate()) <= cstr(doc.to_date):
