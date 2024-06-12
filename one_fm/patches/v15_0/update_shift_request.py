@@ -6,7 +6,7 @@ from one_fm.utils import get_approver
 from one_fm.api.notification import get_employee_user_id
 
 def execute():
-    # sync_fixtures("one_fm")
+    sync_fixtures("one_fm")
     # Pending Approval and Draft 
     open_shift_requests = frappe.get_all("Shift Request", 
         fields=["name", "shift_approver", "department", "workflow_state", "employee"], 
