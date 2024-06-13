@@ -2066,9 +2066,10 @@ def notify_approver_about_pending_shift_request(is_scheduled_event=True):
 												LEFT JOIN `tabOperations Shift` os ON sr.operations_shift = os.name
 									   			LEFT JOIN `tabShift Request Approvers` ap ON sr.name = ap.parent
 												WHERE sr.workflow_state = 'Pending Approval'
+									   			AND ap.parentfield="shift_request_approver"
 												AND sr.from_date = %s 
 												AND os.start_time BETWEEN %s AND %s
-											""", (one_hour.date(), date_time.time(), one_hour.time()), as_dict=1)
+											""", (date_time.date(), date_time.time(), one_hour.time()), as_dict=1)
 
 	if pending_shift_request:
 		data_dict = dict()
