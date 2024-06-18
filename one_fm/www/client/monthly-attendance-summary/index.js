@@ -1,0 +1,2 @@
+frappe.ready(function () {
+});
