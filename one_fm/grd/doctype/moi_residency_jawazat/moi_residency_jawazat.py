@@ -14,8 +14,12 @@ from one_fm.grd.doctype.paci import paci
 from one_fm.utils import is_scheduler_emails_enabled
 
 class MOIResidencyJawazat(Document):
+    if frappe.db.exists("Custom Field", "Company-company_name_arabic"):
+        field_list = ['phone_no', 'email', 'company_name_arabic']
+    else:
+        field_list = ['phone_no', 'email', 'company_name']
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
-            ['phone_no', 'email', 'company_name_arabic'], as_dict=1)
+            field_list, as_dict=1)
     
     def validate(self):
         self.set_grd_values()
