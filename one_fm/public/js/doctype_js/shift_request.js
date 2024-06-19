@@ -247,8 +247,8 @@ const update_shift_role = (frm) => {
 					doctype: "Shift Assignment",
 					fields: ["operations_role", "shift"],
 					order_by: "modified desc",
-					filter: {
-						"employee": frm.replaced_employee
+					filters: {
+						"employee": frm.doc.replaced_employee
 					},
 					limit_page_length: 1
 				},

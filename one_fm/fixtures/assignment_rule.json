@@ -772,7 +772,7 @@
   "document_type": "Timesheet",
   "due_date_based_on": null,
   "field": "owner",
-  "is_assignment_rule_with_workflow": 1,
+  "is_assignment_rule_with_workflow": 0,
   "last_user": "Administrator",
   "modified": "2024-06-09 11:29:18.194436",
   "name": "Timesheet Return to Draft",
