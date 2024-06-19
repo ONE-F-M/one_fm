@@ -7,7 +7,6 @@ from frappe import _
 
 class Client(WebsiteGenerator):
     website = frappe._dict(
-        template = "templates/generators/client.html",
         condition_field = "published",
         page_title_field = "customer",
     )
