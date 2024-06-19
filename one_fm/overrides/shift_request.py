@@ -100,7 +100,7 @@ def on_update(doc, event):
         workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])
 
     if doc.workflow_state == 'Draft':
-        send_workflow_action_email(doc,[doc.approver, "tctkumar@one-fm.com"])
+        send_workflow_action_email(doc,[approver.user for approver in doc.custom_shift_approvers])
         validate_shift_overlap(doc)
 
 def validate_shift_overlap(doc):
@@ -309,7 +309,7 @@ def fetch_approver(doc):
     approver_user_id = get_employee_user_id(approver)
     other_approvers = []
     if doc.department == "Operations - ONEFM":
-        other_approvers =[user.approver for user in frappe.get_all("Department Approver", filters={"parent": doc.department}, fields=["approver"]) if user.approver != employee_user_id and user.approver != approver_user_id]
+        other_approvers =[user.approver for user in frappe.get_all("Department Approver", filters={"parent": doc.department, "parentfield": "shift_request_approver"}, fields=["approver"]) if user.approver != employee_user_id and user.approver != approver_user_id]
 
     if approver_user_id:
         return [approver_user_id] + other_approvers
