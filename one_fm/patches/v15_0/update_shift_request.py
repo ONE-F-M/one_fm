@@ -50,7 +50,7 @@ def update_sr(shift_requests):
         if shift_request.department == "Operations - ONEFM":        
             other_approvers = []
             if shift_request.department == "Operations - ONEFM":
-                other_approvers =[user.approver for user in frappe.get_all("Department Approver", filters={"parent": shift_request.department}, fields=["approver"]) if user.approver != employee_user_id and user.approver != approver_user_id]
+                other_approvers =[user.approver for user in frappe.get_all("Department Approver", filters={"parent": shift_request.department, "parentfield": "shift_request_approver"}, fields=["approver"]) if user.approver != employee_user_id and user.approver != approver_user_id]
 
             other_approvers.append(approver_user_id)
             for approver in other_approvers:
