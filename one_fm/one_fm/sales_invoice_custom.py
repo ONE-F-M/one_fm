@@ -1098,7 +1098,23 @@ def add_admin_manpower(sales_invoice,project,journal_entry_start_date,journal_en
         })
     return sales_invoice
 
+def set_advance_payment_details(doc,event):
+    """
+    Set the advance  details of the advance payment doctype (Payment Entry/Journal Entry)
+
+    Args:
+        doc (object): doctype doc
+        event (str): event
+    """
+    if doc.advances:
+        for each in doc.advances:
+            if each.reference_type == "Payment Entry":
+                each.custom_received_amount = frappe.get_value("Payment Entry",each.reference_name,'paid_amount')
+            elif each.reference_type == "Journal Entry":
+                each.custom_received_amount = frappe.get_value('Journal Entry Account',{'parent':each.reference_name,'account':doc.debit_to},'credit_in_account_currency')
+
 def set_print_settings_from_contracts(doc, method):
+    set_advance_payment_details(doc,method)
     if doc.get('automatic_settlement') == "Yes":
         if not doc.get('settlement_amount'):
             frappe.throw("Please set an amount to be settled from advances for this invoice.")
