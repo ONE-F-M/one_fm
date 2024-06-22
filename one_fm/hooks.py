@@ -831,7 +831,7 @@ override_doctype_dashboards = {
 #ShiftType.process_auto_attendance = process_auto_attendance
 
 # Required apps before installation
-required_apps = ['frappe', 'erpnext']
+required_apps = ['frappe', 'erpnext', 'hrms']
 
 # jinja env
 jinja = {
