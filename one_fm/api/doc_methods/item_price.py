@@ -15,7 +15,8 @@ def validate(self):
     #change codition while going production
     #if is_service_item != None:
     if is_service_item != 0 or item_group != 'Service':
-        self.validate_dates()
+        
+        self.validate_from_to_dates("valid_from", "valid_upto")
         self.update_price_list_details()
     self.check_duplicates()
 

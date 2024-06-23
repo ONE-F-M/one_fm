@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import frappe
-from hrms.hr.doctype.shift_request.shift_request import ShiftRequest
 
 from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
 from hrms.payroll.doctype.salary_slip.salary_slip import SalarySlip
 from erpnext.stock.doctype.item_price.item_price import ItemPrice
 from erpnext.setup.doctype.employee.employee import Employee
-from one_fm.api.doc_methods.shift_request import shift_request_submit, validate_approver, shift_request_cancel, validate_default_shift
 # from one_fm.api.doc_methods.payroll_entry import fill_employee_details
 # from one_fm.api.doc_methods.salary_slip import (
 # 	get_working_days_details, get_unmarked_days_based_on_doj_or_relieving, get_unmarked_days, get_data_for_eval
@@ -72,10 +70,6 @@ QueueBuilder.prepare_email_content  = email_content
 EmployeeMaster.validate = EmployeeOverride.validate
 EmployeeMaster.validate_onboarding_process = validate_onboarding_process
 frappe.auth.LoginManager.post_login = post_login
-ShiftRequest.on_submit = shift_request_submit
-ShiftRequest.validate_approver = validate_approver
-ShiftRequest.on_cancel = shift_request_cancel
-ShiftRequest.validate_default_shift = validate_default_shift
 # PayrollEntry.fill_employee_details = fill_employee_details to be fixed
 # SalarySlip.get_working_days_details = get_working_days_details to be fixed
 # SalarySlip.get_unmarked_days_based_on_doj_or_relieving = get_unmarked_days_based_on_doj_or_relieving to be fixed

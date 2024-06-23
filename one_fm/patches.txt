@@ -88,3 +88,4 @@ one_fm.patches.v15_0.update_religion_field_options
 one_fm.patches.v15_0.add_supervisor_in_shift #1
 one_fm.patches.v15_0.fix_sle
 one_fm.patches.v15_0.patch_employee_checkin
+one_fm.patches.v15_0.update_shift_request

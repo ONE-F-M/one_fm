@@ -150,6 +150,7 @@ home_page = "index"
 
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
+website_generators = ["Client"]
 
 # Installation
 # ------------
@@ -388,19 +389,19 @@ doc_events = {
 	},
 	"Shift Request":{
 		"before_save":[
-			"one_fm.api.doc_methods.shift_request.fill_to_date",
-			"one_fm.utils.send_shift_request_mail",
-			"one_fm.api.doc_methods.shift_request.validate_from_date"
+			"one_fm.overrides.shift_request.fill_to_date",
+			"one_fm.overrides.shift_request.send_shift_request_mail",
+			"one_fm.overrides.shift_request.validate_from_date"
 		],
 		# "on_update_after_submit":[
-			# "one_fm.api.doc_methods.shift_request.on_update_after_submit",
+			# "one_fm.overrides.shift_request.on_update_after_submit",
 		# ],
 		"on_update": [
-            "one_fm.api.doc_methods.shift_request.on_update",
-        	# "one_fm.api.doc_methods.shift_request.process_shift_assignemnt",
+            "one_fm.overrides.shift_request.on_update",
+        	# "one_fm.overrides.shift_request.process_shift_assignemnt",
 		],
         "validate": [
-            "one_fm.api.doc_methods.shift_request.validate",
+            "one_fm.overrides.shift_request.validate",
         ]
 
 	},
@@ -514,6 +515,7 @@ override_doctype_class = {
     "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
     "Goal": "one_fm.overrides.goal.GoalOverride",
     "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
+    "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride"
     # "User": "one_fm.overrides.user.UserOverride"
 }
 
@@ -859,6 +861,7 @@ after_migrate = [
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
     "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
     "one_fm.after_migrate.execute.update_hd_ticket_agent"
+    "one_fm.after_migrate.execute.replace_prompt_message_in_goal"
 ]
 
 before_migrate = [
