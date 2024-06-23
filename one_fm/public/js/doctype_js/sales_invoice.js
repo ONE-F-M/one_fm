@@ -40,8 +40,6 @@ frappe.ui.form.on('Sales Invoice', {
         
     },
 	refresh(frm) {
-        
-
         if(frm.doc.customer){
             frm.set_query("project", function() {
                 return {
@@ -51,52 +49,14 @@ frappe.ui.form.on('Sales Invoice', {
                 };
             });
             frm.refresh_field("project");
+            fetch_advances(frm)
+            
+            
+            
         }
-        if(frm.doc.automatic_settlement == "Yes"){
-            frm.set_df_property('settlement_amount', 'hidden', false);
-            frm.refresh_fields()
-        }
+        
     },
-    customer: function(frm){
-        
-        
-        if(frm.doc.customer){
-            frappe.call({
-                method: 'one_fm.one_fm.sales_invoice_custom.get_customer_advance_balance',
-                args:{
-                    'customer':frm.doc.customer,
-                },
-                callback:function(s){
-                    if (!s.exc) {
-                        frm.doc.balance_in_advance_account = s.message
-                        frm.doc.automatic_settlement = ""
-                        frm.doc.settlement_amount = ""
-                        frm.refresh_field('balance_in_advance_account')
-                        frm.refresh_field('settlement_amount')
-                        if((frm.doc.balance_in_advance_account> 1) && (frm.doc.automatic_settlement == "")  && !(frm.doc.active_modal)){
-                            frm.doc.active_modal = 1
-                            frappe.confirm(`${frm.doc.customer} has ${cur_frm.doc.currency}${cur_frm.doc.balance_in_advance_account} in their advance account.\nDo you wish to use it in this invoice?`,
-                                    () => {
-                                        frm.doc.automatic_settlement = "Yes"
-                                        frm.set_df_property('settlement_amount', 'hidden', false);
-                                        frm.refresh_field('settlement_amount')
-                                        frm.refresh_field('automatic_settlement')
-                                        frm.doc.active_modal = 0
-                                    }, () => {
-                                        frm.doc.automatic_settlement = "No"
-                                        frm.set_df_property('settlement_amount', 'hidden', true);
-                                        frm.refresh_field('settlement_amount')
-                                        frm.refresh_field('automatic_settlement')
-                                        frm.doc.active_modal = 0
-                                 }
-                                
-                                
-                                 )
-                        }
-                    }
-                }
-            });
-        }
+     customer: function(frm){
         if(frm.doc.project){
             frappe.call({
                 method: 'frappe.client.get_value',
@@ -262,6 +222,78 @@ var set_income_account_and_cost_center = function(frm){
         }
     });
 };
+let settle_invoice = function(d,frm){ 
+    let values = d.get_values()
+    if (values.settlement_amount >= values.total_advance_amount){
+        frappe.throw("Settlement Amount cannot be greater than the total advance amount")
+    }
+    if (values.settlement_amount > values.outstanding){
+        frappe.throw("Settlement Amount cannot be greater than the total outstanding amount")
+    }
+    
+    frappe.call({
+        method: 'one_fm.one_fm.sales_invoice_custom.allocate_advances',
+        args:{
+            'frm_id':frm.doc.name,
+            'amount':values.settlement_amount
+        },
+        callback:function(s){
+            if (!s.exc) {
+               frappe.msgprint("Allocations Made Successfully")
+            }
+            }
+        });
+
+    d.hide();
+}
+let settle_advances = function(frm){
+    
+    if((frm.doc.docstatus == 1) && (frm.doc.outstanding_amount>0) && (frm.doc.balance_in_advance_account>0)){
+    
+        cur_frm.add_custom_button(__("Payment from Unearned Revenue"), function(){
+            var d = new frappe.ui.Dialog({
+                'fields': [
+                    {'fieldname': 'customer_name', 'fieldtype': 'Data','read_only':1,'label':'Customer Name','default':frm.doc.customer_name},
+                    {'fieldname': 'outstanding', 'fieldtype': 'Currency','read_only':1,'label':'Outstading Amount','default':frm.doc.outstanding_amount},
+                    {'fieldname': 'total_advance_amount','read_only':1, 'fieldtype': 'Currency','label':'Total Advance Amount','default':frm.doc.balance_in_advance_account},
+                    {'fieldname': 'settlement_amount', 'fieldtype': 'Currency','label':'Settlement Amount'},
+                   
+                ],
+                primary_action: function(){
+                    settle_invoice(d,frm);
+                }
+            });
+            
+            d.show();
+        }, __("Create"));
+    }
+    
+}
+
+let fetch_advances  =  function(frm){
+    if((frm.doc.customer) && (!frm.doc.name.includes("new"))){
+        frappe.call({
+            method: 'one_fm.one_fm.sales_invoice_custom.get_customer_advance_balance',
+            args:{
+                'customer':frm.doc.customer,
+            },
+            callback:function(s){
+                if (!s.exc) {
+                    frm.doc.balance_in_advance_account = s.message
+                    // frm.doc.automatic_settlement = ""
+                    // frm.doc.settlement_amount = ""
+                    frm.refresh_field('balance_in_advance_account')
+                    frm.refresh_field('settlement_amount')
+                    if((frm.doc.balance_in_advance_account> 1)  && !(frm.doc.active_modal)){
+                        frm.doc.active_modal = 1
+                        frm.set_intro(`${frm.doc.customer} has ${cur_frm.doc.currency}${cur_frm.doc.balance_in_advance_account} in their advance account.\nYou can use it to settle this invoice by setting the 'Settle From Unearned Revenue' field to Yes`)
+                        settle_advances(frm)
+                    }
+                }
+            }
+        });
+    }
+}
 //Add timesheet amount
 var add_timesheet_rate = function(frm){
     
