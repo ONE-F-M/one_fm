@@ -1,6 +1,7 @@
 {% extends "templates/web.html" %}
 {% block head %}
 	{% if head_html is defined -%}
+	<script src="./index.js"></script>
 	{{ head_html or "" }}
 	{%- endif %}
 
@@ -24,7 +25,10 @@
 {% block page_content %}
 <div class="mt-4">
 	<h5>View Client Roster</h5>
+	<div id="datatable">YAGA</div>
 </div>
+
+
 {% endblock %}
 
 {% block footer %}
