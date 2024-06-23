@@ -1,20 +1,21 @@
 {% extends "templates/web.html" %}
 {% block head %}
 	{% if head_html is defined -%}
-	<script src="./index.js"></script>
 	{{ head_html or "" }}
 	{%- endif %}
 
+
+	
 	{%- if theme and theme.name != 'Standard' -%}
 	<link type="text/css" rel="stylesheet" href="{{ theme.theme_url }}">
 	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
 
 	{%- else -%}
-	{{ include_style('website.bundle.css') }}
+	<!-- {{ include_style('website.bundle.css') }} -->
 	{%- endif -%}
 
 	{%- for link in web_include_css %}
-	{{ include_style(link) }}
+	<!-- {{ include_style(link) }} -->
 	{%- endfor -%}
 {% endblock %}
 
@@ -25,8 +26,10 @@
 {% block page_content %}
 <div class="mt-4">
 	<h5>View Client Roster</h5>
+	{{ include_script("web.bundle.js") }}
 	<div id="datatable">YAGA</div>
 </div>
+
 
 
 {% endblock %}

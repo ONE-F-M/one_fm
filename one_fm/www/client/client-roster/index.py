@@ -16,13 +16,13 @@ def get_context(context):
 
 
 @frappe.whitelist(allow_guest=1)
-def get_client_roster():
+def get_client_roster(route_hash: str = None):
     try:
-        route_hash = frappe.form_dict.id
+        route_hash = frappe.form_dict.id if not route_hash else route_hash
         year, month, today = getdate().year, getdate().month, getdate().day
         num_days = monthrange(year, month)[1]
         dates = [str(date(year, month, day)) for day in range(1, num_days + 1)]
-        column = ["Employee Name", "Job Title"] + dates
+        columns = ["Employee Name", "Job Title"] + dates
         customer_name = frappe.db.get_value("Client", {"route_hash": route_hash}, "customer")
         if not customer_name:
             return response("Bad Request", 400, None, "Customer Does not exist")
@@ -59,21 +59,24 @@ def get_client_roster():
         for obj in schedules:
             if data_dict.get(obj.employee):
                 data_dict.get(obj.employee).get("schedule").update({str(obj.date): obj.employee_availability})
-            data_dict.update({
-                obj.employee: {"job_title": obj.post_name,
-                            "schedule": {
-                                str(obj.date): obj.employee_availability
-                            },
-                            "employee_name": obj.employee_name
-                            }
-            })
+            else:
+                data_dict.update({
+                    obj.employee: {"job_title": obj.post_name,
+                                "schedule": {
+                                    str(obj.date): obj.employee_availability
+                                },
+                                "employee_name": obj.employee_name
+                                }
+                })
 
         data = list()
         for key, value in data_dict.items():
             to_be_appended_data = [value.get("employee_name"), value.get("job_title"), ] + [
                 value.get("schedule").get(the_date) or "Day Off" for the_date in dates]
+            
             data.append(to_be_appended_data)
-
-        return response("Operation Successful", 200, dict(column=column, data=data))
+        
+        return response("Operation Successful", 200, dict(columns=columns, data=data))
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error while generating client roster")
+        return response("Operation Successful", 500, None, str(e))
