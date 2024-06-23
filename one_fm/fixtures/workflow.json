@@ -6291,7 +6291,7 @@
   "doctype": "Workflow",
   "document_type": "Sales Invoice",
   "is_active": 1,
-  "modified": "2023-05-26 18:48:33.941562",
+  "modified": "2024-06-20 11:48:16.088268",
   "name": "Sales Invoice",
   "override_status": 0,
   "send_email_alert": 0,
@@ -6327,7 +6327,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "Operations Manager",
+    "allow_edit": "Accounts Manager",
     "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
