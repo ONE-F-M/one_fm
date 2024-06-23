@@ -1,4 +1,4 @@
-import frappe, os, shutil
+import frappe, os, shutil, subprocess
 from frappe.utils import cstr
 from one_fm.utils import production_domain
 
@@ -204,3 +204,231 @@ def replace_prompt_message_in_goal():
 
             with open(file_path, 'w') as f:
                 f.write(newdata)
+
+
+"""
+The below code updates HRMS Ticket detail to
+1. Add a new button for creating Pivotal tracker ticket 
+"""
+def append_line_after_in_ticketagent(file_path, search_line, new_code):
+    try:
+        # Read the file contents
+        code_lines = '\n'.join(new_code) + '\n'
+        with open(file_path, 'r') as file:
+            lines = file.read()
+            #  check for existing code
+            if (code_lines in lines):
+                print("Code exists")
+                return False
+
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+            
+        
+        # Create a flag to track if the line was found and new lines were appended
+        line_found = False
+        
+        # Open the file again in write mode to overwrite the contents
+        with open(file_path, 'w') as file:
+            for line in lines:
+                # Write the current line to the file
+                file.write(line)
+                # If the current line matches the search line, append the new lines after it
+                if line.strip() == search_line:
+                    file.write(code_lines)
+                    line_found = True
+        
+        # Check if the line was found and new lines were appended
+        if line_found:
+            print(f"The lines were successfully appended after '{search_line}'.")
+            return True
+        else:
+            print(f"The line '{search_line}' was not found in the file.")
+            return False
+    except FileNotFoundError:
+        print(f"The file '{file_path}' does not exist.")
+        return False
+    except Exception as e:
+        print(f"An error occurred: {e} try", frappe.get_traceback())
+        return False
+
+def append_code_before_in_ticketagent(file_path, search_line, new_code, replacement=None):
+    try:
+        # Read the file contents
+        with open(file_path, 'r') as file:
+            lines = file.read()
+            #  check for existing code
+            if (new_code in lines):
+                print("Code exists")
+                return False
+            
+        if replacement:
+            with open(file_path, 'r') as file:
+                lines = file.read()
+                if search_line in lines:
+                    lines = lines.replace(search_line, new_code)
+            with open(file_path, 'w') as file_write:
+                file_write.write(lines)
+                return True
+        else:
+            # Read the file contents
+            with open(file_path, 'r') as file:
+                lines = file.readlines()
+
+            # Create a flag to track if the line was found and new code was appended
+            line_found = False
+            
+            # Open the file again in write mode to overwrite the contents
+            with open(file_path, 'w') as file:
+                for line in lines:
+                    # If the current line matches the search line, append the new code before it
+                    if line.strip() == search_line:
+                        file.write(new_code + '\n')
+                        line_found = True
+                    # Write the current line to the file
+                    file.write(line)
+            
+            # Check if the line was found and new code was appended
+            if line_found:
+                print(f"The new code was successfully appended before '{search_line}'.")
+                return True
+            else:
+                print(f"The line '{search_line}' was not found in the file.")
+                return False
+    except FileNotFoundError:
+        print(f"The file '{file_path}' does not exist.")
+        return False
+    except Exception as e:
+        print(f"An error occurred: {e} try", frappe.get_traceback())
+        return False
+
+def update_hd_ticket_agent():
+    # Define the file path and search line
+    TICKET_AGENT_FILE = frappe.utils.get_bench_path()+'/apps/helpdesk/desk/src/pages/TicketAgent.vue'
+    if (os.path.exists(TICKET_AGENT_FILE)):
+
+        # Append lines after 'const showSubjectDialog = ref(false);'
+        search_text = 'const showSubjectDialog = ref(false);'
+        new_code = [
+            'let showcreateDevTicket = ref(false);',
+            'let completeDevTicket = ref(false);'
+        ]
+        first_change = append_line_after_in_ticketagent(TICKET_AGENT_FILE, search_text, new_code)
+
+        # Append code before 'const ticket = createResource({'
+        search_text = 'const ticket = createResource({'
+        new_code = '''const createDevTicket = () => {
+        showcreateDevTicket.value = false;
+        completeDevTicket.value=true;
+        if (!ticket.data.custom_development_story_ticket || true) {
+            createResource({
+            url: "one_fm.overrides.hd_ticket.log_pivotal_tracker",
+            auto: true,
+            params: {
+            name: ticket.data.name,
+            description: ticket.data.description
+            },
+            transform: (data) => {
+            
+            },
+            onSuccess: (data) => {
+            completeDevTicket.value=false;
+            ticket.reload();
+            },
+        });
+        }
+        }
+
+        const viewDevTicket = () => {
+            if (ticket.data.custom_development_story_ticket) {
+                window.open(ticket.data.custom_development_story_ticket, "_blank");
+            }
+        }\n\n
+        '''
+        second_change = append_code_before_in_ticketagent(TICKET_AGENT_FILE, search_text, new_code)
+    
+    
+        # Append Template code for button and modal
+        search_text = '''      </template>
+    </LayoutHeader>'''
+        new_code = '''
+        <div>
+          <Button @click="viewDevTicket" v-if="ticket.data.custom_development_story_ticket">
+            View Dev Ticket
+          </Button>
+          <Button @click="showcreateDevTicket = true"  v-if="!ticket.data.custom_development_story_ticket">
+            Create Dev Ticket
+          </Button>
+          <Dialog v-model="showcreateDevTicket">
+            <template #body-title>
+              <h3>Create Development Ticket</h3>
+            </template>
+            <template #body-content>
+              <p>By clicking on Confirm, a story will be created on Pivotal Tracker</p>
+            </template>
+            <template #actions>
+              <Button variant="solid"
+              @click="createDevTicket">
+                Confirm
+              </Button>
+              <Button
+                class="ml-2"
+                @click="showcreateDevTicket = false"
+              >
+                Close
+              </Button>
+            </template>
+          </Dialog>
+          
+          <Dialog v-model="completeDevTicket">
+            <template #body-title>
+              <h3>Creating Development Ticket</h3>
+            </template>
+            <template #body-content>
+              <p>Development Ticket has been created...</p>
+              <p>
+                <Spinner class="w-8"/>
+              </p>
+            </template>
+            <template #actions>
+              <Button
+                class="ml-2"
+                @click="completeDevTicket = false"
+              >
+                Close
+              </Button>
+            </template>
+          </Dialog>
+        </div>
+        </template>
+        </LayoutHeader>
+        '''
+        third_change = append_code_before_in_ticketagent(TICKET_AGENT_FILE, search_text, new_code, replacement=True)
+        print(first_change, second_change, third_change)
+        if (first_change and second_change and third_change):
+            # execute build
+            print("Rebuilding Helpdesk")
+            # Define the directories
+            bench_path = frappe.utils.get_bench_path()
+            helpdesk_dir = os.path.join(bench_path, 'apps/helpdesk/desk')
+
+            # Run yarn build
+            yarn_build_command = 'yarn build'
+            run_command(yarn_build_command, cwd=helpdesk_dir)
+            #  Restart bench
+            bench_restart_command = "bench restart"
+            run_command(bench_restart_command, cwd=bench_path)
+    else:
+        print(TICKET_AGENT_FILE, 'NOT found')
+    return
+    
+def run_command(command, cwd=None, shell=True):
+    try:
+        result = subprocess.run(command, cwd=cwd, shell=shell, check=True, text=True, capture_output=True)
+        print(result.stdout)
+        if result.stderr:
+            print(result.stderr)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while running the command: {e}")
+        print(f"Output: {e.stdout}")
+        print(f"Error: {e.stderr}")

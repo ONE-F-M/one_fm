@@ -858,6 +858,7 @@ after_migrate = [
     # "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
     "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
+    "one_fm.after_migrate.execute.update_hd_ticket_agent"
 ]
 
 before_migrate = [
