@@ -35,19 +35,13 @@ def cancel_sales_invoice(doc,ev):
         # if linked_jea:
         #     parent_je = frappe.get_doc("Journal Entry",linked_jea.parent)
         #     parent_je.cancel()
-    
-def submit_sales_invoice(doc,ev):
-    """
-     Create a journal entry for advance payments if the sales invoice is set to settle from an existing advance payment
 
-    Args:
-        doc (_type_): doctype (Sales Invoice)
-        ev (_type_): evennt
-
-    
-    """
+@frappe.whitelist()
+def allocate_advances(frm_id,amount,doc=None):
+    if not doc:
+        doc = frappe.get_doc("Sales Invoice",frm_id)
     advance_account = frappe.get_value('Accounts Additional Settings',None,'customer_advance_account')
-    if doc.get('automatic_settlement') == "Yes" and advance_account:
+    if advance_account:
         naming_controller = frappe.get_doc("Document Naming Settings")
         journal_series = naming_controller.get_options("Journal Entry").strip("\n")
         
@@ -64,13 +58,13 @@ def submit_sales_invoice(doc,ev):
             je_doc  = frappe.get_doc(journal_dict)
             je_doc.append("accounts",{
                 'account':advance_account,
-                'debit_in_account_currency':doc.settlement_amount,
+                'debit_in_account_currency':amount,
                 'party_type':'Customer',
                 'party':doc.customer,
             })
             je_doc.append("accounts",{
                 'account':doc.debit_to,
-                'credit_in_account_currency':doc.settlement_amount,
+                'credit_in_account_currency':amount,
                 'party_type':'Customer',
                 'party':doc.customer,
                 'reference_type':'Sales Invoice',
@@ -79,7 +73,20 @@ def submit_sales_invoice(doc,ev):
             })
             je_doc.save()
             je_doc.submit()
-            
+    return
+
+def submit_sales_invoice(doc,ev):
+    """
+     Create a journal entry for advance payments if the sales invoice is set to settle from an existing advance payment
+
+    Args:
+        doc (_type_): doctype (Sales Invoice)
+        ev (_type_): evennt
+
+    
+    """
+    if doc.get('automatic_settlement') == "Yes":
+        allocate_advances(doc.name,doc.settlement_amount,doc = doc)
 
 
 
@@ -1120,6 +1127,9 @@ def set_print_settings_from_contracts(doc, method):
             frappe.throw("Please set an amount to be settled from advances for this invoice.")
         if doc.get('settlement_amount') > doc.get('balance_in_advance_account') and doc.get('automatic_settlement') == "Yes":
             frappe.throw("Settlement amount cannot be more than balance in advance account")
+        if doc.get('settlement_amount') > doc.get('outstanding_amount') and  doc.get('automatic_settlement') == "Yes":
+            frappe.throw("Settlement amount cannot be more than invoice balance")
+            
     if doc.contracts:
         contracts_print_settings = frappe.db.get_values('Contracts', doc.contracts, ['sales_invoice_print_format', 'sales_invoice_letter_head'], as_dict=True)
         if contracts_print_settings and len(contracts_print_settings) > 0:
