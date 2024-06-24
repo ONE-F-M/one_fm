@@ -4,18 +4,21 @@
 	{{ head_html or "" }}
 	{%- endif %}
 
-
+	<link href="https://unpkg.com/frappe-datatable@0.0.5/dist/frappe-datatable.min.css" rel="stylesheet">
+	<script src="https://unpkg.com/sortablejs@1.7.0/Sortable.min.js"></script>
+	<script src="https://unpkg.com/clusterize.js@0.18.0/clusterize.min.js"></script>
+	<script src="https://unpkg.com/frappe-datatable@0.0.5/dist/frappe-datatable.min.js"></script>
 	
 	{%- if theme and theme.name != 'Standard' -%}
 	<link type="text/css" rel="stylesheet" href="{{ theme.theme_url }}">
 	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
 
 	{%- else -%}
-	<!-- {{ include_style('website.bundle.css') }} -->
+	{{ include_style('website.bundle.css') }}
 	{%- endif -%}
 
 	{%- for link in web_include_css %}
-	<!-- {{ include_style(link) }} -->
+	{{ include_style(link) }}
 	{%- endfor -%}
 {% endblock %}
 
@@ -26,9 +29,41 @@
 {% block page_content %}
 <div class="mt-4">
 	<h5>View Client Roster</h5>
-	{{ include_script("web.bundle.js") }}
-	<div id="datatable">YAGA</div>
+	<div id="datatable" style="margin-top: 50px;"></div>
 </div>
+
+
+<script>
+	frappe.ready(function () {
+    fetch_data()
+	});
+
+
+
+	const fetch_data = () => {
+		frappe.call({
+			method: 'one_fm.www.client.client-roster.index.get_client_roster',
+			args:{
+				route_hash: new URLSearchParams(window.location.search).get("id")
+			},
+			callback: function(r){
+				if(r && r.status_code == 200){
+					const options = {
+						columns: r.data.columns,
+						data: r.data.data
+					}
+					const datatable = new DataTable('#datatable', options);
+					datatable.getColumns();
+
+				} else {
+					const container = document.getElementById("datatable");
+					container.innerHTML = `${r.message}`;
+				}
+			}
+		});
+	}
+
+</script>
 
 
 
