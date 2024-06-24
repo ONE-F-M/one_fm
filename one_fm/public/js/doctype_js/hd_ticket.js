@@ -23,16 +23,11 @@ const add_pivotal_tracker_button = (frm) => {
           frappe.confirm(
             "Are you sure you create Pivotal Tracker story?",
             () => {
-              const element = document.createElement("div");
-              element.innerHTML = frm.doc.description;
-
-              const description =
-                element.firstChild.innerText || frm.doc.subject;
-
               frappe.call({
-                method: "one_fm.api.doc_methods.hd_ticket.log_pivotal_tracker",
-                freeze_message: "Logging story to Pivotal Tracker",
-                args: { name: frm.doc.name, description: description },
+                method: "one_fm.overrides.hd_ticket.create_pivotal_tracker_story",
+                freeze: true,
+                freeze_message: "Creating Pivotal Tracker Story",
+                args: { name: frm.doc.name, description: frm.doc.description },
                 callback: function (r) {
                   if (r.message.status == "success") {
                     frappe.msgprint(
