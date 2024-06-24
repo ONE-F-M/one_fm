@@ -9,16 +9,14 @@ from one_fm.api.v1.utils import response
 
 
 def get_context(context):
-    print(frappe.form_dict.id)
     customer = frappe.get_doc("Client", {"route_hash": frappe.form_dict.id})
     context.doc = customer
     context.parents = [{'route': customer.route, 'title': _(customer.customer_name)}]
 
 
-@frappe.whitelist(allow_guest=1)
+@frappe.frappe.whitelist(allow_guest=1, methods=["GET"])
 def get_client_roster(route_hash: str = None):
     try:
-        route_hash = frappe.form_dict.id if not route_hash else route_hash
         year, month, today = getdate().year, getdate().month, getdate().day
         num_days = monthrange(year, month)[1]
         dates = [str(date(year, month, day)) for day in range(1, num_days + 1)]

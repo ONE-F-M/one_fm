@@ -11,6 +11,7 @@ const fetch_data = () => {
         args:{
             route_hash: new URLSearchParams(window.location.search).get("id")
         },
+        type: "GET",
         callback: function(r){
             if(r && r.status_code == 200){
                 const options = {
