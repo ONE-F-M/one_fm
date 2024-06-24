@@ -11,3 +11,6 @@ one_fm/docs/current
 /website/node_modules
 */node_modules
 /mem
+node_modules/*
+package-lock.json
+package.json
