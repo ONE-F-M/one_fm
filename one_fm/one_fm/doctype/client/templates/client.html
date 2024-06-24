@@ -1,5 +1,6 @@
 {% extends "templates/web.html" %}
 {% block head %}
+	<meta name="robots" content="noindex">
 	{% if head_html is defined -%}
 	{{ head_html or "" }}
 	{%- endif %}
