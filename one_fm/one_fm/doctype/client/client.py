@@ -10,15 +10,15 @@ class Client(WebsiteGenerator):
         condition_field = "published",
         page_title_field = "customer",
     )
+    hash = frappe.generate_hash(length=8)
 
     def validate(self):
         if not self.route:
-            route_hash = frappe.generate_hash(length=8)
-            self.route_hash = route_hash
-            self.route = f"client/{frappe.scrub(route_hash)}"
+            self.route_hash = self.hash
+            self.route = f"client/{frappe.scrub(self.hash)}"
 
     def autoname(self):
-        self.name = self.route_hash
+        self.name = self.hash
 
     @frappe.whitelist(allow_guest=True)
     def get_context(self, context):
