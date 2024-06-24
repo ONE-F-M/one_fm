@@ -286,7 +286,8 @@ let fetch_advances  =  function(frm){
                     frm.refresh_field('settlement_amount')
                     if((frm.doc.balance_in_advance_account> 1)  && !(frm.doc.active_modal)){
                         frm.doc.active_modal = 1
-                        frm.set_intro(`${frm.doc.customer} has ${cur_frm.doc.currency}${cur_frm.doc.balance_in_advance_account} in their advance account.\nYou can use it to settle this invoice by setting the 'Settle From Unearned Revenue' field to Yes`)
+                        frm.set_intro(`${frm.doc.customer} has ${cur_frm.doc.currency}${cur_frm.doc.balance_in_advance_account} in their advance account.\nYou can use it to settle this invoice by setting the 
+                        'Settle From Unearned Revenue' field to Yes. If the form is submitted, Click on 'Payment from Unearned Revenue' button in the Create button grid`)
                         settle_advances(frm)
                     }
                 }
