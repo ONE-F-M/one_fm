@@ -423,7 +423,8 @@ doc_events = {
 	# 	"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
 	# },
     "Task": {
-        "validate": "one_fm.overrides.task.validate_task"
+        "validate": "one_fm.overrides.task.validate_task",
+        "after_insert": "one_fm.overrides.task.after_task_insert"
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
