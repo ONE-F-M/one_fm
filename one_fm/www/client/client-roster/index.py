@@ -14,7 +14,7 @@ def get_context(context):
     context.parents = [{'route': customer.route, 'title': _(customer.customer_name)}]
 
 
-@frappe.frappe.whitelist(allow_guest=1, methods=["GET"])
+@frappe.whitelist(allow_guest=1, methods=["GET"])
 def get_client_roster(route_hash: str = None):
     try:
         year, month, today = getdate().year, getdate().month, getdate().day
