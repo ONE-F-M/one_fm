@@ -7,7 +7,7 @@ frappe.ready(function () {
 
 const fetch_data = () => {
     frappe.call({
-        method: 'one_fm.www.client.client-roster.index.get_client_roster',
+        method: 'one_fm.www.client.monthly-attendance-schedule.index.get_client_roster',
         args:{
             route_hash: new URLSearchParams(window.location.search).get("id")
         },
