@@ -147,7 +147,7 @@ def create_pivotal_tracker_story(name, description):
             )
             if(req.status_code==200):
                 response_data = frappe._dict(req.json())
-                doc.db_set('pivotal_tracker', f"{pivotal_tracker.url}/n/projects/{project_id}/stories/{response_data.id}")
+                doc.db_set('custom_pivotal_tracker', f"{pivotal_tracker.url}/n/projects/{project_id}/stories/{response_data.id}")
                 return {'status':'success'}
             else:
                 frappe.throw(f"Pivotal Tracker story could not be created:\n {req.json()}")
