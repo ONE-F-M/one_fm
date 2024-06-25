@@ -1,8 +1,7 @@
-import frappe
+import frappe, requests, re
 from frappe.utils import getdate
 from json import dumps
 from httplib2 import Http
-from frappe.desk.form.assign_to import add as add_assignment
 
 from one_fm.processor import sendemail
 
@@ -116,3 +115,48 @@ def notify_issue_raiser_about_priority(doc, event):
                 )
                 msg = frappe.render_template('one_fm/templates/emails/notify_ticket_raiser_about_priority.html', context=context)
                 frappe.enqueue(method=sendemail, queue="short", recipients=doc.raised_by, subject=title, content=msg, is_external_mail=True, is_scheduler_email=True)
+
+@frappe.whitelist()
+def create_pivotal_tracker_story(name, description):
+    """
+        Create Pivotal Tracker story using name and description
+    """
+    try:
+        doc = frappe.get_doc("HD Ticket", name)
+        doc_link = frappe.utils.get_url(doc.get_url())
+        default_api_integration = frappe.get_doc("Default API Integration")
+        description = cleanhtml(description) or doc.subject
+
+        pivotal_tracker = frappe.get_doc("API Integration",
+            [i for i in default_api_integration.integration_setting
+                if i.app_name=='Pivotal Tracker'][0].app_name)
+        if pivotal_tracker.active:
+            headers={"X-TrackerToken":pivotal_tracker.get_password('api_token').replace(' ', ''),
+                "Content-Type": "application/json"}
+            project_id = pivotal_tracker.get_password('project_id').replace(' ', '')
+            url = f"{pivotal_tracker.url}/services/v5/projects/{project_id}/stories"
+
+            req = requests.post(
+                url=url,
+                headers=headers,
+                json={"name":doc.subject,
+                'description':f"""Link:\t{doc_link}\nStatus: \t{doc.status}\nPriority: \t{doc.priority}\Ticket Type: \t{doc.ticket_type}\n\n
+                {description}""",
+                'story_type':'bug',},
+                timeout=5
+            )
+            if(req.status_code==200):
+                response_data = frappe._dict(req.json())
+                doc.db_set('pivotal_tracker', f"{pivotal_tracker.url}/n/projects/{project_id}/stories/{response_data.id}")
+                return {'status':'success'}
+            else:
+                frappe.throw(f"Pivotal Tracker story could not be created:\n {req.json()}")
+    except Exception as e:
+        frappe.throw(f"Pivotal Tracker story could not be created:\n {str(e)}")
+        frappe.log_error(str(e), 'Pivotal Tracker Story')
+
+CLEANER = re.compile('<.*?>') 
+
+def cleanhtml(raw_html):
+  cleantext = re.sub(CLEANER, '', raw_html)
+  return cleantext.replace("\t", "").replace("\n", "")
