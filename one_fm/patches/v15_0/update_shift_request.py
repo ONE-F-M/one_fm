@@ -15,12 +15,12 @@ def execute():
 
     update_sr(open_shift_requests)
 
-    open_shift_requests = frappe.get_all("Shift Request", 
+    submitted_shift_requests = frappe.get_all("Shift Request", 
         fields=["name", "shift_approver", "department", "workflow_state", "employee"], 
         filters={"shift_approver": ("is", "set"), "workflow_state": ["in", ["Approved", "Rejected"]]},
         order_by="creation desc")
 
-    update_submitted_sr(open_shift_requests)
+    update_submitted_sr(submitted_shift_requests)
 
 def update_submitted_sr(shift_requests):
     for shift_request in shift_requests:
@@ -43,6 +43,8 @@ def update_submitted_sr(shift_requests):
 
 def update_sr(shift_requests):
     for shift_request in shift_requests:
+        if frappe.db.exists("Shift Request Approvers", {"parent": shift_request.name}):
+            continue
         employee_user_id = get_employee_user_id(shift_request.employee)
         approver_user_id = shift_request.shift_approver
         doc = frappe.get_doc("Shift Request", shift_request.name)
