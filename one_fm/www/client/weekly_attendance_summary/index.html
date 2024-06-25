@@ -1,0 +1,40 @@
+{% extends "templates/web.html" %}
+{% block head %}
+	<meta name="robots" content="noindex">
+	{% if head_html is defined -%}
+	{{ head_html or "" }}
+	{%- endif %}
+
+	{%- if theme and theme.name != 'Standard' -%}
+	<link type="text/css" rel="stylesheet" href="{{ theme.theme_url }}">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+	
+	{%- else -%}
+	{{ include_style('website.bundle.css') }}
+
+	{%- endif -%}
+
+	{%- for link in web_include_css %}
+	{{ include_style(link) }}
+	{%- endfor -%}
+	<link href="https://unpkg.com/frappe-datatable/dist/frappe-datatable.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumbs %}
+	{% include "templates/includes/breadcrumbs.html" %}
+{% endblock %}
+
+{% block page_content %}
+<div class="mt-4">
+	<div id="weekly-datatable"></div>  
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}
+{%- block script %}
+	{% if colocated_js -%}
+		<script>{{ colocated_js }}</script>
+	{%- endif %}
+	{{ include_script('web.bundle.js') }}
+{%- endblock %}
