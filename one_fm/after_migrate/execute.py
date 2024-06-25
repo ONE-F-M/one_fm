@@ -376,7 +376,6 @@ def update_hd_ticket_agent():
             </LayoutHeader>
         '''
         third_change = append_code_in_file(FILE_PATH, search_text, appendable_code, insert_before_search_text=True, replace_with_search_text=True)
-        print(first_change, second_change, third_change)
         if (first_change and second_change and third_change):
             # execute build
             print("Rebuilding Helpdesk")

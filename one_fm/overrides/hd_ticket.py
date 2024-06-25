@@ -127,8 +127,6 @@ def create_pivotal_tracker_story(name, description):
         default_api_integration = frappe.get_doc("Default API Integration")
         description = cleanhtml(description) or doc.subject
 
-        print("="*100, name, description)
-
         pivotal_tracker = frappe.get_doc("API Integration",
             [i for i in default_api_integration.integration_setting
                 if i.app_name=='Pivotal Tracker'][0].app_name)
