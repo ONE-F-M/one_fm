@@ -79,10 +79,14 @@ one_fm.patches.v15_0.delete_employment_type_field_from_job_opening
 one_fm.patches.v15_0.migrate_data_for_job_offer_term_templates
 one_fm.patches.v15_0.delete_offer_term_templates_field
 one_fm.patches.v15_0.replicate_issue_types_to_hd_ticket_types
-#one_fm.patches.v15_0.update_timesheet_workflow_sate
+# one_fm.patches.v15_0.update_timesheet_workflow_sate
 one_fm.patches.v15_0.delete_duplicate_leave_attendance
 one_fm.patches.v15_0.update_subcontract_doc
 one_fm.patches.v15_0.update_employee_status
 one_fm.patches.v15_0.update_employee_id_qr_code_generator
 one_fm.patches.v15_0.update_religion_field_options
 one_fm.patches.v15_0.add_supervisor_in_shift #1
+one_fm.patches.v15_0.fix_sle
+one_fm.patches.v15_0.patch_employee_checkin
+one_fm.patches.v15_0.update_shift_request
+one_fm.patches.v15_0.add_task_assignments_to_form_field
