@@ -36,30 +36,31 @@ def get_weekly_data(id : str):
 
     # Data for datatable
     Attendance = frappe.qb.DocType("Attendance")
-    Employee = frappe.qb.DocType("Employee")
+    OperationsRole = frappe.qb.DocType("Operations Role")
+    
     query = (
         frappe.qb.from_(Attendance)
-        .left_join(Employee)
-        .on(Attendance.employee == Employee.name)
+        .left_join(OperationsRole)
+        .on(OperationsRole.name == Attendance.operations_role)
         .select(
+            Attendance.attendance_date,
             Attendance.employee,
             Attendance.employee_name,
-            Attendance.attendance_date,
             Attendance.status,
-            Employee.designation
+            OperationsRole.post_name
         )
+        .distinct()
         .where(
             (Attendance.docstatus == 1)         
             & (Attendance.employee.isin([employee.name for employee in employees]))
             & (Attendance.attendance_date[start_date:end_date])
         )
     )
-
     query = query.orderby(Attendance.employee, Attendance.attendance_date)
-
     attendance_list = query.run(as_dict=1)
- 
+
     data = generate_data_map(dates, attendance_list)
+
     return {
         "columns": columns,
         "data": data
@@ -76,19 +77,21 @@ def generate_data_map(dates, attendance_list):
     """
     data_map = []
 
-    for key, value in groupby(attendance_list, key=lambda k: (k['employee'], k['employee_name'], k['designation'])):
+    for key, value in groupby(attendance_list, key=lambda k: (k['employee'], k['employee_name'])):
         row = []
         # Employee Name
         row.append(key[1])
-        # Designation
-        row.append(key[2])
+        records = list(value)
+        # Insert Designation (Operations Role name) at second place in list
+        row.insert(1, next((attendance["post_name"] for attendance in records if attendance["post_name"]), "N-A"))
 
         for date in dates:
             # If attendance for specific date is not present, then assign Not Available as default status
-            status = next((attendance.status for attendance in list(value) if attendance['attendance_date'] == date), "Not Available")
+            status = next((attendance.status for attendance in records if attendance['attendance_date'] == date), "Not Available")
             row.append(status)
-
+            
         data_map.append(row)
+
     return data_map
 
 
