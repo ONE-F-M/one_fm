@@ -13,11 +13,12 @@ from one_fm.api.doc_events import haversine
 
 
 # setup channel for face recognition
-face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
 
+face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
 site_path = os.getcwd()+frappe.utils.get_site_path().replace('./', '/')
 video_path = site_path + '/public/files/video.mp4'
 video_txt_path = site_path + '/public/files/video.txt'
+
 
 def base64_to_mp4(base64_string):
     # Decode the Base64 string to bytes
@@ -68,7 +69,7 @@ def enroll(employee_id: str = None, video: str = None, filename: str = None) -> 
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
         
         # check Face Recognition Endpoint
-        endpoint_state = frappe.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
+        endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
         if endpoint_state:
             status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": frappe.session.user, "filename": filename}, files={"video_file": video_file})
         else:
@@ -117,7 +118,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             skip_attendance = int(skip_attendance) if skip_attendance else 0
             latitude = float(latitude)
             longitude = float(longitude)
-        except:
+        except Exception as e:
             return response("Bad Request", 400, None, "skip_attendance must be an integer, latitude and longitude must be float.")
 
         if not employee_id:
@@ -165,7 +166,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
                 
         # check Face Recognition Endpoint
-        endpoint_state = frappe.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
+        endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
         video_file = video or frappe.request.files.get("video_file") or frappe.request.files.get("video")
         if not filename:
             filename = frappe.session.user+'.mp4'

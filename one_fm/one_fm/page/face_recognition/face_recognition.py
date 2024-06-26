@@ -19,7 +19,7 @@ from one_fm.one_fm.page.face_recognition.utils import update_onboarding_employee
 from one_fm.api.v2.zenquotes import fetch_quote
 
 # setup channel for face recognition
-face_recognition_service_url = frappe.local.conf.face_recognition_service_url
+face_recognition_service_url = frappe.local.conf.face_recognition_service_base_url
 channels = [
 	grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
 ]
