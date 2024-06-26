@@ -86,7 +86,7 @@ def enroll(employee_id: str = None, video: str = None, filename: str = None) -> 
         return response("Success", 201, "User enrolled successfully.<br>Please wait for 10sec, you will be redirected to checkin.")
 
     except Exception as error:
-        frappe.log_error(message=frappe.get_tracebck(), title="Enrollment")
+        frappe.log_error(message=frappe.get_traceback(), title="Enrollment")
         return response("Internal Server Error", 500, None, error)
 
 
