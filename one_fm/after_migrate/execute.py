@@ -278,14 +278,14 @@ def update_hd_ticket_agent():
         # Append code before 'const ticket = createResource({'
         search_text = 'const ticket = createResource({'
         appendable_code = '''
-        const createPivotalTrackerStory = () => {
+        const createDevTicket = () => {
         
             showCreateStoryConfirmationDialog.value = false;
             showStoryCreationProgressDialog.value = true;
 
-            if (!ticket.data.custom_pivotal_tracker || true) {
+            if (!ticket.data.custom_dev_ticket || true) {
                 createResource({
-                url: "one_fm.overrides.hd_ticket.create_pivotal_tracker_story",
+                url: "one_fm.overrides.hd_ticket.create_dev_ticket",
                 auto: true,
                 params: {
                     name: ticket.data.name,
@@ -295,7 +295,7 @@ def update_hd_ticket_agent():
                 onSuccess: (data) => {
                     showStoryCreationProgressDialog.value = false;
                     createToast({
-                      title: "Pivotal Tracker story created successfully",
+                      title: "Dev ticket created successfully",
                       icon: "check",
                       iconClasses: "text-green-600",
                     });
@@ -304,8 +304,8 @@ def update_hd_ticket_agent():
                 onError: (error) => {
                     showStoryCreationProgressDialog.value = false;
                     createToast({
-                    title: 'Pivotal Tracker Story Error',
-                    text: error.message || "Something went wrong in creating Pivotal Tracker story",
+                    title: 'Dev Ticket Error',
+                    text: error.message || "Something went wrong in creating dev ticket",
                     icon: "x",
                     iconClasses: "text-red-600",
                   });
@@ -314,9 +314,9 @@ def update_hd_ticket_agent():
             }
         };
 
-        const viewPivotalTrackerStory = () => {
-            if (ticket.data.custom_pivotal_tracker) {
-                window.open(ticket.data.custom_pivotal_tracker, "_blank");
+        const viewDevTicket = () => {
+            if (ticket.data.custom_dev_ticket) {
+                window.open(ticket.data.custom_dev_ticket, "_blank");
             }
         };\n\n
         '''
@@ -328,22 +328,22 @@ def update_hd_ticket_agent():
     </LayoutHeader>'''
         appendable_code = '''
             <div>
-                <Button @click="viewPivotalTrackerStory" v-if="ticket.data.custom_pivotal_tracker">
-                    View Pivotal Tracker Story
+                <Button @click="viewDevTicket" v-if="ticket.data.custom_dev_ticket">
+                    View Dev Ticket
                 </Button>
-                <Button @click="showCreateStoryConfirmationDialog = true"  v-if="!ticket.data.custom_pivotal_tracker">
-                    Create Pivotal Tracker Story
+                <Button @click="showCreateStoryConfirmationDialog = true"  v-if="!ticket.data.custom_dev_ticket">
+                    Create Dev Ticket
                 </Button>
                 <Dialog v-model="showCreateStoryConfirmationDialog">
                     <template #body-title>
-                    <h3>Create Pivotal Tracker Story</h3>
+                    <h3>Create Dev Ticket</h3>
                     </template>
                     <template #body-content>
-                    <p>By clicking on "Confirm", a story will be created on Pivotal Tracker</p>
+                    <p>By clicking on "Confirm", a dev ticket will be created</p>
                     </template>
                     <template #actions>
                     <Button variant="solid"
-                    @click="createPivotalTrackerStory">
+                    @click="createDevTicket">
                         Confirm
                     </Button>
                     <Button
@@ -360,7 +360,7 @@ def update_hd_ticket_agent():
                     <h3>Please Wait</h3>
                     </template>
                     <template #body-content>
-                    <p>Please hold while we are creating Pivotal Tracker story</p>
+                    <p>Please hold while we are creating dev ticket</p>
                     </template>
                     <template #actions>
                     <Button
