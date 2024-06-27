@@ -36,6 +36,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Employee Id",
    "options": "Employee",
@@ -215,7 +216,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-26 11:27:49.952758",
+ "modified": "2024-06-27 12:24:06.541266",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Shift Permission",
