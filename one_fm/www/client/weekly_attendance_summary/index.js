@@ -4,13 +4,13 @@ frappe.ready(function () {
   frappe.call({
     method: "one_fm.www.client.weekly_attendance_summary.index.get_weekly_data",
     type: "GET",
-    args: {"id": id},
+    args: {"id": id},   
     callback: function(r) { render_table(r) },
   });
 
   function render_table(res){
     let {columns, data} = res.message;
-
+    $('.summary-placeholder').hide();
     const datatable = new DataTable('#weekly-datatable', {
       serialNoColumn: true,
       inlineFilters: true,
@@ -20,6 +20,7 @@ frappe.ready(function () {
       columns: columns,
       noDataMessage : "No data found!",
       isFilterShown: true,
+      clusterize: false,
       data: data,
       events: {
         onSwitchColumn(column) {

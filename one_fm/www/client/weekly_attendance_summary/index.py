@@ -14,7 +14,6 @@ def get_context(context):
 
 @frappe.whitelist(allow_guest=True, methods=["GET"])
 def get_weekly_data(id : str):
-    id = frappe.form_dict.id
     customer = frappe.db.get_value("Client", id, "customer")
     customer_project = frappe.db.get_value("Project", {"customer": customer}, "name")
 
