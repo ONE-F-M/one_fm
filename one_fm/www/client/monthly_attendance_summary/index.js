@@ -10,13 +10,13 @@ frappe.ready(function () {
   $('select[data-fieldname="month"]').val(moment().month() + 1); // month + 1 because zero based indexing
 
   $('select[data-fieldname="year"]').on('change', function(){
-    $('#monthly-datatable').remove();
+    $('#monthly-datatable').hide();
     $('.summary-placeholder').show();
     get_monthly_data();
   })
 
   $('select[data-fieldname="month"]').on('change', function(){
-    $('#monthly-datatable').remove();
+    $('#monthly-datatable').hide();
     $('.summary-placeholder').show();
     get_monthly_data();
   })
@@ -43,7 +43,9 @@ function get_monthly_data(){
 
 function render_table(res){
   $('.summary-placeholder').hide();
+  $('#monthly-datatable').show();
   let {columns, data} = res.message;
+
   const datatable = new DataTable('#monthly-datatable', {
     serialNoColumn: true,
     inlineFilters: true,
