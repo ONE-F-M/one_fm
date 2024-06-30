@@ -41,7 +41,7 @@ def on_update(doc, event):
         workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])
 
     if doc.workflow_state == 'Draft':
-        send_workflow_action_email(doc,[doc.approver])
+        send_workflow_action_email(doc, [doc.approver])
         validate_shift_overlap(doc)
 
 def validate_shift_overlap(doc):
