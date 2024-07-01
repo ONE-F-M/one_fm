@@ -78,7 +78,6 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 				.format(employee_id=employee_id))
 
 		shift_details = get_shift_details(employee)
-		print(shift_details)
 
 		if shift_details.found:
 			shift, shift_type, shift_assignment, shift_supervisor = shift_details.data
