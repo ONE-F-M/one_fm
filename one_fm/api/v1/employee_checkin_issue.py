@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import frappe
 from frappe import _
 from one_fm.api.notification import create_notification_log
@@ -58,8 +60,8 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 			return response("Bad Request", 400, None, "longitude required.")
 
 		try:
-			latitude = float(latitude)
-			longitude = float(longitude)
+			latitude = Decimal(latitude)
+			longitude = Decimal(longitude)
 		except:
 			return response("Bad Request", 400, None, "Latitude and longitude must be float.")
 
@@ -76,6 +78,7 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 				.format(employee_id=employee_id))
 
 		shift_details = get_shift_details(employee)
+		print(shift_details)
 
 		if shift_details.found:
 			shift, shift_type, shift_assignment, shift_supervisor = shift_details.data
@@ -125,8 +128,12 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 def get_shift_details(employee):
 	shift = shift_type = shift_assignment = shift_supervisor = None
 
-	shift_assignment, shift_supervisor, shift, shift_type = fetch_approver(employee)
-
+	shift_details = fetch_approver(employee=employee)
+	shift_assignment = shift_details.get("assigned_shift") 
+	shift_supervisor = shift_details.get("shift_supervisor"),
+	shift = shift_details.get("shift")
+	shift_type = shift_details.get("shift_type")
+	
 	if not shift_assignment:
 		return frappe._dict({'found':False})
 
@@ -283,3 +290,24 @@ def reject_employee_checkin_issue(employee_id: str = None, employee_checkin_issu
 
 def notify_for_employee_checkin_issue_status(subject, message, user, employee_checkin_issue_doc, mobile_notification):
 	create_notification_log(subject, message, [user], employee_checkin_issue_doc, mobile_notification)
+
+
+
+
+@frappe.whitelist(methods=["GET"])
+def get_issue_type():
+	try:
+		doctype = frappe.get_meta("Employee Checkin Issue")
+		if not doctype:
+			return response("Doctype does not exist", 400, None)
+
+		field = next((field for field in doctype.fields if field.fieldname == "issue_type"), None)
+		if not field or field.fieldtype != 'Select':
+			return response("Field not found or is not a Select field", 400, None)
+
+		options = field.options.split("\n")
+		return response("Operation Successful", 200, options)
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), _("Error while fetching issue type (Employee Checkin Issue)"))
+		return response("Internal Server Error", 500, None, str(e))
+
