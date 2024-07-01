@@ -33,8 +33,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 					['user_id', 'employee_name'],
 					as_dict=1
 				)
-				self.approver_user = approver.user_id
-				self.approver_name = approver.employee_name
+				pass
 
 	def on_submit(self):
 		if not self.reports_to():
