@@ -327,7 +327,7 @@ def update_hd_ticket_agent():
         search_text = '''      </template>
     </LayoutHeader>'''
         appendable_code = '''
-            <div>
+            <div v-if="['Open', 'Replied'].includes(ticket.data.status)">
                 <Button @click="viewDevTicket" v-if="ticket.data.custom_dev_ticket">
                     View Dev Ticket
                 </Button>
