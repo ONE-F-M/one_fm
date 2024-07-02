@@ -25,9 +25,10 @@
 {% endblock %}
 
 {% block page_content %}
-<div class="mt-4">
-	<div id="weekly-datatable"></div>  
-</div>
+	<div class="mt-4 border rounded">
+		{% include "www/client/placeholder.html" %}
+		<div class="p-4" id="weekly-datatable"></div>  
+	</div>
 {% endblock %}
 
 {% block footer %}
