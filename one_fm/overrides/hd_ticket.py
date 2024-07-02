@@ -117,9 +117,9 @@ def notify_issue_raiser_about_priority(doc, event):
                 frappe.enqueue(method=sendemail, queue="short", recipients=doc.raised_by, subject=title, content=msg, is_external_mail=True, is_scheduler_email=True)
 
 @frappe.whitelist()
-def create_pivotal_tracker_story(name, description):
+def create_dev_ticket(name, description):
     """
-        Create Pivotal Tracker story using name and description
+        Create Dev Ticket using name and description
     """
     try:
         doc = frappe.get_doc("HD Ticket", name)
@@ -140,20 +140,20 @@ def create_pivotal_tracker_story(name, description):
                 url=url,
                 headers=headers,
                 json={"name":doc.subject,
-                'description':f"""Link:\t{doc_link}\nStatus: \t{doc.status}\nPriority: \t{doc.priority}\Ticket Type: \t{doc.ticket_type}\n\n
+                'description':f"""Link:\t{doc_link}\nStatus: \t{doc.status}\nPriority: \t{doc.priority}\nTicket Type: \t{doc.ticket_type}\n\n
                 {description}""",
                 'story_type':'bug',},
                 timeout=5
             )
             if(req.status_code==200):
                 response_data = frappe._dict(req.json())
-                doc.db_set('custom_pivotal_tracker', f"{pivotal_tracker.url}/n/projects/{project_id}/stories/{response_data.id}")
+                doc.db_set('custom_dev_ticket', f"{pivotal_tracker.url}/n/projects/{project_id}/stories/{response_data.id}")
                 return {'status':'success'}
             else:
-                frappe.throw(f"Pivotal Tracker story could not be created:\n {req.json()}")
+                frappe.throw(f"Dev ticket could not be created:\n {req.json()}")
     except Exception as e:
-        frappe.throw(f"Pivotal Tracker story could not be created:\n {str(e)}")
-        frappe.log_error(str(e), 'Pivotal Tracker Story')
+        frappe.throw(f"Dev ticket could not be created:\n {str(e)}")
+        frappe.log_error(str(e), 'Dev Ticket')
 
 CLEANER = re.compile('<.*?>') 
 
