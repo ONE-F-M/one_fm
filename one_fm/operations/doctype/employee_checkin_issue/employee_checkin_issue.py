@@ -141,7 +141,8 @@ def fetch_approver(employee, date=None):
 			order_by='creation desc',
 			limit_page_length=1
 		)
-		if employee_shift and len(employee_shift)>0:
+
+		if employee_shift and len(employee_shift) > 0:
 			approver = get_approver(employee)
 			shift_detail['assigned_shift'] = employee_shift[0].name
 			shift_detail['shift_supervisor'] = approver

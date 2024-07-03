@@ -1,22 +1,89 @@
-import frappe, json
-import datetime
-from frappe import _
+import frappe
+import datetime, json
 import pandas as pd
-from frappe.workflow.doctype.workflow_action.workflow_action import (
-    get_common_email_args, deduplicate_actions, get_next_possible_transitions,
-    get_doc_workflow_state, get_workflow_name, get_users_next_action_data
-)
-from frappe.utils import getdate, today, cstr, add_to_date, nowdate, add_days
+from frappe import _
+from frappe.utils import getdate, today, cstr, add_to_date, add_days, get_url_to_form
 from frappe.model.workflow import apply_workflow
+from frappe.utils import getdate, cstr
+from hrms.hr.utils import share_doc_with_approver
+from hrms.hr.doctype.shift_request.shift_request import *
 from one_fm.utils import (
     workflow_approve_reject, send_workflow_action_email, get_approver
 )
-from one_fm.api.notification import create_notification_log, get_employee_user_id
-from one_fm.operations.doctype.employee_schedule.employee_schedule import validate_operations_post_overfill
+from one_fm.api.notification import get_employee_user_id
 from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
+from one_fm.processor import sendemail
+
 
 class OverlappingShiftError(frappe.ValidationError):
     pass
+
+class ShiftRequestOverride(ShiftRequest):
+    def on_submit(self):
+        if self.workflow_state != 'Update Request':
+            self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approval' else self.db_set("status", 'Draft')
+
+    def on_update(self):
+        for approver in self.custom_shift_approvers:
+            share_doc_with_approver(self, approver.user)
+
+    def validate_approver(self):
+        if not self.is_new() and self.workflow_state == "Approved":
+            pass
+            # if self.approver != frappe.session.user:
+            # frappe.throw(_("Only Approvers can Approve this Request."))
+
+    def on_cancel(self):
+        '''
+            Method used to override Shift Request on_cancel
+        '''
+        self.cancel_shift_assignment_of_request()
+
+    def validate_default_shift(self):
+        default_shift = frappe.get_value("Employee", self.employee, "default_shift")
+        if self.shift_type == default_shift:
+            pass
+
+
+    def cancel_shift_assignment_of_request(self):
+        '''
+            Method used to cancel Shift Assignment of a Shift Request
+            args:
+                self: Object of shift request
+                submit: Boolean
+        '''
+        schedule_exists = frappe.db.exists("Employee Schedule",{"employee":self.employee, "date":cstr(getdate()), "employee_availability":"Working"})
+
+        shift_assignment_list = frappe.get_list(
+            "Shift Assignment",
+            {
+                "employee": self.employee,
+                "shift_request": self.name,
+                "docstatus": 1
+            }
+        )
+        if shift_assignment_list:
+            for shift in shift_assignment_list:
+                shift_assignment_doc = frappe.get_doc("Shift Assignment", shift["name"])
+                shift_assignment_doc.cancel()
+                shift_assignment_doc.delete()
+        if self.from_date <= cstr(getdate()) <= self.to_date and schedule_exists:
+            schedule = frappe.get_doc("Employee Schedule",{"employee":self.employee, "date":cstr(getdate())})
+            if schedule:
+                sa = frappe.get_doc(dict(
+                doctype='Shift Assignment',
+                start_date = cstr(getdate()),
+                employee = schedule.employee,
+                employee_name = schedule.employee_name,
+                department = schedule.department,
+                operations_role = schedule.operations_role,
+                shift = schedule.shift,
+                site = schedule.site,
+                project = schedule.project,
+                shift_type = schedule.shift_type,
+                roster_type = schedule.roster_type,
+                )).insert()
+                sa.submit()
 
 def validate(doc, event=None):
     # ensure status is not pending
@@ -27,21 +94,13 @@ def validate(doc, event=None):
 
     process_shift_assignemnt(doc) # set shift assignment and employee schedule
 
-def shift_request_submit(self):
-    if self.workflow_state != 'Update Request':
-        self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approval' else self.db_set("status", 'Draft')
-
-def validate_default_shift(self):
-    default_shift = frappe.get_value("Employee", self.employee, "default_shift")
-    if self.shift_type == default_shift:
-        pass
 
 def on_update(doc, event):
     if doc.workflow_state in ['Approved', 'Rejected']:
         workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])
 
     if doc.workflow_state == 'Draft':
-        send_workflow_action_email(doc,[doc.approver])
+        send_workflow_action_email(doc,[approver.user for approver in doc.custom_shift_approvers])
         validate_shift_overlap(doc)
 
 def validate_shift_overlap(doc):
@@ -65,17 +124,12 @@ def validate_shift_overlap(doc):
             )
             frappe.throw(msg, title=_("Overlapping Shifts"), exc=OverlappingShiftError)
 
-def shift_request_cancel(self):
-    '''
-        Method used to override Shift Request on_cancel
-    '''
-    cancel_shift_assignment_of_request(self)
 
 def on_update_after_submit(doc, method):
     if doc.update_request:
         if doc.workflow_state == 'Update Request':
             doc.db_set("status", 'Draft')
-            cancel_shift_assignment_of_request(doc)
+            doc.cancel_shift_assignment_of_request()
 
 def process_shift_assignemnt(doc, event=None):
     role_abbr = frappe.db.get_value("Operations Role",doc.operations_role,'post_abbrv')
@@ -246,60 +300,20 @@ def assign_day_off(shift_request):
             start_date += delta
     frappe.db.commit()
 
-def cancel_shift_assignment_of_request(shift_request):
-    '''
-        Method used to cancel Shift Assignment of a Shift Request
-        args:
-            shift_request: Object of shift request
-            submit: Boolean
-    '''
-    schedule_exists = frappe.db.exists("Employee Schedule",{"employee":shift_request.employee, "date":cstr(getdate()), "employee_availability":"Working"})
-
-    shift_assignment_list = frappe.get_list(
-        "Shift Assignment",
-        {
-            "employee": shift_request.employee,
-            "shift_request": shift_request.name,
-            "docstatus": 1
-        }
-    )
-    if shift_assignment_list:
-        for shift in shift_assignment_list:
-            shift_assignment_doc = frappe.get_doc("Shift Assignment", shift["name"])
-            shift_assignment_doc.cancel()
-            shift_assignment_doc.delete()
-    if shift_request.from_date <= cstr(getdate()) <= shift_request.to_date and schedule_exists:
-        schedule = frappe.get_doc("Employee Schedule",{"employee":shift_request.employee, "date":cstr(getdate())})
-        if schedule:
-            sa = frappe.get_doc(dict(
-            doctype='Shift Assignment',
-            start_date = cstr(getdate()),
-            employee = schedule.employee,
-            employee_name = schedule.employee_name,
-            department = schedule.department,
-            operations_role = schedule.operations_role,
-            shift = schedule.shift,
-            site = schedule.site,
-            project = schedule.project,
-            shift_type = schedule.shift_type,
-            roster_type = schedule.roster_type,
-            )).insert()
-            sa.submit()
-
-
-def validate_approver(self):
-    if not self.is_new() and self.workflow_state == "Approved":
-    	pass
-        #if self.approver != frappe.session.user:
-        #    frappe.throw(_("Only Approvers can Approve this Request."))
 
 @frappe.whitelist()
-def fetch_approver(employee):
-    if not employee:
-        return
-    approver = get_approver(employee)
-    if approver:
-        return frappe.get_value("Employee", approver, ["user_id"])
+def fetch_approver(doc):
+    doc = frappe._dict(json.loads(doc))
+    employee_user_id = get_employee_user_id(doc.employee)
+    approver = get_approver(doc.employee)
+    approver_user_id = get_employee_user_id(approver)
+    other_approvers = []
+    if doc.department == "Operations - ONEFM":
+        other_approvers =[user.approver for user in frappe.get_all("Department Approver", filters={"parent": doc.department, "parentfield": "shift_request_approver"}, fields=["approver"]) if user.approver != employee_user_id and user.approver != approver_user_id]
+
+    if approver_user_id:
+        return [approver_user_id] + other_approvers
+
 
 def fill_to_date(doc, method):
     if not doc.to_date:
@@ -326,8 +340,8 @@ def update_request(shift_request, from_date, to_date):
     apply_workflow(shift_request_obj, "Update Request")
 
 def _get_employee_from_user(user):
-	employee_docname = frappe.db.get_value("Employee", {"user_id": user})
-	return employee_docname if employee_docname else None
+    employee_docname = frappe.db.get_value("Employee", {"user_id": user})
+    return employee_docname if employee_docname else None
 
 
 def get_manager(doctype, employee):
@@ -461,3 +475,23 @@ def daterange(start_date, end_date):
     end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
     for n in range(int((end_date - start_date).days)):
         yield start_date + datetime.timedelta(n)
+
+
+def send_shift_request_mail(doc, method=None):
+    if doc.workflow_state == 'Pending Approval':
+        try:
+            title = f"Urgent Notification: {doc.doctype} Requires Your Immediate Review"
+            context = dict(
+                employee_name=doc.employee_name,
+                from_date=doc.from_date,
+                to_date=doc.to_date,
+                department=doc.department,
+                checkin_site=doc.check_in_site,
+                checkout_site=doc.check_out_site,
+                doc_link=get_url_to_form(doc.doctype, doc.name)
+            )
+            msg = frappe.render_template('one_fm/templates/emails/shift_request_notification.html', context=context)
+            recipients = [approver.user for approver in doc.custom_shift_approvers]
+            sendemail(recipients=recipients, subject=title, content=msg)
+        except:
+            frappe.log_error(frappe.get_traceback(), "Error while sending shift request notification")

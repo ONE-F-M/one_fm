@@ -11,7 +11,7 @@ from frappe.model.utils import is_virtual_doctype
 from frappe.model.utils.user_settings import get_user_settings
 from frappe.permissions import get_doc_permissions
 from frappe.utils.data import cstr
-from one_fm.api.doc_methods.shift_request import get_manager
+from one_fm.overrides.shift_request import get_manager
 from one_fm.utils import (
     check_employee_permission_on_doc, get_approver_for_many_employees, has_super_user_role
 )
