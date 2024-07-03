@@ -492,6 +492,6 @@ def send_shift_request_mail(doc, method=None):
             )
             msg = frappe.render_template('one_fm/templates/emails/shift_request_notification.html', context=context)
             recipients = [approver.user for approver in doc.custom_shift_approvers]
-            frappe.enqueue(sendemail, recipients=recipients, subject=title, content=msg, at_front=True, is_async=True)
+            sendemail(recipients=recipients, subject=title, content=msg)
         except:
             frappe.log_error(frappe.get_traceback(), "Error while sending shift request notification")
