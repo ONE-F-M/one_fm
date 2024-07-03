@@ -315,7 +315,7 @@ def get_issue_type():
 @frappe.whitelist(methods=["GET"])
 def get_employee_checkin_issue():
 	try:
-		employee_name = frappe.db.get_value("Employee", {"user_id": "a.adekunle@one-fm.com"}, ["name"])
+		employee_name = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
 		if employee_name:
 			data = frappe.db.get_list("Employee Checkin Issue", {"employee": employee_name}, ["name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
 			return response("Operation Successful", 200, data, None)
