@@ -318,9 +318,8 @@ def get_employee_checkin_issue():
 		employee_name = frappe.db.get_value("Employee", {"user_id": "a.adekunle@one-fm.com"}, ["name"])
 		if employee_name:
 			data = frappe.db.get_list("Employee Checkin Issue", {"employee": employee_name}, ["name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
-			print(data)
 			return response("Operation Successful", 200, data, None)
-		return response("EMployee does not exist", 400, None)
+		return response("Employee does not exist", 400, None)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), _("Error while fetching Employee Checkin Issue"))
 		return response("Internal Server Error", 500, None, str(e))
