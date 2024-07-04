@@ -774,14 +774,6 @@ def mark_leave_attendance():
         # create On Hold Attendance 
         if on_leave_employees:
             for i in on_leave_employees:
-                name = f"HR-ATT_{date}_{i.employee}_Basic"
-                emp = employees_dict.get(i.employee)
-                query_body+= f"""
-                    (
-                        "{name}", "{naming_series}","{i.employee}", "{i.employee_name}", "On Leave", '{i.leave_type}', '{i.name}',
-                        "{date}", "{i.company}", "{i.department}","Basic", {1}, "{owner}",
-                        "{owner}", "{creation}", "{creation}", "{i.leave_type}"
-                    ),"""
                 basic_attendance_employees.append(i.employee) 
         
         if query_body:
