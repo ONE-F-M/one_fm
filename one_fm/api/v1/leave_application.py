@@ -285,16 +285,20 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
         if proof_document_required_for_leave_type(leave_type):
             if not proof_document:
                 return response("Missing", 400, None, "Proof document is required for {leave_type}".format(leave_type=leave_type))
-            try:
-                proof_doc_json = json.loads(proof_document)
-                if isinstance(proof_doc_json, list):
-                    proof_doc_json = proof_doc_json[0]
-            except:
-                proof_doc_json = {}
-            attachment = proof_doc_json.get('attachment')
-            attachment_name = proof_doc_json.get('attachment_name')
+            if type(proof_document==dict):
+                attachment = proof_document.get('attachment')
+                attachment_name = proof_document.get('attachment_name')
+            else:
+                try:
+                    proof_doc_json = json.loads(proof_document)
+                    if isinstance(proof_doc_json, list):
+                        proof_doc_json = proof_doc_json[0]
+                except:
+                    proof_doc_json = {}
+                attachment = proof_doc_json.get('attachment')
+                attachment_name = proof_doc_json.get('attachment_name')
             if not attachment or not attachment_name:
-                return response('proof_document key requires attachment and attachment_name', {}, 400)
+                return response('Bad Request', 400, {}, "proof_document key requires attachment and attachment_name")
 
             file_ext = "." + attachment_name.split(".")[-1]
             content = base64.b64decode(attachment)
