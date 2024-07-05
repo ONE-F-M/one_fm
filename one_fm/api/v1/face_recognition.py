@@ -13,11 +13,12 @@ from one_fm.api.doc_events import haversine
 
 
 # setup channel for face recognition
-face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
 
+face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
 site_path = os.getcwd()+frappe.utils.get_site_path().replace('./', '/')
 video_path = site_path + '/public/files/video.mp4'
 video_txt_path = site_path + '/public/files/video.txt'
+
 
 def base64_to_mp4(base64_string):
     # Decode the Base64 string to bytes
@@ -53,21 +54,29 @@ def enroll(employee_id: str = None, video: str = None, filename: str = None) -> 
             return response("Bad Request", 400, None, "employee_id required.")
         
         if not filename:
-            filename = employee_id+'.mp4'
+            filename = frappe.session.user+'.mp4'
         
         video_file = frappe.request.files.get("video_file") or video or frappe.request.files.get("video")
 	    
         if not video_file:
             return response("Bad Request", 400, None, "Video File is required.")
         
-        if not face_recog_base_url:
-            return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+        # check Face Recognition Endpoint
+        endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
+        if endpoint_state:
+            if not face_recog_base_url:
+                return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+            status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": frappe.session.user, "filename": filename}, files={"video_file": video_file})
+        else:
+            status, message = True, 'Successful'
+            
         
         doc = frappe.get_doc("Employee", {"employee_id": employee_id})
         if not doc:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-
-        status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": employee_id, "filename": filename}, files={"video_file": video_file})
+        
+        
+            
         if not status:
             return response("Bad Request", 400, None, message)
         
@@ -79,13 +88,14 @@ def enroll(employee_id: str = None, video: str = None, filename: str = None) -> 
         return response("Success", 201, "User enrolled successfully.<br>Please wait for 10sec, you will be redirected to checkin.")
 
     except Exception as error:
-        frappe.log_error(message=frappe.get_tracebck(), title="Enrollment")
+        frappe.log_error(message=frappe.get_traceback(), title="Enrollment")
         return response("Internal Server Error", 500, None, error)
 
 
 @frappe.whitelist()
 def verify_checkin_checkout(employee_id: str = None, video : str = None, log_type: str = None,
-        skip_attendance: str = None, latitude: str = None, longitude: str = None):
+        skip_attendance: str = None, latitude: str = None, longitude: str = None,
+        filename=None):
     """This method verifies user checking in/checking out.
 
     Args:
@@ -110,7 +120,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
             skip_attendance = int(skip_attendance) if skip_attendance else 0
             latitude = float(latitude)
             longitude = float(longitude)
-        except:
+        except Exception as e:
             return response("Bad Request", 400, None, "skip_attendance must be an integer, latitude and longitude must be float.")
 
         if not employee_id:
@@ -156,40 +166,26 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
 
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
-
-        # setup channel
-        # face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-        # channel = grpc.secure_channel(face_recognition_service_url, grpc.ssl_channel_credentials())
-        # setup stub
-        # stub = facial_recognition_pb2_grpc.FaceRecognitionServiceStub(channel)
-        # request body
-        # req = facial_recognition_pb2.FaceRecognitionRequest(
-        #     username = frappe.session.user,
-        #     media_type = "video",
-        #     media_content = video
-        # )
-        # Call service stub and get response
-        # res = random.choice(stubs).FaceRecognition(req)
-        # data = {'employee':employee, 'log_type':log_type, 'verification':res.verification,
-        #     'message':res.message, 'data':res.data, 'source': 'Checkin'}
-        # if res.verification == "FAILED" and 'Invalid media content' in res.data:
-        #     frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',
-        #     **{'data':{'employee':employee, 'log_type':log_type, 'verification':res.verification,
-        #         'message':res.message, 'data':res.data, 'source': 'Checkin'}})
                 
+        # check Face Recognition Endpoint
+        endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
+        video_file = video or frappe.request.files.get("video_file") or frappe.request.files.get("video")
+        if not filename:
+            filename = frappe.session.user+'.mp4'
+        if endpoint_state:
+            if not face_recog_base_url:
+                return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+            status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "verify", data={
+                "username": frappe.session.user, "filename": filename
+                }, files={"video_file": video_file})
+        else:
+            status, message = True, 'Successful'
+            
+        if not status:
+            return response("Bad Request", 400, None, message)
         doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, "Mobile App")
         return response("Success", 201, doc, None)
-        
-        # if res.verification == "FAILED":
-        #     msg = res.message
-        #     if not res.verification == "OK":
-        #         frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
-        #     return response(msg, 400, None, data)
-        # elif res.verification == "OK":
-        #     doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, "Mobile App")
-        #     return response("Success", 201, doc, None)
-        # else:
-        #     return response("Success", 400, None, "No response from face recognition server")
+    
     except Exception as error:
         frappe.log_error(frappe.get_traceback(), 'Verify Checkin')
         return response("Internal Server Error", 500, None, error)

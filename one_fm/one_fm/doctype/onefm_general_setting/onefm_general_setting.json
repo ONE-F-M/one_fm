@@ -11,6 +11,7 @@
   "column_break_xyl05",
   "is_production",
   "enable_scheduler_event_emails",
+  "enable_face_recognition_endpoint",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
@@ -147,11 +148,17 @@
    "fieldname": "enable_scheduler_event_emails",
    "fieldtype": "Check",
    "label": "Enable Scheduler Event Emails"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_face_recognition_endpoint",
+   "fieldtype": "Check",
+   "label": "Enable Face Recognition Endpoint"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-04-30 15:23:33.591201",
+ "modified": "2024-06-26 14:37:58.165247",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

@@ -33,8 +33,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 					['user_id', 'employee_name'],
 					as_dict=1
 				)
-				self.approver_user = approver.user_id
-				self.approver_name = approver.employee_name
+				pass
 
 	def on_submit(self):
 		if not self.reports_to():
@@ -162,7 +161,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	def send_notification(self):
 		if self.workflow_state in ['Pending Approval']:
-			send_workflow_action_email(self, self.approver_user)
+			send_workflow_action_email(self, [self.approver])
 		if self.workflow_state in ['Rejected', 'Approved', 'Update Request', 'Cancelled']:
 			workflow_approve_reject(self, recipients=None)
 
