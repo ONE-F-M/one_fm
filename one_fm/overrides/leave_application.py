@@ -227,38 +227,38 @@ class LeaveApplicationOverride(LeaveApplication):
         #If Leave Approver Exist
         
         if self.leave_approver:
-            parent_doc = frappe.get_doc('Leave Application', self.name)
-            args = parent_doc.as_dict() #fetch fields from the doc.
-            args.update({"base_url": frappe.utils.get_url()})
+            try:
+                args = self.copy().as_dict() #fetch fields from the doc.
+                args.update({"base_url": frappe.utils.get_url()})
 
-            #Fetch Email Template for Leave Approval. The email template is in HTML format.
-            template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
-            if not template:
-                frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
-                return
-            email_template = frappe.get_doc("Email Template", template)
-            message = frappe.render_template(email_template.response_html, args)
+                #Fetch Email Template for Leave Approval. The email template is in HTML format.
+                template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
+                if not template:
+                    frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
+                    return
+                email_template = frappe.get_doc("Email Template", template)
+                message = frappe.render_template(email_template.response_html, args)
 
-            if self.proof_documents:
-                proof_doc = self.proof_documents
-                for p in proof_doc:
-                    message+=f"<hr><img src='{p.attachments}' height='400'/>"
+                if self.proof_documents:
+                    proof_doc = self.proof_documents
+                    for p in proof_doc:
+                        message+=f"<hr><img src='{p.attachments}' height='400'/>"
 
-            # attachments = get_attachment(doc) // when attachment needed
+                #send notification
+                sendemail(recipients= [self.leave_approver], subject="Leave Application", message=message,
+                        reference_doctype=self.doctype, reference_name=self.name, attachments = [])
 
-            #send notification
-            sendemail(recipients= [self.leave_approver], subject="Leave Application", message=message,
-                    reference_doctype=self.doctype, reference_name=self.name, attachments = [])
+                employee_id = frappe.get_value("Employee", {"user_id":self.leave_approver}, ["name"])
 
-            employee_id = frappe.get_value("Employee", {"user_id":self.leave_approver}, ["name"])
+                if self.total_leave_days == 1:
+                    date = "for "+cstr(self.from_date)
+                else:
+                    date = "from "+cstr(self.from_date)+" to "+cstr(self.to_date)
 
-            if self.total_leave_days == 1:
-                date = "for "+cstr(self.from_date)
-            else:
-                date = "from "+cstr(self.from_date)+" to "+cstr(self.to_date)
-
-            push_notication_message = self.employee_name+" has applied for "+self.leave_type+" "+date+". Kindly, take action."
-            push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, self.name)
+                push_notication_message = self.employee_name+" has applied for "+self.leave_type+" "+date+". Kindly, take action."
+                push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, self.name)
+            except Exception as e:
+                frappe.log_error(message=frappe.get_traceback(), title="Leave Notification")
 
     def after_insert(self):
         self.assign_to_leave_approver()
