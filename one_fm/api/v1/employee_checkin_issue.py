@@ -310,3 +310,16 @@ def get_issue_type():
 		frappe.log_error(frappe.get_traceback(), _("Error while fetching issue type (Employee Checkin Issue)"))
 		return response("Internal Server Error", 500, None, str(e))
 
+
+
+@frappe.whitelist(methods=["GET"])
+def get_employee_checkin_issue():
+	try:
+		employee_name = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
+		if employee_name:
+			data = frappe.db.get_list("Employee Checkin Issue", {"employee": employee_name}, ["name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
+			return response("Operation Successful", 200, data, None)
+		return response("Employee does not exist", 400, None)
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), _("Error while fetching Employee Checkin Issue"))
+		return response("Internal Server Error", 500, None, str(e))
