@@ -230,7 +230,6 @@ def approve_employee_checkin_issue(employee_id: str = None, employee_checkin_iss
 				.format(employee_checkin_issue_id=employee_checkin_issue_id))
 
 	except Exception as error:
-		print(frappe.get_traceback())
 		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
@@ -286,7 +285,6 @@ def reject_employee_checkin_issue(employee_id: str = None, employee_checkin_issu
 				.format(employee_checkin_issue_id=employee_checkin_issue_id))
 
 	except Exception as error:
-		print(frappe.get_traceback())
 		return response("Internal Server Error", 500, None, error)
 
 def notify_for_employee_checkin_issue_status(subject, message, user, employee_checkin_issue_doc, mobile_notification):
