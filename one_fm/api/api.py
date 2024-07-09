@@ -204,15 +204,16 @@ def push_notification_rest_api_for_checkin(employee_id, title, body, checkin, ar
         
         #Body in json form defining a message payload to send through API. 
         # The parameter defers based on OS. Hence Body is designed based on the OS of the device.
-        message = messaging.Message(
-            notification=messaging.Notification(
-                title=title,
-                body=body
-            ),
-            token=deviceToken
-        )
-        res = messaging.send(message)
-        return v1_api.utils.response("success", 200, {'response': str(res)})
+        if deviceToken:
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title=title,
+                    body=body
+                ),
+                token=deviceToken
+            )
+            res = messaging.send(message)
+            return v1_api.utils.response("success", 200, {'response': str(res)})
     except Exception as e:
         return v1_api.utils.response("error", 500, {}, str(e))
 
