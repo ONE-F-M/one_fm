@@ -313,7 +313,7 @@ def get_issue_type():
 
 
 @frappe.whitelist(methods=["POST"])
-def get_checkin_issue_list(employee_id: str) -> dict:
+def get_checkin_issue_list(employee_id: str):
 	try:
 		if not employee_id:
 			return response("error", 400, {}, "Employee ID is required.")
