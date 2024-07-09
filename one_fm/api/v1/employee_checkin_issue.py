@@ -230,6 +230,7 @@ def approve_employee_checkin_issue(employee_id: str = None, employee_checkin_iss
 				.format(employee_checkin_issue_id=employee_checkin_issue_id))
 
 	except Exception as error:
+		print(frappe.get_traceback())
 		return response("Internal Server Error", 500, None, error)
 
 @frappe.whitelist()
@@ -285,6 +286,7 @@ def reject_employee_checkin_issue(employee_id: str = None, employee_checkin_issu
 				.format(employee_checkin_issue_id=employee_checkin_issue_id))
 
 	except Exception as error:
+		print(frappe.get_traceback())
 		return response("Internal Server Error", 500, None, error)
 
 def notify_for_employee_checkin_issue_status(subject, message, user, employee_checkin_issue_doc, mobile_notification):
@@ -312,14 +314,22 @@ def get_issue_type():
 
 
 
-@frappe.whitelist(methods=["GET"])
-def get_employee_checkin_issue():
+@frappe.whitelist(methods=["POST"])
+def get_checkin_issue_list(employee_id: str) -> dict:
 	try:
-		employee_name = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, ["name"])
-		if employee_name:
-			data = frappe.db.get_list("Employee Checkin Issue", {"employee": employee_name}, ["name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
+		if not employee_id:
+			return response("error", 400, {}, "Employee ID is required.")
+		employee = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["name", "user_id"], as_dict=1)
+		if employee:
+			my_checkin_issues = frappe.db.get_list("Employee Checkin Issue", {"employee": employee.name}, ["name", "employee_name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
+			reports_to_issues = frappe.db.get_list("Employee Checkin Issue", {"shift_supervisor": employee.name}, ["name", "employee_name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
+
+			data = {
+				"my_checkin_issues": my_checkin_issues,
+				"reports_to_issues": reports_to_issues
+			}
 			return response("Operation Successful", 200, data, None)
-		return response("Employee does not exist", 400, None)
+		return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), _("Error while fetching Employee Checkin Issue"))
 		return response("Internal Server Error", 500, None, str(e))
