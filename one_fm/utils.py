@@ -2718,7 +2718,7 @@ def get_users_next_action_data(transitions, doc, recipients):
 	return user_data_map
 
 def override_frappe_send_workflow_action_email(doc, transitions):
-    users_data = _get_users_next_action_data(doc, transitions)
+    users_data = _get_users_next_action_data(transitions, doc)
     recipients = []
     for d in users_data:
         recipients.append(d.get("email"))
