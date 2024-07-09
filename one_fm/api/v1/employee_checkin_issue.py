@@ -154,7 +154,7 @@ def list_employee_checkin_issue(employee_id: str = None):
 				.format(employee_id=employee_id))
 
 		employee_checkin_issue_list = frappe.get_list("Employee Checkin Issue",
-			filters={'employee': employee}, fields=["name", "date", "workflow_state"])
+			filters={'employee': employee}, fields=["name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
 		return response("Success", 200, employee_checkin_issue_list)
 
 	except Exception as error:
