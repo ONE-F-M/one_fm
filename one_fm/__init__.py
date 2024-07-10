@@ -31,7 +31,7 @@ from one_fm.overrides.employee import EmployeeOverride
 from frappe.email.doctype.email_queue.email_queue import QueueBuilder,SendMailContext
 from one_fm.overrides.email_queue import prepare_email_content as email_content,get_unsubscribe_str_
 from frappe.workflow.doctype.workflow_action import workflow_action
-from one_fm.utils import override_frappe_send_workflow_action_email
+# from one_fm.utils import override_frappe_send_workflow_action_email
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from one_fm.overrides.payment_entry import add_party_gl_entries_,get_valid_reference_doctypes_
 from one_fm.overrides.stock_ledger import get_valuation_rate_
@@ -60,7 +60,7 @@ StockController.make_batches = make_batches_with_supplier_batch_id
 Interview.validate_overlap = validate_interview_overlap
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_
 PaymentEntry.get_valid_reference_doctypes = get_valid_reference_doctypes_
-workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
+# workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
 stock_ledger.get_valuation_rate = get_valuation_rate_
 SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
 workflow_action.filter_allowed_users = filter_allowed_users
