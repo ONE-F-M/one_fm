@@ -1,4 +1,4 @@
-import itertools,time
+import itertools
 from string import Template
 from calendar import month, monthrange
 from datetime import datetime, timedelta
@@ -1985,6 +1985,7 @@ def initiate_checkin_notification(res):
 		date = getdate()
 		for recipient in supervisor_checkin_reminder:
 			action_user, Role = get_action_user(recipient.employee,recipient.operations_shift)
+			action_user_id = None
 			if action_user:
 				action_user_id = frappe.db.get_value("Employee",{'status':"Active",'user_id':action_user},['employee_id'])
 			subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
@@ -2041,6 +2042,7 @@ def initiate_checkin_notification(res):
 		date = getdate()
 		for recipient in supervisor_checkout_reminder:
 			action_user, Role = get_action_user(recipient.employee,recipient.operations_shift)
+			action_user_id = None
 			if action_user:
 				action_user_id = frappe.db.get_value("Employee",{'status':"Active",'user_id':action_user},['employee_id'])
 			subject = _("{employee} has not checked out yet.".format(employee=recipient.employee_name))
