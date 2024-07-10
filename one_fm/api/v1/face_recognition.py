@@ -46,8 +46,10 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
         # filename = frappe.form_dict.get('filename')    
         if not (filename or video):
             return response("Bad Request", 400, None, "Filename or video is required.")
-
-        if ";base64," in video: video = video.split(';base64,')[-1]
+        
+        if video:
+            if ";base64," in video: 
+                video = video.split(';base64,')[-1]
 
         video_file = frappe.request.files.get("video_file") or video
 
