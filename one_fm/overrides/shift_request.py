@@ -22,7 +22,10 @@ class ShiftRequestOverride(ShiftRequest):
     def on_submit(self):
         if self.workflow_state != 'Update Request':
             self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approval' else self.db_set("status", 'Draft')
-
+        if self.status not in ["Approved", "Rejected"]:
+            pass
+        
+        
     def on_update(self):
         for approver in self.custom_shift_approvers:
             share_doc_with_approver(self, approver.user)
@@ -136,13 +139,16 @@ def process_shift_assignemnt(doc, event=None):
     if doc.workflow_state=='Approved' and doc.docstatus==1:
         if doc.assign_day_off == 1:
             assign_day_off(doc)
+        if doc.custom_purpose == "Assign Day Off OT":
+            assign_day_off(doc)
         else:
             if doc.roster_type == "Basic" and cstr(doc.from_date) == cstr(getdate()):
+                day_off_ot = 1 if doc.custom_purpose == "Assign Day Off OT" else 0
                 shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"}, ['name'])
                 if shift_assignemnt:
-                    update_shift_assignment(shift_assignemnt, doc )
+                    update_shift_assignment(shift_assignemnt, doc,day_off_ot=day_off_ot)
                 else:
-                    create_shift_assignment_from_request(doc)
+                    create_shift_assignment_from_request(doc,day_off_ot=day_off_ot)
 
             # check for existing schedule
             schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=doc.to_date)]
@@ -220,7 +226,7 @@ def process_shift_assignemnt(doc, event=None):
                         schedule.reference_docname = doc.name
                         schedule.save(ignore_permissions=True)
 
-def update_shift_assignment(shift_assignemnt,shift_request):
+def update_shift_assignment(shift_assignemnt,shift_request,day_off_ot = False):
     assignment_doc = frappe.get_doc('Shift Assignment', shift_assignemnt)
     project = frappe.db.get_value("Operations Shift", {'name':shift_request.operations_shift}, ['project'])
     assignment_doc.db_set("company" , shift_request.company)
@@ -247,8 +253,11 @@ def update_shift_assignment(shift_assignemnt,shift_request):
         assignment_doc.db_set("end_datetime" , end_datetime)
     if shift_request.operations_role:
         assignment_doc.db_set("operations_role" , shift_request.operations_role)
+    if day_off_ot:
+        assignment_doc.db_set("custom_day_off_ot" , 1)
+        
 
-def create_shift_assignment_from_request(shift_request, submit=True):
+def create_shift_assignment_from_request(shift_request, submit=True,day_off_ot = False):
     '''
         Method used to create Shift Assignment from Shift Request
         args:
@@ -265,12 +274,25 @@ def create_shift_assignment_from_request(shift_request, submit=True):
     assignment_doc.shift_request = shift_request.name
     assignment_doc.check_in_site = shift_request.check_in_site
     assignment_doc.check_out_site = shift_request.check_out_site
+    assignment_doc.custom_day_off_ot = 1 if day_off_ot else 0
     if shift_request.operations_role:
         assignment_doc.operations_role = shift_request.operations_role
     assignment_doc.insert()
     if submit:
         assignment_doc.submit()
     frappe.db.commit()
+    
+    
+
+def setup_day_of_ot(shift_request):
+    """Setup all the documents that need to be created and modified because of the 
+        approval of a shift request"""
+    existing_schedule = frappe.db.sql(f"""SELECT name from `tabEmployee Schedule` where employee = '{shift_request.employee}' and date between '{shift_request.from_date}' and '{shift_request.to_date}' and employee_availability = 'Day Off'  """,as_dict=1)
+    if existing_schedule:
+        frappe.db.sql(f"""UPDATE `tabEmployee Schedule` set employee_availability = 'Working', day_off_ot = 1 where employee = '{shift_request.employee}' and date between '{shift_request.from_date}' and '{shift_request.to_date}' """)
+    else:
+        frappe.throw(f"No Day Off set for {shift_request.employee_name} between {shift_request.from_date} and {shift_request.to_date}")
+    
 
 def assign_day_off(shift_request):
     shift_assignment = frappe.get_list('Shift Assignment' ,{'employee':shift_request.employee, 'start_date': shift_request.from_date}, ['name'])
