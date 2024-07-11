@@ -116,7 +116,7 @@ def verify_checkin_checkout(employee_id: str = None, video : str = None, log_typ
     """
     try:
         # ensure skip attendance is correctly formated
-	    frappe.log_error(title='checkin test', message=f"""
+        frappe.log_error(title='checkin test', message=f"""
 		Employee ID: {employee_id}, Log Type: {log_type},
   		latitude: {latitude}, longitude: {longitude},
         	filename: {filename}
