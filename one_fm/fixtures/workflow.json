@@ -7899,7 +7899,7 @@
   "modified": "2023-11-26 17:00:01.345672",
   "name": "Shift Request",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Employee",
