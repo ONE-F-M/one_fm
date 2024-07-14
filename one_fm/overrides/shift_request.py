@@ -135,21 +135,21 @@ def on_update_after_submit(doc, method):
             doc.cancel_shift_assignment_of_request()
 
 def process_shift_assignemnt(doc, event=None):
+    day_off_ot = 1 if doc.custom_purpose == "Day Off Overtime" else 0
     role_abbr = frappe.db.get_value("Operations Role",doc.operations_role,'post_abbrv')
     if doc.workflow_state=='Approved' and doc.docstatus==1:
         if doc.assign_day_off == 1:
             assign_day_off(doc)
-        if doc.custom_purpose == "Assign Day Off OT":
-            assign_day_off(doc)
         else:
+            if day_off_ot:
+                validate_day_of_ot(doc)
             if doc.roster_type == "Basic" and cstr(doc.from_date) == cstr(getdate()):
-                day_off_ot = 1 if doc.custom_purpose == "Assign Day Off OT" else 0
                 shift_assignemnt = frappe.get_value("Shift Assignment", {'employee':doc.employee, 'start_date': doc.from_date, 'roster_type':"Basic"}, ['name'])
                 if shift_assignemnt:
                     update_shift_assignment(shift_assignemnt, doc,day_off_ot=day_off_ot)
                 else:
                     create_shift_assignment_from_request(doc,day_off_ot=day_off_ot)
-
+            
             # check for existing schedule
             schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=doc.to_date)]
             found_schedules_date = []
@@ -177,13 +177,14 @@ def process_shift_assignemnt(doc, event=None):
                         'roster_type':doc.roster_type,
                         'department':doc.department,
                         'site':doc.site,
+                        'day_off_ot':day_off_ot,
                         'reference_doctype': doc.doctype,
                         'reference_docname': doc.name
                     })
                     found_schedules_date.append(str(es.date))
             # create new schedule
             new_date_range = [i for i in schedule_date_range if not i in found_schedules_date]
-            if new_date_range:
+            if new_date_range and not day_off_ot:
                 for d in new_date_range:
                     if frappe.db.exists("Employee Schedule", {'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'}):
                         es = frappe.get_doc("Employee Schedule", {'date':d, 'employee':doc.employee, 'employee_availability':'Day Off'})
@@ -284,12 +285,16 @@ def create_shift_assignment_from_request(shift_request, submit=True,day_off_ot =
     
     
 
-def setup_day_of_ot(shift_request):
+def validate_day_of_ot(shift_request):
     """Setup all the documents that need to be created and modified because of the 
         approval of a shift request"""
+    total_shift_request_duration = frappe.utils.date_diff(shift_request.to_date,shift_request.from_date)+1
     existing_schedule = frappe.db.sql(f"""SELECT name from `tabEmployee Schedule` where employee = '{shift_request.employee}' and date between '{shift_request.from_date}' and '{shift_request.to_date}' and employee_availability = 'Day Off'  """,as_dict=1)
     if existing_schedule:
-        frappe.db.sql(f"""UPDATE `tabEmployee Schedule` set employee_availability = 'Working', day_off_ot = 1 where employee = '{shift_request.employee}' and date between '{shift_request.from_date}' and '{shift_request.to_date}' """)
+        if int(total_shift_request_duration)!=int(len(existing_schedule)):
+            frappe.throw(f"""Please ensure that an employee schedule for Day Off exists for ALL days in this shift request, 
+                you are trying to create {total_shift_request_duration} {"schedule" if total_shift_request_duration==1 else "schedules"} 
+                But you only have {len(existing_schedule)} schedule for Day Off already created""")
     else:
         frappe.throw(f"No Day Off set for {shift_request.employee_name} between {shift_request.from_date} and {shift_request.to_date}")
     
