@@ -1,5 +1,6 @@
 import frappe
 import itertools
+from frappe.desk.form.assign_to import add as add_assignment
 from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate, get_datetime_in_timezone
 from calendar import monthrange
 from one_fm.api.utils import get_reports_to_employee_name
@@ -41,6 +42,7 @@ class TimesheetOveride(Timesheet):
             # If any of the above criteria is fulfilled then throw an error.
             if (self.has_value_changed("start_date") and date_in_ast > self.get('start_date')) or (self.has_value_changed("end_date") and date_in_ast > self.get('end_date')):
                 frappe.throw(_("Please note that timesheets cannot be updated to a previous date."), title="Invalid Start Date")
+        self.assign_unassign()
 
     def set_approver(self):
         if self.attendance_by_timesheet:
@@ -60,6 +62,7 @@ class TimesheetOveride(Timesheet):
             send_workflow_action_email(self, [self.approver])
             message = "The timesheet {0} of {1}, Open for your Approval".format(self.name, self.employee_name)
             create_notification_log("Pending - Workflow Action on Timesheet", message, [self.approver], self)
+        
 
     def on_submit(self):
         self.validate_mandatory_fields()
@@ -70,6 +73,7 @@ class TimesheetOveride(Timesheet):
         elif self.workflow_state == "Canceled":
             self.check_approver()
             self.notify_the_employee()
+        self.delete_todo()
 
     def notify_the_employee(self):
         timesheet_url = '<a href="{0}">{1}</a>'.format(frappe.utils.get_link_to_form("Timesheet", self.name), self.name)
@@ -124,6 +128,51 @@ class TimesheetOveride(Timesheet):
     def check_approver(self):
         if frappe.session.user not in [self.approver, "Administrator"]:
             frappe.throw(_("Only Approver can Approve/Reject the timesheet"))
+
+    
+
+    def assign_unassign(self) -> None:
+        previous_doc = self.get_doc_before_save() if not self.is_new() else self    
+        if previous_doc.workflow_state != self.workflow_state:
+            self.delete_todo(), print("yaga", self.workflow_state, "\n\n\n\n\n\n\n")
+            if self.workflow_state in {"Draft",  "Pending Approval"}:
+                add_assignment({
+                    'doctype': self.doctype,
+                    'name': self.name,
+                    'assign_to': [self.owner if self.workflow_state == "Draft" else self.approver],
+                    'description': (_(self.fetch_description()))
+                })
+                
+
+    def delete_todo(self):
+        return frappe.db.sql("""
+            DELETE FROM `tabToDo` 
+            WHERE reference_type = %s AND reference_name = %s
+        """, (self.doctype, self.name))
+
+            
+    def fetch_description(self):
+        return f""" 
+            <p>Here is to inform you that the following { self.doctype }({ self.name }) requires your attention/action.
+            <br>
+            The details of the request are as follows:
+            <br>
+            </p><table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Label</th>
+                        <th style="padding: 10px; text-align: left; background-color: #f2f2f2;">Value</th>
+                    </tr>
+                </thead>
+            <tbody>
+            
+                <tr>
+                    <td style="padding: 10px;">Employee</td>
+                    <td style="padding: 10px;">{ self.employee }</td>
+                </tr>
+                </tbody></table><p></p>
+
+        """
 
 @frappe.whitelist()
 def fetch_approver(employee):
@@ -278,3 +327,8 @@ def create_notification_log(subject, message, for_users, reference_doc):
 		# If notification log type is Alert then it will not send email for the log
 		doc.type = 'Alert'
 		doc.insert(ignore_permissions=True)
+
+
+
+
+

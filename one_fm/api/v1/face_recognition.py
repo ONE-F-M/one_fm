@@ -1,13 +1,13 @@
 import frappe, ast, base64, time, grpc, json, random
 from frappe import _
 from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
-from one_fm.utils import get_current_shift
+from one_fm.utils import get_current_shift, is_holiday
 from one_fm.api.v1.utils import response, verify_via_face_recogniton_service
 from frappe.utils import cstr, getdate, now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
 from one_fm.overrides.employee import has_day_off, is_employee_on_leave
-from erpnext.setup.doctype.employee.employee import is_holiday
+
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
@@ -220,13 +220,13 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
         if not isinstance(employee_id, str):
             return response("Bad Request", 400, None, "employee must be of type str.")
 
-        employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
+        employee = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["name", "employee_name", "shift_working"], as_dict=1)
         if not employee:
             return response("Resource Not Found", 404, None,
                             "No employee found with {employee_id}".format(employee_id=employee_id))
 
         shift = False
-        shift_details = get_current_shift(employee)
+        shift_details = get_current_shift(employee.name)
         if shift_details:
             if shift_details['type'] == "Early":
                 # check if user can checkin with the correct time
@@ -244,7 +244,7 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
             if shift.is_replaced == 1:
                 return response("Resource Not Found", 404, None, f"You have been replaced with another Employee")
 
-            if is_attendance_request_exists(employee, date):
+            if is_attendance_request_exists(employee.name, date):
                 return response("Resource Not Found", 404, None,
                                 f"You have an attendance request for today. Your attendance will be marked.")
 
@@ -288,16 +288,17 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                 return response("Resource Not Found", 404, None, "No site location set for {site}".format(site=site))
 
         else:
-            if has_day_off(employee, date):
-                employee_name = frappe.get_value("Employee", employee, 'employee_name')
-                return response("Resource Not Found", 404, None,
-                                f"Dear {employee_name}, Today is your day off.  Happy Recharging!.")
+            if employee.shift_working:
+                if has_day_off(employee.name, date):
+                    return response("Resource Not Found", 404, None,
+                                    f"Dear {employee.employee_name}, Today is your day off.  Happy Recharging!.")
 
-            if is_employee_on_leave(employee, date):
+            if is_employee_on_leave(employee.name, date):
                 return response("Resource Not Found", 404, None, "You are currently on leave, see you soon!")
 
-            if is_holiday(employee, date):
-                return response("Resource Not Found", 404, None, "Today is your holiday, have fun")
+            status, message = is_holiday(employee=employee, date=date)
+            if status:
+                return response("Resource Not Found", 404, None, message)
             return response("Resource Not Found", 404, None, "User not assigned to a shift.")
 
     except Exception as error:

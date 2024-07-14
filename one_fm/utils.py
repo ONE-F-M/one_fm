@@ -3576,3 +3576,19 @@ def send_work_anniversary_reminders():
                     others = [d for d in anniversary_persons if d != person]
                     reminder_text = get_work_anniversary_reminder_text(others)
                     send_work_anniversary_reminder(person_email, reminder_text, others, message, sender)
+
+
+
+def is_holiday(employee, date=None, raise_exception=True):
+    try:
+        date = today() if not date else date
+        holiday_list = get_holiday_list_for_employee(employee.name, raise_exception)
+        if not holiday_list:
+            return False, ""
+        holidays = frappe.db.get_value("Holiday", {"parent": holiday_list, "holiday_date": date}, ["weekly_off"], as_dict=1)
+        if holidays:
+            return (True, f"Dear {employee.employee_name}, Today is your day off.  Happy Recharging!.") if holidays.weekly_off else (True, "Today is your holiday, have fun")
+        return False, ""
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Error while validating Holiday")
+        return False, ""
