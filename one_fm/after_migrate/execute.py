@@ -265,7 +265,7 @@ def append_code_in_file(file_path, search_text, appendable_code, insert_before_s
         return False
 
 def update_hd_ticket_agent():
-    FILE_PATH = frappe.utils.get_bench_path()+'/apps/helpdesk/desk/src/pages/TicketAgent2.vue'
+    FILE_PATH = frappe.utils.get_bench_path()+'/apps/helpdesk/desk/src/pages/TicketAgent.vue'
     if (os.path.exists(FILE_PATH)):
         # Append lines before 'const showSubjectDialog = ref(false);'
         search_text = 'const showSubjectDialog = ref(false);'
