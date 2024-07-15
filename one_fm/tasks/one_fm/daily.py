@@ -54,85 +54,88 @@ def notify_for_employee_docs_exiry():
         - Civil ID
         - Passport
     """
-    supervisor = frappe.db.get_single_value(
-        'GRD Settings', 'default_grd_supervisor')
-    operator = frappe.db.get_single_value(
-        'GRD Settings', 'default_grd_operator')
-    operator_pifss = frappe.db.get_single_value(
-        'GRD Settings', 'default_grd_operator_pifss')
+    try:
+        supervisor = frappe.db.get_single_value(
+            'GRD Settings', 'default_grd_supervisor')
+        operator = frappe.db.get_single_value(
+            'GRD Settings', 'default_grd_operator')
+        operator_pifss = frappe.db.get_single_value(
+            'GRD Settings', 'default_grd_operator_pifss')
 
-    recipients = list(set([supervisor, operator, operator_pifss]))
+        recipients = list(set([supervisor, operator, operator_pifss]))
 
-    target_expiry_date = add_days(today(), 30)
+        target_expiry_date = add_days(today(), 30)
 
-    work_permit_employees = frappe.get_all("Employee",
-                                           filters=[
-                                               ["work_permit_expiry_date",
-                                                   "=", target_expiry_date],
-                                           ],
-                                           fields=["name", "employee_name",
-                                                   "work_permit_expiry_date"]
-                                           )
-    residency_employees = frappe.get_all("Employee",
-                                         filters=[
-                                             ["residency_expiry_date",
-                                                 "=", target_expiry_date],
-                                         ],
-                                         fields=["name", "employee_name",
-                                                 "residency_expiry_date"]
-                                         )
-    civil_id_employees = frappe.get_all("Employee",
-                                        filters=[
-                                            ["civil_id_expiry_date",
-                                                "=", target_expiry_date],
-                                        ],
-                                        fields=["name", "employee_name",
-                                                "civil_id_expiry_date"]
-                                        )
-    passport_employees = frappe.get_all("Employee",
-                                        filters=[
-                                            ["valid_upto", "=", target_expiry_date],
-                                        ],
-                                        fields=[
-                                            "name", "employee_name", "valid_upto"]
-                                        )
+        work_permit_employees = frappe.get_all("Employee",
+                                            filters=[
+                                                ["work_permit_expiry_date",
+                                                    "=", target_expiry_date],
+                                            ],
+                                            fields=["name", "employee_name",
+                                                    "work_permit_expiry_date"]
+                                            )
+        residency_employees = frappe.get_all("Employee",
+                                            filters=[
+                                                ["residency_expiry_date",
+                                                    "=", target_expiry_date],
+                                            ],
+                                            fields=["name", "employee_name",
+                                                    "residency_expiry_date"]
+                                            )
+        civil_id_employees = frappe.get_all("Employee",
+                                            filters=[
+                                                ["civil_id_expiry_date",
+                                                    "=", target_expiry_date],
+                                            ],
+                                            fields=["name", "employee_name",
+                                                    "civil_id_expiry_date"]
+                                            )
+        passport_employees = frappe.get_all("Employee",
+                                            filters=[
+                                                ["valid_upto", "=", target_expiry_date],
+                                            ],
+                                            fields=[
+                                                "name", "employee_name", "valid_upto"]
+                                            )
 
-    def send_notification(document_type, employees):
-        for employee in employees:
-            subject = f"Document Expiry - {employee['employee_name']}"
-            header = f"{employee['employee_name']}'s {document_type} is about to expire."
-            message = f"Dear Onboarding Officer,<br><br>The following employee's {document_type} is expiring on {target_expiry_date}:<br><br>Employee Name: {employee['employee_name']}<br>Employee ID: {employee['name']}<br><br>Kindly take the necessary action."
+        def send_notification(document_type, employees):
+            for employee in employees:
+                subject = f"Document Expiry - {employee['employee_name']}"
+                header = f"{employee['employee_name']}'s {document_type} is about to expire."
+                message = f"Dear Onboarding Officer,<br><br>The following employee's {document_type} is expiring on {target_expiry_date}:<br><br>Employee Name: {employee['employee_name']}<br>Employee ID: {employee['name']}<br><br>Kindly take the necessary action."
 
-            for recipient in recipients:
-                # Create a notification log entry
-                notification_doc = frappe.get_doc({
-                    "doctype": "Notification Log",
-                    "subject": subject,
-                    "email_content": message,
-                    "document_type": "Employee",
-                    "document_name": employee['name'],
-                    "for_user": recipient,
-                })
-                notification_doc.insert(ignore_permissions=True)
-                frappe.db.commit()
+                for recipient in recipients:
+                    notification_doc = frappe.get_doc({
+                        "doctype": "Notification Log",
+                        "subject": subject,
+                        "email_content": message,
+                        "document_type": "Employee",
+                        "document_name": employee['name'],
+                        "for_user": recipient,
+                    })
+                    notification_doc.insert(ignore_permissions=True)
+                    frappe.db.commit()
 
-                doc_link = get_url_to_form(notification_doc.document_type, notification_doc.document_name)
+                    doc_link = get_url_to_form(
+                        notification_doc.document_type, notification_doc.document_name)
 
-                context = {
-                    "body_content": notification_doc.subject,
-                    "description": notification_doc.email_content,
-                    "document_type": notification_doc.document_type,
-                    "document_name": notification_doc.document_name,
-                    "doc_link": doc_link,
-                    "header": header
-                }
+                    context = {
+                        "body_content": notification_doc.subject,
+                        "description": notification_doc.email_content,
+                        "document_type": notification_doc.document_type,
+                        "document_name": notification_doc.document_name,
+                        "doc_link": doc_link,
+                        "header": header
+                    }
 
-                msg = frappe.render_template(
-                    'one_fm/templates/emails/notification_log.html', context=context)
-                
-                sendemail(recipients=[recipient], subject=subject, content=msg, is_external_mail=True,is_scheduler_email=True)
+                    msg = frappe.render_template(
+                        'one_fm/templates/emails/notification_log.html', context=context)
 
-    send_notification("Work Permit", work_permit_employees)
-    send_notification("Residency", residency_employees)
-    send_notification("Civil ID", civil_id_employees)
-    send_notification("Passport", passport_employees)
+                    sendemail(recipients=[recipient], subject=subject, content=msg, is_scheduler_email=True)
+
+        send_notification("Work Permit", work_permit_employees)
+        send_notification("Residency", residency_employees)
+        send_notification("Civil ID", civil_id_employees)
+        send_notification("Passport", passport_employees)
+    except Exception as e:
+        frappe.log_error(str(e), 'Employee Docs Expiry')
