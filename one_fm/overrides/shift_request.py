@@ -289,12 +289,14 @@ def validate_day_of_ot(shift_request):
     """Setup all the documents that need to be created and modified because of the 
         approval of a shift request"""
     total_shift_request_duration = frappe.utils.date_diff(shift_request.to_date,shift_request.from_date)+1
-    existing_schedule = frappe.db.sql(f"""SELECT name from `tabEmployee Schedule` where employee = '{shift_request.employee}' and date between '{shift_request.from_date}' and '{shift_request.to_date}' and employee_availability = 'Day Off'  """,as_dict=1)
+    existing_schedule = frappe.db.sql(f"""SELECT name,date from `tabEmployee Schedule` where employee = '{shift_request.employee}' and date between '{shift_request.from_date}' and '{shift_request.to_date}' and employee_availability = 'Day Off'  """,as_dict=1)
     if existing_schedule:
         if int(total_shift_request_duration)!=int(len(existing_schedule)):
+            existing_dates = [frappe.utils.get_date_str(i.date)  for i in existing_schedule]
+            schedule_date_range = [str(i.date()) for i in pd.date_range(start=shift_request.from_date, end=shift_request.to_date)]
+            missing_dates = [i for i in schedule_date_range if i not in existing_dates ]
             frappe.throw(f"""Please ensure that an employee schedule for Day Off exists for ALL days in this shift request, 
-                you are trying to create {total_shift_request_duration} {"schedule" if total_shift_request_duration==1 else "schedules"} 
-                But you only have {len(existing_schedule)} schedule for Day Off already created""")
+                Please create a schedule for <b>{', '.join(missing_dates)}</b> """)
     else:
         frappe.throw(f"No Day Off set for {shift_request.employee_name} between {shift_request.from_date} and {shift_request.to_date}")
     
