@@ -22,8 +22,7 @@ class ShiftRequestOverride(ShiftRequest):
     def on_submit(self):
         if self.workflow_state != 'Update Request':
             self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approval' else self.db_set("status", 'Draft')
-        if self.status not in ["Approved", "Rejected"]:
-            pass
+        
         
         
     def on_update(self):
