@@ -45,7 +45,7 @@ def roster_projection_view_task():
                            )
 
 
-def notify_for_employee_docs_exiry():
+def notify_for_employee_docs_expiry():
     """
         Notify Onboarding officers about employee docs expiration
 

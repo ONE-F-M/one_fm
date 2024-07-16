@@ -720,7 +720,7 @@ scheduler_events = {
 		],
 		"00 08 * * *": [ # runs at 8:00 am
 			'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
-			'one_fm.tasks.one_fm.daily.notify_for_employee_docs_exiry'
+			'one_fm.tasks.one_fm.daily.notify_for_employee_docs_expiry'
 		],
 		"05 00 * * *":[
 			'one_fm.overrides.leave_application.employee_leave_status'
