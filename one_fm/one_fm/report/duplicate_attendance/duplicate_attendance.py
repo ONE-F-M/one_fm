@@ -13,7 +13,8 @@ def get_columns(filters):
     return [
         _("Employee") + ":Link/Employee:200",
         _("Employee Name") + "::350",
-        _("Number Of Attendance Records") + "::250"
+        _("Number Of Attendance Records") + "::250",
+        _("Action") + ":Action:250",
         ]
 
 def get_data(filters):
@@ -47,7 +48,8 @@ def get_data(filters):
         data.append([
             item.employee,
             item.employee_name,
-            item.records
+            item.records,
+            '<a target="_blank" href="/app/attendance?employee={employee}&attendance_date={date}&roster_type={roster_type}">View Records</a>'.format(employee=item.employee, date=attendance_date, roster_type=roster_type)
         ])
 
     return data
