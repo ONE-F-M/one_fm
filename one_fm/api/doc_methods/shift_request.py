@@ -374,6 +374,7 @@ def replace_shift_assignment(shift_assignemnt, shift_request):
         assignment_doc.db_set("end_datetime", end_datetime)
     if shift_request.operations_role:
         assignment_doc.db_set("operations_role", shift_request.operations_role)
+        
     #Update Employee Checkin 
     frappe.db.sql(f"""UPDATE `tabEmployee Checkin`
         SET is_replaced = 1,
@@ -459,7 +460,7 @@ def create_employee_schedule_from_request(doc, date):
     schedule.shift = doc.operations_shift
     schedule.shift_type = doc.shift_type
     schedule.operations_role = doc.operations_role
-    schedule.post_abbrv = doc.post_abbrv
+    # schedule.post_abbrv = frappe.db.get_value("Operations Role", doc.operations_role, 'post_abbrv')
     schedule.employee_availability = 'Working'
     schedule.roster_type = doc.roster_type
     schedule.department = doc.department
