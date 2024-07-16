@@ -780,7 +780,8 @@ def get_shift_type(time):
 
 def create_shift_assignment(roster, date, time):
 	try:
-		_day_off_ot= 0
+		
+		
 		owner = frappe.session.user
 		creation = now()
 		shift_type = get_shift_type(time)
@@ -849,6 +850,7 @@ def create_shift_assignment(roster, date, time):
 			# check if all roster has been done
 			has_rostered = []
 			for r in roster:
+				_day_off_ot = 0
 				if not r.employee in existing_shift_list:
 					if shift_request_dict.get(r.employee):
 						_shift_request = shift_request_dict.get(r.employee)
@@ -877,7 +879,7 @@ def create_shift_assignment(roster, date, time):
 							"{r.site or ''}", "{r.project or ''}", 'Active', '{_shift_type.shift_type}', "{sites_list_dict.get(r.site) or ''}", "{date}",
 							"{_shift_type.start_datetime or str(date)+' 08:00:00'}",
 							"{_shift_type.end_datetime or str(date)+' 17:00:00'}", "{r.department}", "{r.shift or ''}", "{r.operations_role or ''}", "{r.post_abbrv or ''}", "{r.roster_type}",
-							"{owner}", "{owner}", "{creation}", "{creation}", '', '', '',''),"""
+							"{owner}", "{owner}", "{creation}", "{creation}", '', '', '',"{_day_off_ot}"),"""
 				else:
 					has_rostered.append(r.employee_name)
 
@@ -906,7 +908,7 @@ def create_shift_assignment(roster, date, time):
 					check_out_site = VALUES(check_out_site),
 					shift_classification = VALUES(shift_classification),
 					status = VALUES(status),
-					custom_day_off_ot = {_day_off_ot}
+					custom_day_off_ot = '{_day_off_ot}'
 				"""
 				frappe.db.sql(query, values=[], as_dict=1)
 				frappe.db.commit()
