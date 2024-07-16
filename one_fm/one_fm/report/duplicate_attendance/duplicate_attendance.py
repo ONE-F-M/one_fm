@@ -11,7 +11,7 @@ def execute(filters=None):
 
 def get_columns(filters):
     return [
-        _("Employee ID") + ":Link/Employee:200",
+        _("Employee") + ":Link/Employee:200",
         _("Employee Name") + "::350",
         _("Number Of Attendance Records") + "::250"
         ]
