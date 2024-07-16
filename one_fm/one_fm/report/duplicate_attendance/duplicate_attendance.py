@@ -14,7 +14,7 @@ def get_columns(filters):
         _("Employee") + ":Link/Employee:200",
         _("Employee Name") + "::350",
         _("Number Of Attendance Records") + "::250",
-        _("Action") + ":Action:250",
+        _("Action") + "::250",
         ]
 
 def get_data(filters):
