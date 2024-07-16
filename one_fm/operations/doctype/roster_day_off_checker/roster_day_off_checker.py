@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 from itertools import groupby
+import frappe
 from frappe.utils import (
     get_first_day, get_last_day, getdate, add_days, now, get_first_day_of_week, get_last_day_of_week
 )
