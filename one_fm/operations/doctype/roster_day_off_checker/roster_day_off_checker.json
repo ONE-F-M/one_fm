@@ -1,26 +1,28 @@
 {
  "actions": [],
- "autoname": "format:{date}-{supervisor_name}",
+ "autoname": "format:{date}-{supervisor_name}-{site_supervisor_name}",
  "creation": "2022-10-06 13:46:44.016881",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "date",
   "supervisor",
   "supervisor_name",
   "column_break_3",
-  "date",
+  "site_supervisor",
+  "site_supervisor_name",
   "detail_section_section",
-  "detail"
+  "detail",
+  "amended_from"
  ],
  "fields": [
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Supervisor",
-   "options": "Employee",
-   "reqd": 1
+   "in_standard_filter": 1,
+   "label": "Shift Supervisor",
+   "options": "Employee"
   },
   {
    "fieldname": "detail_section_section",
@@ -38,7 +40,8 @@
    "fetch_if_empty": 1,
    "fieldname": "supervisor_name",
    "fieldtype": "Data",
-   "label": "Supervisor Name",
+   "in_list_view": 1,
+   "label": "Shift Supervisor Name",
    "read_only": 1
   },
   {
@@ -49,14 +52,41 @@
    "fieldname": "date",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Date",
    "reqd": 1
+  },
+  {
+   "fieldname": "site_supervisor",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Site Supervisor",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "site_supervisor.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "site_supervisor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Site Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Roster Day Off Checker",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2023-01-26 15:00:15.199966",
+ "modified": "2024-07-16 17:47:11.784027",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Roster Day Off Checker",
