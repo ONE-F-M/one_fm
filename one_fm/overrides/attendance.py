@@ -735,13 +735,33 @@ def update_day_off_ot(attendances):
 
 
 def mark_open_timesheet_and_create_attendance():
-    timesheets = frappe.get_list("Timesheet", {'workflow_state':'Pending Approval',
-        'start_date':add_days(getdate(), -1)})
+    the_date = add_days(getdate(), -1)
+    employee_list = frappe.db.get_list("Employee", filters={"status": "Active", "attendance_by_timesheet": 1}, pluck="name")
+    timesheets = frappe.db.get_list("Timesheet", {'workflow_state':'Pending Approval',
+        'start_date': the_date},)
+
     for i in timesheets:
         try:
             apply_workflow(frappe.get_doc("Timesheet", i.name), 'Approve')
         except Exception as e:
-            print(e)
+            frappe.log_error(frappe.get_traceback(), "Timesheet Marking")
+
+    present_employees = frappe.db.get_list("Timesheet", filters={"start_date": the_date, "workflow_state": "Approved"}, pluck="employee")
+    for obj in employee_list:
+        if obj not in present_employees:
+            att = frappe.new_doc("Attendance")
+            att.employee = obj
+            att.attendance_date = the_date
+            att.status = "Absent"
+            att.working_hours = 0
+            att.reference_doctype = "Timesheet"
+            try:
+                att.insert(ignore_permissions=True)
+                att.submit()
+            except Exception as e:
+                frappe.log_error(frappe.get_traceback(), "TImesheet Attendance Marking")
+    frappe.db.commit()
+
 
 def approve_pending_employee_checkin_issue():
     pending_eci = frappe.db.get_list("Employee Checkin Issue", {"workflow_state": "Pending Approval", "date": add_days(getdate(), -1)}, pluck="name")
