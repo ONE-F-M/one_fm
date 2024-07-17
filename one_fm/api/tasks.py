@@ -927,7 +927,6 @@ def validate_shift_assignment():
 	shift_request = frappe.db.sql("""
 			SELECT * from `tabShift Request` SR
 				WHERE '{date}' BETWEEN SR.from_date AND SR.to_date
-				AND SR.assign_day_off = 0
 				AND SR.workflow_state = 'Approved'
 				AND SR.employee
 					NOT IN (Select employee from `tabShift Assignment` tSA

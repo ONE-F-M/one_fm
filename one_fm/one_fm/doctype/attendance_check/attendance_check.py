@@ -274,8 +274,6 @@ class AttendanceCheck(Document):
             where
                 docstatus = 0
                 and
-                assign_day_off = 1
-                and
                 employee = '{self.employee}'
                 and
                 from_date <= '{self.date}'
