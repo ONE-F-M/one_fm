@@ -35,40 +35,44 @@ def check_roster_day_off():
 	# Validate their offs for next 2 months
 	# If discrepency, get shift supervisor grouped by and site supervisor.
 	# Create record with this info
-	Employee = frappe.qb.DocType('Employee')
-	employees = frappe.db.sql( frappe.qb.from_(Employee).select("*").where((Employee.status=="Active") & (Employee.shift_working == 1)), as_dict=1)
+	try:
+		Employee = frappe.qb.DocType('Employee')
+		employees = frappe.db.sql( frappe.qb.from_(Employee).select("*").where((Employee.status=="Active") & (Employee.shift_working == 1)), as_dict=1)
 
 
-	roster_day_off_data = []
+		roster_day_off_data = []
 
-	for employee in employees:
-		data = validate_offs(employee)
-		if len(data) > 0: roster_day_off_data = roster_day_off_data + data
-	
-	roster_day_off_data.sort(key=lambda x: (x["shift_supervisor"] is not None, x["shift_supervisor"]), reverse=True)
+		for employee in employees:
+			data = validate_offs(employee)
+			if len(data) > 0: roster_day_off_data = roster_day_off_data + data
+		
+		roster_day_off_data.sort(key=lambda x: (x["shift_supervisor"] is not None, x["shift_supervisor"]), reverse=True)
 
-	for key, data in groupby(roster_day_off_data, key=lambda k: (k["shift_supervisor"], k["site_supervisor"])):
-		# create record
-		shift_supervisor = key[0]
-		site_supervisor = key[1]
-		roster_data = list(data)
+		for key, data in groupby(roster_day_off_data, key=lambda k: (k["shift_supervisor"], k["site_supervisor"])):
+			# create record
+			shift_supervisor = key[0]
+			site_supervisor = key[1]
+			roster_data = list(data)
 
-		supervisor_name = frappe.db.get_value("Employee", shift_supervisor, "employee_name")
-		site_supervisor_name = frappe.db.get_value("Employee", site_supervisor, "employee_name")
-		today = getdate()
-		docname = f"{today}-{supervisor_name}-{site_supervisor_name}"
-		if frappe.db.exists("Roster Day Off Checker", {'name': docname}):
-			delete_checker(docname)
+			supervisor_name = frappe.db.get_value("Employee", shift_supervisor, "employee_name")
+			site_supervisor_name = frappe.db.get_value("Employee", site_supervisor, "employee_name")
+			today = getdate()
+			docname = f"{today}-{supervisor_name if supervisor_name else ''}-{site_supervisor_name if site_supervisor_name else ''}"
+			if frappe.db.exists("Roster Day Off Checker", {'name': docname}):
+				delete_checker(docname)
 
-		checker_doc = frappe.new_doc("Roster Day Off Checker")
-		checker_doc.date = today
-		checker_doc.supervisor = shift_supervisor
-		checker_doc.supervisor_name = supervisor_name
-		checker_doc.site_supervisor = site_supervisor
-		checker_doc.site_supervisor_name = site_supervisor_name
-		checker_doc.insert(ignore_permissions=1)
+			checker_doc = frappe.new_doc("Roster Day Off Checker")
+			checker_doc.date = today
+			checker_doc.supervisor = shift_supervisor
+			checker_doc.supervisor_name = supervisor_name
+			checker_doc.site_supervisor = site_supervisor
+			checker_doc.site_supervisor_name = site_supervisor_name
+			checker_doc.insert(ignore_permissions=1)
 
-		create_checker(checker_doc.name, roster_data)
+			create_checker(checker_doc.name, roster_data)
+
+	except Exception:
+		frappe.log_error(frappe.get_traceback())
 
 def delete_checker(docname):
 	frappe.db.sql("""
@@ -206,11 +210,11 @@ def validate_offs(employee):
 	return supervisors_to_notify
 
 def create_checker(parent, roster_data):
+	values_list = []
 	for info in roster_data:
 		creation = now()
-		count = 0
 		for data in info["data"]:		
-			child_name = f"{parent}-{str(creation)}-{frappe.generate_hash(length=8)}"
+			child_name = f"{parent}-{frappe.generate_hash(length=8)}"
 			values = {
 				"name": child_name,
 				"employee": data["employee"],
@@ -229,11 +233,11 @@ def create_checker(parent, roster_data):
 				"parent": parent,
 				"parenttype": "Roster Day Off Checker",
 				"parentfield": "detail",
-				"idx": count
+				"idx": len(values_list)+1
 			}
-			count = count + 1
+			values_list.append(values)
 
-
+	for child_values in values_list:
 			frappe.db.sql("""
 				INSERT INTO `tabRoster Day Off Detail`
 				 (name, employee, employee_id, employee_name, monthweek, day_off_category, number_of_days_off, day_off_schedule, days_off_ot, 
@@ -241,9 +245,9 @@ def create_checker(parent, roster_data):
 				 VALUES 
 				 (%(name)s, %(employee)s, %(employee_id)s, %(employee_name)s, %(monthweek)s, %(day_off_category)s, %(number_of_days_off)s, %(day_off_schedule)s, %(days_off_ot)s, 
 				 %(day_off_difference)s, %(owner)s, %(modified_by)s, %(creation)s, %(modified)s, %(parent)s, %(parenttype)s, %(parentfield)s, %(idx)s)
-			""", values=values)
+			""", values=child_values)
 
-		frappe.db.commit()
+	frappe.db.commit()
 
 @frappe.whitelist()
 def generate_checker():
