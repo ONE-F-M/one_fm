@@ -4,7 +4,8 @@ from frappe import _
 from frappe.utils import get_fullname, nowdate, add_to_date
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
-from frappe.desk.form.assign_to import add
+from frappe.desk.form.assign_to import add,remove
+from erpnext.crm.utils import get_open_todos
 from one_fm.api.notification import create_notification_log
 from frappe.utils import getdate, date_diff
 import pandas as pd
@@ -378,11 +379,12 @@ class LeaveApplicationOverride(LeaveApplication):
             if frappe.db.exists("Attendance Check",{'docstatus':0,'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]}):
                 att_checks = frappe.get_all("Attendance Check",{'docstatus':0,'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]},['name'])
                 if att_checks:
-                    for each in att_checks:
-                        att_check = frappe.get_doc("Attendance Check",each.name)
-                        att_check.attendance_status= 'On Leave'
-                        att_check.workflow_state = "Approved"
-                        att_check.submit()
+                    for each in att_checks: 
+                        frappe.db.set_value("Attendance Check",each.name,'workflow_state','Approved')
+                        frappe.db.set_value("Attendance Check",each.name,'attendance_status','On Leave')
+                        frappe.db.set_value("Attendance Check",each.name,'docstatus',1)
+                        
+                        remove_assignment(each.name)
             frappe.db.commit()
         except:
             frappe.log_error(title = "Error Updating Attendance Check",message=frappe.get_traceback())
@@ -467,6 +469,14 @@ def update_attendance_recods(self):
             self.create_or_update_attendance(attendance_name, date, 'On Leave')
 
     frappe.msgprint(_("Attendance are created for the leave Appication {0}!".format(self.name)), alert=True)
+
+
+def remove_assignment(attendance_check):
+    open_todo = get_open_todos("Attendance Check",attendance_check)
+    if open_todo:
+        for each in open_todo:
+            remove("Attendance Check",attendance_check,each.allocated_to,ignore_permissions=1)
+    
 
 @frappe.whitelist()
 def get_leave_details(employee, date):

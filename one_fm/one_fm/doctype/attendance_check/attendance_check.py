@@ -179,7 +179,8 @@ class AttendanceCheck(Document):
             self.check_on_leave_record()
         if self.attendance_status == "Day Off" and shift_working:
             self.validate_day_off()
-        self.mark_attendance()
+        if self.attendance_status != "On Leave":
+            self.mark_attendance()
 
     def check_on_leave_record(self):
         if self.attendance_status == "On Leave":
