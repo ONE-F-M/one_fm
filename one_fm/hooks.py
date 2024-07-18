@@ -719,7 +719,7 @@ scheduler_events = {
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
 		],
 		"00 08 * * *": [ # runs at 8:00 am
-			'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
+			'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application',
 			'one_fm.tasks.one_fm.daily.notify_for_employee_docs_expiry'
 		],
 		"05 00 * * *":[
