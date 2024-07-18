@@ -59,8 +59,13 @@ function get_shift_assignment(frm){
 			},
 			callback: function(r) {
 				if(r.message){
-					let [name, approver, shift, shift_type] = r.message;
-					set_shift_details(frm, name, approver, shift, shift_type);
+					set_shift_details(
+						frm, 
+						r.message.shift_assignment, 
+						r.message.approver, 
+						r.message.shift, 
+						r.message.shift_type
+					);
 				}
 				else{
 					set_shift_details(frm, undefined, undefined, undefined, undefined);
@@ -71,6 +76,7 @@ function get_shift_assignment(frm){
 }
 
 function set_shift_details(frm, name, supervisor, shift, shift_type){
+	console.log(name, supervisor, shift, shift_type)
 	frappe.model.set_value(frm.doctype, frm.docname, "assigned_shift", name);
 	frappe.model.set_value(frm.doctype, frm.docname, "shift_supervisor", supervisor);
 	frappe.model.set_value(frm.doctype, frm.docname, "shift", shift);
