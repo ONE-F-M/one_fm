@@ -6,6 +6,7 @@ from datetime import datetime
 import frappe
 from frappe.model.document import Document
 from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr, now
+from frappe.workflow.doctype.workflow_action.workflow_action import apply_workflow
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
@@ -173,7 +174,7 @@ def approve_open_shift_permission(start_date, end_date):
 		shift_permissions = frappe.db.sql(f"""
 			SELECT sp.name FROM `tabShift Permission` sp JOIN `tabShift Assignment` sa
 			ON sa.name=sp.assigned_shift
-			WHERE sa.start_date='{start_date}' and sa.end_date='{end_date}'
+			WHERE sa.start_date ='{start_date}' and sa.end_date <='{end_date}'
 			AND sa.is_replaced = 0
 			AND sp.workflow_state='Pending Approver' AND sp.docstatus=0
 		""", as_dict=1)
@@ -183,6 +184,7 @@ def approve_open_shift_permission(start_date, end_date):
 			try:
 				shift_permission = frappe.get_doc("Shift Permission", i.name)
 				create_checkin(shift_permission)
+				apply_workflow(shift_permission, 'Approve')
 			except Exception as e:
 				error_list += str(e)+'\n\n'
 		if error_list:frappe.log_error(error_list, 'Shift Permission')

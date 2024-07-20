@@ -11,6 +11,7 @@
   "states": [
    {
     "allow_edit": "System Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -20,10 +21,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Hiring Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -33,10 +36,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -46,10 +51,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -59,10 +66,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -72,10 +81,12 @@
     "parenttype": "Workflow",
     "state": "Submit to Recruitment Manager",
     "update_field": "status",
-    "update_value": "Open"
+    "update_value": "Open",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -85,10 +96,12 @@
     "parenttype": "Workflow",
     "state": "Accepted",
     "update_field": "status",
-    "update_value": "Accepted"
+    "update_value": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -98,10 +111,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -111,10 +126,12 @@
     "parenttype": "Workflow",
     "state": "Hold",
     "update_field": "status",
-    "update_value": "Hold"
+    "update_value": "Hold",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -124,10 +141,12 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": "status",
-    "update_value": "Cancelled"
+    "update_value": "Cancelled",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -137,10 +156,12 @@
     "parenttype": "Workflow",
     "state": "Closed",
     "update_field": "status",
-    "update_value": "Closed"
+    "update_value": "Closed",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -150,7 +171,8 @@
     "parenttype": "Workflow",
     "state": "Accepted",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -169,7 +191,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -186,7 +209,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit to Recruitment Manager"
+    "state": "Submit to Recruitment Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -203,7 +227,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit to Recruitment Manager"
+    "state": "Submit to Recruitment Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -220,7 +245,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Accepted"
+    "state": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "action": "Hold",
@@ -237,7 +263,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Accepted"
+    "state": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -254,7 +281,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Hold"
+    "state": "Hold",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -271,7 +299,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Hold"
+    "state": "Hold",
+    "workflow_builder_id": null
    },
    {
     "action": "Close",
@@ -288,7 +317,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Accepted"
+    "state": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "action": "Close",
@@ -305,9 +335,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit to Recruitment Manager"
+    "state": "Submit to Recruitment Manager",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "ERF",
   "workflow_state_field": "workflow_state"
  },
@@ -323,6 +355,7 @@
   "states": [
    {
     "allow_edit": "Junior Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -332,10 +365,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -345,10 +380,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -358,10 +395,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -371,10 +410,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -384,10 +425,12 @@
     "parenttype": "Workflow",
     "state": "Cancellation Requested",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -397,10 +440,12 @@
     "parenttype": "Workflow",
     "state": "Published",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts Manager",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -410,7 +455,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -429,7 +475,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Post as Draft",
@@ -446,7 +493,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Post as Draft",
@@ -463,7 +511,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Post as Draft",
@@ -480,7 +529,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Publish",
@@ -497,7 +547,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Return",
@@ -514,7 +565,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -531,7 +583,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Publish",
@@ -548,7 +601,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Return",
@@ -565,7 +619,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -582,7 +637,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Publish",
@@ -599,7 +655,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Return",
@@ -616,7 +673,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -633,7 +691,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Request Cancel",
@@ -650,7 +709,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Published"
+    "state": "Published",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -667,7 +727,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Cancellation Requested"
+    "state": "Cancellation Requested",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -684,9 +745,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Published"
+    "state": "Published",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Journal Entry",
   "workflow_state_field": "workflow_state"
  },
@@ -702,6 +765,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -711,10 +775,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -724,7 +790,8 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -743,7 +810,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -760,7 +828,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -777,7 +846,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -794,9 +864,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Attendance Check",
   "workflow_state_field": "workflow_state"
  },
@@ -812,6 +884,7 @@
   "states": [
    {
     "allow_edit": "Warehouse Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -821,10 +894,12 @@
     "parenttype": "Workflow",
     "state": "Submit to Purchase Officer",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Purchase Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -834,10 +909,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Purchase Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -847,10 +924,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": "status",
-    "update_value": "Approved"
+    "update_value": "Approved",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Purchase Manager",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -860,7 +939,8 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "status",
-    "update_value": "Rjected"
+    "update_value": "Rjected",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -879,7 +959,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit to Purchase Officer"
+    "state": "Submit to Purchase Officer",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -896,7 +977,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -913,9 +995,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "RFP",
   "workflow_state_field": "workflow_state"
  },
@@ -931,6 +1015,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -940,10 +1025,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -953,10 +1040,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval",
     "update_field": "status",
-    "update_value": "Draft"
+    "update_value": "Draft",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -966,10 +1055,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": "status",
-    "update_value": "Approved"
+    "update_value": "Approved",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -979,7 +1070,8 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -998,7 +1090,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -1015,7 +1108,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -1032,9 +1126,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "RFM",
   "workflow_state_field": "workflow_state"
  },
@@ -1050,6 +1146,7 @@
   "states": [
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1059,10 +1156,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "disabled",
-    "update_value": "1"
+    "update_value": "1",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Stock Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1072,10 +1171,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "disabled",
-    "update_value": "1"
+    "update_value": "1",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Stock User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1085,10 +1186,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "disabled",
-    "update_value": "1"
+    "update_value": "1",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1098,10 +1201,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval",
     "update_field": "disabled",
-    "update_value": "1"
+    "update_value": "1",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Stock Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1111,10 +1216,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval",
     "update_field": "disabled",
-    "update_value": "1"
+    "update_value": "1",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Stock User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1124,10 +1231,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval",
     "update_field": "disabled",
-    "update_value": "1"
+    "update_value": "1",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Purchase Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1137,10 +1246,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": "disabled",
-    "update_value": "0"
+    "update_value": "0",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Purchase Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1150,7 +1261,8 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "disabled",
-    "update_value": "1"
+    "update_value": "1",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -1169,7 +1281,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit for Approval",
@@ -1186,7 +1299,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit for Approval",
@@ -1203,7 +1317,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -1220,7 +1335,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -1237,7 +1353,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Change Request",
@@ -1254,7 +1371,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved"
+    "state": "Approved",
+    "workflow_builder_id": null
    },
    {
     "action": "Change Request",
@@ -1271,9 +1389,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved"
+    "state": "Approved",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Item",
   "workflow_state_field": "workflow_state"
  },
@@ -1289,6 +1409,7 @@
   "states": [
    {
     "allow_edit": "Purchase User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 1,
     "message": null,
@@ -1298,10 +1419,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1311,10 +1434,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approver",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Purchase Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1324,10 +1449,12 @@
     "parenttype": "Workflow",
     "state": "Pending Purchase Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Finance Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1337,10 +1464,12 @@
     "parenttype": "Workflow",
     "state": "Pending Finance Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Purchase User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1350,10 +1479,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Purchase User",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -1363,7 +1494,8 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -1382,7 +1514,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -1399,7 +1532,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approver"
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -1416,7 +1550,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approver"
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    },
    {
     "action": "Return To Draft",
@@ -1433,7 +1568,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approver"
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -1450,7 +1586,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Purchase Manager"
+    "state": "Pending Purchase Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -1467,7 +1604,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Purchase Manager"
+    "state": "Pending Purchase Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Return To Pending Approver",
@@ -1484,7 +1622,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Purchase Manager"
+    "state": "Pending Purchase Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -1501,7 +1640,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Finance Manager"
+    "state": "Pending Finance Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -1518,7 +1658,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Finance Manager"
+    "state": "Pending Finance Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Return To Pending Purchase Manager",
@@ -1535,9 +1676,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Finance Manager"
+    "state": "Pending Finance Manager",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Purchase Order",
   "workflow_state_field": "workflow_state"
  },
@@ -1553,6 +1696,7 @@
   "states": [
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1562,10 +1706,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1575,10 +1721,12 @@
     "parenttype": "Workflow",
     "state": "Submitted for Applicant Review",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1588,10 +1736,12 @@
     "parenttype": "Workflow",
     "state": "Applicant Signed and Uploaded",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1601,10 +1751,12 @@
     "parenttype": "Workflow",
     "state": "Applicant not Signed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1614,7 +1766,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -1633,7 +1786,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Applicant Signed and Upload",
@@ -1650,7 +1804,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted for Applicant Review"
+    "state": "Submitted for Applicant Review",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -1667,7 +1822,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Applicant Signed and Uploaded"
+    "state": "Applicant Signed and Uploaded",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -1684,9 +1840,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted for Applicant Review"
+    "state": "Submitted for Applicant Review",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Duty Commencement 1",
   "workflow_state_field": "workflow_state"
  },
@@ -1702,6 +1860,7 @@
   "states": [
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1711,10 +1870,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -1724,10 +1885,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1737,7 +1900,8 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -1756,7 +1920,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -1773,9 +1938,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Request Employee Assignment",
   "workflow_state_field": "workflow_state"
  },
@@ -1791,6 +1958,7 @@
   "states": [
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1800,10 +1968,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -1813,10 +1983,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1826,7 +1998,8 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -1845,7 +2018,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -1862,9 +2036,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Request Employee Schedule",
   "workflow_state_field": "workflow_state"
  },
@@ -1880,6 +2056,7 @@
   "states": [
    {
     "allow_edit": "HR User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1889,10 +2066,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "form_status",
-    "update_value": "Open"
+    "update_value": "Open",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1902,10 +2081,12 @@
     "parenttype": "Workflow",
     "state": "Form Printed",
     "update_field": "form_status",
-    "update_value": "Printed"
+    "update_value": "Printed",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1915,10 +2096,12 @@
     "parenttype": "Workflow",
     "state": "Apply Online by PRO",
     "update_field": "form_status",
-    "update_value": "Pending by GRD"
+    "update_value": "Pending by GRD",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1928,10 +2111,12 @@
     "parenttype": "Workflow",
     "state": "Awaiting Response",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -1941,7 +2126,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -1960,7 +2146,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to GRD",
@@ -1977,7 +2164,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Form Printed"
+    "state": "Form Printed",
+    "workflow_builder_id": null
    },
    {
     "action": "Apply",
@@ -1994,7 +2182,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Apply Online by PRO"
+    "state": "Apply Online by PRO",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -2011,7 +2200,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Awaiting Response"
+    "state": "Awaiting Response",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -2028,9 +2218,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Awaiting Response"
+    "state": "Awaiting Response",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "MGRP",
   "workflow_state_field": "workflow_state"
  },
@@ -2046,6 +2238,7 @@
   "states": [
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2055,10 +2248,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "work_permit_status",
-    "update_value": "Draft"
+    "update_value": "Draft",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2068,10 +2263,12 @@
     "parenttype": "Workflow",
     "state": "Apply Online by PRO",
     "update_field": "work_permit_status",
-    "update_value": "Draft"
+    "update_value": "Draft",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2081,10 +2278,12 @@
     "parenttype": "Workflow",
     "state": "Pending By Supervisor",
     "update_field": "work_permit_status",
-    "update_value": "Pending by Supervisor"
+    "update_value": "Pending by Supervisor",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2094,10 +2293,12 @@
     "parenttype": "Workflow",
     "state": "Pending By Previous Company",
     "update_field": "work_permit_status",
-    "update_value": "Pending by Previous Company"
+    "update_value": "Pending by Previous Company",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2107,10 +2308,12 @@
     "parenttype": "Workflow",
     "state": "Pending  For Payment",
     "update_field": "work_permit_status",
-    "update_value": "Pending by Supervisor for Payment"
+    "update_value": "Pending by Supervisor for Payment",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2120,10 +2323,12 @@
     "parenttype": "Workflow",
     "state": "Pending By Operator",
     "update_field": "work_permit_status",
-    "update_value": "Pending by Operator"
+    "update_value": "Pending by Operator",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2133,10 +2338,12 @@
     "parenttype": "Workflow",
     "state": "Pending By PAM",
     "update_field": "work_permit_status",
-    "update_value": "Pending by Operator"
+    "update_value": "Pending by Operator",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2146,10 +2353,12 @@
     "parenttype": "Workflow",
     "state": "Reason of Rejection",
     "update_field": "work_permit_status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -2159,10 +2368,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "work_permit_status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -2172,7 +2383,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -2191,7 +2403,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Apply",
@@ -2208,7 +2421,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Apply Online by PRO"
+    "state": "Apply Online by PRO",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -2225,7 +2439,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Supervisor"
+    "state": "Pending By Supervisor",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -2242,7 +2457,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Supervisor"
+    "state": "Pending By Supervisor",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -2259,7 +2475,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Supervisor"
+    "state": "Pending By Supervisor",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -2276,7 +2493,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By PAM"
+    "state": "Pending By PAM",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -2293,7 +2511,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By PAM"
+    "state": "Pending By PAM",
+    "workflow_builder_id": null
    },
    {
     "action": "Informed Previous Company",
@@ -2310,7 +2529,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Previous Company"
+    "state": "Pending By Previous Company",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -2327,7 +2547,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By PAM"
+    "state": "Pending By PAM",
+    "workflow_builder_id": null
    },
    {
     "action": "Paid",
@@ -2344,7 +2565,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending  For Payment"
+    "state": "Pending  For Payment",
+    "workflow_builder_id": null
    },
    {
     "action": "Done",
@@ -2361,7 +2583,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Operator"
+    "state": "Pending By Operator",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -2378,7 +2601,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By PAM"
+    "state": "Pending By PAM",
+    "workflow_builder_id": null
    },
    {
     "action": "Done",
@@ -2395,9 +2619,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Reason of Rejection"
+    "state": "Reason of Rejection",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Work Permit",
   "workflow_state_field": "workflow_state"
  },
@@ -2413,6 +2639,7 @@
   "states": [
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2422,10 +2649,12 @@
     "parenttype": "Workflow",
     "state": "Apply Online by PRO",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -2435,7 +2664,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -2454,9 +2684,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Apply Online by PRO"
+    "state": "Apply Online by PRO",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Medical Insurance",
   "workflow_state_field": "workflow_state"
  },
@@ -2472,6 +2704,7 @@
   "states": [
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2481,10 +2714,12 @@
     "parenttype": "Workflow",
     "state": "Apply Online by PRO",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -2494,7 +2729,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -2513,9 +2749,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Apply Online by PRO"
+    "state": "Apply Online by PRO",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "MOI",
   "workflow_state_field": "workflow_state"
  },
@@ -2531,6 +2769,7 @@
   "states": [
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2540,10 +2779,12 @@
     "parenttype": "Workflow",
     "state": "Apply Online by PRO",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2553,10 +2794,12 @@
     "parenttype": "Workflow",
     "state": "Under Process",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -2566,7 +2809,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -2585,7 +2829,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Apply Online by PRO"
+    "state": "Apply Online by PRO",
+    "workflow_builder_id": null
    },
    {
     "action": "Done",
@@ -2602,9 +2847,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Under Process"
+    "state": "Under Process",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "PACI",
   "workflow_state_field": "workflow_state"
  },
@@ -2620,6 +2867,7 @@
   "states": [
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2629,10 +2877,12 @@
     "parenttype": "Workflow",
     "state": "Awaiting for Appointment",
     "update_field": "status",
-    "update_value": "Awaiting for Appointment"
+    "update_value": "Awaiting for Appointment",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2642,10 +2892,12 @@
     "parenttype": "Workflow",
     "state": "Booked",
     "update_field": "status",
-    "update_value": "Booked"
+    "update_value": "Booked",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -2655,7 +2907,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": "status",
-    "update_value": "Completed"
+    "update_value": "Completed",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -2674,7 +2927,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Awaiting for Appointment"
+    "state": "Awaiting for Appointment",
+    "workflow_builder_id": null
    },
    {
     "action": "Done",
@@ -2691,9 +2945,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Booked"
+    "state": "Booked",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Fingerprint Appointment",
   "workflow_state_field": "workflow_state"
  },
@@ -2709,6 +2965,7 @@
   "states": [
    {
     "allow_edit": "Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2718,10 +2975,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "tp_status",
-    "update_value": "Opened"
+    "update_value": "Opened",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2731,10 +2990,12 @@
     "parenttype": "Workflow",
     "state": "Form Printed",
     "update_field": "tp_status",
-    "update_value": "Printed"
+    "update_value": "Printed",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2744,10 +3005,12 @@
     "parenttype": "Workflow",
     "state": "Pending by Onboarding",
     "update_field": "tp_status",
-    "update_value": "Pending by Onboarding"
+    "update_value": "Pending by Onboarding",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2757,10 +3020,12 @@
     "parenttype": "Workflow",
     "state": "Under Process",
     "update_field": "tp_status",
-    "update_value": "Pending By GRD"
+    "update_value": "Pending By GRD",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -2770,7 +3035,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": "tp_status",
-    "update_value": "Completed"
+    "update_value": "Completed",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -2789,7 +3055,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to Onboarding Officer",
@@ -2806,7 +3073,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Form Printed"
+    "state": "Form Printed",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to GRD",
@@ -2823,7 +3091,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending by Onboarding"
+    "state": "Pending by Onboarding",
+    "workflow_builder_id": null
    },
    {
     "action": "Done",
@@ -2840,9 +3109,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Under Process"
+    "state": "Under Process",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Transfer Paper",
   "workflow_state_field": "workflow_state"
  },
@@ -2858,6 +3129,7 @@
   "states": [
    {
     "allow_edit": "HR User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2867,10 +3139,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "status",
-    "update_value": "Draft"
+    "update_value": "Draft",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2880,10 +3154,12 @@
     "parenttype": "Workflow",
     "state": "Form Printed",
     "update_field": "status",
-    "update_value": "Printed"
+    "update_value": "Printed",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": "You Need To Set The Reference Number Taken from PIFSS website",
@@ -2893,10 +3169,12 @@
     "parenttype": "Workflow",
     "state": "Pending by GRD",
     "update_field": "status",
-    "update_value": "Pending by GRD"
+    "update_value": "Pending by GRD",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2906,10 +3184,12 @@
     "parenttype": "Workflow",
     "state": "Awaiting Response",
     "update_field": "status",
-    "update_value": "Awaiting Response by PIFSS"
+    "update_value": "Awaiting Response by PIFSS",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2919,10 +3199,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2932,10 +3214,12 @@
     "parenttype": "Workflow",
     "state": "Under Process",
     "update_field": "status",
-    "update_value": "Under Process"
+    "update_value": "Under Process",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -2945,10 +3229,12 @@
     "parenttype": "Workflow",
     "state": "Accepted",
     "update_field": "status",
-    "update_value": "Accepted"
+    "update_value": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -2958,7 +3244,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": "status",
-    "update_value": "Completed"
+    "update_value": "Completed",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -2977,7 +3264,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to GRD",
@@ -2994,7 +3282,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Form Printed"
+    "state": "Form Printed",
+    "workflow_builder_id": null
    },
    {
     "action": "Apply",
@@ -3011,7 +3300,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending by GRD"
+    "state": "Pending by GRD",
+    "workflow_builder_id": null
    },
    {
     "action": "Under Process",
@@ -3028,7 +3318,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Awaiting Response"
+    "state": "Awaiting Response",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -3045,7 +3336,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Awaiting Response"
+    "state": "Awaiting Response",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -3062,7 +3354,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Awaiting Response"
+    "state": "Awaiting Response",
+    "workflow_builder_id": null
    },
    {
     "action": "Under Process",
@@ -3079,7 +3372,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Under Process"
+    "state": "Under Process",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -3096,7 +3390,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Under Process"
+    "state": "Under Process",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -3113,7 +3408,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Under Process"
+    "state": "Under Process",
+    "workflow_builder_id": null
    },
    {
     "action": "Done",
@@ -3130,7 +3426,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Accepted"
+    "state": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "action": "Restart Application",
@@ -3147,9 +3444,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Rejected"
+    "state": "Rejected",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "PIFSS Form 103",
   "workflow_state_field": "workflow_state"
  },
@@ -3165,6 +3464,7 @@
   "states": [
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3174,10 +3474,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3187,10 +3489,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3200,10 +3504,12 @@
     "parenttype": "Workflow",
     "state": "Open Request",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR User",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3213,10 +3519,12 @@
     "parenttype": "Workflow",
     "state": "Open Request",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Legal User",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3226,10 +3534,12 @@
     "parenttype": "Workflow",
     "state": "Request Accepted",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Legal User",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -3239,10 +3549,12 @@
     "parenttype": "Workflow",
     "state": "Request Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Legal User",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3252,7 +3564,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -3271,7 +3584,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Open Request",
@@ -3288,7 +3602,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -3305,7 +3620,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open Request"
+    "state": "Open Request",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -3322,7 +3638,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open Request"
+    "state": "Open Request",
+    "workflow_builder_id": null
    },
    {
     "action": "Mark Completed",
@@ -3339,9 +3656,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Request Accepted"
+    "state": "Request Accepted",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Employee ID",
   "workflow_state_field": "workflow_state"
  },
@@ -3357,6 +3676,7 @@
   "states": [
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3366,10 +3686,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": "status",
-    "update_value": "Open"
+    "update_value": "Open",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3379,10 +3701,12 @@
     "parenttype": "Workflow",
     "state": "Submitted for Applicant Review",
     "update_field": "status",
-    "update_value": "Processing"
+    "update_value": "Processing",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3392,10 +3716,12 @@
     "parenttype": "Workflow",
     "state": "Applicant Signed",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3405,10 +3731,12 @@
     "parenttype": "Workflow",
     "state": "Applicant not Signed",
     "update_field": "status",
-    "update_value": "Process Finished"
+    "update_value": "Process Finished",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3418,10 +3746,12 @@
     "parenttype": "Workflow",
     "state": "Submitted to Legal",
     "update_field": "",
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Legal User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3431,10 +3761,12 @@
     "parenttype": "Workflow",
     "state": "Send to Authorised Signatory",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Legal User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3444,10 +3776,12 @@
     "parenttype": "Workflow",
     "state": "Awaiting Employee Received Copy",
     "update_field": "",
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3457,10 +3791,12 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": "status",
-    "update_value": "Process Finished"
+    "update_value": "Process Finished",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3470,7 +3806,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": "status",
-    "update_value": "Process Finished"
+    "update_value": "Process Finished",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -3489,7 +3826,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Applicant Signed",
@@ -3506,7 +3844,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted for Applicant Review"
+    "state": "Submitted for Applicant Review",
+    "workflow_builder_id": null
    },
    {
     "action": "Applicant not Signed",
@@ -3523,7 +3862,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted for Applicant Review"
+    "state": "Submitted for Applicant Review",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to Legal",
@@ -3540,7 +3880,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Applicant Signed"
+    "state": "Applicant Signed",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit for Review",
@@ -3557,7 +3898,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted to Legal"
+    "state": "Submitted to Legal",
+    "workflow_builder_id": null
    },
    {
     "action": "Send to Authorised Signatory",
@@ -3574,7 +3916,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted to Legal"
+    "state": "Submitted to Legal",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -3591,7 +3934,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted to Legal"
+    "state": "Submitted to Legal",
+    "workflow_builder_id": null
    },
    {
     "action": "Authority Signed",
@@ -3608,7 +3952,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Send to Authorised Signatory"
+    "state": "Send to Authorised Signatory",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -3625,7 +3970,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Send to Authorised Signatory"
+    "state": "Send to Authorised Signatory",
+    "workflow_builder_id": null
    },
    {
     "action": "Mark Completed",
@@ -3642,7 +3988,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Awaiting Employee Received Copy"
+    "state": "Awaiting Employee Received Copy",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -3659,9 +4006,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Completed"
+    "state": "Completed",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Work Contract",
   "workflow_state_field": "workflow_state"
  },
@@ -3677,6 +4026,7 @@
   "states": [
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3686,10 +4036,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -3699,10 +4051,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3712,10 +4066,12 @@
     "parenttype": "Workflow",
     "state": "Submit for Candidate Response",
     "update_field": "status",
-    "update_value": "Awaiting Response"
+    "update_value": "Awaiting Response",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3725,10 +4081,12 @@
     "parenttype": "Workflow",
     "state": "Submit for Candidate Response",
     "update_field": "status",
-    "update_value": "Awaiting Response"
+    "update_value": "Awaiting Response",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3738,10 +4096,12 @@
     "parenttype": "Workflow",
     "state": "Submit to Onboarding Officer",
     "update_field": "status",
-    "update_value": "Accepted"
+    "update_value": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3751,10 +4111,12 @@
     "parenttype": "Workflow",
     "state": "Submit to Onboarding Officer",
     "update_field": "status",
-    "update_value": "Accepted"
+    "update_value": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -3764,10 +4126,12 @@
     "parenttype": "Workflow",
     "state": "Offer Rejected",
     "update_field": "status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -3777,10 +4141,12 @@
     "parenttype": "Workflow",
     "state": "Offer Rejected",
     "update_field": "status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Senior Recruiter",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -3790,10 +4156,12 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3803,10 +4171,12 @@
     "parenttype": "Workflow",
     "state": "Process Onboarding",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3816,10 +4186,12 @@
     "parenttype": "Workflow",
     "state": "Accepted",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -3829,7 +4201,8 @@
     "parenttype": "Workflow",
     "state": "Onboarding Officer Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -3848,7 +4221,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit for Candidate Response",
@@ -3865,7 +4239,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Offer Accepted",
@@ -3882,7 +4257,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit for Candidate Response"
+    "state": "Submit for Candidate Response",
+    "workflow_builder_id": null
    },
    {
     "action": "Offer Accepted",
@@ -3899,7 +4275,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit for Candidate Response"
+    "state": "Submit for Candidate Response",
+    "workflow_builder_id": null
    },
    {
     "action": "Offer Rejected",
@@ -3916,7 +4293,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit for Candidate Response"
+    "state": "Submit for Candidate Response",
+    "workflow_builder_id": null
    },
    {
     "action": "Offer Rejected",
@@ -3933,7 +4311,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit for Candidate Response"
+    "state": "Submit for Candidate Response",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -3950,7 +4329,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit to Onboarding Officer"
+    "state": "Submit to Onboarding Officer",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -3967,7 +4347,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submit to Onboarding Officer"
+    "state": "Submit to Onboarding Officer",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to Onboarding Officer",
@@ -3984,7 +4365,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Onboarding Officer Rejected"
+    "state": "Onboarding Officer Rejected",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to Onboarding Officer",
@@ -4001,7 +4383,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Onboarding Officer Rejected"
+    "state": "Onboarding Officer Rejected",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -4018,7 +4401,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Accepted"
+    "state": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -4035,9 +4419,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Onboarding Officer Rejected"
+    "state": "Onboarding Officer Rejected",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Job Offer",
   "workflow_state_field": "workflow_state"
  },
@@ -4053,6 +4439,7 @@
   "states": [
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4062,10 +4449,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -4075,10 +4464,12 @@
     "parenttype": "Workflow",
     "state": "Informed Applicant",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -4088,10 +4479,12 @@
     "parenttype": "Workflow",
     "state": "Applicant Attended",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -4101,10 +4494,12 @@
     "parenttype": "Workflow",
     "state": "Applicant Not Attended",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -4114,10 +4509,12 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -4127,7 +4524,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -4146,7 +4544,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Applicant Attended",
@@ -4163,7 +4562,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Informed Applicant"
+    "state": "Informed Applicant",
+    "workflow_builder_id": null
    },
    {
     "action": "Applicant Not Attended",
@@ -4180,7 +4580,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Informed Applicant"
+    "state": "Informed Applicant",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -4197,7 +4598,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Applicant Not Attended"
+    "state": "Applicant Not Attended",
+    "workflow_builder_id": null
    },
    {
     "action": "Mark Completed",
@@ -4214,7 +4616,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Applicant Attended"
+    "state": "Applicant Attended",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -4231,9 +4634,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Completed"
+    "state": "Completed",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Candidate Orientation",
   "workflow_state_field": "workflow_state"
  },
@@ -4249,6 +4654,7 @@
   "states": [
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4258,10 +4664,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4271,10 +4679,12 @@
     "parenttype": "Workflow",
     "state": "Submitted for Applicant Review",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4284,10 +4694,12 @@
     "parenttype": "Workflow",
     "state": "Applicant Signed and Uploaded",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4297,10 +4709,12 @@
     "parenttype": "Workflow",
     "state": "Applicant not Signed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4310,7 +4724,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -4329,7 +4744,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Applicant Signed and Upload",
@@ -4346,7 +4762,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted for Applicant Review"
+    "state": "Submitted for Applicant Review",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -4363,7 +4780,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Applicant Signed and Uploaded"
+    "state": "Applicant Signed and Uploaded",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -4380,9 +4798,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted for Applicant Review"
+    "state": "Submitted for Applicant Review",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Duty Commencement",
   "workflow_state_field": "workflow_state"
  },
@@ -4398,6 +4818,7 @@
   "states": [
    {
     "allow_edit": "Accommodation User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4407,10 +4828,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4420,10 +4843,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4433,10 +4858,12 @@
     "parenttype": "Workflow",
     "state": "Open Request",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4446,10 +4873,12 @@
     "parenttype": "Workflow",
     "state": "Open Request",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4459,10 +4888,12 @@
     "parenttype": "Workflow",
     "state": "Processing Bank Account Opening",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4472,10 +4903,12 @@
     "parenttype": "Workflow",
     "state": "Rejected by Accounts",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4485,7 +4918,8 @@
     "parenttype": "Workflow",
     "state": "Active Account",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -4504,7 +4938,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Open Request",
@@ -4521,7 +4956,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Process Bank Account Opening",
@@ -4538,7 +4974,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open Request"
+    "state": "Open Request",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -4555,7 +4992,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open Request"
+    "state": "Open Request",
+    "workflow_builder_id": null
    },
    {
     "action": "Open Bank Account",
@@ -4572,7 +5010,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Processing Bank Account Opening"
+    "state": "Processing Bank Account Opening",
+    "workflow_builder_id": null
    },
    {
     "action": "Open Bank Account",
@@ -4589,9 +5028,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Bank Account",
   "workflow_state_field": "workflow_state"
  },
@@ -4607,6 +5048,7 @@
   "states": [
    {
     "allow_edit": "Site Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4616,10 +5058,12 @@
     "parenttype": "Workflow",
     "state": "Assign to Site Supervisor",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Projects Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4629,10 +5073,12 @@
     "parenttype": "Workflow",
     "state": "Review by Projects Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Projects Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -4642,10 +5088,12 @@
     "parenttype": "Workflow",
     "state": "Approved By Projects Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Projects Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -4655,7 +5103,8 @@
     "parenttype": "Workflow",
     "state": "Issue Penalty",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -4674,7 +5123,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Assign to Site Supervisor"
+    "state": "Assign to Site Supervisor",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -4691,7 +5141,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Review by Projects Manager"
+    "state": "Review by Projects Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject & Issue Penalty",
@@ -4708,9 +5159,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Review by Projects Manager"
+    "state": "Review by Projects Manager",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Missed MOM Follow-up Action Workflow",
   "workflow_state_field": "workflow_state"
  },
@@ -4726,6 +5179,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4735,10 +5189,12 @@
     "parenttype": "Workflow",
     "state": "Penalty Issued",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -4748,10 +5204,12 @@
     "parenttype": "Workflow",
     "state": "Penalty Accepted",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -4761,7 +5219,8 @@
     "parenttype": "Workflow",
     "state": "Penalty Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -4780,7 +5239,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Penalty Issued"
+    "state": "Penalty Issued",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -4797,9 +5257,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Penalty Issued"
+    "state": "Penalty Issued",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Penalty",
   "workflow_state_field": "workflow_state"
  },
@@ -4815,6 +5277,7 @@
   "states": [
    {
     "allow_edit": "Site Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4824,10 +5287,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Projects Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4837,10 +5302,12 @@
     "parenttype": "Workflow",
     "state": "Review by Projects Manager",
     "update_field": "",
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Projects Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4850,10 +5317,12 @@
     "parenttype": "Workflow",
     "state": "Approved By Projects Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4863,10 +5332,12 @@
     "parenttype": "Workflow",
     "state": "Approved by Operations Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Projects Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4876,10 +5347,12 @@
     "parenttype": "Workflow",
     "state": "Review by Projects Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Site Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4889,10 +5362,12 @@
     "parenttype": "Workflow",
     "state": "Review by Site Supervisor",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -4902,7 +5377,8 @@
     "parenttype": "Workflow",
     "state": "Review by Operations Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -4921,7 +5397,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Approval Request",
@@ -4938,7 +5415,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Review by Projects Manager"
+    "state": "Review by Projects Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -4955,7 +5433,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Review by Operations Manager"
+    "state": "Review by Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Review",
@@ -4972,7 +5451,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Review by Projects Manager"
+    "state": "Review by Projects Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Review",
@@ -4989,7 +5469,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Review by Operations Manager"
+    "state": "Review by Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Approval Request",
@@ -5006,7 +5487,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Review by Site Supervisor"
+    "state": "Review by Site Supervisor",
+    "workflow_builder_id": null
    },
    {
     "action": "Approval Request",
@@ -5023,7 +5505,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Review by Projects Manager"
+    "state": "Review by Projects Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Review",
@@ -5040,9 +5523,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Operations Site",
   "workflow_state_field": "workflow_state"
  },
@@ -5058,6 +5543,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5067,10 +5553,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5080,10 +5568,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approver",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5093,10 +5583,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5106,7 +5598,8 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -5125,7 +5618,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Return To Draft",
@@ -5142,7 +5636,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approver"
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -5159,7 +5654,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approver"
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -5176,9 +5672,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approver"
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Shift Permission",
   "workflow_state_field": "workflow_state"
  },
@@ -5194,6 +5692,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5203,10 +5702,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5216,7 +5717,8 @@
     "parenttype": "Workflow",
     "state": "Approved by Management",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -5235,9 +5737,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "GP Letter Request WF",
   "workflow_state_field": "workflow_state"
  },
@@ -5253,6 +5757,7 @@
   "states": [
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5262,7 +5767,8 @@
     "parenttype": "Workflow",
     "state": "Submission for approval",
     "update_field": "customer",
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -5281,9 +5787,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submission for approval"
+    "state": "Submission for approval",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Inovice",
   "workflow_state_field": "workflow_state"
  },
@@ -5299,6 +5807,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5308,10 +5817,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5321,7 +5832,8 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -5340,7 +5852,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -5357,9 +5870,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Item Request WF",
   "workflow_state_field": "workflow_state"
  },
@@ -5375,6 +5890,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5384,10 +5900,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5397,10 +5915,12 @@
     "parenttype": "Workflow",
     "state": "Approved by Financial",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5410,10 +5930,12 @@
     "parenttype": "Workflow",
     "state": "Rejected by Financial",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5423,10 +5945,12 @@
     "parenttype": "Workflow",
     "state": "Approved by Management",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5436,7 +5960,8 @@
     "parenttype": "Workflow",
     "state": "Rejected by Management",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -5455,7 +5980,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -5472,7 +5998,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -5489,7 +6016,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved by Financial"
+    "state": "Approved by Financial",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -5506,9 +6034,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved by Financial"
+    "state": "Approved by Financial",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Purchase Request WF",
   "workflow_state_field": "workflow_state"
  },
@@ -5524,6 +6054,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5533,10 +6064,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5546,10 +6079,12 @@
     "parenttype": "Workflow",
     "state": "Approved by Financial",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5559,10 +6094,12 @@
     "parenttype": "Workflow",
     "state": "Rejected by Financial",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5572,10 +6109,12 @@
     "parenttype": "Workflow",
     "state": "Approved by Management",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5585,7 +6124,8 @@
     "parenttype": "Workflow",
     "state": "Rejected by Management",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -5604,7 +6144,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -5621,7 +6162,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -5638,7 +6180,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved by Financial"
+    "state": "Approved by Financial",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -5655,9 +6198,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved by Financial"
+    "state": "Approved by Financial",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Supplier Purchase Order WF",
   "workflow_state_field": "workflow_state"
  },
@@ -5673,6 +6218,7 @@
   "states": [
    {
     "allow_edit": "System Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5682,10 +6228,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "System Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5695,10 +6243,12 @@
     "parenttype": "Workflow",
     "state": "Investigation Started",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "System Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5708,7 +6258,8 @@
     "parenttype": "Workflow",
     "state": "Investigation Completed",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -5727,7 +6278,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Complete Investigation",
@@ -5744,9 +6296,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Investigation Started"
+    "state": "Investigation Started",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Legal Investigation",
   "workflow_state_field": "workflow_state"
  },
@@ -5762,6 +6316,7 @@
   "states": [
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 1,
     "message": null,
@@ -5771,10 +6326,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5784,10 +6341,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval from Operations Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5797,10 +6356,12 @@
     "parenttype": "Workflow",
     "state": "Approved by Operations Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5810,10 +6371,12 @@
     "parenttype": "Workflow",
     "state": "Rejected by Operations Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5823,10 +6386,12 @@
     "parenttype": "Workflow",
     "state": "Approved by Finance",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5836,10 +6401,12 @@
     "parenttype": "Workflow",
     "state": "Rejected by Finance",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Accounts Manager",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -5849,7 +6416,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -5868,7 +6436,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -5885,7 +6454,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval from Operations Manager"
+    "state": "Pending Approval from Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -5902,7 +6472,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval from Operations Manager"
+    "state": "Pending Approval from Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -5919,7 +6490,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved by Operations Manager"
+    "state": "Approved by Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -5936,7 +6508,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved by Operations Manager"
+    "state": "Approved by Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -5953,9 +6526,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved by Finance"
+    "state": "Approved by Finance",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Sales Invoice",
   "workflow_state_field": "workflow_state"
  },
@@ -5971,6 +6546,7 @@
   "states": [
    {
     "allow_edit": "Stock User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -5980,10 +6556,12 @@
     "parenttype": "Workflow",
     "state": "Received At Warehouse",
     "update_field": "",
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Stock User",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -5993,10 +6571,12 @@
     "parenttype": "Workflow",
     "state": "Transferred From Warehouse",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Stock User",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -6006,7 +6586,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -6025,7 +6606,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Received At Warehouse"
+    "state": "Received At Warehouse",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -6042,9 +6624,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Transferred From Warehouse"
+    "state": "Transferred From Warehouse",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Asset",
   "workflow_state_field": "workflow_state"
  },
@@ -6060,6 +6644,7 @@
   "states": [
    {
     "allow_edit": "Stock User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6069,10 +6654,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Stock Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6082,10 +6669,12 @@
     "parenttype": "Workflow",
     "state": "Transferred",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Stock Manager",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -6095,7 +6684,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -6114,7 +6704,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -6131,9 +6722,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Transferred"
+    "state": "Transferred",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Asset Movement",
   "workflow_state_field": "workflow_state"
  },
@@ -6149,6 +6742,7 @@
   "states": [
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6158,10 +6752,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6171,10 +6767,12 @@
     "parenttype": "Workflow",
     "state": "Pending By Supervisor",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Finance User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6184,10 +6782,12 @@
     "parenttype": "Workflow",
     "state": "Pending By Finance",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6197,7 +6797,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -6216,7 +6817,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to Finance",
@@ -6233,7 +6835,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Supervisor"
+    "state": "Pending By Supervisor",
+    "workflow_builder_id": null
    },
    {
     "action": "Done",
@@ -6250,9 +6853,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Finance"
+    "state": "Pending By Finance",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "PIFSS Monthly Deduction",
   "workflow_state_field": "workflow_state"
  },
@@ -6268,6 +6873,7 @@
   "states": [
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6277,10 +6883,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "status",
-    "update_value": "Open"
+    "update_value": "Open",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Operator",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6290,10 +6898,12 @@
     "parenttype": "Workflow",
     "state": "Pending By Operator",
     "update_field": "status",
-    "update_value": "Pending By Operator"
+    "update_value": "Pending By Operator",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6303,10 +6913,12 @@
     "parenttype": "Workflow",
     "state": "Pending By Supervisor",
     "update_field": "status",
-    "update_value": "Pending By Supervisor"
+    "update_value": "Pending By Supervisor",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6316,10 +6928,12 @@
     "parenttype": "Workflow",
     "state": "Approved By Supervisor",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6329,10 +6943,12 @@
     "parenttype": "Workflow",
     "state": "Rejected By Supervisor",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "GRD Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6342,7 +6958,8 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": "status",
-    "update_value": "Completed"
+    "update_value": "Completed",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -6361,7 +6978,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to GRD Supervisor",
@@ -6378,7 +6996,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Operator"
+    "state": "Pending By Operator",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -6395,7 +7014,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Supervisor"
+    "state": "Pending By Supervisor",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -6412,7 +7032,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending By Supervisor"
+    "state": "Pending By Supervisor",
+    "workflow_builder_id": null
    },
    {
     "action": "Save",
@@ -6429,7 +7050,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Rejected By Supervisor"
+    "state": "Rejected By Supervisor",
+    "workflow_builder_id": null
    },
    {
     "action": "Done",
@@ -6446,9 +7068,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved By Supervisor"
+    "state": "Approved By Supervisor",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "PIFSS Monthly Deduction Tool",
   "workflow_state_field": "workflow_state"
  },
@@ -6464,6 +7088,7 @@
   "states": [
    {
     "allow_edit": "Projects Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6473,10 +7098,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "status",
-    "update_value": "Draft"
+    "update_value": "Draft",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Projects Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6486,10 +7113,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": "status",
-    "update_value": "Pending"
+    "update_value": "Pending",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6499,10 +7128,12 @@
     "parenttype": "Workflow",
     "state": "Request Accepted",
     "update_field": "status",
-    "update_value": "Accepted"
+    "update_value": "Accepted",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6512,7 +7143,8 @@
     "parenttype": "Workflow",
     "state": "Request Rejected",
     "update_field": "status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -6531,7 +7163,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Accept",
@@ -6548,7 +7181,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -6565,9 +7199,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Overtime Request",
   "workflow_state_field": "workflow_state"
  },
@@ -6583,6 +7219,7 @@
   "states": [
    {
     "allow_edit": "Site Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6592,10 +7229,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Line Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6605,10 +7244,12 @@
     "parenttype": "Workflow",
     "state": "Approved by Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Line Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6618,10 +7259,12 @@
     "parenttype": "Workflow",
     "state": "Rejected by Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6631,10 +7274,12 @@
     "parenttype": "Workflow",
     "state": "Approved by HR Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "HR Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6644,7 +7289,8 @@
     "parenttype": "Workflow",
     "state": "Rejected by HR Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -6663,7 +7309,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -6680,7 +7327,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -6697,7 +7345,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved by Manager"
+    "state": "Approved by Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -6714,9 +7363,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Rejected by Manager"
+    "state": "Rejected by Manager",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Employee Incentive",
   "workflow_state_field": "workflow_state"
  },
@@ -6732,6 +7383,7 @@
   "states": [
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -6741,10 +7393,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6754,10 +7408,12 @@
     "parenttype": "Workflow",
     "state": "Inform Applicant",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6767,10 +7423,12 @@
     "parenttype": "Workflow",
     "state": "Applicant Attended",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6780,10 +7438,12 @@
     "parenttype": "Workflow",
     "state": "Work Contract",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6793,10 +7453,12 @@
     "parenttype": "Workflow",
     "state": "Duty Commencement",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6806,10 +7468,12 @@
     "parenttype": "Workflow",
     "state": "Bank Account",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6819,10 +7483,12 @@
     "parenttype": "Workflow",
     "state": "Mobile App Enrolment",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -6832,10 +7498,12 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -6845,7 +7513,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -6864,7 +7533,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Applicant Attended",
@@ -6881,7 +7551,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Inform Applicant"
+    "state": "Inform Applicant",
+    "workflow_builder_id": null
    },
    {
     "action": "Work Contract",
@@ -6898,7 +7569,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Applicant Attended"
+    "state": "Applicant Attended",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit",
@@ -6915,7 +7587,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Applicant Attended"
+    "state": "Applicant Attended",
+    "workflow_builder_id": null
    },
    {
     "action": "Duty Commencement",
@@ -6932,7 +7605,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Work Contract"
+    "state": "Work Contract",
+    "workflow_builder_id": null
    },
    {
     "action": "Open Bank Account",
@@ -6949,7 +7623,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Duty Commencement"
+    "state": "Duty Commencement",
+    "workflow_builder_id": null
    },
    {
     "action": "Mobile App Enrolment",
@@ -6966,7 +7641,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Duty Commencement"
+    "state": "Duty Commencement",
+    "workflow_builder_id": null
    },
    {
     "action": "Mobile App Enrolment",
@@ -6983,7 +7659,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Bank Account"
+    "state": "Bank Account",
+    "workflow_builder_id": null
    },
    {
     "action": "Mark Completed",
@@ -7000,7 +7677,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Mobile App Enrolment"
+    "state": "Mobile App Enrolment",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7017,7 +7695,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Inform Applicant"
+    "state": "Inform Applicant",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7034,7 +7713,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Applicant Attended"
+    "state": "Applicant Attended",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7051,7 +7731,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Work Contract"
+    "state": "Work Contract",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7068,7 +7749,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Duty Commencement"
+    "state": "Duty Commencement",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7085,7 +7767,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Bank Account"
+    "state": "Bank Account",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7102,7 +7785,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Mobile App Enrolment"
+    "state": "Mobile App Enrolment",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7119,9 +7803,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 1,
     "skip_multiple_action": 0,
-    "state": "Completed"
+    "state": "Completed",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Onboard Employee",
   "workflow_state_field": "workflow_state"
  },
@@ -7137,6 +7823,7 @@
   "states": [
    {
     "allow_edit": "Finance User",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7146,10 +7833,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Finance Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7159,10 +7848,12 @@
     "parenttype": "Workflow",
     "state": "Active",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Finance Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7172,7 +7863,8 @@
     "parenttype": "Workflow",
     "state": "Inactive",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -7191,7 +7883,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Set Inactive",
@@ -7208,9 +7901,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Active"
+    "state": "Active",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Contracts",
   "workflow_state_field": "workflow_state"
  },
@@ -7226,6 +7921,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7235,10 +7931,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7248,10 +7946,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approver",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -7261,10 +7961,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7274,7 +7976,8 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -7293,7 +7996,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -7310,7 +8014,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approver"
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -7327,7 +8032,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approver"
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    },
    {
     "action": "Return To Draft",
@@ -7344,9 +8050,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approver"
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Shift Request",
   "workflow_state_field": "workflow_state"
  },
@@ -7362,6 +8070,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7371,10 +8080,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7384,10 +8095,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7397,10 +8110,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -7410,10 +8125,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -7423,7 +8140,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -7442,7 +8160,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -7459,7 +8178,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -7476,7 +8196,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Return To Draft",
@@ -7493,7 +8214,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7510,9 +8232,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved"
+    "state": "Approved",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Attendance Request",
   "workflow_state_field": "workflow_state"
  },
@@ -7528,6 +8252,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7537,10 +8262,12 @@
     "parenttype": "Workflow",
     "state": "Open",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Leave Approver",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -7550,10 +8277,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": "status",
-    "update_value": "Approved"
+    "update_value": "Approved",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Leave Approver",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -7563,10 +8292,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -7576,7 +8307,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": "status",
-    "update_value": "Cancelled"
+    "update_value": "Cancelled",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -7595,7 +8327,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -7612,7 +8345,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Open"
+    "state": "Open",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7629,7 +8363,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved"
+    "state": "Approved",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7646,9 +8381,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Rejected"
+    "state": "Rejected",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Leave Application",
   "workflow_state_field": "workflow_state"
  },
@@ -7664,6 +8401,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7673,10 +8411,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7686,10 +8426,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -7699,10 +8441,12 @@
     "parenttype": "Workflow",
     "state": "Submitted",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -7712,10 +8456,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": "status",
-    "update_value": "Submitted"
+    "update_value": "Submitted",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -7725,10 +8471,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "System Manager",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -7738,7 +8486,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": "",
-    "update_value": ""
+    "update_value": "",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -7757,7 +8506,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit",
@@ -7774,7 +8524,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -7791,7 +8542,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Return To Draft",
@@ -7808,7 +8560,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7825,7 +8578,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved"
+    "state": "Approved",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7842,9 +8596,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Submitted"
+    "state": "Submitted",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Timesheet",
   "workflow_state_field": "workflow_state"
  },
@@ -7860,6 +8616,7 @@
   "states": [
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7869,10 +8626,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Employee",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -7882,10 +8641,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -7895,10 +8656,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -7908,10 +8671,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -7921,7 +8686,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -7940,7 +8706,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -7957,7 +8724,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -7974,7 +8742,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval"
+    "state": "Pending Approval",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -7991,9 +8760,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved"
+    "state": "Approved",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Employee Checkin Issue",
   "workflow_state_field": "workflow_state"
  },
@@ -8009,6 +8780,7 @@
   "states": [
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8018,10 +8790,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Shift Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8031,10 +8805,12 @@
     "parenttype": "Workflow",
     "state": "Pending Approval from Operations Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -8044,10 +8820,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -8057,10 +8835,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -8070,7 +8850,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -8089,7 +8870,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -8106,7 +8888,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval from Operations Manager"
+    "state": "Pending Approval from Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -8123,7 +8906,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Approval from Operations Manager"
+    "state": "Pending Approval from Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -8140,7 +8924,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 1,
     "skip_multiple_action": 0,
-    "state": "Approved"
+    "state": "Approved",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -8157,9 +8942,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 1,
     "skip_multiple_action": 0,
-    "state": "Rejected"
+    "state": "Rejected",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Incident Form",
   "workflow_state_field": "workflow_state"
  },
@@ -8175,6 +8962,7 @@
   "states": [
    {
     "allow_edit": "Operations Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8184,10 +8972,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8197,10 +8987,12 @@
     "parenttype": "Workflow",
     "state": "Pending Operations Manager",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8210,10 +9002,12 @@
     "parenttype": "Workflow",
     "state": "Pending Onboarding Officer",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -8223,10 +9017,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 1,
     "message": null,
@@ -8236,10 +9032,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8249,10 +9047,12 @@
     "parenttype": "Workflow",
     "state": "Return",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -8262,7 +9062,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -8281,7 +9082,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Submit to Onboarding Officer",
@@ -8298,7 +9100,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Operations Manager"
+    "state": "Pending Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Return",
@@ -8315,7 +9118,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Operations Manager"
+    "state": "Pending Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -8332,7 +9136,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Operations Manager"
+    "state": "Pending Operations Manager",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -8349,7 +9154,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Onboarding Officer"
+    "state": "Pending Onboarding Officer",
+    "workflow_builder_id": null
    },
    {
     "action": "Return",
@@ -8366,7 +9172,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Onboarding Officer"
+    "state": "Pending Onboarding Officer",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -8383,7 +9190,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending Onboarding Officer"
+    "state": "Pending Onboarding Officer",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -8400,9 +9208,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Approved"
+    "state": "Approved",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Subcontract Staff Shortlist",
   "workflow_state_field": "workflow_state"
  },
@@ -8418,6 +9228,7 @@
   "states": [
    {
     "allow_edit": "Operations Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8427,10 +9238,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8440,10 +9253,12 @@
     "parenttype": "Workflow",
     "state": "Pending",
     "update_field": "status",
-    "update_value": "Pending"
+    "update_value": "Pending",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -8453,10 +9268,12 @@
     "parenttype": "Workflow",
     "state": "Approved",
     "update_field": "status",
-    "update_value": "Approved"
+    "update_value": "Approved",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Manager",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 1,
     "message": null,
@@ -8466,10 +9283,12 @@
     "parenttype": "Workflow",
     "state": "Rejected",
     "update_field": "status",
-    "update_value": "Rejected"
+    "update_value": "Rejected",
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Operations Supervisor",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8479,7 +9298,8 @@
     "parenttype": "Workflow",
     "state": "Return",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -8498,7 +9318,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Approve",
@@ -8515,7 +9336,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Reject",
@@ -8532,7 +9354,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Pending"
+    "state": "Pending",
+    "workflow_builder_id": null
    },
    {
     "action": "Return",
@@ -8549,9 +9372,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Rejected"
+    "state": "Rejected",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Subcontract Staff Request",
   "workflow_state_field": "workflow_state"
  },
@@ -8567,6 +9392,7 @@
   "states": [
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8576,10 +9402,12 @@
     "parenttype": "Workflow",
     "state": "Draft",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
     "message": null,
@@ -8589,10 +9417,12 @@
     "parenttype": "Workflow",
     "state": "In Progress",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,
     "message": null,
@@ -8602,10 +9432,12 @@
     "parenttype": "Workflow",
     "state": "Completed",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 1,
     "message": null,
@@ -8615,10 +9447,12 @@
     "parenttype": "Workflow",
     "state": "Stopped",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    },
    {
     "allow_edit": "Onboarding Officer",
+    "avoid_status_override": 0,
     "doc_status": "2",
     "is_optional_state": 0,
     "message": null,
@@ -8628,7 +9462,8 @@
     "parenttype": "Workflow",
     "state": "Cancelled",
     "update_field": null,
-    "update_value": null
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -8647,7 +9482,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Draft"
+    "state": "Draft",
+    "workflow_builder_id": null
    },
    {
     "action": "Complete",
@@ -8664,7 +9500,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "In Progress"
+    "state": "In Progress",
+    "workflow_builder_id": null
    },
    {
     "action": "Stop",
@@ -8681,7 +9518,8 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "In Progress"
+    "state": "In Progress",
+    "workflow_builder_id": null
    },
    {
     "action": "Cancel",
@@ -8698,9 +9536,11 @@
     "parenttype": "Workflow",
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
-    "state": "Completed"
+    "state": "Completed",
+    "workflow_builder_id": null
    }
   ],
+  "workflow_data": null,
   "workflow_name": "Onboard Subcontract Employee",
   "workflow_state_field": "workflow_state"
  }
