@@ -755,22 +755,22 @@ fixtures = [
 	# 	"dt": "Custom Field",
 	# 	'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
 	# },
-	# {
-	# 	"dt": "Property Setter"
-	# },
-	# {
-	# 	"dt": "Workflow State"
-	# },
-	# {
-	# 	"dt": "Workflow Action Master"
-	# },
-	# {
-	# 	"dt": "Workflow"
-	# },
-	# {
-	# 	"dt": "Role",
-	# 	"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
-	# },
+	{
+		"dt": "Property Setter"
+	},
+	{
+		"dt": "Workflow State"
+	},
+	{
+		"dt": "Workflow Action Master"
+	},
+	{
+		"dt": "Workflow"
+	},
+	{
+		"dt": "Role",
+		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+	},
 	{
 		"dt": "Assignment Rule",
 		"filters": [["name", "in",
@@ -778,23 +778,23 @@ fixtures = [
 				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To", "Shift Permission Approver",
 				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request",
 				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action",
-				"Timesheet Return to Draft", "Timesheet Approval Assignment", "Shift Request Draft", "Shift Request Pending Approval",	
+				"Timesheet Return to Draft", "Timesheet Approval Assignment", "Shift Request Draft", "Shift Request Pending Approval",
 				"Attendance Request Return to Draft", "Attendance Request Approval", "Employee Checkin Issue Approval"
 			]
 		]]
 	},
-	# {
-	# 	"dt": "Email Template"
-	# },
-	# {
-	# 	"doctype": "DocType Layout",
-	# 	"filters": {
-	# 		"name": ("in", (
-	# 				"Employee",
-	# 			)
-	# 		)
-	# 	}
-	# }
+	{
+		"dt": "Email Template"
+	},
+	{
+		"doctype": "DocType Layout",
+		"filters": {
+			"name": ("in", (
+					"Employee",
+				)
+			)
+		}
+	}
 ]
 
 # before_tests = "one_fm.install.before_tests"
