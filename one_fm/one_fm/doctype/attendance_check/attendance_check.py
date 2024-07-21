@@ -465,7 +465,7 @@ def get_pending_approval_attendance_check(hours):
     date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f') - timedelta(hours=hours)
     return  frappe.db.sql("""
         select
-            name,creation, _assign as assign_to
+            name, _assign as assign_to
         from
             `tabAttendance Check`
         where
