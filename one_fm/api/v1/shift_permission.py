@@ -109,11 +109,11 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
                 latitude = float(latitude)
                 longitude = float(longitude)
             except:
-                frappe.log_error(title="API Shift Permission", message="MEssage 1")
+                frappe.log_error(title="API Shift Permission", message= "Latitude and longitude must be float.")
                 return response("Bad Request", 400, None, "Latitude and longitude must be float.")
         if not isinstance(date, str):
 
-            frappe.log_error(title="API Shift Permission", message='MEssage 2')
+            frappe.log_error(title="API Shift Permission", message="date must be of type str.")
             return response("Bad Request", 400, None, "date must be of type str.")
 
         if not validate_date(date):
@@ -122,25 +122,25 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
             return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
 
         if not isinstance(reason, str):
-            frappe.log_error(title="API Shift Permission", message='MEssage 3')
+            frappe.log_error(title="API Shift Permission", message="reason must be of type str.")
             return response("Bad Request", 400, None, "reason must be of type str.")
 
         if arrival_time:
             if not isinstance(arrival_time, str):
-                frappe.log_error(title="API Shift Permission", message='MEssage 4')
+                frappe.log_error(title="API Shift Permission", message="arival_time must be of type str.")
                 return response("Bad Request", 400, None, "arival_time must be of type str.")
 
             if not validate_time(arrival_time):
-                frappe.log_error(title="API Shift Permission", message='MEssage 5')
+                frappe.log_error(title="API Shift Permission", message="arrival_time must be of type hh:mm:ss.")
                 return response("Bad Request", 400, None, "arrival_time must be of type hh:mm:ss.")
 
         if leaving_time:
             if not isinstance(leaving_time, str):
-                frappe.log_error(title="API Shift Permission", message='MEssage 6')
+                frappe.log_error(title="API Shift Permission", message="leaving_time must be of type str.")
                 return response("Bad Request", 400, None, "leaving_time must be of type str.")
 
             if not validate_time(leaving_time):
-                frappe.log_error(title="API Shift Permission", message='MEssage 7')
+                frappe.log_error(title="API Shift Permission", message="leaving_time must be of type hh:mm:ss.")
                 return response("Bad Request", 400, None, "leaving_time must be of type hh:mm:ss.")
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
