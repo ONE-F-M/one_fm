@@ -205,8 +205,11 @@ def get_shift_details(employee):
         shift_type = None
         shift_assignment = None
         shift_supervisor = None
-
-        shift_assignment, shift_supervisor, shift, shift_type = fetch_approver(employee)
+        approver_approver_data = fetch_approver(employee)
+        shift_assignment = approver_approver_data.get('shift_assignment')
+        shift_supervisor = approver_approver_data.get('approver')
+        shift = approver_approver_data.get('shift')
+        shift_type = approver_approver_data.get('shift_type')
 
         if not shift_assignment:
             return frappe._dict({'found':False})
