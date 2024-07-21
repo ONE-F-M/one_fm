@@ -306,7 +306,7 @@ class AttendanceCheck(Document):
         )
 
     def update_existing_attendance_record(self, attendance):
-        if attendance.status == "Absent" and self.attendance_status in ["Present", "Day Off", "On Leave"]:
+        if attendance.status != self.attendance_status:
             working_hours = self.get_shift_working_hours(self.shift_assignment)
             frappe.db.sql(f"""
                 update
