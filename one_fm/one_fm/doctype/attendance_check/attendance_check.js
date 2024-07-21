@@ -7,7 +7,6 @@ frappe.ui.form.on('Attendance Check', {
 			frm.toggle_reqd(['attendance_status'], 1);
 		}
 		allow_only_attendance_manager(frm);
-		screenshot_functionality(frm);
 	},
 	before_workflow_action: function(frm){
 		if(frm.doc.workflow_state == 'Pending Approval'){
@@ -22,22 +21,11 @@ frappe.ui.form.on('Attendance Check', {
 	attendance_status: function(frm){
 		if (frm.doc.attendance_status != "Present"){
 			frm.doc.justification = ""
-			screenshot_functionality(frm);
 		}
 	},
-	justification: function(frm){
-		screenshot_functionality(frm);
-		
-	}
 });
 
 
-
-var screenshot_functionality = (frm) => {
-	const show_screenshot = ["Invalid media content", "Mobile isn't supporting the app", "Employees insist that he/she did check in or out", "Other"].includes(frm.doc.justification)
-	frm.toggle_reqd("screenshot", show_screenshot)
-	frm.toggle_display("screenshot", show_screenshot)
-}
 
 
 

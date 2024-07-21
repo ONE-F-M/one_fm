@@ -233,48 +233,50 @@ class AttendanceCheck(Document):
     def validate_day_off(self):
         if self.attendance_status == "Day Off":
             # Check if shift request for that day exists
-            draft_shift_request = self.get_draft_shift_request()
-            if draft_shift_request and len(draft_shift_request) > 0:
-                doc_url = get_url_to_form('Shift Request',draft_shift_request[0].get('name'))
-                approver_full_name = frappe.db.get_value("User",draft_shift_request[0].get('approver'), 'full_name')
-                error_template = frappe.render_template(
-                    "one_fm/templates/emails/attendance_check_alert.html",
-                    context={
-                        "doctype":"Shift Request",
-                        "current_user":frappe.session.user,
-                        "date":self.date,
-                        "approver":approver_full_name,
-                        "page_link":doc_url,
-                        "employee_name":self.employee_name
-                    }
-                )
-                frappe.throw(error_template)
-            else:
-                # Cancelled or shift request not created at all
-                link_to_new_shift_request = frappe.utils.get_url('/app/shift-request/new-shift-request-1')
-                frappe.throw(f"""
-                    <p>
-                        Please note that a shift request has not been created for
-                        <b>{self.employee_name}</b> on <b>{self.date}</b>
-                    </p>
-                    <hr>
-                    To create a Shift Request
-                    <a class="btn btn-primary btn-sm"
-                    href='{link_to_new_shift_request}?doc_id={self.name}&doctype={self.doctype}'
-                    target="_blank" onclick=" ">
-                        Click Here
-                    </a>
-                 """)
+            shift_request = self.get_shift_request()
+            if shift_request:
+                workflow_state = shift_request[0].get("workflow_state")
+                if workflow_state in {"Draft", "Pending Approval"}:
+                    doc_url = get_url_to_form('Shift Request',shift_request[0].get('name'))
+                    approver_full_name = frappe.db.get_value("User", shift_request[0].get('approver'), 'full_name')
+                    error_template = frappe.render_template(
+                        "one_fm/templates/emails/attendance_check_alert.html",
+                        context={
+                            "doctype":"Shift Request",
+                            "current_user":frappe.session.user,
+                            "date":self.date,
+                            "approver":approver_full_name,
+                            "page_link":doc_url,
+                            "employee_name":self.employee_name
+                        }
+                    )
+                    frappe.throw(error_template)
+                elif workflow_state == "Approved":
+                    return 
+            
+            # Cancelled or shift request not created at all
+            link_to_new_shift_request = frappe.utils.get_url('/app/shift-request/new-shift-request-1')
+            frappe.throw(f"""
+                <p>
+                    Please note that a shift request has not been created for
+                    <b>{self.employee_name}</b> on <b>{self.date}</b>
+                </p>
+                <hr>
+                To create a Shift Request
+                <a class="btn btn-primary btn-sm"
+                href='{link_to_new_shift_request}?doc_id={self.name}&doctype={self.doctype}'
+                target="_blank" onclick=" ">
+                    Click Here
+                </a>
+            """)
 
-    def get_draft_shift_request(self):
+    def get_shift_request(self):
         return frappe.db.sql(f"""
             select
-                name,approver
+                name, approver, workflow_state
             from
                 `tabShift Request`
             where
-                docstatus = 0
-                and
                 employee = '{self.employee}'
                 and
                 from_date <= '{self.date}'
@@ -287,7 +289,7 @@ class AttendanceCheck(Document):
     def mark_attendance(self):
         if self.workflow_state == 'Approved':
             attendance = self.get_existing_attendance()
-            if attendance and len(attendance)>0:
+            if attendance and len(attendance) > 0:
                 self.update_existing_attendance_record(attendance)
             else:
                 self.create_new_attendance_record()
@@ -299,14 +301,14 @@ class AttendanceCheck(Document):
                 "attendance_date": self.date,
                 "employee": self.employee,
                 "docstatus": ["<", 2],
-                "roster_type":self.roster_type
+                "roster_type": self.roster_type
             },
             ["status", "name"],
             as_dict=1
         )
 
     def update_existing_attendance_record(self, attendance):
-        if attendance.status == "Absent" and self.attendance_status in ["Present", "Day Off", "On Leave"]:
+        if attendance.status != self.attendance_status:
             working_hours = self.get_shift_working_hours(self.shift_assignment)
             frappe.db.sql(f"""
                 update

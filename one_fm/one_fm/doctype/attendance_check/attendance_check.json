@@ -343,10 +343,12 @@
    "mandatory_depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\""
   },
   {
+   "depends_on": "eval:[\"Invalid media content\", \"Mobile isn't supporting the app\", \"Employees insist that he/she did check in or out\", \"Other\"].includes(doc.justification)",
    "description": "Upload screenshot with the same issue!",
    "fieldname": "screenshot",
    "fieldtype": "Attach",
-   "label": "Screenshot"
+   "label": "Screenshot",
+   "mandatory_depends_on": "eval:[\"Invalid media content\", \"Mobile isn't supporting the app\", \"Employees insist that he/she did check in or out\", \"Other\"].includes(doc.justification)"
   },
   {
    "depends_on": "eval:doc.justification == \"Other\"",
@@ -383,7 +385,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2024-05-08 13:38:36.309448",
+ "modified": "2024-07-21 18:09:03.081135",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",
