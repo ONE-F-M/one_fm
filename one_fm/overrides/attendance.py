@@ -8,7 +8,7 @@ from frappe.utils import (
 from datetime import timedelta, datetime as p_datetime
 from hrms.hr.doctype.attendance.attendance import *
 from hrms.hr.utils import  validate_active_employee, get_holidays_for_employee
-from one_fm.utils import get_holiday_today
+from one_fm.utils import get_holiday_today, is_holiday
 from one_fm.operations.doctype.shift_permission.shift_permission import create_checkin as approve_shift_permission
 from frappe.model import table_fields
 from frappe.workflow.doctype.workflow_action.workflow_action import apply_workflow
@@ -748,11 +748,12 @@ def mark_open_timesheet_and_create_attendance():
 
     present_employees = frappe.db.get_list("Timesheet", filters={"start_date": the_date, "workflow_state": "Approved"}, pluck="employee")
     for obj in employee_list:
+        status, message = is_holiday(employee=obj)
         if obj not in present_employees:
             att = frappe.new_doc("Attendance")
             att.employee = obj
             att.attendance_date = the_date
-            att.status = "Absent"
+            att.status = "Absent" if not status else "Day Off"
             att.working_hours = 0
             att.reference_doctype = "Timesheet"
             try:
