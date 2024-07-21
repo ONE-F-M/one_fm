@@ -464,7 +464,7 @@ def attendance_check_pending_approval_check():
 def get_pending_approval_attendance_check(hours):
     # Method to get list of attendance check, which is in panding approval state after a given hours
     date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f') - timedelta(hours=hours)
-    return frappe.db.sql("""
+    return  frappe.db.sql("""
         select
             name, _assign as assign_to
         from
@@ -473,9 +473,9 @@ def get_pending_approval_attendance_check(hours):
             creation <= %s
             and
             docstatus = 0
-            and
-            TIME(creation) <= %s
-    """, (date_time, date_time.time()), as_dict=1)
+            
+    """, (date_time), as_dict=1)
+   
 
 def issue_penalty_to_the_assigned_approver(pending_approval_attendance_checks):
     approvers = {}
@@ -515,11 +515,15 @@ def assign_attendance_manager(pending_approval_attendance_checks):
     attendance_manager_user = fetch_attendance_manager_user()
     if attendance_manager_user:
         for pending_approval_attendance_check in pending_approval_attendance_checks:
-            add_assignment({
-                'doctype': "Attendance Check",
-                'name': pending_approval_attendance_check.name,
-                'assign_to': [attendance_manager_user],
-            })
+            try:
+                add_assignment({
+                    'doctype': "Attendance Check",
+                    'name': pending_approval_attendance_check.name,
+                    'assign_to': [attendance_manager_user],
+                })
+            except:
+                frappe.log_error(title = "Error Assigning to Attendnace Manager",message = frappe.get_traceback())
+                continue
         frappe.db.commit()
 
 def schedule_attendance_check():
