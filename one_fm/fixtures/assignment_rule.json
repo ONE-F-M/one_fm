@@ -64,6 +64,70 @@
   "users": []
  },
  {
+  "assign_condition": "workflow_state == 'Pending Approver'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in (\"Approved\", \"Rejected\")",
+  "custom_routine_task": null,
+  "description": "Automatic Assignment",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Shift Request",
+  "due_date_based_on": null,
+  "field": "shift_approver",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "e.anthony@one-fm.com",
+  "modified": "2024-07-17 18:39:42.381957",
+  "name": "Shift Request Pending Approval",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in (\"Approved\", \"Rejected\")",
+  "users": []
+ },
+ {
   "assign_condition": "workflow_state == 'Pending Approval'",
   "assignment_days": [
    {
@@ -779,6 +843,70 @@
   "priority": 0,
   "rule": "Based on Field",
   "unassign_condition": "workflow_state in ('Approved', 'Draft')",
+  "users": []
+ },
+ {
+  "assign_condition": "workflow_state ==\"Draft\" and creation < modified",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Pending Approver', )",
+  "custom_routine_task": null,
+  "description": "Automatic Assignment",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Shift Request",
+  "due_date_based_on": null,
+  "field": "owner",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "Administrator",
+  "modified": "2024-07-17 18:39:34.234190",
+  "name": "Shift Request Draft",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Pending Approver', )",
   "users": []
  }
 ]
