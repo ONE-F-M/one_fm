@@ -114,7 +114,8 @@ doctype_js = {
     "Gratuity": "public/js/doctype_js/gratuity.js",
     "Goal": "public/js/doctype_js/goal.js",
     "Task": "public/js/doctype_js/task.js",
-    "HD Ticket": "public/js/doctype_js/hd_ticket.js"
+    "HD Ticket": "public/js/doctype_js/hd_ticket.js",
+    "Appraisal": "public/js/doctype_js/appraisal.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
