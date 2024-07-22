@@ -109,7 +109,7 @@
     "parenttype": "Assignment Rule"
    }
   ],
-  "close_condition": "workflow_state in (\"Approved\", \"Rejected\")",
+  "close_condition": "workflow_state in (\"Approved\", \"Rejected\", \"Draft\")",
   "custom_routine_task": null,
   "description": "Automatic Assignment",
   "disabled": 0,
@@ -119,12 +119,12 @@
   "due_date_based_on": null,
   "field": "shift_approver",
   "is_assignment_rule_with_workflow": 0,
-  "last_user": "e.anthony@one-fm.com",
-  "modified": "2024-07-17 18:39:42.381957",
+  "last_user": "abdullah@one-fm.com",
+  "modified": "2024-07-22 13:32:41.603305",
   "name": "Shift Request Pending Approval",
   "priority": 0,
   "rule": "Based on Field",
-  "unassign_condition": "workflow_state in (\"Approved\", \"Rejected\")",
+  "unassign_condition": "workflow_state in (\"Approved\", \"Rejected\", \"Draft\")",
   "users": []
  },
  {
@@ -902,7 +902,7 @@
   "field": "owner",
   "is_assignment_rule_with_workflow": 0,
   "last_user": "Administrator",
-  "modified": "2024-07-17 18:39:34.234190",
+  "modified": "2024-07-22 13:46:56.508148",
   "name": "Shift Request Draft",
   "priority": 0,
   "rule": "Based on Field",
