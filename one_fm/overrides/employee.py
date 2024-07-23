@@ -54,14 +54,14 @@ class EmployeeOverride(EmployeeMaster):
                 self.employee_id = residency_employee_id
     
     def validate_face_recognition_enrollment(self):
-        prev_enrollment = frappe.db.get_value(self.doctype, self.name, 'enrolled')
-
-        # If no previous enrollment, allow update by default
-        if(prev_enrollment is None):
+        # Skip the validation while creating new employee
+        if self.is_new():
             return
+        
+        prev_enrollment = self.get_doc_before_save().get('enrolled')
 
         # Allow update if the context flag is set
-        if not getattr(frappe.flags, 'allow_enrollment_update', False):
+        if not frappe.flags.allow_enrollment_update:
             if prev_enrollment != self.enrolled:
                 frappe.throw(f"Enrollment field is read-only and cannot be modified.")
 
