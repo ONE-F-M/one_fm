@@ -67,10 +67,13 @@ def login(client_id, grant_type, employee_id, password):
 		return frappe.utils.response.report_error(e.http_status_code)
 
 def change_enroll_status(employee):
-	 doc = frappe.get_doc("Employee", employee)
-	 doc.enrolled = 0
-	 doc.save(ignore_permissions=True)
-	 frappe.db.commit()
+    # Set a context flag to indicate an API update (It will affect in 'Employee' validate method)
+    frappe.flags.allow_enrollment_update = True
+    
+    doc = frappe.get_doc("Employee", employee)
+    doc.enrolled = 0
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
 
 @frappe.whitelist(allow_guest=True)
 def forgot_password(employee_id,OTP_source):

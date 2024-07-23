@@ -74,6 +74,9 @@ def enroll():
 			msg = res.message
 			data = res.data
 			frappe.throw(_("{msg}: {data}".format(msg=msg, data=data)))
+
+		# Set a context flag to indicate an API update (It will affect in 'Employee' validate method)
+		frappe.flags.allow_enrollment_update = True
 		
 		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
 		doc.enrolled = 1
