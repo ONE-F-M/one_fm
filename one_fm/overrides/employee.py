@@ -56,6 +56,10 @@ class EmployeeOverride(EmployeeMaster):
     def validate_face_recognition_enrollment(self):
         prev_enrollment = frappe.db.get_value(self.doctype, self.name, 'enrolled')
 
+        # If no previous enrollment, allow update by default
+        if(prev_enrollment is None):
+            return
+
         # Allow update if the context flag is set
         if not getattr(frappe.flags, 'allow_enrollment_update', False):
             if prev_enrollment != self.enrolled:
