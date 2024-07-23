@@ -480,38 +480,42 @@ def get_pending_approval_attendance_check(hours):
    
 
 def issue_penalty_to_the_assigned_approver(pending_approval_attendance_checks):
-    approvers = {}
-    for pending_approval_attendance_check in pending_approval_attendance_checks:
-        if "assign_to" in pending_approval_attendance_check:
-            assign_to = frappe.parse_json(pending_approval_attendance_check.assign_to)
-            if assign_to and len(assign_to) > 0:
-                if assign_to[0] in approvers:
-                    approvers[assign_to[0]] += ", "+pending_approval_attendance_check.name
-                else:
-                    approvers[assign_to[0]] = pending_approval_attendance_check.name
+    try:
+        approvers = {}
+        for pending_approval_attendance_check in pending_approval_attendance_checks:
+            
+            if pending_approval_attendance_check.get('assign_to'):
+                assign_to = frappe.parse_json(pending_approval_attendance_check.assign_to)
+                if assign_to and len(assign_to) > 0:
+                    if assign_to[0] in approvers:
+                        approvers[assign_to[0]] += ", "+pending_approval_attendance_check.name
+                    else:
+                        approvers[assign_to[0]] = pending_approval_attendance_check.name
 
-    penalty_type = frappe.db.get_single_value("ONEFM General Setting", "att_check_approver_penalty_type")
-    for approver in approvers:
-        note = "There are attendance check not approved "+approvers[approver]
-        approver_employee = frappe.db.get_values(
-            "Employee",
-            {"user_id": approver},
-            ['name', 'employee_name', 'designation'],
-            as_dict=True
-        )
-        if approver_employee and len(approver_employee)>0:
-            penalty = frappe.get_doc({
-                "doctype": "Penalty",
-                "penalty_issuance_time": now(),
-                "recipient_employee": approver_employee[0].name,
-                "recipient_name": approver_employee[0].employee_name,
-                "recipient_designation": approver_employee[0].designation,
-                "recipient_user": approver,
-            })
-            penalty_details = penalty.append("penalty_details")
-            penalty_details.penalty_type = penalty_type
-            penalty_details.exact_notes = note
-            penalty.save(ignore_permissions=True)
+        penalty_type = frappe.db.get_single_value("ONEFM General Setting", "att_check_approver_penalty_type")
+        for approver in approvers:
+            note = "There are attendance check not approved "+approvers[approver]
+            approver_employee = frappe.db.get_values(
+                "Employee",
+                {"user_id": approver},
+                ['name', 'employee_name', 'designation'],
+                as_dict=True
+            )
+            if approver_employee and len(approver_employee)>0:
+                penalty = frappe.get_doc({
+                    "doctype": "Penalty",
+                    "penalty_issuance_time": now(),
+                    "recipient_employee": approver_employee[0].name,
+                    "recipient_name": approver_employee[0].employee_name,
+                    "recipient_designation": approver_employee[0].designation,
+                    "recipient_user": approver,
+                })
+                penalty_details = penalty.append("penalty_details")
+                penalty_details.penalty_type = penalty_type
+                penalty_details.exact_notes = note
+                penalty.save(ignore_permissions=True)
+    except:
+        frappe.log_error(title = "Error Creating Penalty Documents",message = frappe.get_traceback())
 
 def assign_attendance_manager(pending_approval_attendance_checks):
     attendance_manager_user = fetch_attendance_manager_user()
