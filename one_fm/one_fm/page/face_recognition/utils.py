@@ -7,6 +7,9 @@ from one_fm.utils import check_existing, get_current_shift
 
 @frappe.whitelist()
 def update_onboarding_employee(employee):
+    # Set a context flag to indicate an API update (It will affect in 'Employee' validate method)
+    frappe.flags.allow_enrollment_update = True
+
     onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
     if onboard_employee_exist:
         onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
