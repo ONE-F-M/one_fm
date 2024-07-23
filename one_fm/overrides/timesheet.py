@@ -23,15 +23,16 @@ class TimesheetOveride(Timesheet):
         self.validate_start_date()
 
     def validate_start_date(self):
-        start_date = getdate(self.start_date)
-        if start_date > getdate():
-            frappe.throw(_("Please note that Timesheets cannot be created for a future date"), title="Invalid Start Date")
-        if start_date < getdate():
-            if self.is_new():
-                msg = _("Please note that Timesheets cannot be created for a past date")
-            else:
-                msg = _("Please note that Timesheets cannot be updated for a past date")
-            frappe.throw(msg, title="Invalid Start Date")
+        if frappe.session.user != "Administrator":
+            start_date = getdate(self.start_date)
+            if start_date > getdate():
+                frappe.throw(_("Please note that Timesheets cannot be created for a future date"), title="Invalid Start Date")
+            if start_date < getdate():
+                if self.is_new():
+                    msg = _("Please note that Timesheets cannot be created for a past date")
+                else:
+                    msg = _("Please note that Timesheets cannot be updated for a past date")
+                frappe.throw(msg, title="Invalid Start Date")
 
     def before_save(self):
         if not self.is_new():
@@ -134,7 +135,7 @@ class TimesheetOveride(Timesheet):
     def assign_unassign(self) -> None:
         previous_doc = self.get_doc_before_save() if not self.is_new() else self    
         if previous_doc.workflow_state != self.workflow_state:
-            self.delete_todo(), print("yaga", self.workflow_state, "\n\n\n\n\n\n\n")
+            self.delete_todo()
             if self.workflow_state in {"Draft",  "Pending Approval"}:
                 add_assignment({
                     'doctype': self.doctype,
