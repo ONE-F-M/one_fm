@@ -461,7 +461,8 @@ def attendance_check_pending_approval_check():
         # Issue Penalty to the assigned approver
         issue_penalty_to_the_assigned_approver(pending_approval_attendance_checks)
         # Assign the attendance checks to attendance manager for approval
-        assign_attendance_manager(pending_approval_attendance_checks)
+        frappe.enqueue(assign_attendance_manager,pending_approval_attendance_checks=pending_approval_attendance_checks,timeout='4000',queue='long')
+        frappe.db.commit()
 
 def get_pending_approval_attendance_check(hours):
     # Method to get list of attendance check, which is in panding approval state after a given hours
