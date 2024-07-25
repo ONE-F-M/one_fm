@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 
 from frappe.model.document import Document
+from one_fm.processor import sendemail
 import frappe,json
 from frappe import _
 from frappe.desk.form.assign_to import add as add_assignment
@@ -461,7 +462,8 @@ def attendance_check_pending_approval_check():
         # Issue Penalty to the assigned approver
         issue_penalty_to_the_assigned_approver(pending_approval_attendance_checks)
         # Assign the attendance checks to attendance manager for approval
-        frappe.enqueue(assign_attendance_manager,pending_approval_attendance_checks=pending_approval_attendance_checks,timeout='4000',queue='long')
+        assign_attendance_manager(pending_approval_attendance_checks)
+        
         frappe.db.commit()
 
 def get_pending_approval_attendance_check(hours):
@@ -517,21 +519,121 @@ def issue_penalty_to_the_assigned_approver(pending_approval_attendance_checks):
                 penalty.save(ignore_permissions=True)
     except:
         frappe.log_error(title = "Error Creating Penalty Documents",message = frappe.get_traceback())
+        
+def fetch_existing_todos(manager):
+    """Fetch the existing todos for attendance checks assigned to the attendance manager
+    Args:
+        manager (Str): User
+    """
+    existing_todos = frappe.get_all("ToDo",{'allocated_to':manager,'status':'Open','reference_type':'Attendance Check'},['reference_name'])
+    return [i.reference_name for i in existing_todos]
+
+
+def create_split_query(todos,limit,manager,today,today_datetime):
+    """
+    This is to mitigate max_allowed_packet errors when the query size is too large
+    Args:
+        todos (_type_): all todos
+        limit (int): the number of todos per string 
+    """
+    def create_sql_query(sublist):
+        values = []
+        for d in sublist:
+            vals = f"""
+                '{manager}_{d.name}',
+                 '{manager}',
+                 'Attendance Check',
+                 '{d.name}',
+                 "Assignment for Attendance Check {d.name}",
+                 'Medium',
+                 'Open',
+                 '{today}',
+                "Administrator",
+                "Action",
+                "Administrator",
+                '{today_datetime}',
+               '{today_datetime}'
+               """
+            values.append(f"({vals})")
+        query = """ INSERT INTO `tabToDo` 
+                (`name`,`allocated_to`, `reference_type`, `reference_name`,
+                `description`, `priority`,`status`, `date`,`owner`,`type`,`assigned_by`,`creation`, `modified`) 
+                VALUES """ + ', '.join(values) 
+        return query
+    
+    split_lists = [todos[i:i + limit] for i in range(0, len(todos), limit)]
+    
+    # Creating SQL query strings for each sublist
+    sql_queries = [create_sql_query(sublist) for sublist in split_lists]
+    
+    return sql_queries
+
+def create_todos(manager,todos):
+    """Create todos for the attendance manager
+      Using this approach because there a potential for over 50k entries and timeout
+
+    Args:
+        manager (str): attenance manager user
+        todos (list): a list of dicts with todo details
+    """
+    try:
+        today = frappe.utils.getdate()
+        today_datetime = frappe.utils.get_datetime()
+        
+        if len(todos)>10000:
+            #Query needs to be split to avoid max query package error
+            split_query =create_split_query(todos,10000,manager,today,today_datetime)
+            for each in split_query:
+                frappe.db.sql(each,values=[])
+        else:
+            query = """
+                INSERT INTO
+                    `tabToDo`
+                    (
+                        `name`,`allocated_to`, `reference_type`, `reference_name`,`description`, `priority`,
+                        `status`, `date`, `assigned_by`,`creation`, `modified`,`type`,`owner`
+                    )
+                VALUES
+            """
+            query_body = """"""
+            for each in todos:
+                query_body+= f"""
+                        (
+                            "{'_'.join([manager,each.name])}", "{manager}", "{'Attendance Check'}", "{each.name}", 
+                            "Assignment for Attendance Check {each.name}", "{'Medium'}", "{'Open'}", '{today}', 
+                            "Administrator",'{today_datetime}','{today_datetime}',"Action","Administrator"
+                        ),"""
+            if query_body:
+                query += query_body[:-1]
+                frappe.db.sql(query,values=[])
+        frappe.db.commit()
+    except:
+        frappe.log_error(title = "Error Assigning to Attendance Manager",message = frappe.get_traceback())
+
+def notify_manager(manager):
+    """Notify the manager that new todos have been created for them
+
+    Args:
+        manager (str): attendance manager
+    """
+    try:
+        page_link = frappe.utils.get_url()+f'/app/todo?date={frappe.utils.get_date_str(frappe.utils.getdate())}&allocated_to={manager}'
+        msg = frappe.render_template('one_fm/templates/emails/attendance_manager_todo_assignment.html', context={"manager": manager,'page_link':page_link})
+        sendemail(recipients= [manager], content=msg, subject="Pending Attendance Checks", delayed=False)
+    except:
+        frappe.log_error(title = "Error Notifying  Attendance Manager",message = frappe.get_traceback())
+    
+    
+
+
 
 def assign_attendance_manager(pending_approval_attendance_checks):
     attendance_manager_user = fetch_attendance_manager_user()
     if attendance_manager_user:
-        for pending_approval_attendance_check in pending_approval_attendance_checks:
-            try:
-                add_assignment({
-                    'doctype': "Attendance Check",
-                    'name': pending_approval_attendance_check.name,
-                    'assign_to': [attendance_manager_user],
-                })
-            except:
-                frappe.log_error(title = "Error Assigning to Attendance Manager",message = frappe.get_traceback())
-                continue
-        frappe.db.commit()
-
+        existing_todos = fetch_existing_todos(attendance_manager_user)
+        filtered_pending_approval_attendance_check = [i for i in pending_approval_attendance_checks if i.name not in existing_todos ]
+        create_todos(attendance_manager_user,filtered_pending_approval_attendance_check)
+        notify_manager(attendance_manager_user)
+        
 def schedule_attendance_check():
     frappe.enqueue(create_attendance_check, queue='long', timeout=7000)
