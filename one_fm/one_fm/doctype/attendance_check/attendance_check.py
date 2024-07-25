@@ -529,7 +529,7 @@ def assign_attendance_manager(pending_approval_attendance_checks):
                     'assign_to': [attendance_manager_user],
                 })
             except:
-                frappe.log_error(title = "Error Assigning to Attendnace Manager",message = frappe.get_traceback())
+                frappe.log_error(title = "Error Assigning to Attendance Manager",message = frappe.get_traceback())
                 continue
         frappe.db.commit()
 
