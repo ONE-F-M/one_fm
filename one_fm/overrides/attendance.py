@@ -933,12 +933,11 @@ class AttendanceMarking():
         if not (start and end):
             dt = now_datetime()
             dt = dt.replace(minute=0, second=0, microsecond=0)
-            self.start = dt + timedelta(hours=-4)
-            self.end = dt + timedelta(hours=-3)
+            self.start = dt + timedelta(hours=-2)
+            self.end = dt + timedelta(hours=-1)
 
 
     def mark_shift_attendance(self):
-        self.get_datetime()
         # CREATE ATTENDANCE FOR CLIENTS
         if self.attendance_type:
             client_shifts =  frappe.db.sql(f"""
@@ -998,7 +997,7 @@ class AttendanceMarking():
 
 
         if shifts:
-            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts) > 1 else (shifts[0].name,"" ))
+            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts) > 1 else (shifts[0].name,""))
             if checkins:
                 # employees = [i.employee for i in shifts]
                 checked_in_employees = [i.employee for i in checkins]
@@ -1053,7 +1052,7 @@ class AttendanceMarking():
                                 try:
                                     self.create_attendance(frappe._dict({**dict(i), **{
                                         "status":status, "comment":comment, "working_hours":working_hours,
-                                        "dt":"Employee Checkin", }}))
+                                        "dt":"Employee Checkin"}}))
                                 except Exception as e:
                                     print(e)
 
@@ -1183,7 +1182,6 @@ class AttendanceMarking():
             doc.status = record.status
 
             doc.attendance_date = _date
-            doc.attendance_date = self.start.date()
             if record.shift_assignment:
                 doc.shift_assignment = record.shift_assignment
                 doc.shift = record.shift_type
@@ -1223,7 +1221,6 @@ class AttendanceMarking():
                     frappe.db.set_value("Employee Checkin", record.out_name, 'attendance', doc.name)
             frappe.db.commit()
         except Exception as e:
-            print(e, "\n\n\n\n\n\n\n")
             frappe.log_error(message=frappe.get_traceback(), title=f"Hourly Attendance Marking - {str(e)}")
 
 
