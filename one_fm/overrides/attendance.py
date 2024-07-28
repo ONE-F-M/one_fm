@@ -995,8 +995,9 @@ class AttendanceMarking():
             shifts.extend(non_shifts)
 
 
+
         if shifts:
-            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts)>1 else (shifts[0].name, ))
+            checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts) > 1 else (shifts[0].name,""))
             if checkins:
                 # employees = [i.employee for i in shifts]
                 checked_in_employees = [i.employee for i in checkins]
@@ -1022,6 +1023,7 @@ class AttendanceMarking():
                                     "On Hold", "Work From Home"]]
                                 }):
                                 total_hours = (i.shift_actual_end - i.shift_actual_start).total_seconds() / (60*60)
+                                i.early_exit = self.check_early_exit(i)
                                 half_hour = total_hours / 2
                                 working_hours = 0
                                 status = "Absent"
@@ -1053,6 +1055,37 @@ class AttendanceMarking():
                                         "dt":"Employee Checkin"}}))
                                 except Exception as e:
                                     print(e)
+
+
+    def check_early_exit(self, checkin: dict) -> bool:
+        if checkin:
+            in_name = checkin.get("in_name")
+            out_name = checkin.get("out_name")
+            if in_name and out_name:
+                early_exit_doc = frappe.db.get_value(
+                    "Employee Checkin", 
+                    {"name": out_name, "early_exit": 1, "log_type": "OUT"}, 
+                    ["time"], 
+                    as_dict=1
+                )
+
+                if early_exit_doc:
+                    check = frappe.db.sql(
+                        """
+                        SELECT name FROM `tabEmployee Checkin` 
+                        WHERE name = %s 
+                        AND time > %s
+                        """, 
+                        (in_name, early_exit_doc.time), 
+                        as_dict=1
+                    )
+                    return bool(check)
+        return False
+
+
+
+
+
 
     def get_checkins(self, shift_assignments):
         query = f"""
@@ -1143,7 +1176,6 @@ class AttendanceMarking():
                 pass
             frappe.db.commit()
 
-
             doc = frappe._dict({})
             doc.doctype = "Attendance"
             doc.employee = record.employee
@@ -1189,8 +1221,7 @@ class AttendanceMarking():
                     frappe.db.set_value("Employee Checkin", record.out_name, 'attendance', doc.name)
             frappe.db.commit()
         except Exception as e:
-            print(e)
-            frappe.log_error(message=str(e), title="Hourly Attendance Marking")
+            frappe.log_error(message=frappe.get_traceback(), title=f"Hourly Attendance Marking - {str(e)}")
 
 
 def run_attendance_marking_hourly():
