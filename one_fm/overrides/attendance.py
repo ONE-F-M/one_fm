@@ -250,6 +250,7 @@ def mark_single_attendance(emp, att_date, roster_type="Basic"):
             else:
                 mark_for_shift_assignment(employee.name, att_date)
 
+
 def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
     shift_assignment = frappe.db.get_value("Shift Assignment", {
         'employee':employee,
@@ -286,12 +287,18 @@ def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
             fields="name, owner, creation, modified, modified_by, docstatus, idx, employee, employee_name, log_type, late_entry, early_exit, time, date, skip_auto_attendance, shift_actual_start, shift_actual_end, shift_assignment, operations_shift, shift_type, shift_permission, actual_time, MAX(time) as time",
             order_by="time DESC", group_by="shift_assignment"
         )
+
         out_checkins = _out_checkins[0] if _out_checkins else frappe._dict({})
+        
+        early_exit = 0
         # check if checkin and out exists
         if (out_checkins and in_checkins):
             if (out_checkins.time < in_checkins.time):
                 out_checkins = False # The employee checked in, out, in but not out
-
+            
+            early_exit = not frappe.db.exists("Employee Checkin", {"log_type": "IN", "time": [">", out_checkins.time], "shift_assignment": shift_assignment.name}) if out_checkins.early_exit else 0
+            
+    
         # start checkin
         if in_checkins:
             if ((in_checkins.time - shift_assignment.start_datetime).total_seconds() / (60*60)) > 4:
@@ -308,7 +315,7 @@ def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
                 comment = ""
                 checkin = in_checkins
                 checkout = out_checkins
-
+        
         create_single_attendance_record(frappe._dict({
             'status': status,
             'comment': comment,
@@ -318,10 +325,14 @@ def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
             'checkout': checkout,
             'shift_assignment':shift_assignment,
             'employee':frappe.db.get_value("Employee", employee, ["name", "employee_name", "holiday_list"], as_dict=1),
-            'roster_type': roster_type
+            'roster_type': roster_type,
+            "early_exit": early_exit
             })
         )
         # working_hours = (out_time - in_time).total_seconds() / (60 * 60)
+
+
+
 
 
 def create_single_attendance_record(record):
@@ -354,8 +365,6 @@ def create_single_attendance_record(record):
             doc.site = record.shift_assignment.site
         if record.checkin:
             if record.checkin.late_entry:doc.late_entry=1
-        if record.checkout:
-            if record.checkout.early_exit:doc.early_exit=1
         # check if worked less
         work_duration = 0
         if record.checkin and record.checkout and record.shift_assignment:
