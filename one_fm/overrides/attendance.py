@@ -1006,20 +1006,28 @@ class AttendanceMarking():
 
 
         if shifts:
+            existing_attendance = frappe.get_list("Attendance", {
+            'attendance_date':getdate(self.start),
+            'roster_type':'Basic',
+            'status':['IN', ['Present', 'Holiday', 'On Leave','Work From Home', 'On Hold', 'Day Off']]
+            },
+            pluck="employee"
+            )
             checkins = self.get_checkins(tuple([i.name for i in shifts]) if len(shifts) > 1 else (shifts[0].name,""))
             if checkins:
                 # employees = [i.employee for i in shifts]
                 checked_in_employees = [i.employee for i in checkins]
                 no_checkins = [i for i in shifts if not i.employee in checked_in_employees]
-                if no_checkins: #create absent
+                if no_checkins: #create absent if no attendance already exists
                     for i in no_checkins:
-                        try:
-                            record = frappe._dict({**dict(i), **{
-                                "status":"Absent", "comment":"No checkin record found", "working_hours":0,
-                                "dt":"Shift Assignment"}})
-                            self.create_attendance(record)
-                        except:
-                            pass
+                        if i.employee not in existing_attendance:
+                            try:
+                                record = frappe._dict({**dict(i), **{
+                                    "status":"Absent", "comment":"No checkin record found", "working_hours":0,
+                                    "dt":"Shift Assignment"}})
+                                self.create_attendance(record)
+                            except:
+                                frappe.log_error(message=frappe.get_traceback(), title=f"Error Marking Attendance for {i.employee}")
                 if checkins: # check for work hours
                     # start checkin
                     for i in checkins:
