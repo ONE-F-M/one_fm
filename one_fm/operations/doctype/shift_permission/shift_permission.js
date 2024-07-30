@@ -59,8 +59,13 @@ function get_shift_assignment(frm){
 			},
 			callback: function(r) {
 				if(r.message){
-					let [name, approver, shift, shift_type] = r.message;
-					set_shift_details(frm, name, approver, shift, shift_type);
+					set_shift_details(
+						frm, 
+						r.message.shift_assignment, 
+						r.message.approver, 
+						r.message.shift, 
+						r.message.shift_type
+					);
 				}
 				else{
 					set_shift_details(frm, undefined, undefined, undefined, undefined);

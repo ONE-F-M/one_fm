@@ -228,7 +228,7 @@ class LeaveApplicationOverride(LeaveApplication):
         
         if self.leave_approver:
             try:
-                args = self.copy().as_dict() #fetch fields from the doc.
+                args = dict(self.as_dict()) #fetch fields from the doc.
                 args.update({"base_url": frappe.utils.get_url()})
 
                 #Fetch Email Template for Leave Approval. The email template is in HTML format.
