@@ -1008,7 +1008,7 @@ class AttendanceMarking():
         if shifts:
             existing_attendance = frappe.get_list("Attendance", {
             'attendance_date':getdate(self.start),
-            'roster_type':'Basic',
+            'shift_assignment':['in',[i.name for i in shifts]],
             'status':['IN', ['Present', 'Holiday', 'On Leave','Work From Home', 'On Hold', 'Day Off']]
             },
             pluck="employee"
