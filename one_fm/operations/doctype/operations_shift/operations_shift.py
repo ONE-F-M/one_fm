@@ -150,32 +150,32 @@ def get_shift_supervisor_user(shift, date=False):
 	return None
 
 def get_shift_supervisor(shift, date=False):
-    # Get all the shift supervisors assigned to the shift
-    supervisors = frappe.get_all(
-        "Operations Shift Supervisor",
-        fields=["supervisor"],
-        filters={
-            "parent": shift, "parenttype": "Operations Shift"
-        },
-        order_by="idx"
-    )
+	# Get all the shift supervisors assigned to the shift
+	supervisors = frappe.get_all(
+		"Operations Shift Supervisor",
+		fields=["supervisor"],
+		filters={
+			"parent": shift, "parenttype": "Operations Shift"
+		},
+		order_by="idx"
+	)
 
-    if not date:
-        date = getdate()
+	if not date:
+		date = getdate()
 
-    for supervisor in supervisors:
-        # Return the supervisor if the supervisor working on the day
-        if frappe.db.exists(
-            "Employee Schedule",
-            {
-                "employee": supervisor.supervisor,
-                "date": date,
-                "employee_availability": "Working"
-            }
-        ):
-            return supervisor.supervisor
+	for supervisor in supervisors:
+		# Return the supervisor if the supervisor working on the day
+		if frappe.db.exists(
+			"Employee Schedule",
+			{
+				"employee": supervisor.supervisor,
+				"date": date,
+				"employee_availability": "Working"
+			}
+		):
+			return supervisor.supervisor
 
-    return None
+	return None
 
 def get_supervisor_operations_shifts(supervisor=None, project=None, site=None):
 	query = """

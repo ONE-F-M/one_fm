@@ -21,6 +21,7 @@ class PostSchedulerChecker(Document):
 			self.check_date = getdate()
 		self.fill_items()
 		self.get_supervisor()
+		self.get_site_supervisor()
 		if not self.items:
 			frappe.throw('No issues found.')
 
@@ -33,6 +34,22 @@ class PostSchedulerChecker(Document):
 			self.supervisor = get_shift_supervisor(shifts[0])
 			if self.supervisor:
 				self.supervisor_name = frappe.db.get_value("Employee", self.supervisor, "employee_name")
+
+
+	def get_site_supervisor(self):
+		try:
+			list_of_sites = frappe.db.sql(f"""SELECT account_supervisor, account_supervisor_name from `tabOperations Site` 
+								 			WHERE project = '{self.project}'
+											AND account_supervisor in (SELECT employee from `tabEmployee Schedule`
+											WHERE employee_availability = 'Working'
+											AND date = '{self.check_date}')""", as_dict=1)
+			if list_of_sites:
+				site = list_of_sites[0]
+				self.site_supervisor, self.site_supervisor_name = site["account_supervisor"], site["account_supervisor_name"]
+		except Exception as e:
+			frappe.log_error(frappe.get_traceback(), str(e))
+
+
 
 	def fill_items(self):
 		current_date = getdate()
