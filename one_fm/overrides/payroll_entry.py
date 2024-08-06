@@ -41,6 +41,10 @@ class PayrollEntryOverride(PayrollEntry):
 				error_msg += "<br>" + _("End date: {0}").format(frappe.bold(self.end_date))
 			frappe.throw(error_msg, title=_("No employees found"))
 
+		# Custom method to fetch Bank Details and update employee list
+		set_bank_details(self, employees)
+
+
 		self.set("employees", employees)
 		self.number_of_employees = len(self.employees)
 
@@ -206,3 +210,102 @@ def set_filter_conditions(query, filters, qb_object):
 		if filters.get(fltr_key):
 			query = query.where(qb_object[fltr_key] == filters[fltr_key])
 	return query
+
+
+@frappe.whitelist()
+def set_bank_details(self, employee_details):
+	"""This Funtion Sets the bank Details of an employee. The data is fetched from Bank Account Doctype.
+
+	Args:
+		employee_details (dict): Employee Details Child Table.
+
+	Returns:
+		employee_details ([dict): Sets the bank account IBAN code and Bank Code.
+	"""
+	employee_missing_detail = []
+	missing_ssa = []
+	employee_list = ', '.join(['"{}"'.format(employee.employee) for employee in employee_details])
+	if employee_list:
+		missing_ssa = frappe.db.sql("""
+			SELECT employee from `tabEmployee` E
+			WHERE E.status = 'Active'
+			AND E.employment_type != 'Subcontractor'
+			AND E.name NOT IN (
+				SELECT employee from `tabSalary Structure Assignment` SE
+			)
+			""".format(employee_list), as_dict=True)
+
+	for employee in employee_details:
+		try:
+			bank_account = frappe.db.get_value("Bank Account",{"party":employee.employee},["iban","bank", "bank_account_no"])
+			salary_mode = frappe.db.get_value("Employee", {'name': employee.employee}, ["salary_mode"])
+			if bank_account:
+				iban, bank, bank_account_no = bank_account
+			else:
+				iban, bank, bank_account_no = None, None, None
+
+			if not salary_mode:
+				employee_missing_detail.append(frappe._dict(
+				{'employee':employee.employee, 'salary_mode':'', 'issue':'No salary mode'}))
+			elif(salary_mode=='Bank' and bank is None):
+				employee_missing_detail.append(frappe._dict(
+					{'employee':employee.employee, 'salary_mode':salary_mode, 'issue':'No bank account'}))
+			elif(salary_mode=="Bank" and bank_account_no is None):
+				employee_missing_detail.append(frappe._dict(
+					{'employee':employee.employee, 'salary_mode':salary_mode, 'issue':'No account no.'}))
+			employee.salary_mode = salary_mode
+			employee.iban_number = iban or bank_account_no
+			bank_code = frappe.db.get_value("Bank", {'name': bank}, ["bank_code"])
+			employee.bank_code = bank_code
+		except Exception as e:
+			frappe.log_error(str(e), 'Payroll Entry')
+			frappe.throw(str(e))
+
+	if len(missing_ssa) > 0:
+		for e in missing_ssa:
+			employee_missing_detail.append(frappe._dict(
+				{'employee':e.employee, 'salary_mode':'', 'issue':'No Salary Structure Assignment'}))
+
+	# check for missing details, log and report
+	if(len(employee_missing_detail)):
+		missing_detail = []
+		for i in employee_missing_detail:
+			missing_detail.append({
+				'employee':i.employee,
+				'salary_mode':i.salary_mode,
+				'issue': i.issue
+			})
+
+		if frappe.db.exists("Missing Payroll Information",{'payroll_entry': self.name}):
+			fetch_mpi = frappe.db.sql(f"""
+				SELECT name FROM `tabMissing Payroll Information`
+				WHERE payroll_entry="{self.name}"
+				ORDER BY modified DESC
+				LIMIT 1
+			;""", as_dict=1)
+			mpi = frappe.get_doc('Missing Payroll Information', fetch_mpi[0].name)
+			# delete previous table data
+			frappe.db.sql(f"""
+				DELETE FROM `tabMissing Payroll Information Detail`
+				WHERE parent="{mpi.name}"
+			;""")
+			mpi.reload()
+			for i in missing_detail:
+				mpi.append('missing_payroll_information_detail', i)
+			mpi.save(ignore_permissions=True)
+			frappe.db.commit()
+		else:
+			mpi = frappe.get_doc({
+				'doctype':"Missing Payroll Information",
+				'payroll_entry': self.name,
+				'missing_payroll_information_detail':missing_detail
+			}).insert(ignore_permissions=True)
+			frappe.db.commit()
+
+		# generate html template to show to user screen
+		message = frappe.render_template(
+			'one_fm/api/doc_methods/templates/payroll/bank_issue.html',
+			context={'employees':employee_missing_detail, 'mpi':mpi}
+		)
+		frappe.throw(_(message))
+	return employee_details
