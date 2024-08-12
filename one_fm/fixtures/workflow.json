@@ -7,7 +7,7 @@
   "modified": "2024-03-21 13:12:53.986630",
   "name": "ERF",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "System Manager",
@@ -351,7 +351,7 @@
   "modified": "2023-09-07 10:26:40.072336",
   "name": "Journal Entry",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Junior Accounts User",
@@ -3460,7 +3460,7 @@
   "modified": "2021-07-05 12:51:09.713462",
   "name": "Employee ID",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Onboarding Officer",
@@ -5044,7 +5044,7 @@
   "modified": "2020-12-04 18:19:24.820549",
   "name": "Missed MOM Follow-up Action Workflow",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Site Supervisor",
@@ -5175,7 +5175,7 @@
   "modified": "2023-06-18 19:43:31.913370",
   "name": "Penalty",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Employee",
@@ -5273,7 +5273,7 @@
   "modified": "2020-05-21 21:15:27.464530",
   "name": "Operations Site",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Site Supervisor",
@@ -5735,7 +5735,7 @@
   "modified": "2019-12-05 15:26:42.914414",
   "name": "Inovice",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Accounts User",
@@ -6196,7 +6196,7 @@
   "modified": "2020-07-27 19:38:16.646366",
   "name": "Legal Investigation",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "System Manager",
@@ -6524,7 +6524,7 @@
   "modified": "2020-12-17 14:13:16.993467",
   "name": "Asset",
   "override_status": 1,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Stock User",
@@ -6622,7 +6622,7 @@
   "modified": "2020-12-19 22:39:45.112963",
   "name": "Asset Movement",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Stock User",
@@ -7896,10 +7896,10 @@
   "doctype": "Workflow",
   "document_type": "Shift Request",
   "is_active": 1,
-  "modified": "2024-06-11 11:21:39.373701",
+  "modified": "2024-07-16 12:55:32.094492",
   "name": "Shift Request",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Employee",
@@ -7999,7 +7999,7 @@
     "allowed": "Employee",
     "allowed_user_field": null,
     "allowed_user_id": null,
-    "condition": "",
+    "condition": "frappe.session.user not in [approver.user for approver in doc.custom_shift_approvers]",
     "custom_confirm_message": null,
     "custom_confirm_transition": 0,
     "next_state": "Pending Approval",
@@ -8099,6 +8099,42 @@
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
     "state": "Update Request",
+    "workflow_builder_id": null
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Shift Supervisor",
+    "allowed_user_field": null,
+    "allowed_user_id": null,
+    "condition": "frappe.session.user in [approver.user for approver in doc.custom_shift_approvers]",
+    "custom_confirm_message": null,
+    "custom_confirm_transition": 0,
+    "next_state": "Approved",
+    "parent": "Shift Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "skip_creation_of_workflow_action": 0,
+    "skip_multiple_action": 0,
+    "state": "Draft",
+    "workflow_builder_id": null
+   },
+   {
+    "action": "Reject",
+    "allow_self_approval": 1,
+    "allowed": "Shift Supervisor",
+    "allowed_user_field": null,
+    "allowed_user_id": null,
+    "condition": "frappe.session.user in [approver.user for approver in doc.custom_shift_approvers]",
+    "custom_confirm_message": null,
+    "custom_confirm_transition": 0,
+    "next_state": "Rejected",
+    "parent": "Shift Request",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "skip_creation_of_workflow_action": 0,
+    "skip_multiple_action": 0,
+    "state": "Draft",
     "workflow_builder_id": null
    }
   ],
@@ -8860,7 +8896,7 @@
   "modified": "2023-09-19 14:25:28.317095",
   "name": "Incident Form",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Shift Supervisor",
@@ -9042,7 +9078,7 @@
   "modified": "2023-12-21 18:48:54.989626",
   "name": "Subcontract Staff Shortlist",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Operations Supervisor",
@@ -9308,7 +9344,7 @@
   "modified": "2023-12-03 22:55:55.001571",
   "name": "Subcontract Staff Request",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Operations Supervisor",
@@ -9472,7 +9508,7 @@
   "modified": "2023-12-04 16:30:55.091863",
   "name": "Onboard Subcontract Employee",
   "override_status": 0,
-  "send_email_alert": 1,
+  "send_email_alert": 0,
   "states": [
    {
     "allow_edit": "Onboarding Officer",

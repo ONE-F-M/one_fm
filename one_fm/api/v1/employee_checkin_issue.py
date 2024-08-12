@@ -70,7 +70,7 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 
 		if not validate_date(date):
 			return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
-		
+
 		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
 		if not employee:
@@ -128,11 +128,11 @@ def get_shift_details(employee):
 	shift = shift_type = shift_assignment = shift_supervisor = None
 
 	shift_details = fetch_approver(employee=employee)
-	shift_assignment = shift_details.get("assigned_shift") 
+	shift_assignment = shift_details.get("assigned_shift")
 	shift_supervisor = shift_details.get("shift_supervisor"),
 	shift = shift_details.get("shift")
 	shift_type = shift_details.get("shift_type")
-	
+
 	if not shift_assignment:
 		return frappe._dict({'found':False})
 
@@ -154,7 +154,7 @@ def list_employee_checkin_issue(employee_id: str = None):
 				.format(employee_id=employee_id))
 
 		employee_checkin_issue_list = frappe.get_list("Employee Checkin Issue",
-			filters={'employee': employee}, fields=["name", "date", "workflow_state"])
+			filters={'employee': employee}, fields=["name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
 		return response("Success", 200, employee_checkin_issue_list)
 
 	except Exception as error:
@@ -310,3 +310,24 @@ def get_issue_type():
 		frappe.log_error(frappe.get_traceback(), _("Error while fetching issue type (Employee Checkin Issue)"))
 		return response("Internal Server Error", 500, None, str(e))
 
+
+
+@frappe.whitelist(methods=["POST"])
+def get_checkin_issue_list(employee_id: str):
+	try:
+		if not employee_id:
+			return response("error", 400, {}, "Employee ID is required.")
+		employee = frappe.db.get_value("Employee", {"employee_id": employee_id}, ["name", "user_id"], as_dict=1)
+		if employee:
+			my_checkin_issues = frappe.db.get_list("Employee Checkin Issue", {"employee": employee.name}, ["name", "employee_name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
+			reports_to_issues = frappe.db.get_list("Employee Checkin Issue", {"shift_supervisor": employee.name}, ["name", "employee_name", "workflow_state", "log_type", "issue_type", "date"], order_by='creation desc')
+
+			data = {
+				"my_checkin_issues": my_checkin_issues,
+				"reports_to_issues": reports_to_issues
+			}
+			return response("Operation Successful", 200, data, None)
+		return response("Resource not found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), _("Error while fetching Employee Checkin Issue"))
+		return response("Internal Server Error", 500, None, str(e))

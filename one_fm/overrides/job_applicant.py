@@ -16,9 +16,39 @@ class JobApplicantOverride(JobApplicant):
 		pass
 
 	def validate(self):
+		self.set_hiring_method()
+		self.validate_duplicate_application()
 		super(JobApplicantOverride, self).validate()
 		self.validate_transfer_reminder_date()
 		self.convert_name_to_title_case()
+
+	def set_hiring_method(self):
+		'''
+			Method to check if one_fm_hiring_method is not already set and erf is linked to the job applicant
+		'''
+		# Check if one_fm_hiring_method is not already set and one_fm_erf exists
+		if not self.one_fm_hiring_method and self.one_fm_erf:
+			# Retrieve the hiring method from the ERF and set it to the one_fm_hiring_method in job applicant
+			self.one_fm_hiring_method = frappe.db.get_value("ERF", self.one_fm_erf, "hiring_method")
+
+	def validate_duplicate_application(self):
+		'''
+			Method to validates that a job applicant is not applying for the same position more than once.
+			If the hiring method is not 'Bulk Recruitment', it checks for existing applications with the same
+			job title and email ID, but a different name.
+			If a duplicate application is found, an error is thrown.
+		'''
+		if self.one_fm_hiring_method != 'Bulk Recruitment':
+			if frappe.db.exists("Job Applicant", {
+				"job_title": self.job_title,
+				"one_fm_email_id": self.one_fm_email_id,
+				"name": ["!=", self.name]
+			}):
+				frappe.throw(_("""
+					Not allowed to apply for same position again
+					<br/>
+					Change your email id, if you wish to apply it for different person
+				"""))
 
 	def after_insert(self):
 		self.notify_recruiter_and_requester_from_job_applicant()

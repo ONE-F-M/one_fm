@@ -114,7 +114,8 @@ doctype_js = {
     "Gratuity": "public/js/doctype_js/gratuity.js",
     "Goal": "public/js/doctype_js/goal.js",
     "Task": "public/js/doctype_js/task.js",
-    "HD Ticket": "public/js/doctype_js/hd_ticket.js"
+    "HD Ticket": "public/js/doctype_js/hd_ticket.js",
+    "Appraisal": "public/js/doctype_js/appraisal.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -718,8 +719,9 @@ scheduler_events = {
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
 		],
-		"00 08 * * *": [ #notify leave approver to approve all the open application at 8:00 am
-		'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
+		"00 08 * * *": [ # runs at 8:00 am
+			'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application',
+			'one_fm.tasks.one_fm.daily.notify_for_employee_docs_expiry'
 		],
 		"05 00 * * *":[
 			'one_fm.overrides.leave_application.employee_leave_status'

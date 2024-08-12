@@ -2717,13 +2717,16 @@ def get_users_next_action_data(transitions, doc, recipients):
 			)
 	return user_data_map
 
-def override_frappe_send_workflow_action_email(doc, transitions):
-    users_data = _get_users_next_action_data(transitions, doc)
-    recipients = []
-    for d in users_data:
-        recipients.append(d.get("email"))
-    if recipients:
-        send_workflow_action_email(doc, recipients)
+# def override_frappe_send_workflow_action_email(doc, transitions):
+#     users_data = _get_users_next_action_data(transitions, doc)
+#     recipients = []
+#     for d in users_data:
+#         if (type(d)==str or type(d)==dict):
+#             recipients.append(d)
+#         else:
+#             recipients.append(d.get("email"))
+#     if recipients:
+#         send_workflow_action_email(doc, recipients)
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
@@ -3095,7 +3098,7 @@ def get_approver(employee, date=False):
         if employee_data.shift_working:
             if employee_data.shift:
                 line_manager = get_shift_supervisor(employee_data.shift, date)
-
+                if line_manager:return line_manager
             if not line_manager and employee_data.site:
                 line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
                 if not line_manager:

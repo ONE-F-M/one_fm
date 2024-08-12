@@ -265,7 +265,7 @@ def append_code_in_file(file_path, search_text, appendable_code, insert_before_s
         return False
 
 def update_hd_ticket_agent():
-    FILE_PATH = frappe.utils.get_bench_path()+'/apps/helpdesk/desk/src/pages/TicketAgent2.vue'
+    FILE_PATH = frappe.utils.get_bench_path()+'/apps/helpdesk/desk/src/pages/TicketAgent.vue'
     if (os.path.exists(FILE_PATH)):
         # Append lines before 'const showSubjectDialog = ref(false);'
         search_text = 'const showSubjectDialog = ref(false);'
@@ -376,7 +376,30 @@ def update_hd_ticket_agent():
             </LayoutHeader>
         '''
         third_change = append_code_in_file(FILE_PATH, search_text, appendable_code, insert_before_search_text=True, replace_with_search_text=True)
-        if (first_change and second_change and third_change):
+        search_text = "subjectInput.value = data.subject;"
+        appendable_code = """
+                                    setTimeout(()=>{
+                        if((data.communications.length) && communicationAreaRef.value!=null){
+                            
+                            let last_index = data.communications.length - 1
+                            let last_content = data.communications[last_index].content
+                            
+                            communicationAreaRef.value.$refs.emailEditorRef.addToReply(last_content,[data.raised_by])
+                            
+                        }
+                        else if(communicationAreaRef.value==null){
+                            
+                            
+                            let last_index = data.communications.length - 1
+                            let last_content = data.communications[last_index].content
+                            localStorage.setItem('emailBoxContent',last_content)
+                            
+                        }
+
+                        }, 1000);
+                    """
+        fourth_change = append_code_in_file(FILE_PATH, search_text, appendable_code, False)
+        if (first_change or second_change or third_change or fourth_change):
             # execute build
             print("Rebuilding Helpdesk")
             # Define the directories
