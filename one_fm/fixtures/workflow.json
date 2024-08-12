@@ -1008,7 +1008,7 @@
   "doctype": "Workflow",
   "document_type": "Request for Material",
   "is_active": 1,
-  "modified": "2023-06-18 19:56:38.481229",
+  "modified": "2024-08-08 14:21:46.861439",
   "name": "RFM",
   "override_status": 0,
   "send_email_alert": 0,
@@ -1072,6 +1072,21 @@
     "update_field": "status",
     "update_value": "Rejected",
     "workflow_builder_id": null
+   },
+   {
+    "allow_edit": "Employee",
+    "avoid_status_override": 0,
+    "doc_status": "2",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "RFM",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "state": "Cancelled",
+    "update_field": "status",
+    "update_value": "Cancelled",
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -1127,6 +1142,42 @@
     "skip_creation_of_workflow_action": 0,
     "skip_multiple_action": 0,
     "state": "Pending Approval",
+    "workflow_builder_id": null
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "allowed_user_field": "request_for_material_approver",
+    "allowed_user_id": null,
+    "condition": null,
+    "custom_confirm_message": null,
+    "custom_confirm_transition": 0,
+    "next_state": "Cancelled",
+    "parent": "RFM",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "skip_creation_of_workflow_action": 0,
+    "skip_multiple_action": 0,
+    "state": "Approved",
+    "workflow_builder_id": null
+   },
+   {
+    "action": "Cancel",
+    "allow_self_approval": 1,
+    "allowed": "Employee",
+    "allowed_user_field": "request_for_material_approver",
+    "allowed_user_id": null,
+    "condition": null,
+    "custom_confirm_message": null,
+    "custom_confirm_transition": 0,
+    "next_state": "Cancelled",
+    "parent": "RFM",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "skip_creation_of_workflow_action": 0,
+    "skip_multiple_action": 0,
+    "state": "Rejected",
     "workflow_builder_id": null
    }
   ],
