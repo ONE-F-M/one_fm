@@ -33,7 +33,8 @@ app_include_js = [
 		"/assets/one_fm/js/desk.js",
         "/assets/one_fm/js/showdown.min.js",
         "purchase.bundle.js",
-		"/assets/one_fm/js/form_overrides/workflow_override.js"
+		"/assets/one_fm/js/form_overrides/workflow_override.js",
+        "text_editor.bundle.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -89,7 +90,7 @@ doctype_js = {
 	"Item Price": "public/js/doctype_js/item_price.js",
 	"Employee Incentive": "public/js/doctype_js/employee_incentive.js",
 	"Employee": "public/js/doctype_js/employee.js",
-	"Salary Slip": "public/js/doctype_js/salary_slip.js",
+	# "Salary Slip": "public/js/doctype_js/salary_slip.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 	"Issue": "public/js/doctype_js/issue.js",
 	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
@@ -332,10 +333,10 @@ doc_events = {
 	},
 	"Salary Slip": {
 		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
-		"validate": [
-			"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
-			"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
-		]
+		# "validate": [
+		# 	"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
+		# 	"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
+		# ]
 	},
 	"Salary Structure Assignment": {
 		"validate": [

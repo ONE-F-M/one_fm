@@ -39,7 +39,11 @@ class PayrollEntryOverride(PayrollEntry):
 				error_msg += "<br>" + _("Start date: {0}").format(frappe.bold(self.start_date))
 			if self.end_date:
 				error_msg += "<br>" + _("End date: {0}").format(frappe.bold(self.end_date))
+			if self.payroll_type:
+				error_msg += "<br>" + _("Payroll type: {0}").format(frappe.bold(self.payroll_type))
+				
 			frappe.throw(error_msg, title=_("No employees found"))
+			
 
 		# Custom method to fetch Bank Details and update employee list
 		set_bank_details(self, employees)
@@ -155,30 +159,43 @@ def get_filtered_employees(
 	Employee = frappe.qb.DocType("Employee")
 	Attendance = frappe.qb.DocType("Attendance")
 
-	query = (
-		frappe.qb.from_(Employee)
-		.join(SalaryStructureAssignment)
-		.on(Employee.name == SalaryStructureAssignment.employee)
-		.where(
-			(SalaryStructureAssignment.docstatus == 1)
-			& (Employee.status != "Inactive")
-			& (Employee.company == filters.company)
-			& ((Employee.date_of_joining <= filters.end_date) | (Employee.date_of_joining.isnull()))
-			& ((Employee.relieving_date >= filters.start_date) | (Employee.relieving_date.isnull()))
-			& (SalaryStructureAssignment.salary_structure.isin(sal_struct))
-			& (SalaryStructureAssignment.payroll_payable_account == filters.payroll_payable_account)
-			& (filters.end_date >= SalaryStructureAssignment.from_date)
-			& (Employee.employee.notin(
-				frappe.qb.from_(Attendance)
-				.select(Attendance.employee)
-				.where(
-					(Attendance.attendance_date[filters.start_date:filters.end_date])
-				    & (Attendance.status == "On Hold")
-					& (Attendance.roster_type == filters.payroll_type)
-		   		)
-			))
+	attendance_sub_query = None
+	if filters.payroll_type == "Basic":
+		attendance_sub_query = Employee.employee.notin(
+			frappe.qb.from_(Attendance)
+			.select(Attendance.employee)
+			.where(
+				(Attendance.attendance_date[filters.start_date:filters.end_date])
+				& (Attendance.status == "On Hold")
+				& (Attendance.roster_type == filters.payroll_type)
+			)
 		)
-	)
+	elif filters.payroll_type == "Over-Time":
+		attendance_sub_query = Employee.employee.isin(
+			frappe.qb.from_(Attendance)
+			.select(Attendance.employee)
+			.where(
+				(Attendance.attendance_date[filters.start_date:filters.end_date])
+				& (Attendance.status != "On Hold")
+				& (Attendance.roster_type == filters.payroll_type)
+			)
+		)
+
+	query = (
+	frappe.qb.from_(Employee)
+	.join(SalaryStructureAssignment)
+	.on(Employee.name == SalaryStructureAssignment.employee)
+	.where(
+		(SalaryStructureAssignment.docstatus == 1)
+		& (Employee.status.isin(["Active", "Vacation"]))
+		& (Employee.company == filters.company)
+		& ((Employee.date_of_joining <= filters.end_date) | (Employee.date_of_joining.isnull()))
+		& ((Employee.relieving_date >= filters.start_date) | (Employee.relieving_date.isnull()))
+		& (SalaryStructureAssignment.salary_structure.isin(sal_struct))
+		& (SalaryStructureAssignment.payroll_payable_account == filters.payroll_payable_account)
+		& (filters.end_date >= SalaryStructureAssignment.from_date)
+		& (attendance_sub_query)
+	))
 
 	query = set_fields_to_select(query, fields)
 	query = set_searchfield(query, searchfield, search_string, qb_object=Employee)
