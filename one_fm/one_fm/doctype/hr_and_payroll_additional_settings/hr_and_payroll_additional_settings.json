@@ -19,11 +19,6 @@
   "default_bank",
   "exclude_salary_component",
   "basic_salary_component",
-  "payroll_cycle_settings_section",
-  "default_payroll_start_day",
-  "default_payroll_end_day",
-  "project_payroll_cycle",
-  "get_projects_not_configured_in_payroll_cycle",
   "overtime_additional_salary_section",
   "overtime_additional_salary_component",
   "working_day_overtime_rate",
@@ -219,38 +214,6 @@
    "label": "Validate Shift Permission on Employee Checkin"
   },
   {
-   "collapsible": 1,
-   "fieldname": "payroll_cycle_settings_section",
-   "fieldtype": "Section Break",
-   "label": "Monthly Payroll Cycle Settings"
-  },
-  {
-   "allow_bulk_edit": 1,
-   "fieldname": "project_payroll_cycle",
-   "fieldtype": "Table",
-   "label": "Project Payroll Cycle",
-   "options": "Project Payroll Cycle"
-  },
-  {
-   "description": "Day of the month in which payroll start date will define",
-   "fieldname": "default_payroll_start_day",
-   "fieldtype": "Select",
-   "label": "Default Payroll Start Day",
-   "options": "\nMonth Start\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\nMonth End"
-  },
-  {
-   "fieldname": "default_payroll_end_day",
-   "fieldtype": "Data",
-   "label": "Default Payroll End Day",
-   "read_only": 1
-  },
-  {
-   "fieldname": "get_projects_not_configured_in_payroll_cycle",
-   "fieldtype": "Button",
-   "hidden": 1,
-   "label": "Show Projects Not Configured in Payroll Cycle But Linked in Employee"
-  },
-  {
    "default": "0",
    "description": "If checked, Total no. of Working Days will include day off, and this will reduce the value of Salary Per Day",
    "fieldname": "include_day_off_in_total_working_days",
@@ -319,7 +282,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-12-13 16:05:30.445222",
+ "modified": "2024-08-01 13:57:26.780025",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",

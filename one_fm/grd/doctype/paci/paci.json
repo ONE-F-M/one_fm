@@ -189,7 +189,7 @@
    "label": "Upload Civil ID"
   },
   {
-   "fetch_from": "employee.residency_expiry_date",
+   "fetch_from": "employee.work_permit_expiry_date",
    "fetch_if_empty": 1,
    "fieldname": "new_civil_id_expiry_date",
    "fieldtype": "Date",
@@ -313,7 +313,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-11-14 14:14:29.601882",
+ "modified": "2024-08-15 15:44:39.951477",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "PACI",

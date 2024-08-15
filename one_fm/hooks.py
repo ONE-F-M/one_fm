@@ -33,7 +33,8 @@ app_include_js = [
 		"/assets/one_fm/js/desk.js",
         "/assets/one_fm/js/showdown.min.js",
         "purchase.bundle.js",
-		"/assets/one_fm/js/form_overrides/workflow_override.js"
+		"/assets/one_fm/js/form_overrides/workflow_override.js",
+        "text_editor.bundle.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -89,7 +90,7 @@ doctype_js = {
 	"Item Price": "public/js/doctype_js/item_price.js",
 	"Employee Incentive": "public/js/doctype_js/employee_incentive.js",
 	"Employee": "public/js/doctype_js/employee.js",
-	"Salary Slip": "public/js/doctype_js/salary_slip.js",
+	# "Salary Slip": "public/js/doctype_js/salary_slip.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 	"Issue": "public/js/doctype_js/issue.js",
 	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
@@ -247,7 +248,8 @@ doc_events = {
       					"one_fm.overrides.hd_ticket.send_google_chat_notification",
                   		"one_fm.overrides.hd_ticket.notify_ticket_raiser_of_receipt"
                     	], 
-		"on_change": "one_fm.overrides.hd_ticket.notify_issue_raiser_about_priority"
+		"on_change": "one_fm.overrides.hd_ticket.notify_issue_raiser_about_priority",
+		"on_update": "one_fm.overrides.hd_ticket.apply_ticket_escalation"
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -332,10 +334,10 @@ doc_events = {
 	},
 	"Salary Slip": {
 		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
-		"validate": [
-			"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
-			"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
-		]
+		# "validate": [
+		# 	"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
+		# 	"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
+		# ]
 	},
 	"Salary Structure Assignment": {
 		"validate": [
@@ -356,9 +358,9 @@ doc_events = {
 		"on_update": "one_fm.one_fm.payroll_utils.on_update_employee_incentive",
 		"on_update_after_submit": "one_fm.one_fm.payroll_utils.on_update_after_submit_employee_incentive",
 	},
-	"Payroll Entry": {
-		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
-	},
+	# "Payroll Entry": {
+	# 	"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
+	# },
 	"Expense Claim": {
 		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
 	},
@@ -518,7 +520,8 @@ override_doctype_class = {
     "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
     "Goal": "one_fm.overrides.goal.GoalOverride",
     "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
-    "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride"
+    "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride",
+    "Payroll Entry": "one_fm.overrides.payroll_entry.PayrollEntryOverride"
     # "User": "one_fm.overrides.user.UserOverride"
 }
 
@@ -826,7 +829,8 @@ override_whitelisted_methods = {
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate",
-	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens"
+	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens",
+    "hrms.payroll.doctype.payroll_entry.payroll_entry.get_start_end_dates": "one_fm.overrides.payroll_entry.get_start_end_dates"
 }
 
 
