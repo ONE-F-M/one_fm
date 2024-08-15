@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 frappe.ui.form.on('PACI', {
 	// onload: function(frm){
-    //     set_employee_details(frm);
+        // set_employee_details(frm);
     // },
     employee: function(frm){
         set_employee_details(frm);
@@ -26,11 +26,10 @@ var set_employee_details = function(frm){
                 name: frm.doc.employee
                 },
                 fieldname:["one_fm_first_name_in_arabic","one_fm_second_name_in_arabic","one_fm_third_name_in_arabic","one_fm_last_name_in_arabic",
-				"first_name","middle_name","one_fm_third_name","last_name","one_fm_civil_id",
+				"first_name","middle_name","one_fm_third_name","last_name","one_fm_civil_id", "work_permit_expiry_date",
 				"passport_number","one_fm_pam_designation","one_fm_nationality","employee_id","residency_expiry_date"]
             }, 
             callback: function(r) { 
-        
                 // set the returned value in a field
                 frm.set_value('first_name_arabic', r.message.one_fm_first_name_in_arabic);
                 frm.set_value('second_name_arabic', r.message.one_fm_second_name_in_arabic);
@@ -44,8 +43,9 @@ var set_employee_details = function(frm){
                 frm.set_value('passport_number', r.message.passport_number);
                 frm.set_value('pam_designation', r.message.one_fm_pam_designation);
                 frm.set_value('nationality', r.message.one_fm_nationality);
-				frm.set_value('employee_id',r,message.employee_id);
+				frm.set_value('employee_id', r.message.employee_id);
                 frm.set_value('residency_expiry_date',r.message.residency_expiry_date);
+                frm.set_value("new_civil_id_expiry_date", r.message.work_permit_expiry_date);
                
             }
         })
