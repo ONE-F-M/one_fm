@@ -52,11 +52,15 @@ class EmployeeOverride(EmployeeMaster):
         
 
     def toggle_auto_attendance(self):
-        if not self.is_new():
-            doc_before_update = self.get_doc_before_save()
-            if doc_before_update.auto_attendance != self.auto_attendance:
-                if not frappe.db.exists("Has Role", {"role": ["IN", ["HR Manager", "HR Supervisor", "Attendance Manager"]], "parent": frappe.session.user}):
-                    frappe.throw("You Are Not Permitted To Toggle Auto-Attendance")
+        try:
+            if not self.is_new():
+                doc_before_update = self.get_doc_before_save()
+                if doc_before_update.auto_attendance != self.auto_attendance:
+                    if not any((frappe.db.exists("Has Role", {"role": ["IN", ["HR Manager", "HR Supervisor", "Attendance Manager"]], "parent": frappe.session.user}), frappe.session.user == "Administrator")):
+                        frappe.throw("You Are Not Permitted To Toggle Auto-Attendance")
+        except Exception as e:
+            frappe.log_error(title = f"{str(e)}", message = frappe.get_traceback())
+
                     
 
     def set_employee_id_based_on_residency(self):
