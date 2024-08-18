@@ -126,6 +126,7 @@ doctype_list_js = {
 	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
 	"Wiki Page": "public/js/doctype_list_js/wiki_page_list.js",
+    "Employee": "public/js/doctype_list_js/employee_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -790,7 +791,7 @@ fixtures = [
 	},
 	{
 		"dt": "Role",
-		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager", "HR Supervisor", "Attendance Manager"]]]
 	},
 	{
 		"dt": "Assignment Rule",
