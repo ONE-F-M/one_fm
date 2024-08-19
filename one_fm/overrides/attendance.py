@@ -1250,8 +1250,7 @@ def run_attendance_marking_hourly():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""
     attendance_marking = AttendanceMarking()
     attendance_marking.get_datetime()
-    attendance_marking.mark_shift_attendance()
-    # frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
+    frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
 
 def mark_day_off_for_yesterday():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""
