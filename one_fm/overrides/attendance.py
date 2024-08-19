@@ -1075,6 +1075,11 @@ class AttendanceMarking():
 
 
     def check_early_exit(self, checkin: dict) -> bool:
+        """
+            Validates the presence of a checkin record created after the last checkout record if 
+            the last checkout record  was set as a early exit
+             
+        """
         if checkin:
             in_name = checkin.get("in_name")
             out_name = checkin.get("out_name")
@@ -1090,10 +1095,11 @@ class AttendanceMarking():
                     check = frappe.db.sql(
                         """
                         SELECT name FROM `tabEmployee Checkin` 
-                        WHERE name = %s 
+                        WHERE shift_assignment = %s 
+                        AND  log_type =  %s
                         AND time > %s
                         """, 
-                        (in_name, early_exit_doc.time), 
+                        (checkin.shift_assignment,"IN",early_exit_doc.time), 
                         as_dict=1
                     )
                     return bool(check)
@@ -1239,6 +1245,7 @@ class AttendanceMarking():
             frappe.db.commit()
         except Exception as e:
             frappe.log_error(message=frappe.get_traceback(), title=f"Hourly Attendance Marking - {str(e)}")
+
 
 
 def run_attendance_marking_hourly():
