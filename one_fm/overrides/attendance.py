@@ -1245,13 +1245,11 @@ class AttendanceMarking():
             frappe.log_error(message=frappe.get_traceback(), title=f"Hourly Attendance Marking - {str(e)}")
 
 
-@frappe.whitelist()
+
 def run_attendance_marking_hourly():
     """Marks Attendances for Hourly Employees based on Employee Checkin."""
     attendance_marking = AttendanceMarking()
-    start = frappe.utils.get_datetime('2024-08-18 19:00:00')
-    end = frappe.utils.get_datetime('2024-08-18 20:00:00')
-    attendance_marking.get_datetime(start,end)
+    attendance_marking.get_datetime()
     attendance_marking.mark_shift_attendance()
     # frappe.enqueue(attendance_marking.mark_shift_attendance, queue="long", timeout=4000)
 
