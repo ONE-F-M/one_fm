@@ -1076,7 +1076,9 @@ class AttendanceMarking():
 
     def check_early_exit(self, checkin: dict) -> bool:
         """
-            Validates if the last checkout record of an employee was set as a early exit
+            Validates the presence of a checkin record created after the last checkout record if 
+            the last checkout record  was set as a early exit
+             
         """
         if checkin:
             in_name = checkin.get("in_name")
