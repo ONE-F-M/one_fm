@@ -90,7 +90,7 @@ doctype_js = {
 	"Item Price": "public/js/doctype_js/item_price.js",
 	"Employee Incentive": "public/js/doctype_js/employee_incentive.js",
 	"Employee": "public/js/doctype_js/employee.js",
-	# "Salary Slip": "public/js/doctype_js/salary_slip.js",
+	"Salary Slip": "public/js/doctype_js/salary_slip.js",
 	"Payroll Entry": "public/js/doctype_js/payroll_entry.js",
 	"Issue": "public/js/doctype_js/issue.js",
 	"Interview Feedback": "public/js/doctype_js/interview_feedback.js",
@@ -334,11 +334,11 @@ doc_events = {
 		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
 	"Salary Slip": {
-		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
-		# "validate": [
+		"before_submit": "one_fm.overrides.salary_slip.salary_slip_before_submit",
+		"validate": [
 		# 	"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
-		# 	"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
-		# ]
+			"one_fm.overrides.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
+		]
 	},
 	"Salary Structure Assignment": {
 		"validate": [
@@ -522,7 +522,9 @@ override_doctype_class = {
     "Goal": "one_fm.overrides.goal.GoalOverride",
     "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
     "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride",
-    "Payroll Entry": "one_fm.overrides.payroll_entry.PayrollEntryOverride"
+    "Payroll Entry": "one_fm.overrides.payroll_entry.PayrollEntryOverride",
+    "Salary Slip": "one_fm.overrides.salary_slip.SalarySlipOverride",
+    
     # "User": "one_fm.overrides.user.UserOverride"
 }
 
