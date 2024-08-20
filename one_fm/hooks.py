@@ -113,7 +113,9 @@ doctype_js = {
     "Stock Entry": "public/js/doctype_js/stock_entry.js",
     "Gratuity": "public/js/doctype_js/gratuity.js",
     "Goal": "public/js/doctype_js/goal.js",
-    "Task": "public/js/doctype_js/task.js"
+    "Task": "public/js/doctype_js/task.js",
+    "HD Ticket": "public/js/doctype_js/hd_ticket.js",
+    "Appraisal": "public/js/doctype_js/appraisal.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -150,6 +152,7 @@ home_page = "index"
 
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
+website_generators = ["Client"]
 
 # Installation
 # ------------
@@ -388,19 +391,19 @@ doc_events = {
 	},
 	"Shift Request":{
 		"before_save":[
-			"one_fm.api.doc_methods.shift_request.fill_to_date",
-			"one_fm.utils.send_shift_request_mail",
-			"one_fm.api.doc_methods.shift_request.validate_from_date"
+			"one_fm.overrides.shift_request.fill_to_date",
+			"one_fm.overrides.shift_request.send_shift_request_mail",
+			"one_fm.overrides.shift_request.validate_from_date"
 		],
 		# "on_update_after_submit":[
-			# "one_fm.api.doc_methods.shift_request.on_update_after_submit",
+			# "one_fm.overrides.shift_request.on_update_after_submit",
 		# ],
 		"on_update": [
-            "one_fm.api.doc_methods.shift_request.on_update",
-        	# "one_fm.api.doc_methods.shift_request.process_shift_assignemnt",
+            "one_fm.overrides.shift_request.on_update",
+        	# "one_fm.overrides.shift_request.process_shift_assignemnt",
 		],
         "validate": [
-            "one_fm.api.doc_methods.shift_request.validate",
+            "one_fm.overrides.shift_request.validate",
         ]
 
 	},
@@ -423,7 +426,8 @@ doc_events = {
 	# 	"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
 	# },
     "Task": {
-        "validate": "one_fm.overrides.task.validate_task"
+        "validate": "one_fm.overrides.task.validate_task",
+        "after_insert": "one_fm.overrides.task.after_task_insert"
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
@@ -514,6 +518,7 @@ override_doctype_class = {
     "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
     "Goal": "one_fm.overrides.goal.GoalOverride",
     "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
+    "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride"
     # "User": "one_fm.overrides.user.UserOverride"
 }
 
@@ -714,8 +719,9 @@ scheduler_events = {
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
 		],
-		"00 08 * * *": [ #notify leave approver to approve all the open application at 8:00 am
-		'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
+		"00 08 * * *": [ # runs at 8:00 am
+			'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application',
+			'one_fm.tasks.one_fm.daily.notify_for_employee_docs_expiry'
 		],
 		"05 00 * * *":[
 			'one_fm.overrides.leave_application.employee_leave_status'
@@ -858,6 +864,7 @@ after_migrate = [
     # "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
     "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
+    "one_fm.after_migrate.execute.update_hd_ticket_agent"
 ]
 
 before_migrate = [

@@ -13,6 +13,7 @@ def notify_todo_status_change(doc):
 	status_in_db = frappe.db.get_value(doc.doctype, doc.name, 'status')
 	if status_in_db != doc.status and doc.assigned_by != doc.allocated_to:
 		user = frappe.session.user
+		subject = _("{0}({1}) assignment is {2}".format(doc.reference_type, doc.reference_name, doc.status))
 		email_content = _("""
                     	The assignment referenced to {0}({1}) is {2} by {3}. See Details Below <br> 
 					<p>Description: {4} </p> <br>
@@ -21,9 +22,11 @@ def notify_todo_status_change(doc):
                      """.format(doc.reference_type, doc.reference_name, doc.status,\
                          	get_fullname(user),doc.description,doc.creation,doc.date))
 		if doc.reference_type == "Task":
-			email_content+= f'<p>Subject:{frappe.db.get_value("Task",{doc.reference_name},"subject")}</p>'
+			task_subject = frappe.db.get_value("Task",doc.reference_name,"subject")
+			subject = _("{0} '{1}'({2}) assignment is {3}".format(doc.reference_type, task_subject,doc.reference_name, doc.status))
+			email_content+= f'<p>Subject:{task_subject}</p>'
 		notification_log = frappe.new_doc('Notification Log')
-		notification_log.subject = _("{0}({1}) assignment is {2}".format(doc.reference_type, doc.reference_name, doc.status))
+		notification_log.subject = subject
 		notification_log.email_content = email_content
 		notification_log.for_user = doc.assigned_by
 		notification_log.document_type = doc.doctype

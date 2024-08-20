@@ -1,0 +1,63 @@
+{% extends "templates/web.html" %}
+{% block head %}
+	<meta name="robots" content="noindex">
+	{% if head_html is defined -%}
+	{{ head_html or "" }}
+	{%- endif %}
+
+	{%- if theme and theme.name != 'Standard' -%}
+	<link type="text/css" rel="stylesheet" href="{{ theme.theme_url }}">
+
+	{%- else -%}
+	{{ include_style('website.bundle.css') }}
+	{%- endif -%}
+
+	{%- for link in web_include_css %}
+	{{ include_style(link) }}
+	{%- endfor -%}
+	<link href="https://unpkg.com/frappe-datatable/dist/frappe-datatable.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumbs %}
+	{% include "templates/includes/breadcrumbs.html" %}
+{% endblock %}
+
+{% block page_content %}
+<div class="mt-4 border rounded">
+	<div class="filter-row pt-4 flex">
+		<div class="form-group frappe-control input-max-width col-md-2">
+			<select type="text" autocomplete="off" class="custom-select form-control input-xs ellipsis bold" maxlength="140"
+				data-fieldtype="Select" data-fieldname="month" placeholder="Month">
+				<option value="1">Jan</option>
+				<option value="2">Feb</option>
+				<option value="3">Mar</option>
+				<option value="4">Apr</option>
+				<option value="5">May</option>
+				<option value="6">June</option>
+				<option value="7">July</option>
+				<option value="8">Aug</option>
+				<option value="9">Sep</option>
+				<option value="10">Oct</option>
+				<option value="11">Nov</option>
+				<option value="12">Dec</option>
+			</select>
+		</div>
+		<div class="form-group frappe-control input-max-width col-md-2">
+			<select type="text" autocomplete="off" class="custom-select form-control input-xs ellipsis bold" maxlength="140"
+				data-fieldtype="Select" data-fieldname="year" placeholder="Year">
+			</select>
+		</div>
+	</div>
+	{% include "www/client/placeholder.html" %}
+	<div class="p-4" id="monthly-datatable"></div>  
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}
+{%- block script %}
+	{% if colocated_js -%}
+		<script>{{ colocated_js }}</script>
+	{%- endif %}
+	{{ include_script('web.bundle.js') }}
+{%- endblock %}
