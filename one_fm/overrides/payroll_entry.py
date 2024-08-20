@@ -240,17 +240,17 @@ def set_bank_details(self, employee_details):
 		employee_details ([dict): Sets the bank account IBAN code and Bank Code.
 	"""
 	employee_missing_detail = []
-	missing_ssa = []
-	employee_list = ', '.join(['"{}"'.format(employee.employee) for employee in employee_details])
-	if employee_list:
-		missing_ssa = frappe.db.sql("""
-			SELECT employee from `tabEmployee` E
-			WHERE E.status = 'Active'
-			AND E.employment_type != 'Subcontractor'
-			AND E.name NOT IN (
-				SELECT employee from `tabSalary Structure Assignment` SE
-			)
-			""".format(employee_list), as_dict=True)
+	# missing_ssa = []
+	# employee_list = ', '.join(['"{}"'.format(employee.employee) for employee in employee_details])
+	# if employee_list:
+	# 	missing_ssa = frappe.db.sql("""
+	# 		SELECT employee from `tabEmployee` E
+	# 		WHERE E.status = 'Active'
+	# 		AND E.employment_type != 'Subcontractor'
+	# 		AND E.name NOT IN (
+	# 			SELECT employee from `tabSalary Structure Assignment` SE
+	# 		)
+	# 		""".format(employee_list), as_dict=True)
 
 	for employee in employee_details:
 		try:
@@ -278,13 +278,13 @@ def set_bank_details(self, employee_details):
 			frappe.log_error(str(e), 'Payroll Entry')
 			frappe.throw(str(e))
 
-	if len(missing_ssa) > 0:
-		for e in missing_ssa:
-			employee_missing_detail.append(frappe._dict(
-				{'employee':e.employee, 'salary_mode':'', 'issue':'No Salary Structure Assignment'}))
+	# if len(missing_ssa) > 0:
+	# 	for e in missing_ssa:
+	# 		employee_missing_detail.append(frappe._dict(
+	# 			{'employee':e.employee, 'salary_mode':'', 'issue':'No Salary Structure Assignment'}))
 
 	# check for missing details, log and report
-	if(len(employee_missing_detail)):
+	if len(employee_missing_detail) > 0:
 		missing_detail = []
 		for i in employee_missing_detail:
 			missing_detail.append({
@@ -293,14 +293,11 @@ def set_bank_details(self, employee_details):
 				'issue': i.issue
 			})
 
-		if frappe.db.exists("Missing Payroll Information",{'payroll_entry': self.name}):
-			fetch_mpi = frappe.db.sql(f"""
-				SELECT name FROM `tabMissing Payroll Information`
-				WHERE payroll_entry="{self.name}"
-				ORDER BY modified DESC
-				LIMIT 1
-			;""", as_dict=1)
-			mpi = frappe.get_doc('Missing Payroll Information', fetch_mpi[0].name)
+		mpi_exists = frappe.db.exists("Missing Payroll Information",{'payroll_entry': self.name})
+		
+		if mpi_exists:
+			mpi = frappe.get_doc('Missing Payroll Information', mpi_exists)
+
 			# delete previous table data
 			frappe.db.sql(f"""
 				DELETE FROM `tabMissing Payroll Information Detail`
