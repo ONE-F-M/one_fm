@@ -49,7 +49,7 @@ class EmployeeOverride(EmployeeMaster):
                     "Employee", self.name, existing_user_id)
         employee_validate_attendance_by_timesheet(self, method=None)
         validate_leaves(self)
-        
+
 
     def toggle_auto_attendance(self):
         try:
@@ -61,19 +61,19 @@ class EmployeeOverride(EmployeeMaster):
         except Exception as e:
             frappe.log_error(title = f"{str(e)}", message = frappe.get_traceback())
 
-                    
+
 
     def set_employee_id_based_on_residency(self):
         if self.employee_id:
             residency_employee_id = get_employee_id_based_on_residency(self.employee_id, self.under_company_residency, self.name, self.employment_type)
             if self.employee_id != residency_employee_id:
                 self.employee_id = residency_employee_id
-    
+
     def validate_face_recognition_enrollment(self):
         # Skip the validation while creating new employee
         if self.is_new():
             return
-        
+
         prev_enrollment = self.get_doc_before_save().get('enrolled')
 
         # Allow update if the context flag is set
@@ -511,4 +511,3 @@ def toggle_auto_attendance(employee_names: list | str, status: bool):
     except Exception as e:
         frappe.log_error(title = f"{str(e)}",message = frappe.get_traceback())
         return response(message=str(e), status_code=400)
-

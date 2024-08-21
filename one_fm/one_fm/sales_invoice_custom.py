@@ -1122,7 +1122,7 @@ def set_advance_payment_details(doc,event):
 
 def set_print_settings_from_contracts(doc, method):
     set_advance_payment_details(doc,method)
-    if doc.get('automatic_settlement') == "Yes":
+    if doc.get('automatic_settlement') == "Yes" and doc.get('balance_in_advance_account'):
         if not doc.get('settlement_amount'):
             frappe.throw("Please set an amount to be settled from advances for this invoice.")
         if doc.get('settlement_amount') > doc.get('balance_in_advance_account') and doc.get('automatic_settlement') == "Yes":
