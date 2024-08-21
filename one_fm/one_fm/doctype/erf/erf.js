@@ -305,9 +305,9 @@ var allow_recruitment_manager = function(frm){
 			frm.toggle_reqd('grade', is_senior_recruiter);
 			frm.toggle_reqd('hiring_method', is_senior_recruiter);
 			frm.toggle_reqd('recruiter_assigned', is_senior_recruiter);
-			if(!frm.doc.shift_working){
-				frm.toggle_reqd('reports_to', is_senior_recruiter);
-			}
+			// if(!frm.doc.shift_working){
+			// 	frm.toggle_reqd('reports_to', is_senior_recruiter);
+			// }
 		}
 	}
 }

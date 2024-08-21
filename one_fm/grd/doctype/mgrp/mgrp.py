@@ -9,6 +9,7 @@ from frappe.utils import get_url, cint, today
 from one_fm.api.notification import create_notification_log
 from datetime import date
 from one_fm.hiring.utils import update_onboarding_doc
+from one_fm.utils import is_scheduler_emails_enabled
 from frappe.core.doctype.communication.email import make
 class MGRP(Document):
 	def validate(self):
@@ -162,7 +163,9 @@ def notify_awaiting_response_mgrp():
 	This method fetches list of objects having `Awaiting Response` workflow state
 	"""
 	mgrp_list = frappe.db.get_list('MGRP',{'workflow_state':['=',('Awaiting Response')]},['name','civil_id'])
-	notification_reminder(mgrp_list)
+
+	if is_scheduler_emails_enabled():
+		notification_reminder(mgrp_list)
 
 def notification_reminder(mgrp_list):
 	"""

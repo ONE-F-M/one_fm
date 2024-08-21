@@ -10,8 +10,11 @@ from frappe.desk.form.assign_to import add as add_assignment
 from frappe.utils import add_days, today, now, get_url_to_form, getdate
 from one_fm.utils import (
     production_domain,
-    fetch_attendance_manager_user
+    fetch_attendance_manager_user,
+    fetch_attendance_manager_user_obj,
+    get_approver
 )
+from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 
 class AttendanceCheck(Document):
     def before_insert(self):
@@ -125,11 +128,16 @@ class AttendanceCheck(Document):
         if employee.reports_to:
             self.reports_to = employee.reports_to
         if employee.shift:
-            shift_supervisor = frappe.db.get_value('Operations Shift', employee.shift, 'supervisor')
-            self.shift_supervisor = shift_supervisor
+            self.shift_supervisor = get_shift_supervisor(employee.shift)
         if employee.site:
-            site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
-            self.site_supervisor = site_supervisor
+            self.site_supervisor = frappe.db.get_value('Operations Site', employee.site, 'account_supervisor')
+
+    def after_insert(self):
+        """
+            Assign document to supervisors
+        """
+        pass
+
 
     def validate(self):
         self.validate_is_replaced_shift_assignment()

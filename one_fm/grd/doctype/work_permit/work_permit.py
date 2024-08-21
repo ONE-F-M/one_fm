@@ -19,7 +19,7 @@ from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
-from one_fm.utils import send_workflow_action_email, get_holiday_today, workflow_approve_reject
+from one_fm.utils import send_workflow_action_email, is_scheduler_emails_enabled
 
 # from PyPDF2 import PdfFileReader
 
@@ -30,6 +30,7 @@ class WorkPermit(Document):
         self.check_required_document_for_workflow()
         self.notify()
         self.send_work_permit_receipt_to_perm_operator()
+        self.set_new_pam_details_in_employee()
         # frappe.throw(f"""{self.reference_number_on_pam_registration}, {self.workflow_state}""")
         
 
@@ -326,6 +327,25 @@ class WorkPermit(Document):
     def get_required_documents(self):
         set_required_documents(self)
 
+    def set_new_pam_details_in_employee(self):
+        if self.workflow_state == "Completed":
+            employee = frappe.get_doc("Employee", self.employee)
+            fields_to_update = {}
+
+            if self.new_pam_designation and self.new_pam_designation != employee.one_fm_pam_designation:
+                fields_to_update['one_fm_pam_designation'] = self.new_pam_designation
+
+            if self.new_pam_file and self.new_pam_file != employee.pam_file:
+                fields_to_update['pam_file'] = self.new_pam_file
+
+            if self.new_work_permit_salary_ and self.new_work_permit_salary_ != employee.work_permit_salary:
+                fields_to_update['work_permit_salary'] = self.new_work_permit_salary_
+
+            if fields_to_update:
+                employee.update(fields_to_update)
+                employee.save()
+                frappe.db.commit()
+
 def set_required_documents(doc):
     if frappe.db.exists('Work Permit Required Documents Template', {'work_permit_type':doc.work_permit_type}):
         #getting the required documents template based on the wp type
@@ -469,7 +489,9 @@ def system_remind_renewal_operator_to_apply():
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     work_permit_list = frappe.db.get_list('Work Permit',
     {'date_of_application':['<=',today()],'workflow_state':['in',('Draft','Apply Online by PRO')],'work_permit_type':['in',('Renewal Non Kuwaiti','Renewal Kuwaiti')]},['civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
-    notification_reminder(work_permit_list,supervisor,renewal_operator,"Renewal")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(work_permit_list,supervisor,renewal_operator,"Renewal")
 
 def system_remind_transfer_operator_to_apply():
     """
@@ -479,7 +501,9 @@ def system_remind_transfer_operator_to_apply():
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     work_permit_list = frappe.db.get_list('Work Permit',
     {'date_of_application':['<=',today()],'workflow_state':['in',('Draft','Apply Online by PRO')],'work_permit_type':['=',('Local Transfer')]},['civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
-    notification_reminder(work_permit_list,supervisor,transfer_operator,"Local Transfer")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(work_permit_list,supervisor,transfer_operator,"Local Transfer")
 
 
 def notification_reminder(work_permit_list,supervisor,operator,type):

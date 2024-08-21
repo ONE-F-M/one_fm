@@ -10,10 +10,8 @@ from frappe.workflow.doctype.workflow_action.workflow_action import apply_workfl
 from frappe import _
 from one_fm.api.notification import create_notification_log, get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
-from one_fm.api.tasks import get_action_user
-from one_fm.api.utils import get_reports_to_employee_name
 from one_fm.processor import sendemail
-from one_fm.utils import has_super_user_role
+from one_fm.utils import has_super_user_role, get_approver
 
 class PermissionTypeandLogTypeError(frappe.ValidationError):
 	pass
@@ -96,8 +94,8 @@ class ShiftPermission(Document):
 		if self.workflow_state in ["Approved", "Rejected"]:
 			if has_super_user_role(frappe.session.user):
 				return
-			if frappe.session.user not in [self.approver_user_id, 'administrator', 'Administrator']:
-				frappe.throw(_("This document can only be approved/rejected by the approver."))
+			#if frappe.session.user not in [self.approver_user_id, 'administrator', 'Administrator']:
+			#	frappe.throw(_("This document can only be approved/rejected by the approver."))
 
 	def on_submit(self):
 		employee_user = frappe.get_value('Employee', self.employee, 'user_id')
@@ -158,14 +156,28 @@ class ShiftPermission(Document):
 
 
 @frappe.whitelist()
-def fetch_approver(employee):
+def fetch_approver(employee, date=None):
 	if employee:
-		employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-		if employee_shift:
-			approver = get_reports_to_employee_name(employee)
-			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
-
-		frappe.throw("No approver found for {employee}".format(employee=employee))
+		filters={"employee":employee}
+		if date:
+			filters["start_date"] = getdate(date)
+		employee_shift = frappe.get_list(
+			"Shift Assignment",
+			fields=["name", "shift", "shift_type"],
+			filters=filters,
+			order_by='creation desc',
+			limit_page_length=1
+		)
+		if employee_shift and len(employee_shift)>0:
+			approver = get_approver(employee, date)
+			return {
+				'shift_assignment':employee_shift[0].name, 
+				'approver':approver, 
+				'shift':employee_shift[0].shift, 
+				'shift_type':employee_shift[0].shift_type
+			}
+	
+	frappe.throw("No shift assigned to {employee}".format(employee=employee))
 
 
 # approve open shift permission before marking attendance

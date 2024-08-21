@@ -23,13 +23,16 @@ class AttendanceRequestOverride(AttendanceRequest):
 		check_for_attendance(self)
 
 	def set_approver(self):
-		if not self.approver:
+		if not self.approver and self.employee:
 			self.approver = get_approver(self.employee)
-			approver = frappe.db.get_value("Employee", {'name':self.approver}, ['user_id', 'employee_name'], as_dict=1)
-			self.approver_user = approver.user_id
-			self.approver_name = approver.employee_name
-		if not self.approver_user:
-			self.approver_user = frappe.db.get_value("Employee", self.approver, 'user_id')
+			if self.approver:
+				approver = frappe.db.get_value(
+					"Employee",
+					{'name':self.approver},
+					['user_id', 'employee_name'],
+					as_dict=1
+				)
+				pass
 
 	def on_submit(self):
 		if not self.reports_to():
@@ -155,7 +158,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	def send_notification(self):
 		if self.workflow_state in ['Pending Approval']:
-			send_workflow_action_email(self, self.approver_user)
+			send_workflow_action_email(self, [self.approver])
 		if self.workflow_state in ['Rejected', 'Approved', 'Cancelled']:
 			workflow_approve_reject(self, recipients=None)
 
@@ -184,17 +187,12 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 		return False
 
-	def get_reports_to(self):
-		return frappe.db.get_value("Employee", {'name':frappe.db.get_value("Employee", {'name':self.employee}, ['reports_to'])}, ['user_id'])
-
 	@frappe.whitelist()
 	def reports_to(self):
 		employee_user = frappe.get_value("Employee", {"name": self.employee}, "user_id")
-		if employee_user and frappe.session.user == employee_user and has_super_user_role(employee_user):
-			return True
-
-		reports_to_user = self.get_reports_to()
-		if reports_to_user and frappe.session.user in [reports_to_user, 'administrator', 'Administrator']:
+		if frappe.session.user == self.approver or has_super_user_role(employee_user) or (
+			frappe.session.user == "administrator"
+		):
 			return True
 
 		frappe.msgprint('This Attendance Request can only be approved by the employee supervisor')

@@ -6,8 +6,8 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from one_fm.hiring.utils import update_onboarding_doc
-from frappe.utils import global_date_format
-import urllib.parse
+from frappe.utils import get_url
+from one_fm.qr_code_generator import get_qr_code
 
 class EmployeeID(Document):
 	def validate(self):
@@ -16,19 +16,7 @@ class EmployeeID(Document):
 
 	def validate_qr_code(self):
 		if not self.qr_code_image_link:
-			chart = "http://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=";
-			fields = ['Employee Name', 'Employee Name in Arabic', 'Designation', 'Designation in Arabic', 'Date of Birth',
-				'Date of Joining', 'CIVIL ID']
-			qr_details = ""
-			for field in fields:
-				fieldname = field.lower().replace(' ', '_')
-				field_value = self.get(fieldname)
-				if field_value:
-					df = self.meta.get_field(fieldname)
-					if df.fieldtype == "Date":
-						field_value = global_date_format(field_value)
-					qr_details += field+": "+field_value+"\n"
-			self.qr_code_image_link = chart+urllib.parse.quote(qr_details)
+			self.qr_code_image_link = get_qr_code(get_url(f"/employee-info/{self.employee}"))
 
 	def set_progress(self):
 		progress_wf_list = {'Draft': 0, 'Open Request': 20,

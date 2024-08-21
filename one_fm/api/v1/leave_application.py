@@ -1,9 +1,14 @@
+from pathlib import Path
+import hashlib, base64, json
 import frappe
 from frappe import _
-from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
 from datetime import date
 import datetime
 import collections
+
+from frappe.utils import cint, cstr, getdate, add_months
+from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on, get_leave_allocation_records, get_leave_details
+
 from one_fm.api.api import upload_file
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
@@ -57,6 +62,10 @@ def get_leave_detail(employee_id: str = None, leave_id: str = None) -> dict:
             else:
                 is_leave_approver = 0
             data = leave_details.as_dict()
+
+            for d in data.proof_documents:
+                filename = frappe.get_value("File",{'file_url':d.attachments},['file_name'])
+                d.update({"file_name":filename})
             data.update({"is_leave_approver":is_leave_approver})
 
             if leave_details:
@@ -92,6 +101,7 @@ def approver_leave() -> dict:
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
+
 @frappe.whitelist()
 def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
     """This method gets the leave balance data for a specific employee.
@@ -108,7 +118,6 @@ def get_leave_balance(employee_id: str = None, leave_type: str = None) -> dict:
             error (str): Any error handled.
         }
     """
-    return response("Success", 200, [])
     if not employee_id:
         return response("Bad Request", 400, None, "employee_id required.")
 
@@ -184,19 +193,23 @@ def get_leave_types(employee_id: str = None) -> dict:
         if not leave_type_list or len(leave_type_list) == 0:
             return response("Resource Not Found", 404, None, "No leave allocated to {employee}".format(employee=employee_id))
 
+        leave_types = frappe.get_all("Leave Type", fields=["name", "is_proof_document_required"])
+        leave_types_dict = {}
+        for i in leave_types:
+            leave_types_dict[i.name] = i.is_proof_document_required
+        leave_type_documents = {}
         for leave_type in leave_type_list:
-            leave_types_set.add(leave_type.leave_type)
-
-        return response("Success", 200, list(leave_types_set))
+            leave_type_documents[leave_type.leave_type] = leave_types_dict[leave_type.leave_type]
+        return response("Success", 200, leave_type_documents)
 
     except Exception as error:
         return response("Internal Server Error", 500, None, error)
 
 
 
-
 @frappe.whitelist()
-def create_new_leave_application(employee_id: str = None, from_date: str = None, to_date: str = None, leave_type: str = None, reason: str = None, proof_document = {}) -> dict:
+def create_new_leave_application(employee_id: str = None, from_date: str = None, 
+    to_date: str = None, leave_type: str = None, reason: str = None, proof_document = {}) -> dict:
     """[summary]
     Args:
         employee (str): Employee record name.
@@ -212,107 +225,95 @@ def create_new_leave_application(employee_id: str = None, from_date: str = None,
             error (str): Any error handled.
         }
     """
-    if not employee_id:
-        return response("Bad Request", 400, None, "employee_id required.")
-
-    if not from_date:
-        return response("Bad Request", 400, None, "from_date required.")
-
-    if not to_date:
-        return response("Bad Request", 400, None, "to_date required.")
-
-    if not leave_type:
-        return response("Bad Request", 400, None, "leave_type required.")
-
-    if not reason:
-        return response("Bad Request", 400, None, "reason required.")
-
-    if not isinstance(employee_id, str):
-        return response("Bad Request", 400, None, "employee_id must be of type str")
-
-    if not isinstance(from_date, str):
-        return response("Bad Request", 400, None, "from_date must be of type str.")
-
-    if not validate_date(from_date):
-        return response("Bad Request", 400, None, "from_date must be of format yyyy-mm-dd.")
-
-    if not validate_date(to_date):
-        return response("Bad Request", 400, None, "to_date must be of format yyyy-mm-dd.")
-
-    if not isinstance(to_date, str):
-        return response("Bad Request", 400, None, "to_date must be of type str.")
-
-    if not isinstance(leave_type, str):
-        return response("Bad Request", 400, None, "leave_type must be of type str.")
-
-    if not isinstance(reason, str):
-        return response("Bad Request", 400, None, "reason must be of type str.")
-
-    if proof_document_required_for_leave_type(leave_type) and not proof_document:
-        return response("Bad Request", 400, None, "Leave type requires a proof_document.")
-
-    if not check_if_backdate_allowed(leave_type, from_date):
-        return response("Bad Request", 400, None, "You are not allowed to apply for later or previous date.")
-
     try:
-        from pathlib import Path
-        import hashlib
-        import base64, json
+        if not employee_id:
+            return response("Bad Request", 400, None, "employee_id required.")
+
+        if not from_date:
+            return response("Bad Request", 400, None, "from_date required.")
+
+        if not to_date:
+            return response("Bad Request", 400, None, "to_date required.")
+
+        if not leave_type:
+            return response("Bad Request", 400, None, "leave_type required.")
+
+        if not reason:
+            return response("Bad Request", 400, None, "reason required.")
+
+        if not isinstance(employee_id, str):
+            return response("Bad Request", 400, None, "employee_id must be of type str")
+
+        if not isinstance(from_date, str):
+            return response("Bad Request", 400, None, "from_date must be of type str.")
+
+        if not validate_date(from_date):
+            return response("Bad Request", 400, None, "from_date must be of format yyyy-mm-dd.")
+
+        if not validate_date(to_date):
+            return response("Bad Request", 400, None, "to_date must be of format yyyy-mm-dd.")
+
+        if not isinstance(to_date, str):
+            return response("Bad Request", 400, None, "to_date must be of type str.")
+
+        if not isinstance(leave_type, str):
+            return response("Bad Request", 400, None, "leave_type must be of type str.")
+
+        if not isinstance(reason, str):
+            return response("Bad Request", 400, None, "reason must be of type str.")
+
+        if proof_document_required_for_leave_type(leave_type) and not proof_document:
+            return response("Bad Request", 400, None, "Leave type requires a proof_document.")
+
+        if not check_if_backdate_allowed(leave_type, from_date):
+            return response("Bad Request", 400, None, "You are not allowed to apply for later or previous date.")
+        
 
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
         if not employee:
             return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
 
-        employee_doc = frappe.get_doc("Employee", employee)
-        leave_approver = fetch_leave_approver(employee)
-
+        leave_approver = frappe.db.get_value("Employee", get_approver(employee), "user_id")
         if not leave_approver:
             return response("Resource Not Found", 404, None, "No leave approver found for {employee}.".format(employee=employee_id))
 
-        if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['>=', to_date],'to_date' : ['>=', from_date]}):
+        if frappe.db.exists("Leave Application", {'employee': employee,'from_date': ['BETWEEN', [from_date, to_date]],'to_date' : ['BETWEEN', [from_date, to_date]]}):
             return response("Duplicate", 422, None, "Leave application already created for {employee}".format(employee=employee_id))
-        attachment_paths = []
-        doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, attachment_paths)
+
         if proof_document_required_for_leave_type(leave_type):
-            proof_doc_json = json.loads(proof_document)
-            for proof_doc in proof_doc_json:
-                attachment = proof_doc['attachment']
-                attachment_name = proof_doc['attachment_name']
-                if not attachment or not attachment_name:
-                    return response('proof_document key requires attachment and attachment_name', {}, 400)
+            if not proof_document:
+                return response("Missing", 400, None, "Proof document is required for {leave_type}".format(leave_type=leave_type))
+            if type(proof_document==dict):
+                attachment = proof_document.get('attachment')
+                attachment_name = proof_document.get('attachment_name')
+            else:
+                try:
+                    proof_doc_json = json.loads(proof_document)
+                    if isinstance(proof_doc_json, list):
+                        proof_doc_json = proof_doc_json[0]
+                except:
+                    proof_doc_json = {}
+                attachment = proof_doc_json.get('attachment')
+                attachment_name = proof_doc_json.get('attachment_name')
+            if not attachment or not attachment_name:
+                return response('Bad Request', 400, {}, "proof_document key requires attachment and attachment_name")
 
-                file_ext = "." + attachment_name.split(".")[-1]
-                content = base64.b64decode(attachment)
-                filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
-
-                # Path(frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
-                Path(frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}").mkdir(parents=True, exist_ok=True)
-                # OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/public/files/leave-application/{employee_doc.user_id}/{filename}"
-                OUTPUT_FILE_PATH = frappe.utils.cstr(frappe.local.site)+f"/private/files/leave-application/{employee_doc.user_id}/{filename}"
-                file_ = upload_file(doc, "attachments", filename, OUTPUT_FILE_PATH, content, is_private=True)
-                leave_doc = frappe.get_doc("Leave Application",doc.get('name'))
-                leave_doc.append('proof_documents',{"attachments":file_.file_url})
-                leave_doc.save()
-                if not validate_sick_leave_attachment(leave_doc):
-                    return response("Internal Server Error", 500, None, "Error while attaching document to form")
-                frappe.db.commit()
-                # with open(OUTPUT_FILE_PATH, "wb") as fh:
-                #     fh.write(content)
-
-                # attachment_paths.append(f"/private/files/leave-application/{employee_doc.user_id}/{filename}")
-        
-
-        # if attachment_paths:
-            # upload_file(doc, "proof_document", filename, attachment_path, content, is_private=True)
-
+            file_ext = "." + attachment_name.split(".")[-1]
+            content = base64.b64decode(attachment)
+            filename = hashlib.md5((attachment_name + str(datetime.datetime.now())).encode('utf-8')).hexdigest() + file_ext
+            doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver, {
+                'attachment_name':attachment_name,
+                'attachment_hashed_name':filename,
+                'attachment_file':content
+            })
+        else:
+            doc = new_leave_application(employee, from_date, to_date, leave_type, "Open", reason, leave_approver)
         return response("Success", 201, doc)
-    
     except Exception as error:
-        frappe.log_error(error, 'Leave API')
+        frappe.log_error(message=frappe.get_traceback(), title='Leave API')
         return response("Internal Server Error", 500, None, error)
     
-def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachment_paths = []) -> dict:
-
+def new_leave_application(employee: str, from_date: str,to_date: str,leave_type: str,status:str, reason: str,leave_approver: str, attachments = {}) -> dict:
     leave = frappe.new_doc("Leave Application")
     leave.employee=employee
     leave.leave_type=leave_type
@@ -323,7 +324,14 @@ def new_leave_application(employee: str, from_date: str,to_date: str,leave_type:
     leave.follow_via_email=1
     leave.status=status
     leave.leave_approver = leave_approver
+    leave.leave_approver_name = frappe.db.get_value("User", leave_approver, 'full_name')
     leave.save(ignore_permissions=True)
+    if attachments:
+        _file = upload_file(leave, "", attachments['attachment_hashed_name'], "", attachments['attachment_file'], is_private=True)
+        leave.append('proof_documents', {'description':attachments['attachment_name'], 
+            "attachments":_file.file_url})
+        leave.save()
+    # add the files to File doctype
     return leave.as_dict()
 
 @frappe.whitelist()
@@ -366,11 +374,111 @@ def proof_document_required_for_leave_type(leave_type):
 def leave_approver_action(leave_id: str,status: str) -> dict:
     try:
         doc = frappe.get_doc("Leave Application",{"name":leave_id})
-        doc.status = status
+        if doc:
+            if not doc.leave_approver in [frappe.session.user, 'administrator']:
+                return response("error", 401, {}, "Unauthorised.")
+            if status == "Approved":
+                doc.status = status
+                doc.save()
+            elif status == "Rejected":
+                doc.db_set('status', 'Rejected')
+                doc.db_set('workflow_state', 'Rejected')
+                doc.reload()
+            else:
+                return response("error", 400, {}, "expected Approved or Rejected")
+        else:
+            return response("error", 404, {}, f"Leave ID {leave_id} not found")
         doc.submit()
         frappe.db.commit()
         return response("Success", 201, doc)
-        #return response('Leave Application was'+status,doc, 201)
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback())
+        return response("error", 500, {}, str(e))
+
+@frappe.whitelist()
+def leave_application_list(
+        employee_id: str, from_date: str = None, to_date: str = None,
+        leave_type: str = None,
+        status: str = None) -> dict:
+    """
+    this method retrived list of leave application for both employee and reports to
+    """
+    try:
+        if not employee_id:
+            return response("error", 400, {}, "Employee ID is required.")
+        employee = frappe.get_value("Employee", {"employee_id": employee_id}, ["name", "user_id"], as_dict=1)
+        if not employee:
+            return response("error", 404, {}, "Employee not found.")
+        
+        if not(from_date and to_date):
+            posting_date = ["BETWEEN", [add_months(getdate(), -2), getdate()]]
+        else:
+            posting_date = ["BETWEEN", [from_date, to_date]]
+
+        extra_filters = {}
+        if leave_type:
+            extra_filters["leave_type"] = leave_type
+        if status:
+            extra_filters["status"] = status
+
+
+        my_leaves_query = frappe.get_all("Leave Application", 
+            filters = {**{
+                "employee": employee.name,
+                "posting_date": posting_date
+            }, **extra_filters},
+            fields=["*"]
+        )
+        my_leaves = [{
+            "name":i.name,"employee_name":i.employee_name, "workflow_state":i.workflow_state,
+            "leave_type":i.leave_type, "total_leave_days":i.total_leave_days,
+            "posting_date":i.posting_date, "from_date":i.from_date, "to_date":i.to_date, 
+            "leave_approver_name":i.leave_approver_name, "description":i.description, 
+            "proof_documents":i.proof_documents or []
+            } for i in my_leaves_query
+        ]
+        reports_to_query = frappe.get_all("Leave Application", 
+            filters = {**{
+                "leave_approver": employee.user_id,
+                "posting_date": posting_date,
+            }, **extra_filters},
+            fields=["*"]
+        )
+        reports_to = [{
+            "name":i.name,"employee_name":i.employee_name, "workflow_state":i.workflow_state,
+            "leave_type":i.leave_type, "total_leave_days":i.total_leave_days,
+            "posting_date":i.posting_date, "from_date":i.from_date, "to_date":i.to_date, 
+            "leave_approver_name":i.leave_approver_name, "description":i.description, 
+            "proof_documents":clean_proof_documents(i.proof_documents)
+            } for i in reports_to_query
+        ]
+        return response("success", 200, {"my_leaves":my_leaves, "reports_to": reports_to})
+    except Exception as e:
+        return response("error", 500, {}, str(frappe.get_traceback()))
+
+def clean_proof_documents(proof_documents):
+    """
+    This filters out attachments
+    """
+    if proof_documents:
+        attachments = [i.attachments for i in proof_documents]
+    else:
+        attachments = []
+    return attachments
+
+@frappe.whitelist()
+def fetch_proof_document(file_name: str, docname: str, doctype: str) -> dict:
+    try:
+        file_doc = frappe.get_doc("File",{"attached_to_name":docname, "attached_to_doctype":doctype, 'file_name':file_name})
+        content = frappe.get_doc("File", file_doc.name).get_content()
+        base64EncodedStr = base64.b64encode(content).decode('utf-8')
+        data = {
+            "file_url": file_doc.file_url,
+            "file_type":  file_doc.file_type,
+            "content": base64EncodedStr,
+        }
+        return response("Success", 200, data)
     except Exception as e:
         frappe.log_error(frappe.get_traceback())
         frappe.respond_as_web_page(_("Error"), e , http_status_code=417)
+        return response("Bad Request", 404, None, "Unable to fetch data")

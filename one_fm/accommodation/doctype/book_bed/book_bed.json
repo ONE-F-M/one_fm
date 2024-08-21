@@ -203,8 +203,9 @@
   },
   {
    "fieldname": "religion",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Religion",
+   "options": "Religion",
    "read_only": 1
   },
   {
@@ -277,10 +278,11 @@
   }
  ],
  "links": [],
- "modified": "2020-11-16 08:47:30.735656",
+ "modified": "2024-04-24 12:08:45.893685",
  "modified_by": "Administrator",
  "module": "Accommodation",
  "name": "Book Bed",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -310,5 +312,6 @@
  ],
  "search_fields": "full_name, passport_number, civil_id, employee",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }

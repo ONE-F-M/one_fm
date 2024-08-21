@@ -12,6 +12,7 @@ from frappe import _
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime
 from one_fm.grd.doctype.work_permit import work_permit
 from one_fm.hiring.utils import update_onboarding_doc
+from one_fm.utils import is_scheduler_emails_enabled
 from frappe.core.doctype.communication.email import make
 
 class PIFSSForm103(Document):
@@ -257,7 +258,9 @@ def notify_grd_to_check_under_process_status_on_pifss():
 	This method fetches list of objects having `Awaiting Response` workflow state
 	"""
 	pifss_103_list = frappe.db.get_list('PIFSS Form 103',{'workflow_state':['=',('Awaiting Response')]},['name','civil_id'])
-	notification_reminder(pifss_103_list)
+	
+	if is_scheduler_emails_enabled():
+		notification_reminder(pifss_103_list)
 
 def notification_reminder(pifss_103_list):
 	"""

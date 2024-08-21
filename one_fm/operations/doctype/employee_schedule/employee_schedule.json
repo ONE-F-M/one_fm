@@ -42,7 +42,8 @@
    "in_standard_filter": 1,
    "label": "Employee",
    "options": "Employee",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fieldname": "shift",
@@ -79,7 +80,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Date",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "fetch_from": "employee.employee_name",
@@ -217,7 +219,7 @@
   }
  ],
  "links": [],
- "modified": "2024-04-25 14:15:04.404489",
+ "modified": "2024-05-31 10:39:39.670488",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",

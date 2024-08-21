@@ -3,11 +3,10 @@ import itertools
 from frappe.desk.form.assign_to import add as add_assignment
 from frappe.utils import cstr, flt, add_days, time_diff_in_hours, getdate, get_datetime_in_timezone
 from calendar import monthrange
-from one_fm.api.utils import get_reports_to_employee_name
 from hrms.overrides.employee_timesheet import *
 from frappe import _
 from one_fm.processor import sendemail
-from one_fm.utils import send_workflow_action_email, get_approver
+from one_fm.utils import send_workflow_action_email, get_approver_user, get_approver
 
 
 class TimesheetOveride(Timesheet):
@@ -300,6 +299,15 @@ def add_time_log(timesheet, attendance, start, end, post, billable, billing_hour
         "billing_rate":billing_rate
     })
     return timesheet
+
+@frappe.whitelist()
+def fetch_approver(employee):
+    if employee:
+        approver_user = get_approver_user(employee)
+        if approver_user:
+            return approver_user
+
+    frappe.throw("No approver found for {employee}".format(employee=employee))
 
 def validate_timesheet_count(doc, event):
     if doc.workflow_state == "Approved":

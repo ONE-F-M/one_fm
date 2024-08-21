@@ -8,8 +8,8 @@ from frappe.utils import getdate, date_diff, add_days, month_diff, formatdate, a
 from hrms.hr.doctype.leave_application.leave_application \
 	import get_leave_balance_on, get_leaves_for_period
 
-from hrms.hr.report.employee_leave_balance_summary.employee_leave_balance_summary \
-	import get_department_leave_approver_map
+# from hrms.hr.report.employee_leave_balance_summary.employee_leave_balance_summary \
+# 	import get_department_leave_approver_map
 
 def execute(filters=None):
 	# Get the list of  Paid annula leave Leave type
@@ -128,3 +128,26 @@ def find_year_from_no_of_days(number_of_days):
 	days = (number_of_days % 365) % 30
 	year_from_no_of_days = str(year)+" Years "+str(month)+" Months "+str(days)+" Days"
 	return year_from_no_of_days
+
+def get_department_leave_approver_map(department = None):
+	# get current department and all its child
+	department_list = frappe.get_list(
+		"Department",
+		filters={"disabled": 0},
+		or_filters={"name": department, "parent_department": department},
+		pluck="name",
+	)
+	# retrieve approvers list from current department and from its subsequent child departments
+	approver_list = frappe.get_all(
+		"Department Approver",
+		filters={"parentfield": "leave_approvers", "parent": ("in", department_list)},
+		fields=["parent", "approver"],
+		as_list=True,
+	)
+
+	approvers = {}
+
+	for k, v in approver_list:
+		approvers.setdefault(k, []).append(v)
+
+	return approvers

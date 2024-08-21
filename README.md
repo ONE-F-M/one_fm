@@ -1,8 +1,8 @@
 ## One Fm
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Frappe-14.XX.X-blue?style=for-the-badge&logo=frappe">
-  <img src="https://img.shields.io/badge/ERPNext-14.XX.X-green?style=for-the-badge&logo=erpnext">
+  <img src="https://img.shields.io/badge/Frappe-15-blue?style=for-the-badge&logo=frappe">
+  <img src="https://img.shields.io/badge/ERPNext-15-green?style=for-the-badge&logo=erpnext">
   <br/>
 </p>
 
@@ -17,21 +17,20 @@ One Facilities Management is a leader in the fields of commercial automation and
 ### Core Requirements
 Before you install this app, ensure that the following apps and their respective versions are installed:
 
-- Frappe Framework: v14.37.1 (version-14)
-- ERPNext: v14.26.0 (version-14)
-- Helpdesk: v0.8.4 (main)
-- Frappe HR: v14.4.1 (version-14)
+- Frappe Framework: 15 (version-15)
+- ERPNext: v15 (version-15)
+- Helpdesk: v15 or main (main)
+- Frappe HR: v15 (version-15)
 - One Fm Password Management: v0.0.1 (master)
-- One Wiki: v0.0.1 (master-14)
-- Payments: v0.0.1 (version-14)
-- Twilio Integration: v0.0.1 (master)
-- Wiki: v2.0.0 (version-14)
+- Wiki: v15 (master-15)
+- Payments: v15 (version-16)
+- Twilio Integration: (master)
 
 #### Requirements
 
 - Python 3.10 or above
 - MariaDB 10.6 or above
-- Node V16
+- Node V18
 - Redis
 
 

@@ -77,25 +77,25 @@ def get_total_indemnity(date_of_joining, to_date):
         #calculation takes 15 days salary for 5 years and 30 days salary after 5 years         
         return (15 / 365 * five_year_in_days) + (30 / 365 * (total_working_days-five_year_in_days))
 
-def get_per_day_indemnity_allocation(date_of_joining, to_date):
+def get_per_day_indemnity_amount(date_of_joining, to_date, indemnity_amount = 0):
     """To Calculate indemnity of the employee per day distributed across one year. 
     This allows to get the per day calculation to be allocated every day.
-
     Args:
         date_of_joining ([date]): Employee's Joining Date
         to_date ([data]): up until date
-
+        indemnity_amount ([currency]): Indemnity Amount from Salary Structure Assignment
     Returns:
-        [type]: [description]
+        amount: Per day indemnity amount
     """
     total_working_year = relativedelta(to_date, date_of_joining).years
     total_working_days = (to_date - date_of_joining).days
+    per_day_amount = indemnity_amount/26
 
     #calculate indemnity per day.
     if total_working_year < 5:
-        return 15  / 365
+        return 15 * per_day_amount / 365
     elif total_working_year >= 5 and total_working_days > (5*365):
-        return 30 / 365 
+        return 30 * per_day_amount / 365  
 
 def allocate_daily_indemnity():
     # Get List of Indemnity Allocation for today

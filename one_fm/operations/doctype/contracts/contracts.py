@@ -1021,9 +1021,12 @@ def get_due_contracts():
     pass
 
 @frappe.whitelist()
-def send_contract_reminders():
+def send_contract_reminders(is_scheduled_event=True):
     """
-    Generate Reminders for Contract Termination Decision Period and Contract End Internal Notification periods
+    Generate Reminders for Contract Termination Decision Period and Contract End Internal Notification periods.
+
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
     """
 
     contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':getdate()},['contract_end_internal_notification',\
@@ -1055,7 +1058,7 @@ def send_contract_reminders():
                        "link": frappe.utils.get_url_to_form("Contracts",each[3]),
                        "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
             msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
-            sendemail(recipients=[users], subject="Expiring Contracts", content=msg)
+            sendemail(recipients=[users], subject="Expiring Contracts", content=msg, is_scheduler_email=is_scheduled_event)
     if contracts_due_termination_notification:
         contracts_due_termination_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
             get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
@@ -1074,7 +1077,7 @@ def send_contract_reminders():
                        "link": frappe.utils.get_url_to_form("Contracts",each[3]),
                        "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
             msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
-            sendemail(recipients=[users], subject="Expiring Contracts", content=msg)
+            sendemail(recipients=[users], subject="Expiring Contracts", content=msg,is_scheduler_email=is_scheduled_event)
 
 @frappe.whitelist()
 def renew_contracts_by_termination_date():

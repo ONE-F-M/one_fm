@@ -1,5 +1,4 @@
 import itertools
-from datetime import timedelta
 from string import Template
 from calendar import month, monthrange
 from datetime import datetime, timedelta
@@ -920,7 +919,11 @@ def create_shift_assignment(roster, date, time):
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Shift Assignment Failed", delayed=False)
 
-def validate_shift_assignment():
+def validate_shift_assignment(is_scheduled_event=True):
+	"""
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
 	date = cstr(getdate())
 	now = datetime.strptime(format(datetime.now() + timedelta(hours=1), "%d-%m-%Y %H:00:00"), "%d-%m-%Y %H:00:00")
 	now_time = now.time()
@@ -984,9 +987,13 @@ def validate_shift_assignment():
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Develop"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False)
+		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False, is_scheduler_email=is_scheduled_event)
 
-def validate_am_shift_assignment():
+def validate_am_shift_assignment(is_scheduled_event=True):
+	"""
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
 	date = cstr(getdate())
 	end_previous_shifts("PM")
 	roster = frappe.db.sql("""
@@ -1029,7 +1036,7 @@ def validate_am_shift_assignment():
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
-		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False)
+		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False, is_scheduler_email=True)
 		frappe.enqueue(create_shift_assignment, roster = roster, date = date, time='AM', is_async=True, queue='long')
 
 def validate_pm_shift_assignment():
@@ -1699,11 +1706,15 @@ def fetch_employees_not_in_checkin():
 				WHERE notification_reminder_after_shift_start>0
 				GROUP BY notification_reminder_after_shift_start;
 			""", as_dict=1)]
-			grace_period_minute = [i.minute for i in frappe.db.sql("""
+			
+
+			late_entry_reminder_minutes = [i.minute for i in frappe.db.sql("""
 				SELECT late_entry_grace_period as minute FROM `tabShift Type`
 				WHERE late_entry_grace_period>0
 				GROUP BY late_entry_grace_period;
 			""", as_dict=1)]
+			
+
 			supervisor_reminder_minutes = [i.minute for i in frappe.db.sql("""
 				SELECT supervisor_reminder_shift_start as minute FROM `tabShift Type`
 				WHERE supervisor_reminder_shift_start>0
@@ -1727,8 +1738,8 @@ def fetch_employees_not_in_checkin():
 		shift_assignments_employees_list = frappe.db.sql(f"""
 			SELECT DISTINCT sa.employee, sa.shift_type, sa.start_datetime, sa.end_datetime,
 			sa.shift as operations_shift, st.notification_reminder_after_shift_start,
-			st.notification_reminder_after_shift_end, st.late_entry_grace_period, st.supervisor_reminder_shift_start,
-			st.supervisor_reminder_start_ends, os.supervisor as shift_supervisor,
+			st.notification_reminder_after_shift_end, st.supervisor_reminder_shift_start,
+			st.supervisor_reminder_start_ends,st.late_entry_grace_period, os.supervisor as shift_supervisor,
 			osi.account_supervisor as site_supervisor,sa.name as shift_assignment_id
 			FROM `tabShift Assignment` sa RIGHT JOIN `tabShift Type` st ON sa.shift_type=st.name
 			RIGHT JOIN `tabOperations Shift` os ON sa.shift=os.name RIGHT JOIN `tabOperations Site` osi
@@ -1807,11 +1818,13 @@ def fetch_employees_not_in_checkin():
 				if shift_assignments_employees_dict.get(i.name):
 					i = {**i, **shift_assignments_employees_dict.get(i.name), **{'log_type':'IN'}}
 					del i['name']
+					
 					# check if is_after_grace_period
-					if minute in initial_reminder_minutes:
-						i['initial_checkin_reminder']=True
-					else:
-						i['initial_checkin_reminder']=False
+					if minute in reminder_minutes:i['is_after_grace_checkin'] = True
+					 #Setup this way because the users do not want both emails(late_entry and is_after_grace_checkin) sent
+					else:i['is_after_grace_checkin'] = False	
+					if minute in late_entry_reminder_minutes:i['is_late_entry_checkin'] = True
+					else:i['is_late_entry_checkin'] = False
 					# check if supervisor reminder
 					if minute in supervisor_reminder_minutes:
 						i['is_supervisor_checkin_reminder'] = True
@@ -1915,6 +1928,8 @@ def initiate_checkin_notification(res):
 		# split employees into lists
 		if recipient.initial_checkin_reminder:
 			checkin_reminders.append(recipient)
+		elif recipient.is_late_entry_checkin and not recipient.is_after_grace_checkin:
+			after_grace_checkin_reminder.append(recipient)
 		elif recipient.is_after_grace_checkin:
 			after_grace_checkin_reminder.append(recipient)
 		elif recipient.is_supervisor_checkin_reminder:
@@ -1984,6 +1999,9 @@ def initiate_checkin_notification(res):
 		date = getdate()
 		for recipient in supervisor_checkin_reminder:
 			action_user, Role = get_action_user(recipient.employee,recipient.operations_shift)
+			action_user_id = None
+			if action_user:
+				action_user_id = frappe.db.get_value("Employee",{'status':"Active",'user_id':action_user},['employee_id'])
 			subject = _("{employee} has not checked in yet.".format(employee=recipient.employee_name))
 			action_message = _("""
 				Submit a Shift Permission for the employee to give an excuse and not need to penalize
@@ -1994,6 +2012,10 @@ def initiate_checkin_notification(res):
 			""").format(recipient=recipient, shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
 			if action_user is not None: #and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 				send_notification(title, subject, action_message, category, [action_user])
+			if action_user_id:
+				push_notification_rest_api_for_checkin(
+						action_user_id, title, subject,
+						checkin=False,arriveLate=False,checkout=True)
 
 			# notify_message = _("""Note that {employee} from Shift {shift} has Not Checked in yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
 			# if Role:
@@ -2034,6 +2056,9 @@ def initiate_checkin_notification(res):
 		date = getdate()
 		for recipient in supervisor_checkout_reminder:
 			action_user, Role = get_action_user(recipient.employee,recipient.operations_shift)
+			action_user_id = None
+			if action_user:
+				action_user_id = frappe.db.get_value("Employee",{'status':"Active",'user_id':action_user},['employee_id'])
 			subject = _("{employee} has not checked out yet.".format(employee=recipient.employee_name))
 			action_message = _("""
 				Submit a Shift Permission for the employee to give an excuse and not need to penalize
@@ -2045,6 +2070,10 @@ def initiate_checkin_notification(res):
 			""").format(recipient=recipient, shift=recipient.operations_shift, date=cstr(now_time), employee=recipient.employee, time=str(recipient.start_datetime))
 			if action_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 				send_notification(title, subject, action_message, category, [action_user])
+			if action_user_id:
+				push_notification_rest_api_for_checkin(
+						action_user_id, title, subject,
+						checkin=False,arriveLate=False,checkout=True)
 
 			# notify_message = _("""Note that {employee} from Shift {shift} has Not Checked out yet.""").format(employee=recipient.employee_name, shift=recipient.operations_shift)
 			# if Role:
@@ -2052,6 +2081,14 @@ def initiate_checkin_notification(res):
 			# 	if notify_user is not None:# and not has_checkin_record(recipient.employee, recipient.log_type, res.date):
 			# 		send_notification(title, subject, notify_message, category, notify_user)
 
+
+
+
+
+	
+	
+	
+	# return all_ended_shifts+all_started_shifts
 
 def run_checkin_reminder():
 	# execute first checkin reminder
@@ -2066,30 +2103,37 @@ def run_checkin_reminder():
 
 
 
-
-def notify_approver_about_pending_shift_request():
-    date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
-    one_hour = date_time + timedelta(minutes=60)
-    pending_shift_request = frappe.db.sql("""
-												SELECT sr.name, shift_approver, employee_name
+def notify_approver_about_pending_shift_request(is_scheduled_event=True):
+	"""
+	Args:
+		is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+	"""
+	date_time = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
+	one_hour = date_time + timedelta(minutes=60)
+	pending_shift_request = frappe.db.sql("""
+												SELECT sr.name, employee_name, ap.user as shift_approver
 												FROM `tabShift Request` sr
 												LEFT JOIN `tabOperations Shift` os ON sr.operations_shift = os.name
+									   			LEFT JOIN `tabShift Request Approvers` ap ON sr.name = ap.parent
 												WHERE sr.workflow_state = 'Pending Approver'
-												AND sr.from_date = %s
-												AND TIME(os.start_time) BETWEEN %s AND %s
+									   			AND ap.parentfield="shift_request_approver"
+												AND sr.from_date = %s 
+												AND os.start_time BETWEEN %s AND %s
 											""", (date_time.date(), date_time.time(), one_hour.time()), as_dict=1)
-    
-    if pending_shift_request:
-        data_dict = dict()
-        for obj in pending_shift_request:
-            if not data_dict.get(obj["shift_approver"]):
-                data_dict.update({obj["shift_approver"]: list()})
 
-        for obj in pending_shift_request:
-            data_dict.get(obj["shift_approver"]).append({obj.get("employee_name"): get_url_to_form("Shift Request", obj.get("name"))})
+	if pending_shift_request:
+		data_dict = dict()
 
-        for key, value in data_dict.items():
-            title = "Pending Shift Request for upcoming shift"
-            msg = frappe.render_template('one_fm/templates/emails/notify_shift_request_approver.html', context={"data": value})
-            sendemail(recipients=key, subject=title, content=msg)
-        frappe.db.commit()
+		for obj in pending_shift_request:
+			if not data_dict.get(obj["shift_approver"]):
+				data_dict.update({obj["shift_approver"]: list()})
+		
+		for obj in pending_shift_request:
+			data_dict.get(obj["shift_approver"]).append({obj.get("employee_name"): get_url_to_form("Shift Request", obj.get("name"))})
+			
+
+		for key, value in data_dict.items():
+			title = "Pending Shift Request for upcoming shift"
+			msg = frappe.render_template('one_fm/templates/emails/notify_shift_request_approver.html', context={"data": value})
+			sendemail(recipients=key, subject=title, content=msg, is_scheduler_email=is_scheduled_event)
+

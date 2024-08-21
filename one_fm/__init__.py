@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import frappe
-from hrms.hr.doctype.shift_request.shift_request import ShiftRequest
 
 from hrms.payroll.doctype.payroll_entry.payroll_entry import PayrollEntry
 from hrms.payroll.doctype.salary_slip.salary_slip import SalarySlip
 from erpnext.stock.doctype.item_price.item_price import ItemPrice
 from erpnext.setup.doctype.employee.employee import Employee
-from one_fm.api.doc_methods.shift_request import shift_request_submit, validate_approver, shift_request_cancel, validate_default_shift
 # from one_fm.api.doc_methods.payroll_entry import fill_employee_details
 # from one_fm.api.doc_methods.salary_slip import (
 # 	get_working_days_details, get_unmarked_days_based_on_doj_or_relieving, get_unmarked_days, get_data_for_eval
@@ -31,7 +29,7 @@ from one_fm.overrides.employee import EmployeeOverride
 from frappe.email.doctype.email_queue.email_queue import QueueBuilder,SendMailContext
 from one_fm.overrides.email_queue import prepare_email_content as email_content,get_unsubscribe_str_
 from frappe.workflow.doctype.workflow_action import workflow_action
-from one_fm.utils import override_frappe_send_workflow_action_email
+# from one_fm.utils import override_frappe_send_workflow_action_email
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 from one_fm.overrides.payment_entry import add_party_gl_entries_,get_valid_reference_doctypes_
 from one_fm.overrides.stock_ledger import get_valuation_rate_
@@ -60,7 +58,7 @@ StockController.make_batches = make_batches_with_supplier_batch_id
 Interview.validate_overlap = validate_interview_overlap
 PaymentEntry.add_party_gl_entries = add_party_gl_entries_
 PaymentEntry.get_valid_reference_doctypes = get_valid_reference_doctypes_
-workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
+# workflow_action.send_workflow_action_email = override_frappe_send_workflow_action_email
 stock_ledger.get_valuation_rate = get_valuation_rate_
 SendMailContext.get_unsubscribe_str = get_unsubscribe_str_
 workflow_action.filter_allowed_users = filter_allowed_users
@@ -72,10 +70,6 @@ QueueBuilder.prepare_email_content  = email_content
 EmployeeMaster.validate = EmployeeOverride.validate
 EmployeeMaster.validate_onboarding_process = validate_onboarding_process
 frappe.auth.LoginManager.post_login = post_login
-ShiftRequest.on_submit = shift_request_submit
-ShiftRequest.validate_approver = validate_approver
-ShiftRequest.on_cancel = shift_request_cancel
-ShiftRequest.validate_default_shift = validate_default_shift
 # PayrollEntry.fill_employee_details = fill_employee_details to be fixed
 # SalarySlip.get_working_days_details = get_working_days_details to be fixed
 # SalarySlip.get_unmarked_days_based_on_doj_or_relieving = get_unmarked_days_based_on_doj_or_relieving to be fixed

@@ -140,8 +140,7 @@ class LeaveApplicationOverride(LeaveApplication):
             frappe.db.set_value("Attendance Check", attcheck_exists, {'shift_assignment': "",'has_shift_assignment': 0})
         frappe.db.commit()
 
-
-    def notify_employee(self):
+    def custom_notify_employee(self):
         template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
         if not template:
             frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
@@ -160,7 +159,10 @@ class LeaveApplicationOverride(LeaveApplication):
             sendemail(recipients= [employee.user_id], subject="Leave Application", message=message,
                     reference_doctype=self.doctype, reference_name=self.name, attachments = [])
             frappe.msgprint("Email Sent to Employee {}".format(employee.employee_name))
-
+            
+            
+    def notify_employee(self):
+        self.enqueue_notification_method(self.custom_notify_employee)
 
     def validate(self):
         validate_active_employee(self.employee)
@@ -224,45 +226,49 @@ class LeaveApplicationOverride(LeaveApplication):
         It's a action that takes place on update of Leave Application.
         """
         #If Leave Approver Exist
+        
         if self.leave_approver:
-            parent_doc = frappe.get_doc('Leave Application', self.name)
-            args = parent_doc.as_dict() #fetch fields from the doc.
-            args.update({"base_url": frappe.utils.get_url()})
+            try:
+                args = dict(self.as_dict()) #fetch fields from the doc.
+                args.update({"base_url": frappe.utils.get_url()})
 
-            #Fetch Email Template for Leave Approval. The email template is in HTML format.
-            template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
-            if not template:
-                frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
-                return
-            email_template = frappe.get_doc("Email Template", template)
-            message = frappe.render_template(email_template.response_html, args)
+                #Fetch Email Template for Leave Approval. The email template is in HTML format.
+                template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
+                if not template:
+                    frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
+                    return
+                email_template = frappe.get_doc("Email Template", template)
+                message = frappe.render_template(email_template.response_html, args)
 
-            if self.proof_documents:
-                proof_doc = self.proof_documents
-                for p in proof_doc:
-                    message+=f"<hr><img src='{p.attachments}' height='400'/>"
+                if self.proof_documents:
+                    proof_doc = self.proof_documents
+                    for p in proof_doc:
+                        message+=f"<hr><img src='{p.attachments}' height='400'/>"
 
-            # attachments = get_attachment(doc) // when attachment needed
+                #send notification
+                sendemail(recipients= [self.leave_approver], subject="Leave Application", message=message,
+                        reference_doctype=self.doctype, reference_name=self.name, attachments = [])
 
-            #send notification
-            sendemail(recipients= [self.leave_approver], subject="Leave Application", message=message,
-                    reference_doctype=self.doctype, reference_name=self.name, attachments = [])
+                employee_id = frappe.get_value("Employee", {"user_id":self.leave_approver}, ["name"])
 
-            employee_id = frappe.get_value("Employee", {"user_id":self.leave_approver}, ["name"])
+                if self.total_leave_days == 1:
+                    date = "for "+cstr(self.from_date)
+                else:
+                    date = "from "+cstr(self.from_date)+" to "+cstr(self.to_date)
 
-            if self.total_leave_days == 1:
-                date = "for "+cstr(self.from_date)
-            else:
-                date = "from "+cstr(self.from_date)+" to "+cstr(self.to_date)
-
-            push_notication_message = self.employee_name+" has applied for "+self.leave_type+" "+date+". Kindly, take action."
-            push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, self.name)
+                push_notication_message = self.employee_name+" has applied for "+self.leave_type+" "+date+". Kindly, take action."
+                push_notification_rest_api_for_leave_application(employee_id,"Leave Application", push_notication_message, self.name)
+            except Exception as e:
+                frappe.log_error(message=frappe.get_traceback(), title="Leave Notification")
 
     def after_insert(self):
         self.assign_to_leave_approver()
         self.update_attachment_name()
-        self.notify_leave_approver()
-
+        self.enqueue_notification_method(self.notify_leave_approver)
+        
+    def enqueue_notification_method(self,method):
+        frappe.enqueue(method,is_async=True, job_name= str("Leave Notification"),  queue="short")
+        
     def update_attachment_name(self):
         if self.proof_documents:
             for each in self.proof_documents:
@@ -420,7 +426,8 @@ class LeaveApplicationOverride(LeaveApplication):
         if self.status == "Approved":
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 # frappe.db.set_value(), will not call the validate.
-                frappe.db.set_value("Employee", self.employee, "status", "Vacation")
+                if self.leave_type !='Sick Leave':
+                    frappe.db.set_value("Employee", self.employee, "status", "Vacation")
             self.validate_attendance_check()
         self.clear_employee_schedules()
 
@@ -516,9 +523,14 @@ def get_leave_details(employee, date):
 
 @frappe.whitelist()
 def get_leave_approver(employee):
-    employee_details = frappe.db.get_list("Employee", {"name":employee}, ["reports_to", "department"])
-    reports_to = employee_details[0].reports_to
-    department = employee_details[0].department
+    employee_details = frappe.db.get_value(
+			"Employee",
+			{"name": employee},
+			["reports_to", "department"],
+			as_dict = True
+		)
+    reports_to = employee_details.get('reports_to')
+    department = employee_details.get('department')
     employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
     approver = False
     if reports_to:

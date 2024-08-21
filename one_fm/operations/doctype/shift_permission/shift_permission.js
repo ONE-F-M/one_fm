@@ -57,25 +57,28 @@ function set_options_for_permission_type(frm) {
 };
 
 function get_shift_assignment(frm){
-	let {employee, emp_name} = frm.doc;
-	if(employee != undefined){
+	if(frm.doc.employee && frm.doc.date){
 		frappe.call({
-            method: 'one_fm.operations.doctype.shift_permission.shift_permission.fetch_approver',
-            args:{
-                'employee':employee
-            },
-            callback: function(r) {
-				let val = r.message
-                if(val && val.includes(null) != true){
-					let [name, approver, shift, shift_type] = r.message;
-					set_shift_details(frm, name, approver, shift, shift_type);
-                }
+			method: 'one_fm.operations.doctype.shift_permission.shift_permission.fetch_approver',
+			args:{
+				'employee':frm.doc.employee,
+				'date': frm.doc.date
+			},
+			callback: function(r) {
+				if(r.message){
+					set_shift_details(
+						frm, 
+						r.message.shift_assignment, 
+						r.message.approver, 
+						r.message.shift, 
+						r.message.shift_type
+					);
+				}
 				else{
-					frappe.msgprint(__(`No shift assigned to ${emp_name}. Please check again.`));
 					set_shift_details(frm, undefined, undefined, undefined, undefined);
 				}
-            }
-        });
+			}
+		});
 	}
 }
 

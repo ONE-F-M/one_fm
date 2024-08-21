@@ -11,6 +11,7 @@ from frappe.utils import today, add_days, get_url
 from frappe.core.doctype.communication.email import make
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.grd.doctype.paci import paci
+from one_fm.utils import is_scheduler_emails_enabled
 
 class MOIResidencyJawazat(Document):
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
@@ -30,8 +31,8 @@ class MOIResidencyJawazat(Document):
             self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
     def set_new_expiry_date(self):
         if self.category != "Extend":
-            employee = frappe.get_doc('Employee',self.employee)
-            self.new_residency_expiry_date = employee.work_permit_expiry_date
+            self.new_residency_expiry_date = frappe.db.get_value("Employee", self.employee, "work_permit_expiry_date")
+
 
     def set_company_address(self):
         """
@@ -194,7 +195,9 @@ def system_remind_renewal_operator_to_apply():# cron job at 4pm
     moi_list = frappe.db.get_list('MOI Residency Jawazat',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['in',('Renewal','Extend')]},
     ['one_fm_civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
-    notification_reminder(moi_list,supervisor,renewal_operator,"Renewal or Extend")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(moi_list,supervisor,renewal_operator,"Renewal or Extend")
 
 
 def system_remind_transfer_operator_to_apply():# cron job at 4pm
@@ -204,7 +207,9 @@ def system_remind_transfer_operator_to_apply():# cron job at 4pm
     moi_list = frappe.db.get_list('MOI Residency Jawazat',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Transfer')]},
     ['one_fm_civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
-    notification_reminder(moi_list,supervisor,transfer_operator,"Local Transfer")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(moi_list,supervisor,transfer_operator,"Local Transfer")
 
 
 def notification_reminder(moi_list,supervisor,operator,type):
