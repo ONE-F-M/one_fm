@@ -17,6 +17,7 @@ class PACI(Document):
     def validate(self):
         self.set_grd_values()
 
+
     def set_grd_values(self):
         if not self.grd_supervisor:
             self.grd_supervisor = frappe.db.get_value('GRD Settings', None, 'default_grd_supervisor')
@@ -24,6 +25,7 @@ class PACI(Document):
             self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_value('GRD Settings', None, 'default_grd_operator_transfer')
+    
 
     def on_update(self):
         self.validate_mandatory_fields_on_update()

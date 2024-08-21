@@ -1,0 +1,60 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-08-12 21:58:17.880684",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "hd_escalation_settings",
+  "escalation_priorities",
+  "column_break_lkbu",
+  "escalation_ticket_types"
+ ],
+ "fields": [
+  {
+   "description": "All the tickets having one of the below priority or ticket type will be escalated to the line manager once SLA is failed",
+   "fieldname": "hd_escalation_settings",
+   "fieldtype": "Section Break",
+   "label": "Escalation Settings"
+  },
+  {
+   "fieldname": "escalation_priorities",
+   "fieldtype": "Table MultiSelect",
+   "label": "Priority",
+   "options": "HD Escalation Priority"
+  },
+  {
+   "fieldname": "column_break_lkbu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "escalation_ticket_types",
+   "fieldtype": "Table MultiSelect",
+   "label": "Ticket Type",
+   "options": "HD Escalation Ticket Type"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2024-08-12 22:15:36.061843",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "HD Additional Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
