@@ -1,10 +1,12 @@
 from one_fm.utils import get_doctype_mandatory_fields
 from frappe.workflow.doctype.workflow_action.workflow_action import (
-    get_next_possible_transitions,
+
     get_workflow_name,
     get_workflow_action_url,
     get_doc_workflow_state
 )
+
+from one_fm.overrides.workflow import get_next_possible_transitions
 from frappe.model.workflow import (
     apply_workflow,
     get_workflow_state_field
