@@ -1,4 +1,5 @@
 from itertools import chain
+from json import loads
 
 import frappe
 from frappe.utils import getdate, add_days, get_url_to_form, get_url
@@ -6,6 +7,7 @@ from frappe.utils.user import get_users_with_role
 from frappe.permissions import remove_user_permission
 from one_fm.api.api import  push_notification_rest_api_for_checkin
 from one_fm.api.tasks import send_notification
+from one_fm.api.v1.utils import response
 from hrms.overrides.employee_master import *
 from one_fm.hiring.utils import (
     employee_after_insert, employee_before_insert, set_employee_name,
@@ -33,6 +35,7 @@ class EmployeeOverride(EmployeeMaster):
         self.validate_reports_to()
         self.validate_preferred_email()
         self.validate_face_recognition_enrollment()
+        self.toggle_auto_attendance()
         update_user_doc(self)
         if self.job_applicant:
             self.validate_onboarding_process()
@@ -46,6 +49,19 @@ class EmployeeOverride(EmployeeMaster):
                     "Employee", self.name, existing_user_id)
         employee_validate_attendance_by_timesheet(self, method=None)
         validate_leaves(self)
+        
+
+    def toggle_auto_attendance(self):
+        try:
+            if not self.is_new():
+                doc_before_update = self.get_doc_before_save()
+                if doc_before_update.auto_attendance != self.auto_attendance:
+                    if not any((frappe.db.exists("Has Role", {"role": ["IN", ["HR Manager", "HR Supervisor", "Attendance Manager"]], "parent": frappe.session.user}), frappe.session.user == "Administrator")):
+                        frappe.throw("You Are Not Permitted To Toggle Auto-Attendance")
+        except Exception as e:
+            frappe.log_error(title = f"{str(e)}", message = frappe.get_traceback())
+
+                    
 
     def set_employee_id_based_on_residency(self):
         if self.employee_id:
@@ -476,3 +492,23 @@ class StatusChangeVaccumValidate(NotifyAttendanceManagerOnStatusChange):
             self._message += "<div>"
 
             return self._message
+
+
+
+
+@frappe.whitelist(methods=["POST"])
+def toggle_auto_attendance(employee_names: list | str, status: bool):
+    try:
+        employee_names = loads(employee_names)
+        if any((frappe.db.exists("Has Role", {"role": ["IN", ["HR Manager", "HR Supervisor", "Attendance Manager"]], "parent": frappe.session.user}), frappe.session.user == "Administrator")):
+            frappe.db.sql(f"""
+                            UPDATE `tabEmployee`
+                            SET auto_attendance = {status}
+                            WHERE name in {tuple(employee_names)}
+                        """)
+            return response(message=f"Updated {len(employee_names)} Successfully", status_code=201)
+        return response(message="You are not permitted to carry out this action", status_code=400)
+    except Exception as e:
+        frappe.log_error(title = f"{str(e)}",message = frappe.get_traceback())
+        return response(message=str(e), status_code=400)
+
