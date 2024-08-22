@@ -1,9 +1,11 @@
 from ast import literal_eval
 import frappe,json
+
 from frappe import _
 from frappe.utils import get_fullname, nowdate, add_to_date
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
+
 from frappe.desk.form.assign_to import add
 from one_fm.api.notification import create_notification_log
 from frappe.utils import getdate, date_diff
@@ -11,9 +13,12 @@ import pandas as pd
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.processor import is_user_id_company_prefred_email_in_employee
 from hrms.hr.utils import get_holidays_for_employee
-from one_fm.api.tasks import get_action_user
+from one_fm.api.tasks import get_action_user,remove_assignment
 
 from .employee import NotifyAttendanceManagerOnStatusChange
+
+
+    
 
 def close_leaves(leave_ids, user=None):
     approved_leaves = leave_ids
@@ -385,10 +390,10 @@ class LeaveApplicationOverride(LeaveApplication):
                 att_checks = frappe.get_all("Attendance Check",{'docstatus':0,'employee':self.employee, 'date': ['between', (getdate(self.from_date), getdate(self.to_date))]},['name'])
                 if att_checks:
                     for each in att_checks:
-                        att_check = frappe.get_doc("Attendance Check",each.name)
-                        att_check.attendance_status= 'On Leave'
-                        att_check.workflow_state = "Approved"
-                        att_check.submit()
+                        frappe.db.set_value("Attendance Check",each.name,'workflow_state','Approved')
+                        frappe.db.set_value("Attendance Check",each.name,'attendance_status','On Leave')
+                        frappe.db.set_value("Attendance Check",each.name,'docstatus',1)
+                        remove_assignment(each.name)
             frappe.db.commit()
         except:
             frappe.log_error(title = "Error Updating Attendance Check",message=frappe.get_traceback())
