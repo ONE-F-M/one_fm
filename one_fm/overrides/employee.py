@@ -32,6 +32,7 @@ class EmployeeOverride(EmployeeMaster):
         self.validate_status()
         self.validate_reports_to()
         self.validate_preferred_email()
+        self.validate_face_recognition_enrollment()
         update_user_doc(self)
         if self.job_applicant:
             self.validate_onboarding_process()
@@ -51,6 +52,18 @@ class EmployeeOverride(EmployeeMaster):
             residency_employee_id = get_employee_id_based_on_residency(self.employee_id, self.under_company_residency, self.name, self.employment_type)
             if self.employee_id != residency_employee_id:
                 self.employee_id = residency_employee_id
+    
+    def validate_face_recognition_enrollment(self):
+        # Skip the validation while creating new employee
+        if self.is_new():
+            return
+        
+        prev_enrollment = self.get_doc_before_save().get('enrolled')
+
+        # Allow update if the context flag is set
+        if not frappe.flags.allow_enrollment_update:
+            if prev_enrollment != self.enrolled:
+                frappe.throw(f"Enrollment field is read-only and cannot be modified.")
 
     def before_save(self):
         self.assign_role_profile_based_on_designation()

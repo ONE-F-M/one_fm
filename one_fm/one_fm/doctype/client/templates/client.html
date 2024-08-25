@@ -1,0 +1,75 @@
+{% extends "templates/web.html" %}
+{% block head %}
+	<meta name="robots" content="noindex">
+	{% if head_html is defined -%}
+	{{ head_html or "" }}
+	{%- endif %}
+
+	{%- if theme and theme.name != 'Standard' -%}
+	<link type="text/css" rel="stylesheet" href="{{ theme.theme_url }}">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+
+	{%- else -%}
+	{{ include_style('website.bundle.css') }}
+	{%- endif -%}
+
+	{%- for link in web_include_css %}
+	{{ include_style(link) }}
+	{%- endfor -%}
+{% endblock %}
+
+{% block breadcrumbs %}
+	{% include "templates/includes/breadcrumbs.html" %}
+{% endblock %}
+
+{% block header %}
+<div class="mb-2">
+	<h3>{{ title }}</h3>
+</div>
+{% endblock %}
+
+{% block page_content %}
+<div class="mt-4">
+	<div class="row row-cols-1 row-cols-md-3">
+		<div class="col mb-4">
+			<a class="card h-100 shadow bg-white rounded text-center" href="/client/weekly_attendance_summary?id={{id}}">
+				<div >
+					<div class="card-body">
+						<h5 class="card-title">
+							<span><i class="fas fa-calendar-week"></i></span> 
+							Weekly Attendance Summary
+						</h5>
+					</div>
+				</div>
+			</a>
+		</div>
+		<div class="col mb-4">
+			<a class="card h-100 shadow bg-white rounded text-center" href="/client/monthly_attendance_summary?id={{id}}">
+				<div>
+					<div class="card-body">
+							<h5 class="card-title">
+								<span><i class="fas fa-calendar-alt"></i></span>
+								Monthly Attendance Summary
+							</h5>
+					</div>
+				</div>
+			</a>
+		</div>
+		<div class="col mb-4">
+			<a class="card h-100 shadow bg-white rounded text-center" href="/client/monthly-attendance-schedule?id={{id}}">
+				<div >
+					<div class="card-body">
+							<h5 class="card-title">
+								<span><i class="fas fa-clipboard-list"></i></span>	
+								Monthly Attendance Schedule
+							</h5>
+					</div>
+				</div>
+			</a>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

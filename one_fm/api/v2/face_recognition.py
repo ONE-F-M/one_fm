@@ -68,6 +68,9 @@ def enroll(employee_id: str = None, video: str = None) -> dict:
         #frappe.enqueue('one_fm.operations.doctype.face_recognition_log.face_recognition_log.create_face_recognition_log',**{'data':data})
         if res.enrollment == "FAILED":
             return response(res.message, 400, None, res.data)
+        
+        # Set a context flag to indicate an API update (It will affect in 'Employee' validate method)
+        frappe.flags.allow_enrollment_update = True
 
         doc.enrolled = 1
         doc.save(ignore_permissions=True)

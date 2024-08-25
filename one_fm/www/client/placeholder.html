@@ -1,0 +1,30 @@
+<style>
+    .loading-skeleton div {
+        color: transparent;
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: #eee;
+        border-color: #eee;
+    }
+    .loading-skeleton div::placeholder {
+        color: transparent;
+    }
+    @keyframes loading-skeleton {
+        from {
+            opacity: 0.4;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    .loading-skeleton {
+        pointer-events: none;
+        animation: loading-skeleton 1s infinite alternate;
+    }
+    .loading-skeleton img {
+        filter: grayscale(100) contrast(0%) brightness(1.8);
+    }
+</style>
+<div class="loading-skeleton summary-placeholder m-4">
+    <div class="col-xs-12 col-md-12 rounded" style="min-height:250px; width:100%;"></div>
+</div>
