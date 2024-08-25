@@ -300,6 +300,7 @@ class DataExporter:
 						.select("*")
 						.where(child_doctype_table.parent == doc.name)
 						.where(child_doctype_table.parentfield == c["parentfield"])
+						.where(child_doctype_table.parenttype == self.doctype)
 						.orderby(child_doctype_table.idx)
 					)
 					for ci, child in enumerate(data_row.run(as_dict=True)):
