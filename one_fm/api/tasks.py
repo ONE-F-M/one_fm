@@ -372,15 +372,15 @@ def checkin_checkout_query(date, shift_type, log_type):
 
 
 
-def remove_assignment(attendance_check,doctype=None):
-    """Remove all usesr assignments in a document, 
+def remove_assignment(docname,doctype=None):
+    """Remove all user assignments in a document, 
     It defaults to attendance check if no doctype is set"""
     if not doctype:
         doctype="Attendance Check" 
-    open_todo = get_open_todos(doctype,attendance_check)
+    open_todo = get_open_todos(doctype,docname)
     if open_todo:
         for each in open_todo:
-            remove("Attendance Check",attendance_check,each.allocated_to,ignore_permissions=1)
+            remove(doctype,docname,each.allocated_to,ignore_permissions=1)
 
 @frappe.whitelist()
 def get_action_user(employee, shift):
