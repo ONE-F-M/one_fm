@@ -31,6 +31,7 @@ class WorkPermit(Document):
         self.check_required_document_for_workflow()
         self.notify()
         self.send_work_permit_receipt_to_perm_operator()
+        self.set_new_pam_details_in_employee()
         # frappe.throw(f"""{self.reference_number_on_pam_registration}, {self.workflow_state}""")
         
 
@@ -346,6 +347,25 @@ class WorkPermit(Document):
     @frappe.whitelist()
     def get_required_documents(self):
         set_required_documents(self)
+
+    def set_new_pam_details_in_employee(self):
+        if self.workflow_state == "Completed":
+            employee = frappe.get_doc("Employee", self.employee)
+            fields_to_update = {}
+
+            if self.new_pam_designation and self.new_pam_designation != employee.one_fm_pam_designation:
+                fields_to_update['one_fm_pam_designation'] = self.new_pam_designation
+
+            if self.new_pam_file and self.new_pam_file != employee.pam_file:
+                fields_to_update['pam_file'] = self.new_pam_file
+
+            if self.new_work_permit_salary_ and self.new_work_permit_salary_ != employee.work_permit_salary:
+                fields_to_update['work_permit_salary'] = self.new_work_permit_salary_
+
+            if fields_to_update:
+                employee.update(fields_to_update)
+                employee.save()
+                frappe.db.commit()
 
 def set_required_documents(doc):
     if frappe.db.exists('Work Permit Required Documents Template', {'work_permit_type':doc.work_permit_type}):

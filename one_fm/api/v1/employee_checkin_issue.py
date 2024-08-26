@@ -70,7 +70,7 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 
 		if not validate_date(date):
 			return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
-		
+
 		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
 		if not employee:
@@ -128,11 +128,11 @@ def get_shift_details(employee):
 	shift = shift_type = shift_assignment = shift_supervisor = None
 
 	shift_details = fetch_approver(employee=employee)
-	shift_assignment = shift_details.get("assigned_shift") 
+	shift_assignment = shift_details.get("assigned_shift")
 	shift_supervisor = shift_details.get("shift_supervisor"),
 	shift = shift_details.get("shift")
 	shift_type = shift_details.get("shift_type")
-	
+
 	if not shift_assignment:
 		return frappe._dict({'found':False})
 

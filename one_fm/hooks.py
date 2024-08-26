@@ -33,7 +33,8 @@ app_include_js = [
 		"/assets/one_fm/js/desk.js",
         "/assets/one_fm/js/showdown.min.js",
         "purchase.bundle.js",
-		"/assets/one_fm/js/form_overrides/workflow_override.js"
+		"/assets/one_fm/js/form_overrides/workflow_override.js",
+        "text_editor.bundle.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -114,7 +115,8 @@ doctype_js = {
     "Gratuity": "public/js/doctype_js/gratuity.js",
     "Goal": "public/js/doctype_js/goal.js",
     "Task": "public/js/doctype_js/task.js",
-    "HD Ticket": "public/js/doctype_js/hd_ticket.js"
+    "HD Ticket": "public/js/doctype_js/hd_ticket.js",
+    "Appraisal": "public/js/doctype_js/appraisal.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -124,6 +126,7 @@ doctype_list_js = {
 	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
 	"Wiki Page": "public/js/doctype_list_js/wiki_page_list.js",
+    "Employee": "public/js/doctype_list_js/employee_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -246,7 +249,8 @@ doc_events = {
       					"one_fm.overrides.hd_ticket.send_google_chat_notification",
                   		"one_fm.overrides.hd_ticket.notify_ticket_raiser_of_receipt"
                     	], 
-		"on_change": "one_fm.overrides.hd_ticket.notify_issue_raiser_about_priority"
+		"on_change": "one_fm.overrides.hd_ticket.notify_issue_raiser_about_priority",
+		"on_update": "one_fm.overrides.hd_ticket.apply_ticket_escalation"
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -330,10 +334,10 @@ doc_events = {
 		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
 	"Salary Slip": {
-		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
+		"before_submit": "one_fm.overrides.salary_slip.salary_slip_before_submit",
 		"validate": [
-			"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
-			"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
+		# 	"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
+			"one_fm.overrides.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
 		]
 	},
 	"Salary Structure Assignment": {
@@ -355,9 +359,9 @@ doc_events = {
 		"on_update": "one_fm.one_fm.payroll_utils.on_update_employee_incentive",
 		"on_update_after_submit": "one_fm.one_fm.payroll_utils.on_update_after_submit_employee_incentive",
 	},
-	"Payroll Entry": {
-		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
-	},
+	# "Payroll Entry": {
+	# 	"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
+	# },
 	"Expense Claim": {
 		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
 	},
@@ -517,7 +521,10 @@ override_doctype_class = {
     "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
     "Goal": "one_fm.overrides.goal.GoalOverride",
     "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
-    "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride"
+    "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride",
+    "Payroll Entry": "one_fm.overrides.payroll_entry.PayrollEntryOverride",
+    "Salary Slip": "one_fm.overrides.salary_slip.SalarySlipOverride",
+    
     # "User": "one_fm.overrides.user.UserOverride"
 }
 
@@ -719,7 +726,7 @@ scheduler_events = {
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
 		],
 		"00 08 * * *": [ # runs at 8:00 am
-			'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
+			'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application',
 			'one_fm.tasks.one_fm.daily.notify_for_employee_docs_expiry'
 		],
 		"05 00 * * *":[
@@ -786,7 +793,7 @@ fixtures = [
 	},
 	{
 		"dt": "Role",
-		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager", "HR Supervisor", "Attendance Manager"]]]
 	},
 	{
 		"dt": "Assignment Rule",
@@ -825,7 +832,8 @@ override_whitelisted_methods = {
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate",
-	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens"
+	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens",
+    "hrms.payroll.doctype.payroll_entry.payroll_entry.get_start_end_dates": "one_fm.overrides.payroll_entry.get_start_end_dates"
 }
 
 

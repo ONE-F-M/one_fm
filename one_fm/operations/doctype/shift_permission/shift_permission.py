@@ -168,9 +168,14 @@ def fetch_approver(employee, date=None):
 		)
 		if employee_shift and len(employee_shift)>0:
 			approver = get_approver(employee, date)
-			return employee_shift[0].name, approver, employee_shift[0].shift, employee_shift[0].shift_type
-
-		frappe.throw("No shift assigned to {employee}".format(employee=employee))
+			return {
+				'shift_assignment':employee_shift[0].name, 
+				'approver':approver, 
+				'shift':employee_shift[0].shift, 
+				'shift_type':employee_shift[0].shift_type
+			}
+	
+	frappe.throw("No shift assigned to {employee}".format(employee=employee))
 
 
 # approve open shift permission before marking attendance
