@@ -336,27 +336,15 @@ def set_on_hold_employees(
 	Employee = frappe.qb.DocType("Employee")
 	Attendance = frappe.qb.DocType("Attendance")
 
-	attendance_sub_query = None
-	if filters.payroll_type == "Basic":
-		attendance_sub_query = Employee.employee.isin(
-			frappe.qb.from_(Attendance)
-			.select(Attendance.employee)
-			.where(
-				(Attendance.attendance_date[filters.start_date:filters.end_date])
-				& (Attendance.status == "On Hold")
-				& (Attendance.roster_type == filters.payroll_type)
-			)
+	attendance_sub_query = Employee.employee.isin(
+		frappe.qb.from_(Attendance)
+		.select(Attendance.employee)
+		.where(
+			(Attendance.attendance_date[filters.start_date:filters.end_date])
+			& (Attendance.status == "On Hold")
+			& (Attendance.roster_type == filters.payroll_type)
 		)
-	elif filters.payroll_type == "Over-Time":
-		attendance_sub_query = Employee.employee.isin(
-			frappe.qb.from_(Attendance)
-			.select(Attendance.employee)
-			.where(
-				(Attendance.attendance_date[filters.start_date:filters.end_date])
-				& (Attendance.status == "On Hold")
-				& (Attendance.roster_type == filters.payroll_type)
-			)
-		)
+	)
 
 	query = (
 	frappe.qb.from_(Employee)
