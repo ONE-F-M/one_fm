@@ -27,6 +27,7 @@ from one_fm.utils import send_workflow_action_email, is_scheduler_emails_enabled
 class WorkPermit(Document):
     def on_update(self):
         self.update_work_permit_details_in_tp()
+        self.update_passport_details_in_employee()
         self.check_required_document_for_workflow()
         self.notify()
         self.send_work_permit_receipt_to_perm_operator()
@@ -198,6 +199,26 @@ class WorkPermit(Document):
                     })
             tp.save()
             tp.reload()
+
+
+    def update_passport_details_in_employee(self):
+        """
+        runs: `on_update`
+        param: work_permit object
+
+        This method sets employee passport details in employee doctype
+        """
+        updated_values = {}
+
+        if self.new_passport_type:
+            updated_values['one_fm_passport_type'] = self.new_passport_type
+        if self.new_passport_number:
+            updated_values['passport_number'] = self.new_passport_number
+        if self.new_passport_expiry_date:
+            updated_values['valid_upto'] = self.new_passport_expiry_date
+
+        if self.employee and updated_values:
+            frappe.db.set_value('Employee', self.employee, updated_values)
 
     def on_submit(self):
         if self.work_permit_type not in ['Cancellation', 'New Kuwaiti', 'Local Transfer'] and self.workflow_state != "Rejected":
