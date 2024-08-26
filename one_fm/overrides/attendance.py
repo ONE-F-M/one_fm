@@ -1102,7 +1102,7 @@ class AttendanceMarking():
                         (checkin.shift_assignment,"IN",early_exit_doc.time), 
                         as_dict=1
                     )
-                    return bool(check)
+                    return not bool(check)
         return False
 
 
@@ -1245,7 +1245,6 @@ class AttendanceMarking():
             frappe.db.commit()
         except Exception as e:
             frappe.log_error(message=frappe.get_traceback(), title=f"Hourly Attendance Marking - {str(e)}")
-
 
 
 def run_attendance_marking_hourly():

@@ -117,6 +117,7 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 			employee_checkin_issue_doc.shift_supervisor = shift_supervisor
 			employee_checkin_issue_doc.shift = shift
 			employee_checkin_issue_doc.shift_type = shift_type
+			employee_checkin_issue_doc.flags.ignore_permissions = 1
 			employee_checkin_issue_doc.save()
 			apply_workflow(employee_checkin_issue_doc, "Submit for Approval")
 
