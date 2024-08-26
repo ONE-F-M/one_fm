@@ -9,7 +9,7 @@ frappe.ui.form.on('Salary Slip', {
 	employee:function(frm){
 		if(frm.doc.employee){
 			frappe.call({
-				method: 'one_fm.api.doc_methods.salary_slip.validate_multi_structure_slip',
+				method: 'one_fm.overrides.salary_slip.validate_multi_structure_slip',
 				args: {'doc':frm.doc},
 				callback: function(r) {
 					
