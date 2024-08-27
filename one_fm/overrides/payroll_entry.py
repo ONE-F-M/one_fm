@@ -5,10 +5,8 @@ from frappe import _
 from frappe.utils import (
 	add_to_date,
 	cint,
-	getdate,
+	getdate
 )
-from frappe.query_builder.functions import Coalesce, Count
-
 from hrms.payroll.doctype.payroll_entry.payroll_entry import ( PayrollEntry, get_employee_list, get_salary_structure, remove_payrolled_employees, 
 															  set_fields_to_select, set_searchfield, set_match_conditions)
 
@@ -376,27 +374,28 @@ def set_on_hold_employees(
 		query = query.offset(offset)
 
 	employees = query.run(as_dict=as_dict)
-	mpi_exists = frappe.db.exists("Missing Payroll Information", { "payroll_entry": filters.payroll_entry})
-	
-	missing_payroll_info = []
-	for employee in employees:
-		missing_payroll_info.append({
-			"employee": employee.employee,
-			"salary_mode": "N/A",
-			"issue": "On-Hold attendance records"
-		})
 
-	if mpi_exists:
-		mpi = frappe.get_doc("Missing Payroll Information", mpi_exists)
-		for info in missing_payroll_info:
-			mpi.append("missing_payroll_information_detail", info)
-		mpi.save(ignore_permissions=True)
+	if len(employees) > 0:
+		mpi_exists = frappe.db.exists("Missing Payroll Information", { "payroll_entry": filters.payroll_entry})
+		missing_payroll_info = []
+		for employee in employees:
+			missing_payroll_info.append({
+				"employee": employee.employee,
+				"salary_mode": "N/A",
+				"issue": "On-Hold attendance records"
+			})
 
-	else:
-		mpi = frappe.get_doc({
-			"doctype":"Missing Payroll Information",
-			"payroll_entry": filters.payroll_entry,
-			"missing_payroll_information_detail": missing_payroll_info
-		}).insert(ignore_permissions=True)
-	
-	frappe.db.commit()
+		if mpi_exists:
+			mpi = frappe.get_doc("Missing Payroll Information", mpi_exists)
+			for info in missing_payroll_info:
+				mpi.append("missing_payroll_information_detail", info)
+			mpi.save(ignore_permissions=True)
+
+		else:
+			mpi = frappe.get_doc({
+				"doctype":"Missing Payroll Information",
+				"payroll_entry": filters.payroll_entry,
+				"missing_payroll_information_detail": missing_payroll_info
+			}).insert(ignore_permissions=True)
+		
+		frappe.db.commit()
