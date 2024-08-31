@@ -16,6 +16,20 @@ from one_fm.processor import sendemail
 from one_fm.utils import is_scheduler_emails_enabled
 
 class MedicalInsurance(Document):
+    def before_insert(self):
+        self.cancel_existing()
+    
+    def cancel_existing(self):
+        """Cancel existing documents for that employee"""
+        
+        existing_docs = frappe.get_all(self.doctype,{'name':['!=',self.name],'docstatus':1,'employee':self.employee})
+        if existing_docs:
+            for one in existing_docs:
+                _doc = frappe.get_doc(self.doctype,one)
+                _doc.flags.ignore_links = True
+                _doc.cancel()
+                frappe.db.set_value(self.doctype,_doc.name,'workflow_state','Cancelled')
+                frappe.db.commit()
 
     def validate(self):
         self.set_value()
