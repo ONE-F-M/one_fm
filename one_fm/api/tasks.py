@@ -1,9 +1,11 @@
 import itertools
 from string import Template
 from calendar import month, monthrange
+from erpnext.crm.utils import get_open_todos
 from datetime import datetime, timedelta
 from frappe import enqueue
 import frappe, erpnext
+from frappe.desk.form.assign_to import remove
 from frappe import _
 from frappe.model.workflow import apply_workflow
 from frappe.utils import (
@@ -367,6 +369,18 @@ def checkin_checkout_query(date, shift_type, log_type):
 						AND empChkin.shift_type='{shift_type}')
 					""".format(date=cstr(date), shift_type=shift_type, log_type=log_type, permission_type=permission_type), as_dict=1)
 	return query
+
+
+
+def remove_assignment(docname,doctype=None):
+    """Remove all user assignments in a document, 
+    It defaults to attendance check if no doctype is set"""
+    if not doctype:
+        doctype="Attendance Check" 
+    open_todo = get_open_todos(doctype,docname)
+    if open_todo:
+        for each in open_todo:
+            remove(doctype,docname,each.allocated_to,ignore_permissions=1)
 
 @frappe.whitelist()
 def get_action_user(employee, shift):

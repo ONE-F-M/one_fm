@@ -17,6 +17,22 @@ class MOIResidencyJawazat(Document):
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
             ['phone_no', 'email', 'company_name_arabic'], as_dict=1)
     
+    def before_insert(self):
+        self.cancel_existing()
+    
+    def cancel_existing(self):
+        """Cancel existing documents for that employee"""
+        
+        existing_docs = frappe.get_all(self.doctype,{'name':['!=',self.name],'docstatus':1,'employee':self.employee})
+        if existing_docs:
+            for one in existing_docs:
+                _doc = frappe.get_doc(self.doctype,one)
+                _doc.flags.ignore_links = True
+                _doc.cancel()
+                frappe.db.set_value(self.doctype,_doc.name,'workflow_state','Cancelled')
+                frappe.db.commit()
+
+    
     def validate(self):
         self.set_grd_values()
         self.set_new_expiry_date()

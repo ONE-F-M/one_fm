@@ -25,8 +25,28 @@ from one_fm.utils import send_workflow_action_email, is_scheduler_emails_enabled
 
 # from pdfminer.pdfparser import PDFParser, PDFDocument
 class WorkPermit(Document):
+    
+    def before_insert(self):
+        self.cancel_existing()
+    
+    def cancel_existing(self):
+        """Cancel existing documents for that employee"""
+        
+        existing_docs = frappe.get_all(self.doctype,{'name':['!=',self.name],'docstatus':1,'employee':self.employee})
+        if existing_docs:
+            for one in existing_docs:
+                _doc = frappe.get_doc(self.doctype,one)
+                _doc.flags.ignore_links = True
+                _doc.cancel()
+                frappe.db.set_value(self.doctype,_doc.name,'workflow_state','Cancelled')
+                frappe.db.commit()
+                
+                
+                
+                
     def on_update(self):
         self.update_work_permit_details_in_tp()
+        self.update_passport_details_in_employee()
         self.check_required_document_for_workflow()
         self.notify()
         self.send_work_permit_receipt_to_perm_operator()
@@ -199,6 +219,26 @@ class WorkPermit(Document):
                     })
             tp.save()
             tp.reload()
+
+
+    def update_passport_details_in_employee(self):
+        """
+        runs: `on_update`
+        param: work_permit object
+
+        This method sets employee passport details in employee doctype
+        """
+        updated_values = {}
+
+        if self.new_passport_type:
+            updated_values['one_fm_passport_type'] = self.new_passport_type
+        if self.new_passport_number:
+            updated_values['passport_number'] = self.new_passport_number
+        if self.new_passport_expiry_date:
+            updated_values['valid_upto'] = self.new_passport_expiry_date
+
+        if self.employee and updated_values:
+            frappe.db.set_value('Employee', self.employee, updated_values)
 
     def on_submit(self):
         if self.work_permit_type not in ['Cancellation', 'New Kuwaiti', 'Local Transfer'] and self.workflow_state != "Rejected":
