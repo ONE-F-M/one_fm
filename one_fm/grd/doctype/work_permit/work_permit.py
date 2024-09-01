@@ -208,8 +208,8 @@ class WorkPermit(Document):
                 self.set_work_permit_attachment_in_employee_doctype(self.upload_work_permit,self.new_work_permit_expiry_date)
             else:
                 msg = False
-                if not self.upload_work_permit or not self.attach_invoice:
-                    msg = "Upload the required documents(Work Permit and Invoice)"
+                if  not self.attach_invoice:
+                    msg = "Upload the required document(Invoice)"
                 if not self.new_work_permit_expiry_date:
                     msg = ((msg+" and ") if msg else "") + "Set <i>Updated Work Permit Expiry Date</i>"
                 if msg:
