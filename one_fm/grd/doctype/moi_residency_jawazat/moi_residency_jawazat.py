@@ -100,7 +100,7 @@ class MOIResidencyJawazat(Document):
         paci.create_PACI_for_transfer(self.employee)
 
     def validate_mandatory_fields_on_submit(self):
-        field_list = [{'Upload Payment Invoice':'invoice_attachment'},{'Upload Residency':'residency_attachment'},{'Updated Residency Expiry Date':'new_residency_expiry_date'}]
+        field_list = [{'Upload Payment Invoice':'invoice_attachment'},{'Updated Residency Expiry Date':'new_residency_expiry_date'}]
         self.set_mendatory_fields(field_list)
 
     def set_mendatory_fields(self,field_list):
@@ -111,7 +111,7 @@ class MOIResidencyJawazat(Document):
                     mandatory_fields.append(field)
 
         if len(mandatory_fields) > 0:
-            message= 'Mandatory fields required in Work Permit form<br><br><ul>'
+            message= 'Mandatory fields required in MOI Residency Jawazat form<br><br><ul>'
             for mandatory_field in mandatory_fields:
                 message += '<li>' + mandatory_field +'</li>'
             message += '</ul>'
