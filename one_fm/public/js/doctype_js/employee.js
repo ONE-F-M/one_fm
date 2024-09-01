@@ -1,6 +1,7 @@
 frappe.ui.form.on('Employee', {
 	refresh: function(frm) {
 		hideFields(frm);
+		setAutoAttendanceReadOnly(frm);
 
 		set_grd_fields(frm)
 		frm.trigger('set_queries');
@@ -237,4 +238,11 @@ const TransferToNonShift = frm => {
 function setCharAt(str,index,chr) {
     if(index > str.length-1) return str;
     return str.substring(0,index) + chr + str.substring(index+1);
+}
+
+const setAutoAttendanceReadOnly = (frm) => {
+	if (["HR Manager", "HR Supervisor", "Attendance Manager"].some(role => frappe.user.has_role(role))){
+		frm.set_df_property('auto_attendance', 'read_only', 0)
+	}
+
 }

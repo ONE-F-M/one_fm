@@ -45,7 +45,6 @@ var set_employee_details = function(frm){
                 frm.set_value('nationality', r.message.one_fm_nationality);
 				frm.set_value('employee_id', r.message.employee_id);
                 frm.set_value('residency_expiry_date',r.message.residency_expiry_date);
-                frm.set_value("new_civil_id_expiry_date", r.message.work_permit_expiry_date);
                
             }
         })

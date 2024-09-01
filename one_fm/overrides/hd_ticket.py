@@ -1,9 +1,12 @@
 import frappe, requests, re
+from frappe import _
 from frappe.utils import getdate
 from json import dumps
 from httplib2 import Http
+from frappe.desk.form.assign_to import get as get_assignments,add as add_assignment
 
 from one_fm.processor import sendemail
+from one_fm.api.doc_events import get_employee_user_id
 
 def send_google_chat_notification(doc, method):
     """Hangouts Chat incoming webhook to send the Issues Created, in Card Format."""
@@ -115,6 +118,40 @@ def notify_issue_raiser_about_priority(doc, event):
                 )
                 msg = frappe.render_template('one_fm/templates/emails/notify_ticket_raiser_about_priority.html', context=context)
                 frappe.enqueue(method=sendemail, queue="short", recipients=doc.raised_by, subject=title, content=msg, is_external_mail=True, is_scheduler_email=True)
+
+
+def apply_ticket_escalation(doc, event):
+    if doc.agreement_status != 'Failed':
+        return
+
+    additional_settings = frappe.get_single("HD Additional Settings")
+    escalation_priorities = [record.priority for record in additional_settings.escalation_priorities]
+    escalation_ticket_types = [record.ticket_type for record in additional_settings.escalation_ticket_types]
+
+    if doc.priority not in escalation_priorities and doc.ticket_type not in escalation_ticket_types:
+        return
+
+    # Fetch bug buster and his reports to details
+    bug_buster = frappe.db.exists("Employee", {'user_id': doc.custom_bug_buster})
+    if not bug_buster:
+        return
+
+    bug_buster_reports_to_user_id = get_employee_user_id(frappe.db.get_value('Employee', bug_buster, 'reports_to'))
+
+    # Fetch doc current assignments
+    doc_assignments = [assignment.owner for assignment in get_assignments({'doctype': doc.doctype, 'name': doc.name})]
+
+    # If reports to is not assigned then add assignment
+    if bug_buster_reports_to_user_id not in doc_assignments:
+        add_assignment({
+            'assign_to': [bug_buster_reports_to_user_id],
+            'doctype': doc.doctype,
+            'name': doc.name,
+            'description': _('HD Ticket {0} has been assigned to you due to escalation for failed SLA').format(doc.name),
+        })
+
+
+
 
 @frappe.whitelist()
 def create_dev_ticket(name, description):
