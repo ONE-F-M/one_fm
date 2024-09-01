@@ -54,7 +54,7 @@ frappe.ui.form.on('Work Permit', {
         
     },
     pam_file: function(frm) {
-        set_authorized_signatory_name_arabic(frm);
+        // set_authorized_signatory_name_arabic(frm);
     },
     grd_operator_apply_work_permit_on_ashal: function(frm){
         set_dates_grd_operator(frm);
