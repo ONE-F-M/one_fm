@@ -38,6 +38,14 @@ frappe.ui.form.on('Work Permit', {
     employee: function(frm) {
         set_required_documents(frm);
     },
+    passport_expiry_date: function(frm) {
+        if (frm.doc.passport_expiry_date){
+            if (!is_day_difference_less(frm.doc.passport_expiry_date, 365)){
+                frm.toggle_display("new_passport_details_section", false)
+
+            }
+        }
+    },
     refresh(frm) {
         set_button_for_medical_insurance_transfer(frm);
         set_restart_application(frm);
@@ -173,7 +181,7 @@ var set_employee_details = function(frm){
                 fieldname:["one_fm_duration_of_work_permit","employee_name","one_fm_nationality","one_fm_civil_id","gender","date_of_birth","work_permit_salary","pam_file_number","employee_id","valid_upto","first_name","middle_name","one_fm_third_name","last_name","one_fm_first_name_in_arabic","one_fm_second_name_in_arabic","one_fm_third_name_in_arabic","one_fm_last_name_in_arabic","one_fm_religion","marital_status","one_fm_passport_type","passport_number","one_fm_date_of_entry_in_kuwait","one_fm__highest_educational_qualification","one_fm_date_of_issuance_of_visa","one_fm_pam_designation","one_fm_salary_type","work_permit_salary","one_fm_visa_reference_number"]
             }, 
             callback: function(r) { 
-        
+   
                 // set the returned value in a field
                 frm.set_value('duration_of_work_permit', r.message.one_fm_duration_of_work_permit);
                 frm.set_value('nationality', r.message.one_fm_nationality);
@@ -203,11 +211,22 @@ var set_employee_details = function(frm){
                 frm.set_value('third_name_in_arabic', r.message.one_fm_third_name_in_arabic);
                 frm.set_value('last_name_in_arabic', r.message.one_fm_last_name_in_arabic);
                 frm.set_value('visa_reference_number', r.message.one_fm_visa_reference_number);
-
+                
             }
         })
     }
 };
+
+const is_day_difference_less = (date_to_check, threshold) => {
+    const today = new Date();
+    const timeDifference = new Date(date_to_check) - today;
+    const dayDifference = timeDifference / (1000 * 3600 * 24);
+    console.log(dayDifference, threshold)
+    return dayDifference < threshold
+
+}
+
+
 var set_attach_cancellation_on = function(frm){
     if(frm.doc.work_permit_cancellation){
         frm.set_value('attach_cancellation_on',frappe.datetime.now_datetime());    
