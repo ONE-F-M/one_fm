@@ -27,6 +27,44 @@ from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
 
 class Preparation(Document):
+                    
+    def on_update_after_submit(self):
+        self.compare_preparation_record()
+    
+    def compare_preparation_record(self):
+        """Compare the data of preparation record child table before it was saved with the most updated version
+        and flag changes
+        """
+        old_preparation_record = {}
+        new_preparation_record = {}
+        old_doc = self.get_doc_before_save()
+        for each in old_doc.preparation_record: 
+            old_preparation_record[each.name] =  each
+        old_row_ids = [i.name for i in old_doc.preparation_record ]
+        for one in self.preparation_record:
+            new_preparation_record[one.name] =  one
+        new_row_ids = [i.name for i in self.preparation_record ]
+        
+        for ind in old_row_ids: #Find Removed rows 
+            if ind not in new_row_ids:
+                # self.fetch_linked_records(existing_preparation_record.get(ind)) # Delete for this employee
+                cancel_delete_doc("PACI",self.name,old_preparation_record.get(ind))
+                cancel_delete_doc("Work Permit",self.name,old_preparation_record.get(ind))
+                cancel_delete_doc("MOI Residency Jawazat",self.name,old_preparation_record.get(ind))
+                cancel_delete_doc("Medical Insurance",self.name,old_preparation_record.get(ind))
+            else:
+                if old_preparation_record.get(ind).get('renewal_or_extend')!=new_preparation_record.get(ind).get('renewal_or_extend'):
+                    handle_renewal_changes(old_preparation_record.get(ind),new_preparation_record.get(ind),self.name) #Create or Delete based on choices
+        for each in new_row_ids: #Find New rows added
+            if each not in old_row_ids:
+                handle_creation_of_grd_docs(new_preparation_record.get(each),self.name)
+                 
+            
+        
+            
+    
+    
+    
     def validate(self):
         self.set_grd_values()
         self.set_hr_values()
@@ -239,3 +277,65 @@ def get_grd_renewal_extension_cost(renewal_or_extend, no_of_years=False):
 		result = frappe.db.sql(query, as_dict=True)
 		if result and len(result) > 0:
 			return result[0]
+
+def handle_creation_of_grd_docs(row,source):
+    """
+            Handle the creation of grd documents for  new rows just added after the submission of a preparation  document
+    Args:
+        row (dict): dict containing employee information
+    """
+    try:
+        employee_doc = frappe.get_doc("Employee",row.employee)
+        work_permit.create_wp_renewal(employee_doc,row.renewal_or_extend,source)
+        frappe.db.commit() #because Medical Insurance depends on the work permit
+        medical_insurance.create_mi_record(frappe.get_doc('Work Permit',{'preparation':source,'employee':employee_doc.employee}))
+        moi_residency_jawazat.create_moi_record(employee_doc,row.renewal_or_extend,preparation_name=source)
+        paci.create_PACI(employee_doc,row.renewal_or_extend,source)   
+    except:
+        frappe.log_error(title=f"Error Creating New GRD documents  for {row.employee} </b>",message=frappe.get_traceback()) 
+    
+    
+def handle_renewal_changes(old_,new_,source):
+    """
+    Handle the changes in  renewal field of a row in the preparation record table 
+    Args:
+        old (dict): a dict containing details of the old row
+        new (dict): a dict containing details of the new row
+    """
+    if old_.renewal_or_extend == "Renewal" and new_.renewal_or_extend in ['Extend 1 month','Extend 2 months','Extend 3 months']:
+        cancel_delete_doc("PACI",source,new_)
+        cancel_delete_doc("Medical Insurance",source,new_)
+        cancel_delete_doc("Work Permit",source,new_)
+    elif new_.renewal_or_extend == "Cancellation":
+        cancel_delete_doc("MOI Residency Jawazat",source,new_)
+        cancel_delete_doc("PACI",source,new_)
+        cancel_delete_doc("Medical Insurance",source,new_)
+        cancel_delete_doc("Work Permit",source,new_)
+    elif new_.renewal_or_extend == "Renewal" and old_.renewal_or_extend != "Renewal":
+        handle_creation_of_grd_docs(new_,source)
+        #Create for all
+        
+            
+
+def cancel_delete_doc(doctype,source,row):
+    """
+    Loop through a list of records, cancel and delete them
+    Args:
+        doctype (str): a doctype
+        records (dict): a dict of records
+    """
+    records = frappe.get_all(doctype,{'preparation':source,'employee':row.employee},['docstatus','name'])
+    
+    for each in records:
+        try:
+            doc = frappe.get_doc(doctype,each.name)
+            doc.flags.ignore_links = 1
+            doc.flags.ignore_permissions = 1
+            doc.save()
+            if each.docstatus == 1:  
+                doc.cancel()
+            frappe.delete_doc(doctype,each.name,force= True)
+        except:
+            frappe.log_error(title=f"Error Cancelling and Deleting <b>{doctype} {each.name} </b>",message=frappe.get_traceback())
+            
+            continue
