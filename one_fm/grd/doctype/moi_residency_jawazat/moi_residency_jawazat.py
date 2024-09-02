@@ -28,6 +28,7 @@ class MOIResidencyJawazat(Document):
             for one in existing_docs:
                 _doc = frappe.get_doc(self.doctype,one)
                 _doc.flags.ignore_links = True
+                _doc.flags.ignore_permissions = True
                 _doc.cancel()
                 frappe.db.set_value(self.doctype,_doc.name,'workflow_state','Cancelled')
                 frappe.db.commit()
