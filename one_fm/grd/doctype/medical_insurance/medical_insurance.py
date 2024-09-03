@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today, get_url
+from frappe.utils import today, get_url,getdate
 from frappe import _
 from datetime import date
 from frappe.core.doctype.communication.email import make
@@ -20,17 +20,14 @@ class MedicalInsurance(Document):
         self.cancel_existing()
     
     def cancel_existing(self):
-        """Cancel existing documents for that employee"""
-        
-        existing_docs = frappe.get_all(self.doctype,{'name':['!=',self.name],'docstatus':1,'employee':self.employee})
+        """Cancel  documents for that employee which were created in previous years"""
+        year_threshold = getdate(self.date_of_application).year or getdate().year
+        first_day_of_year = getdate(f'01-01-{year_threshold}') #Get the first day of the year
+        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee})
         if existing_docs:
             for one in existing_docs:
-                _doc = frappe.get_doc(self.doctype,one)
-                _doc.flags.ignore_links = True
-                _doc.flags.ignore_permissions = True
-                _doc.cancel()
-                frappe.db.set_value(self.doctype,_doc.name,'workflow_state','Cancelled')
-                frappe.db.commit()
+                frappe.db.set_value(self.doctype,one,'workflow_state','Cancelled')
+            frappe.db.commit()
 
     def validate(self):
         self.set_value()
