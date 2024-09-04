@@ -25,6 +25,23 @@ from one_fm.utils import send_workflow_action_email, is_scheduler_emails_enabled
 
 # from pdfminer.pdfparser import PDFParser, PDFDocument
 class WorkPermit(Document):
+    
+    def before_insert(self):
+        self.cancel_existing()
+    
+    def cancel_existing(self):
+        """Cancel  documents for that employee which were created in previous years"""
+        year_threshold = getdate(self.date_of_application).year or getdate().year
+        first_day_of_year = getdate(f'01-01-{year_threshold}') #Get the first day of the year
+        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee})
+        if existing_docs:
+            for one in existing_docs:
+                frappe.db.set_value(self.doctype,one,'workflow_state','Cancelled')
+            frappe.db.commit()
+                
+                
+                
+                
     def on_update(self):
         self.update_work_permit_details_in_tp()
         self.update_passport_details_in_employee()
@@ -229,8 +246,8 @@ class WorkPermit(Document):
                 self.set_work_permit_attachment_in_employee_doctype(self.upload_work_permit,self.new_work_permit_expiry_date)
             else:
                 msg = False
-                if not self.upload_work_permit or not self.attach_invoice:
-                    msg = "Upload the required documents(Work Permit and Invoice)"
+                if  not self.attach_invoice:
+                    msg = "Upload the required document(Invoice)"
                 if not self.new_work_permit_expiry_date:
                     msg = ((msg+" and ") if msg else "") + "Set <i>Updated Work Permit Expiry Date</i>"
                 if msg:
