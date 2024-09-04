@@ -20,19 +20,10 @@ frappe.ui.form.on('Employee Checkin', {
 });
 
 
-<<<<<<< HEAD
 var validate_source_of_checkin = (frm) => {
 	var allowed_sources = ['Mobile App', 'Mobile Web']
 	if(!allowed_sources.includes(frm.doc.source)){
 		frappe.throw("Employee Checkin can only be via the Mobile App or Mobile Web App")
-=======
-validate_source_of_checkin = (frm) => {
-	allowed_sources = ['Mobile App', 'Mobile Web']
-	if (frappe.session.user!='Administrator'){
-		if(!allowed_sources.includes(frm.doc.source)){
-			frappe.throw("Employee Checkin can only be via the Mobile App or Mobile Web App")
-		}
->>>>>>> prod-staging
 	}
 	
 }
