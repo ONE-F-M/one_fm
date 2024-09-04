@@ -16,6 +16,7 @@ from one_fm.utils import is_scheduler_emails_enabled
 class PACI(Document):
     def validate(self):
         self.set_grd_values()
+        self.set_new_expiry_date()
 
 
     def set_grd_values(self):
@@ -25,6 +26,9 @@ class PACI(Document):
             self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_value('GRD Settings', None, 'default_grd_operator_transfer')
+
+    def set_new_expiry_date(self):
+        self.new_civil_id_expiry_date = frappe.db.get_value("Employee", self.employee, "work_permit_expiry_date")
     
 
     def on_update(self):
