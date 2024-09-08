@@ -1979,19 +1979,19 @@ def update_onboarding_doc_for_bank_account(doc):
 
 def notify_hr_manager(doc):
     try:
-        payroll_officer = frappe.db.get_single_value("HR and Payroll Additional Settings", 'payroll_officer')
-        print(payroll_officer, "\n\n\n\n\n\n\n\n\n")
-        if payroll_officer:
+        hr_manager = frappe.db.get_single_value("HR Settings", 'custom_hr_manager')
+        if hr_manager:
             add_assignment({
                     'doctype': doc.doctype,
                     'name': doc.name,
-                    'assign_to': [payroll_officer],
+                    'assign_to': [hr_manager],
                     'description': (_("The Following Bank Acccount needs to be processed. Kindly, proceed with the action. ").format(doc.name))
                 })
         else:
-            frappe.throw("Please add Payroll Officer in the HR and Payroll Additional Settings")
+            frappe.throw("Please add HR Manager in the HR Settings")
     except:
         frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
+
 
 def send_roster_report():
     # Enqueue roster report generation to background
