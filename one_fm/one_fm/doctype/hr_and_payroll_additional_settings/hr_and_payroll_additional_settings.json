@@ -14,8 +14,6 @@
   "holiday_additional_salary_component",
   "maximum_salary_deduction_percentage",
   "include_day_off_in_total_working_days",
-  "payroll_officer",
-  "payroll_officer_name",
   "column_break_7",
   "enable_export",
   "default_bank",
@@ -279,26 +277,12 @@
    "fieldname": "section_break_nkbfu",
    "fieldtype": "Section Break",
    "hide_border": 1
-  },
-  {
-   "description": "User ID of Current Payroll Officer",
-   "fieldname": "payroll_officer",
-   "fieldtype": "Link",
-   "label": "Payroll Officer",
-   "options": "User"
-  },
-  {
-   "fetch_from": "payroll_officer.full_name",
-   "fieldname": "payroll_officer_name",
-   "fieldtype": "Data",
-   "label": "Payroll Officer Name",
-   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-09-05 13:50:32.286435",
+ "modified": "2024-08-01 13:57:26.780025",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "HR and Payroll Additional Settings",
