@@ -29,7 +29,7 @@ from one_fm.processor import sendemail
 class Preparation(Document):
     def update_total_amount(self):
         doc_total = sum(i.total_amount for i in self.preparation_record)
-        # self.total_payment = doc_total
+       
         frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
                      
     def on_update_after_submit(self):
