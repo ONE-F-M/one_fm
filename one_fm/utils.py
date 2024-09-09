@@ -1943,7 +1943,7 @@ def validate_iban_is_filled(doc, method):
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
     if doc.workflow_state == "Open Request":
-        notify_hr_manager(doc)
+        notify_payroll_officer(doc)
 
 
 def bank_account_on_trash(doc, method):
@@ -1977,18 +1977,18 @@ def update_onboarding_doc_for_bank_account(doc):
             oe.workflow_state = 'Bank Account'
         oe.save(ignore_permissions=True)
 
-def notify_hr_manager(doc):
+def notify_payroll_officer(doc):
     try:
-        hr_manager = frappe.db.get_single_value("HR Settings", 'custom_hr_manager')
-        if hr_manager:
+        payroll_officer = frappe.db.get_single_value("HR and Payroll Additional Settings", 'payroll_officer')
+        if payroll_officer:
             add_assignment({
                     'doctype': doc.doctype,
                     'name': doc.name,
-                    'assign_to': [hr_manager],
+                    'assign_to': [payroll_officer],
                     'description': (_("The Following Bank Acccount needs to be processed. Kindly, proceed with the action. ").format(doc.name))
                 })
         else:
-            frappe.throw("Please add HR Manager in the HR Settings")
+            frappe.throw("Please add Payroll Manager in the HR and Payroll Additional Settings")
     except:
         frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
 
