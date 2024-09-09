@@ -281,19 +281,19 @@
    "hide_border": 1
   },
   {
-    "description": "User ID of Current Payroll Officer",
-    "fieldname": "payroll_officer",
-    "fieldtype": "Link",
-    "label": "Payroll Officer",
-    "options": "User"
-   },
-   {
-    "fetch_from": "payroll_officer.full_name",
-    "fieldname": "payroll_officer_name",
-    "fieldtype": "Data",
-    "label": "Payroll Officer Name",
-    "read_only": 1
-   }
+   "description": "User ID of Current Payroll Officer",
+   "fieldname": "payroll_officer",
+   "fieldtype": "Link",
+   "label": "Payroll Officer",
+   "options": "User"
+  },
+  {
+   "fetch_from": "payroll_officer.full_name",
+   "fieldname": "payroll_officer_name",
+   "fieldtype": "Data",
+   "label": "Payroll Officer Name",
+   "read_only": 1
+  }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,

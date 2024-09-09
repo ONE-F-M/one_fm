@@ -1988,7 +1988,7 @@ def notify_payroll_officer(doc):
                     'description': (_("The Following Bank Acccount needs to be processed. Kindly, proceed with the action. ").format(doc.name))
                 })
         else:
-            frappe.throw("Please add Payroll Manager in the HR and Payroll Additional Settings")
+            frappe.throw("Please add Payroll Officer in the HR and Payroll Additional Settings")
     except:
         frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
 
