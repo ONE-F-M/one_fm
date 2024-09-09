@@ -633,20 +633,24 @@ def update_leave_policy_assignments_expires_today():
 
 def create_leave_policy(leave_policy_assignments):
 	for policy_assignment in leave_policy_assignments:
-		doc = frappe.get_doc('Leave Policy Assignment', policy_assignment.name)
-		effective_from = add_days(getdate(doc.effective_to), 1)
-		effective_to = add_days(add_years(effective_from, 1), -1)
-		# Check if the employee status not Left
-		if frappe.db.get_value('Employee', doc.employee, 'status') not in ['Left'] and not frappe.db.exists("Leave Policy Assignment", {'employee':doc.employee, 'effective_from':effective_from, 'effective_to':effective_to}):
-			leave_policy_assignment = frappe.new_doc('Leave Policy Assignment')
-			leave_policy_assignment.employee = doc.employee
-			leave_policy_assignment.effective_from = effective_from
-			leave_policy_assignment.effective_to = effective_to
-			leave_policy_assignment.leave_policy = doc.leave_policy
-			leave_policy_assignment.carry_forward = doc.carry_forward
-			leave_policy_assignment.leaves_allocated = False
-			leave_policy_assignment.save(ignore_permissions=True)
-			leave_policy_assignment.submit()
+		try:
+			doc = frappe.get_doc('Leave Policy Assignment', policy_assignment.name)
+			effective_from = add_days(getdate(doc.effective_to), 1)
+			effective_to = add_days(add_years(effective_from, 1), -1)
+			# Check if the employee status not Left
+			if frappe.db.get_value('Employee', doc.employee, 'status') not in {'Left', } and not frappe.db.exists("Leave Policy Assignment", {'employee':doc.employee, 'effective_from':effective_from, 'effective_to':effective_to}):
+				leave_policy_assignment = frappe.new_doc('Leave Policy Assignment')
+				leave_policy_assignment.employee = doc.employee
+				leave_policy_assignment.effective_from = effective_from
+				leave_policy_assignment.effective_to = effective_to
+				leave_policy_assignment.leave_policy = doc.leave_policy
+				leave_policy_assignment.carry_forward = doc.carry_forward
+				leave_policy_assignment.leaves_allocated = False
+				leave_policy_assignment.save(ignore_permissions=True)
+				leave_policy_assignment.submit()
+		except Exception as e:
+			frappe.log_error(frappe.get_traceback(), "Error while creating leave policy assignment")
+			continue
 
 def update_onboarding_doc_workflow_sate(doc):
 	onboard_employee_id = False
