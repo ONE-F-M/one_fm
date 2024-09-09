@@ -27,14 +27,23 @@ from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
 
 class Preparation(Document):
-                    
+    def update_total_amount(self):
+        doc_total = sum(i.total_amount for i in self.preparation_record)
+        frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
+                     
     def on_update_after_submit(self):
         self.compare_preparation_record()
+        self.update_total_amount()
     
     def compare_preparation_record(self):
         """Compare the data of preparation record child table before it was saved with the most updated version
         and flag changes
         """
+        count = 0
+        method_dict = {
+            'to_cancel':[],
+            'to_renew':[],
+            'to_create':[]}
         old_preparation_record = {}
         new_preparation_record = {}
         old_doc = self.get_doc_before_save()
@@ -46,25 +55,23 @@ class Preparation(Document):
         new_row_ids = [i.name for i in self.preparation_record ]
         
         for ind in old_row_ids: #Find Removed rows 
-            if ind not in new_row_ids:
-                # self.fetch_linked_records(existing_preparation_record.get(ind)) # Delete for this employee
-                cancel_delete_doc("PACI",self.name,old_preparation_record.get(ind))
-                cancel_delete_doc("Work Permit",self.name,old_preparation_record.get(ind))
-                cancel_delete_doc("MOI Residency Jawazat",self.name,old_preparation_record.get(ind))
-                cancel_delete_doc("Medical Insurance",self.name,old_preparation_record.get(ind))
+            if ind not in new_row_ids: # Delete for this employee
+                method_dict['to_cancel'].append({'source':self.name,'row':old_preparation_record.get(ind)})
+                count+=1
             else:
                 if old_preparation_record.get(ind).get('renewal_or_extend')!=new_preparation_record.get(ind).get('renewal_or_extend'):
-                    handle_renewal_changes(old_preparation_record.get(ind),new_preparation_record.get(ind),self.name) #Create or Delete based on choices
+                    method_dict['to_renew'].append({'old_row':old_preparation_record.get(ind),'new_row':new_preparation_record.get(ind),'source':self.name})
+                    count+=1
         for each in new_row_ids: #Find New rows added
             if each not in old_row_ids:
-                handle_creation_of_grd_docs(new_preparation_record.get(each),self.name)
+                method_dict['to_create'].append({'row':new_preparation_record.get(each),'source':self.name})
+                count+=1
+        if count>10:
+            frappe.enqueue(handle_updates,timeout = 600,method_dict = method_dict)
+        else:
+            handle_updates(method_dict)
                  
             
-        
-            
-    
-    
-    
     def validate(self):
         self.set_grd_values()
         self.set_hr_values()
@@ -303,19 +310,35 @@ def handle_renewal_changes(old_,new_,source):
         new (dict): a dict containing details of the new row
     """
     if old_.renewal_or_extend == "Renewal" and new_.renewal_or_extend in ['Extend 1 month','Extend 2 months','Extend 3 months']:
-        cancel_delete_doc("PACI",source,new_)
-        cancel_delete_doc("Medical Insurance",source,new_)
-        cancel_delete_doc("Work Permit",source,new_)
+        handle_extension(source,new_)
     elif new_.renewal_or_extend == "Cancellation":
-        cancel_delete_doc("MOI Residency Jawazat",source,new_)
-        cancel_delete_doc("PACI",source,new_)
-        cancel_delete_doc("Medical Insurance",source,new_)
-        cancel_delete_doc("Work Permit",source,new_)
+        handle_cancelation(source,new_)
     elif new_.renewal_or_extend == "Renewal" and old_.renewal_or_extend != "Renewal":
         handle_creation_of_grd_docs(new_,source)
         #Create for all
         
+def handle_updates(method_dict):
+    for one in method_dict['to_create']:
+        handle_creation_of_grd_docs(one['row'],one['source'])
+    for one in method_dict['to_cancel']:
+        handle_cancelation(one['source'],one['row'])
+    for one in method_dict['to_renew']:
+        handle_renewal_changes(one['old_row'],one['new_row'],one['source'])
+        
+        
             
+def handle_extension(source,row):
+    """Cancel 3 of the linked GRD documents for an employee"""
+    cancel_delete_doc("PACI",source,row)
+    cancel_delete_doc("Medical Insurance",source,row)
+    cancel_delete_doc("Work Permit",source,row)
+
+def handle_cancelation(source,row):
+    """Cancel all the linked GRD documents for an employee"""
+    cancel_delete_doc("MOI Residency Jawazat",source,row)
+    cancel_delete_doc("PACI",source,row)
+    cancel_delete_doc("Medical Insurance",source,row)
+    cancel_delete_doc("Work Permit",source,row)
 
 def cancel_delete_doc(doctype,source,row):
     """
