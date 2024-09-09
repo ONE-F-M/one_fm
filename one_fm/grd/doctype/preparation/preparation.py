@@ -27,9 +27,14 @@ from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
 
 class Preparation(Document):
-                    
+    def update_total_amount(self):
+        doc_total = sum(i.total_amount for i in self.preparation_record)
+       
+        frappe.db.set_value(self.doctype,self.name,'total_payment',doc_total)
+                     
     def on_update_after_submit(self):
         self.compare_preparation_record()
+        self.update_total_amount()
     
     def compare_preparation_record(self):
         """Compare the data of preparation record child table before it was saved with the most updated version
