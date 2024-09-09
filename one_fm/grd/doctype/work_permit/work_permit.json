@@ -410,8 +410,7 @@
    "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "upload_work_permit",
    "fieldtype": "Attach",
-   "label": "Upload Work Permit",
-   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'"
+   "label": "Upload Work Permit"
   },
   {
    "allow_on_submit": 1,
@@ -458,8 +457,7 @@
    "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "upload_work_permit_on",
    "fieldtype": "Data",
-   "label": "Upload On",
-   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM'"
+   "label": "Upload On"
   },
   {
    "allow_on_submit": 1,

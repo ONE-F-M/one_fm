@@ -33,7 +33,7 @@ frappe.ui.form.on('MOM', {
 						frm.set_value("last_mom_name", r.message.name);
 						set_last_attendees_table(frm, r.message.attendees);
 						set_last_action_table(frm, r.message.action);
-
+						
 					}
 				})
 			}
@@ -165,10 +165,12 @@ var set_table_non_external = (frm, user_list) => {
 }
 
 function set_last_attendees_table(frm, poc_list){
+	frm.doc.last_attendees = []
 	poc_list.forEach((mom_poc) => {
 		let child_row = frappe.model.add_child(frm.doc, "last_attendees");
 		child_row.poc_name = mom_poc.poc_name;
 		child_row.poc_designation = mom_poc.poc_designation;
+		child_row.attended_meeting = mom_poc.attended_meeting;
 	});
 	frm.refresh_fields("last_attendees");
 }
