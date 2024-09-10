@@ -32,6 +32,18 @@ class ShiftRequestOverride(ShiftRequest):
         if self.workflow_state != 'Update Request':
             self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approval' else self.db_set("status", 'Draft')
 
+    def before_save(self):
+        # Fill 'To' date if not set
+        if not self.to_date:
+            self.to_date = self.from_date
+
+        # Validate 'From' date
+        if not self.assign_day_off:
+            if getdate(today()) > getdate(self.from_date):
+                frappe.throw('From Date cannot be before today.')
+        
+        send_shift_request_mail(self)
+
     def on_update(self):
         for approver in self.custom_shift_approvers:
             share_doc_with_approver(self, approver.user)
@@ -313,16 +325,6 @@ def fetch_approver(doc):
     if approver_user_id:
         return [approver_user_id] + other_approvers
 
-
-def fill_to_date(doc, method):
-    if not doc.to_date:
-        doc.to_date = doc.from_date
-
-def validate_from_date(doc, method):
-    if not doc.assign_day_off:
-        if getdate(today()) > getdate(doc.from_date):
-            frappe.throw('From Date cannot be before today.')
-
 @frappe.whitelist()
 def update_request(shift_request, from_date, to_date):
     from_date = getdate(from_date)
@@ -476,7 +478,7 @@ def daterange(start_date, end_date):
         yield start_date + datetime.timedelta(n)
 
 
-def send_shift_request_mail(doc, method=None):
+def send_shift_request_mail(doc):
     if doc.workflow_state == 'Pending Approval':
         try:
             title = f"Urgent Notification: {doc.doctype} Requires Your Immediate Review"
