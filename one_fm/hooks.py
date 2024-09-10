@@ -401,13 +401,13 @@ doc_events = {
 		# "on_update_after_submit":[
 			# "one_fm.overrides.shift_request.on_update_after_submit",
 		# ],
-		"on_update": [
-            "one_fm.overrides.shift_request.on_update",
-        	# "one_fm.overrides.shift_request.process_shift_assignemnt",
-		],
-        "validate": [
-            "one_fm.overrides.shift_request.validate",
-        ]
+		# "on_update": [
+        #     "one_fm.overrides.shift_request.on_update",
+        # 	"one_fm.overrides.shift_request.process_shift_assignemnt",
+		# ],
+        # "validate": [
+        #     "one_fm.overrides.shift_request.validate",
+        # ]
 
 	},
 	"Customer": {

@@ -19,6 +19,15 @@ class OverlappingShiftError(frappe.ValidationError):
     pass
 
 class ShiftRequestOverride(ShiftRequest):
+    def validate(self):
+        # ensure status is not pending
+        if self.is_new():
+            self.status='Draft'
+        if self.status=='Pending Approval':
+            self.status == 'Draft'
+
+        process_shift_assignemnt(self) # set shift assignment and employee schedule
+
     def on_submit(self):
         if self.workflow_state != 'Update Request':
             self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approval' else self.db_set("status", 'Draft')
@@ -26,6 +35,13 @@ class ShiftRequestOverride(ShiftRequest):
     def on_update(self):
         for approver in self.custom_shift_approvers:
             share_doc_with_approver(self, approver.user)
+
+        if self.workflow_state in ['Approved', 'Rejected']:
+            workflow_approve_reject(self, [get_employee_user_id(self.employee)])
+
+        if self.workflow_state == 'Draft':
+            send_workflow_action_email(self,[approver.user for approver in self.custom_shift_approvers])
+            validate_shift_overlap(self)
 
     def validate_approver(self):
         if not self.is_new() and self.workflow_state == "Approved":
@@ -85,23 +101,6 @@ class ShiftRequestOverride(ShiftRequest):
                 )).insert()
                 sa.submit()
 
-def validate(doc, event=None):
-    # ensure status is not pending
-    if doc.is_new():
-        doc.status='Draft'
-    if doc.status=='Pending Approval':
-        doc.status == 'Draft'
-
-    process_shift_assignemnt(doc) # set shift assignment and employee schedule
-
-
-def on_update(doc, event):
-    if doc.workflow_state in ['Approved', 'Rejected']:
-        workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])
-
-    if doc.workflow_state == 'Draft':
-        send_workflow_action_email(doc,[approver.user for approver in doc.custom_shift_approvers])
-        validate_shift_overlap(doc)
 
 def validate_shift_overlap(doc):
     curr_date = getdate()
