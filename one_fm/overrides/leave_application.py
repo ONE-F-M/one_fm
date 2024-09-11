@@ -18,7 +18,13 @@ from one_fm.api.tasks import get_action_user,remove_assignment
 from .employee import NotifyAttendanceManagerOnStatusChange
 
 
-    
+
+def validate_active_staff(doc,event):
+    emp_details = frappe.get_value("Employee",doc.employee,['status','relieving_date'],as_dict =1 )
+    if emp_details.status != "Active" and emp_details.relieving_date:
+        if getdate(emp_details.relieving_date)<getdate(doc.to_date):
+            frappe.throw("The Employee Specified in the leave application is not Active.\nAlso, the leave application date exceeds the employee relieving date")
+
 
 def close_leaves(leave_ids, user=None):
     approved_leaves = leave_ids
