@@ -234,7 +234,8 @@ class WorkPermit(Document):
             updated_values['passport_number'] = self.new_passport_number
         if self.new_passport_expiry_date:
             updated_values['valid_upto'] = self.new_passport_expiry_date
-
+        if self.new_work_permit_expiry_date:
+            updated_values['work_permit_expiry_date'] = self.new_work_permit_expiry_date
         if self.employee and updated_values:
             frappe.db.set_value('Employee', self.employee, updated_values)
 
