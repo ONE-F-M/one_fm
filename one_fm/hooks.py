@@ -246,9 +246,9 @@ doc_events = {
 	"HD Ticket": {
 		"validate": "one_fm.overrides.hd_ticket.validate_hd_ticket",
 		"after_insert":[
-      					"one_fm.overrides.hd_ticket.send_google_chat_notification",
-                  		"one_fm.overrides.hd_ticket.notify_ticket_raiser_of_receipt"
-                    	], 
+      		"one_fm.overrides.hd_ticket.send_google_chat_notification",
+        	"one_fm.overrides.hd_ticket.notify_ticket_raiser_of_receipt"
+        ], 
 		"on_change": "one_fm.overrides.hd_ticket.notify_issue_raiser_about_priority",
 		"on_update": "one_fm.overrides.hd_ticket.apply_ticket_escalation"
 	},
@@ -332,13 +332,6 @@ doc_events = {
 		"before_cancel":'one_fm.one_fm.sales_invoice_custom.cancel_sales_invoice',
 		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
 		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
-	},
-	"Salary Slip": {
-		"before_submit": "one_fm.overrides.salary_slip.salary_slip_before_submit",
-		"validate": [
-		# 	"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
-			"one_fm.overrides.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
-		]
 	},
 	"Salary Structure Assignment": {
 		"validate": [
