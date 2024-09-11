@@ -1,7 +1,6 @@
 frappe.ui.form.on('Attendance Request', {
   refresh: (frm)=>{
     frm.trigger('check_workflow');
-    set_update_request_btn(frm);
   },
   validate: (frm) => {
     validate_from_date(frm);

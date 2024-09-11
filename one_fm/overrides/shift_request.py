@@ -20,13 +20,41 @@ class OverlappingShiftError(frappe.ValidationError):
     pass
 
 class ShiftRequestOverride(ShiftRequest):
+    def validate(self):
+        # ensure status is not pending
+        if self.is_new():
+            self.status='Draft'
+        if self.status=='Pending Approval':
+            self.status == 'Draft'
+
+        process_shift_assignemnt(self) # set shift assignment and employee schedule
+
     def on_submit(self):
         if self.workflow_state != 'Update Request':
             self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approval' else self.db_set("status", 'Draft')
 
+    def before_save(self):
+        # Fill 'To' date if not set
+        if not self.to_date:
+            self.to_date = self.from_date
+
+        # Validate 'From' date
+        if not self.assign_day_off:
+            if getdate(today()) > getdate(self.from_date):
+                frappe.throw('From Date cannot be before today.')
+        
+        send_shift_request_mail(self)
+
     def on_update(self):
         for approver in self.custom_shift_approvers:
             share_doc_with_approver(self, approver.user)
+
+        if self.workflow_state in ['Approved', 'Rejected']:
+            workflow_approve_reject(self, [get_employee_user_id(self.employee)])
+
+        if self.workflow_state == 'Draft':
+            send_workflow_action_email(self,[approver.user for approver in self.custom_shift_approvers])
+            validate_shift_overlap(self)
 
     def validate_approver(self):
         if not self.is_new() and self.workflow_state == "Approved":
@@ -647,6 +675,7 @@ def fetch_approver(doc):
     if approver_user_id:
         return [approver_user_id] + other_approvers
 
+<<<<<<< HEAD
 
 
 def fill_to_date(doc, method):
@@ -665,6 +694,8 @@ def validate_from_date(doc, method):
             )
 
 
+=======
+>>>>>>> 6ba5d03b0bb7170323286e8bd7f41e9ebcb55621
 @frappe.whitelist()
 def update_request(shift_request, from_date, to_date):
     from_date = getdate(from_date)
@@ -845,7 +876,7 @@ def daterange(start_date, end_date):
         yield start_date + datetime.timedelta(n)
 
 
-def send_shift_request_mail(doc, method=None):
+def send_shift_request_mail(doc):
     if doc.workflow_state == 'Pending Approval':
         try:
             title = f"Urgent Notification: {doc.doctype} Requires Your Immediate Review"
