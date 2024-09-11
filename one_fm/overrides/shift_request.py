@@ -675,7 +675,6 @@ def fetch_approver(doc):
     if approver_user_id:
         return [approver_user_id] + other_approvers
 
-<<<<<<< HEAD
 
 
 def fill_to_date(doc, method):
@@ -694,8 +693,6 @@ def validate_from_date(doc, method):
             )
 
 
-=======
->>>>>>> 6ba5d03b0bb7170323286e8bd7f41e9ebcb55621
 @frappe.whitelist()
 def update_request(shift_request, from_date, to_date):
     from_date = getdate(from_date)
