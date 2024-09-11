@@ -12,150 +12,159 @@ from frappe.utils import (cint, flt, date_diff,
 from one_fm.api.notification import create_notification_log
 
 class SalarySlipOverride(SalarySlip):
-	def get_working_days_details(self, lwp=None, for_preview=0):
-		payroll_settings = frappe.get_cached_value(
-			"Payroll Settings",
-			None,
-			(
-				"payroll_based_on",
-				"include_holidays_in_total_working_days",
-				"consider_marked_attendance_on_holidays",
-				"daily_wages_fraction_for_half_day",
-				"consider_unmarked_attendance_as",
-			),
-			as_dict=1,
-		)
+    def validate(self):
+        super().validate()
+        set_earnings_and_deduction_with_respect_to_payroll_cycle(self)
 
-		consider_marked_attendance_on_holidays = (
-			payroll_settings.include_holidays_in_total_working_days
-			and payroll_settings.consider_marked_attendance_on_holidays
-		)
+    def before_submit(self):
+        validate_minimum_payable_salary(self)
 
-		## ONEFM
-		# Identify start date and end date based on the joining and relieving date
-		# Set working days based on the payroll type
-		working_days = 0
-		if self.payroll_type == 'Basic':
-			# Set working days as total number of days in between the start and end date
-			working_days = date_diff(self.end_date, self.start_date) + 1
-		else:
-			# Set working days as Number of Over Time employee schedules in between the start and end date
-			working_days = get_ot_days(self.employee, self.start_date, self.end_date)
-			
-		## ONEFM 
-		daily_wages_fraction_for_half_day = flt(payroll_settings.daily_wages_fraction_for_half_day) or 0.5
+    def get_working_days_details(self, lwp=None, for_preview=0):
+        payroll_settings = frappe.get_cached_value(
+            "Payroll Settings",
+            None,
+            (
+                "payroll_based_on",
+                "include_holidays_in_total_working_days",
+                "consider_marked_attendance_on_holidays",
+                "daily_wages_fraction_for_half_day",
+                "consider_unmarked_attendance_as",
+            ),
+            as_dict=1,
+        )
 
-		if for_preview:
-			self.total_working_days = working_days
-			self.payment_days = working_days
-			return
+        consider_marked_attendance_on_holidays = (
+            payroll_settings.include_holidays_in_total_working_days
+            and payroll_settings.consider_marked_attendance_on_holidays
+        )
 
-		holidays = self.get_holidays_for_employee(self.start_date, self.end_date)
-		working_days_list = [add_days(getdate(self.start_date), days=day) for day in range(0, working_days)]
+        # ONEFM
+        # Identify start date and end date based on the joining and relieving date
+        # Set working days based on the payroll type
+        working_days = 0
+        if self.payroll_type == 'Basic':
+            # Set working days as total number of days in between the start and end date
+            working_days = date_diff(self.end_date, self.start_date) + 1
+        else:
+            # Set working days as Number of Over Time employee schedules in between the start and end date
+            working_days = get_ot_days(self.employee, self.start_date, self.end_date)
 
-		if not cint(payroll_settings.include_holidays_in_total_working_days):
-			working_days_list = [i for i in working_days_list if i not in holidays]
+        # ONEFM
+        daily_wages_fraction_for_half_day = flt(payroll_settings.daily_wages_fraction_for_half_day) or 0.5
 
-			working_days -= len(holidays)
-			if working_days < 0:
-				frappe.throw(_("There are more holidays than working days this month."))
+        if for_preview:
+            self.total_working_days = working_days
+            self.payment_days = working_days
+            return
 
-		if not payroll_settings.payroll_based_on:
-			frappe.throw(_("Please set Payroll based on in Payroll settings"))
+        holidays = self.get_holidays_for_employee(self.start_date, self.end_date)
+        working_days_list = [add_days(getdate(self.start_date), days=day) for day in range(0, working_days)]
 
-		if payroll_settings.payroll_based_on == "Attendance":
-			actual_lwp, absent = self.calculate_lwp_ppl_and_absent_days_based_on_attendance(
-				holidays, daily_wages_fraction_for_half_day, consider_marked_attendance_on_holidays
-			)
-			self.absent_days = absent
-		else:
-			actual_lwp = self.calculate_lwp_or_ppl_based_on_leave_application(
-				holidays, working_days_list, daily_wages_fraction_for_half_day
-			)
+        if not cint(payroll_settings.include_holidays_in_total_working_days):
+            working_days_list = [i for i in working_days_list if i not in holidays]
 
-		if not lwp:
-			lwp = actual_lwp
-		elif lwp != actual_lwp:
-			frappe.msgprint(
-				_("Leave Without Pay does not match with approved {} records").format(
-					payroll_settings.payroll_based_on
-				)
-			)
+            working_days -= len(holidays)
+            if working_days < 0:
+                frappe.throw(_("There are more holidays than working days this month."))
 
-		self.leave_without_pay = lwp
-		self.total_working_days = working_days
+        if not payroll_settings.payroll_based_on:
+            frappe.throw(_("Please set Payroll based on in Payroll settings"))
 
-		payment_days = self.get_payment_days(payroll_settings.include_holidays_in_total_working_days)
+        if payroll_settings.payroll_based_on == "Attendance":
+            actual_lwp, absent = self.calculate_lwp_ppl_and_absent_days_based_on_attendance(
+                holidays, daily_wages_fraction_for_half_day, consider_marked_attendance_on_holidays
+            )
+            self.absent_days = absent
+        else:
+            actual_lwp = self.calculate_lwp_or_ppl_based_on_leave_application(
+                holidays, working_days_list, daily_wages_fraction_for_half_day
+            )
 
-		if flt(payment_days) > flt(lwp):
-			self.payment_days = flt(payment_days) - flt(lwp)
+        if not lwp:
+            lwp = actual_lwp
+        elif lwp != actual_lwp:
+            frappe.msgprint(
+                _("Leave Without Pay does not match with approved {} records").format(
+                    payroll_settings.payroll_based_on
+                )
+            )
 
-			if payroll_settings.payroll_based_on == "Attendance":
-				self.payment_days -= flt(absent)
+        self.leave_without_pay = lwp
+        self.total_working_days = working_days
 
-			consider_unmarked_attendance_as = payroll_settings.consider_unmarked_attendance_as or "Present"
+        payment_days = self.get_payment_days(payroll_settings.include_holidays_in_total_working_days)
 
-			if (
-				payroll_settings.payroll_based_on == "Attendance"
-				and consider_unmarked_attendance_as == "Absent"
-			):
-				unmarked_days = self.get_unmarked_days(
-					payroll_settings.include_holidays_in_total_working_days, holidays
-				)
-				self.absent_days += unmarked_days  # will be treated as absent
-				self.payment_days -= unmarked_days
-		else:
-			self.payment_days = 0
+        if flt(payment_days) > flt(lwp):
+            self.payment_days = flt(payment_days) - flt(lwp)
 
-	def get_unmarked_days(
+            if payroll_settings.payroll_based_on == "Attendance":
+                self.payment_days -= flt(absent)
+
+            consider_unmarked_attendance_as = payroll_settings.consider_unmarked_attendance_as or "Present"
+
+            if (
+                payroll_settings.payroll_based_on == "Attendance"
+                and consider_unmarked_attendance_as == "Absent"
+            ):
+                unmarked_days = self.get_unmarked_days(
+                    payroll_settings.include_holidays_in_total_working_days, holidays
+                )
+                self.absent_days += unmarked_days  # will be treated as absent
+                self.payment_days -= unmarked_days
+        else:
+            self.payment_days = 0
+
+    def get_unmarked_days(
         self, include_holidays_in_total_working_days: bool, holidays: list | None = None
     ) -> float:
-		"""Calculates the number of unmarked days for an employee within a date range"""
-		unmarked_days = self.total_working_days
+        return 1.5
+        """Calculates the number of unmarked days for an employee within a date range"""
+        unmarked_days = self.total_working_days
 
-		joining_date, relieving_date = frappe.get_cached_value(
-			"Employee", self.employee, ["date_of_joining", "relieving_date"]
-		)
-		start_date = self.start_date
-		end_date = self.end_date
+        joining_date, relieving_date = frappe.get_cached_value(
+            "Employee", self.employee, ["date_of_joining", "relieving_date"]
+        )
+        start_date = self.start_date
+        end_date = self.end_date
 
-		if joining_date and (getdate(self.start_date) < joining_date <= getdate(self.end_date)):
-			start_date = joining_date
-			unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
-				unmarked_days,
-				include_holidays_in_total_working_days,
-				self.start_date,
-				add_days(joining_date, -1),
-			)
+        if joining_date and (getdate(self.start_date) < joining_date <= getdate(self.end_date)):
+            start_date = joining_date
+            unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
+                unmarked_days,
+                include_holidays_in_total_working_days,
+                self.start_date,
+                add_days(joining_date, -1),
+            )
 
-		if relieving_date and (getdate(self.start_date) <= relieving_date < getdate(self.end_date)):
-			end_date = relieving_date
-			unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
-				unmarked_days,
-				include_holidays_in_total_working_days,
-				add_days(relieving_date, 1),
-				self.end_date,
-			)
-		if (getdate(self.posting_date) < getdate(self.end_date)):
-			end_date = self.posting_date
-			unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
-				unmarked_days,
-				include_holidays_in_total_working_days,
-				self.posting_date,
-				self.end_date,
-			)
-		# exclude days for which attendance has been marked
-		unmarked_days -= frappe.get_all(
-			"Attendance",
-			filters={
-				"attendance_date": ["between", [start_date, end_date]],
-				"employee": self.employee,
-				"docstatus": 1,
-				"roster_type":self.payroll_type
-			},
-			fields=["COUNT(*) as marked_days"],
-		)[0].marked_days
-		return unmarked_days
+        if relieving_date and (getdate(self.start_date) <= relieving_date < getdate(self.end_date)):
+            end_date = relieving_date
+            unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
+                unmarked_days,
+                include_holidays_in_total_working_days,
+                add_days(relieving_date, 1),
+                self.end_date,
+            )
+        if getdate(self.posting_date) < getdate(self.end_date):
+            end_date = self.posting_date
+            unmarked_days = self.get_unmarked_days_based_on_doj_or_relieving(
+                unmarked_days,
+                include_holidays_in_total_working_days,
+                self.posting_date,
+                self.end_date,
+            )
+        # exclude days for which attendance has been marked
+        unmarked_days -= frappe.get_all(
+            "Attendance",
+            filters={
+                "attendance_date": ["between", [start_date, end_date]],
+                "employee": self.employee,
+                "docstatus": 1,
+                "roster_type": self.payroll_type
+            },
+            fields=["COUNT(*) as marked_days"],
+        )[0].marked_days
+        return unmarked_days
+
 
 
 @frappe.whitelist()
@@ -279,7 +288,7 @@ def calculate_lwp_ppl_and_absent_days(employee, start_date, end_date, holidays):
     return lwp, absent
 
 
-def salary_slip_before_submit(doc, method):
+def validate_minimum_payable_salary(doc):
     basic_salary = get_basic_salary(doc.employee)
 
     # As per Kuwaiti law, 90% of WP salary has to be paid to an employee after factoring in deductions
@@ -327,7 +336,7 @@ def salary_slip_before_submit(doc, method):
         frappe.throw(_("Total deduction amount exceeds the permissible limit in Salary Slip for {}".format(doc.employee+":"+doc.employee_name)))
 
 
-def set_earnings_and_deduction_with_respect_to_payroll_cycle(doc, method):
+def set_earnings_and_deduction_with_respect_to_payroll_cycle(doc):
     all_assignments = is_multiple_salary_structure(doc)
     if len(all_assignments)>1:
         doc.has_multiple_salary_structure = 1
