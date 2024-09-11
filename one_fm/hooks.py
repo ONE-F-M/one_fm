@@ -392,24 +392,6 @@ doc_events = {
 		"before_insert": "one_fm.api.doc_methods.help_article.before_insert",
 		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
 	},
-	# "Shift Request":{
-		# "before_save":[
-		# 	"one_fm.overrides.shift_request.fill_to_date",
-		# 	"one_fm.overrides.shift_request.send_shift_request_mail",
-		# 	"one_fm.overrides.shift_request.validate_from_date"
-		# ],
-		# "on_update_after_submit":[
-			# "one_fm.overrides.shift_request.on_update_after_submit",
-		# ],
-		# "on_update": [
-        #     "one_fm.overrides.shift_request.on_update",
-        # 	"one_fm.overrides.shift_request.process_shift_assignemnt",
-		# ],
-        # "validate": [
-        #     "one_fm.overrides.shift_request.validate",
-        # ]
-
-	# },
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
