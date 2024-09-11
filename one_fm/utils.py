@@ -1943,7 +1943,7 @@ def validate_iban_is_filled(doc, method):
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
     if doc.workflow_state == "Open Request":
-        notify_hr_manager(doc)
+        notify_payroll_officer(doc)
 
 
 def bank_account_on_trash(doc, method):
@@ -1977,20 +1977,21 @@ def update_onboarding_doc_for_bank_account(doc):
             oe.workflow_state = 'Bank Account'
         oe.save(ignore_permissions=True)
 
-def notify_hr_manager(doc):
+def notify_payroll_officer(doc):
     try:
-        hr_manager = frappe.db.get_single_value("HR Settings", 'custom_hr_manager')
-        if hr_manager:
+        payroll_officer = frappe.db.get_single_value("HR and Payroll Additional Settings", 'payroll_officer')
+        if payroll_officer:
             add_assignment({
                     'doctype': doc.doctype,
                     'name': doc.name,
-                    'assign_to': [hr_manager],
+                    'assign_to': [payroll_officer],
                     'description': (_("The Following Bank Acccount needs to be processed. Kindly, proceed with the action. ").format(doc.name))
                 })
         else:
-            frappe.throw("Please add HR Manager in the HR Settings")
+            frappe.throw("Please add Payroll Officer in the HR and Payroll Additional Settings")
     except:
         frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
+
 
 def send_roster_report():
     # Enqueue roster report generation to background
@@ -3098,7 +3099,8 @@ def get_approver(employee, date=False):
         if employee_data.shift_working:
             if employee_data.shift:
                 line_manager = get_shift_supervisor(employee_data.shift, date)
-                if line_manager:return line_manager
+                if line_manager:
+                    return line_manager
             if not line_manager and employee_data.site:
                 line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
                 if not line_manager:
@@ -3106,12 +3108,19 @@ def get_approver(employee, date=False):
                     if project:
                         line_manager = frappe.db.get_value('Project', project, 'account_manager')
         else:
-            frappe.msgprint(
-                _("Please ensure that the Reports To is set for {0}, Since the employee is not shift working".format(employee_data.employee_name)),
-                title= "Missing Data",
-                indicator="orange",
-                alert=True
-            )
+            if employee_data.site:
+                line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
+
+            if not line_manager and employee_data.shift:
+                line_manager = get_shift_supervisor(employee_data.shift, date)
+            
+            if not line_manager:
+                frappe.msgprint(
+                    _("Please ensure that the Reports To or Operations Site Supervisor is set for {0}, Since the employee is not shift working".format(employee_data.employee_name)),
+                    title= "Missing Data",
+                    indicator="orange",
+                    alert=True
+                )
 
     return line_manager
 

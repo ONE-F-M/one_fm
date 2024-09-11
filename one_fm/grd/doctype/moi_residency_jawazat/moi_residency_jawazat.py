@@ -17,6 +17,20 @@ class MOIResidencyJawazat(Document):
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
             ['phone_no', 'email', 'company_name_arabic'], as_dict=1)
     
+    def before_insert(self):
+        self.cancel_existing()
+    
+    def cancel_existing(self):
+        """Cancel  documents for that employee which were created in previous years"""
+        year_threshold = getdate(self.date_of_application).year or getdate().year
+        first_day_of_year = getdate(f'01-01-{year_threshold}') #Get the first day of the year
+        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee})
+        if existing_docs:
+            for one in existing_docs:
+                frappe.db.set_value(self.doctype,one,'workflow_state','Cancelled')
+            frappe.db.commit()
+
+    
     def validate(self):
         self.set_grd_values()
         self.set_new_expiry_date()
@@ -84,7 +98,7 @@ class MOIResidencyJawazat(Document):
         paci.create_PACI_for_transfer(self.employee)
 
     def validate_mandatory_fields_on_submit(self):
-        field_list = [{'Upload Payment Invoice':'invoice_attachment'},{'Upload Residency':'residency_attachment'},{'Updated Residency Expiry Date':'new_residency_expiry_date'}]
+        field_list = [{'Upload Payment Invoice':'invoice_attachment'},{'Updated Residency Expiry Date':'new_residency_expiry_date'}]
         self.set_mendatory_fields(field_list)
 
     def set_mendatory_fields(self,field_list):
@@ -95,7 +109,7 @@ class MOIResidencyJawazat(Document):
                     mandatory_fields.append(field)
 
         if len(mandatory_fields) > 0:
-            message= 'Mandatory fields required in Work Permit form<br><br><ul>'
+            message= 'Mandatory fields required in MOI Residency Jawazat form<br><br><ul>'
             for mandatory_field in mandatory_fields:
                 message += '<li>' + mandatory_field +'</li>'
             message += '</ul>'

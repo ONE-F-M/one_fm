@@ -25,8 +25,26 @@ from one_fm.utils import send_workflow_action_email, is_scheduler_emails_enabled
 
 # from pdfminer.pdfparser import PDFParser, PDFDocument
 class WorkPermit(Document):
+    
+    def before_insert(self):
+        self.cancel_existing()
+    
+    def cancel_existing(self):
+        """Cancel  documents for that employee which were created in previous years"""
+        year_threshold = getdate(self.date_of_application).year or getdate().year
+        first_day_of_year = getdate(f'01-01-{year_threshold}') #Get the first day of the year
+        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee})
+        if existing_docs:
+            for one in existing_docs:
+                frappe.db.set_value(self.doctype,one,'workflow_state','Cancelled')
+            frappe.db.commit()
+                
+                
+                
+                
     def on_update(self):
         self.update_work_permit_details_in_tp()
+        self.update_passport_details_in_employee()
         self.check_required_document_for_workflow()
         self.notify()
         self.send_work_permit_receipt_to_perm_operator()
@@ -200,6 +218,26 @@ class WorkPermit(Document):
             tp.save()
             tp.reload()
 
+
+    def update_passport_details_in_employee(self):
+        """
+        runs: `on_update`
+        param: work_permit object
+
+        This method sets employee passport details in employee doctype
+        """
+        updated_values = {}
+
+        if self.new_passport_type:
+            updated_values['one_fm_passport_type'] = self.new_passport_type
+        if self.new_passport_number:
+            updated_values['passport_number'] = self.new_passport_number
+        if self.new_passport_expiry_date:
+            updated_values['valid_upto'] = self.new_passport_expiry_date
+
+        if self.employee and updated_values:
+            frappe.db.set_value('Employee', self.employee, updated_values)
+
     def on_submit(self):
         if self.work_permit_type not in ['Cancellation', 'New Kuwaiti', 'Local Transfer'] and self.workflow_state != "Rejected":
             if self.workflow_state == "Completed" and self.upload_work_permit and self.attach_invoice and self.new_work_permit_expiry_date:
@@ -208,8 +246,8 @@ class WorkPermit(Document):
                 self.set_work_permit_attachment_in_employee_doctype(self.upload_work_permit,self.new_work_permit_expiry_date)
             else:
                 msg = False
-                if not self.upload_work_permit or not self.attach_invoice:
-                    msg = "Upload the required documents(Work Permit and Invoice)"
+                if  not self.attach_invoice:
+                    msg = "Upload the required document(Invoice)"
                 if not self.new_work_permit_expiry_date:
                     msg = ((msg+" and ") if msg else "") + "Set <i>Updated Work Permit Expiry Date</i>"
                 if msg:
