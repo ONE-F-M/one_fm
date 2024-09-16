@@ -11,7 +11,6 @@ from frappe.utils import add_days, today, now, get_url_to_form, getdate
 from one_fm.utils import (
     production_domain,
     fetch_attendance_manager_user,
-    fetch_attendance_manager_user_obj,
     get_approver
 )
 from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
