@@ -169,7 +169,7 @@ def fetch_approver(employee, date=None):
 			limit_page_length=1
 		)
 		if employee_shift and len(employee_shift) > 0:
-			approver = get_approver(employee, date)
+			approver = get_approver(employee)
 			return {
 				'shift_assignment':employee_shift[0].name, 
 				'approver':approver, 

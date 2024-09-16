@@ -46,3 +46,13 @@ frappe.ui.form.on('Attendance Request', {
     }
   }
 });
+
+validate_from_date = (frm) => {
+	if (frm.doc.from_date < frappe.datetime.now_date()){
+    if (frm.is_new()){
+      frappe.throw("Atendance Request can not be created for past dates.")
+    }else {
+      frappe.throw("Atendance Request can not be updated to a past date.")
+    }
+	}
+}
