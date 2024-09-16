@@ -13,15 +13,7 @@ from one_fm.api.v1.utils import response
 def create_vector_index():
     try:
         os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY   
-        # max_input = 4096
-        # tokens = 256
-        # chunk_size = 600
-        # max_chunk_overlap = 0.5
-        # prompt_helper = PromptHelper(max_input, tokens, max_chunk_overlap, chunk_size_limit=chunk_size)
-        # llm_predictor = LLMPredictor(OpenAI(temperature=0.5, model_name="text-ada-001", max_tokens=tokens))
-        # Settings.llm_predictor = OpenAI(temperature=0.5, model_name="text-ada-001", max_tokens=tokens)
         docs = SimpleDirectoryReader(get_folder_path()).load_data()
-        # vector_index = VectorStoreIndex(documents=docs, llm_predictor=Settings.llm_predictor)
         vector_index = VectorStoreIndex.from_documents(docs)
         vector_index.save_to_disk("vector_index.json")
         return vector_index
