@@ -39,7 +39,7 @@ class ShiftRequestOverride(ShiftRequest):
             self.to_date = self.from_date
 
         # Validate 'From' date
-        if not self.assign_day_off:
+        if not self.purpose == "Assign Day Off":
             if getdate(today()) > getdate(self.from_date):
                 frappe.throw('From Date cannot be before today.')
         
