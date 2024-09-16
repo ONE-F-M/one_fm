@@ -6,21 +6,22 @@ from one_fm.utils import get_approver
 from one_fm.api.notification import get_employee_user_id
 
 def execute():
-    sync_fixtures("one_fm")
+    pass
+    # sync_fixtures("one_fm")
     # Pending Approval and Draft 
-    open_shift_requests = frappe.get_all("Shift Request", 
-        fields=["name", "shift_approver", "department", "workflow_state", "employee"], 
-        filters={"shift_approver": ("is", "set"), "workflow_state": ["in", ["Pending Approval", "Draft"]]},
-        order_by="creation desc")
+    # open_shift_requests = frappe.get_all("Shift Request", 
+    #     fields=["name", "shift_approver", "department", "workflow_state", "employee"], 
+    #     filters={"shift_approver": ("is", "set"), "workflow_state": ["in", ["Pending Approval", "Draft"]]},
+    #     order_by="creation desc")
 
-    update_sr(open_shift_requests)
+    # update_sr(open_shift_requests)
 
-    submitted_shift_requests = frappe.get_all("Shift Request", 
-        fields=["name", "shift_approver", "department", "workflow_state", "employee"], 
-        filters={"shift_approver": ("is", "set"), "workflow_state": ["in", ["Approved", "Rejected"]]},
-        order_by="creation desc")
+    # submitted_shift_requests = frappe.get_all("Shift Request", 
+    #     fields=["name", "shift_approver", "department", "workflow_state", "employee"], 
+    #     filters={"shift_approver": ("is", "set"), "workflow_state": ["in", ["Approved", "Rejected"]]},
+    #     order_by="creation desc")
 
-    update_submitted_sr(submitted_shift_requests)
+    # update_submitted_sr(submitted_shift_requests)
 
 def update_submitted_sr(shift_requests):
     for shift_request in shift_requests:
