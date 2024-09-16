@@ -2,8 +2,9 @@ import os
 import json
 
 import frappe
-from gpt_index import SimpleDirectoryReader, GPTListIndex, GPTSimpleVectorIndex, LLMPredictor, PromptHelper
-from langchain import OpenAI
+from llama_index.core import SimpleDirectoryReader,PromptHelper,VectorStoreIndex
+from langchain.llms import OpenAI
+
 
 from one_fm.api.v1.utils import response
 
@@ -12,14 +13,8 @@ from one_fm.api.v1.utils import response
 def create_vector_index():
     try:
         os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY   
-        max_input = 4096
-        tokens = 256
-        chunk_size = 600
-        max_chunk_overlap = 0.5
-        prompt_helper = PromptHelper(max_input, tokens, max_chunk_overlap, chunk_size_limit=chunk_size)
-        llm_predictor = LLMPredictor(OpenAI(temperature=0.5, model_name="text-ada-001", max_tokens=tokens))
         docs = SimpleDirectoryReader(get_folder_path()).load_data()
-        vector_index = GPTSimpleVectorIndex(documents=docs, llm_predictor=llm_predictor, prompt_helper=prompt_helper)
+        vector_index = VectorStoreIndex.from_documents(docs)
         vector_index.save_to_disk("vector_index.json")
         return vector_index
     except:
@@ -32,7 +27,7 @@ def ask_question(question: str = None):
         os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY
         if not question:
             return response("Bad Request !", 400, error="Question can not be empty")
-        index = GPTSimpleVectorIndex.load_from_disk("vector_index.json")
+        index = VectorStoreIndex.load_from_disk("vector_index.json")
         answer = index.query(question)
         return response(message="Success", status_code=200, data={"question": question, "answer": answer.response})
     except Exception as e:
