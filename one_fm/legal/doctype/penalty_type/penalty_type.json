@@ -1,4 +1,6 @@
 {
+ "actions": [],
+ "allow_rename": 1,
  "autoname": "field:penalty_name",
  "creation": "2020-06-16 19:04:42.552124",
  "doctype": "DocType",
@@ -29,7 +31,8 @@
    "label": "Penalty Code"
   }
  ],
- "modified": "2020-08-24 10:55:43.444445",
+ "links": [],
+ "modified": "2024-06-27 12:38:34.846471",
  "modified_by": "Administrator",
  "module": "Legal",
  "name": "Penalty Type",
@@ -51,5 +54,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

@@ -1,4 +1,25 @@
 frappe.ui.form.on('Warehouse', {
+  before_save: async (frm) => {
+    const isNewDoc = frm.is_new();
+    const isRateChanged = frm.doc.allow_zero_valuation_rate !== frm.doc.__zero_valuation_value;
+    if((isNewDoc && frm.doc.allow_zero_valuation_rate) || (!isNewDoc && isRateChanged)){
+      let prompt = new Promise((resolve, reject) => {
+        frappe.confirm(
+            'Do you want to change allow zero valuation rate?',
+            () => resolve(),
+            () => reject()
+        );
+    });
+    await prompt.then(
+        () => "", 
+        () => frappe.validated = false
+    );
+    }
+
+  },
+  onload: function(frm){
+    frm.doc.__zero_valuation_value = frm.doc.allow_zero_valuation_rate;
+  },
   refresh: function(frm){
     frm.toggle_enable(['is_group'], true);
 		frm.set_query('one_fm_site', function () {

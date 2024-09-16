@@ -13,6 +13,7 @@ from frappe.model.document import Document
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.processor import sendemail
+from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor_user
 
 
 class FingerprintAppointment(Document):
@@ -120,12 +121,11 @@ class FingerprintAppointment(Document):
 
     def notify_shift_supervisor(self):
         """Notify shift supervisor with the employee's appointment"""
-        shift = frappe.db.get_value("Employee",{'one_fm_civil_id':self.civil_id},['shift'])
+        shift = frappe.db.get_value("Employee",{"one_fm_civil_id":self.civil_id},"shift")
         if shift:
-            shift_doc = frappe.get_doc("Operations Shift",shift)
-            if shift_doc:
-                employee = frappe.get_doc("Employee", shift_doc.supervisor)
-                send_email_notification(self, [employee.user_id])
+            shift_supervisor_user = get_shift_supervisor_user(shift)
+            if shift_supervisor_user:
+                send_email_notification(self, [shift_supervisor_user])
 
     def notify_transportation(self):
         """Notify transportation with the employee's appointment"""

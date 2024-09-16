@@ -3,8 +3,8 @@
 
 frappe.ui.form.on('Shift Request', {
 	onload_post_render: function(frm){
-		$('[data-fieldname="checkin_map_html"]').append(`<div style='width:100%; height:500px' id='in_map'></div>`);
-		$('[data-fieldname="checkout_map_html"]').append(`<div style='width:100%; height:500px' id='out_map'></div>`);
+		$('[data-fieldname="checkin_map_html"]').empty().append(`<div style='width:100%; height:500px' id='in_map'></div>`);
+		$('[data-fieldname="checkout_map_html"]').empty().append(`<div style='width:100%; height:500px' id='out_map'></div>`);
 		let {checkin_latitude, checkin_longitude, checkout_latitude,checkout_longitude }= frm.doc;
 		window.markers = [];
 		window.circles = [];
@@ -39,7 +39,7 @@ frappe.ui.form.on('Shift Request', {
 		if(operations_shift){
 			frm.set_query("operations_role", function() {
 				return {
-					query: "one_fm.api.doc_methods.shift_request.get_operations_role",
+					query: "one_fm.overrides.shift_request.get_operations_role",
 					filters: {operations_shift}
 				};
 			});
@@ -59,7 +59,8 @@ frappe.ui.form.on('Shift Request', {
 function set_update_request_btn(frm) {
 	if(frm.doc.docstatus == 1 && frm.doc.workflow_state == 'Approved' && !frm.doc.update_request){
 		frappe.db.get_value('Employee', frm.doc.employee, 'user_id', function(r) {
-			if((frappe.session.user == frm.doc.approver) || (r.user_id && frappe.session.user == r.user_id)){
+			approvers = frm.doc.custom_shift_approvers.map(approver => approver.user);
+			if(approvers.includes(frappe.session.user) || (r.user_id && frappe.session.user == r.user_id)){
 				frm.add_custom_button(__('Update Request'), function() {
 					update_request(frm);
 				});
@@ -89,7 +90,7 @@ function update_request(frm) {
 				function(){
 					// Yes
 					frappe.call({
-						method: 'one_fm.api.doc_methods.shift_request.update_request',
+						method: 'one_fm.overrides.shift_request.update_request',
 						args: {
 							shift_request: frm.doc.name,
 							from_date: dialog.get_value('from_date'),
@@ -118,21 +119,26 @@ function update_request(frm) {
 function set_approver(frm){
     if(frm.doc.employee){
         frappe.call({
-            method: 'one_fm.api.doc_methods.shift_request.fetch_approver',
+            method: 'one_fm.overrides.shift_request.fetch_approver',
             args:{
-                'employee':frm.doc.employee
+                'doc':frm.doc
             },
             callback: function(r) {
                 if(r.message){
-                    frm.set_value("approver",r.message)
-					frm.set_value("shift_approver",r.message)
+                    frm.set_value("approver",r.message[0])
+					frm.set_value("shift_approver",r.message[0])
+					frm.clear_table("custom_shift_approvers");
+					for(let i=0; i<r.message.length; i++){
+						frm.add_child("custom_shift_approvers", {"user": r.message[i]});
+					}
+					frm.refresh_field("custom_shift_approvers");
                 }
             }
         });
     }
 	if(!frm.doc.employee_name && frm.doc.employee){
 		frappe.call({
-            method: 'one_fm.api.doc_methods.shift_request.fetch_employee_details',
+            method: 'one_fm.overrides.shift_request.fetch_employee_details',
             args:{
                 'employee':frm.doc.employee
             },
@@ -204,7 +210,7 @@ function clearCircles(){
 let set_employee_filters = frm=>{
 	frm.set_query("employee", function() {
 		return {
-			query: "one_fm.api.doc_methods.shift_request.get_employees",
+			query: "one_fm.overrides.shift_request.get_employees",
 			
 		};
 	});

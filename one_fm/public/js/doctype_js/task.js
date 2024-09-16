@@ -21,8 +21,9 @@ function set_perms(frm){
         if(!res.exc){
             let roles = res[0];
             let is_project_manager = res[1];
-            // if session user is project manager for linked project, then Projects Manager perms apply otherwise Projects User perms apply.
-            if (roles.includes("Projects User") && !roles.includes("Projects Manager") && !is_project_manager){
+            // if project is linked and session user is project manager, then Projects Manager perms apply otherwise Projects User perms apply.
+            // if there is no project, then only the doc.owner can change the task status and priority.
+            if (roles.includes("Projects User") && !roles.includes("Projects Manager") && !is_project_manager && (project || (frm.doc.owner != frappe.session.user))){
                 // If task status is one of ["Open", "Working", "Pending Review"], keep the status field editable.
                 // If task status is one of ["Overdue", "Template", "Completed", "Canceled"], make the status field read_only for Projects User.
                 if(USER_PERMS["status"].includes(frm.doc.status)){

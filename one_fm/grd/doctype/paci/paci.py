@@ -11,10 +11,27 @@ from frappe.utils import today, add_days, get_url, date_diff
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from frappe.core.doctype.communication.email import make
 from one_fm.processor import sendemail
+from one_fm.utils import is_scheduler_emails_enabled
 
 class PACI(Document):
+    def before_insert(self):
+        self.cancel_existing()
+    
+    def cancel_existing(self):
+        """Cancel  documents for that employee which were created in previous years"""
+        year_threshold = getdate(self.date_of_application).year or getdate().year
+        first_day_of_year = getdate(f'01-01-{year_threshold}') #Get the first day of the year
+        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee})
+        if existing_docs:
+            for one in existing_docs:
+                frappe.db.set_value(self.doctype,one,'workflow_state','Cancelled')
+            frappe.db.commit()
+
+
     def validate(self):
         self.set_grd_values()
+        self.set_new_expiry_date()
+
 
     def set_grd_values(self):
         if not self.grd_supervisor:
@@ -23,6 +40,10 @@ class PACI(Document):
             self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
         if not self.grd_operator_transfer:
             self.grd_operator_transfer = frappe.db.get_value('GRD Settings', None, 'default_grd_operator_transfer')
+
+    def set_new_expiry_date(self):
+        self.new_civil_id_expiry_date = frappe.db.get_value("Employee", self.employee, "work_permit_expiry_date")
+    
 
     def on_update(self):
         self.validate_mandatory_fields_on_update()
@@ -120,7 +141,9 @@ def notify_operator_to_take_hawiyati_renewal():# cron job at 8am in working days
     for paci in paci_list_renewal:
         if date_diff(date.today(),getdate(paci.upload_civil_id_payment_datetime))>=2:
             renewal_list.append(paci)
-    email_notification_reminder(renewal_operator,paci_list_renewal,"Reminder","Upload Hawiyati for","Renewal", supervisor)
+
+    if is_scheduler_emails_enabled():
+        email_notification_reminder(renewal_operator,paci_list_renewal,"Reminder","Upload Hawiyati for","Renewal", supervisor)
 
 def notify_operator_to_take_hawiyati_transfer(): # cron job at 8am in working days
     transfer_list=[]
@@ -130,7 +153,9 @@ def notify_operator_to_take_hawiyati_transfer(): # cron job at 8am in working da
     for paci in paci_list_transfer:
         if date_diff(date.today(),getdate(paci.upload_civil_id_payment_datetime))>=2:
             transfer_list.append(paci)
-    email_notification_reminder(transfer_operator,paci_list_transfer,"Reminder","Upload Hawiyati for","Transfer", supervisor)
+    
+    if is_scheduler_emails_enabled():
+        email_notification_reminder(transfer_operator,paci_list_transfer,"Reminder","Upload Hawiyati for","Transfer", supervisor)
 
 def system_remind_renewal_operator_to_apply():# cron job at 8am in working days
     """
@@ -140,7 +165,9 @@ def system_remind_renewal_operator_to_apply():# cron job at 8am in working days
     renewal_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator")
     paci_list = frappe.db.get_list('PACI',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Renewal')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
-    notification_reminder(paci_list,supervisor,renewal_operator,"Renewal")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(paci_list,supervisor,renewal_operator,"Renewal")
 
 
 def system_remind_transfer_operator_to_apply():# cron job at 8am in working days
@@ -151,7 +178,9 @@ def system_remind_transfer_operator_to_apply():# cron job at 8am in working days
     transfer_operator = frappe.db.get_single_value("GRD Settings", "default_grd_operator_transfer")
     paci_list = frappe.db.get_list('PACI',
     {'date_of_application':['<=',today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Transfer')]},['civil_id','name','reminder_grd_operator','reminder_grd_operator_again'])
-    notification_reminder(paci_list,supervisor,transfer_operator,"Transfer")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(paci_list,supervisor,transfer_operator,"Transfer")
 
 
 def notification_reminder(paci_list,supervisor,operator,type):

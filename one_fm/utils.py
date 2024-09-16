@@ -1,55 +1,59 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 from __future__ import unicode_literals
+import os, json, math, pymysql, requests, datetime
+from datetime import timedelta, datetime
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
+import pandas as pd
+from six import string_types
+
+
+import frappe
+from frappe import _
 from frappe.auth import validate_ip_address
 from frappe.utils.nestedset import validate_loop
-from one_fm.api.notification import create_notification_log
-from frappe import _
-import frappe, os, erpnext, json, math, itertools, pymysql, requests
-from frappe.model.document import Document
-from erpnext.setup.doctype.employee.employee import get_holiday_list_for_employee
-from frappe.utils.csvutils import read_csv_content
-from datetime import tzinfo, timedelta, datetime
-from dateutil import parser
-from datetime import date
-from frappe.model.naming import set_name_by_naming_series
-from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
-    expire_allocation, create_leave_ledger_entry
-)
 from frappe.desk.form.assign_to import add as add_assignment
-from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
-from dateutil.relativedelta import relativedelta
+from frappe.desk.notifications import extract_mentions
+from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
+from frappe.core.doctype.doctype.doctype import validate_series
+from frappe.utils.user import get_users_with_role
+from frappe.permissions import has_permission
+from frappe.model.workflow import apply_workflow
+from frappe.desk.form import assign_to
+from frappe.model.naming import make_autoname
+from deep_translator import GoogleTranslator
 from frappe.utils import (
     cint, cstr, date_diff, flt, formatdate, getdate, get_link_to_form,
     comma_or, get_fullname, add_years, add_months, add_days,
     nowdate,get_first_day,get_last_day, today, now_datetime, rounded, get_url,
     get_datetime, add_to_date, time_diff, get_time, get_url_to_form, strip_html, now
 )
-import datetime
-from datetime import datetime, time
-from frappe import utils
-import pandas as pd
-from hrms.hr.utils import get_holidays_for_employee
-from one_fm.processor import sendemail
-from frappe.desk.form import assign_to
-from one_fm.one_fm.payroll_utils import get_user_list_by_role
-from frappe.desk.notifications import extract_mentions
-from frappe.desk.doctype.notification_log.notification_log import get_title, get_title_html
-from one_fm.api.api import push_notification_rest_api_for_leave_application
 from frappe.workflow.doctype.workflow_action.workflow_action import (
     get_email_template, deduplicate_actions, get_next_possible_transitions,
-    get_doc_workflow_state, get_workflow_name, get_workflow_action_url
+    get_doc_workflow_state, get_workflow_name, get_workflow_action_url,
+    get_users_next_action_data as _get_users_next_action_data
 )
-from six import string_types
-from frappe.core.doctype.doctype.doctype import validate_series
-from frappe.utils.user import get_users_with_role
-from frappe.permissions import has_permission
-from frappe.desk.form.linked_with import get_linked_fields
-from frappe.model.workflow import apply_workflow
 
-from deep_translator import GoogleTranslator
-from frappe.model.naming import make_autoname
-from erpnext.setup.doctype.employee.employee import get_all_employee_emails, get_employee_email
+import erpnext
+from erpnext.setup.doctype.employee.employee import (
+    get_holiday_list_for_employee, get_all_employee_emails, get_employee_email
+)
+
+
+from hrms.hr.utils import get_holidays_for_employee
+from hrms.hr.doctype.interview_feedback.interview_feedback import get_applicable_interviewers
+from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import (
+    expire_allocation, create_leave_ledger_entry
+)
+
+from one_fm.api.notification import create_notification_log
+from one_fm.processor import sendemail
+from one_fm.one_fm.payroll_utils import get_user_list_by_role
+from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
+from one_fm.api import api
+
+
 
 def get_common_email_args(doc):
 	doctype = doc.get("doctype")
@@ -94,7 +98,7 @@ def check_upload_original_visa_submission_reminder2():
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
 
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False)
+            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=True)
 
 
 
@@ -117,7 +121,7 @@ def check_upload_original_visa_submission_reminder1():
         cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
+            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False, is_scheduler_email=True)
 
 
 
@@ -150,7 +154,7 @@ def check_pam_visa_approval_submission_seven():
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
 
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False)
+            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=True)
 
 
 
@@ -174,7 +178,7 @@ def check_pam_visa_approval_submission_six_half():
         cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
+            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False, is_scheduler_email=True)
 
 
 def check_pam_visa_approval_submission_daily():
@@ -204,7 +208,7 @@ def check_upload_tasriah_reminder2():
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
 
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False)
+            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=True)
 
 
 
@@ -229,7 +233,7 @@ def check_upload_tasriah_reminder1():
         cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False)
+            content=msg, subject="PAM Visa Reminder", cc=cc, delayed=False, is_scheduler_email=True)
 
 
 
@@ -253,7 +257,11 @@ def check_upload_tasriah_submission_nine():
 
 
 
-def check_grp_supervisor_submission_daily():
+def check_grp_supervisor_submission_daily(is_scheduled_event=True):
+    """
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=1 and pam_visa_submitted_supervisor=0")
 
     for pam_visa in pam_visas:
@@ -268,10 +276,14 @@ def check_grp_supervisor_submission_daily():
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False)
+            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=is_scheduled_event)
 
 
-def check_grp_operator_submission_four_half():
+def check_grp_operator_submission_four_half(is_scheduled_event=True):
+    """
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0 and pam_visa_reminder2_done=1")
 
     for pam_visa in pam_visas:
@@ -290,11 +302,15 @@ def check_grp_operator_submission_four_half():
         cc = frappe.db.get_single_value('PAM Visa Setting', 'grd_supervisor')
 
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder",cc=cc, delayed=False)
+            content=msg, subject="PAM Visa Reminder",cc=cc, delayed=False, is_scheduler_email=is_scheduled_event)
 
 
 
-def check_grp_operator_submission_four():
+def check_grp_operator_submission_four(is_scheduled_event=True):
+    """
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     pam_visas = frappe.db.sql_list("select name from `tabPAM Visa` where pam_visa_submitted=0 and pam_visa_reminder2_start=1")
 
     for pam_visa in pam_visas:
@@ -312,7 +328,7 @@ def check_grp_operator_submission_four():
         recipient = frappe.db.get_single_value('PAM Visa Setting', 'grd_operator')
 
         sendemail(sender=sender, recipients= recipient,
-            content=msg, subject="PAM Visa Reminder", delayed=False)
+            content=msg, subject="PAM Visa Reminder", delayed=False, is_scheduler_email=is_scheduled_event)
 
 
 
@@ -325,7 +341,11 @@ def check_grp_operator_submission_daily():
         pam_visa_doc.pam_visa_reminder2_start = 1
         pam_visa_doc.save(ignore_permissions = True)
 
-def send_gp_letter_attachment_reminder2():
+def send_gp_letter_attachment_reminder2(is_scheduled_event=True):
+    """
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     gp_letters_request = frappe.db.sql_list("select DISTINCT gp_letter_request_reference from `tabGP Letter` where (gp_letter_attachment is NULL or gp_letter_attachment='' ) ")
 
     for gp_letter_request in gp_letters_request:
@@ -347,13 +367,17 @@ def send_gp_letter_attachment_reminder2():
                 cc = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
 
                 sendemail(sender=sender, recipients= recipient,
-                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False)
+                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False, is_scheduler_email=is_scheduled_event)
 
                 gp_letter_doc.upload_reminder2 = frappe.utils.now()
                 gp_letter_doc.save(ignore_permissions = True)
 
 
-def send_gp_letter_attachment_reminder3():
+def send_gp_letter_attachment_reminder3(is_scheduled_event=True):
+    """
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     gp_letters_request = frappe.db.sql_list("select DISTINCT gp_letter_request_reference from `tabGP Letter` where (gp_letter_attachment is NULL or gp_letter_attachment='' ) ")
 
     for gp_letter_request in gp_letters_request:
@@ -373,13 +397,17 @@ def send_gp_letter_attachment_reminder3():
                 cc = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
 
                 sendemail(sender=sender, recipients= recipient,
-                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False)
+                    content=msg, subject="GP Letter Upload Reminder" ,cc=cc, delayed=False, is_scheduler_email=is_scheduled_event)
 
                 gp_letter_doc.upload_reminder3 = frappe.utils.now()
                 gp_letter_doc.save(ignore_permissions = True)
 
 
-def send_gp_letter_attachment_no_response():
+def send_gp_letter_attachment_no_response(is_scheduled_event=True):
+    """
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     gp_letters_request = frappe.db.sql_list("select DISTINCT gp_letter_request_reference from `tabGP Letter` where (gp_letter_attachment is NULL or gp_letter_attachment='' ) ")
 
     for gp_letter_request in gp_letters_request:
@@ -395,16 +423,20 @@ def send_gp_letter_attachment_no_response():
             sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
             recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
             sendemail(sender=sender, recipients= recipient,
-                content=msg, subject="GP Letter Upload No Response", delayed=False)
+                content=msg, subject="GP Letter Upload No Response", delayed=False, is_scheduler_email=is_scheduled_event)
 
-def send_travel_agent_email():
+def send_travel_agent_email(is_scheduled_event=True):
+    """
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     gp_letters_request = frappe.db.sql_list("select name from `tabGP Letter Request` where (gp_status is NULL or gp_status='' or gp_status='Reject') and (supplier is not NULL or supplier!='') ")
 
     for gp_letter_request in gp_letters_request:
         gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request)
         if gp_letter_doc.gp_status!='No Response':
             if not gp_letter_doc.sent_date:
-                send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
+                send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request, is_scheduler_email=is_scheduled_event)
 
                 gp_letter_doc.sent_date = frappe.utils.now()
                 gp_letter_doc.save(ignore_permissions = True)
@@ -431,7 +463,11 @@ def send_travel_agent_email():
             #     sendemail(sender=sender, recipients= recipient,
             #         content=msg, subject="GP Letter Request No Response", delayed=False)
 
-def send_gp_letter_reminder():
+def send_gp_letter_reminder(is_scheduled_event=True):
+    """
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     gp_letters_request = frappe.db.sql_list("select name from `tabGP Letter Request` where (gp_status is NULL or gp_status='' or gp_status='Reject') and (supplier is not NULL or supplier!='') ")
 
     for gp_letter_request in gp_letters_request:
@@ -440,21 +476,21 @@ def send_gp_letter_reminder():
             if gp_letter_doc.sent_date and not gp_letter_doc.reminder1:
                 after_three_hour = add_to_date(gp_letter_doc.sent_date, hours=3)
                 if get_datetime(frappe.utils.now())>=get_datetime(after_three_hour):
-                    send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
+                    send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request, is_scheduler_email=is_scheduled_event)
 
                     gp_letter_doc.reminder1 = frappe.utils.now()
                     gp_letter_doc.save(ignore_permissions = True)
             if gp_letter_doc.reminder1 and not gp_letter_doc.reminder2:
                 after_three_hour = add_to_date(gp_letter_doc.reminder1, hours=3)
                 if get_datetime(frappe.utils.now())>=get_datetime(after_three_hour):
-                    send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
+                    send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request, is_scheduler_email=is_scheduled_event)
 
                     gp_letter_doc.reminder2 = frappe.utils.now()
                     gp_letter_doc.save(ignore_permissions = True)
             if gp_letter_doc.reminder2:
                 after_three_hour = add_to_date(gp_letter_doc.reminder2, hours=3)
                 if get_datetime(frappe.utils.now())>=get_datetime(after_three_hour):
-                    send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request)
+                    send_gp_email(gp_letter_doc.pid, gp_letter_doc.gp_letter_candidates, gp_letter_request, is_scheduler_email=is_scheduled_event)
 
                     gp_letter_doc.gp_status = 'No Response'
                     gp_letter_doc.save(ignore_permissions = True)
@@ -465,13 +501,13 @@ def send_gp_letter_reminder():
                     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                     recipient = frappe.db.get_single_value('GP Letter Request Setting', 'grd_email')
                     sendemail(sender=sender, recipients= recipient,
-                        content=msg, subject="GP Letter Request No Response", delayed=False)
+                        content=msg, subject="GP Letter Request No Response", delayed=False, is_scheduler_email=is_scheduled_event)
 
 
 
 
 
-def send_gp_email(pid, candidates, gp_letter_request):
+def send_gp_email(pid, candidates, gp_letter_request, is_scheduler_email=False):
     gp_letter_doc = frappe.get_doc("GP Letter Request", gp_letter_request)
     page_link = "http://206.189.228.82/gp_letter_request?pid=" + pid
     # page_link = get_url("/gp_letter_request?pid=" + pid)
@@ -493,7 +529,7 @@ def send_gp_email(pid, candidates, gp_letter_request):
     }]
 
     sendemail(sender=sender, recipients= recipient,
-        content=msg, subject="Request for GP Letter | {0}".format(gp_letter_request), attachments=attachments ,delayed=False)
+        content=msg, subject="Request for GP Letter | {0}".format(gp_letter_request), attachments=attachments ,delayed=False, is_scheduler_email=is_scheduler_email)
 
 
 def create_gp_letter_request():
@@ -587,7 +623,7 @@ def notify_employee(doc, method):
             date = "from "+cstr(doc.from_date)+" to "+cstr(doc.to_date)
 
         message = "Hello, Your "+doc.leave_type+" Application "+date+" has been "+doc.workflow_state
-        push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, doc.name)
+        api.push_notification_rest_api_for_leave_application(doc.employee,"Leave Application", message, doc.name)
 
 @frappe.whitelist()
 def leave_appillication_on_cancel(doc, method):
@@ -1907,7 +1943,7 @@ def validate_iban_is_filled(doc, method):
 def bank_account_on_update(doc, method):
     update_onboarding_doc_for_bank_account(doc)
     if doc.workflow_state == "Open Request":
-        notify_hr_manager(doc)
+        notify_payroll_officer(doc)
 
 
 def bank_account_on_trash(doc, method):
@@ -1941,31 +1977,34 @@ def update_onboarding_doc_for_bank_account(doc):
             oe.workflow_state = 'Bank Account'
         oe.save(ignore_permissions=True)
 
-def notify_hr_manager(doc):
+def notify_payroll_officer(doc):
     try:
-        hr_manager = frappe.db.get_single_value("HR Settings", 'custom_hr_manager')
-        if hr_manager:
+        payroll_officer = frappe.db.get_single_value("HR and Payroll Additional Settings", 'payroll_officer')
+        if payroll_officer:
             add_assignment({
                     'doctype': doc.doctype,
                     'name': doc.name,
-                    'assign_to': [hr_manager],
+                    'assign_to': [payroll_officer],
                     'description': (_("The Following Bank Acccount needs to be processed. Kindly, proceed with the action. ").format(doc.name))
                 })
         else:
-            frappe.throw("Please add HR Manager in the HR Settings")
+            frappe.throw("Please add Payroll Officer in the HR and Payroll Additional Settings")
     except:
         frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
 
+
 def send_roster_report():
     # Enqueue roster report generation to background
-    frappe.enqueue(generate_roster_report, is_async=True, queue='long')
+    frappe.enqueue(generate_roster_report, is_async=True, queue='long', is_scheduled_event=True)
 
-def generate_roster_report():
+def generate_roster_report(is_scheduled_event=False):
     """
     This method creates a monthly company wide roster Post and Employee report in a tabular format
     and sends it via email to users having role as 'Operations Manager'.
-    """
 
+    Args:
+        is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
+    """
     start_date = cstr(getdate())
     end_date = add_to_date(start_date, days=30)
 
@@ -2087,11 +2126,11 @@ def generate_roster_report():
 
     # Send Roster Post report email to Operations Managers
     post_report_subject = "Roster Post Report from {start_date} to {end_date}".format(start_date=start_date, end_date=end_date)
-    sendemail(recipients= recipients, content=post_report_table, subject=post_report_subject ,delayed=False)
+    sendemail(recipients= recipients, content=post_report_table, subject=post_report_subject ,delayed=False, is_scheduler_email=is_scheduled_event)
 
     # Send Roster Employee report email to Operations Managers
     employee_report_subject = "Roster Employee Report from {start_date} to {end_date}".format(start_date=start_date, end_date=end_date)
-    sendemail(recipients= recipients, content=employee_report_table, subject=employee_report_subject ,delayed=False)
+    sendemail(recipients= recipients, content=employee_report_table, subject=employee_report_subject ,delayed=False, is_scheduler_email=is_scheduled_event)
 
 
 
@@ -2679,18 +2718,25 @@ def get_users_next_action_data(transitions, doc, recipients):
 			)
 	return user_data_map
 
-def override_frappe_send_workflow_action_email(users_data, doc):
-	recipients = []
-	for d in users_data:
-		recipients.append(d.get("email"))
-	if recipients:
-		send_workflow_action_email(doc, recipients)
+# def override_frappe_send_workflow_action_email(doc, transitions):
+#     users_data = _get_users_next_action_data(transitions, doc)
+#     recipients = []
+#     for d in users_data:
+#         if (type(d)==str or type(d)==dict):
+#             recipients.append(d)
+#         else:
+#             recipients.append(d.get("email"))
+#     if recipients:
+#         send_workflow_action_email(doc, recipients)
 
 @frappe.whitelist()
 def send_workflow_action_email(doc, recipients):
     frappe.enqueue(queue_send_workflow_action_email, doc=doc, recipients=recipients)
 
 def queue_send_workflow_action_email(doc, recipients):
+    if recipients and (type(recipients)!=list):
+        recipients = [recipients]
+    
     workflow = get_workflow_name(doc.get("doctype"))
     next_possible_transitions = get_next_possible_transitions(
         workflow, get_doc_workflow_state(doc), doc
@@ -3003,6 +3049,9 @@ def get_domain():
 def production_domain():
     return frappe.db.get_single_value("ONEFM General Setting", "is_production")
 
+def is_scheduler_emails_enabled():
+    return frappe.db.get_single_value("ONEFM General Setting", "enable_scheduler_event_emails")
+
 def check_employee_attendance_dependents(employee):
     """
         This method checks if employee have Checkin/out, shift request
@@ -3016,6 +3065,64 @@ def get_today_leaves(cur_date):
         WHERE status='Approved'
         AND '{cur_date}' BETWEEN from_date AND to_date;
     """, as_dict=1)]
+
+@frappe.whitelist()
+def get_approver_user(employee):
+    approver = get_approver(employee)
+    if approver:
+        return frappe.db.get_value("Employee", approver, "user_id")
+    return None
+
+@frappe.whitelist()
+def get_approver(employee, date=False):
+    '''
+        Method to get the line manager employee of an employee with the priority
+        args:
+            employee: name of Employee object
+            date: date in which the shift supervisor working
+        return: employee eference of the line manager or None
+    '''
+
+    if not frappe.db.exists("Employee", {'name':employee}):
+        frappe.throw(f"Employee {employee} does not exists")
+
+    employee_field_list = ["user_id", "reports_to", "shift", "site", "shift_working", "employee_name"]
+    employee_data = frappe.db.get_value('Employee', employee, employee_field_list, as_dict=1)
+
+    line_manager = employee_data.reports_to if employee_data.reports_to else None
+
+    if not line_manager:
+        if employee_data.user_id and has_super_user_role(employee_data.user_id):
+            line_manager = employee
+
+    if not line_manager:
+        if employee_data.shift_working:
+            if employee_data.shift:
+                line_manager = get_shift_supervisor(employee_data.shift, date)
+                if line_manager:
+                    return line_manager
+            if not line_manager and employee_data.site:
+                line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
+                if not line_manager:
+                    project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
+                    if project:
+                        line_manager = frappe.db.get_value('Project', project, 'account_manager')
+        else:
+            if employee_data.site:
+                line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
+
+            if not line_manager and employee_data.shift:
+                line_manager = get_shift_supervisor(employee_data.shift, date)
+            
+            if not line_manager:
+                frappe.msgprint(
+                    _("Please ensure that the Reports To or Operations Site Supervisor is set for {0}, Since the employee is not shift working".format(employee_data.employee_name)),
+                    title= "Missing Data",
+                    indicator="orange",
+                    alert=True
+                )
+
+    return line_manager
 
 @frappe.whitelist()
 def has_super_user_role(user=None):
@@ -3198,6 +3305,7 @@ def check_employee_permission_on_doc(doc):
                     if frappe.get_single("ONEFM General Setting").extend_user_permissions:
                         approver_list = get_other_managers(doc.employee)
                     approver_list.append(approver)
+
                     if session_employee not in approver_list:
 
                         frappe.throw("You do not have permissions to access this document.")
@@ -3332,24 +3440,6 @@ def translate_words(word: str, target_language_code: str="ar") -> str:
             frappe.log_error(frappe.get_traceback(), "Error while translating word")
             return word
     return word
-
-def send_shift_request_mail(doc, method=None):
-    if doc.workflow_state == 'Pending Approval':
-        try:
-            title = f"Urgent Notification: {doc.doctype} Requires Your Immediate Review"
-            context = dict(
-                employee_name=doc.employee_name,
-                from_date=doc.from_date,
-                to_date=doc.to_date,
-                department=doc.department,
-                checkin_site=doc.check_in_site,
-                checkout_site=doc.check_out_site,
-                doc_link=get_url_to_form(doc.doctype, doc.name)
-            )
-            msg = frappe.render_template('one_fm/templates/emails/shift_request_notification.html', context=context)
-            frappe.enqueue(sendemail, recipients=doc.shift_approver, subject=title, content=msg, at_front=True, is_async=True)
-        except:
-            frappe.log_error(frappe.get_traceback(), "Error while sending shift request notification")
 
 
 def custom_validate_interviewer(self):
@@ -3486,7 +3576,7 @@ def send_birthday_reminders():
     """Send Employee birthday reminders if no 'Stop Birthday Reminders' is not set."""
     from hrms.controllers.employee_reminders import send_birthday_reminder, get_employees_who_are_born_today,get_birthday_reminder_text_and_message
 
-    to_send = int(frappe.db.get_single_value("HR Settings", "send_birthday_reminders"))
+    to_send = int(frappe.db.get_single_value("HR Settings", "send_birthday_reminders")) or is_scheduler_emails_enabled()
     if not to_send:
         return
 
@@ -3548,7 +3638,7 @@ def get_all_employee_emails(company,is_birthday=False,is_anniversary = False):
 def send_work_anniversary_reminders():
     from hrms.controllers.employee_reminders import send_work_anniversary_reminder, get_employees_having_an_event_today,get_work_anniversary_reminder_text
     """Send Employee Work Anniversary Reminders if 'Send Work Anniversary Reminders' is checked"""
-    to_send = int(frappe.db.get_single_value("HR Settings", "send_work_anniversary_reminders"))
+    to_send = int(frappe.db.get_single_value("HR Settings", "send_work_anniversary_reminders")) or is_scheduler_emails_enabled()
     if not to_send:
         return
 
@@ -3592,3 +3682,4 @@ def is_holiday(employee, date=None, raise_exception=True):
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error while validating Holiday")
         return False, ""
+                    

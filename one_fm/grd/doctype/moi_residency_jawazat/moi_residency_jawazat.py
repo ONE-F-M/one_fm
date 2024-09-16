@@ -11,10 +11,25 @@ from frappe.utils import today, add_days, get_url
 from frappe.core.doctype.communication.email import make
 from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, now_datetime, nowdate, cstr
 from one_fm.grd.doctype.paci import paci
+from one_fm.utils import is_scheduler_emails_enabled
 
 class MOIResidencyJawazat(Document):
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
             ['phone_no', 'email', 'company_name_arabic'], as_dict=1)
+    
+    def before_insert(self):
+        self.cancel_existing()
+    
+    def cancel_existing(self):
+        """Cancel  documents for that employee which were created in previous years"""
+        year_threshold = getdate(self.date_of_application).year or getdate().year
+        first_day_of_year = getdate(f'01-01-{year_threshold}') #Get the first day of the year
+        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee})
+        if existing_docs:
+            for one in existing_docs:
+                frappe.db.set_value(self.doctype,one,'workflow_state','Cancelled')
+            frappe.db.commit()
+
     
     def validate(self):
         self.set_grd_values()
@@ -30,8 +45,8 @@ class MOIResidencyJawazat(Document):
             self.grd_operator = frappe.db.get_value('GRD Settings', None, 'default_grd_operator')
     def set_new_expiry_date(self):
         if self.category != "Extend":
-            employee = frappe.get_doc('Employee',self.employee)
-            self.new_residency_expiry_date = employee.work_permit_expiry_date
+            self.new_residency_expiry_date = frappe.db.get_value("Employee", self.employee, "work_permit_expiry_date")
+
 
     def set_company_address(self):
         """
@@ -83,7 +98,7 @@ class MOIResidencyJawazat(Document):
         paci.create_PACI_for_transfer(self.employee)
 
     def validate_mandatory_fields_on_submit(self):
-        field_list = [{'Upload Payment Invoice':'invoice_attachment'},{'Upload Residency':'residency_attachment'},{'Updated Residency Expiry Date':'new_residency_expiry_date'}]
+        field_list = [{'Upload Payment Invoice':'invoice_attachment'},{'Updated Residency Expiry Date':'new_residency_expiry_date'}]
         self.set_mendatory_fields(field_list)
 
     def set_mendatory_fields(self,field_list):
@@ -94,7 +109,7 @@ class MOIResidencyJawazat(Document):
                     mandatory_fields.append(field)
 
         if len(mandatory_fields) > 0:
-            message= 'Mandatory fields required in Work Permit form<br><br><ul>'
+            message= 'Mandatory fields required in MOI Residency Jawazat form<br><br><ul>'
             for mandatory_field in mandatory_fields:
                 message += '<li>' + mandatory_field +'</li>'
             message += '</ul>'
@@ -194,7 +209,9 @@ def system_remind_renewal_operator_to_apply():# cron job at 4pm
     moi_list = frappe.db.get_list('MOI Residency Jawazat',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['in',('Renewal','Extend')]},
     ['one_fm_civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
-    notification_reminder(moi_list,supervisor,renewal_operator,"Renewal or Extend")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(moi_list,supervisor,renewal_operator,"Renewal or Extend")
 
 
 def system_remind_transfer_operator_to_apply():# cron job at 4pm
@@ -204,7 +221,9 @@ def system_remind_transfer_operator_to_apply():# cron job at 4pm
     moi_list = frappe.db.get_list('MOI Residency Jawazat',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['=',('Transfer')]},
     ['one_fm_civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
-    notification_reminder(moi_list,supervisor,transfer_operator,"Local Transfer")
+    
+    if is_scheduler_emails_enabled():
+        notification_reminder(moi_list,supervisor,transfer_operator,"Local Transfer")
 
 
 def notification_reminder(moi_list,supervisor,operator,type):

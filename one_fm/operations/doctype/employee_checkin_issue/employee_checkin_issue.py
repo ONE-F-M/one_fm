@@ -7,8 +7,12 @@ from frappe.model.document import Document
 from frappe.utils import getdate, get_datetime, add_to_date, format_date
 from frappe import _
 from one_fm.api.utils import get_reports_to_employee_name
+from one_fm.api.notification import get_employee_user_id
+from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
 from one_fm.api.v1.utils import response
-from one_fm.utils import (workflow_approve_reject, send_workflow_action_email)
+from one_fm.utils import (
+	workflow_approve_reject, send_workflow_action_email, get_approver
+)
 
 class ExistAttendance(frappe.ValidationError):
 	pass
@@ -126,18 +130,31 @@ class EmployeeCheckinIssue(Document):
 		return 'Checkin Issue'
 
 @frappe.whitelist()
-def fetch_approver(employee):
+def fetch_approver(employee, date=None):
 	if employee:
 		shift_detail = {"assigned_shift":'',"shift_supervisor":'', "shift":'',"shift_type":''}
-		employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-		if employee_shift:
-			approver = get_reports_to_employee_name(employee)
+		filters={"employee":employee}
+		if date:
+			filters["start_date"] = getdate(date)
+		employee_shift = frappe.get_list(
+			"Shift Assignment",
+			fields=["name", "shift", "shift_type"],
+			filters=filters,
+			order_by='creation desc',
+			limit_page_length=1
+		)
+
+		if employee_shift and len(employee_shift) > 0:
+			approver = get_approver(employee)
 			shift_detail['assigned_shift'] = employee_shift[0].name
 			shift_detail['shift_supervisor'] = approver
 			shift_detail['shift'] = employee_shift[0].shift
 			shift_detail['shift_type'] = employee_shift[0].shift_type
 			return shift_detail
-		frappe.throw("No approver found for {employee}".format(employee=employee))
+		tail_end = ""
+		if date:
+			tail_end = "on {0}".format(date)
+		frappe.throw("No shift assignment found for {employee} {tail_end}".format(employee=employee, tail_end=tail_end))
 
 @frappe.whitelist()
 def create_checkin_issue(employee, issue_type, log_type, latitude, longitude, reason):
@@ -161,3 +178,4 @@ def create_checkin_issue(employee, issue_type, log_type, latitude, longitude, re
 		response("Success", 200, checkin_issue_doc.as_dict())
 	except:
 		frappe.log_error(frappe.get_traceback(), 'Employee Checkin Issue')
+		response("Bad Request", 400, None, "Employee Checkin Issue")

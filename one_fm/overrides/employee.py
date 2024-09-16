@@ -1,4 +1,5 @@
 from itertools import chain
+from json import loads
 
 import frappe
 from frappe.utils import getdate, add_days, get_url_to_form, get_url
@@ -6,6 +7,7 @@ from frappe.utils.user import get_users_with_role
 from frappe.permissions import remove_user_permission
 from one_fm.api.api import  push_notification_rest_api_for_checkin
 from one_fm.api.tasks import send_notification
+from one_fm.api.v1.utils import response
 from hrms.overrides.employee_master import *
 from one_fm.hiring.utils import (
     employee_after_insert, employee_before_insert, set_employee_name,
@@ -13,9 +15,10 @@ from one_fm.hiring.utils import (
     is_subcontract_employee
 )
 from one_fm.processor import sendemail,send_whatsapp
-from one_fm.utils import get_domain, get_standard_notification_template, get_approver
+from one_fm.utils import get_domain, get_standard_notification_template, get_approver_user
 from six import string_types
 from frappe import _
+from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
 
 class EmployeeOverride(EmployeeMaster):
     def validate(self):
@@ -31,6 +34,8 @@ class EmployeeOverride(EmployeeMaster):
         self.validate_status()
         self.validate_reports_to()
         self.validate_preferred_email()
+        self.validate_face_recognition_enrollment()
+        self.toggle_auto_attendance()
         update_user_doc(self)
         if self.job_applicant:
             self.validate_onboarding_process()
@@ -45,11 +50,36 @@ class EmployeeOverride(EmployeeMaster):
         employee_validate_attendance_by_timesheet(self, method=None)
         validate_leaves(self)
 
+
+    def toggle_auto_attendance(self):
+        try:
+            if not self.is_new():
+                doc_before_update = self.get_doc_before_save()
+                if doc_before_update.auto_attendance != self.auto_attendance:
+                    if not any((frappe.db.exists("Has Role", {"role": ["IN", ["HR Manager", "HR Supervisor", "Attendance Manager"]], "parent": frappe.session.user}), frappe.session.user == "Administrator")):
+                        frappe.throw("You Are Not Permitted To Toggle Auto-Attendance")
+        except Exception as e:
+            frappe.log_error(title = f"{str(e)}", message = frappe.get_traceback())
+
+
+
     def set_employee_id_based_on_residency(self):
         if self.employee_id:
             residency_employee_id = get_employee_id_based_on_residency(self.employee_id, self.under_company_residency, self.name, self.employment_type)
             if self.employee_id != residency_employee_id:
                 self.employee_id = residency_employee_id
+
+    def validate_face_recognition_enrollment(self):
+        # Skip the validation while creating new employee
+        if self.is_new():
+            return
+
+        prev_enrollment = self.get_doc_before_save().get('enrolled')
+
+        # Allow update if the context flag is set
+        if not frappe.flags.allow_enrollment_update:
+            if prev_enrollment != self.enrolled:
+                frappe.throw(f"Enrollment field is read-only and cannot be modified.")
 
     def before_save(self):
         self.assign_role_profile_based_on_designation()
@@ -150,16 +180,18 @@ class EmployeeOverride(EmployeeMaster):
                         cell_number = "".join(i for i in self.cell_number if i.isdigit())
                     else:
                         cell_number = self.cell_number
-                whatsapp_message = f"Dear {context.first_name}, Your residency registration process has been completed and your employee ID has been updated from {self.get_doc_before_save().employee_id} to {self.employee_id}.",
-                send_whatsapp(sender_id=cell_number,body = whatsapp_message)
+                content_variables= {
+	                    	'1':context.first_name,
+                            '2':self.get_doc_before_save().employee_id,
+                            '3':self.employee_id,
+                    	}
+                send_whatsapp(sender_id=cell_number,template_name='employee_id_change', content_variables=content_variables)
         except:
             frappe.log_error(title = "Error Notifying Employee",message = frappe.get_traceback())
             frappe.msgprint("Error Notifying Employee, Please check Error Log for Details")
 
     def get_reports_to_user(self):
-        approver = get_approver(self.name)
-        if approver:
-            return frappe.db.get_value('Employee', approver, 'user_id')
+        return get_approver_user(self.name)
 
     def update_subcontract_onboard(self):
         subcontract_onboard = frappe.db.exists("Onboard Subcontract Employee", {"employee": self.name, "enrolled": ['!=', '1']})
@@ -265,7 +297,7 @@ class NotifyAttendanceManagerOnStatusChange:
 
     @property
     def _operations_shift_supervisor(self) -> list:
-        operation_shifts = frappe.db.sql(""" SELECT name from `tabOperations Shift` WHERE supervisor = %s AND status = 'Active' """, (self.employee_object.name), as_list=1)
+        operation_shifts = get_supervisor_operations_shifts(self.employee_object.name)
         return list(chain.from_iterable(operation_shifts)) if operation_shifts else list()
 
     @property
@@ -503,3 +535,21 @@ def is_employee_on_leave(employee, date):
     ):
         return True
     return False
+
+
+
+@frappe.whitelist(methods=["POST"])
+def toggle_auto_attendance(employee_names: list | str, status: bool):
+    try:
+        employee_names = loads(employee_names)
+        if any((frappe.db.exists("Has Role", {"role": ["IN", ["HR Manager", "HR Supervisor", "Attendance Manager"]], "parent": frappe.session.user}), frappe.session.user == "Administrator")):
+            frappe.db.sql(f"""
+                            UPDATE `tabEmployee`
+                            SET auto_attendance = {status}
+                            WHERE name in {tuple(employee_names)}
+                        """)
+            return response(message=f"Updated {len(employee_names)} Successfully", status_code=201)
+        return response(message="You are not permitted to carry out this action", status_code=400)
+    except Exception as e:
+        frappe.log_error(title = f"{str(e)}",message = frappe.get_traceback())
+        return response(message=str(e), status_code=400)

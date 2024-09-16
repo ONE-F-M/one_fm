@@ -83,6 +83,9 @@ def enroll():
 		
 		doc = frappe.get_doc("Employee", {"user_id": frappe.session.user})
 
+		# Set a context flag to indicate an API update (It will affect in 'Employee' validate method)
+		frappe.flags.allow_enrollment_update = True
+
 		doc.enrolled = 1
 		doc.save(ignore_permissions=True)
 		update_onboarding_employee(doc)
@@ -216,14 +219,17 @@ def forced_checkin(employee, log_type, time):
 	return _('Check {log_type} successful! {docname}'.format(log_type=log_type.lower(), docname=checkin.name))
 
 def update_onboarding_employee(employee):
-    onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
-    if onboard_employee_exist:
-        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
-        onboard_employee.enrolled = True
-        onboard_employee.enrolled_on = now_datetime()
-        onboard_employee.flags.ignore_mandatory = True
-        onboard_employee.save(ignore_permissions=True)
-        frappe.db.commit()
+	# Set a context flag to indicate an API update (It will affect in 'Employee' validate method)
+	frappe.flags.allow_enrollment_update = True
+
+	onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
+	if onboard_employee_exist:
+		onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
+		onboard_employee.enrolled = True
+		onboard_employee.enrolled_on = now_datetime()
+		onboard_employee.flags.ignore_mandatory = True
+		onboard_employee.save(ignore_permissions=True)
+		frappe.db.commit()
 
 # def create_dataset(video):
 # 	OUTPUT_DIRECTORY = frappe.utils.cstr(frappe.local.site)+"/private/files/dataset/"+frappe.session.user+"/"
@@ -249,14 +255,17 @@ def update_onboarding_employee(employee):
 # 	frappe.db.commit()
 
 def update_onboarding_employee(employee):
-    onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
-    if onboard_employee_exist:
-        onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist)
-        onboard_employee.enrolled = True
-        onboard_employee.enrolled_on = now_datetime()
-        onboard_employee.flags.ignore_mandatory = True
-        onboard_employee.save(ignore_permissions=True)
-        frappe.db.commit()
+	# Set a context flag to indicate an API update (It will affect in 'Employee' validate method)
+	frappe.flags.allow_enrollment_update = True
+	
+	onboard_employee_exist = frappe.db.exists('Onboard Employee', {'employee': employee.name})
+	if onboard_employee_exist:
+		onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist)
+		onboard_employee.enrolled = True
+		onboard_employee.enrolled_on = now_datetime()
+		onboard_employee.flags.ignore_mandatory = True
+		onboard_employee.save(ignore_permissions=True)
+		frappe.db.commit()
 
 # def create_encodings(directory, detection_method="hog"):# detection_method can be "hog" or "cnn". cnn is more cpu and memory intensive.
 # 	"""

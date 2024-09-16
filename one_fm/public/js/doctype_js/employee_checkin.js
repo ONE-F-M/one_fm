@@ -25,4 +25,5 @@ var validate_source_of_checkin = (frm) => {
 	if(!allowed_sources.includes(frm.doc.source)){
 		frappe.throw("Employee Checkin can only be via the Mobile App or Mobile Web App")
 	}
+	
 }

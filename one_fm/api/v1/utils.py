@@ -208,6 +208,14 @@ def log_error_via_api(traceback: str, message: str, medium: str):
     frappe.log_error(title=f"Error from {medium} -- {frappe.session.user}", message=f"{traceback} -- {message}")
     return response(message="Error Logged Successfully", status_code=201)
 
+@frappe.whitelist()
+def google_map_api():
+    try:
+        return response("success", 200, {
+            "google_map_api":frappe.db.get_single_value("Google Settings", "api_key")})
+    except Exception as e:
+        return response("error", 500, {}, str(e))
+    
 
 def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tuple:
     res = requests.post(url=url, data=data, files=files)

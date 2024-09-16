@@ -1071,7 +1071,7 @@ class AttendanceMarking():
                                         "status":status, "comment":comment, "working_hours":working_hours,
                                         "dt":"Employee Checkin"}}))
                                 except Exception as e:
-                                    print(e)
+                                    pass
 
 
     def check_early_exit(self, checkin: dict) -> bool:

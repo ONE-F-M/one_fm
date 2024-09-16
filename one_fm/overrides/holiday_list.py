@@ -1,10 +1,8 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-
-import json
-
-import frappe
+import pycountry
+import json, frappe
 from frappe import _, throw
 from frappe.model.document import Document
 from frappe.utils import cint, formatdate, getdate, today
@@ -119,6 +117,22 @@ class HolidayListOverride(HolidayList):
 	def clear_table(self):
 		self.set("holidays", [])
 
+	@frappe.whitelist()
+	def get_supported_countries(self):
+		from holidays.utils import list_supported_countries
+
+		subdivisions_by_country = list_supported_countries()
+		if not subdivisions_by_country.get('KW'):
+			subdivisions_by_country['KW'] = []
+		countries = [
+			{"value": country, "label": local_country_name(country)}
+			for country in subdivisions_by_country.keys()
+		]
+		return {
+			"countries": countries,
+			"subdivisions_by_country": subdivisions_by_country,
+		}
+
 
 @frappe.whitelist()
 def get_events(start, end, filters=None):
@@ -161,3 +175,4 @@ def is_holiday(holiday_list, date=None):
 		)
 	else:
 		return False
+

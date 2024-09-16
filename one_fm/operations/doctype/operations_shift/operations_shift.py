@@ -8,7 +8,7 @@ from datetime import timedelta
 from frappe.model.document import Document
 from frappe import _
 from frappe.model.rename_doc import rename_doc
-from frappe.utils import cstr, get_datetime, today, formatdate
+from frappe.utils import cstr, get_datetime, today, formatdate, getdate
 
 class OperationsShift(Document):
 	def autoname(self):
@@ -18,16 +18,15 @@ class OperationsShift(Document):
 		except Exception as e:
 			if not self.service_type and self.site and self.shift_classification:
 				frappe.throw("Kindly, make sure all required fields are not missing")
-    
+
 	def clear_cache(self):
 		if self.has_value_changed('supervisor'):
 			frappe.cache.delete_key('user_permissions')
-  
-  
+
 	def on_update(self):
 		self.clear_cache()
 		self.validate_name()
-  
+
 		self.update_post_status()
 
 	def validate_name(self):
@@ -143,3 +142,62 @@ def create_posts(data, site_shift, site, project=None):
 		frappe.msgprint(_("Posts created successfully."))
 	except Exception as e:
 		frappe.throw(_(frappe.get_traceback()))
+
+def get_shift_supervisor_user(shift, date=False):
+	shift_supervisor = get_shift_supervisor(shift, date)
+	if shift_supervisor:
+		return frappe.db.get_value("Employee", shift_supervisor, "user_id")
+	return None
+
+def get_shift_supervisor(shift, date=False):
+	# Get all the shift supervisors assigned to the shift
+	supervisors = frappe.get_all(
+		"Operations Shift Supervisor",
+		fields=["supervisor"],
+		filters={
+			"parent": shift, "parenttype": "Operations Shift"
+		},
+		order_by="idx"
+	)
+
+	if not date:
+		date = getdate()
+
+	for supervisor in supervisors:
+		# Return the supervisor if the supervisor working on the day
+		if frappe.db.exists(
+			"Employee Schedule",
+			{
+				"employee": supervisor.supervisor,
+				"date": date,
+				"employee_availability": "Working"
+			}
+		):
+			return supervisor.supervisor
+
+	return None
+
+def get_supervisor_operations_shifts(supervisor=None, project=None, site=None):
+	query = """
+		select
+			distinct shift.name
+		from
+			`tabOperations Shift Supervisor` supervisor,
+			`tabOperations Shift` shift
+		where
+			supervisor.parenttype='Operations Shift'
+			and
+			supervisor.parent=shift.name
+			and
+			status='Active'
+	"""
+	if supervisor:
+		query += " and supervisor.supervisor='{0}'".format(supervisor)
+	if project:
+		query += " and shift.project='{0}'".format(project)
+	if site:
+		query += " and shift.site='{0}'".format(site)
+
+	shifts = frappe.db.sql(query, as_dict=True)
+
+	return [shift.name for shift in shifts]

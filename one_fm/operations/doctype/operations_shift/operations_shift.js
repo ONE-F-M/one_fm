@@ -11,9 +11,9 @@ frappe.ui.form.on('Operations Shift', {
 						'fields': [
 							{'label': 'Number of Posts', 'fieldname': 'qty', 'fieldtype': 'Int'},
 							{
-								'label': 'Post Names', 
-								'fieldname': 'post_names', 
-								'fieldtype': 'Table', 
+								'label': 'Post Names',
+								'fieldname': 'post_names',
+								'fieldtype': 'Table',
 								'fields': [
 									{
 										fieldtype:'Data',
@@ -29,7 +29,7 @@ frappe.ui.form.on('Operations Shift', {
 									return this.data;
 								},
 								data: [],
-							},	
+							},
 							{'fieldname': 'cb2', 'fieldtype': 'Column Break'},
 							{'label': 'Operations Role', 'fieldname': 'post_template', 'fieldtype': 'Link', 'options': 'Operations Role', onchange: function(){
 								let operations_role = this.value;
@@ -48,13 +48,13 @@ frappe.ui.form.on('Operations Shift', {
 												post_dialog.fields_dict["designations"].grid.remove_all();
 
 												skills.forEach((skill) => {
-													post_dialog.fields_dict["skills"].grid.df.data.push(skill);	
+													post_dialog.fields_dict["skills"].grid.df.data.push(skill);
 												});
 												post_dialog.fields_dict["skills"].grid.refresh();
 
 												designations.forEach((designation) => {
-													post_dialog.fields_dict["designations"].grid.df.data.push(designation);	
-												});										
+													post_dialog.fields_dict["designations"].grid.df.data.push(designation);
+												});
 												post_dialog.fields_dict["designations"].grid.refresh();
 
 											}
@@ -67,9 +67,9 @@ frappe.ui.form.on('Operations Shift', {
 							{'label': 'Sale Item', 'fieldname': 'sale_item', 'fieldtype': 'Link', 'options':'Item'},
 							{'fieldname': 'sb', 'fieldtype': 'Section Break'},
 							{
-								'label': 'Skills', 
-								'fieldname': 'skills', 
-								'fieldtype': 'Table', 
+								'label': 'Skills',
+								'fieldname': 'skills',
+								'fieldtype': 'Table',
 								'fields': [
 									{
 										fieldtype:'Link',
@@ -102,9 +102,9 @@ frappe.ui.form.on('Operations Shift', {
 								},
 							},
 							{
-								'label': 'Designations', 
-								'fieldname': 'designations', 
-								'fieldtype': 'Table', 
+								'label': 'Designations',
+								'fieldname': 'designations',
+								'fieldtype': 'Table',
 								'fields': [
 									{
 										fieldtype:'Link',
@@ -161,38 +161,9 @@ frappe.ui.form.on('Operations Shift', {
 					});
 					post_dialog.show();
 					post_dialog.$wrapper.find('.modal-dialog').css('width', '75%');
-				
+
 				}
 			).addClass('btn-primary');
-		}	
-	},
-	onload: function(frm){
-		frm.set_query("supervisor", function() {
-			return {
-				"filters": {
-					"status": "Active",
-				}
-			};
-
-		});
-	},
-	supervisor: function(frm){
-		frm.trigger("get_employee_status")
-	},
-	get_employee_status: function(frm){
-		frappe.call({
-			method:"frappe.client.get_value",
-			args: {
-				doctype:"Employee",
-				filters: {
-					name:frm.doc.supervisor
-				},
-				fieldname:["status",]
-			}, 
-			callback: function(r) { 
-				frm.toggle_display(["supervisor_name"], r.message.status == "Active")
-
-			}
-		})
+		}
 	}
 });

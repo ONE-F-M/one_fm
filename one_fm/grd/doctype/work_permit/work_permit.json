@@ -94,10 +94,23 @@
   "salary_certificate",
   "column_break_64",
   "iqrar",
-  "section_break_50",
+  "new_passport_details_section",
+  "new_passport_type",
+  "column_break_yjma",
+  "new_passport_number",
+  "column_break_jgpb",
+  "new_passport_expiry_date",
   "documents_required_section",
   "documents_required",
   "amended_from",
+  "new_pam_details_section",
+  "new_pam_designation",
+  "new_pam_designation_name_english",
+  "new_pam_designation_name_arabic",
+  "column_break_zsnm",
+  "new_pam_file",
+  "new_pam_file_number",
+  "new_work_permit_salary_",
   "grd_section",
   "grd_operator_transfer",
   "grd_operator",
@@ -397,8 +410,7 @@
    "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "upload_work_permit",
    "fieldtype": "Attach",
-   "label": "Upload Work Permit",
-   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'"
+   "label": "Upload Work Permit"
   },
   {
    "allow_on_submit": 1,
@@ -445,8 +457,7 @@
    "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "upload_work_permit_on",
    "fieldtype": "Data",
-   "label": "Upload On",
-   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM'"
+   "label": "Upload On"
   },
   {
    "allow_on_submit": 1,
@@ -559,8 +570,9 @@
    "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_religion",
    "fieldname": "religion",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Religion",
+   "options": "Religion",
    "read_only": 1
   },
   {
@@ -573,16 +585,13 @@
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_passport_type",
    "fieldname": "passport_type",
    "fieldtype": "Data",
    "label": "Passport Type",
-   "read_only": 1,
-   "translatable": 1
+   "read_only": 1
   },
   {
-   "allow_on_submit": 1,
    "fetch_from": "employee.passport_number",
    "fieldname": "passport_number",
    "fieldtype": "Data",
@@ -668,10 +677,6 @@
   {
    "depends_on": "eval:doc.work_permit_type != \"Cancellation\" && doc.work_permit_type != \"New Kuwaiti\"",
    "fieldname": "section_break_46",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "section_break_50",
    "fieldtype": "Section Break"
   },
   {
@@ -896,11 +901,90 @@
    "options": "User",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "description": "The details added in this section will update the employee passport details in Employee doctype",
+   "fieldname": "new_passport_details_section",
+   "fieldtype": "Section Break",
+   "label": "New Passport Details"
+  },
+  {
+   "fieldname": "new_passport_type",
+   "fieldtype": "Select",
+   "label": "Passport Type",
+   "options": "\nDiplomat\nNormal"
+  },
+  {
+   "fieldname": "column_break_yjma",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "new_passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "column_break_jgpb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "new_passport_expiry_date",
+   "fieldtype": "Date",
+   "label": "Passport Expiry Date"
+  },
+  {
+   "fieldname": "new_pam_details_section",
+   "fieldtype": "Section Break",
+   "label": "New PAM Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "new_pam_designation",
+   "fieldtype": "Link",
+   "label": "New PAM Designation",
+   "options": "PAM Designation List"
+  },
+  {
+   "fetch_from": "new_pam_designation.designation_name_english",
+   "fieldname": "new_pam_designation_name_english",
+   "fieldtype": "Data",
+   "label": "New PAM Designation Name (English)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "new_pam_file",
+   "fieldtype": "Link",
+   "label": "New PAM File",
+   "options": "PAM File"
+  },
+  {
+   "fetch_from": "new_pam_designation.designation_name_arabic",
+   "fieldname": "new_pam_designation_name_arabic",
+   "fieldtype": "Data",
+   "label": "New PAM Designation Name (Arabic)",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "new_pam_file.pam_file_number",
+   "fieldname": "new_pam_file_number",
+   "fieldtype": "Data",
+   "label": "New PAM File Number",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "new_work_permit_salary_",
+   "fieldtype": "Currency",
+   "label": "New Work Permit Salary"
+  },
+  {
+   "fieldname": "column_break_zsnm",
+   "fieldtype": "Column Break"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2023-05-14 16:13:28.882651",
+ "modified": "2024-08-26 10:15:55.860237",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

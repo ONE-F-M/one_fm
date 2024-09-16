@@ -33,7 +33,8 @@ app_include_js = [
 		"/assets/one_fm/js/desk.js",
         "/assets/one_fm/js/showdown.min.js",
         "purchase.bundle.js",
-		"/assets/one_fm/js/form_overrides/workflow_override.js"
+		"/assets/one_fm/js/form_overrides/workflow_override.js",
+        "text_editor.bundle.js"
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/one_fm/css/one_fm.css"
@@ -113,7 +114,9 @@ doctype_js = {
     "Stock Entry": "public/js/doctype_js/stock_entry.js",
     "Gratuity": "public/js/doctype_js/gratuity.js",
     "Goal": "public/js/doctype_js/goal.js",
-    "Task": "public/js/doctype_js/task.js"
+    "Task": "public/js/doctype_js/task.js",
+    "HD Ticket": "public/js/doctype_js/hd_ticket.js",
+    "Appraisal": "public/js/doctype_js/appraisal.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -123,6 +126,7 @@ doctype_list_js = {
 	"Leave Application":"public/js/doctype_list_js/leave_application.js",
 	"Attendance" : "public/js/doctype_list_js/attendance_list.js",
 	"Wiki Page": "public/js/doctype_list_js/wiki_page_list.js",
+    "Employee": "public/js/doctype_list_js/employee_list.js",
 }
 doctype_tree_js = {
 	"Warehouse" : "public/js/doctype_tree_js/warehouse_tree.js",
@@ -150,6 +154,7 @@ home_page = "index"
 
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
+website_generators = ["Client"]
 
 # Installation
 # ------------
@@ -240,7 +245,12 @@ doc_events = {
 	},
 	"HD Ticket": {
 		"validate": "one_fm.overrides.hd_ticket.validate_hd_ticket",
-		"after_insert":"one_fm.overrides.hd_ticket.send_google_chat_notification"
+		"after_insert":[
+      					"one_fm.overrides.hd_ticket.send_google_chat_notification",
+                  		"one_fm.overrides.hd_ticket.notify_ticket_raiser_of_receipt"
+                    	], 
+		"on_change": "one_fm.overrides.hd_ticket.notify_issue_raiser_about_priority",
+		"on_update": "one_fm.overrides.hd_ticket.apply_ticket_escalation"
 	},
 	"Employee Grade": {
 		"validate": "one_fm.one_fm.utils.employee_grade_validate"
@@ -324,10 +334,10 @@ doc_events = {
 		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
 	"Salary Slip": {
-		#"before_submit": "one_fm.api.doc_methods.salary_slip.salary_slip_before_submit",
+		"before_submit": "one_fm.overrides.salary_slip.salary_slip_before_submit",
 		"validate": [
-			"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
-			"one_fm.api.doc_methods.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
+		# 	"one_fm.one_fm.payroll_utils.set_justification_needed_on_deduction_in_salary_slip",
+			"one_fm.overrides.salary_slip.set_earnings_and_deduction_with_respect_to_payroll_cycle"
 		]
 	},
 	"Salary Structure Assignment": {
@@ -349,9 +359,9 @@ doc_events = {
 		"on_update": "one_fm.one_fm.payroll_utils.on_update_employee_incentive",
 		"on_update_after_submit": "one_fm.one_fm.payroll_utils.on_update_after_submit_employee_incentive",
 	},
-	"Payroll Entry": {
-		"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
-	},
+	# "Payroll Entry": {
+	# 	"on_submit": "one_fm.api.doc_methods.payroll_entry.export_payroll",
+	# },
 	"Expense Claim": {
 		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
 	},
@@ -382,24 +392,6 @@ doc_events = {
 		"before_insert": "one_fm.api.doc_methods.help_article.before_insert",
 		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
 	},
-	"Shift Request":{
-		"before_save":[
-			"one_fm.api.doc_methods.shift_request.fill_to_date",
-			"one_fm.utils.send_shift_request_mail",
-			"one_fm.api.doc_methods.shift_request.validate_from_date"
-		],
-		# "on_update_after_submit":[
-			# "one_fm.api.doc_methods.shift_request.on_update_after_submit",
-		# ],
-		"on_update": [
-            "one_fm.api.doc_methods.shift_request.on_update",
-        	# "one_fm.api.doc_methods.shift_request.process_shift_assignemnt",
-		],
-        "validate": [
-            "one_fm.api.doc_methods.shift_request.validate",
-        ]
-
-	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
@@ -419,7 +411,8 @@ doc_events = {
 	# 	"after_insert": "one_fm.wiki_chat_bot.main.after_insert_wiki_page"
 	# },
     "Task": {
-        "validate": "one_fm.overrides.task.validate_task"
+        "validate": "one_fm.overrides.task.validate_task",
+        "after_insert": "one_fm.overrides.task.after_task_insert"
 	},
 	# "Additional Salary" :{
 	# 	"on_submit": "one_fm.grd.utils.validate_date"
@@ -476,6 +469,10 @@ website_route_rules = [
 		"from_route": "/job_application/<path:job_title>",
 		"to_route": "job_application"
 	},
+	{
+		"from_route": "/employee-info/<path:employee_id>",
+		"to_route": "employee-info"
+	},
     # {"from_route": "/job_applicant_magic_link/<path:app_path>", "to_route": "job_applicant_magic_link"},
 
 ]
@@ -506,6 +503,10 @@ override_doctype_class = {
     "Shift Assignment": "one_fm.overrides.shift_assignment.ShiftAssignmentOverride",
     "Goal": "one_fm.overrides.goal.GoalOverride",
     "Appraisal": "one_fm.overrides.appraisal.AppraisalOverride",
+    "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride",
+    "Payroll Entry": "one_fm.overrides.payroll_entry.PayrollEntryOverride",
+    "Salary Slip": "one_fm.overrides.salary_slip.SalarySlipOverride",
+    
     # "User": "one_fm.overrides.user.UserOverride"
 }
 
@@ -593,7 +594,8 @@ scheduler_events = {
 			# "one_fm.api.tasks.checkin_checkout_final_reminder",
 			# "one_fm.api.tasks.checkin_deadline",
 			"one_fm.api.tasks.overtime_shift_assignment",
-			#"one_fm.api.tasks.automatic_checkout"
+			#"one_fm.api.tasks.automatic_checkout",
+			"one_fm.one_fm.doctype.password_reset_token.password_reset_token.revoke_password_tokens",
 		],
 		"0/15 * * * *": [
 			"one_fm.api.tasks.update_shift_type"
@@ -702,8 +704,9 @@ scheduler_events = {
 		"00 03 * * *": [ # Update Google Sheet
 			'one_fm.one_fm.doctype.google_sheet_data_export.exporter.update_google_sheet_daily'
 		],
-		"00 08 * * *": [ #notify leave approver to approve all the open application at 8:00 am
-		'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application'
+		"00 08 * * *": [ # runs at 8:00 am
+			'one_fm.api.doc_methods.payroll_entry.notify_for_open_leave_application',
+			'one_fm.tasks.one_fm.daily.notify_for_employee_docs_expiry'
 		],
 		"05 00 * * *":[
 			'one_fm.overrides.leave_application.employee_leave_status'
@@ -769,7 +772,7 @@ fixtures = [
 	},
 	{
 		"dt": "Role",
-		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager"]]]
+		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager", "HR Supervisor", "Attendance Manager"]]]
 	},
 	{
 		"dt": "Assignment Rule",
@@ -810,7 +813,8 @@ override_whitelisted_methods = {
     "frappe.desk.form.load.getdoc": "one_fm.permissions.getdoc",
     "frappe.desk.form.load.get_docinfo": "one_fm.permissions.get_docinfo",
 	"erpnext.controllers.accounts_controller.update_child_qty_rate":"one_fm.overrides.accounts_controller.update_child_qty_rate",
-	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens"
+	"hrms.hr.doctype.goal.goal.get_children":"one_fm.overrides.goal.get_childrens",
+    "hrms.payroll.doctype.payroll_entry.payroll_entry.get_start_end_dates": "one_fm.overrides.payroll_entry.get_start_end_dates"
 }
 
 
@@ -824,6 +828,12 @@ override_doctype_dashboards = {
 required_apps = ['frappe', 'erpnext']
 
 # jinja env
+jinja = {
+		"methods": [
+			"one_fm.jinja.print_format.methods"
+		]
+		}
+
 jenv = {
     "methods": [
         "pf:one_fm.jinja.print_format.methods.pf",
@@ -835,13 +845,14 @@ jenv = {
 }
 
 after_migrate = [
-    "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
+    # "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.replace_send_birthday_reminder",
     "one_fm.after_migrate.execute.replace_send_anniversary_reminder",
     "one_fm.after_migrate.execute.disable_workflow_emails",
-    "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
+    # "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
     "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
+    "one_fm.after_migrate.execute.update_hd_ticket_agent"
 ]
 
 before_migrate = [
@@ -851,6 +862,11 @@ before_migrate = [
 ]
 
 # add more info to session on boot
-# on_session_creation = "one_fm.session_hooks.on_session_creation"
+on_session_creation = [
+    # "one_fm.api.api.initialize_firebase"
+]
+app_startup = [
+    "one_fm.api.api.initialize_firebase"
+]
 # auth_hooks = "one_fm.session_hooks.auth_hooks"
 # on_login = "one_fm.session_hooks.on_login"

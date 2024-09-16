@@ -1420,6 +1420,13 @@
     "parenttype": "DocType Layout"
    },
    {
+    "fieldname": "registered",
+    "label": "Registered",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
     "fieldname": "enrolled",
     "label": "Enrolled with face recognition system for attendance",
     "parent": "Employee",

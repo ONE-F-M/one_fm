@@ -1,28 +1,37 @@
-import frappe, ast, base64, time, grpc, json, random
+import frappe, ast, base64, time, grpc, json, random, os
 from frappe import _
-from one_fm.one_fm.page.face_recognition.face_recognition import update_onboarding_employee, check_existing
+from one_fm.one_fm.page.face_recognition.face_recognition import (
+    update_onboarding_employee, check_existing,
+)
 from one_fm.utils import get_current_shift, is_holiday
-from one_fm.api.v1.utils import response, verify_via_face_recogniton_service
-from frappe.utils import cstr, getdate, now_datetime
+from one_fm.api.v1.utils import (
+    response, verify_via_face_recogniton_service
+)
+from frappe.utils import cstr, getdate,now_datetime
 from one_fm.proto import facial_recognition_pb2, facial_recognition_pb2_grpc, enroll_pb2, enroll_pb2_grpc
 from one_fm.api.doc_events import haversine
 from one_fm.overrides.employee import has_day_off, is_employee_on_leave
 
-
 # setup channel for face recognition
-face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-# options = [('grpc.max_message_length', 100 * 1024 * 1024* 10)]
-# channels = [
-#     grpc.secure_channel(i, grpc.ssl_channel_credentials(), options=options) for i in face_recognition_service_url
-# ]
 
-# setup stub for face recognition
-# stubs = [
-#     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
-# ]
+face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
+site_path = os.getcwd()+frappe.utils.get_site_path().replace('./', '/')
+video_path = site_path + '/public/files/video.mp4'
+video_txt_path = site_path + '/public/files/video.txt'
 
-stubs = list()
 
+def base64_to_mp4(base64_string):
+    # Decode the Base64 string to bytes
+    video_data = base64.b64decode(base64_string)
+    try:os.remove(video_path)
+    except:pass
+    # Write the bytes to an MP4 file
+    with open(video_txt_path, 'w') as text_file:
+            text_file.write(base64_string)
+
+    with open(video_path, 'wb') as mp4_file:
+        mp4_file.write(video_data)
+    
 
 @frappe.whitelist()
 def enroll(employee_id: str = None, filename: str = None, video: str = None) -> dict:
@@ -42,36 +51,36 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
     try:
         if not employee_id:
             return response("Bad Request", 400, None, "employee_id required.")
-
-        # filename = frappe.form_dict.get('filename')    
-        if not (filename or video):
-            return response("Bad Request", 400, None, "Filename or video is required.")
         
-        if video:
-            if ";base64," in video: 
-                video = video.split(';base64,')[-1]
-
-        video_file = frappe.request.files.get("video_file") or video
-
+        if not filename:
+            filename = frappe.session.user+'.mp4'
+        
+        video_file = frappe.request.files.get("video_file") or video or frappe.request.files.get("video")
+	    
         if not video_file:
             return response("Bad Request", 400, None, "Video File is required.")
-
-        face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
-        if not face_recog_base_url:
-            return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
-
-        status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll",
-                                                             data={"username": frappe.session.user,
-                                                                   "filename": filename},
-                                                             files={"video_file": video_file})
-        if not status:
-            return response("Bad Request", 400, None, message)
-
+        
+        # check Face Recognition Endpoint
+        endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
+        if endpoint_state:
+            if not face_recog_base_url:
+                return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+            status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "enroll", data={"username": frappe.session.user, "filename": filename}, files={"video_file": video_file})
+        else:
+            status, message = True, 'Successful'
+            
+        
         doc = frappe.get_doc("Employee", {"employee_id": employee_id})
         if not doc:
-            return response("Resource Not Found", 404, None,
-                            "No employee found with {employee_id}".format(employee_id=employee_id))
-
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+        
+        
+            
+        if not status:
+            return response("Bad Request", 400, None, message)
+        
+        # Set a context flag to indicate an API update (It will affect in 'Employee' validate method)
+        frappe.flags.allow_enrollment_update = True        
         doc.enrolled = 1
         doc.save(ignore_permissions=True)
         update_onboarding_employee(doc)
@@ -80,7 +89,7 @@ def enroll(employee_id: str = None, filename: str = None, video: str = None) -> 
         return response("Success", 201,
                         "User enrolled successfully.<br>Please wait for 10sec, you will be redirected to checkin.")
     except Exception as error:
-        frappe.log_error(frappe.get_traceback(), 'Enroll')
+        frappe.log_error(message=frappe.get_traceback(), title="Enrollment")
         return response("Internal Server Error", 500, None, error)
 
 
@@ -158,28 +167,27 @@ def verify_checkin_checkout(employee_id: str = None, log_type: str = None,
         employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
         if not employee:
-            return response("Resource Not Found", 404, None,
-                            "No employee found with {employee_id}".format(employee_id=employee_id))
-
-        face_recog_base_url = frappe.local.conf.face_recognition_service_base_url
-        if not face_recog_base_url:
-            return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
-
-        status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "verify",
-                                                             data={"username": frappe.session.user, "filename": filename},
-                                                             files={"video_file": video_file})
+            return response("Resource Not Found", 404, None, "No employee found with {employee_id}".format(employee_id=employee_id))
+                
+        # check Face Recognition Endpoint
+        endpoint_state = frappe.db.get_single_value("ONEFM General Setting", 'enable_face_recognition_endpoint')
+        video_file = frappe.request.files.get("video_file") or frappe.request.files.get("video")
+        if not filename:
+            filename = frappe.session.user+'.mp4'
+        if endpoint_state:
+            if not face_recog_base_url:
+                return response("Bad Request", 400, None, "Face Recognition Service configuration is not available.")
+            status, message = verify_via_face_recogniton_service(url=face_recog_base_url + "verify", data={
+                "username": frappe.session.user, "filename": filename
+                }, files={"video_file": video_file})
+        else:
+            status, message = True, 'Successful'
+            
         if not status:
             return response("Bad Request", 400, None, message)
-
-        get_site_location(employee_id, latitude, longitude)
-        checkin_location = frappe.local.response
-        if checkin_location.status_code != 200:
-            return response("Resource Not Found", 404, None, "User not assigned to the shift")
-        if not checkin_location.data['user_within_geofence_radius']:
-            return response("Resource Not Found", 404, None, "You are outside the site location. Please try again")
-
         doc = create_checkin_log(employee, log_type, skip_attendance, latitude, longitude, "Mobile App")
         return response("Success", 201, doc, None)
+    
     except Exception as error:
         frappe.log_error(frappe.get_traceback(), 'Verify Checkin')
         return response("Internal Server Error", 500, None, error)
@@ -204,6 +212,19 @@ def check_employee_non_shift(employee):
         return True
     return False
 
+def has_day_off(employee,date):
+    """
+        Confirm if the employee schedule for that day and employee is set to day off
+    """
+    is_day_off = False
+
+    schedule = frappe.db.exists("Employee Schedule", {'employee':employee,'date':date})
+    existing_schedule = frappe.get_value("Employee Schedule", schedule, ['employee_availability']) if schedule else None
+
+    if existing_schedule:
+        if existing_schedule == 'Day Off':
+            is_day_off = True
+    return is_day_off
 
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
@@ -418,3 +439,23 @@ def get_shift_request_site_location(employee, date, log_type):
                 as_dict=True
             )
     return None
+@frappe.whitelist()
+def checkin_list(employee_id, from_date, to_date):
+    """
+    This method retrives employee checkin list
+    """
+    try:
+        employee = frappe.db.get_value("Employee", {"employee_id":employee_id}, "name")
+        if not employee:
+            return response("Success", 404, None, "Employee ID not found")
+        checkins = frappe.get_all("Employee Checkin", filters={
+            "employee": employee,
+            "time": ["BETWEEN", [f"{from_date} 00:00:00", f"{to_date} 23:59:59"]]
+            },
+            fields=["name", "employee_name", "time", "log_type"],
+            order_by="time DESC"
+        )
+        return response("success", 200, checkins)
+    except Exception as e:
+        return response("error", 500, None, str(e))
+    
