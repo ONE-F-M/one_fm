@@ -216,15 +216,8 @@ def has_day_off(employee,date):
     """
         Confirm if the employee schedule for that day and employee is set to day off
     """
-    is_day_off = False
+    return frappe.db.exists("Employee Schedule", {"employee": employee, "date": date, "employee_availability": "Day Off"})
 
-    schedule = frappe.db.exists("Employee Schedule", {'employee':employee,'date':date})
-    existing_schedule = frappe.get_value("Employee Schedule", schedule, ['employee_availability']) if schedule else None
-
-    if existing_schedule:
-        if existing_schedule == 'Day Off':
-            is_day_off = True
-    return is_day_off
 
 @frappe.whitelist()
 def get_site_location(employee_id: str = None, latitude: float = None, longitude: float = None) -> dict:
