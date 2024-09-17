@@ -4988,7 +4988,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "Accounts User",
+    "allow_edit": "Payroll Operator",
     "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
@@ -5003,7 +5003,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "Accounts User",
+    "allow_edit": "Payroll Operator",
     "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
@@ -5018,7 +5018,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "Accounts User",
+    "allow_edit": "Payroll Operator",
     "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
@@ -5073,7 +5073,7 @@
    {
     "action": "Process Bank Account Opening",
     "allow_self_approval": 1,
-    "allowed": "Accounts User",
+    "allowed": "Payroll Operator",
     "allowed_user_field": null,
     "allowed_user_id": null,
     "condition": null,
@@ -5091,7 +5091,7 @@
    {
     "action": "Reject",
     "allow_self_approval": 1,
-    "allowed": "Accounts User",
+    "allowed": "Payroll Operator",
     "allowed_user_field": null,
     "allowed_user_id": null,
     "condition": null,
@@ -5109,7 +5109,7 @@
    {
     "action": "Open Bank Account",
     "allow_self_approval": 1,
-    "allowed": "Accounts User",
+    "allowed": "Payroll Operator",
     "allowed_user_field": null,
     "allowed_user_id": null,
     "condition": null,
@@ -5127,7 +5127,7 @@
    {
     "action": "Open Bank Account",
     "allow_self_approval": 1,
-    "allowed": "Accounts User",
+    "allowed": "Payroll Operator",
     "allowed_user_field": null,
     "allowed_user_id": null,
     "condition": "doc.new_account != 1",
