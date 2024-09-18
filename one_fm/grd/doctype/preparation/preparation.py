@@ -75,7 +75,8 @@ class Preparation(Document):
     def validate(self):
         self.set_grd_values()
         self.set_hr_values()
-
+        validate_preparation_table(self)
+        
     def set_grd_values(self):
         """
 		runs: `validate`
@@ -362,3 +363,13 @@ def cancel_delete_doc(doctype,source,row):
             frappe.log_error(title=f"Error Cancelling and Deleting <b>{doctype} {each.name} </b>",message=frappe.get_traceback())
             
             continue
+
+def validate_preparation_table(doc):
+    """Ensure that all the employees in the preparation table are in Active Status"""
+    
+    all_active_staff = frappe.get_all("Employee",{'status': ["IN",["Active","Vacation"]]})
+    if all_active_staff:
+        all_active_staff_list = [o.name for o in all_active_staff]
+        for each in doc.preparation_record:
+            if each.employee not in all_active_staff_list:
+                frappe.throw(f"The Employee in row <b>{each.idx}</b> <b>{each.full_name}</b> is not Active at the moment")
