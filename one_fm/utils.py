@@ -1992,6 +1992,7 @@ def notify_payroll_officer(doc):
     except:
         frappe.log_error(frappe.get_traceback(), "Error while sending notification of local transfer")
 
+
 def send_roster_report():
     # Enqueue roster report generation to background
     frappe.enqueue(generate_roster_report, is_async=True, queue='long', is_scheduled_event=True)
@@ -3098,7 +3099,8 @@ def get_approver(employee, date=False):
         if employee_data.shift_working:
             if employee_data.shift:
                 line_manager = get_shift_supervisor(employee_data.shift, date)
-                if line_manager:return line_manager
+                if line_manager:
+                    return line_manager
             if not line_manager and employee_data.site:
                 line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
                 if not line_manager:
@@ -3106,12 +3108,19 @@ def get_approver(employee, date=False):
                     if project:
                         line_manager = frappe.db.get_value('Project', project, 'account_manager')
         else:
-            frappe.msgprint(
-                _("Please ensure that the Reports To is set for {0}, Since the employee is not shift working".format(employee_data.employee_name)),
-                title= "Missing Data",
-                indicator="orange",
-                alert=True
-            )
+            if employee_data.site:
+                line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
+
+            if not line_manager and employee_data.shift:
+                line_manager = get_shift_supervisor(employee_data.shift, date)
+            
+            if not line_manager:
+                frappe.msgprint(
+                    _("Please ensure that the Reports To or Operations Site Supervisor is set for {0}, Since the employee is not shift working".format(employee_data.employee_name)),
+                    title= "Missing Data",
+                    indicator="orange",
+                    alert=True
+                )
 
     return line_manager
 
