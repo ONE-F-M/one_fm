@@ -235,7 +235,8 @@ doc_events = {
 		"validate": [
 			"one_fm.utils.validate_sick_leave_date",
 			"one_fm.utils.validate_hajj_leave",
-			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
+			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
+			"one_fm.overrides.leave_application.validate_active_staff"
 		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel",
 

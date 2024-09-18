@@ -1819,7 +1819,7 @@ def fetch_employees_not_in_checkin():
 		holiday_list_employees = [i.name for i in frappe.db.sql(f"""SELECT name from `tabEmployee` WHERE
 			status = 'Active' AND
 			holiday_list IN {holiday_list_tuple}
-		""")]
+		""", as_dict=1)]
 		employees_yet_to_checkin = [i for i in employees_yet_to_checkin if not i in holiday_list_employees]
 		
 		employee_details = frappe.db.get_list("Employee", filters={
