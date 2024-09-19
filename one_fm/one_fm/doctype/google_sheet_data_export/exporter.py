@@ -482,7 +482,6 @@ class DataExporter:
 			return result
 		except HttpError as err:
 			frappe.log_error(title="Error Updating Google Sheet",message = err)
-			frappe.db.commit()	
 			frappe.throw("Error updating google sheet.See error log for more details")
 
 
