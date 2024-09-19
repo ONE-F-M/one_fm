@@ -3,7 +3,8 @@
 from __future__ import print_function
 
 import os.path
-
+from httplib2 import Http
+from google_auth_httplib2 import AuthorizedHttp
 import csv
 import os
 import re
@@ -113,10 +114,10 @@ class DataExporter:
 		SCOPES = ["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
 		credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-		service = discovery.build('sheets', 'v4', credentials=credentials)
+		http = Http(timeout=1200)
+		authorized_http = AuthorizedHttp(credentials, http=http)
+		service = build('sheets', 'v4', http=authorized_http)
 		drive_api = build('drive', 'v3', credentials=credentials)
-		
 		return {"credentials":credentials, "service": service, "drive_api": drive_api}
 
 	def prepare_args(self):
@@ -457,6 +458,7 @@ class DataExporter:
 		Prints values from a sample spreadsheet.
 		"""
 		service = self.service
+		# service = self.service
 		try:
 			no_of_row = len(values)
 			no_of_col = len(self.column)
