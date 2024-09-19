@@ -462,12 +462,8 @@ class DataExporter:
 		try:
 			no_of_row = len(values)
 			no_of_col = len(self.column)
-			if no_of_col <= 26:
-				ranges = self.sheet_name + "!A1:" + chr(ord('A') + no_of_col) + str(no_of_row)
-				ranges_ = self.sheet_name+ "!A1:" + get_column_identifier(no_of_col+1)+ str(no_of_row)
-			else:
-				ranges = self.sheet_name + "!A1:A" + chr(ord('A') + no_of_col - 26) + str(no_of_row)
-				ranges_ = self.sheet_name+ "!A1:" + get_column_identifier(no_of_col+1)+ str(no_of_row)
+			ranges = self.sheet_name+ "!A1:" + get_column_identifier(no_of_col+1)+ str(no_of_row)
+			
 
 			# clear sheet
 			
@@ -476,7 +472,7 @@ class DataExporter:
 
 			# add new value
 			result = service.spreadsheets().values().update(
-						spreadsheetId=self.google_sheet_id, range=ranges_,valueInputOption="USER_ENTERED", body={"values":values}).execute()
+						spreadsheetId=self.google_sheet_id, range=ranges,valueInputOption="USER_ENTERED", body={"values":values}).execute()
 
 			
 			# request = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Country!A1:B22").execute()
