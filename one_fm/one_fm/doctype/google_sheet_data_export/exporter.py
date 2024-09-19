@@ -3,7 +3,8 @@
 from __future__ import print_function
 
 import os.path
-
+from httplib2 import Http
+from google_auth_httplib2 import AuthorizedHttp
 import csv
 import os
 import re
@@ -113,10 +114,10 @@ class DataExporter:
 		SCOPES = ["https://www.googleapis.com/auth/spreadsheets","https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
 		credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-		service = discovery.build('sheets', 'v4', credentials=credentials)
+		http = Http(timeout=1200)
+		authorized_http = AuthorizedHttp(credentials, http=http)
+		service = build('sheets', 'v4', http=authorized_http)
 		drive_api = build('drive', 'v3', credentials=credentials)
-		
 		return {"credentials":credentials, "service": service, "drive_api": drive_api}
 
 	def prepare_args(self):
@@ -450,27 +451,32 @@ class DataExporter:
 		except Exception as e:
 			frappe.log_error(e)
 
-
+	
+			
 	def update_sheet(self, values):
 		"""Shows basic usage of the Sheets API.
 		Prints values from a sample spreadsheet.
 		"""
 		service = self.service
+		# service = self.service
 		try:
 			no_of_row = len(values)
 			no_of_col = len(self.column)
 			if no_of_col <= 26:
 				ranges = self.sheet_name + "!A1:" + chr(ord('A') + no_of_col) + str(no_of_row)
+				ranges_ = self.sheet_name+ "!A1:" + get_column_identifier(no_of_col+1)+ str(no_of_row)
 			else:
 				ranges = self.sheet_name + "!A1:A" + chr(ord('A') + no_of_col - 26) + str(no_of_row)
+				ranges_ = self.sheet_name+ "!A1:" + get_column_identifier(no_of_col+1)+ str(no_of_row)
 
 			# clear sheet
+			
 			service.spreadsheets().values().clear(spreadsheetId=self.google_sheet_id, 
 				range='{0}'.format(self.sheet_name), body={}).execute()
 
 			# add new value
 			result = service.spreadsheets().values().update(
-						spreadsheetId=self.google_sheet_id, range=ranges,valueInputOption="USER_ENTERED", body={"values":values}).execute()
+						spreadsheetId=self.google_sheet_id, range=ranges_,valueInputOption="USER_ENTERED", body={"values":values}).execute()
 
 			
 			# request = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID, range="Country!A1:B22").execute()
@@ -479,7 +485,10 @@ class DataExporter:
 			
 			return result
 		except HttpError as err:
-			frappe.log_error(err)
+			frappe.log_error(title="Error Updating Google Sheet",message = err)
+			frappe.db.commit()	
+			frappe.throw("Error updating google sheet.See error log for more details")
+
 
 	def batch_update(self, sheet):
 		'''
@@ -626,3 +635,15 @@ def export_from_excel():
 	response = request.execute()
 
 	print(f"Sheet updated with {response['updatedCells']:,} cells.")
+
+
+def get_column_identifier(num_columns):
+    # Function to convert column number to Excel-style letters
+    def number_to_column_letter(n):
+        result = ''
+        while n > 0:
+            n, remainder = divmod(n - 1, 26)
+            result = chr(65 + remainder) + result
+        return result
+
+    return number_to_column_letter(num_columns)
