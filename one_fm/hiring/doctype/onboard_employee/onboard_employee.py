@@ -44,6 +44,30 @@ class OnboardEmployee(Document):
 	def on_update_after_submit(self):
 		self.validate_transition()
 		self.validate_on_complete()
+		self.validate_name_change()
+	
+ 
+	def validate_name_change(self):
+		"""Update the Employee record from an onboard employee record when any of the arabic names are changed"""
+		if self.employee:
+			change_dict = {}
+			employee_doc = frappe.get_doc("Employee",self.employee)
+			old_doc = self.get_doc_before_save()
+			if old_doc.first_name_in_arabic != self.first_name_in_arabic:
+				change_dict['one_fm_first_name_in_arabic'] = self.first_name_in_arabic
+			if old_doc.second_name_in_arabic != self.second_name_in_arabic:
+				change_dict['one_fm_second_name_in_arabic'] = self.second_name_in_arabic
+			if old_doc.third_name_in_arabic != self.third_name_in_arabic:
+				change_dict['one_fm_third_name_in_arabic'] = self.third_name_in_arabic
+			if old_doc.forth_name_in_arabic != self.forth_name_in_arabic:
+				change_dict['one_fm_forth_name_in_arabic'] = self.forth_name_in_arabic
+			if old_doc.last_name_in_arabic != self.last_name_in_arabic:
+				change_dict['one_fm_last_name_in_arabic'] = self.last_name_in_arabic
+			if change_dict:
+				employee_doc.update(change_dict)
+				employee_doc.save()
+				frappe.db.commit()
+			
 
 	def validate_transition(self):
 		if self.workflow_state == 'Applicant Attended' and not self.applicant_attended:
