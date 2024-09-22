@@ -96,7 +96,7 @@ class ShiftRequestOverride(ShiftRequest):
                 shift_assignment_doc = frappe.get_doc("Shift Assignment", shift["name"])
                 shift_assignment_doc.cancel()
                 shift_assignment_doc.delete()
-        if self.from_date <= cstr(getdate()) <= self.to_date and schedule_exists:
+        if self.from_date <= getdate() <= self.to_date and schedule_exists:
             schedule = frappe.get_doc("Employee Schedule",{"employee":self.employee, "date":cstr(getdate())})
             if schedule:
                 sa = frappe.get_doc(dict(
