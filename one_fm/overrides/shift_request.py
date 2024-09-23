@@ -22,7 +22,7 @@ class OverlappingShiftError(frappe.ValidationError):
 class ShiftRequestOverride(ShiftRequest):
     def on_submit(self):
         if self.workflow_state != 'Update Request':
-            self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approval' else self.db_set("status", 'Draft')
+            self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approver' else self.db_set("status", 'Draft')
 
 
     def on_update(self):
@@ -92,7 +92,7 @@ def validate(doc, event=None):
     # ensure status is not pending
     if doc.is_new():
         doc.status = 'Draft'
-    if doc.status == 'Pending Approval':
+    if doc.status == 'Pending Approver':
         doc.status == 'Draft'
     if doc.status == 'Draft' and doc.purpose == 'Assign Unrostered Employee':
         if check_for_roster(doc):
@@ -110,7 +110,7 @@ def validate(doc, event=None):
 
 def shift_request_submit(self):
     if self.workflow_state != 'Update Request':
-        self.db_set("status", self.workflow_state) if self.workflow_state != 'Pending Approval' else self.db_set(
+        self.db_set("status", self.workflow_state) if self.workflow_state != 'Pending Approver' else self.db_set(
             "status", 'Draft')
 
 
@@ -128,7 +128,7 @@ def on_update(doc, event):
         send_workflow_action_email(doc,[approver.user for approver in doc.custom_shift_approvers])
         validate_shift_overlap(doc)
 
-    if doc.workflow_state == 'Pending Approval':
+    if doc.workflow_state == 'Pending Approver':
         assign_approver(doc, doc.approver)
 
 
@@ -865,7 +865,7 @@ def daterange(start_date, end_date):
 
 
 def send_shift_request_mail(doc, method):
-    if doc.workflow_state == 'Pending Approval':
+    if doc.workflow_state == 'Pending Approver':
         try:
             title = f"Urgent Notification: {doc.doctype} Requires Your Immediate Review"
             context = dict(
