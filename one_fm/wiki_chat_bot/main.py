@@ -4,7 +4,7 @@ import json
 import frappe
 from llama_index.core import SimpleDirectoryReader,PromptHelper,VectorStoreIndex
 from langchain.llms import OpenAI
-
+from llama_index.core import StorageContext, load_index_from_storage
 
 from one_fm.api.v1.utils import response
 
@@ -15,7 +15,8 @@ def create_vector_index():
         os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY   
         docs = SimpleDirectoryReader(get_folder_path()).load_data()
         vector_index = VectorStoreIndex.from_documents(docs)
-        vector_index.save_to_disk("vector_index.json")
+        
+        vector_index.storage_context.persist(persist_dir="vector_index.json")
         return vector_index
     except:
         frappe.log_error(frappe.get_traceback(), "Error while adding to bot memory(Chat-BOT)")
@@ -27,8 +28,11 @@ def ask_question(question: str = None):
         os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY
         if not question:
             return response("Bad Request !", 400, error="Question can not be empty")
-        index = VectorStoreIndex.load_from_disk("vector_index.json")
-        answer = index.query(question)
+        storage_context = StorageContext.from_defaults(persist_dir="vector_index.json")
+        index = load_index_from_storage(storage_context)
+       
+        query_engine = index.as_query_engine()
+        answer = query_engine.query(question)
         return response(message="Success", status_code=200, data={"question": question, "answer": answer.response})
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error while generating answer(Chat-BOT)")
