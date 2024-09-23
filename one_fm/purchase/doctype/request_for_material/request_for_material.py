@@ -115,12 +115,12 @@ class RequestforMaterial(BuyingController):
 		if not self.request_for_material_approver:
 			approver = False
 			if self.type == 'Project' and self.project:
-				approver = frappe.db.get_single_value("Operation Settings", "default_operation_manager")
-				if approver:
-					self.request_for_material_approver = approver
-					return
-				else:
-					approver = frappe.db.get_value('Project', self.project, 'account_manager')
+				approver = frappe.db.get_value('Project', self.project, 'account_manager')
+				if not approver:
+					approver = frappe.db.get_single_value("Operation Settings", "default_operation_manager")
+					if approver:
+						self.request_for_material_approver = approver
+						return
 			elif self.type in ['Individual', 'Department'] and self.employee:
 				approver = frappe.db.get_value('Employee', self.employee, 'reports_to')
 			elif self.type == 'Onboarding':
