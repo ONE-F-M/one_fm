@@ -5,12 +5,11 @@ from __future__ import unicode_literals
 from datetime import datetime
 import frappe
 from frappe.model.document import Document
-from frappe.utils import getdate, get_datetime, add_to_date, format_date, cstr, now
+from frappe.utils import getdate, format_date
 from frappe.workflow.doctype.workflow_action.workflow_action import apply_workflow
 from frappe import _
+from frappe.desk.form.assign_to import add, remove
 from one_fm.api.notification import create_notification_log, get_employee_user_id
-from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
-from one_fm.processor import sendemail
 from one_fm.utils import has_super_user_role, get_approver
 
 class PermissionTypeandLogTypeError(frappe.ValidationError):
@@ -31,7 +30,7 @@ class ShiftPermission(Document):
 		self.validate_date()
 		self.validate_record()
 		self.validate_approver()
-		if self.workflow_state in ['Pending', 'Approved']:
+		if self.workflow_state in ['Pending Approver', 'Approved']:
 			self.validate_attendance()
 		if not self.title:
 			self.title = self.emp_name
@@ -40,9 +39,10 @@ class ShiftPermission(Document):
 		attendance = frappe.db.exists('Attendance',{'attendance_date': self.date, 'employee': self.employee, 'docstatus': 1})
 		if attendance:
 			frappe.throw(_('There is an Attendance {0} exists for the Employee {1} on {2}'.format(attendance, self.emp_name, format_date(self.date))), exc=ExistAttendance)
-    
+	
 	def on_update(self):
 		self.update_shift_assignment_checkin()
+		self.assign_to_owner()
 
 	# This method validates the shift details availability for employee
 	def check_shift_details_value(self):
@@ -59,7 +59,7 @@ class ShiftPermission(Document):
 		date = getdate(self.date).strftime('%d-%m-%Y')
 		if self.docstatus==0 and frappe.db.exists("Shift Permission", {
 			"employee": self.employee, "date":self.date, "assigned_shift": self.assigned_shift,
-			"workflow_state":"Pending", 'name':['!=', self.name]
+			"workflow_state":"Pending Approver", 'name':['!=', self.name]
 			}):
 			frappe.throw(_("{employee} has already applied for permission on {date}.".format(employee=self.emp_name,date=date)))
 
@@ -154,7 +154,21 @@ class ShiftPermission(Document):
 
 			frappe.db.commit()
 
+	def assign_to_owner(self):
+		# Assign back to owner if Shift permission is Returned to Draft state from Pending Approver
+		if not self.get("__unsaved"):
+			if self.workflow_state == "Draft" and self.get_doc_before_save().workflow_state == "Pending Approver":
+				# Remove approver's assignment
+				remove(self.doctype, self.name, frappe.session.user, ignore_permissions=False)
 
+				# Assign back to document owner
+				add({
+					'doctype': self.doctype,
+					'name': self.name,
+					'assign_to': [self.owner],
+					'description': (_(f"Shift Permission: {self.name} has been returned to Draft. Please check and review."))
+				})
+		
 @frappe.whitelist()
 def fetch_approver(employee, date=None):
 	if employee:
