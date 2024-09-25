@@ -40,8 +40,6 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 		if not issue_type:
 			return response("Bad Request", 400, None, "issue_type required.")
 
-		if not date:
-			return response("Bad Request", 400, None, "date required.")
 
 		if issue_type == "Other":
 			if not issue_details:
@@ -67,11 +65,6 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 		except:
 			return response("Bad Request", 400, None, "Latitude and longitude must be float.")
 
-		if not isinstance(date, str):
-			return response("Bad Request", 400, None, "date must be of type str.")
-
-		if not validate_date(date):
-			return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
 
 		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
@@ -101,6 +94,10 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 		if not shift_supervisor:
 			return response("Resource Not Found", 404, None, "shift supervisor not found for {employee}"
 				.format(employee=employee_id))
+		
+		if frappe.db.exists("Attendance", {"shift_assignment": shift_assignment}):
+			return response("Attendance Exists", 400, None, f"Attendance already marked for {date}")
+		
 
 		if not frappe.db.exists("Employee Checkin Issue", {"employee": employee, "date": date,
 			"assigned_shift": shift_assignment, "log_type": log_type, "issue_type": issue_type}):
