@@ -14,8 +14,23 @@ frappe.ui.form.on('Employee Checkin Issue', {
 	},
 	employee: function(frm) {
 		get_shift_assignment(frm);
+	},
+	validate: function(frm){
+		validate_date(frm);
+	},
+	date: function(frm){
+		validate_date(frm);
 	}
+
 });
+
+
+function validate_date(frm){
+	if(frm.doc.date < frappe.datetime.now_date()){
+		frappe.throw("Date can not be set to a past date")
+	}
+
+}
 
 function set_employee_from_the_session_user(frm) {
 	if(frappe.session.user != 'Administrator' && frm.is_new()){
