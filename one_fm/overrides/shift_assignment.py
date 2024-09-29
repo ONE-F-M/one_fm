@@ -108,7 +108,7 @@ def has_overlapping_timings(self) -> bool:
     """
     Accepts two shift types and checks whether their timings are overlapping
     """
-    if datetime.strptime(str(self.start_datetime), '%Y-%m-%d %H:%M:%S').date()>datetime.strptime(today(), '%Y-%m-%d').date():
+    if datetime.strptime(str(self.start_datetime), '%Y-%m-%d %H:%M:%S').date() > datetime.strptime(today(), '%Y-%m-%d').date():
         frappe.throw(f"Shift cannot be created for date greater than today. Today is {today()}, you requested {self.start_date}")
 
     existing_shift = frappe.db.sql(f"""

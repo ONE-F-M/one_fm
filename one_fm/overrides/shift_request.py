@@ -526,6 +526,8 @@ def create_shift_assignment_from_request(shift_request, submit=True,day_off_ot =
     assignment_doc.check_in_site = shift_request.check_in_site
     assignment_doc.check_out_site = shift_request.check_out_site
     assignment_doc.custom_day_off_ot = 1 if day_off_ot else 0
+    if day_off_ot:
+        assignment_doc.flags.ignore_validate = True
     if shift_request.operations_role:
         assignment_doc.operations_role = shift_request.operations_role
     
