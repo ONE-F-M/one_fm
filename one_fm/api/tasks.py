@@ -1722,15 +1722,11 @@ def fetch_employees_not_in_checkin():
 				WHERE notification_reminder_after_shift_start>0
 				GROUP BY notification_reminder_after_shift_start;
 			""", as_dict=1)]
-			
-
-			late_entry_reminder_minutes = [i.minute for i in frappe.db.sql("""
+			grace_period_minute = [i.minute for i in frappe.db.sql("""
 				SELECT late_entry_grace_period as minute FROM `tabShift Type`
 				WHERE late_entry_grace_period>0
 				GROUP BY late_entry_grace_period;
 			""", as_dict=1)]
-			
-
 			supervisor_reminder_minutes = [i.minute for i in frappe.db.sql("""
 				SELECT supervisor_reminder_shift_start as minute FROM `tabShift Type`
 				WHERE supervisor_reminder_shift_start>0
@@ -1754,8 +1750,8 @@ def fetch_employees_not_in_checkin():
 		shift_assignments_employees_list = frappe.db.sql(f"""
 			SELECT DISTINCT sa.employee, sa.shift_type, sa.start_datetime, sa.end_datetime,
 			sa.shift as operations_shift, st.notification_reminder_after_shift_start,
-			st.notification_reminder_after_shift_end, st.supervisor_reminder_shift_start,
-			st.supervisor_reminder_start_ends,st.late_entry_grace_period, os.supervisor as shift_supervisor,
+			st.notification_reminder_after_shift_end, st.late_entry_grace_period, st.supervisor_reminder_shift_start,
+			st.supervisor_reminder_start_ends, os.supervisor as shift_supervisor,
 			osi.account_supervisor as site_supervisor,sa.name as shift_assignment_id
 			FROM `tabShift Assignment` sa RIGHT JOIN `tabShift Type` st ON sa.shift_type=st.name
 			RIGHT JOIN `tabOperations Shift` os ON sa.shift=os.name RIGHT JOIN `tabOperations Site` osi
@@ -1821,7 +1817,7 @@ def fetch_employees_not_in_checkin():
 		holiday_list_employees = [i.name for i in frappe.db.sql(f"""SELECT name from `tabEmployee` WHERE
 			status = 'Active' AND
 			holiday_list IN {holiday_list_tuple}
-		""", as_dict=1)]
+		""")]
 		employees_yet_to_checkin = [i for i in employees_yet_to_checkin if not i in holiday_list_employees]
 		
 		employee_details = frappe.db.get_list("Employee", filters={
@@ -1834,13 +1830,11 @@ def fetch_employees_not_in_checkin():
 				if shift_assignments_employees_dict.get(i.name):
 					i = {**i, **shift_assignments_employees_dict.get(i.name), **{'log_type':'IN'}}
 					del i['name']
-					
 					# check if is_after_grace_period
-					if minute in reminder_minutes:i['is_after_grace_checkin'] = True
-					 #Setup this way because the users do not want both emails(late_entry and is_after_grace_checkin) sent
-					else:i['is_after_grace_checkin'] = False	
-					if minute in late_entry_reminder_minutes:i['is_late_entry_checkin'] = True
-					else:i['is_late_entry_checkin'] = False
+					if minute in initial_reminder_minutes:
+						i['initial_checkin_reminder']=True
+					else:
+						i['initial_checkin_reminder']=False
 					# check if supervisor reminder
 					if minute in supervisor_reminder_minutes:
 						i['is_supervisor_checkin_reminder'] = True
