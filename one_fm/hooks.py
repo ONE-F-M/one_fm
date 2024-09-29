@@ -116,7 +116,8 @@ doctype_js = {
     "Goal": "public/js/doctype_js/goal.js",
     "Task": "public/js/doctype_js/task.js",
     "HD Ticket": "public/js/doctype_js/hd_ticket.js",
-    "Appraisal": "public/js/doctype_js/appraisal.js"
+    "Appraisal": "public/js/doctype_js/appraisal.js",
+    "Employee Performance Feedback":"public/js/doctype_js/employee_performance_feedback.js",
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
