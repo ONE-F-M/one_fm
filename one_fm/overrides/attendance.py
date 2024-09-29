@@ -780,7 +780,7 @@ def approve_pending_employee_checkin_issue():
             try:
                 apply_workflow(frappe.get_doc("Employee Checkin Issue", obj), "Approve")
             except Exception as e:
-                print(e)
+                frappe.log_error(frappe.get_traceback(), "Error while approving employee checkin issue")
             frappe.db.commit()
 
 

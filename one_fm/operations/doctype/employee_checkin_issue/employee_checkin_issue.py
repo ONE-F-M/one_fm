@@ -8,6 +8,7 @@ from frappe.utils import getdate, get_datetime, add_to_date, format_date
 from frappe import _
 from one_fm.api.notification import get_employee_user_id
 from hrms.hr.doctype.shift_assignment.shift_assignment import get_shift_details
+from one_fm.api.v1.face_recognition import create_checkin_log
 from one_fm.api.v1.utils import response
 from one_fm.utils import (
 	workflow_approve_reject, send_workflow_action_email, get_approver
@@ -97,8 +98,14 @@ class EmployeeCheckinIssue(Document):
 
 	# This method validates the ECI date and avoid creating ECI for previous days
 	def validate_date(self):
-		if self.docstatus==0 and getdate(self.date) < getdate() and self.is_new():
+		if self.docstatus == 0 and getdate(self.date) < getdate() and self.is_new():
 			frappe.throw(_("Oops! You cannot create Employee Checkin Issue for a previous date."))
+
+	def on_update(self):
+		if self.workflow_state == "Approved":
+			create_checkin_log(self.employee, self.log_type, 0,  self.latitude, self.longitude, "Mobile App")
+			self.create_hd_ticket()
+
 
 	@frappe.whitelist()
 	def create_hd_ticket(self):
