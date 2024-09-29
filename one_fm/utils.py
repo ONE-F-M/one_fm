@@ -3480,14 +3480,15 @@ def get_current_shift(employee):
 
     shift = frappe.db.sql(sql, as_dict=1)
     if shift: # shift was checked in between start and end time
+        data = frappe.get_doc("Shift Assignment", shift[0].name)
         if shift[0].checkin_time > nowtime:
             minutes = int((shift[0].checkin_time - nowtime).total_seconds() / 60)
-            return {"type":"Early", "data":minutes}
+            return {"type":"Early", "data": data, "time": minutes}
         elif shift[0].checkout_time < nowtime:
             minutes = int((nowtime - shift[0].checkout_time).total_seconds() / 60)
-            return {"type":"Late", "data":minutes}
+            return {"type":"Late", "data": data, "time": minutes}
         elif shift[0].checkin_time <= nowtime <= shift[0].checkout_time:
-            return {"type":"On Time", "data":frappe.get_doc("Shift Assignment", shift[0].name)}
+            return {"type":"On Time", "data": data, "time": 0}
         else:
             return False
     return False
