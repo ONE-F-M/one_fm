@@ -226,12 +226,14 @@ def checkin_checkout_supervisor_reminder():
 		"""
 		frappe.enqueue(supervisor_reminder,shift = shift,today_datetime = today_datetime ,now_time=now_time, is_async=True, queue='long')
 
+
 def supervisor_reminder(shift, today_datetime, now_time):
 	title = "Checkin Report"
 	category = "Attendance"
 	date = getdate()
 	if shift.start_time < shift.end_time and nowtime() < cstr(shift.start_time):
 		date = getdate() - timedelta(days=1)
+
 
 	if (strfdelta(shift.start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())) or (shift.has_split_shift == 1 and strfdelta(shift.second_shift_start_time, '%H:%M:%S') == cstr((get_datetime(now_time) - timedelta(minutes=cint(shift.supervisor_reminder_shift_start))).time())):
 		checkin_time = today_datetime + " " + strfdelta(shift.start_time, '%H:%M:%S')
