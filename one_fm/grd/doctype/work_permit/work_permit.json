@@ -94,6 +94,12 @@
   "salary_certificate",
   "column_break_64",
   "iqrar",
+  "new_passport_details_section",
+  "new_passport_type",
+  "column_break_yjma",
+  "new_passport_number",
+  "column_break_jgpb",
+  "new_passport_expiry_date",
   "documents_required_section",
   "documents_required",
   "amended_from",
@@ -404,8 +410,7 @@
    "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "upload_work_permit",
    "fieldtype": "Attach",
-   "label": "Upload Work Permit",
-   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'"
+   "label": "Upload Work Permit"
   },
   {
    "allow_on_submit": 1,
@@ -452,8 +457,7 @@
    "depends_on": "eval:doc.workflow_state=='Pending By PAM' || doc.workflow_state=='Pending By Operator'",
    "fieldname": "upload_work_permit_on",
    "fieldtype": "Data",
-   "label": "Upload On",
-   "mandatory_depends_on": "eval:doc.workflow_state=='Pending By PAM'"
+   "label": "Upload On"
   },
   {
    "allow_on_submit": 1,
@@ -581,16 +585,13 @@
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
    "fetch_from": "employee.one_fm_passport_type",
    "fieldname": "passport_type",
    "fieldtype": "Data",
    "label": "Passport Type",
-   "read_only": 1,
-   "translatable": 1
+   "read_only": 1
   },
   {
-   "allow_on_submit": 1,
    "fetch_from": "employee.passport_number",
    "fieldname": "passport_number",
    "fieldtype": "Data",
@@ -902,6 +903,36 @@
    "read_only": 1
   },
   {
+   "description": "The details added in this section will update the employee passport details in Employee doctype",
+   "fieldname": "new_passport_details_section",
+   "fieldtype": "Section Break",
+   "label": "New Passport Details"
+  },
+  {
+   "fieldname": "new_passport_type",
+   "fieldtype": "Select",
+   "label": "Passport Type",
+   "options": "\nDiplomat\nNormal"
+  },
+  {
+   "fieldname": "column_break_yjma",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "new_passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number"
+  },
+  {
+   "fieldname": "column_break_jgpb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "new_passport_expiry_date",
+   "fieldtype": "Date",
+   "label": "Passport Expiry Date"
+  },
+  {
    "fieldname": "new_pam_details_section",
    "fieldtype": "Section Break",
    "label": "New PAM Details"
@@ -953,7 +984,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-08-18 11:30:35.755202",
+ "modified": "2024-08-26 10:15:55.860237",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Work Permit",

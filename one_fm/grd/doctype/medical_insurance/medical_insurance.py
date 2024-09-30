@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import today, get_url
+from frappe.utils import today, get_url,getdate
 from frappe import _
 from datetime import date
 from frappe.core.doctype.communication.email import make
@@ -16,6 +16,18 @@ from one_fm.processor import sendemail
 from one_fm.utils import is_scheduler_emails_enabled
 
 class MedicalInsurance(Document):
+    def before_insert(self):
+        self.cancel_existing()
+    
+    def cancel_existing(self):
+        """Cancel  documents for that employee which were created in previous years"""
+        year_threshold = getdate(self.date_of_application).year or getdate().year
+        first_day_of_year = getdate(f'01-01-{year_threshold}') #Get the first day of the year
+        existing_docs = frappe.get_all(self.doctype,{'date_of_application':['<',first_day_of_year],'name':['!=',self.name],'docstatus':0,'employee':self.employee})
+        if existing_docs:
+            for one in existing_docs:
+                frappe.db.set_value(self.doctype,one,'workflow_state','Cancelled')
+            frappe.db.commit()
 
     def validate(self):
         self.set_value()
@@ -47,7 +59,7 @@ def valid_work_permit_exists(preparation_name):
     if employee_in_preparation.preparation_record:
         for employee in employee_in_preparation.preparation_record:
             if employee.renewal_or_extend == 'Renewal' and employee.nationality != 'Kuwaiti':
-                print(employee.employee)
+                
                 create_mi_record(frappe.get_doc('Work Permit',{'preparation':preparation_name,'employee':employee.employee}))
 
 #Creating mi for transfer

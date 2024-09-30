@@ -369,6 +369,7 @@ def create_attendance_check(attendance_date=None):
                                     WHERE emp.attendance_by_timesheet = 1
                                     AND emp.status ='Active'
                                     AND emp.employee_name != 'Test Employee'
+                                    AND  emp.date_of_joining <= '{attendance_date}' 
                                     AND emp.name NOT IN (SELECT employee from `tabTimesheet` WHERE start_date='{attendance_date}')
                                     AND '{attendance_date}' NOT IN (SELECT holiday_date from `tabHoliday` h WHERE h.parent = emp.holiday_list AND h.holiday_date = '{attendance_date}')
                                     AND emp.employee NOT IN (SELECT employee
