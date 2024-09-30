@@ -6,11 +6,18 @@ from __future__ import unicode_literals
 from json import loads
 
 import frappe
+from frappe.utils import today, format_date
 from frappe.desk.form.assign_to import add as add_assignment
 from frappe.model.document import Document
 from frappe import _
 
 class MOM(Document):
+	def autoname(self):
+		formated_today_date = format_date(today(), 'dd-mm-yyyy')
+		target_project_docs = frappe.db.count(self.doctype, filters={"project": self.project})
+		# Format the name as `DD-MM-YYYY|Project|##`
+		self.name = f"{formated_today_date}|{self.project}|{target_project_docs + 1:02d}"
+
 	def validate(self):
 		attendees_count = 0
 		for attendee in self.attendees[:]:
