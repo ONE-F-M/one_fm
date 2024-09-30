@@ -28,18 +28,17 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		pass
 
 	def validate(self):
-		validate_active_employee(self.employee)
-		self.validate_duplicate_log()
-		if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin'):
-			try:
-				curr_shift = None
+		try:
+			validate_active_employee(self.employee)
+			self.validate_duplicate_log()
+			if frappe.db.get_single_value("HR and Payroll Additional Settings",
+										  'validate_shift_permission_on_employee_checkin'):
 				existing_perm = None
 				checkin_time = get_datetime(self.time)
-				shift_exists = get_current_shift(self.employee)
-				if shift_exists and shift_exists['type'] == "On Time":
-					curr_shift = shift_exists['data']
+				curr_shift = get_current_shift(self.employee)
 				if curr_shift:
-					curr_shift = curr_shift.as_dict()
+					current_shift_obj = curr_shift['data']
+					curr_shift = current_shift_obj.as_dict()
 					start_date = curr_shift["start_date"].strftime("%Y-%m-%d")
 					existing_perm = frappe.db.sql(f""" select name from `tabShift Permission` where date = '{start_date}' and employee = '{self.employee}' and permission_type = '{perm_map[self.log_type]}' and workflow_state = 'Approved' """, as_dict=1)
 					self.shift_assignment = curr_shift["name"]
@@ -60,8 +59,8 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 							self.time = curr_shift["end_datetime"]
 							self.skip_auto_attendance = 0
 							self.shift_permission = existing_perm[0]["name"]
-			except Exception as e:
-				frappe.throw(frappe.get_traceback())
+		except Exception as e:
+			frappe.throw(frappe.get_traceback())
 
 	def validate_duplicate_log(self):
 		doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
@@ -82,13 +81,16 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			self.shift_actual_end = sa.end_datetime
 
 	def after_insert(self):
-		frappe.db.commit()
-		self.reload()
-		if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
+		try:
+			frappe.db.commit()
+			self.reload()
+			# if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
 			frappe.enqueue(after_insert_background, employee_checkin=self.name)
 
-		if self.log_type == "IN":
-			frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
+			if self.log_type == "IN":
+				frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
+		except Exception as e:
+			frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
 
 def exists_checkin(current_shift_assignment, checkin_name, log_type="IN"):
 	'''
@@ -110,15 +112,13 @@ def exists_checkin(current_shift_assignment, checkin_name, log_type="IN"):
 
 	return False
 
-def after_insert_background(self):
-	self = frappe.get_doc("Employee Checkin", self)
+def after_insert_background(employee_checkin):
+	self = frappe.get_doc("Employee Checkin", employee_checkin)
 	try:
 		# update shift if not exists
-		curr_shift = False
-		shift_exists = get_current_shift(self.employee)
-		if shift_exists and shift_exists['type'] == "On Time":
-			curr_shift = shift_exists['data']
+		curr_shift = get_current_shift(self.employee)
 		if curr_shift:
+			curr_shift = curr_shift['data']
 			shift_type = frappe.db.sql(f"""SELECT * FROM `tabShift Type` WHERE name='{curr_shift.shift_type}' """, as_dict=1)[0]
 			# calculate entry
 			early_exit = 0
@@ -126,7 +126,7 @@ def after_insert_background(self):
 			actual_time = str(self.time)
 			if not '.' in actual_time:
 				actual_time += '.000000'
-
+				
 			if self.log_type=='IN':
 				if (datetime.strptime(actual_time, '%Y-%m-%d %H:%M:%S.%f') - timedelta(minutes=shift_type.late_entry_grace_period)) > curr_shift.start_datetime:
 					late_entry = 1
