@@ -28,10 +28,11 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 		pass
 
 	def validate(self):
-		validate_active_employee(self.employee)
-		self.validate_duplicate_log()
-		if frappe.db.get_single_value("HR and Payroll Additional Settings", 'validate_shift_permission_on_employee_checkin'):
-			try:
+		try:
+			validate_active_employee(self.employee)
+			self.validate_duplicate_log()
+			if frappe.db.get_single_value("HR and Payroll Additional Settings",
+										  'validate_shift_permission_on_employee_checkin'):
 				existing_perm = None
 				checkin_time = get_datetime(self.time)
 				curr_shift = get_current_shift(self.employee)
@@ -58,8 +59,8 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 							self.time = curr_shift["end_datetime"]
 							self.skip_auto_attendance = 0
 							self.shift_permission = existing_perm[0]["name"]
-			except Exception as e:
-				frappe.throw(frappe.get_traceback())
+		except Exception as e:
+			frappe.throw(frappe.get_traceback())
 
 	def validate_duplicate_log(self):
 		doc = frappe.db.sql(f""" select name from `tabEmployee Checkin` where employee = '{self.employee}' and time = '{self.time}' and (NOT name = '{self.name}')""", as_dict=1)
