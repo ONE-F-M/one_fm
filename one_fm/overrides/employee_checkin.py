@@ -80,13 +80,16 @@ class EmployeeCheckinOverride(EmployeeCheckin):
 			self.shift_actual_end = sa.end_datetime
 
 	def after_insert(self):
-		frappe.db.commit()
-		self.reload()
-		# if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
-		frappe.enqueue(after_insert_background, employee_checkin=self.name)
+		try:
+			frappe.db.commit()
+			self.reload()
+			# if not (self.shift_assignment and self.shift_type and self.operations_shift and self.shift_actual_start and self.shift_actual_end):
+			frappe.enqueue(after_insert_background, employee_checkin=self.name)
 
-		if self.log_type == "IN":
-			frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
+			if self.log_type == "IN":
+				frappe.enqueue(notify_supervisor_about_late_entry, checkin=self)
+		except Exception as e:
+			frappe.log_error(frappe.get_traceback(), 'Employee Checkin')
 
 def exists_checkin(current_shift_assignment, checkin_name, log_type="IN"):
 	'''
