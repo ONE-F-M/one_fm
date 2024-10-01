@@ -441,7 +441,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                     employees = new_employees.copy()
 
     # # get and structure employee dictionary for easy hashing
-    employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employee_list]}, fields=['name', 'employee_name', 'department'], ignore_permissions=True)
+    employees_list = frappe.db.get_list("Employee", filters={'employee': ['IN', employee_list]}, fields=['name', 'employee_name', 'department','date_of_joining'], ignore_permissions=True)
     employees_dict = {}
     for i in employees_list:
         employees_dict[i.name] = i
@@ -453,11 +453,12 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
         next_day = True
     employees_date_dict = {}
     for i in employees:
-        if employees_date_dict.get(i['employee']):
-            employees_date_dict[i['employee']].append({'date':i['date'],
-                'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')})
-        else:
-            employees_date_dict[i['employee']] =[{'date':i['date'], 'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')}]
+        if getdate(employees_dict.get(i.get('employee')).get('date_of_joining')) <= getdate(i.get('date')):
+            if employees_date_dict.get(i['employee']):
+                employees_date_dict[i['employee']].append({'date':i['date'],
+                    'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')})
+            else:
+                employees_date_dict[i['employee']] =[{'date':i['date'], 'start_datetime': datetime.strptime(f"{i['date']} {shift_start}", '%Y-%m-%d %H:%M:%S'), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end}", '%Y-%m-%d %H:%M:%S')}]
 
     # check for intersection schedules
     error_msg = """"""
