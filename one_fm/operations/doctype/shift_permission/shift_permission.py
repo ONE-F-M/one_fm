@@ -168,6 +168,10 @@ class ShiftPermission(Document):
 					'assign_to': [self.owner],
 					'description': (_(f"Shift Permission: {self.name} has been returned to Draft. Please check and review."))
 				})
+			
+			if self.workflow_state == "Pending Approver" and self.get_doc_before_save().workflow_state == "Draft":
+				# Remove doc owner's assignment
+				remove(self.doctype, self.name, self.owner, ignore_permissions=False)
 		
 @frappe.whitelist()
 def fetch_approver(employee, date=None):
