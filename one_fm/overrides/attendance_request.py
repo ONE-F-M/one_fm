@@ -1,12 +1,13 @@
 import frappe, pandas as pd
 from frappe import _
-from frappe.model.document import Document
-from frappe.utils import add_days, date_diff, getdate, nowdate, get_link_to_form, format_date
+from frappe.utils import getdate, get_link_to_form, format_date
 from erpnext.setup.doctype.employee.employee import is_holiday
 from hrms.hr.utils import validate_active_employee
 from hrms.hr.doctype.attendance_request.attendance_request import AttendanceRequest
+
+from frappe.desk.form.assign_to import add, remove
 from one_fm.utils import (
-	send_workflow_action_email, get_holiday_today, workflow_approve_reject, get_approver, has_super_user_role
+	send_workflow_action_email, workflow_approve_reject, get_approver, has_super_user_role
 )
 
 
@@ -23,7 +24,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 		check_for_attendance(self)
 
 	def set_approver(self):
-		if not self.approver and self.employee:
+		if self.employee:
 			self.approver = get_approver(self.employee)
 			if self.approver:
 				approver = frappe.db.get_value(
@@ -32,7 +33,8 @@ class AttendanceRequestOverride(AttendanceRequest):
 					['user_id', 'employee_name'],
 					as_dict=1
 				)
-				pass
+				self.approver_name = approver.employee_name
+				self.approver_user = approver.user_id
 
 	def on_submit(self):
 		if not self.reports_to():
@@ -53,6 +55,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	def on_update(self):
 		self.send_notification()
+		self.assign_to_owner()
 
 	def on_update_after_submit(self):
 		self.send_notification()
@@ -158,7 +161,7 @@ class AttendanceRequestOverride(AttendanceRequest):
 
 	def send_notification(self):
 		if self.workflow_state in ['Pending Approval']:
-			send_workflow_action_email(self, [self.approver])
+			send_workflow_action_email(self, [self.approver_user])
 		if self.workflow_state in ['Rejected', 'Approved', 'Cancelled']:
 			workflow_approve_reject(self, recipients=None)
 
@@ -190,13 +193,30 @@ class AttendanceRequestOverride(AttendanceRequest):
 	@frappe.whitelist()
 	def reports_to(self):
 		employee_user = frappe.get_value("Employee", {"name": self.employee}, "user_id")
-		if frappe.session.user == self.approver or has_super_user_role(employee_user) or (
+		if frappe.session.user == self.approver_user or has_super_user_role(employee_user) or (
 			frappe.session.user == "administrator"
 		):
 			return True
 
-		frappe.msgprint('This Attendance Request can only be approved by the employee supervisor')
 		return False
+
+	def assign_to_owner(self):
+		# Assign back to owner if Attendance Request is Returned to Draft state from Pending Approval
+		if not self.get("__unsaved"):
+			if self.workflow_state == "Draft" and self.get_doc_before_save().workflow_state == "Pending Approval":
+				# Remove approver's assignment
+				remove(self.doctype, self.name, frappe.session.user, ignore_permissions=False)
+
+				# Assign back to document owner
+				add({
+					'doctype': self.doctype,
+					'name': self.name,
+					'assign_to': [self.owner],
+					'description': (_(f"Attendance Request: {self.name} has been returned to Draft. Please check and review."))
+				})
+			if self.workflow_state == "Pending Approval" and self.get_doc_before_save().workflow_state == "Draft":
+				# Remove doc owner's assignment
+				remove(self.doctype, self.name, self.owner, ignore_permissions=False)
 
 def check_for_attendance(doc):
 	att = frappe.get_list("Attendance", {"employee": doc.employee, "attendance_date":["between", [doc.from_date, doc.to_date]]}, ['status'])
@@ -222,16 +242,16 @@ def validate_dates(doc, from_date, to_date):
 
 
 def mark_future_attendance_request():
-    """
-        GET attendance request for the future where date is today
-    """
-    attendance_requests = frappe.db.sql(f"""
-        SELECT name FROM `tabAttendance Request`
-        WHERE '{getdate()}' BETWEEN from_date AND to_date
-        AND docstatus=1
-    """, as_dict=1)
-    for row in attendance_requests:
-        try:
-            frappe.get_doc("Attendance Request", row.name).mark_attendance(str(getdate()))
-        except Exception as e:
-            frappe.log_error(str(e), 'Attendance Request')
+	"""
+		GET attendance request for the future where date is today
+	"""
+	attendance_requests = frappe.db.sql(f"""
+		SELECT name FROM `tabAttendance Request`
+		WHERE '{getdate()}' BETWEEN from_date AND to_date
+		AND docstatus=1
+	""", as_dict=1)
+	for row in attendance_requests:
+		try:
+			frappe.get_doc("Attendance Request", row.name).mark_attendance(str(getdate()))
+		except Exception as e:
+			frappe.log_error(str(e), 'Attendance Request')
