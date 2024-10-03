@@ -4,6 +4,7 @@ import json
 import frappe
 from llama_index.core import SimpleDirectoryReader,PromptHelper,VectorStoreIndex
 from langchain.llms import OpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import StorageContext, load_index_from_storage
 
 from one_fm.api.v1.utils import response
@@ -14,9 +15,9 @@ def create_vector_index():
     try:
         os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY   
         docs = SimpleDirectoryReader(get_folder_path()).load_data()
-        vector_index = VectorStoreIndex.from_documents(docs)
-        
-        vector_index.storage_context.persist(persist_dir="vector_index.json")
+        embedding_model = OpenAIEmbedding(model_name="gpt-4o-mini")
+        vector_index = VectorStoreIndex.from_documents(docs,embedding=embedding_model)
+        vector_index.storage_context.persist(persist_dir="vector_index")
         return vector_index
     except:
         frappe.log_error(frappe.get_traceback(), "Error while adding to bot memory(Chat-BOT)")
