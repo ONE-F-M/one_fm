@@ -129,7 +129,7 @@ frappe.ui.form.on('Interview', {
 			fieldname: 'weight',
 			label: __('Weight'),
 		}, {
-			fieldtype: 'Data',
+			fieldtype: 'Small Text',
 			fieldname: 'applicant_answer',
 			label: __('Applicant Answer'),
 			in_list_view: 1,
