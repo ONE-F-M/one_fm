@@ -104,7 +104,6 @@ frappe.ui.form.on('Interview', {
 			primary_action_label: __("Save"),
 			primary_action: function(values) {
 				create_interview_feedback(frm, values, feedback_exists, 'save');
-				d.hide();
 			},
 			secondary_action_label: __("Save and Submit"),
 			secondary_action: function() {

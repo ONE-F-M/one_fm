@@ -680,7 +680,7 @@ def get_interview_skill_and_question_set(interview_round, interviewer=False, int
 		interview_feedback = frappe.get_doc('Interview Feedback', feedback_exists)
 		return interview_feedback.interview_question_assessment, interview_feedback.skill_assessment, feedback_exists
 	else:
-		question = frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+		question = frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'], order_by='idx')
 		skill = frappe.get_all('Expected Skill Set', filters ={'parent': interview_round}, fields=['skill'])
 		return question, skill, False
 
