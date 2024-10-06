@@ -45,9 +45,9 @@ function generateResponse(prompt){
   if(prompt){
     frappe.call({
       method: 'one_fm.wiki_chat_bot.main.ask_question',
-      args: {'prompt': prompt},
+      args: {'question': prompt},
       callback: function(r) {
-        console.log(r)
+        
         if(r.message != 'None') {
           $('#chat-bubble').hide();
           addMessage("received",  r.data.answer);
