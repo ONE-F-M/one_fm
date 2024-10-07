@@ -32,7 +32,7 @@ configs:
         collection_name: "docs_collection"
     output_path: "data/plain_docs"
     inputs:
-      - path: "/Users/samdani/Desktop/sample/apps/one_fm/one_fm/docsagent/content"
+        - path: "content" # create a content folder inside docsagent dir give the absolute path  
         url_prefix: "http://onefm.localhost:8003/app/wiki"
     conditions:
       - condition_text: "You are a helpful chatbot answering questions from users.
