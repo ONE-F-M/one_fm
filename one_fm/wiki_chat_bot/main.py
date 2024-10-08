@@ -92,7 +92,7 @@ def add_wiki_page_to_bot_memory(doc):
         with open(f"{folder_path}/{doc.get('name')}.txt", "w") as x:
             x.write(doc.get("title") + "\n" + doc.get("content"))
         
-        create_vector_index_ai()
+        create_vector_index()
 
         queue_delete_all_uploaded_files()
         return True
