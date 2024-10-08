@@ -67,12 +67,8 @@ class AttendanceRequestOverride(AttendanceRequest):
 		"""
 			Check if shift exist for employee
 		"""
-		if(frappe.db.exists("Shift Assignment",
-			{'employee':self.employee, 'docstatus':1, 'status':'Active', 'start_date':attendance_date})):
-			shift_assignment = frappe.db.get_list("Shift Assignment",
-				{'employee':self.employee, 'docstatus':1, 'status':'Active', 'start_date':attendance_date})
-			return frappe.get_doc("Shift Assignment", shift_assignment[0].name)
-		return False
+		shift_check = frappe.db.exists("Shift Assignment",{'employee':self.employee, 'docstatus':1, 'status':'Active', 'start_date':attendance_date})
+		return frappe.get_doc("Shift Assignment", shift_check) if shift_check else False
 
 	def create_attendance(self):
 		date_range = pd.date_range(self.from_date, self.to_date)
