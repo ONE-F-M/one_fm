@@ -23,8 +23,8 @@ import google.generativeai
 from ratelimit import limits
 from ratelimit import sleep_and_retry
 
-from docs_agent.utilities.config import Models
-from docs_agent.utilities.config import Conditions
+from one_fm.docsagent.docs_agent.utilities.config import Models
+from one_fm.docsagent.docs_agent.utilities.config import Conditions
 
 
 class Error(Exception):

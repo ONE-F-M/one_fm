@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from docs_agent.utilities import config
+from one_fm.docsagent.docs_agent.utilities import config
 
 # Per the docs 60-80 words ~= 100 tokens
 lower_word_limit = 60 / 100

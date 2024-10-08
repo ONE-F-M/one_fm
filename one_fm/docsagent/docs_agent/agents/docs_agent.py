@@ -23,19 +23,19 @@ import google.api_core
 import google.ai.generativelanguage as glm
 from chromadb.utils import embedding_functions
 
-from docs_agent.storage.chroma import ChromaEnhanced
+from one_fm.docsagent.docs_agent.storage.chroma import ChromaEnhanced
 
-from docs_agent.models.google_genai import Gemini
+from one_fm.docsagent.docs_agent.models.google_genai import Gemini
 
-from docs_agent.utilities.config import ProductConfig, Models
-from docs_agent.preprocess.splitters import markdown_splitter
+from one_fm.docsagent.docs_agent.utilities.config import ProductConfig, Models
+from one_fm.docsagent.docs_agent.preprocess.splitters import markdown_splitter
 
-from docs_agent.preprocess.splitters.markdown_splitter import Section as Section
-from docs_agent.postprocess.docs_retriever import SectionDistance as SectionDistance
-from docs_agent.postprocess.docs_retriever import (
+from one_fm.docsagent.docs_agent.preprocess.splitters.markdown_splitter import Section as Section
+from one_fm.docsagent.docs_agent.postprocess.docs_retriever import SectionDistance as SectionDistance
+from one_fm.docsagent.docs_agent.postprocess.docs_retriever import (
     SectionProbability as SectionProbability,
 )
-from docs_agent.utilities.helpers import resolve_path
+from one_fm.docsagent.docs_agent.utilities.helpers import resolve_path
 
 
 

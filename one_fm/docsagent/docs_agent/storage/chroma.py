@@ -28,10 +28,10 @@ from chromadb.utils import embedding_functions
 from chromadb.api.models import Collection
 from chromadb.api.types import QueryResult
 
-from docs_agent.models.palm import PaLM
-from docs_agent.preprocess.splitters.markdown_splitter import Section as Section
-from docs_agent.postprocess.docs_retriever import FullPage as FullPage
-from docs_agent.utilities.helpers import resolve_path, parallel_backup_dir
+from one_fm.docsagent.docs_agent.models.palm import PaLM
+from one_fm.docsagent.docs_agent.preprocess.splitters.markdown_splitter import Section as Section
+from one_fm.docsagent.docs_agent.postprocess.docs_retriever import FullPage as FullPage
+from one_fm.docsagent.docs_agent.utilities.helpers import resolve_path, parallel_backup_dir
 
 
 class Error(Exception):

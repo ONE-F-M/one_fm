@@ -19,9 +19,9 @@ import markdown
 import bs4
 import re, os
 from absl import logging
-from docs_agent.models import tokenCount
+from one_fm.docsagent.docs_agent.models import tokenCount
 import frontmatter
-from docs_agent.utilities.helpers import add_scheme_url
+from one_fm.docsagent.docs_agent.utilities.helpers import add_scheme_url
 
 
 class Section:

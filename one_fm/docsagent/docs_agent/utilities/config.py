@@ -22,7 +22,7 @@ import yaml
 import typing
 
 from absl import logging
-from docs_agent.utilities.helpers import get_project_path
+from one_fm.docsagent.docs_agent.utilities.helpers import get_project_path
 
 
 class DbConfig:

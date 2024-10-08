@@ -15,7 +15,7 @@
 #
 
 import re, os
-from docs_agent.preprocess.splitters import markdown_splitter
+from one_fm.docsagent.docs_agent.preprocess.splitters import markdown_splitter
 
 
 # This function replaces HTML's includes sections with content.

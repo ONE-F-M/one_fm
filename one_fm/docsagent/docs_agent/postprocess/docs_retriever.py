@@ -16,8 +16,8 @@
 # from markdown import markdown
 # from bs4 import BeautifulSoup
 # import re, os
-from docs_agent.models import tokenCount
-from docs_agent.preprocess.splitters.markdown_splitter import Section as Section
+from one_fm.docsagent.docs_agent.models import tokenCount
+from one_fm.docsagent.docs_agent.preprocess.splitters.markdown_splitter import Section as Section
 
 """Objects to handle retrieval of Sections and rebuild original pages"""
 
