@@ -5,8 +5,9 @@ import shutil
 from deep_translator import GoogleTranslator
 
 import frappe
-from llama_index.core import SimpleDirectoryReader,PromptHelper,VectorStoreIndex
-# from langchain.llms import OpenAI
+from llama_index.core import SimpleDirectoryReader,PromptHelper,VectorStoreIndex,PromptTemplate
+from langchain.llms import OpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import StorageContext, load_index_from_storage
 
 from one_fm.docsagent.docs_agent.preprocess.files_to_plain_text import process_all_products as chunk
@@ -17,16 +18,14 @@ import typing
 
 
 from one_fm.api.v1.utils import response
-
-
-
+        
 def create_vector_index():
     try:
         os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY   
         docs = SimpleDirectoryReader(get_folder_path("chatgtp")).load_data()
-        vector_index = VectorStoreIndex.from_documents(docs)
-        
-        vector_index.storage_context.persist(persist_dir="vector_index.json")
+        embedding_model = OpenAIEmbedding(model_name="gpt-4o-mini")
+        vector_index = VectorStoreIndex.from_documents(docs,embedding=embedding_model)
+        vector_index.storage_context.persist(persist_dir="vector_index")
         return vector_index
     except:
         frappe.log_error(frappe.get_traceback(), "Error while adding to bot memory(Chat-BOT)")
@@ -40,8 +39,19 @@ def ask_question(question: str = None):
             return response("Bad Request !", 400, error="Question can not be empty")
         storage_context = StorageContext.from_defaults(persist_dir="vector_index.json")
         index = load_index_from_storage(storage_context)
-       
-        query_engine = index.as_query_engine()
+        prompt_template = (
+           "Context information is below.\n"
+            "---------------------\n"
+            "{context_str}\n"
+            "---------------------\n"
+            "Given the context information and not prior knowledge, "
+            "Whenever you are not sure of the answer to a question, ask the user to upload the most updated data\n"
+            "You are an AI assistant named Lumina. Always introduce yourself as Lumina and respond to the user in the same language they use.\n"
+            "Query: {query_str}\n"
+            "Answer: "
+        )
+        text_qa_template = PromptTemplate(prompt_template)
+        query_engine = index.as_query_engine(text_qa_template=text_qa_template,refine_template=text_qa_template)
         answer = query_engine.query(question)
         return response(message="Success", status_code=200, data={"question": question, "answer": answer.response})
     except Exception as e:
