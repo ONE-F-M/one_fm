@@ -127,14 +127,14 @@
             </div>
         </section>
 
-        <div id="chatbot-container" style="display: none">
-            <div id="chatbot-interface">
-              <div id="chatbot-header">
+        <div id="chatbot-container-lumina" style="display: none">
+            <div id="chatbot-interface-lumina">
+              <div id="chatbot-header-lumina">
                 <p>Want to know something? - Let's chat</p>
               </div>
               
-              <div id="chatbot-chat">
-                <div id="chat-bubble" class="chatbot-messages chatbot-received-messages" >
+              <div id="chatbot-chat-lumina">
+                <div id="chat-bubble-lumina" class="chatbot-messages-lumina chatbot-received-messages-lumina" >
                     <div class="typing">
                       <div class="dot"></div>
                       <div class="dot"></div>
@@ -142,34 +142,72 @@
                     </div>
                 </div>
 
-                <div id="chat-intro">
-                    <div class="chatbot-messages chatbot-received-messages">
+                <div id="chat-intro-lumina">
+                    <div class="chatbot-messages-lumina chatbot-received-messages-lumina">
                         <p>With what can I help you today?</p>
                     </div>
-                    <div class="chatbot-messages chatbot-received-messages">
+                    <div class="chatbot-messages-lumina chatbot-received-messages-lumina">
                         <p>Hello! I am Lumina, OneFM's chatbot</p>
                     </div>
                 </div>
                
-                
-                
               </div>
               
-              <div id="chatbot-footer">
-                <div id="chatbot-input-container">
-                  <input type="text" id="chatbot-input" name="chatbot-input" placeholder="Type your question here...">
+              <div id="chatbot-footer-lumina">
+                <div id="chatbot-input-container-lumina">
+                  <input type="text" id="chatbot-input-lumina" name="chatbot-input" placeholder="Type your question here...">
                 </div>
-                <div id="chatbot-new-message-send-button">
+                <div id="chatbot-new-message-send-button-lumina">
                   <i class="material-icons" id="send-icon">send</i>
                 </div>
               </div>
             </div>
           </div> 
-          <div id="chatbot-open-container">
-            <span class="material-symbols-outlined">chat</span>
-            <span class="material-symbols-outlined" style="display: none">close </span>
-          </div>
+          
+          <div id="chatbot-container-gemini" style="display: none">
+            <div id="chatbot-interface-gemini">
+              <div id="chatbot-header-gemini">
+                <p>Want to know something? - Let's chat</p>
+              </div>
+              
+              <div id="chatbot-chat-gemini">
+                <div id="chat-bubble-gemini" class="chatbot-messages-gemini chatbot-received-messages-gemini" >
+                    <div class="typing">
+                      <div class="dot"></div>
+                      <div class="dot"></div>
+                      <div class="dot"></div>
+                    </div>
+                </div>
 
+                <div id="chat-intro-gemini">
+                    <div class="chatbot-messages-gemini chatbot-received-messages-gemini">
+                        <p>With what can I help you today?</p>
+                    </div>
+                    <div class="chatbot-messages-gemini chatbot-received-messages-gemini">
+                        <p>Hello! I am Gemini, OneFM's chatbot</p>
+                    </div>
+                </div>
+               
+              </div>
+              
+              <div id="chatbot-footer-gemini">
+                <div id="chatbot-input-container-gemini">
+                  <input type="text" id="chatbot-input-gemini" name="chatbot-input" placeholder="Type your question here...">
+                </div>
+                <div id="chatbot-new-message-send-button-gemini">
+                  <i class="material-icons" id="send-icon">send</i>
+                </div>
+              </div>
+            </div>
+          </div> 
+            <div id="chatbot-open-container-gemini">
+                <span class="g-icon">G<span class="material-symbols-outlined">chat</span></span>
+                <span class="material-symbols-outlined" style="display: none">close </span>
+              </div>
+              <div id="chatbot-open-container-lumina">
+                <span class="material-symbols-outlined">chat</span>
+                <span class="material-symbols-outlined" style="display: none">close </span>
+              </div>
         {% block content %}
 
         {% endblock %}
@@ -208,8 +246,8 @@
     <script src="https://unpkg.com/ionicons@5.4.0/dist/ionicons.js"></script>
     <script src="/assets/one_fm/faq/js/main.js"></script>
     <script src="/assets/one_fm/faq/js/chatgpt.js"></script>
-    <script src="/assets/frappe/js/lib/socket.io.min.js"></script>
-    <script type="text/javascript" src="/assets/js/frappe-web.min.js"></script>
+    <!-- <script src="/assets/frappe/js/lib/socket.io.min.js"></script> -->
+    <script type="text/javascript" src="/assets/one_fm/faq/js/frappe-web.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", (event)=>{
         // Add knowledge base to help button

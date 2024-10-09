@@ -6,7 +6,6 @@ from deep_translator import GoogleTranslator
 
 import frappe
 from llama_index.core import SimpleDirectoryReader,PromptHelper,VectorStoreIndex,PromptTemplate
-from langchain.llms import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core import StorageContext, load_index_from_storage
 
@@ -64,14 +63,22 @@ def ask_question_with_gemini(config_file: typing.Optional[str],question: str = N
     try:
         new_condition = f"Read the context below and answer the question at the end:"
         new_question = f"Can you think of 5 questions whose answers can be found in the context above?"
-        loaded_config, product_config = return_config_and_product(config_file=config_file)
-        docs_agent = DocsAgent(config= product_config.products[0], init_chroma=True)
         if detect(question) != 'en':
             new_condition = GoogleTranslator(source='en', target=detect(question)).translate(new_condition)
             new_question = GoogleTranslator(source='en', target=detect(question)).translate(new_question)
-        (answers, final_context) = docs_agent.ask_aqa_model_using_local_vector_store(question=question,results_num=5,)
+        loaded_config, product_config = return_config_and_product(config_file=config_file)
+        try:
+            docs_agent = DocsAgent(config= product_config.products[0], init_chroma=True)
+            (answers, final_context) = docs_agent.ask_aqa_model_using_local_vector_store(question=question,results_num=5,)
+        except:
+            docs_agent = DocsAgent(
+                config= product_config.products[0], init_chroma=False, init_semantic=False
+            )
+            (answers,final_context) = docs_agent.ask_content_model_with_context_prompt(context="",question=question,prompt="",model="models/aqa",)
+            final_context = ""
         (related_questions,new_prompt_questions,) = docs_agent.ask_content_model_with_context_prompt(context=final_context,question=new_question,prompt=new_condition,model="models/aqa",)
-        return response(message="Success", status_code=200, data={"question": question,"answers":answers,"related_questions":related_questions})
+        answer = answers + "\n\n" + related_questions
+        return response(message="Success", status_code=200, data={"question": question,"answer":answer})
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Error while generating answer(Chat-BOT)")
         return response(e, 500, {}, False, )
