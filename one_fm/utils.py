@@ -3073,56 +3073,6 @@ def get_approver_user(employee):
         return frappe.db.get_value("Employee", approver, "user_id")
     return None
 
-@frappe.whitelist()
-def get_approver(employee, date=False):
-    '''
-        Method to get the line manager employee of an employee with the priority
-        args:
-            employee: name of Employee object
-            date: date in which the shift supervisor working
-        return: employee eference of the line manager or None
-    '''
-
-    if not frappe.db.exists("Employee", {'name':employee}):
-        frappe.throw(f"Employee {employee} does not exists")
-
-    employee_field_list = ["user_id", "reports_to", "shift", "site", "shift_working", "employee_name"]
-    employee_data = frappe.db.get_value('Employee', employee, employee_field_list, as_dict=1)
-
-    line_manager = employee_data.reports_to if employee_data.reports_to else None
-
-    if not line_manager:
-        if employee_data.user_id and has_super_user_role(employee_data.user_id):
-            line_manager = employee
-
-    if not line_manager:
-        if employee_data.shift_working:
-            if employee_data.shift:
-                line_manager = get_shift_supervisor(employee_data.shift, date)
-                if line_manager:
-                    return line_manager
-            if not line_manager and employee_data.site:
-                line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
-                if not line_manager:
-                    project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
-                    if project:
-                        line_manager = frappe.db.get_value('Project', project, 'account_manager')
-        else:
-            if employee_data.site:
-                line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'account_supervisor')
-
-            if not line_manager and employee_data.shift:
-                line_manager = get_shift_supervisor(employee_data.shift, date)
-            
-            if not line_manager:
-                frappe.msgprint(
-                    _("Please ensure that the Reports To or Operations Site Supervisor is set for {0}, Since the employee is not shift working".format(employee_data.employee_name)),
-                    title= "Missing Data",
-                    indicator="orange",
-                    alert=True
-                )
-
-    return line_manager
 
 @frappe.whitelist()
 def has_super_user_role(user=None):
