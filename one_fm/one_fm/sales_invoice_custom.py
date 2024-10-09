@@ -941,6 +941,8 @@ def calculate_total_working_days(project = None, item_code = None, first_day =No
     return total_working_day
 
 def before_submit_sales_invoice(doc, method):
+    if not doc.custom_client_confirmation_copy:
+        frappe.throw('Please Attach Client Confirmation Copy')
     if doc.contracts:
         is_po_for_invoice = frappe.db.get_value('Contracts', doc.contracts, 'is_po_for_invoice')
         if is_po_for_invoice == 1 and not doc.po:
