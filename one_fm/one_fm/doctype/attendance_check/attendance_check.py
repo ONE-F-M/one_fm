@@ -301,10 +301,16 @@ def create_attendance_check(attendance_date=None):
         if not attendance_date:
             attendance_date = add_days(today(), -1)
 
+        employee_with_shift_permission = frappe.db.get_list('Shift Permission', filters={
+            'date': attendance_date
+        }, pluck='employee'
+        )
+
         absentees = frappe.get_all("Attendance", filters={
             'docstatus':1,
             'status':'Absent',
-            'attendance_date':attendance_date},
+            'attendance_date':attendance_date,
+            'employee':["not in", employee_with_shift_permission]},
             fields="*"
         )
 
