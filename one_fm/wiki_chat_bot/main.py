@@ -21,7 +21,7 @@ from one_fm.api.v1.utils import response
 def create_vector_index():
     try:
         os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY   
-        docs = SimpleDirectoryReader(get_folder_path("chatgtp")).load_data()
+        docs = SimpleDirectoryReader(get_folder_path("chatgpt")).load_data()
         embedding_model = OpenAIEmbedding(model_name="gpt-4o-mini")
         vector_index = VectorStoreIndex.from_documents(docs,embedding=embedding_model)
         vector_index.storage_context.persist(persist_dir="vector_index")
@@ -90,7 +90,7 @@ def queue_fetch_wiki_and_add_to_bot_memory():
 
 def fetch_wiki_and_add_to_bot_memory():
     try:
-        folder_path = get_folder_path("chatgtp")
+        folder_path = get_folder_path("chatgpt")
         wiki_page_list = frappe.db.get_list("Wiki Page", fields=["name", "content", "title"])
         wiki_page_dict = {item["name"]: item["title"] + "\n" + item["content"] for item in wiki_page_list}
         for k, v in wiki_page_dict.items():
@@ -117,7 +117,7 @@ def add_wiki_page_to_bot_memory(doc):
         if isinstance(doc, str):
             doc = json.loads(doc)
             
-        folder_path = get_folder_path("chatgtp")
+        folder_path = get_folder_path("chatgpt")
         
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -141,8 +141,8 @@ def add_wiki_page_to_bot_memory_by_gemini(doc):
         folder_path = get_folder_path("gemini")
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
-        markdown_content = f"# {doc['title']}\n\n"
-        markdown_content += f"## {doc['route']}\n\n"
+        markdown_content = f"{doc['title']}\n\n"
+        markdown_content += f"{doc['route']}\n\n"
         markdown_content += f"{doc['content']}\n\n"
         output_file_path = folder_path+"/"+doc['title']+".md"
         with open(output_file_path, "w") as file:
@@ -180,6 +180,6 @@ def delete_all_uploaded_files(chatbot):
 def get_folder_path(chatbot):
     if frappe.local.conf.gemini_folder_name and chatbot== "gemini":
         return os.path.join(os.path.abspath(frappe.get_site_path('private')), frappe.local.conf.gemini_folder_name)
-    elif frappe.local.conf.CHATGPT_FOLDER_NAME and chatbot== "chatgtp":
+    elif frappe.local.conf.CHATGPT_FOLDER_NAME and chatbot== "chatgpt":
         return os.path.join(os.path.abspath(frappe.get_site_path('private')), frappe.local.conf.CHATGPT_FOLDER_NAME)
     return None
