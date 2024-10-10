@@ -1,8 +1,8 @@
-const chatLumina = document.getElementById("chat-intro-lumina");
+const chatLumina = document.getElementById("chat-intro");
 const chatGemini = document.getElementById("chat-intro-gemini");
 
-$("#chatbot-open-container-lumina").click(function() {
-  $("#chatbot-container-lumina").fadeToggle(200);
+$("#chatbot-open-container").click(function() {
+  $("#chatbot-container").fadeToggle(200);
 });
 
 // Toggle Gemini chatbot
@@ -12,7 +12,7 @@ $("#chatbot-open-container-gemini").click(function() {
 
 
   // Event listener for Lumina chatbot
-document.getElementById("chatbot-new-message-send-button-lumina").addEventListener("click", function() {
+document.getElementById("chatbot-new-message-send-button").addEventListener("click", function() {
   newInput("lumina");
   });
 
@@ -21,7 +21,7 @@ document.getElementById("chatbot-new-message-send-button-gemini").addEventListen
   newInput("gemini");
   });
 
-document.getElementById("chatbot-input-lumina").addEventListener('keypress', function (e) {
+document.getElementById("chatbot-input").addEventListener('keypress', function (e) {
   if (e.key === 'Enter') {
     newInput("lumina");
   }
@@ -36,11 +36,11 @@ document.getElementById("chatbot-input-gemini").addEventListener('keypress', fun
 function newInput(chatbot) {
   let newText = "";
   if (chatbot === "lumina") {
-    newText = document.getElementById("chatbot-input-lumina").value;
+    newText = document.getElementById("chatbot-input").value;
     if (newText !== "") {
-      document.getElementById("chatbot-input-lumina").value = "";
+      document.getElementById("chatbot-input").value = "";
       addMessage(chatLumina, "sent", newText,chatbot);
-      $('#chat-bubble-lumina').show();
+      $('#chat-bubble').show();
       generateResponse(newText);
     }
   } else if (chatbot === "gemini") {
@@ -60,9 +60,9 @@ function addMessage(chatContainer, type, text,chatbot) {
   responseText.appendChild(document.createTextNode(text));
   if (chatbot === "lumina") {
     if (type === "sent") {
-      messageDiv.classList.add("chatbot-messages-lumina", "chatbot-sent-messages-lumina");
+      messageDiv.classList.add("chatbot-messages", "chatbot-sent-messages");
     } else if (type === "received") {
-      messageDiv.classList.add("chatbot-messages-lumina", "chatbot-received-messages-lumina");
+      messageDiv.classList.add("chatbot-messages", "chatbot-received-messages");
     }
   }
   else if (chatbot === "gemini") {
@@ -85,11 +85,11 @@ function generateResponse(prompt){
       callback: function(r) {
         
         if(r.message != 'None') {
-          $('#chat-bubble-lumina').hide();
+          $('#chat-bubble').hide();
           addMessage("received",  r.data.answer);
         }
         else{
-          $('#chat-bubble-lumina').hide();
+          $('#chat-bubble').hide();
           addMessage("received", "I'm Sorry! I didnt get that");
         }
       },
@@ -97,7 +97,7 @@ function generateResponse(prompt){
   
   }
   else{
-    $('#chat-bubble-lumina').hide();
+    $('#chat-bubble').hide();
     addMessage("received", "I'm Sorry! I didnt get that");
   }
   
