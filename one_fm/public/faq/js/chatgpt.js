@@ -44,13 +44,13 @@ function generateResponse(prompt){
   // Here you can add your answer-generating code
   if(prompt){
     frappe.call({
-      method: 'one_fm.www.knowledge_base.chatgpt.get_completion',
-      args: {'prompt': prompt},
+      method: 'one_fm.wiki_chat_bot.main.ask_question',
+      args: {'question': prompt},
       callback: function(r) {
-        console.log(r)
+        
         if(r.message != 'None') {
           $('#chat-bubble').hide();
-          addMessage("received", r.message);
+          addMessage("received",  r.data.answer);
         }
         else{
           $('#chat-bubble').hide();
