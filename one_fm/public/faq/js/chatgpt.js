@@ -58,7 +58,7 @@ function addMessage(chatContainer, type, text,chatbot) {
   let messageDiv = document.createElement("div");
   let responseText = document.createElement("p");
   responseText.appendChild(document.createTextNode(text));
-  if (chatbot === "lumina") {
+  if (chatbot === "chatgpt") {
     if (type === "sent") {
       messageDiv.classList.add("chatbot-messages", "chatbot-sent-messages");
     } else if (type === "received") {
@@ -69,6 +69,10 @@ function addMessage(chatContainer, type, text,chatbot) {
   if (type === "sent") {
     messageDiv.classList.add("chatbot-messages-gemini", "chatbot-sent-messages-gemini");
   } else if (type === "received") {
+    let regex = /(here|Here) are (5|five) questions/i;
+    if (regex.test(text)) {
+        responseText.innerHTML = text.replace(regex, `<span style="color: red; font-weight: bold;">$&</span>`);
+    }
     messageDiv.classList.add("chatbot-messages-gemini", "chatbot-received-messages-gemini");
   }
   }
@@ -86,11 +90,11 @@ function generateResponse(prompt){
         
         if(r.message != 'None') {
           $('#chat-bubble').hide();
-          addMessage("received",  r.data.answer);
+          addMessage(chatLumina,"received",  r.data.answer,"chatgpt");
         }
         else{
           $('#chat-bubble').hide();
-          addMessage("received", "I'm Sorry! I didnt get that");
+          addMessage(chatLumina,"received", "I'm Sorry! I didnt get that","chatgpt");
         }
       },
     });
@@ -98,30 +102,29 @@ function generateResponse(prompt){
   }
   else{
     $('#chat-bubble').hide();
-    addMessage("received", "I'm Sorry! I didnt get that");
+    addMessage(chatLumina,"received", "I'm Sorry! I didnt get that","chatgpt");
   }
   
 }
 
 function generateResponseGemini(prompt) {
-  config_file = '/Users/samdani/Desktop/sample/apps/one_fm/one_fm/docsagent/config.yaml'
   if (prompt) {
     frappe.call({
       method: "one_fm.wiki_chat_bot.main.ask_question_with_gemini",
-      args: {'config_file':config_file,'question': prompt},
+      args: {'question': prompt},
       headers: {'Content-Type': 'application/json'},
       callback: function(r) {
         $('#chat-bubble-gemini').hide();
         if (r.message !== 'None') {
-          addMessage(chatGemini, "received", r.data.answer);
+          addMessage(chatGemini, "received", r.data.answer,"gemini");
         } else {
-          addMessage(chatGemini, "received", "I'm Sorry! I didn't get that");
+          addMessage(chatGemini, "received", "I'm Sorry! I didn't get that","gemini");
         }
       }
     });  }
     else{
       $('#chat-bubble-gemini').hide();
-      addMessage("received", "I'm Sorry! I didnt get that");
+      addMessage(chatGemini,"received", "I'm Sorry! I didnt get that",gemini);
     }
 
 }

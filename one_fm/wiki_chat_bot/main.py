@@ -59,8 +59,10 @@ def ask_question(question: str = None):
 
 
 @frappe.whitelist()
-def ask_question_with_gemini(config_file: typing.Optional[str],question: str = None):
+def ask_question_with_gemini(question: str = None):
     try:
+        cwd = os.getcwd()
+        config_file = os.path.join(cwd, '..','apps', 'one_fm', 'one_fm', 'docsagent', 'config.yaml')
         new_condition = f"Read the context below and answer the question at the end:"
         new_question = f"Can you think of 5 questions whose answers can be found in the context above?"
         if detect(question) != 'en':

@@ -3016,12 +3016,20 @@
   left: 25px;
 }
 
-#chatbot-interface,#chatbot-interface-gemini {
+#chatbot-interface{
   height: 70vh;
   width: 25vw;
   background-color: #2c2325;
   border-radius: 1rem;
 }
+
+#chatbot-interface-gemini {
+  height: 70vh;
+  width: 30vw;
+  background-color: #2c2325;
+  border-radius: 1rem;
+}
+
 
 #chat-bubble,#chat-bubble-gemini {
   background: #2c303a;
