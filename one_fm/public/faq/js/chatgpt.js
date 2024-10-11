@@ -13,7 +13,7 @@ $("#chatbot-open-container-gemini").click(function() {
 
   // Event listener for Lumina chatbot
 document.getElementById("chatbot-new-message-send-button").addEventListener("click", function() {
-  newInput("lumina");
+  newInput("chatgpt");
   });
 
   // Event listener for Gemini chatbot
@@ -23,7 +23,7 @@ document.getElementById("chatbot-new-message-send-button-gemini").addEventListen
 
 document.getElementById("chatbot-input").addEventListener('keypress', function (e) {
   if (e.key === 'Enter') {
-    newInput("lumina");
+    newInput("chatgpt");
   }
 });
 
@@ -35,7 +35,7 @@ document.getElementById("chatbot-input-gemini").addEventListener('keypress', fun
 
 function newInput(chatbot) {
   let newText = "";
-  if (chatbot === "lumina") {
+  if (chatbot === "chatgpt") {
     newText = document.getElementById("chatbot-input").value;
     if (newText !== "") {
       document.getElementById("chatbot-input").value = "";
