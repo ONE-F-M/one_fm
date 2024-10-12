@@ -1028,56 +1028,58 @@ def send_contract_reminders(is_scheduled_event=True):
     Args:
         is_scheduled_event -> Boolean (Default True) If method is triggered from anywhere else than the scheduled event, Pass "False" to avoid email trigger check from "ONEFM General Setting"
     """
+    try:
+        contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':getdate()},['contract_end_internal_notification',\
+            'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
+        contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':getdate()},['contract_end_internal_notification',\
+            'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
 
-    contracts_due_internal_notification = frappe.get_all("Contracts",{'contract_end_internal_notification_date':getdate()},['contract_end_internal_notification',\
-        'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
-    contracts_due_termination_notification = frappe.get_all("Contracts",{'contract_termination_decision_period_date':getdate()},['contract_end_internal_notification',\
-        'contract_end_internal_notification_date','engagement_type','contract_termination_decision_period','contract_termination_decision_period_date','name','start_date','end_date','duration','client'])
-
-    relevant_roles = ["Finance Manager",'Legal Manager','Projects Manager','Operations Manager']
-    active_users = frappe.get_all("User",{'enabled':1})
-    active_users_ = [i.name for i in active_users] if active_users else []
-    active_users_.remove("Administrator")
-    relevant_users = frappe.get_all("Has Role",{'role':['IN',relevant_roles],'parent':['IN',active_users_]},['distinct parent'])
-    users = [i.parent for i in relevant_users]
-    if contracts_due_internal_notification:
-        contracts_due_internal_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
-            get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
-            get_date_str(i.end_date),i.duration,i.client,i.engagement_type, i.contract] for i in contracts_due_internal_notification]
-        for each in contracts_due_internal_notification_list:
-            context = {"project": each[8],
-                       "contract_end_internal_notif_period": each[1],
-                       "start_date": each[4],
-                       "engagement_type": each[9],
-                       "contract_end_internal_notif_date": each[5],
-                       "contract_termination_decision_period": each[0],
-                       "contract_termination_decision_date": each[2],
-                       "end_date": each[6],
-                       "duration": each[7],
-                       "document_id": each[3],
-                       "link": frappe.utils.get_url_to_form("Contracts",each[3]),
-                       "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
-            msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
-            sendemail(recipients=[users], subject="Expiring Contracts", content=msg, is_scheduler_email=is_scheduled_event)
-    if contracts_due_termination_notification:
-        contracts_due_termination_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
-            get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
-            get_date_str(i.end_date),i.duration,i.client,i.engagement_type, i.contract] for i in contracts_due_termination_notification]
-        for each in contracts_due_termination_notification_list:
-            context = {"project": each[8],
-                       "contract_end_internal_notif_period": each[1],
-                       "start_date": each[4],
-                       "engagement_type": each[9],
-                       "contract_end_internal_notif_date": each[5],
-                       "contract_termination_decision_period": each[0],
-                       "contract_termination_decision_date": each[2],
-                       "end_date": each[6],
-                       "duration": each[7],
-                       "document_id": each[3],
-                       "link": frappe.utils.get_url_to_form("Contracts",each[3]),
-                       "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
-            msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
-            sendemail(recipients=[users], subject="Expiring Contracts", content=msg,is_scheduler_email=is_scheduled_event)
+        relevant_roles = ["Finance Manager",'Legal Manager','Projects Manager','Operations Manager']
+        active_users = frappe.get_all("User",{'enabled':1})
+        active_users_ = [i.name for i in active_users] if active_users else []
+        active_users_.remove("Administrator")
+        relevant_users = frappe.get_all("Has Role",{'role':['IN',relevant_roles],'parent':['IN',active_users_]},['distinct parent'])
+        users = [i.parent for i in relevant_users]
+        if contracts_due_internal_notification:
+            contracts_due_internal_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
+                get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
+                get_date_str(i.end_date),i.duration,i.client,i.engagement_type, i.contract] for i in contracts_due_internal_notification]
+            for each in contracts_due_internal_notification_list:
+                context = {"project": each[8],
+                        "contract_end_internal_notif_period": each[1],
+                        "start_date": each[4],
+                        "engagement_type": each[9],
+                        "contract_end_internal_notif_date": each[5],
+                        "contract_termination_decision_period": each[0],
+                        "contract_termination_decision_date": each[2],
+                        "end_date": each[6],
+                        "duration": each[7],
+                        "document_id": each[3],
+                        "link": frappe.utils.get_url_to_form("Contracts",each[3]),
+                        "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
+                msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
+                sendemail(recipients=users, subject="Expiring Contracts", content=msg, is_scheduler_email=is_scheduled_event)
+        if contracts_due_termination_notification:
+            contracts_due_termination_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
+                get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
+                get_date_str(i.end_date),i.duration,i.client,i.engagement_type, i.contract] for i in contracts_due_termination_notification]
+            for each in contracts_due_termination_notification_list:
+                context = {"project": each[8],
+                        "contract_end_internal_notif_period": each[1],
+                        "start_date": each[4],
+                        "engagement_type": each[9],
+                        "contract_end_internal_notif_date": each[5],
+                        "contract_termination_decision_period": each[0],
+                        "contract_termination_decision_date": each[2],
+                        "end_date": each[6],
+                        "duration": each[7],
+                        "document_id": each[3],
+                        "link": frappe.utils.get_url_to_form("Contracts",each[3]),
+                        "attachment": frappe.utils.get_url(each[10]) if each[10] else None}
+                msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
+                sendemail(recipients=users, subject="Expiring Contracts", content=msg,is_scheduler_email=is_scheduled_event)
+    except Exception as e:
+        frappe.log_error(e)    
 
 @frappe.whitelist()
 def renew_contracts_by_termination_date():

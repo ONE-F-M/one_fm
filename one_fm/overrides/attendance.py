@@ -553,6 +553,7 @@ def mark_daily_attendance(start_date, end_date):
                             "{owner}", "{creation}", "{creation}", "{i.description}"
                         ),"""
         
+        today = getdate()
         # Mark DayOff Attendance
         #Find Employees with no schedule but have Day Off in the company holiday. Mainly for head office employees
         day_off_no_schedule = frappe.db.sql(f"""
@@ -566,6 +567,7 @@ def mark_daily_attendance(start_date, end_date):
             AND '{start_date}' BETWEEN hl.from_date AND hl.to_date
             AND e.status='Active'
             AND e.name NOT IN (SELECT employee from `tabEmployee Schedule`es where es.date = '{start_date}' AND es.employee_availability='Day Off')
+            AND e.date_of_joining < '{today}'
             """,
         as_dict=1)
         
