@@ -393,7 +393,8 @@ def get_absentees_on_date(attendance_date):
         filters={
             'docstatus': 1,
             'status': 'Absent',
-            'attendance_date': attendance_date
+            'attendance_date': attendance_date,
+            "employee": ["not in", frappe.db.get_list('Shift Permission', filters={'date': attendance_date}, pluck='employee')]
         },
         fields=[
             "employee",
