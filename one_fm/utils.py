@@ -908,16 +908,21 @@ def increase_daily_leave_balance():
         # Get Leave Type object from allocation list
         leave_type = frappe.get_doc("Leave Type", leave_allocation.leave_type)
 
-        # If True, then calculate new_leaves_allocated and update to the Leave Allocation
-        if is_employee_allowed_to_avail_increment_existing_allocation(allocation, leave_type):
-            # Get Number of Leave Allocated for the allocation of an employee
-            new_leaves_allocated = get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type)
-            if new_leaves_allocated:
-                allocation.new_leaves_allocated = allocation.new_leaves_allocated+new_leaves_allocated
-                allocation.total_leaves_allocated = allocation.new_leaves_allocated+allocation.unused_leaves
-                allocation.save()
-                # Update Leave Ledger to reflect the Leave Allocation
-                update_leave_ledger_for_paid_annual_leave(allocation, leave_type.is_carry_forward)
+        # Get Number of Leave Allocated for the allocation of an employee
+        new_leaves_allocated = get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type)
+        if new_leaves_allocated:
+            current_date = getdate(nowdate())
+            # Calculate the difference in days between the current date and the allocation start date
+            difference_in_days = (current_date - allocation.from_date).days
+            
+            # Calculate the previous leaves based on the number of days and new leaves allocated
+            previous_leaves_allocated = difference_in_days * new_leaves_allocated
+            allocation.new_leaves_allocated = previous_leaves_allocated + new_leaves_allocated
+            allocation.total_leaves_allocated = allocation.new_leaves_allocated + allocation.unused_leaves
+            allocation.save(ignore_permissions=True)
+            allocation.submit()
+            # Update Leave Ledger to reflect the Leave Allocation
+            update_leave_ledger_for_paid_annual_leave(allocation, leave_type.is_carry_forward)
 
 def update_leave_ledger_for_paid_annual_leave(allocation, is_carry_forward):
     '''
@@ -951,7 +956,7 @@ def get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type):
 
     # Fetch employee annual leave allocation from employee
     employee_annual_leave = frappe.db.get_value('Employee', allocation.employee, 'annual_leave_balance')
-    if employee_annual_leave and employee_annual_leave <= 0:
+    if not employee_annual_leave or employee_annual_leave <= 0:
         # Fetch employee annual leave allocation from company defaults
         employee_annual_leave = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
 
@@ -990,7 +995,7 @@ def get_paid_annual_leave_allocation_list(date=False):
         return: List of Leave Allocation
     '''
     if not date:
-        date = add_to_date(getdate(nowdate()),days=2)
+        date = getdate(nowdate())
     # Get List of Paid Annual Leave Allocation for a date of a Leave Type (having Is Paid Annual Leave marekd True)
     query = """
         select
