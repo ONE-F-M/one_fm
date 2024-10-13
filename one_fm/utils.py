@@ -917,10 +917,16 @@ def increase_daily_leave_balance():
             
             # Calculate the previous leaves based on the number of days and new leaves allocated
             previous_leaves_allocated = difference_in_days * new_leaves_allocated
-            allocation.new_leaves_allocated = previous_leaves_allocated + new_leaves_allocated
+
+            if previous_leaves_allocated != allocation.new_leaves_allocated:
+                allocation.new_leaves_allocated = previous_leaves_allocated + new_leaves_allocated 
+            else:
+                allocation.new_leaves_allocated += new_leaves_allocated
+
             allocation.total_leaves_allocated = allocation.new_leaves_allocated + allocation.unused_leaves
             allocation.save(ignore_permissions=True)
             allocation.submit()
+            frappe.db.commit()
             # Update Leave Ledger to reflect the Leave Allocation
             update_leave_ledger_for_paid_annual_leave(allocation, leave_type.is_carry_forward)
 
