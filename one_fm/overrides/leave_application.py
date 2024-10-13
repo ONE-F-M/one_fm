@@ -4,6 +4,8 @@ import frappe,json
 from frappe import _
 from frappe.utils import get_fullname, nowdate, add_to_date
 from hrms.hr.doctype.leave_application.leave_application import *
+from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
+
 from one_fm.processor import sendemail
 
 from frappe.desk.form.assign_to import add
@@ -77,6 +79,17 @@ def is_app_user(emp):
         return is_app_user
     except:
         pass
+
+
+class LeaveAllocationOverride(LeaveAllocation):
+    def validate(self):
+        super().validate()
+        self.validate_employee_gender()
+    
+    def validate_employee_gender(self):
+        gender  = frappe.db.get_value("Employee", self.employee, "gender")
+        if gender == "Male" and self.leave_type == "Maternity Leave":
+            frappe.throw(_("Maternity Leave allocation is only allowed for female workers."))
 
 
 class LeaveApplicationOverride(LeaveApplication):
