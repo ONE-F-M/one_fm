@@ -32,17 +32,9 @@ configs:
         collection_name: "docs_collection"
     output_path: "data/plain_docs"
     inputs:
-        - path: "content" # create a content folder inside docsagent dir give the absolute path  
+      - path: "content" # create a content folder inside docsagent dir give the absolute path  
         url_prefix: "http://onefm.localhost:8003/app/wiki"
     conditions:
-      - condition_text: "You are a helpful chatbot answering questions from users.
-        Read the context below first and answer the user's question at the end.
-        In your answer, provide a summary in three or five sentences. (BUT DO NOT USE
-        ANY INFORMATION YOU KNOW ABOUT THE WORLD.)"
-        fact_check_question: "Can you compare the text below to the information
-        provided in this prompt above and write a short message that warns the readers
-        about which part of the text they should consider fact-checking? (Please keep
-        your response concise, focus on only one important item, but DO NOT USE BOLD
-        TEXT IN YOUR RESPONSE.)"
-        model_error_message: "Gemini is not able to answer this question at the moment.
-        Rephrase the question and try asking again."
+      - condition_text: "You are a helpful chatbot answering questions from users. Read the context below first and answer the user's question at the end. In your answer, provide a summary in three or five sentences. (BUT DO NOT USE ANY INFORMATION YOU KNOW ABOUT THE WORLD.)"
+        fact_check_question: "Can you compare the text below to the information provided in this prompt above and write a short message that warns the readers about which part of the text they should consider fact-checking? (Please keep your response concise, focus on only one important item, but DO NOT USE BOLD TEXT IN YOUR RESPONSE.)"
+        model_error_message: "Gemini is not able to answer this question at the moment. Rephrase the question and try asking again."

@@ -90,7 +90,7 @@ def ask_question_with_gemini(question: str = None):
         loaded_config, product_config = return_config_and_product(config_file=config_file)
         try:
             docs_agent = DocsAgent(config= product_config.products[0], init_chroma=True)
-            (answers, final_context) = docs_agent.ask_aqa_model_using_local_vector_store(question=question,results_num=5,)
+            (answers, final_context) = docs_agent.ask_aqa_model_using_local_vector_store(question=question,results_num=1,)
         except:
             docs_agent = DocsAgent(
                 config= product_config.products[0], init_chroma=False, init_semantic=False
