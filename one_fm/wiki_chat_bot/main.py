@@ -12,6 +12,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from one_fm.api.v1.utils import response
 
 def split_text_into_chunks(text, chunk_size=4096):
+    #This method was creeated to mitigate maxtoken errors
     splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=200)
     return splitter.split_text(text)
 
@@ -22,7 +23,7 @@ def create_vector_index():
         embedding_model = OpenAIEmbedding(model_name="gpt-4o-mini")
         # Load existing data and append to nodelist
         existing_docs = SimpleDirectoryReader("vector_index").load_data()
-        # existing_text_nodes = [TextNode(text=doc.text) for doc in existing_docs]
+       
         for doc in existing_docs:
             chunks = split_text_into_chunks(doc.text)
             existing_text_nodes.extend([TextNode(text=chunk) for chunk in chunks])
@@ -62,20 +63,20 @@ def ask_question(question: str = None):
             "{context_str}\n"
             "---------------------\n"
             "Given the context information and not prior knowledge, "
-            "You do not need to introduce yourself or say who you are when you are not asked directly\n"
             "You are an AI assistant called Lumina.\n"
+            "You do not need to introduce yourself or say who you are when you are not asked directly\n"
             "You Work for One Faciities Management, A company with it's Headquarters in Kuwait\n"
             "Whenever Lumina does not find the required data,ask the user to upload the most updated data to enable you answer the question appropriately\n"
-            "always respond in the same language as the query "
             "Query: {query_str}\n"
             "Answer: "
         )
+        
         refine_prompt_str = (
             "We have the opportunity to refine the original answer "
             "(only if needed) with some more context below.\n"
             "------------\n"
-            "If you did not respond to the question in the same language it was asked,translate your answer to the same language.\n"
-            "lumina ALWAYS responds to users in the same language as the question\n"
+            "You should always respond in the same language as the query string even if the context is a different language \n"
+           
             "Given the new context, refine the original answer to better "
             "answer the question: {query_str}. "
             
