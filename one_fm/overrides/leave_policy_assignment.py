@@ -3,6 +3,8 @@ import frappe
 from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import (
     LeavePolicyAssignment
 )
+from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
+
 
 
 class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
@@ -69,6 +71,17 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 		allocation.submit()
 		return allocation.name, new_leaves_allocated
 	
+
+class LeaveAllocationOverride(LeaveAllocation):
+    def validate(self):
+        super().validate()
+        self.validate_employee_gender()
+    
+    def validate_employee_gender(self):
+        gender  = frappe.db.get_value("Employee", self.employee, "gender")
+        if gender == "Male" and self.leave_type == "Maternity Leave":
+            frappe.throw("Maternity Leave allocation is only allowed for female workers.")
+
 
 def get_leave_type_detail():
 	leave_type_details = frappe._dict()
