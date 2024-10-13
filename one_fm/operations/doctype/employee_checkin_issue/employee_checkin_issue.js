@@ -3,9 +3,9 @@
 
 frappe.ui.form.on('Employee Checkin Issue', {
 	refresh: function(frm) {
-		if(!frm.doc.issue && frm.doc.workflow_state == 'Approved'){
-			frm.add_custom_button(__('Create Issue'), function() {
-				create_issue(frm);
+		if(!frm.doc.ticket && frm.doc.workflow_state == 'Approved'){
+			frm.add_custom_button(__('Create Ticket'), function() {
+				create_ticket(frm);
 			}).addClass('btn-primary');
 		}
 	},
@@ -14,8 +14,23 @@ frappe.ui.form.on('Employee Checkin Issue', {
 	},
 	employee: function(frm) {
 		get_shift_assignment(frm);
+	},
+	validate: function(frm){
+		validate_date(frm);
+	},
+	date: function(frm){
+		validate_date(frm);
 	}
+
 });
+
+
+function validate_date(frm){
+	if(frm.doc.date < frappe.datetime.now_date()){
+		frappe.throw("Date can not be set to a past date")
+	}
+
+}
 
 function set_employee_from_the_session_user(frm) {
 	if(frappe.session.user != 'Administrator' && frm.is_new()){
@@ -33,12 +48,12 @@ function set_employee_from_the_session_user(frm) {
 	}
 };
 
-function create_issue(frm) {
+function create_ticket(frm) {
 	frappe.call({
-		method: 'create_issue',
+		method: 'create_hd_ticket',
 		doc: frm.doc,
 		freeze: true,
-		freeze_message: __("Creating the Issue...!")
+		freeze_message: __("Creating the Ticket!")
 	})
 };
 
