@@ -14,10 +14,9 @@ class LeaveAllocationOverride(LeaveAllocation):
 		self.validate_maternity_leave()
 		
 	def validate_maternity_leave(self):
-		leave_type = frappe.get_doc("Leave Type", self.leave_type)
-		employee = frappe.get_doc("Employee", self.employee)
+		gender = frappe.db.get_value("Employee", self.employee, "gender")
 		
-		if leave_type.name == "Maternity Leave" and employee.gender == "Male":
+		if self.leave_type == "Maternity Leave" and gender == "Male":
 			frappe.throw(
 				_("Leave Type: {0} cannot be assign to male Employee {1}.").format(
 					bold(self.leave_type ),

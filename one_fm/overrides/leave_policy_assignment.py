@@ -94,12 +94,12 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 			)
 		}
 		leave_policy = frappe.get_doc("Leave Policy", self.leave_policy)
-		employee = frappe.get_doc("Employee", self.employee)
+		gender = frappe.db.get_value("Employee", self.employee, "gender")
 
 		for policy in leave_policy.leave_policy_details:
 			leave_type = leave_types.get(policy.leave_type)
 
-			if leave_type.name == "Maternity Leave" and employee.gender == "Male":
+			if leave_type.name == "Maternity Leave" and gender == "Male":
 				frappe.throw(
 				_("Leave Policy: {0} with leave type {1} cannot be assign to male Employee {2}.").format(
 					bold(self.leave_policy),
