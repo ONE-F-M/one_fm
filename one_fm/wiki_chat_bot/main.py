@@ -2,24 +2,51 @@ import os
 import json
 
 import frappe
-from llama_index.core import SimpleDirectoryReader,PromptHelper,VectorStoreIndex,PromptTemplate
+from llama_index.core import SimpleDirectoryReader,VectorStoreIndex,PromptTemplate,GPTListIndex,StorageContext, load_index_from_storage
 from llama_index.llms.openai import OpenAI
 from llama_index.embeddings.openai import OpenAIEmbedding
-from llama_index.core import StorageContext, load_index_from_storage
+from llama_index.core.schema import TextNode
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 from one_fm.api.v1.utils import response
-        
+
+def split_text_into_chunks(text, chunk_size=4096):
+    #This method was creeated to mitigate maxtoken errors
+    splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=200)
+    return splitter.split_text(text)
+
 def create_vector_index():
     try:
-        os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY   
-        docs = SimpleDirectoryReader(get_folder_path()).load_data()
+        os.environ["OPENAI_API_KEY"] = frappe.local.conf.CHATGPT_APIKEY
+        existing_text_nodes,new_text_nodes = [],[]
         embedding_model = OpenAIEmbedding(model_name="gpt-4o-mini")
-        vector_index = VectorStoreIndex.from_documents(docs,embedding=embedding_model)
-        vector_index.storage_context.persist(persist_dir="vector_index")
-        return vector_index
+        # Load existing data and append to nodelist
+        existing_docs = SimpleDirectoryReader("vector_index").load_data()
+       
+        for doc in existing_docs:
+            chunks = split_text_into_chunks(doc.text)
+            existing_text_nodes.extend([TextNode(text=chunk) for chunk in chunks])
+
+        # Load new data
+        new_docs = SimpleDirectoryReader(get_folder_path()).load_data()
+        # new_text_nodes = [TextNode(text=doc.text) for doc in new_docs]
+        for doc in new_docs:
+            #Split the texts so we don't go over the max token value of the model
+            chunks = split_text_into_chunks(doc.text)
+            new_text_nodes.extend([TextNode(text=chunk) for chunk in chunks])
+        # Merge existing and new vector indexes
+        merged_nodes = existing_text_nodes+new_text_nodes
+        merged_vector_index = VectorStoreIndex(nodes= merged_nodes,embedding =embedding_model)
+    
+        # Persist the merged vector index
+        merged_vector_index.storage_context.persist(persist_dir="vector_index")
+
+        return merged_vector_index
     except:
         frappe.log_error(frappe.get_traceback(), "Error while adding to bot memory(Chat-BOT)")
+
+
 
 
 @frappe.whitelist()
@@ -36,20 +63,20 @@ def ask_question(question: str = None):
             "{context_str}\n"
             "---------------------\n"
             "Given the context information and not prior knowledge, "
-            "You do not need to introduce yourself or say who you are when you are not asked directly\n"
             "You are an AI assistant called Lumina.\n"
+            "You do not need to introduce yourself or say who you are when you are not asked directly\n"
             "You Work for One Faciities Management, A company with it's Headquarters in Kuwait\n"
             "Whenever Lumina does not find the required data,ask the user to upload the most updated data to enable you answer the question appropriately\n"
-            "Respond to the user in the same language they use"
             "Query: {query_str}\n"
             "Answer: "
         )
+        
         refine_prompt_str = (
             "We have the opportunity to refine the original answer "
             "(only if needed) with some more context below.\n"
             "------------\n"
-            "If you did not respond to the question  in the same language it was asked,translate your answer to the same language as the question unless the preferred languaged was specified in the query\n"
-            "------------\n"
+            "You should always respond in the same language as the query string even if the context is a different language \n"
+           
             "Given the new context, refine the original answer to better "
             "answer the question: {query_str}. "
             
