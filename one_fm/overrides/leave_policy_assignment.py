@@ -3,10 +3,16 @@ import frappe
 from hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment import (
     LeavePolicyAssignment
 )
+from frappe import _,  bold
 
 
 class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 	# overide default class
+
+	def validate(self):
+		super().validate()
+		self.validate_maternity_leave()
+
 	@frappe.whitelist()
 	def grant_leave_alloc_for_employee(self):
 		leave_allocations = {}
@@ -68,6 +74,41 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 		allocation.save(ignore_permissions=True)
 		allocation.submit()
 		return allocation.name, new_leaves_allocated
+	
+	def validate_maternity_leave(self):
+		leave_types = {
+		leave_type["name"]: leave_type
+		for leave_type in frappe.get_all(
+			"Leave Type",
+			fields=[
+				"name",
+				"is_lwp",
+				"is_earned_leave",
+				"is_compensatory",
+				"allocate_on_day",
+				"is_carry_forward",
+				"expire_carry_forwarded_leaves_after_days",
+				"earned_leave_frequency",
+				"rounding",
+			]
+		)
+	}
+		leave_policy = frappe.get_doc("Leave Policy", self.leave_policy)
+		employee = frappe.get_doc("Employee", self.employee)
+
+		for policy in leave_policy.leave_policy_details:
+			leave_type = leave_types.get(policy.leave_type)
+
+			if leave_type.name == "Maternity Leave" and employee.gender == "Male":
+				frappe.throw(
+				_("Leave Policy: {0} with leave type {1} cannot be assign to male Employee {2}.").format(
+					bold(self.leave_policy),
+					bold(leave_type.name ),
+					bold(self.employee),
+				),
+				title=_("Wrong Leave Type Assignment"),
+			)
+
 	
 
 def get_leave_type_detail():
