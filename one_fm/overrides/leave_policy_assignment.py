@@ -90,9 +90,9 @@ class LeavePolicyAssignmentOverride(LeavePolicyAssignment):
 				"expire_carry_forwarded_leaves_after_days",
 				"earned_leave_frequency",
 				"rounding",
-			]
-		)
-	}
+				]
+			)
+		}
 		leave_policy = frappe.get_doc("Leave Policy", self.leave_policy)
 		employee = frappe.get_doc("Employee", self.employee)
 
