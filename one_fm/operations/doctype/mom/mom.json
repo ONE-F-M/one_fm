@@ -1,6 +1,5 @@
 {
  "actions": [],
- "autoname": "format:{DD}-{MM}-{YYYY}|{project}",
  "creation": "2020-04-27 15:55:06.978338",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -43,6 +42,7 @@
    "fieldtype": "Link",
    "hidden": 1,
    "label": "Site",
+   "mandatory_depends_on": "eval:doc.project_type == 'External'",
    "options": "Operations Site"
   },
   {
@@ -200,6 +200,7 @@
    "fieldname": "supervisor",
    "fieldtype": "Link",
    "label": "Supervisor",
+   "mandatory_depends_on": "eval:doc.project_type == 'External'",
    "options": "Employee"
   },
   {
@@ -217,11 +218,10 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-08-30 00:09:12.249684",
+ "modified": "2024-10-01 12:49:10.048427",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM",
- "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

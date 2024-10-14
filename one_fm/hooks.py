@@ -116,7 +116,8 @@ doctype_js = {
     "Goal": "public/js/doctype_js/goal.js",
     "Task": "public/js/doctype_js/task.js",
     "HD Ticket": "public/js/doctype_js/hd_ticket.js",
-    "Appraisal": "public/js/doctype_js/appraisal.js"
+    "Appraisal": "public/js/doctype_js/appraisal.js",
+    "Employee Performance Feedback":"public/js/doctype_js/employee_performance_feedback.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -235,7 +236,8 @@ doc_events = {
 		"validate": [
 			"one_fm.utils.validate_sick_leave_date",
 			"one_fm.utils.validate_hajj_leave",
-			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement"
+			"one_fm.one_fm.hr_utils.validate_leave_proof_document_requirement",
+			"one_fm.overrides.leave_application.validate_active_staff"
 		],
 		"on_cancel": "one_fm.utils.leave_appillication_on_cancel",
 
@@ -391,24 +393,6 @@ doc_events = {
 		"validate": "one_fm.api.doc_methods.help_article.validate",
 		"before_insert": "one_fm.api.doc_methods.help_article.before_insert",
 		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
-	},
-	"Shift Request":{
-		"before_save":[
-			"one_fm.overrides.shift_request.fill_to_date",
-			"one_fm.overrides.shift_request.send_shift_request_mail",
-			"one_fm.overrides.shift_request.validate_from_date"
-		],
-		# "on_update_after_submit":[
-			# "one_fm.overrides.shift_request.on_update_after_submit",
-		# ],
-		"on_update": [
-            "one_fm.overrides.shift_request.on_update",
-        	# "one_fm.overrides.shift_request.process_shift_assignemnt",
-		],
-        "validate": [
-            "one_fm.overrides.shift_request.validate",
-        ]
-
 	},
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
