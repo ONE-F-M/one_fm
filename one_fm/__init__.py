@@ -51,7 +51,7 @@ from frappe.core.doctype.user_permission import user_permission
 from one_fm.permissions import get_custom_user_permissions
 
 
-__version__ = '15.1.3'
+__version__ = '15.1.2'
 
 user_permission.get_user_permissions = get_custom_user_permissions
 StockController.make_batches = make_batches_with_supplier_batch_id

@@ -12,6 +12,7 @@
   "date",
   "column_break_3",
   "log_type",
+  "permission_type",
   "section_break_5",
   "assigned_shift",
   "roster_type",
@@ -24,6 +25,9 @@
   "section_break_12",
   "arrival_time",
   "leaving_time",
+  "latitude",
+  "column_break_20",
+  "longitude",
   "section_break_17",
   "reason",
   "amended_from"
@@ -82,6 +86,15 @@
    "read_only": 1
   },
   {
+   "fieldname": "permission_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Permission Type",
+   "options": "\nArrive Late\nLeave Early\nForget to Checkin\nForget to Checkout\nCheckin Issue\nCheckout Issue",
+   "reqd": 1
+  },
+  {
    "fieldname": "shift_supervisor",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
@@ -106,21 +119,21 @@
   },
   {
    "default": "Now",
-   "depends_on": "eval:doc.log_type == \"IN\"",
+   "depends_on": "eval:doc.permission_type == \"Arrive Late\"",
    "fieldname": "arrival_time",
    "fieldtype": "Time",
    "in_list_view": 1,
    "label": "Arrival Time",
-   "mandatory_depends_on": "eval:doc.log_type == \"IN\""
+   "mandatory_depends_on": "eval:doc.permission_type == \"Arrive Late\""
   },
   {
    "default": "Now",
-   "depends_on": "eval:doc.log_type == \"OUT\"",
+   "depends_on": "eval:doc.permission_type== \"Leave Early\"",
    "fieldname": "leaving_time",
    "fieldtype": "Time",
    "in_list_view": 1,
    "label": "Leaving Time",
-   "mandatory_depends_on": "eval:doc.log_type == \"OUT\""
+   "mandatory_depends_on": "eval:doc.permission_type== \"Leave Early\""
   },
   {
    "fieldname": "amended_from",
@@ -139,6 +152,18 @@
    "in_list_view": 1,
    "label": "Employee Name",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.permission_type == \"Checkin Issue\" || doc.permission_type == \"Checkout Issue\"",
+   "fieldname": "latitude",
+   "fieldtype": "Float",
+   "label": "Latitude"
+  },
+  {
+   "depends_on": "eval:doc.permission_type == \"Checkin Issue\" || doc.permission_type == \"Checkout Issue\"",
+   "fieldname": "longitude",
+   "fieldtype": "Float",
+   "label": "Longitude"
   },
   {
    "fieldname": "section_break_17",
@@ -175,6 +200,10 @@
    "label": "Log Type",
    "options": "\nIN\nOUT",
    "reqd": 1
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
   },
   {
    "fetch_from": "assigned_shift.roster_type",

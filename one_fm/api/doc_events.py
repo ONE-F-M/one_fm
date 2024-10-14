@@ -6,6 +6,7 @@ import frappe, erpnext
 from frappe import _
 from frappe.utils import cstr, cint, get_datetime, getdate, add_to_date
 from frappe.core.doctype.version.version import get_diff
+from one_fm.utils import get_current_shift
 from one_fm.operations.doctype.operations_site.operations_site import create_notification_log
 import datetime
 from frappe.permissions import remove_user_permission

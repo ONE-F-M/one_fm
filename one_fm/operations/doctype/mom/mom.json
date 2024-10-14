@@ -42,7 +42,6 @@
    "fieldtype": "Link",
    "hidden": 1,
    "label": "Site",
-   "mandatory_depends_on": "eval:doc.project_type == 'External'",
    "options": "Operations Site"
   },
   {
@@ -200,7 +199,6 @@
    "fieldname": "supervisor",
    "fieldtype": "Link",
    "label": "Supervisor",
-   "mandatory_depends_on": "eval:doc.project_type == 'External'",
    "options": "Employee"
   },
   {
@@ -218,7 +216,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-10-01 12:49:10.048427",
+ "modified": "2024-09-30 14:17:34.273265",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM",

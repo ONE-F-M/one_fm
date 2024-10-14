@@ -14,7 +14,7 @@ from json import JSONEncoder
 import json
 # from imutils import face_utils, paths
 from one_fm.api.doc_events import haversine
-from one_fm.utils import get_current_shift
+from one_fm.api.v1.roster import get_current_shift
 from one_fm.api.v1.utils import response
 from one_fm.api.v1.face_recognition import (
     create_checkin_log, verify_checkin_checkout,

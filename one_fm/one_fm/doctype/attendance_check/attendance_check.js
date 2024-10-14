@@ -18,15 +18,8 @@ frappe.ui.form.on('Attendance Check', {
 			}
 		}
 	},
-	attendance_status: function(frm){
-		if (frm.doc.attendance_status != "Present"){
-			frm.doc.justification = ""
-		}
-	},
+
 });
-
-
-
 
 
 var allow_only_attendance_manager = (frm) => {

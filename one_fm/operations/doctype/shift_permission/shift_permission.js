@@ -15,15 +15,8 @@ frappe.ui.form.on('Shift Permission', {
 		get_shift_assignment(frm);
 	},
 	date: function(frm) {
-		validate_date(frm);
 		get_shift_assignment(frm);
-	},
-	validate: function(frm){
-		validate_date(frm)
-	},
-	permission_type: function(frm) {
-		get_shift_assignment(frm);
-	},
+	}
 });
 
 function set_employee_from_the_session_user(frm) {
@@ -45,10 +38,10 @@ function set_employee_from_the_session_user(frm) {
 function set_options_for_permission_type(frm) {
 	if(frm.doc.log_type){
 		if(frm.doc.log_type == 'IN'){
-			frm.set_df_property('permission_type', 'options', ['', 'Arrive Late', ]);
+			frm.set_df_property('permission_type', 'options', ['', 'Arrive Late', 'Forget to Checkin', 'Checkin Issue']);
 		}
 		else{
-			frm.set_df_property('permission_type', 'options', ['', 'Leave Early', ]);
+			frm.set_df_property('permission_type', 'options', ['', 'Leave Early', 'Forget to Checkout', 'Checkout Issue']);
 		}
 	}
 	else{
@@ -87,18 +80,4 @@ function set_shift_details(frm, name, supervisor, shift, shift_type){
 	frappe.model.set_value(frm.doctype, frm.docname, "shift_supervisor", supervisor);
 	frappe.model.set_value(frm.doctype, frm.docname, "shift", shift);
 	frappe.model.set_value(frm.doctype, frm.docname, "shift_type", shift_type);
-}
-
-
-var validate_date = (frm) => {
-	if (frm.doc.date){
-		if (frm.doc.date < frappe.datetime.now_date()){
-			if (frm.is_new()){
-				frappe.throw("Please note that Shift permission cannot be created for a past date")
-
-			} else {
-				frappe.throw("Please note that Shift permission cannot be updated to a past date")
-			}
-		}
-	}
 }

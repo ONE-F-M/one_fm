@@ -7,6 +7,7 @@ import json, base64, ast, itertools, datetime
 from frappe.client import attach_file
 from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view  # , get_roster_view as _get_roster_view
 from one_fm.api.v1.utils import response
+from one_fm.utils import get_current_shift
 from one_fm.one_fm.page.roster.employee_map import CreateMap, PostMap
 
 

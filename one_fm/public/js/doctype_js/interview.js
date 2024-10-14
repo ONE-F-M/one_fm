@@ -104,6 +104,7 @@ frappe.ui.form.on('Interview', {
 			primary_action_label: __("Save"),
 			primary_action: function(values) {
 				create_interview_feedback(frm, values, feedback_exists, 'save');
+				d.hide();
 			},
 			secondary_action_label: __("Save and Submit"),
 			secondary_action: function() {
@@ -129,7 +130,7 @@ frappe.ui.form.on('Interview', {
 			fieldname: 'weight',
 			label: __('Weight'),
 		}, {
-			fieldtype: 'Small Text',
+			fieldtype: 'Data',
 			fieldname: 'applicant_answer',
 			label: __('Applicant Answer'),
 			in_list_view: 1,

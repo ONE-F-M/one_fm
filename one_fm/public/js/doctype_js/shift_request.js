@@ -16,7 +16,6 @@ frappe.ui.form.on('Shift Request', {
 	onload: function(frm){
 		prefillForm(frm);
 		set_employee_filters(frm)
-
 		
 	},
 	refresh: function(frm) {
@@ -45,14 +44,6 @@ frappe.ui.form.on('Shift Request', {
 			});
 
 		}
-	},
-	purpose: function(frm){
-		update_shift_role(frm);
-
-	},
-	replaced_employee: function (frm){
-		update_shift_role(frm);
-
 	}
 });
 
@@ -244,32 +235,3 @@ var prefillForm = frm =>{
 		});
 	}
 }
-
-const update_shift_role = (frm) => {
-	if (frm.doc.purpose == "Replace Existing Assignment" && frm.doc.replaced_employee){
-		frappe.call({
-				method: "frappe.client.get_list",
-				args: {
-					doctype: "Shift Assignment",
-					fields: ["operations_role", "shift"],
-					order_by: "modified desc",
-					filters: {
-						"employee": frm.doc.replaced_employee
-					},
-					limit_page_length: 1
-				},
-			callback: function(r) {
-				if (r.message && r.message.length > 0) {
-					var last_doc = r.message[0];
-					frm.set_value({
-						operations_role: last_doc.operations_role,
-						operations_shift: last_doc.shift
-					})
-
-				}
-    }
-			}
-
-		)
-	}
-};

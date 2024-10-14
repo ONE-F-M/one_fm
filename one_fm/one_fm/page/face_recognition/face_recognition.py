@@ -20,15 +20,14 @@ from one_fm.api.v2.zenquotes import fetch_quote
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-# channels = [
-# 	grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
-# ]
+channels = [
+	grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+]
 
 # setup stub for face recognition
-# stubs = [
-# 	facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
-# ]
-stubs = list()
+stubs = [
+	facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+]
 
 
 class NumpyArrayEncoder(JSONEncoder):
@@ -152,17 +151,7 @@ def verify():
 @frappe.whitelist()
 def user_within_site_geofence(employee, log_type, user_latitude, user_longitude):
 	""" This method checks if user's given coordinates fall within the geofence radius of the user's assigned site in Shift Assigment. """
-	shift_exists = get_current_shift(employee)
-	if shift_exists['type'] == "Early":
-		# check if user can checkin with the correct time
-		return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
-	elif shift_exists['type'] == "Late":
-		return response("Resource Not Found", 404, None, f"You are checking out too late, checkout was allowed {shift_exists['data']} minutes ago ")
-	elif shift_exists['type'] == "On Time":
-		shift = shift_exists['data']
-	else:
-		shift = None
-
+	shift = get_current_shift(employee)
 	date = cstr(getdate())
 	if shift:
 		if frappe.db.exists("Shift Request", {"employee":employee, 'from_date':['<=',date],'to_date':['>=',date]}):
@@ -227,7 +216,6 @@ def update_onboarding_employee(employee):
 		onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist.name)
 		onboard_employee.enrolled = True
 		onboard_employee.enrolled_on = now_datetime()
-		onboard_employee.flags.ignore_mandatory = True
 		onboard_employee.save(ignore_permissions=True)
 		frappe.db.commit()
 
@@ -263,7 +251,6 @@ def update_onboarding_employee(employee):
 		onboard_employee = frappe.get_doc('Onboard Employee', onboard_employee_exist)
 		onboard_employee.enrolled = True
 		onboard_employee.enrolled_on = now_datetime()
-		onboard_employee.flags.ignore_mandatory = True
 		onboard_employee.save(ignore_permissions=True)
 		frappe.db.commit()
 
@@ -341,16 +328,7 @@ def check_existing():
 	if not employee:
 		frappe.throw(_("Please link an employee to the logged in user to proceed further."))
 
-	shift_exists = get_current_shift(employee)
-	if shift_exists['type'] == "Early":
-		# check if user can checkin with the correct time
-		return response("Resource Not Found", 404, None, f"You are checking in too early, checkin is allowed in {shift_exists['data']} minutes ")
-	elif shift_exists['type'] == "Late":
-		return response("Resource Not Found", 404, None, f"You are checking out too late, checkout was allowed {shift_exists['data']} minutes ago ")
-	elif shift_exists['type'] == "On Time":
-		shift = shift_exists['data']
-	else:
-		shift = None
+	shift = get_current_shift(employee)
 	#if employee schedule is linked with the previous Checkin doc
 
 	if shift:
