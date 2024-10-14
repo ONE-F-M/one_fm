@@ -1042,7 +1042,7 @@ def send_contract_reminders(is_scheduled_event=True):
     users = [i.parent for i in relevant_users]
     if contracts_due_internal_notification:
         contracts_due_internal_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
-            get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
+            get_date_str(i.contract_termination_decision_period_date) if i.contract_termination_decision_period_date else None,i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date) if i.contract_end_internal_notification_date else None,\
             get_date_str(i.end_date),i.duration,i.client,i.engagement_type, i.contract] for i in contracts_due_internal_notification]
         for each in contracts_due_internal_notification_list:
             context = {"project": each[8],
@@ -1061,8 +1061,9 @@ def send_contract_reminders(is_scheduled_event=True):
             sendemail(recipients=[users], subject="Expiring Contracts", content=msg, is_scheduler_email=is_scheduled_event)
     if contracts_due_termination_notification:
         contracts_due_termination_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
-            get_date_str(i.contract_termination_decision_period_date),i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date),\
+            get_date_str(i.contract_termination_decision_period_date) if i.contract_termination_decision_period_date else None,i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date) if i.contract_end_internal_notification_date else None,\
             get_date_str(i.end_date),i.duration,i.client,i.engagement_type, i.contract] for i in contracts_due_termination_notification]
+        print(contracts_due_termination_notification_list)
         for each in contracts_due_termination_notification_list:
             context = {"project": each[8],
                        "contract_end_internal_notif_period": each[1],
