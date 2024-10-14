@@ -5,8 +5,8 @@ from frappe import _
 from frappe.utils import get_fullname, nowdate, add_to_date
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
-
-from frappe.desk.form.assign_to import add
+from frappe.desk.form.assign_to import add,remove
+from erpnext.crm.utils import get_open_todos
 from one_fm.api.notification import create_notification_log
 from frappe.utils import getdate, date_diff
 import pandas as pd
@@ -485,6 +485,14 @@ def update_attendance_recods(self):
             self.create_or_update_attendance(attendance_name, date, 'On Leave')
 
     frappe.msgprint(_("Attendance are created for the leave Appication {0}!".format(self.name)), alert=True)
+
+
+def remove_assignment(attendance_check):
+    open_todo = get_open_todos("Attendance Check",attendance_check)
+    if open_todo:
+        for each in open_todo:
+            remove("Attendance Check",attendance_check,each.allocated_to,ignore_permissions=1)
+    
 
 @frappe.whitelist()
 def get_leave_details(employee, date):
