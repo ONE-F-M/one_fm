@@ -1,5 +1,5 @@
 import frappe
-from frappe.utils import getdate
+from frappe.utils import getdate, rounded
 from frappe import _
 from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 
@@ -34,6 +34,7 @@ def get_annual_leave_allocation(from_date, leave_policy_assignment, employee):
     annual_leave_allocation = frappe.get_value("Leave Policy Detail", {"parent": leave_policy, "leave_type": "Annual Leave"}, "annual_allocation")
 
     days_passed = getdate() - getdate(from_date)
+    daily_earned_allocation = rounded((annual_leave_allocation / 365), precision=3)
+    calculated_leave_allocation =  daily_earned_allocation * days_passed.days
 
-    calculated_leave_allocation = (annual_leave_allocation / 365) * days_passed.days
     return calculated_leave_allocation
