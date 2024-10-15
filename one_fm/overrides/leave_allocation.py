@@ -15,7 +15,6 @@ class LeaveAllocationOverride(LeaveAllocation):
             frappe.throw("Maternity Leave allocation is only allowed for female workers.")
 
     def validate_hajj_leave(self):
-        print("samdaniii")
         employee_info = frappe.db.get_value("Employee", self.employee, ["one_fm_religion", "went_to_hajj"], as_dict=True)
         religion = employee_info.get("one_fm_religion")
         went_to_hajj = employee_info.get("went_to_hajj")
