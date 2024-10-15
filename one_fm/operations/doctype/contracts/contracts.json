@@ -57,6 +57,9 @@
   "items",
   "section_break_28",
   "frequency",
+  "payment_terms_section",
+  "payment_terms_template",
+  "payment_schedule",
   "section_break_30",
   "create_sales_invoice_as",
   "site_wise_option",
@@ -480,10 +483,28 @@
    "fieldtype": "Date",
    "label": "Contract End Internal Notification Date",
    "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "payment_terms_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Terms"
+  },
+  {
+   "fieldname": "payment_terms_template",
+   "fieldtype": "Link",
+   "label": "Payment Terms Template",
+   "options": "Payment Terms Template"
+  },
+  {
+   "fieldname": "payment_schedule",
+   "fieldtype": "Table",
+   "label": "Payment Schedule",
+   "options": "Payment Schedule"
   }
  ],
  "links": [],
- "modified": "2023-05-28 09:50:41.365007",
+ "modified": "2024-10-15 12:11:28.595389",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

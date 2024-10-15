@@ -27,6 +27,9 @@ frappe.ui.form.on('Contracts', {
 			},
 		};
 	},
+	onload_post_render: function(frm) {
+		set_payment_schedule_fields_property(frm);
+	},
 	use_portal_for_invoice:function(frm){
 		if(frm.doc.use_portal_for_invoice){
 			if(!frm.doc.password_management){
@@ -100,13 +103,12 @@ frappe.ui.form.on('Contracts', {
 	},
 	refresh:function(frm){
 		// create delivery note and reroute to the form in draft mode
-		
 		if (frm.doc.workflow_state == "Active" && frappe.user_roles.includes("Operations Manager")){
 
 			//  Amend contract
 			frm.add_custom_button(__("Create Missing Post Schedules"), function() {
 				frappe.call({
-						
+
 						method: 'one_fm.operations.doctype.operations_post.operations_post.create_new_schedule_for_project',
 						args: {proj:frm.doc.project},
 						callback: function(r) {
@@ -115,15 +117,15 @@ frappe.ui.form.on('Contracts', {
 										message:__('Post Schedules are being created in the background.'),
 										indicator:'green'
 								}, 5);
-								
+
 							}
 						},
-						
+
 					})
 			});
 
 		}
-		
+
 
 		if (frm.doc.workflow_state == "Inactive" && frappe.user_roles.includes("Finance Manager")){
 
@@ -301,8 +303,32 @@ frappe.ui.form.on('Contracts', {
 			frm.toggle_enable('is_auto_renewal', 1);
 			frm.toggle_display('is_auto_renewal', 1);
 		}
+	},
+	payment_terms_template:(frm)=>{
+		if(frm.doc.payment_terms_template) {
+			frappe.call({
+				method: "erpnext.controllers.accounts_controller.get_payment_terms",
+				args: {
+					terms_template: frm.doc.payment_terms_template,
+					posting_date: frm.doc.start_date
+				},
+				callback: function(r) {
+					if(r.message && !r.exc) {
+						frm.set_value("payment_schedule", r.message);
+					}
+				}
+			})
+		}
 	}
 });
+
+var set_payment_schedule_fields_property = function(frm) {
+	var payment_schedule_grid = frm.fields_dict.payment_schedule.grid;
+	payment_schedule_grid.update_docfield_property('payment_amount', 'hidden', 1);
+	payment_schedule_grid.update_docfield_property('payment_amount', 'in_list_view', 0);
+	payment_schedule_grid.update_docfield_property('payment_amount', 'reqd', 0);
+	payment_schedule_grid.reset_grid()
+};
 
 var set_hide_management_fee_fields = function(frm) {
 	var management_fee_percentage = frappe.meta.get_docfield("Contract Item", "management_fee_percentage", frm.doc.name);

@@ -8,24 +8,32 @@ import frappe, json
 from datetime import datetime
 import calendar
 from frappe.model.document import Document
-
 from frappe.utils import (
     cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
     get_last_day, get_datetime, flt, add_days,add_months,get_date_str
 )
 from frappe import _
-
 from one_fm.processor import sendemail
+from erpnext.controllers.accounts_controller import get_payment_terms
 
 class Contracts(Document):
     def validate(self):
         self.calculate_contract_duration()
         self.validate_no_of_days_off()
         self.update_contract_dates()
-        # if self.overtime_rate == 0:
-        # 	frappe.msgprint(_("Overtime rate not set."), alert=True, indicator='orange')
+        self.set_payment_schedule()
 
-
+    def set_payment_schedule(self):
+        '''
+            Method to set payment schedule if not payment schedule set in the contract and
+            payment terms template selected in the contract
+        '''
+        if not self.payment_schedule and self.payment_terms_template:
+            data = get_payment_terms(
+                self.payment_terms_template, self.start_date
+            )
+            for item in data:
+                self.append("payment_schedule", item)
 
     def update_contract_dates(self):
         if self.contract_termination_decision_period:
@@ -1079,7 +1087,7 @@ def send_contract_reminders(is_scheduled_event=True):
                 msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
                 sendemail(recipients=users, subject="Expiring Contracts", content=msg,is_scheduler_email=is_scheduled_event)
     except Exception as e:
-        frappe.log_error(e)    
+        frappe.log_error(e)
 
 @frappe.whitelist()
 def renew_contracts_by_termination_date():
