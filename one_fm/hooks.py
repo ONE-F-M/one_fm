@@ -250,7 +250,7 @@ doc_events = {
 		"after_insert":[
       					"one_fm.overrides.hd_ticket.send_google_chat_notification",
                   		"one_fm.overrides.hd_ticket.notify_ticket_raiser_of_receipt"
-                    	], 
+                    	],
 		"on_change": "one_fm.overrides.hd_ticket.notify_issue_raiser_about_priority",
 		"on_update": "one_fm.overrides.hd_ticket.apply_ticket_escalation"
 	},
@@ -332,7 +332,10 @@ doc_events = {
 		"before_submit": "one_fm.one_fm.sales_invoice_custom.before_submit_sales_invoice",
 		"on_submit":"one_fm.one_fm.sales_invoice_custom.submit_sales_invoice",
 		"before_cancel":'one_fm.one_fm.sales_invoice_custom.cancel_sales_invoice',
-		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
+		"validate": [
+			"one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
+			"one_fm.overrides.sales_invoice.set_payment_terms_template"
+		],
 		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
 	"Salary Slip": {
@@ -377,7 +380,7 @@ doc_events = {
 		"after_insert": [
 			"one_fm.utils.assign_issue",
 			"one_fm.api.doc_methods.issue.notify_issue_raiser"
-			
+
 		],
     "on_update": "one_fm.utils.notify_on_close",
 	},
@@ -521,7 +524,7 @@ override_doctype_class = {
     "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride",
     "Payroll Entry": "one_fm.overrides.payroll_entry.PayrollEntryOverride",
     "Salary Slip": "one_fm.overrides.salary_slip.SalarySlipOverride",
-    
+
     # "User": "one_fm.overrides.user.UserOverride"
 }
 

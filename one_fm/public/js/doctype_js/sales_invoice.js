@@ -37,7 +37,7 @@ frappe.ui.form.on('Sales Invoice', {
                 // set_income_account_and_cost_center(frm);
             }
         }
-        
+
     },
 	refresh(frm) {
         if(frm.doc.customer){
@@ -50,11 +50,11 @@ frappe.ui.form.on('Sales Invoice', {
             });
             frm.refresh_field("project");
             fetch_advances(frm)
-            
-            
-            
+
+
+
         }
-        
+
     },
      customer: function(frm){
         if(frm.doc.project){
@@ -115,7 +115,7 @@ frappe.ui.form.on('Sales Invoice', {
                 },
                 callback:function(s){
                     if (!s.exc) {
-                        
+
                         if(frm.doc.selling_price_list == null){
                             if(s.message){
                                 var selling_price_list = s.message.name;
@@ -143,7 +143,7 @@ frappe.ui.form.on('Sales Invoice', {
                 },
                 callback:function(s){
                     if (!s.exc) {
-                        
+
                         if(s.message){
                             var contracts = s.message.name;
                             frm.set_value("contracts",contracts);
@@ -157,15 +157,23 @@ frappe.ui.form.on('Sales Invoice', {
 
     contracts: function(frm){
         if(frm.doc.contracts){
-            
             frm.clear_table("items");
             frm.refresh_field("items");
             //get contracts service items
             get_contracts_items(frm);
             //get contracts consumable items
             get_contracts_asset_items(frm);
+            // Get payment terms template
+            frm.events.set_payment_term_template(frm)
         }
     },
+    set_payment_term_template: function(frm) {
+      if(!frm.doc.payment_terms_template && frm.doc.contracts){
+        frappe.db.get_value('Contracts', frm.doc.contracts, 'payment_terms_template', function(r) {
+          frm.set_value('payment_terms_template', r.payment_terms_template)
+        })
+      }
+    }
     // add_timesheet_amount: function(frm){
     //     add_timesheet_rate(frm);
     // }
@@ -193,12 +201,12 @@ frappe.ui.form.on('Sales Invoice', {
 //                     }
 //                 }
 //             }
-//         });  
+//         });
 //         //frappe.model.set_value(d.doctype, d.name,"test_item",d.item_code);
 //     }
 // });
 var set_income_account_and_cost_center = function(frm){
-    
+
     frappe.call({
         method: 'frappe.client.get_value',
         args:{
@@ -222,7 +230,7 @@ var set_income_account_and_cost_center = function(frm){
         }
     });
 };
-let settle_invoice = function(d,frm){ 
+let settle_invoice = function(d,frm){
     let values = d.get_values()
     if (values.settlement_amount >= values.total_advance_amount){
         frappe.throw("Settlement Amount cannot be greater than the total advance amount")
@@ -230,7 +238,7 @@ let settle_invoice = function(d,frm){
     if (values.settlement_amount > values.outstanding){
         frappe.throw("Settlement Amount cannot be greater than the total outstanding amount")
     }
-    
+
     frappe.call({
         method: 'one_fm.one_fm.sales_invoice_custom.allocate_advances',
         args:{
@@ -247,9 +255,9 @@ let settle_invoice = function(d,frm){
     d.hide();
 }
 let settle_advances = function(frm){
-    
+
     if((frm.doc.docstatus == 1) && (frm.doc.outstanding_amount>0) && (frm.doc.balance_in_advance_account>0)){
-    
+
         cur_frm.add_custom_button(__("Payment from Unearned Revenue"), function(){
             var d = new frappe.ui.Dialog({
                 'fields': [
@@ -257,17 +265,17 @@ let settle_advances = function(frm){
                     {'fieldname': 'outstanding', 'fieldtype': 'Currency','read_only':1,'label':'Outstading Amount','default':frm.doc.outstanding_amount},
                     {'fieldname': 'total_advance_amount','read_only':1, 'fieldtype': 'Currency','label':'Total Advance Amount','default':frm.doc.balance_in_advance_account},
                     {'fieldname': 'settlement_amount', 'fieldtype': 'Currency','label':'Settlement Amount'},
-                   
+
                 ],
                 primary_action: function(){
                     settle_invoice(d,frm);
                 }
             });
-            
+
             d.show();
         }, __("Create"));
     }
-    
+
 }
 
 let fetch_advances  =  function(frm){
@@ -286,7 +294,7 @@ let fetch_advances  =  function(frm){
                     frm.refresh_field('settlement_amount')
                     if((frm.doc.balance_in_advance_account> 1)  && !(frm.doc.active_modal)){
                         frm.doc.active_modal = 1
-                        frm.set_intro(`${frm.doc.customer} has ${cur_frm.doc.currency}${cur_frm.doc.balance_in_advance_account} in their advance account.\nYou can use it to settle this invoice by setting the 
+                        frm.set_intro(`${frm.doc.customer} has ${cur_frm.doc.currency}${cur_frm.doc.balance_in_advance_account} in their advance account.\nYou can use it to settle this invoice by setting the
                         'Settle From Unearned Revenue' field to Yes. If the form is submitted, Click on 'Payment from Unearned Revenue' button in the Create button grid`)
                         settle_advances(frm)
                     }
@@ -297,7 +305,7 @@ let fetch_advances  =  function(frm){
 }
 //Add timesheet amount
 var add_timesheet_rate = function(frm){
-    
+
     $.each(frm.doc.items || [], function(i, v) {
         var amount = 0;
         $.each(frm.doc.timesheets || [], function(i, d) {
@@ -321,7 +329,7 @@ var get_timesheet_details =  function(frm,item) {
         },
         callback:function(s){
             if (!s.exc) {
-                
+
                 if(s.message != undefined && s.message.length > 0){
                     add_timesheet_data(frm,s.message,item);
                 }
@@ -342,7 +350,7 @@ var add_timesheet_data = function(frm,timesheet_data,item_code){
     }
 };
 var get_contracts_asset_items = function(frm){
-    
+
     frappe.call({
         method: "one_fm.operations.doctype.contracts.contracts.get_contracts_asset_items",
         args:{
@@ -351,7 +359,7 @@ var get_contracts_asset_items = function(frm){
         callback:function(s){
             if(!s.exc){
                 if(s.message != undefined){
-                   
+
                     for (var i=0; i<s.message.length; i++){
                         var d = frm.add_child("items");
                         var item = s.message[i];
@@ -365,13 +373,13 @@ var get_contracts_asset_items = function(frm){
                         frm.refresh_field("items");
                     }
                     //loop again and set qty and uom .....not good
-                }                      
+                }
             }
         }
     })
 };
 var get_contracts_items = function(frm){
-    
+
     frappe.call({
         method: "one_fm.operations.doctype.contracts.contracts.get_contracts_items",
         args:{
@@ -380,8 +388,8 @@ var get_contracts_items = function(frm){
         callback:function(s){
             if(!s.exc){
                 if(s.message != undefined){
-                    
-                    
+
+
                     $.each(s.message, function(i, d) {
                         var row = frappe.model.add_child(frm.doc, "Sales Invoice Item", "items");
                         frappe.model.set_value(row.doctype, row.name, "item_code", d.item_code)
@@ -389,8 +397,8 @@ var get_contracts_items = function(frm){
                         frappe.model.set_value(row.doctype, row.name, "rate", d.price_list_rate)
                         frappe.model.set_value(row.doctype, row.name, "uom", d.uom)
                     });
-                    
-                }                      
+
+                }
             }
         }
     })
