@@ -1,22 +1,18 @@
 from ast import literal_eval
 import frappe,json
+import pandas as pd
 
 from frappe import _
-from frappe.utils import get_fullname, nowdate, add_to_date
+from frappe.utils import get_fullname, nowdate, add_to_date, getdate, date_diff
+
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
-
-from frappe.desk.form.assign_to import add
-from one_fm.api.notification import create_notification_log
-from frappe.utils import getdate, date_diff
-import pandas as pd
+from frappe.desk.form.assign_to import remove
+from erpnext.crm.utils import get_open_todos
 from one_fm.api.api import push_notification_rest_api_for_leave_application
-from one_fm.processor import is_user_id_company_prefred_email_in_employee
-from hrms.hr.utils import get_holidays_for_employee
-from one_fm.api.tasks import get_action_user,remove_assignment
-
-from .employee import NotifyAttendanceManagerOnStatusChange
-
+from one_fm.api.tasks import remove_assignment
+from one_fm.overrides.employee import NotifyAttendanceManagerOnStatusChange
+from one_fm.utils import get_approver_user
 
 
 def validate_active_staff(doc,event):
@@ -524,29 +520,9 @@ def get_leave_details(employee, date):
 
 @frappe.whitelist()
 def get_leave_approver(employee):
-    employee_details = frappe.db.get_value(
-			"Employee",
-			{"name": employee},
-			["reports_to", "department"],
-			as_dict = True
-		)
-    reports_to = employee_details.get('reports_to')
-    department = employee_details.get('department')
-    employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-    approver = False
-    if reports_to:
-        approver = frappe.get_value("Employee", reports_to, ["user_id"])
-    elif len(employee_shift) > 0 and employee_shift[0].shift:
-        approver, Role = get_action_user(employee,employee_shift[0].shift)
-    else:
-        approvers = frappe.db.sql(
-                """select approver from `tabDepartment Approver` where parent= %s and parentfield = 'leave_approvers'""",
-                (department),
-            )
-        if approvers and len(approvers) > 0:
-            approvers = [approver[0] for approver in approvers]
-            approver = approvers[0]
+    approver = get_approver_user(employee)
     return approver
+
 
 @frappe.whitelist()
 def employee_leave_status():
