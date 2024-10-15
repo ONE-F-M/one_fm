@@ -158,7 +158,7 @@ class LeaveApplicationOverride(LeaveApplication):
         parent_doc = frappe.get_doc("Leave Application", self.name)
         args = parent_doc.as_dict()
         email_template = frappe.get_doc("Email Template", template)
-        message = frappe.render_template(email_template.response, args)
+        message = frappe.render_template(email_template.response_html, args)
         if is_app_user(self.employee):
             push_notification_rest_api_for_leave_application(self.employee,email_template.subject,message,self.name)
             frappe.msgprint(_("Push notification sent to {0} via mobile application").format(self.employee),alert=True)
