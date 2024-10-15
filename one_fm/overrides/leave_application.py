@@ -166,7 +166,8 @@ class LeaveApplicationOverride(LeaveApplication):
             employee = frappe.get_doc("Employee", self.employee)
             if not employee.user_id:
                 return
-            sendemail(recipients= [employee.user_id], subject="Leave Application", message=message,
+            personal_email = employee.personal_email or ""
+            sendemail(recipients= [employee.user_id, personal_email], subject="Leave Application", message=message,
                     reference_doctype=self.doctype, reference_name=self.name, attachments = [])
             frappe.msgprint("Email Sent to Employee {}".format(employee.employee_name))
             
@@ -275,6 +276,7 @@ class LeaveApplicationOverride(LeaveApplication):
         self.assign_to_leave_approver()
         self.update_attachment_name()
         self.enqueue_notification_method(self.notify_leave_approver)
+        self.enqueue_notification_method(self.notify_employee)
         
     def enqueue_notification_method(self,method):
         frappe.enqueue(method,is_async=True, job_name= str("Leave Notification"),  queue="short")
@@ -433,6 +435,7 @@ class LeaveApplicationOverride(LeaveApplication):
 
                     frappe.db.commit()
         if self.status == "Approved":
+            self.notify_employee()
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 # frappe.db.set_value(), will not call the validate.
                 if self.leave_type !='Sick Leave':
