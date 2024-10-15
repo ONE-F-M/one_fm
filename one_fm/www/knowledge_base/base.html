@@ -151,8 +151,6 @@
                     </div>
                 </div>
                
-                
-                
               </div>
               
               <div id="chatbot-footer">
@@ -165,11 +163,51 @@
               </div>
             </div>
           </div> 
-          <div id="chatbot-open-container">
-            <span class="material-symbols-outlined">chat</span>
-            <span class="material-symbols-outlined" style="display: none">close </span>
-          </div>
+          
+          <div id="chatbot-container-gemini" style="display: none">
+            <div id="chatbot-interface-gemini">
+              <div id="chatbot-header-gemini">
+                <p>Want to know something? - Let's chat</p>
+              </div>
+              
+              <div id="chatbot-chat-gemini">
+                <div id="chat-bubble-gemini" class="chatbot-messages-gemini chatbot-received-messages-gemini" >
+                    <div class="typing">
+                      <div class="dot"></div>
+                      <div class="dot"></div>
+                      <div class="dot"></div>
+                    </div>
+                </div>
 
+                <div id="chat-intro-gemini">
+                    <div class="chatbot-messages-gemini chatbot-received-messages-gemini">
+                        <p>With what can I help you today?</p>
+                    </div>
+                    <div class="chatbot-messages-gemini chatbot-received-messages-gemini">
+                        <p>Hello! I am Lumina, OneFM's chatbot</p>
+                    </div>
+                </div>
+               
+              </div>
+              
+              <div id="chatbot-footer-gemini">
+                <div id="chatbot-input-container-gemini">
+                  <input type="text" id="chatbot-input-gemini" name="chatbot-input" placeholder="Type your question here...">
+                </div>
+                <div id="chatbot-new-message-send-button-gemini">
+                  <i class="material-icons" id="send-icon">send</i>
+                </div>
+              </div>
+            </div>
+          </div> 
+            <div id="chatbot-open-container-gemini">
+                <span class="g-icon">G<span class="material-symbols-outlined">chat</span></span>
+                <span class="material-symbols-outlined" style="display: none">close </span>
+              </div>
+              <div id="chatbot-open-container">
+                <span class="material-symbols-outlined">chat</span>
+                <span class="material-symbols-outlined" style="display: none">close </span>
+              </div>
         {% block content %}
 
         {% endblock %}
