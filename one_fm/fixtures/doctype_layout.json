@@ -741,13 +741,6 @@
     "parenttype": "DocType Layout"
    },
    {
-    "fieldname": "went_to_hajj",
-    "label": "Went to Hajj",
-    "parent": "Employee",
-    "parentfield": "fields",
-    "parenttype": "DocType Layout"
-   },
-   {
     "fieldname": "leave_policy",
     "label": "Leave Policy",
     "parent": "Employee",
@@ -1009,6 +1002,13 @@
    {
     "fieldname": "one_fm_religion",
     "label": "Religion",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
+    "fieldname": "went_to_hajj",
+    "label": "Went to Hajj",
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
