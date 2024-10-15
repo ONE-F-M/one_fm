@@ -13,7 +13,7 @@ from one_fm.api.api import upload_file
 from one_fm.api.tasks import get_action_user,get_notification_user
 from one_fm.api.v1.utils import response, validate_date
 from frappe.utils import cint, cstr, getdate
-from one_fm.utils import check_if_backdate_allowed, get_approver
+from one_fm.utils import check_if_backdate_allowed, get_approver, get_approver_user
 from one_fm.api.utils import validate_sick_leave_attachment
 
 @frappe.whitelist()
@@ -346,21 +346,7 @@ def fetch_leave_approver(employee: str) -> str:
     Returns:
         str: user id of leave approver
     """
-    employee_details = frappe.db.get_list("Employee", {"name":employee}, ["reports_to", "department"])
-    reports_to = employee_details[0].reports_to
-    department = employee_details[0].department
-    employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-    if reports_to:
-        approver = frappe.get_value("Employee", reports_to, ["user_id"])
-    elif len(employee_shift) > 0 and employee_shift[0].shift:
-        approver, Role = get_action_user(employee,employee_shift[0].shift)
-    else:
-        approvers = frappe.db.sql(
-				"""select approver from `tabDepartment Approver` where parent= %s and parentfield = 'leave_approvers'""",
-				(department),
-			)
-        approvers = [approver[0] for approver in approvers]
-        approver = approvers[0]
+    approver = get_approver_user(employee)
     return approver
 
 
