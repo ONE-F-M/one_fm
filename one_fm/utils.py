@@ -898,45 +898,48 @@ def increase_daily_leave_balance():
     '''
 
     # Get List of Leave Allocation for today of a Leave Type (having Is Paid Annual Leave marekd True)
-    allocation_list = get_paid_annual_leave_allocation_list()
+    try:
+        allocation_list = get_paid_annual_leave_allocation_list()
 
-    # Iterate Allocation List to increment Allocation
-    for leave_allocation in allocation_list:
-        try:
-            # Get Allocation object from allocation list
-            allocation = frappe.get_doc("Leave Allocation", leave_allocation.name)
-
-            # Get Leave Type object from allocation list
-            leave_type = frappe.get_doc("Leave Type", leave_allocation.leave_type)
-
-            # Get Number of Leave Allocated for the allocation of an employee
-            new_leaves_allocated = get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type)
-            if new_leaves_allocated:
-                current_date = getdate(nowdate())
-                # Calculate the difference in days between the current date and the allocation start date
-                difference_in_days = (current_date - allocation.from_date).days
-                
-                # Calculate the previous leaves based on the number of days and new leaves allocated
-                previous_leaves_allocated = difference_in_days * new_leaves_allocated
-
-                if previous_leaves_allocated != allocation.new_leaves_allocated:
-                    allocation.new_leaves_allocated = previous_leaves_allocated + new_leaves_allocated 
-                else:
-                    allocation.new_leaves_allocated += new_leaves_allocated
-
-                allocation.total_leaves_allocated = allocation.new_leaves_allocated + allocation.unused_leaves
-                allocation.save(ignore_permissions=True)
-                allocation.submit()
-                frappe.db.commit()
-                # Update Leave Ledger to reflect the Leave Allocation
-                update_leave_ledger_for_paid_annual_leave(allocation, leave_type.is_carry_forward)
-
-        except Exception as e:
+        # Iterate Allocation List to increment Allocation
+        for leave_allocation in allocation_list:
             try:
-                frappe.log_error(f"Error processing Leave Allocation {leave_allocation.name}: {str(e)}")
-            except Exception as log_error:
-                print(f"Logging failed for Leave Allocation {leave_allocation.name}: {str(log_error)}")
-            continue
+                # Get Allocation object from allocation list
+                allocation = frappe.get_doc("Leave Allocation", leave_allocation.name)
+
+                # Get Leave Type object from allocation list
+                leave_type = frappe.get_doc("Leave Type", leave_allocation.leave_type)
+
+                # Get Number of Leave Allocated for the allocation of an employee
+                new_leaves_allocated = get_new_leave_allocated_for_annual_paid_leave(allocation, leave_type)
+                if new_leaves_allocated:
+                    current_date = getdate(nowdate())
+                    # Calculate the difference in days between the current date and the allocation start date
+                    difference_in_days = (current_date - allocation.from_date).days
+                    
+                    # Calculate the previous leaves based on the number of days and new leaves allocated
+                    previous_leaves_allocated = difference_in_days * new_leaves_allocated
+
+                    if previous_leaves_allocated != allocation.new_leaves_allocated:
+                        allocation.new_leaves_allocated = previous_leaves_allocated + new_leaves_allocated 
+                    else:
+                        allocation.new_leaves_allocated += new_leaves_allocated
+
+                    allocation.total_leaves_allocated = allocation.new_leaves_allocated + allocation.unused_leaves
+                    allocation.save(ignore_permissions=True)
+                    allocation.submit()
+                    frappe.db.commit()
+                    # Update Leave Ledger to reflect the Leave Allocation
+                    update_leave_ledger_for_paid_annual_leave(allocation, leave_type.is_carry_forward)
+
+            except Exception as e:
+                try:
+                    frappe.log_error(f"Error processing Leave Allocation {leave_allocation.name}: {str(e)}")
+                except Exception as log_error:
+                    print(f"Logging failed for Leave Allocation {leave_allocation.name}: {str(log_error)}")
+                continue
+    except Exception as e:
+          frappe.log_error(f"Error processing Leave Allocation {leave_allocation.name}: {str(e)}")
 
 def update_leave_ledger_for_paid_annual_leave(allocation, is_carry_forward):
     '''

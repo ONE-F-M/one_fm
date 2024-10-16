@@ -508,6 +508,7 @@ override_doctype_class = {
     "Shift Request": "one_fm.overrides.shift_request.ShiftRequestOverride",
     "Payroll Entry": "one_fm.overrides.payroll_entry.PayrollEntryOverride",
     "Salary Slip": "one_fm.overrides.salary_slip.SalarySlipOverride",
+    "Leave Allocation": "one_fm.overrides.leave_allocation.LeaveAllocationOverride",
     
     # "User": "one_fm.overrides.user.UserOverride"
 }
