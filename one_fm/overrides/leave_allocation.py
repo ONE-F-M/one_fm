@@ -21,6 +21,10 @@ class LeaveAllocationOverride(LeaveAllocation):
         if religion != "Muslim" or (religion == "Muslim" and went_to_hajj  == True):
             frappe.throw("Hajj Leave allocation is only allowed for a muslim staff Who has not performed Hajj before.")
 
+    def validate_against_leave_applications(self):
+        pass
+
+
 
 
 @frappe.whitelist()
@@ -56,4 +60,3 @@ def show_notification(title, msg, indicator):
         msg=_(msg),
         indicator=indicator
     )
-        
