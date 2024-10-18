@@ -151,25 +151,35 @@ class LeaveApplicationOverride(LeaveApplication):
         frappe.db.commit()
 
     def custom_notify_employee(self):
-        template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
-        if not template:
-            frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
-            return
-        parent_doc = frappe.get_doc("Leave Application", self.name)
-        args = parent_doc.as_dict()
-        email_template = frappe.get_doc("Email Template", template)
-        message = frappe.render_template(email_template.response_html, args)
-        if is_app_user(self.employee):
-            push_notification_rest_api_for_leave_application(self.employee,email_template.subject,message,self.name)
-            frappe.msgprint(_("Push notification sent to {0} via mobile application").format(self.employee),alert=True)
-        else:
-            employee = frappe.get_doc("Employee", self.employee)
-            if not employee.user_id:
+        try:
+            template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
+            if not template:
+                frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
                 return
-            personal_email = employee.personal_email or ""
-            sendemail(recipients= [employee.user_id, personal_email], subject="Leave Application", message=message,
-                    reference_doctype=self.doctype, reference_name=self.name, attachments = [])
-            frappe.msgprint("Email Sent to Employee {}".format(employee.employee_name))
+            parent_doc = frappe.get_doc("Leave Application", self.name)
+            employee = frappe.db.get_value("Employee", self.employee, "employee_name_in_arabic", as_dict=True) or {}
+            leave_approver = frappe.db.get_value("Employee", {"company_email": self.leave_approver}, ["employee_name_in_arabic", "employee_name"], as_dict=True) or {}
+            args = parent_doc.as_dict()
+            args["employee_name_in_arabic"] = employee.get("employee_name_in_arabic")
+            args["leave_approver_in_arabic"] = leave_approver.get("employee_name_in_arabic")
+            args["leave_approver_in_english"] = leave_approver.get("employee_name")
+            args["status"] = "Pending" if args.get("status") == "Open" else "Approved"
+            args["status_in_arabic"] = get_status_in_arabic(args.get("status"))
+            email_template = frappe.get_doc("Email Template", template)
+            message = frappe.render_template(email_template.response_html, args)
+            if is_app_user(self.employee):
+                push_notification_rest_api_for_leave_application(self.employee,email_template.subject,message,self.name)
+                frappe.msgprint(_("Push notification sent to {0} via mobile application").format(self.employee),alert=True)
+            else:
+                employee = frappe.get_doc("Employee", self.employee)
+                if not employee.user_id:
+                    return
+                personal_email = employee.personal_email or ""
+                sendemail(recipients= [employee.user_id, personal_email], subject="Leave Application", message=message,
+                        reference_doctype=self.doctype, reference_name=self.name, attachments = [])
+                frappe.msgprint("Email Sent to Employee {}".format(employee.employee_name))
+        except Exception as e:
+            frappe.log_error(message=frappe.get_traceback(), title="Leave Notification")
             
             
     def notify_employee(self):
@@ -732,6 +742,16 @@ class ReassignDocumentToLeaveApplicant:
             
             if key == "ONEFM General Setting":
                 self.reassign_operation_settings(settings=value)
+
+
+def get_status_in_arabic(status):
+    if status in ["Open", "Pending"]:
+        return "معلّق"  # Arabic for "pending"
+    elif status == "Approved":
+        return "موافق عليه"  # Arabic for "approved"
+    else:
+        return "حالة غير معروفة"  # Arabic for "unknown status" (optional)
+
 
 
             
