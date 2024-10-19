@@ -1042,5 +1042,14 @@
   "name": "Pending Operations Manager",
   "style": "",
   "workflow_state_name": "Pending Operations Manager"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2024-10-19 13:50:58.692909",
+  "name": "Propose New Date",
+  "style": "",
+  "workflow_state_name": "Propose New Date"
  }
 ]
