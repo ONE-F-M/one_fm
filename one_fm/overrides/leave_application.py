@@ -450,6 +450,29 @@ class LeaveApplicationOverride(LeaveApplication):
                 )
 
 
+@frappe.whitelist()
+def validate_leave_application(leave_application_name, from_date, to_date,total_leave_days,custom_total_propose_leave_days,leave_type):
+    validate_annual_leave = frappe.db.get_value("Leave Type", leave_type, "one_fm_is_paid_annual_leave")
+
+    # Custom validation logic
+    if from_date and to_date:
+        if date_diff(to_date, from_date) < 0:
+            frappe.throw(_("Proposed From Date cannot be later than the To Date"))
+
+    if from_date < nowdate():
+        frappe.throw(_("Proposed From Date cannot be in the past."))
+
+    if validate_annual_leave and int(total_leave_days) >= 15:
+        if int(custom_total_propose_leave_days) < 15:
+            frappe.throw(_("You are not allowed to reduce the total leave days below 15 days. Please propose another period."))
+    
+     # Continue with other validations
+    leave_application = frappe.get_doc('Leave Application', leave_application_name)
+    leave_application.validate_back_dated_application()
+
+    return True
+
+
 def update_attendance_recods(self):
     if self.status != "Approved":
         return
