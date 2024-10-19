@@ -1,79 +1,80 @@
 [
- {
-  "docstatus": 0,
-  "doctype": "Client Script",
-  "dt": "Purchase Order",
-  "enabled": 0,
-  "modified": "2020-07-25 20:19:57.770639",
-  "module": null,
-  "name": "Purchase Order-Client",
-  "script": "frappe.ui.form.on('Purchase Order', {\n\trefresh: function(frm) {\n\t\thide_tax_fields(frm);\n\t\thide_subscription_section(frm);\n\t\tset_field_property_for_documents(frm);\n\t\tset_field_property_for_other_documents(frm);\n\t},\n\tset_warehouse: function(frm){\n\t\tif(frm.doc.set_warehouse){\n\t\t\tfrappe.call({\n\t\t\t\tmethod: 'one_fm.purchase.utils.get_warehouse_contact_details',\n\t\t\t\targs: {'warehouse': frm.doc.set_warehouse},\n\t\t\t\tcallback: function(r) {\n\t\t\t\t\tvar contact = r.message;\n\t\t\t\t\tif(contact){\n\t\t\t\t\t\tif(contact[0]){\n\t\t\t\t\t\t\tfrm.set_value('one_fm_warehouse_contact_person', contact[0].contact_display);\n\t\t\t\t\t\t\tfrm.set_value('one_fm_contact_person_email', contact[0].contact_email);\n\t\t\t\t\t\t\tfrm.set_value('one_fm_contact_person_phone', contact[0].contact_mobile);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tfrm.set_value('one_fm_warehouse_location', contact[1]);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\t},\n\tone_fm_type_of_purchase: function(frm) {\n\t\tset_field_property_for_documents(frm);\n\t},\n\tone_fm_other_documents_required: function(frm) {\n\t\tset_field_property_for_other_documents(frm);\n\t}\n});\n\nvar set_field_property_for_other_documents = function(frm) {\n\tif(frm.doc.one_fm_other_documents_required && frm.doc.one_fm_other_documents_required == 'Yes'){\n\t\tfrm.set_df_property('one_fm_details_of_other_documents', 'reqd', true);\n\t}\n\telse{\n\t\tfrm.set_df_property('one_fm_details_of_other_documents', 'reqd', false);\n\t\tfrm.set_value('one_fm_details_of_other_documents', '');\n\t}\n};\n\nvar set_field_property_for_documents = function(frm) {\n\tif(frm.doc.one_fm_type_of_purchase && frm.doc.one_fm_type_of_purchase == \"Import\"){\n\t\tfrm.set_df_property('one_fm_certificate_of_origin_required', 'reqd', true);\n\t\tfrm.set_df_property('one_fm_other_documents_required', 'reqd', true);\n\t}\n\telse{\n\t\tfrm.set_df_property('one_fm_certificate_of_origin_required', 'reqd', false);\n\t\tfrm.set_df_property('one_fm_other_documents_required', 'reqd', false);\n\t\tfrm.set_value('one_fm_certificate_of_origin_required', '');\n\t\tfrm.set_value('one_fm_other_documents_required', '');\n\t}\n};\n\nvar hide_tax_fields = function(frm) {\n\tlet field_list = ['tax_category', 'section_break_52', 'taxes_and_charges', 'taxes', 'sec_tax_breakup', 'totals'];\n\tfield_list.forEach((field, i) => {\n\t\tfrm.set_df_property(field, 'hidden', true);\n\t});\n};\n\nvar hide_subscription_section = function(frm) {\n\tfrm.set_df_property('subscription_section', 'hidden', true);\n};\n",
-  "view": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Client Script",
-  "dt": "Purchase Receipt",
-  "enabled": 0,
-  "modified": "2020-07-25 20:19:19.729266",
-  "module": null,
-  "name": "Purchase Receipt-Client",
-  "script": "frappe.ui.form.on('Purchase Receipt', {\n\trefresh(frm) {\n\t\tif(frm.doc.docstatus == 1){\n\t\t    frm.add_custom_button(__(\"Material Delivery Note\"),\n\t\t        () => frm.events.make_material_delivery_note(frm), __('Create'));\n\t\t}\n\t},\n\tmake_material_delivery_note: function(frm) {\n\t\tfrappe.model.open_mapped_doc({\n\t\t\tmethod: \"one_fm.purchase.utils.make_material_delivery_note\",\n\t\t\tfrm: frm,\n\t\t\trun_link_triggers: true\n\t\t});\n\t}\n})\n",
-  "view": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Client Script",
-  "dt": "Payment Entry",
-  "enabled": 0,
-  "modified": "2020-07-25 20:22:10.707850",
-  "module": null,
-  "name": "Payment Entry-Client",
-  "script": "frappe.ui.form.on('Payment Entry', {\n\trefresh(frm) {\n\t\tset_payment_details_for_po(frm);\n\t},\n\tparty(frm) {\n\t\tset_party_bank_account(frm);\n\t},\n\tone_fm_mode_of_payment_type(frm) {\n\t\tset_party_bank_account(frm);\n\t}\n});\n\nvar set_payment_details_for_po = function(frm) {\n\tif(frm.doc.references && frm.doc.references.length > 0){\n\t\tif(frm.doc.references[0].reference_doctype == 'Purchase Order'){\n\t\t\tfrappe.call({\n\t\t\t\tmethod: 'one_fm.purchase.utils.get_payment_details_for_po',\n\t\t\t\targs: {'po': frm.doc.references[0].reference_name},\n\t\t\t\tcallback: function(r) {\n\t\t\t\t\tif(r && r.message){\n\t\t\t\t\t\tlet data = r.message;\n\t\t\t\t\t\tif(data.mode_of_payment){\n\t\t\t\t\t\t\tfrm.set_value('mode_of_payment', data.mode_of_payment);\n\t\t\t\t\t\t\tset_party_bank_account(frm);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tif(data.payment_amount){\n\t\t\t\t\t\t\tfrm.set_value('paid_amount', data.payment_amount);\n\t\t\t\t\t\t\tfrappe.model.set_value(frm.doc.references[0].doctype, frm.doc.references[0].name, 'allocated_amount', data.payment_amount);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tfrm.refresh_field('references');\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\t}\n};\n\nvar set_party_bank_account = function(frm) {\n\tif(frm.doc.party_type && frm.doc.party && frm.doc.one_fm_mode_of_payment_type == 'Bank'){\n\t\tfrappe.db.get_value('Bank Account', {'party_type': frm.doc.party_type, 'party': frm.doc.party}, 'name', function(r) {\n\t\t\tfrm.set_value('party_bank_account', r.name);\n\t\t});\n\t}\n};\n",
-  "view": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Client Script",
-  "dt": "Payment Request",
-  "enabled": 0,
-  "modified": "2020-07-25 20:21:31.843737",
-  "module": null,
-  "name": "Payment Request-Client",
-  "script": "frappe.ui.form.on('Payment Request', {\n\trefresh(frm) {\n\t\tset_payment_details_for_po(frm);\n\t}\n});\n\nvar set_payment_details_for_po = function(frm) {\n\tif(frm.doc.reference_doctype == 'Purchase Order'){\n\t\tfrappe.call({\n\t\t\tmethod: 'one_fm.purchase.utils.get_payment_details_for_po',\n\t\t\targs: {'po': frm.doc.reference_name},\n\t\t\tcallback: function(r) {\n\t\t\t\tif(r && r.message){\n\t\t\t\t\tlet data = r.message;\n\t\t\t\t\tif(data.mode_of_payment){\n\t\t\t\t\t\tfrm.set_value('mode_of_payment', data.mode_of_payment);\n\t\t\t\t\t}\n\t\t\t\t\tif(data.payment_amount){\n\t\t\t\t\t\tfrm.set_value('grand_total', data.payment_amount)\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\t}\n};\n",
-  "view": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Client Script",
-  "dt": "Stock Entry",
-  "enabled": 0,
-  "modified": "2020-05-22 16:27:03.963651",
-  "module": null,
-  "name": "Stock Entry-Client",
-  "script": "frappe.ui.form.on('Stock Entry', {\n\tsupplier_purchase_order: function(frm) {\n\n        cur_frm.doc.items = []\n        frappe.model.with_doc(\"Supplier Purchase Order\", frm.doc.supplier_purchase_order, function() {\n            var tabletransfer= frappe.model.get_doc(\"Supplier Purchase Order\", frm.doc.supplier_purchase_order)\n            frm.doc.items = []\n            frm.refresh_field(\"items\");\n            $.each(tabletransfer.items, function(index, row){\n                var d = frm.add_child(\"items\");\n                d.t_warehouse = tabletransfer.place_of_delivery;\n                d.item_code = row.item_code;\n                d.description = row.item_name;\n                d.qty = row.qty;\n                d.uom = row.uom;\n                d.basic_rate = row.unit_price;\n                frm.refresh_field(\"items\");\n            });  \n        });\n\n    },\n    onload: function(frm) {\n        frm.set_query(\"supplier_purchase_order\", function() {\n            return {\n                filters: [\n                    ['Supplier Purchase Order', 'docstatus', '=', 1]\n                ]\n            }\n        });\n\n\t}\n})",
-  "view": null
- },
- {
-  "docstatus": 0,
-  "doctype": "Client Script",
-  "dt": "Warehouse",
-  "enabled": 0,
-  "modified": "2020-08-04 21:27:29.909023",
-  "module": null,
-  "name": "Warehouse-Client",
-  "script": "frappe.ui.form.on('Warehouse', {\n\tstatus: function(frm) {\n        if (frm.doc.status == 'Enable') {\n            frm.set_value(\"disabled\", 0);\n        } else {\n            frm.set_value(\"disabled\", 1);\n        }\n    }\n})",
-  "view": null
- },
- {
-    "docstatus": 0,
-    "doctype": "Client Script",
-    "dt": "Leave Application",
-    "enabled": 1,
-    "modified": "2024-10-19 21:58:03.144772",
-    "module": "null",
-    "name": "Leave management-Client",
-    "script": "frappe.ui.form.on('Leave Application', {\n    before_workflow_action: function(frm, cdt, cdn) {\n        if (frm.selected_workflow_action === 'Propose New Date') {\n            \n            // Create a custom modal using frappe.ui.Dialog\n            let dialog = new frappe.ui.Dialog({\n                title: 'Confirm New Dates',\n                fields: [\n                    {\n                        fieldtype: 'Date', \n                        fieldname: 'custom_propose_from_date', \n                        label: 'Proposed From Date', \n                        default: frm.doc.custom_propose_from_date, \n                        reqd: 1,\n                        change: function() {\n                            calculate_days(); // Trigger calculation when date changes\n                        }\n                    },\n                    {\n                        fieldtype: 'Date', \n                        fieldname: 'custom_propose_to_date', \n                        label: 'Proposed To Date', \n                        default: frm.doc.custom_propose_to_date, \n                        reqd: 1,\n                        change: function() {\n                            calculate_days(); // Trigger calculation when date changes\n                        }\n                    },\n                    {\n                        fieldtype: 'Data', \n                        fieldname: 'custom_total_propose_leave_days', \n                        label: 'Number of Days', \n                        read_only: 1,\n                        default: '0' // Initially set to 0\n                    }\n                ],\n                primary_action_label: 'Confirm',\n                primary_action(values) {\n                    // Set the new dates to the doc\n                    frm.set_value('custom_propose_from_date', values.custom_propose_from_date);\n                    frm.set_value('custom_propose_to_date', values.custom_propose_to_date);\n                    \n                    // Also set the calculated number of days on the form\n                    let total_days = dialog.get_value('custom_total_propose_leave_days');\n                    frm.set_value('custom_total_propose_leave_days', total_days);\n\n                    // Close the modal immediately\n                    dialog.hide();\n\n                    // Save the form and proceed with the action\n                    frm.save_or_submit().then(() => {\n                        frappe.msgprint(\"Dates updated successfully\");\n                    }).catch((error) => {\n                        frappe.msgprint(\"Error saving the form: \" + error.message);\n                    });\n                }\n            });\n\n            // Function to calculate the difference between dates\n            function calculate_days() {\n                let from_date = dialog.get_value('custom_propose_from_date');\n                let to_date = dialog.get_value('custom_propose_to_date');\n\n                if (from_date && to_date) {\n                    let from = new Date(from_date);\n                    let to = new Date(to_date);\n                    \n                    // Calculate the number of days between the dates\n                    let time_diff = to.getTime() - from.getTime();\n                    let days_diff = Math.ceil(time_diff / (1000 * 3600 * 24));\n\n                    // Update the read-only field\n                    if (days_diff >= 0) {\n                        dialog.set_value('custom_total_propose_leave_days', days_diff);\n                    } else {\n                        dialog.set_value('custom_total_propose_leave_days', '0');\n                    }\n                } else {\n                    dialog.set_value('custom_total_propose_leave_days', '0');\n                }\n            }\n\n            // Show the dialog\n            dialog.show();\n        }\n    }\n});\n",
-    "view": "Form"
-   }
-]
+    {
+     "docstatus": 0,
+     "doctype": "Client Script",
+     "dt": "Purchase Order",
+     "enabled": 0,
+     "modified": "2020-07-25 20:19:57.770639",
+     "module": null,
+     "name": "Purchase Order-Client",
+     "script": "frappe.ui.form.on('Purchase Order', {\n\trefresh: function(frm) {\n\t\thide_tax_fields(frm);\n\t\thide_subscription_section(frm);\n\t\tset_field_property_for_documents(frm);\n\t\tset_field_property_for_other_documents(frm);\n\t},\n\tset_warehouse: function(frm){\n\t\tif(frm.doc.set_warehouse){\n\t\t\tfrappe.call({\n\t\t\t\tmethod: 'one_fm.purchase.utils.get_warehouse_contact_details',\n\t\t\t\targs: {'warehouse': frm.doc.set_warehouse},\n\t\t\t\tcallback: function(r) {\n\t\t\t\t\tvar contact = r.message;\n\t\t\t\t\tif(contact){\n\t\t\t\t\t\tif(contact[0]){\n\t\t\t\t\t\t\tfrm.set_value('one_fm_warehouse_contact_person', contact[0].contact_display);\n\t\t\t\t\t\t\tfrm.set_value('one_fm_contact_person_email', contact[0].contact_email);\n\t\t\t\t\t\t\tfrm.set_value('one_fm_contact_person_phone', contact[0].contact_mobile);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tfrm.set_value('one_fm_warehouse_location', contact[1]);\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\t},\n\tone_fm_type_of_purchase: function(frm) {\n\t\tset_field_property_for_documents(frm);\n\t},\n\tone_fm_other_documents_required: function(frm) {\n\t\tset_field_property_for_other_documents(frm);\n\t}\n});\n\nvar set_field_property_for_other_documents = function(frm) {\n\tif(frm.doc.one_fm_other_documents_required && frm.doc.one_fm_other_documents_required == 'Yes'){\n\t\tfrm.set_df_property('one_fm_details_of_other_documents', 'reqd', true);\n\t}\n\telse{\n\t\tfrm.set_df_property('one_fm_details_of_other_documents', 'reqd', false);\n\t\tfrm.set_value('one_fm_details_of_other_documents', '');\n\t}\n};\n\nvar set_field_property_for_documents = function(frm) {\n\tif(frm.doc.one_fm_type_of_purchase && frm.doc.one_fm_type_of_purchase == \"Import\"){\n\t\tfrm.set_df_property('one_fm_certificate_of_origin_required', 'reqd', true);\n\t\tfrm.set_df_property('one_fm_other_documents_required', 'reqd', true);\n\t}\n\telse{\n\t\tfrm.set_df_property('one_fm_certificate_of_origin_required', 'reqd', false);\n\t\tfrm.set_df_property('one_fm_other_documents_required', 'reqd', false);\n\t\tfrm.set_value('one_fm_certificate_of_origin_required', '');\n\t\tfrm.set_value('one_fm_other_documents_required', '');\n\t}\n};\n\nvar hide_tax_fields = function(frm) {\n\tlet field_list = ['tax_category', 'section_break_52', 'taxes_and_charges', 'taxes', 'sec_tax_breakup', 'totals'];\n\tfield_list.forEach((field, i) => {\n\t\tfrm.set_df_property(field, 'hidden', true);\n\t});\n};\n\nvar hide_subscription_section = function(frm) {\n\tfrm.set_df_property('subscription_section', 'hidden', true);\n};\n",
+     "view": null
+    },
+    {
+     "docstatus": 0,
+     "doctype": "Client Script",
+     "dt": "Purchase Receipt",
+     "enabled": 0,
+     "modified": "2020-07-25 20:19:19.729266",
+     "module": null,
+     "name": "Purchase Receipt-Client",
+     "script": "frappe.ui.form.on('Purchase Receipt', {\n\trefresh(frm) {\n\t\tif(frm.doc.docstatus == 1){\n\t\t    frm.add_custom_button(__(\"Material Delivery Note\"),\n\t\t        () => frm.events.make_material_delivery_note(frm), __('Create'));\n\t\t}\n\t},\n\tmake_material_delivery_note: function(frm) {\n\t\tfrappe.model.open_mapped_doc({\n\t\t\tmethod: \"one_fm.purchase.utils.make_material_delivery_note\",\n\t\t\tfrm: frm,\n\t\t\trun_link_triggers: true\n\t\t});\n\t}\n})\n",
+     "view": null
+    },
+    {
+     "docstatus": 0,
+     "doctype": "Client Script",
+     "dt": "Payment Entry",
+     "enabled": 0,
+     "modified": "2020-07-25 20:22:10.707850",
+     "module": null,
+     "name": "Payment Entry-Client",
+     "script": "frappe.ui.form.on('Payment Entry', {\n\trefresh(frm) {\n\t\tset_payment_details_for_po(frm);\n\t},\n\tparty(frm) {\n\t\tset_party_bank_account(frm);\n\t},\n\tone_fm_mode_of_payment_type(frm) {\n\t\tset_party_bank_account(frm);\n\t}\n});\n\nvar set_payment_details_for_po = function(frm) {\n\tif(frm.doc.references && frm.doc.references.length > 0){\n\t\tif(frm.doc.references[0].reference_doctype == 'Purchase Order'){\n\t\t\tfrappe.call({\n\t\t\t\tmethod: 'one_fm.purchase.utils.get_payment_details_for_po',\n\t\t\t\targs: {'po': frm.doc.references[0].reference_name},\n\t\t\t\tcallback: function(r) {\n\t\t\t\t\tif(r && r.message){\n\t\t\t\t\t\tlet data = r.message;\n\t\t\t\t\t\tif(data.mode_of_payment){\n\t\t\t\t\t\t\tfrm.set_value('mode_of_payment', data.mode_of_payment);\n\t\t\t\t\t\t\tset_party_bank_account(frm);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tif(data.payment_amount){\n\t\t\t\t\t\t\tfrm.set_value('paid_amount', data.payment_amount);\n\t\t\t\t\t\t\tfrappe.model.set_value(frm.doc.references[0].doctype, frm.doc.references[0].name, 'allocated_amount', data.payment_amount);\n\t\t\t\t\t\t}\n\t\t\t\t\t\tfrm.refresh_field('references');\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t});\n\t\t}\n\t}\n};\n\nvar set_party_bank_account = function(frm) {\n\tif(frm.doc.party_type && frm.doc.party && frm.doc.one_fm_mode_of_payment_type == 'Bank'){\n\t\tfrappe.db.get_value('Bank Account', {'party_type': frm.doc.party_type, 'party': frm.doc.party}, 'name', function(r) {\n\t\t\tfrm.set_value('party_bank_account', r.name);\n\t\t});\n\t}\n};\n",
+     "view": null
+    },
+    {
+     "docstatus": 0,
+     "doctype": "Client Script",
+     "dt": "Payment Request",
+     "enabled": 0,
+     "modified": "2020-07-25 20:21:31.843737",
+     "module": null,
+     "name": "Payment Request-Client",
+     "script": "frappe.ui.form.on('Payment Request', {\n\trefresh(frm) {\n\t\tset_payment_details_for_po(frm);\n\t}\n});\n\nvar set_payment_details_for_po = function(frm) {\n\tif(frm.doc.reference_doctype == 'Purchase Order'){\n\t\tfrappe.call({\n\t\t\tmethod: 'one_fm.purchase.utils.get_payment_details_for_po',\n\t\t\targs: {'po': frm.doc.reference_name},\n\t\t\tcallback: function(r) {\n\t\t\t\tif(r && r.message){\n\t\t\t\t\tlet data = r.message;\n\t\t\t\t\tif(data.mode_of_payment){\n\t\t\t\t\t\tfrm.set_value('mode_of_payment', data.mode_of_payment);\n\t\t\t\t\t}\n\t\t\t\t\tif(data.payment_amount){\n\t\t\t\t\t\tfrm.set_value('grand_total', data.payment_amount)\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\t}\n};\n",
+     "view": null
+    },
+    {
+     "docstatus": 0,
+     "doctype": "Client Script",
+     "dt": "Stock Entry",
+     "enabled": 0,
+     "modified": "2020-05-22 16:27:03.963651",
+     "module": null,
+     "name": "Stock Entry-Client",
+     "script": "frappe.ui.form.on('Stock Entry', {\n\tsupplier_purchase_order: function(frm) {\n\n        cur_frm.doc.items = []\n        frappe.model.with_doc(\"Supplier Purchase Order\", frm.doc.supplier_purchase_order, function() {\n            var tabletransfer= frappe.model.get_doc(\"Supplier Purchase Order\", frm.doc.supplier_purchase_order)\n            frm.doc.items = []\n            frm.refresh_field(\"items\");\n            $.each(tabletransfer.items, function(index, row){\n                var d = frm.add_child(\"items\");\n                d.t_warehouse = tabletransfer.place_of_delivery;\n                d.item_code = row.item_code;\n                d.description = row.item_name;\n                d.qty = row.qty;\n                d.uom = row.uom;\n                d.basic_rate = row.unit_price;\n                frm.refresh_field(\"items\");\n            });  \n        });\n\n    },\n    onload: function(frm) {\n        frm.set_query(\"supplier_purchase_order\", function() {\n            return {\n                filters: [\n                    ['Supplier Purchase Order', 'docstatus', '=', 1]\n                ]\n            }\n        });\n\n\t}\n})",
+     "view": null
+    },
+    {
+     "docstatus": 0,
+     "doctype": "Client Script",
+     "dt": "Warehouse",
+     "enabled": 0,
+     "modified": "2020-08-04 21:27:29.909023",
+     "module": null,
+     "name": "Warehouse-Client",
+     "script": "frappe.ui.form.on('Warehouse', {\n\tstatus: function(frm) {\n        if (frm.doc.status == 'Enable') {\n            frm.set_value(\"disabled\", 0);\n        } else {\n            frm.set_value(\"disabled\", 1);\n        }\n    }\n})",
+     "view": null
+    },
+    {
+        "docstatus": 0,
+        "doctype": "Client Script",
+        "dt": "Leave Application",
+        "enabled": 1,
+        "modified": "2024-10-20 00:52:52.685017",
+        "module": "one_fm",
+        "name": "Leave management",
+        "script": "frappe.ui.form.on('Leave Application', {\n    before_workflow_action: function(frm) {\n        if (frm.selected_workflow_action === 'Propose New Date') {\n            \n            // Create a custom modal using frappe.ui.Dialog\n            let dialog = new frappe.ui.Dialog({\n                title: 'Confirm New Dates',\n                fields: [\n                    {\n                        fieldtype: 'Date', \n                        fieldname: 'custom_propose_from_date', \n                        label: 'Proposed From Date', \n                        default: frm.doc.custom_propose_from_date, \n                        reqd: 1,\n                        change: function() {\n                            calculate_days(); // Trigger calculation when date changes\n                        }\n                    },\n                    {\n                        fieldtype: 'Date', \n                        fieldname: 'custom_propose_to_date', \n                        label: 'Proposed To Date', \n                        default: frm.doc.custom_propose_to_date, \n                        reqd: 1,\n                        change: function() {\n                            calculate_days(); // Trigger calculation when date changes\n                        }\n                    },\n                    {\n                        fieldtype: 'Data', \n                        fieldname: 'custom_total_propose_leave_days', \n                        label: 'Number of Days', \n                        read_only: 1,\n                        default: '0' // Initially set to 0\n                    }\n                ],\n                primary_action_label: 'Confirm',\n                primary_action(values) {\n                    let total_leave_days = frm.doc.total_leave_days;\n                    let leave_type = frm.doc.leave_type;\n                    // Call the server-side validation method\n                    frappe.call({\n                        method: \"one_fm.overrides.leave_application.validate_leave_application\",\n                        args: {\n                            leave_application_name: frm.doc.name,\n                            from_date: values.custom_propose_from_date,\n                            to_date: values.custom_propose_to_date,\n                            total_leave_days: total_leave_days,\n                            custom_total_propose_leave_days: dialog.get_value('custom_total_propose_leave_days'),\n                            leave_type: leave_type\n                        },\n                        callback: function(r) {\n                            if (r.message === true) {\n                                // If validation passes, set the values and submit\n                                frm.set_value('custom_propose_from_date', values.custom_propose_from_date);\n                                frm.set_value('custom_propose_to_date', values.custom_propose_to_date);\n                                frm.set_value('custom_total_propose_leave_days', dialog.get_value('custom_total_propose_leave_days'));\n\n                                // Close the modal and proceed with the workflow transition\n                                dialog.hide();\n                                frm.save();\n                            }\n                        }\n                    });\n                }\n            });\n\n            // Function to calculate the difference between dates\n            function calculate_days() {\n                let from_date = dialog.get_value('custom_propose_from_date');\n                let to_date = dialog.get_value('custom_propose_to_date');\n\n                if (from_date && to_date) {\n                    let from = new Date(from_date);\n                    let to = new Date(to_date);\n                    \n                    // Calculate the number of days between the dates\n                    let time_diff = to.getTime() - from.getTime();\n                    let days_diff = Math.ceil(time_diff / (1000 * 3600 * 24));\n\n                    // Update the read-only field\n                    if (days_diff >= 0) {\n                        dialog.set_value('custom_total_propose_leave_days', days_diff);\n                    } else {\n                        dialog.set_value('custom_total_propose_leave_days', '0');\n                    }\n                } else {\n                    dialog.set_value('custom_total_propose_leave_days', '0');\n                }\n            }\n\n            // Show the dialog\n            dialog.show();\n        }\n    }\n});\n",
+        "view": "Form"
+       }      
+   ]
+   

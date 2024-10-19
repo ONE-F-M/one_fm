@@ -495,5 +495,12 @@
   "modified": "2024-10-19 14:05:04.280061",
   "name": "Propose New Date",
   "workflow_action_name": "Propose New Date"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2024-10-20 01:44:48.921832",
+  "name": "Accept Proposed Date",
+  "workflow_action_name": "Accept Proposed Date"
  }
 ]
