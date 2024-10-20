@@ -3092,6 +3092,36 @@ def get_approver_user(employee):
         return frappe.db.get_value("Employee", approver, "user_id")
     return None
 
+
+@frappe.whitelist()
+def has_super_user_role(user=None):
+    '''
+        A method to check the user is having super user role
+        Default it will be the role 'Director'
+        User having this role can be self approve configured documents like Shift Permission.
+        The user having this role no need reports to, since it will be the same employee linked to the user.
+
+        args:
+            user: user ID, eg: employee123@one_fm.com
+
+        return boolean(True if super user role exists in the given user's role list)
+    '''
+    if not user:
+        user = frappe.session.user
+    if user:
+        # get the user roles
+        user_roles = frappe.get_roles(user)
+        # Check if the default super user role in the user role list
+        if "Director" in user_roles:
+            return True
+        else:
+            # Get configured super user in ONEFM General Setting
+            super_user_role = frappe.db.get_single_value("ONEFM General Setting", "super_user_role")
+            # Check if the super user role exists in the user role list
+            if super_user_role and super_user_role in user_roles:
+                return True
+    return False
+
 @frappe.whitelist()
 def get_approver(employee, date=False):
     '''
@@ -3143,34 +3173,6 @@ def get_approver(employee, date=False):
 
     return line_manager
 
-@frappe.whitelist()
-def has_super_user_role(user=None):
-    '''
-        A method to check the user is having super user role
-        Default it will be the role 'Director'
-        User having this role can be self approve configured documents like Shift Permission.
-        The user having this role no need reports to, since it will be the same employee linked to the user.
-
-        args:
-            user: user ID, eg: employee123@one_fm.com
-
-        return boolean(True if super user role exists in the given user's role list)
-    '''
-    if not user:
-        user = frappe.session.user
-    if user:
-        # get the user roles
-        user_roles = frappe.get_roles(user)
-        # Check if the default super user role in the user role list
-        if "Director" in user_roles:
-            return True
-        else:
-            # Get configured super user in ONEFM General Setting
-            super_user_role = frappe.db.get_single_value("ONEFM General Setting", "super_user_role")
-            # Check if the super user role exists in the user role list
-            if super_user_role and super_user_role in user_roles:
-                return True
-    return False
 
 def get_approver_for_many_employees(supervisor=None):
     """
@@ -3428,64 +3430,44 @@ def custom_validate_interviewer(self):
 def get_current_shift(employee):
     """
         Get current shift employee should be logged into
+        This Method Checks if Employee has a shift and is within the checkin Range.
+        args:
+			employee: Employee ID
+		return dict (type, data)
     """
-    sql = f"""
-        SELECT * FROM `tabShift Assignment`
-        WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-        ('{now()}' BETWEEN start_datetime AND end_datetime)
-    """
-    shift = frappe.db.sql(sql, as_dict=1)
-    if shift: # shift was checked in between start and end time
-        return frappe.get_doc("Shift Assignment", shift[0])
-    else: # we look right and left (right for next shift)
-        dt = datetime.strptime(now(), '%Y-%m-%d %H:%M:%S.%f')
-        curtime_plus_1 = dt + timedelta(hours=1)
+    try:
+        nowtime = now_datetime()
         sql = f"""
-            SELECT * FROM `tabShift Assignment`
-            WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-            ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
-        """
-        shift = frappe.db.sql(sql, as_dict=1)
-        if shift: # shift was checked 1hr ahead
-            return frappe.get_doc("Shift Assignment", shift[0])
-        else:
-            curtime_plus_1 = dt + timedelta(hours=-1)
-            sql = f"""
-                SELECT * FROM `tabShift Assignment`
-                WHERE employee="{employee}" AND status="Active" AND docstatus=1 AND
-                ('{curtime_plus_1}' BETWEEN start_datetime AND end_datetime)
+            SELECT sa.*,
+                DATE_SUB(sa.start_datetime, INTERVAL st.begin_check_in_before_shift_start_time MINUTE) as checkin_time,
+                DATE_ADD(sa.end_datetime, INTERVAL st.allow_check_out_after_shift_end_time MINUTE) as checkout_time
+            FROM `tabShift Assignment` sa
+            JOIN `tabShift Type` st ON sa.shift_type = st.name
+            WHERE sa.employee="{employee}"
+            AND sa.status="Active"
+            AND sa.docstatus=1
+            AND (DATE('{nowtime}') = sa.start_date
+                OR DATE_ADD(DATE('{nowtime}'), INTERVAL 1 DAY) = sa.start_date
+                OR DATE('{nowtime}') = sa.end_date)
             """
-            shift = frappe.db.sql(sql, as_dict=1)
-            if shift: # shift was checked 1hr in the past
-                return frappe.get_doc("Shift Assignment", shift[0])
-    return False
 
-
-@frappe.whitelist()
-def check_existing_checking(shift):
-    """API to determine the applicable Log type.
-    The api checks employee's last lcheckin log type. and determine what next log type needs to be
-    Returns:
-        True: The log in was "IN", so his next Log Type should be "OUT".
-        False: either no log type or last log type is "OUT", so his next Ltg Type should be "IN".
-    """
-    checkin = frappe.db.get_list("Employee Checkin", filters={
-        'employee':shift.employee, 'shift_assignment':shift.name,
-        'shift_actual_start':shift.start_datetime,
-        'shift_actual_end':shift.end_datetime,
-        'roster_type':shift.roster_type
-        },
-        fields='log_type',
-        order_by="actual_time DESC"
-    )
-    if checkin:
-        # #For Check IN
-        if checkin[0].log_type=='OUT':
-            return "IN"
-        #For Check OUT
-        else:
-            return "OUT"
-    return "IN"
+        shift = frappe.db.sql(sql, as_dict=1)
+        if shift: # shift was checked in between start and end time
+            data = frappe.get_doc("Shift Assignment", shift[0].name)
+            if shift[0].checkin_time > nowtime:
+                minutes = int((shift[0].checkin_time - nowtime).total_seconds() / 60)
+                return {"type":"Early", "data": data, "time": minutes}
+            elif shift[0].checkout_time < nowtime:
+                minutes = int((nowtime - shift[0].checkout_time).total_seconds() / 60)
+                return {"type":"Late", "data": data, "time": minutes}
+            elif shift[0].checkin_time <= nowtime <= shift[0].checkout_time:
+                return {"type":"On Time", "data": data, "time": 0}
+            else:
+                return False
+        return False
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Error while getting current shift")
+        return False
 
 @frappe.whitelist()
 def check_existing():
@@ -3498,21 +3480,23 @@ def check_existing():
     employee = frappe.get_value("Employee", {"user_id": frappe.session.user})
     if not employee:
         return response("Employee not found", 404, None, "Employee not found")
-    curr_shift = get_current_shift(employee)
+    shift_exists = get_current_shift(employee)
+    if shift_exists['type'] == "On Time":
+        curr_shift = shift_exists['data']
     if not curr_shift:
         return response("Employee not found", 404, None, "Employee not found")
-    log_type = check_existing_checking(curr_shift)
+    log_type = curr_shift.get_next_checkin_log_type()
     if log_type=='IN':
         return response("success", 200, True, "")
     return response("success", 200, False, "")
 
-def fetch_attendance_manager_user_obj() -> str:
-    attendance_manager = frappe.get_doc("ONEFM General Setting").get("attendance_manager")
+def fetch_attendance_manager_user() -> str:
+    attendance_manager = frappe.db.get_single_value("ONEFM General Setting", "attendance_manager")
     if attendance_manager:
         attendance_manager_user = frappe.db.get_value("Employee", {"name": attendance_manager}, "user_id")
-        return attendance_manager_user
+        if attendance_manager_user:
+            return attendance_manager_user
     return ""
-
 
 def custom_toggle_notifications(user: str, enable: bool = False):
     try:
@@ -3659,4 +3643,20 @@ def send_work_anniversary_reminders():
                     others = [d for d in anniversary_persons if d != person]
                     reminder_text = get_work_anniversary_reminder_text(others)
                     send_work_anniversary_reminder(person_email, reminder_text, others, message, sender)
+
+
+
+def is_holiday(employee, date=None, raise_exception=True):
+    try:
+        date = today() if not date else date
+        holiday_list = get_holiday_list_for_employee(employee.name, raise_exception)
+        if not holiday_list:
+            return False, ""
+        holidays = frappe.db.get_value("Holiday", {"parent": holiday_list, "holiday_date": date}, ["weekly_off"], as_dict=1)
+        if holidays:
+            return (True, f"Dear {employee.employee_name}, Today is your day off.  Happy Recharging!.") if holidays.weekly_off else (True, "Today is your holiday, have fun")
+        return False, ""
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Error while validating Holiday")
+        return False, ""
                     
