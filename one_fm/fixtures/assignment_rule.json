@@ -1,848 +1,848 @@
 [
-    {
-     "assign_condition": "workflow_state == 'Pending Approver'",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Shift Request Pending Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Shift Request Pending Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Shift Request Pending Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Shift Request Pending Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Shift Request Pending Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Shift Request Pending Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Shift Request Pending Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": "workflow_state in (\"Approved\", \"Rejected\", \"Draft\")",
-     "custom_routine_task": null,
-     "description": "Automatic Assignment",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Shift Request",
-     "due_date_based_on": null,
-     "field": "shift_approver",
-     "is_assignment_rule_with_workflow": 0,
-     "last_user": "abdullah@one-fm.com",
-     "modified": "2024-07-22 13:32:41.603305",
-     "name": "Shift Request Pending Approval",
-     "priority": 0,
-     "rule": "Based on Field",
-     "unassign_condition": "workflow_state in (\"Approved\", \"Rejected\", \"Draft\")",
-     "users": []
-    },
-    {
-     "assign_condition": "workflow_state == 'Pending Approval'",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Attendance Request Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Attendance Request Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Attendance Request Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Attendance Request Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Attendance Request Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Attendance Request Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Attendance Request Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": "workflow_state in ('Approved', 'Draft', 'Rejected')",
-     "custom_routine_task": null,
-     "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">From Date</td>\n                <td style=\"padding: 10px;\">{{from_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">To Date</td>\n                <td style=\"padding: 10px;\">{{to_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Reason</td>\n                <td style=\"padding: 10px;\">{{reason}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Explanation</td>\n                <td style=\"padding: 10px;\">{{explanation}}</td>\n            </tr>\n            </tbody></table><p></p>",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Attendance Request",
-     "due_date_based_on": null,
-     "field": "approver_user",
-     "is_assignment_rule_with_workflow": 1,
-     "last_user": "",
-     "modified": "2024-07-17 17:59:49.745883",
-     "name": "Attendance Request Approval",
-     "priority": 0,
-     "rule": "Based on Field",
-     "unassign_condition": "workflow_state in ('Approved', 'Draft', 'Rejected')",
-     "users": []
-    },
-    {
-     "assign_condition": "workflow_state in ('Approved', \"Rejected\")",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Subcontract Staff Request",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Subcontract Staff Request",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Subcontract Staff Request",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Subcontract Staff Request",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Subcontract Staff Request",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Subcontract Staff Request",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Subcontract Staff Request",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": null,
-     "custom_routine_task": null,
-     "description": "Your subcontract staff request {{name}} has just been {{workflow_state}}.",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Subcontract Staff Request",
-     "due_date_based_on": null,
-     "field": "owner",
-     "is_assignment_rule_with_workflow": 0,
-     "last_user": "a.adekunle@one-fm.com",
-     "modified": "2023-12-03 09:02:58.730013",
-     "name": "Subcontract Staff Request",
-     "priority": 0,
-     "rule": "Based on Field",
-     "unassign_condition": null,
-     "users": []
-    },
-    {
-     "assign_condition": "docstatus == 0",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Attendance Check Reports To",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Attendance Check Reports To",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Attendance Check Reports To",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Attendance Check Reports To",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Attendance Check Reports To",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Attendance Check Reports To",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Attendance Check Reports To",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": "workflow_state in ('Approved', 'Rejected')",
-     "custom_routine_task": null,
-     "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee Name</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee_name}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Department</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{department}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Attendance Check",
-     "due_date_based_on": null,
-     "field": "reports_to_user",
-     "is_assignment_rule_with_workflow": 0,
-     "last_user": "",
-     "modified": "2024-03-22 09:51:17.332071",
-     "name": "Attendance Check Reports To",
-     "priority": 2,
-     "rule": "Based on Field",
-     "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
-     "users": []
-    },
-    {
-     "assign_condition": "docstatus == 0",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Attendance Check Site Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Attendance Check Site Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Attendance Check Site Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Attendance Check Site Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Attendance Check Site Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Attendance Check Site Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Attendance Check Site Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": "workflow_state in ('Approved', 'Rejected')",
-     "custom_routine_task": null,
-     "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee Name</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee_name}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Department</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{department}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Attendance Check",
-     "due_date_based_on": null,
-     "field": "site_supervisor_user",
-     "is_assignment_rule_with_workflow": 0,
-     "last_user": "",
-     "modified": "2024-01-24 18:00:38.952572",
-     "name": "Attendance Check Site Supervisor",
-     "priority": 1,
-     "rule": "Based on Field",
-     "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
-     "users": []
-    },
-    {
-     "assign_condition": "docstatus == 0",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Attendance Check Shift Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Attendance Check Shift Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Attendance Check Shift Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Attendance Check Shift Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Attendance Check Shift Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Attendance Check Shift Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Attendance Check Shift Supervisor",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": "workflow_state in ('Approved', 'Rejected')",
-     "custom_routine_task": null,
-     "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee Name</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee_name}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Department</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{department}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Attendance Check",
-     "due_date_based_on": null,
-     "field": "shift_supervisor_user",
-     "is_assignment_rule_with_workflow": 0,
-     "last_user": "",
-     "modified": "2024-01-24 18:00:07.832120",
-     "name": "Attendance Check Shift Supervisor",
-     "priority": 0,
-     "rule": "Based on Field",
-     "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
-     "users": []
-    },
-    {
-     "assign_condition": "workflow_state == 'Pending Approval'",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "RFM Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "RFM Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "RFM Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "RFM Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "RFM Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "RFM Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "RFM Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": "workflow_state in ('Approved', 'Rejected')",
-     "custom_routine_task": null,
-     "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Type</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{type}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Required Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{schedule_date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Transaction Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{transaction_date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Company</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{company}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Request for Material",
-     "due_date_based_on": null,
-     "field": "request_for_material_approver",
-     "is_assignment_rule_with_workflow": 0,
-     "last_user": "",
-     "modified": "2023-05-28 23:23:27.725768",
-     "name": "RFM Approver",
-     "priority": 0,
-     "rule": "Based on Field",
-     "unassign_condition": "",
-     "users": []
-    },
-    {
-     "assign_condition": "workflow_state == 'Pending Approver'",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Shift Permission Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Shift Permission Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Shift Permission Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Shift Permission Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Shift Permission Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Shift Permission Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Shift Permission Approver",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": "workflow_state in ('Approved', 'Rejected')",
-     "custom_routine_task": null,
-     "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee Id</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Log Type</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{log_type}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Reason</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{reason}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
-     "disabled" :0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Shift Permission",
-     "due_date_based_on": null,
-     "field": "approver_user_id",
-     "is_assignment_rule_with_workflow": 0,
-     "last_user": "",
-     "modified": "2024-03-10 15:19:46.392833",
-     "name": "Shift Permission Approver",
-     "priority": 0,
-     "rule": "Based on Field",
-     "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
-     "users": []
-    },
-    {
-     "assign_condition": "workflow_state == 'Pending Approver'",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Purchase Order Approver Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Purchase Order Approver Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Purchase Order Approver Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Purchase Order Approver Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Purchase Order Approver Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Purchase Order Approver Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Purchase Order Approver Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": null,
-     "custom_routine_task": null,
-     "description": "<p>Dear {{ custom_purchase_order_approver_name }}</p>\n<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Name</td>\n                <td style=\"padding: 10px;\">{{ name }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Supplier</td>\n                <td style=\"padding: 10px;\">{{supplier}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Currency</td>\n                <td style=\"padding: 10px;\">{{currency}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Exchange Rate</td>\n                <td style=\"padding: 10px;\">{{conversion_rate}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            </tbody></table><p></p>",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Purchase Order",
-     "due_date_based_on": null,
-     "field": "custom_purchase_order_approver",
-     "is_assignment_rule_with_workflow": 1,
-     "last_user": "e.anthony@one-fm.com",
-     "modified": "2024-02-20 12:32:55.832461",
-     "name": "Purchase Order Approver Action",
-     "priority": 0,
-     "rule": "Based on Field",
-     "unassign_condition": "workflow_state != 'Pending Approver'",
-     "users": []
-    },
-    {
-     "assign_condition": "workflow_state == 'Pending Purchase Manager'",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Purchase Order Purchase Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Purchase Order Purchase Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Purchase Order Purchase Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Purchase Order Purchase Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Purchase Order Purchase Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Purchase Order Purchase Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Purchase Order Purchase Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": null,
-     "custom_routine_task": null,
-     "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Name</td>\n                <td style=\"padding: 10px;\">{{ name }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Supplier</td>\n                <td style=\"padding: 10px;\">{{supplier}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Currency</td>\n                <td style=\"padding: 10px;\">{{currency}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Exchange Rate</td>\n                <td style=\"padding: 10px;\">{{conversion_rate}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            </tbody></table><p></p>",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Purchase Order",
-     "due_date_based_on": null,
-     "field": null,
-     "is_assignment_rule_with_workflow": 1,
-     "last_user": null,
-     "modified": "2024-02-19 18:26:32.916049",
-     "name": "Purchase Order Purchase Manager Action",
-     "priority": 0,
-     "rule": "Round Robin",
-     "unassign_condition": "workflow_state != 'Pending Purchase Manager'",
-     "users": [
-      {
-       "parent": "Purchase Order Purchase Manager Action",
-       "parentfield": "users",
-       "parenttype": "Assignment Rule",
-       "user": "a.kuriakose@one-fm.com"
-      }
-     ]
-    },
-    {
-     "assign_condition": "workflow_state == 'Pending Finance Manager'",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Purchase Order Finance Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Purchase Order Finance Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Purchase Order Finance Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Purchase Order Finance Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Purchase Order Finance Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Purchase Order Finance Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Purchase Order Finance Manager Action",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": null,
-     "custom_routine_task": null,
-     "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Name</td>\n                <td style=\"padding: 10px;\">{{ name }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Supplier</td>\n                <td style=\"padding: 10px;\">{{supplier}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Currency</td>\n                <td style=\"padding: 10px;\">{{currency}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Exchange Rate</td>\n                <td style=\"padding: 10px;\">{{conversion_rate}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            </tbody></table><p></p>",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Purchase Order",
-     "due_date_based_on": null,
-     "field": null,
-     "is_assignment_rule_with_workflow": 0,
-     "last_user": null,
-     "modified": "2024-02-19 18:26:56.866172",
-     "name": "Purchase Order Finance Manager Action",
-     "priority": 0,
-     "rule": "Round Robin",
-     "unassign_condition": "workflow_state != 'Pending Finance Manager'",
-     "users": [
-      {
-       "parent": "Purchase Order Finance Manager Action",
-       "parentfield": "users",
-       "parenttype": "Assignment Rule",
-       "user": "saoud@one-fm.com"
-      }
-     ]
-    },
-    {
-     "assign_condition": "workflow_state == 'Pending Approval'",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Employee Checkin Issue Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Employee Checkin Issue Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Employee Checkin Issue Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Employee Checkin Issue Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Employee Checkin Issue Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Employee Checkin Issue Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Employee Checkin Issue Approval",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": "workflow_state in ('Approved', 'Draft')",
-     "custom_routine_task": null,
-     "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Log Type</td>\n                <td style=\"padding: 10px;\">{{log_type}}</td>\n            </tr>\n            </tbody></table><p></p>",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Employee Checkin Issue",
-     "due_date_based_on": null,
-     "field": "approver_user_id",
-     "is_assignment_rule_with_workflow": 1,
-     "last_user": "",
-     "modified": "2024-03-25 11:55:45.809300",
-     "name": "Employee Checkin Issue Approval",
-     "priority": 0,
-     "rule": "Based on Field",
-     "unassign_condition": "workflow_state in ('Approved', 'Draft')",
-     "users": []
-    },
-    {
-     "assign_condition": "workflow_state ==\"Draft\" and creation < modified",
-     "assignment_days": [
-      {
-       "day": "Monday",
-       "parent": "Shift Request Draft",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Tuesday",
-       "parent": "Shift Request Draft",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Wednesday",
-       "parent": "Shift Request Draft",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Thursday",
-       "parent": "Shift Request Draft",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Friday",
-       "parent": "Shift Request Draft",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Saturday",
-       "parent": "Shift Request Draft",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      },
-      {
-       "day": "Sunday",
-       "parent": "Shift Request Draft",
-       "parentfield": "assignment_days",
-       "parenttype": "Assignment Rule"
-      }
-     ],
-     "close_condition": "workflow_state in ('Pending Approver', )",
-     "custom_routine_task": null,
-     "description": "Automatic Assignment",
-     "disabled": 0,
-     "docstatus": 0,
-     "doctype": "Assignment Rule",
-     "document_type": "Shift Request",
-     "due_date_based_on": null,
-     "field": "owner",
-     "is_assignment_rule_with_workflow": 0,
-     "last_user": "Administrator",
-     "modified": "2024-07-22 13:46:56.508148",
-     "name": "Shift Request Draft",
-     "priority": 0,
-     "rule": "Based on Field",
-     "unassign_condition": "workflow_state in ('Pending Approver', )",
-     "users": []
-    }
-   ]
+ {
+  "assign_condition": "workflow_state == 'Pending Approver'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Shift Request Pending Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in (\"Approved\", \"Rejected\", \"Draft\")",
+  "custom_routine_task": null,
+  "description": "Automatic Assignment",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Shift Request",
+  "due_date_based_on": null,
+  "field": "shift_approver",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "abdullah@one-fm.com",
+  "modified": "2024-07-22 13:32:41.603305",
+  "name": "Shift Request Pending Approval",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in (\"Approved\", \"Rejected\", \"Draft\")",
+  "users": []
+ },
+ {
+  "assign_condition": "workflow_state == 'Pending Approval'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Attendance Request Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Approved', 'Draft', 'Rejected')",
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">From Date</td>\n                <td style=\"padding: 10px;\">{{from_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">To Date</td>\n                <td style=\"padding: 10px;\">{{to_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Reason</td>\n                <td style=\"padding: 10px;\">{{reason}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Explanation</td>\n                <td style=\"padding: 10px;\">{{explanation}}</td>\n            </tr>\n            </tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Attendance Request",
+  "due_date_based_on": null,
+  "field": "approver_user",
+  "is_assignment_rule_with_workflow": 1,
+  "last_user": "",
+  "modified": "2024-07-17 17:59:49.745883",
+  "name": "Attendance Request Approval",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Approved', 'Draft', 'Rejected')",
+  "users": []
+ },
+ {
+  "assign_condition": "workflow_state in ('Approved', \"Rejected\")",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Subcontract Staff Request",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": null,
+  "custom_routine_task": null,
+  "description": "Your subcontract staff request {{name}} has just been {{workflow_state}}.",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Subcontract Staff Request",
+  "due_date_based_on": null,
+  "field": "owner",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "a.adekunle@one-fm.com",
+  "modified": "2023-12-03 09:02:58.730013",
+  "name": "Subcontract Staff Request",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": null,
+  "users": []
+ },
+ {
+  "assign_condition": "docstatus == 0",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Attendance Check Reports To",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Attendance Check Reports To",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Attendance Check Reports To",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Attendance Check Reports To",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Attendance Check Reports To",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Attendance Check Reports To",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Attendance Check Reports To",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Approved', 'Rejected')",
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee Name</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee_name}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Department</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{department}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Attendance Check",
+  "due_date_based_on": null,
+  "field": "reports_to_user",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "",
+  "modified": "2024-03-22 09:51:17.332071",
+  "name": "Attendance Check Reports To",
+  "priority": 2,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
+  "users": []
+ },
+ {
+  "assign_condition": "docstatus == 0",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Attendance Check Site Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Attendance Check Site Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Attendance Check Site Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Attendance Check Site Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Attendance Check Site Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Attendance Check Site Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Attendance Check Site Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Approved', 'Rejected')",
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee Name</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee_name}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Department</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{department}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Attendance Check",
+  "due_date_based_on": null,
+  "field": "site_supervisor_user",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "",
+  "modified": "2024-01-24 18:00:38.952572",
+  "name": "Attendance Check Site Supervisor",
+  "priority": 1,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
+  "users": []
+ },
+ {
+  "assign_condition": "docstatus == 0",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Attendance Check Shift Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Attendance Check Shift Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Attendance Check Shift Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Attendance Check Shift Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Attendance Check Shift Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Attendance Check Shift Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Attendance Check Shift Supervisor",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Approved', 'Rejected')",
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee Name</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee_name}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Department</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{department}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Attendance Check",
+  "due_date_based_on": null,
+  "field": "shift_supervisor_user",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "",
+  "modified": "2024-01-24 18:00:07.832120",
+  "name": "Attendance Check Shift Supervisor",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
+  "users": []
+ },
+ {
+  "assign_condition": "workflow_state == 'Pending Approval'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "RFM Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "RFM Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "RFM Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "RFM Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "RFM Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "RFM Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "RFM Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Approved', 'Rejected')",
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Type</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{type}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Required Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{schedule_date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Transaction Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{transaction_date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Company</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{company}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Request for Material",
+  "due_date_based_on": null,
+  "field": "request_for_material_approver",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "",
+  "modified": "2023-05-28 23:23:27.725768",
+  "name": "RFM Approver",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "",
+  "users": []
+ },
+ {
+  "assign_condition": "workflow_state == 'Pending Approver'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Shift Permission Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Shift Permission Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Shift Permission Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Shift Permission Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Shift Permission Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Shift Permission Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Shift Permission Approver",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Approved', 'Rejected')",
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee Id</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{date}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Log Type</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{log_type}}</td>\n\t\t\t\t</tr>\n\t\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Reason</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{reason}}</td>\n\t\t\t\t</tr>\n\t\t\t</tbody></table><p></p>",
+  "disabled" :0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Shift Permission",
+  "due_date_based_on": null,
+  "field": "approver_user_id",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "",
+  "modified": "2024-03-10 15:19:46.392833",
+  "name": "Shift Permission Approver",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Approved', 'Rejected')",
+  "users": []
+ },
+ {
+  "assign_condition": "workflow_state == 'Pending Approver'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Purchase Order Approver Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Purchase Order Approver Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Purchase Order Approver Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Purchase Order Approver Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Purchase Order Approver Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Purchase Order Approver Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Purchase Order Approver Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": null,
+  "custom_routine_task": null,
+  "description": "<p>Dear {{ custom_purchase_order_approver_name }}</p>\n<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Name</td>\n                <td style=\"padding: 10px;\">{{ name }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Supplier</td>\n                <td style=\"padding: 10px;\">{{supplier}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Currency</td>\n                <td style=\"padding: 10px;\">{{currency}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Exchange Rate</td>\n                <td style=\"padding: 10px;\">{{conversion_rate}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            </tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Purchase Order",
+  "due_date_based_on": null,
+  "field": "custom_purchase_order_approver",
+  "is_assignment_rule_with_workflow": 1,
+  "last_user": "e.anthony@one-fm.com",
+  "modified": "2024-02-20 12:32:55.832461",
+  "name": "Purchase Order Approver Action",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state != 'Pending Approver'",
+  "users": []
+ },
+ {
+  "assign_condition": "workflow_state == 'Pending Purchase Manager'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Purchase Order Purchase Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Purchase Order Purchase Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Purchase Order Purchase Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Purchase Order Purchase Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Purchase Order Purchase Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Purchase Order Purchase Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Purchase Order Purchase Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": null,
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Name</td>\n                <td style=\"padding: 10px;\">{{ name }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Supplier</td>\n                <td style=\"padding: 10px;\">{{supplier}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Currency</td>\n                <td style=\"padding: 10px;\">{{currency}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Exchange Rate</td>\n                <td style=\"padding: 10px;\">{{conversion_rate}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            </tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Purchase Order",
+  "due_date_based_on": null,
+  "field": null,
+  "is_assignment_rule_with_workflow": 1,
+  "last_user": null,
+  "modified": "2024-02-19 18:26:32.916049",
+  "name": "Purchase Order Purchase Manager Action",
+  "priority": 0,
+  "rule": "Round Robin",
+  "unassign_condition": "workflow_state != 'Pending Purchase Manager'",
+  "users": [
+   {
+    "parent": "Purchase Order Purchase Manager Action",
+    "parentfield": "users",
+    "parenttype": "Assignment Rule",
+    "user": "a.kuriakose@one-fm.com"
+   }
+  ]
+ },
+ {
+  "assign_condition": "workflow_state == 'Pending Finance Manager'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Purchase Order Finance Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Purchase Order Finance Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Purchase Order Finance Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Purchase Order Finance Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Purchase Order Finance Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Purchase Order Finance Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Purchase Order Finance Manager Action",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": null,
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Name</td>\n                <td style=\"padding: 10px;\">{{ name }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Supplier</td>\n                <td style=\"padding: 10px;\">{{supplier}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Currency</td>\n                <td style=\"padding: 10px;\">{{currency}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Exchange Rate</td>\n                <td style=\"padding: 10px;\">{{conversion_rate}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            </tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Purchase Order",
+  "due_date_based_on": null,
+  "field": null,
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": null,
+  "modified": "2024-02-19 18:26:56.866172",
+  "name": "Purchase Order Finance Manager Action",
+  "priority": 0,
+  "rule": "Round Robin",
+  "unassign_condition": "workflow_state != 'Pending Finance Manager'",
+  "users": [
+   {
+    "parent": "Purchase Order Finance Manager Action",
+    "parentfield": "users",
+    "parenttype": "Assignment Rule",
+    "user": "saoud@one-fm.com"
+   }
+  ]
+ },
+ {
+  "assign_condition": "workflow_state == 'Pending Approval'",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Employee Checkin Issue Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Employee Checkin Issue Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Employee Checkin Issue Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Employee Checkin Issue Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Employee Checkin Issue Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Employee Checkin Issue Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Employee Checkin Issue Approval",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Approved', 'Draft')",
+  "custom_routine_task": null,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Log Type</td>\n                <td style=\"padding: 10px;\">{{log_type}}</td>\n            </tr>\n            </tbody></table><p></p>",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Employee Checkin Issue",
+  "due_date_based_on": null,
+  "field": "approver_user_id",
+  "is_assignment_rule_with_workflow": 1,
+  "last_user": "",
+  "modified": "2024-03-25 11:55:45.809300",
+  "name": "Employee Checkin Issue Approval",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Approved', 'Draft')",
+  "users": []
+ },
+ {
+  "assign_condition": "workflow_state ==\"Draft\" and creation < modified",
+  "assignment_days": [
+   {
+    "day": "Monday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Tuesday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Wednesday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Thursday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Friday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Saturday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   },
+   {
+    "day": "Sunday",
+    "parent": "Shift Request Draft",
+    "parentfield": "assignment_days",
+    "parenttype": "Assignment Rule"
+   }
+  ],
+  "close_condition": "workflow_state in ('Pending Approver', )",
+  "custom_routine_task": null,
+  "description": "Automatic Assignment",
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Assignment Rule",
+  "document_type": "Shift Request",
+  "due_date_based_on": null,
+  "field": "owner",
+  "is_assignment_rule_with_workflow": 0,
+  "last_user": "Administrator",
+  "modified": "2024-07-22 13:46:56.508148",
+  "name": "Shift Request Draft",
+  "priority": 0,
+  "rule": "Based on Field",
+  "unassign_condition": "workflow_state in ('Pending Approver', )",
+  "users": []
+ }
+]
