@@ -20,14 +20,16 @@ from one_fm.api.v2.face_recognition import create_checkin_log
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-channels = [
-    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
-]
+# channels = [
+#     grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+# ]
 
 # setup stub for face recognition
-stubs = [
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
-]
+# stubs = [
+#     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+# ]
+
+stubs = list()
 
 class NumpyArrayEncoder(JSONEncoder):
     def default(self, obj):
