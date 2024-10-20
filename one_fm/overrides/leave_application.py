@@ -433,7 +433,6 @@ class LeaveApplicationOverride(LeaveApplication):
 
                     frappe.db.commit()
         if self.status == "Approved":
-            self.notify_employee()
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 # frappe.db.set_value(), will not call the validate.
                 if self.leave_type !='Sick Leave':
