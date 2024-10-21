@@ -3,6 +3,15 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
+  "modified": "2024-10-19 13:50:58.692909",
+  "name": "Propose New Date",
+  "style": "",
+  "workflow_state_name": "Propose New Date"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
   "modified": "2024-02-18 20:16:27.544291",
   "name": "Pending Approver",
   "style": "",
