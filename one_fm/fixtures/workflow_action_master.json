@@ -2,6 +2,13 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2024-10-19 14:05:04.280061",
+  "name": "Propose New Date",
+  "workflow_action_name": "Propose New Date"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2023-11-28 12:22:20.644583",
   "name": "Strat Onboarding",
   "workflow_action_name": "Strat Onboarding"
