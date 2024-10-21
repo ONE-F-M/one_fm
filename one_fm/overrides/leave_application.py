@@ -248,11 +248,24 @@ class LeaveApplicationOverride(LeaveApplication):
         It's a action that takes place on update of Leave Application.
         """
         #If Leave Approver Exist
-        
-        if self.leave_approver:
+        if self.workflow_state == "Open":
             try:
-                args = dict(self.as_dict()) #fetch fields from the doc.
-                args.update({"base_url": frappe.utils.get_url()})
+                employee =  frappe.db.get_values("Employee", self.employee, ["employee_name_in_arabic", "employee_id"], as_dict=1)
+                line_manager = frappe.db.get_value("Employee", {"user_id": self.leave_approver}, "employee_name_in_arabic")
+                args = frappe._dict({
+                    "employee_name_in_arabic": employee[0].employee_name_in_arabic,
+                    "employee_name": self.employee_name,
+                    "line_manager": self.leave_approver_name,
+                    "line_manager_in_arabic": line_manager,
+                    "employee_id": employee[0].employee_id,
+                    "leave_type": self.leave_type,
+                    "from_date": self.from_date,
+                    "to_date": self.to_date,
+                    "total_leave_days": self.total_leave_days,
+                    "workflow_state": self.workflow_state,
+                    "posting_date": self.posting_date,
+                    "base_url": frappe.utils.get_url()
+                })
 
                 #Fetch Email Template for Leave Approval. The email template is in HTML format.
                 template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
@@ -261,14 +274,13 @@ class LeaveApplicationOverride(LeaveApplication):
                     return
                 email_template = frappe.get_doc("Email Template", template)
                 message = frappe.render_template(email_template.response_html, args)
-
                 if self.proof_documents:
                     proof_doc = self.proof_documents
                     for p in proof_doc:
                         message+=f"<hr><img src='{p.attachments}' height='400'/>"
-
+                subject = f"Leave Application Submitted for Approval – {self.employee_name}"
                 #send notification
-                sendemail(recipients= [self.leave_approver], subject="Leave Application", message=message,
+                sendemail(recipients= [self.leave_approver], subject=subject, message=message,
                         reference_doctype=self.doctype, reference_name=self.name, attachments = [])
 
                 employee_id = frappe.get_value("Employee", {"user_id":self.leave_approver}, ["name"])
