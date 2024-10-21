@@ -24,12 +24,11 @@
   "attendance_manager",
   "attendance_manager_name",
   "attendance_check_exclusion",
-  "column_break_xudp",
-  "att_check_approver_penalty_type",
   "employee_section",
   "employee_master_role",
   "wiki_page_access",
-  "employee_info_access"
+  "employee_info_access",
+  "status_translation"
  ],
  "fields": [
   {
@@ -75,7 +74,6 @@
    "options": "ONEFM Document Access Roles Detail"
   },
   {
-   "collapsible": 1,
    "fieldname": "section_break_7yvzt",
    "fieldtype": "Section Break",
    "label": "Attendance"
@@ -140,16 +138,6 @@
    "label": "Extend User Permissions"
   },
   {
-   "fieldname": "column_break_xudp",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "att_check_approver_penalty_type",
-   "fieldtype": "Link",
-   "label": "Attendance Check Approver Penalty Type",
-   "options": "Penalty Type"
-  },
-  {
    "description": "Table of roles allowed to view employee info",
    "fieldname": "employee_info_access",
    "fieldtype": "Table",
@@ -167,11 +155,17 @@
    "fieldname": "enable_face_recognition_endpoint",
    "fieldtype": "Check",
    "label": "Enable Face Recognition Endpoint"
+  },
+  {
+   "fieldname": "status_translation",
+   "fieldtype": "Table",
+   "label": "Status Translation",
+   "options": "Status Translation"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-06-26 14:37:58.165247",
+ "modified": "2024-10-21 14:06:15.388266",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

@@ -156,12 +156,15 @@ class LeaveApplicationOverride(LeaveApplication):
             employee = frappe.db.get_value("Employee", self.employee, "employee_name_in_arabic", as_dict=True) or {}
             leave_approver = frappe.db.get_value("Employee", {"company_email": self.leave_approver}, ["employee_name_in_arabic", "employee_name"], as_dict=True) or {}
             leave_type_in_arabic = frappe.db.get_value('Leave Type', self.leave_type, 'custom_leave_type_name_in_arabic')
+            get_status_from_general_settings = frappe.get_single('ONEFM General Setting')
+            status_translation = get_status_from_general_settings.status_translation
+            status_translation_dict = {status.status_in_english: status.status_in_arabic for status in status_translation}
             args = parent_doc.as_dict()
             args["employee_name_in_arabic"] = employee.get("employee_name_in_arabic")
             args["leave_approver_in_arabic"] = leave_approver.get("employee_name_in_arabic")
             args["leave_approver_in_english"] = leave_approver.get("employee_name")
             args["status"] = "Pending" if args.get("status") == "Open" else "Approved"
-            args["status_in_arabic"] = get_status_in_arabic(args.get("status"))
+            args["status_in_arabic"] = status_translation_dict.get(args["status"], args["status"])
             args["leave_type_in_arabic"] = leave_type_in_arabic if leave_type_in_arabic else self.leave_type
             email_template = frappe.get_doc("Email Template", template)
             message = frappe.render_template(email_template.response_html, args)
@@ -727,15 +730,6 @@ class ReassignDocumentToLeaveApplicant:
             
             if key == "ONEFM General Setting":
                 self.reassign_operation_settings(settings=value)
-
-
-def get_status_in_arabic(status):
-    if status in ["Open", "Pending"]:
-        return "معلّق"  # Arabic for "pending"
-    elif status == "Approved":
-        return "موافق عليه"  # Arabic for "approved"
-    else:
-        return "حالة غير معروفة"  # Arabic for "unknown status" (optional)
 
 
 
