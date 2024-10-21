@@ -156,15 +156,14 @@ class LeaveApplicationOverride(LeaveApplication):
             employee = frappe.db.get_value("Employee", self.employee, "employee_name_in_arabic", as_dict=True) or {}
             leave_approver = frappe.db.get_value("Employee", {"company_email": self.leave_approver}, ["employee_name_in_arabic", "employee_name"], as_dict=True) or {}
             leave_type_in_arabic = frappe.db.get_value('Leave Type', self.leave_type, 'custom_leave_type_name_in_arabic')
-            get_status_from_general_settings = frappe.get_single('ONEFM General Setting')
-            status_translation = get_status_from_general_settings.status_translation
-            status_translation_dict = {status.status_in_english: status.status_in_arabic for status in status_translation}
             args = parent_doc.as_dict()
             args["employee_name_in_arabic"] = employee.get("employee_name_in_arabic")
             args["leave_approver_in_arabic"] = leave_approver.get("employee_name_in_arabic")
             args["leave_approver_in_english"] = leave_approver.get("employee_name")
             args["status"] = "Pending" if args.get("status") == "Open" else "Approved"
-            args["status_in_arabic"] = status_translation_dict.get(args["status"], args["status"])
+
+            get_translated_status = frappe.db.get_value("Translation", {"source_text": args.get('status')}, 'translated_text', as_dict=True) or {}
+            args["status_in_arabic"] = get_translated_status.get("translated_text", args.get("status"))
             args["leave_type_in_arabic"] = leave_type_in_arabic if leave_type_in_arabic else self.leave_type
             email_template = frappe.get_doc("Email Template", template)
             message = frappe.render_template(email_template.response_html, args)
