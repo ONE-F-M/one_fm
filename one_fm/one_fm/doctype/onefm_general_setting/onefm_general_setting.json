@@ -27,8 +27,7 @@
   "employee_section",
   "employee_master_role",
   "wiki_page_access",
-  "employee_info_access",
-  "status_translation"
+  "employee_info_access"
  ],
  "fields": [
   {
@@ -155,17 +154,11 @@
    "fieldname": "enable_face_recognition_endpoint",
    "fieldtype": "Check",
    "label": "Enable Face Recognition Endpoint"
-  },
-  {
-   "fieldname": "status_translation",
-   "fieldtype": "Table",
-   "label": "Status Translation",
-   "options": "Status Translation"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-10-21 14:06:15.388266",
+ "modified": "2024-06-26 14:37:58.165247",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",
