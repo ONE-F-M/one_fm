@@ -162,8 +162,17 @@ class LeaveApplicationOverride(LeaveApplication):
             args["leave_approver_in_english"] = leave_approver.get("employee_name")
             args["status"] = "Pending" if args.get("status") == "Open" else "Approved"
 
-            get_translated_status = frappe.db.get_value("Translation", {"source_text": args.get('status')}, 'translated_text', as_dict=True) or {}
-            args["status_in_arabic"] = get_translated_status.get("translated_text", args.get("status"))
+            get_translated_status = frappe.db.sql(
+                """
+                SELECT translated_text 
+                FROM `tabTranslation`
+                WHERE LOWER(source_text) = LOWER(%s)
+                """,
+                (args.get('status'),),
+                as_dict=True
+            )
+            translated_status = next(iter(get_translated_status or []), {})
+            args["status_in_arabic"] = translated_status.get("translated_text", args.get("status"))
             args["leave_type_in_arabic"] = leave_type_in_arabic if leave_type_in_arabic else self.leave_type
             email_template = frappe.get_doc("Email Template", template)
             message = frappe.render_template(email_template.response_html, args)
