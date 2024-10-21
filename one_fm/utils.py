@@ -3650,7 +3650,8 @@ def set_employee_status_to_vacation():
     leave_applications = frappe.get_all('Leave Application', 
         filters={
             'status': 'Approved',
-            'from_date': ['<=', current_date]
+            'from_date': ['<=', current_date],
+            'to_date': ['>', current_date]
         }, 
         fields=['employee', 'from_date']
     )
