@@ -6,24 +6,24 @@ from hrms.hr.doctype.leave_allocation.leave_allocation import LeaveAllocation
 class LeaveAllocationOverride(LeaveAllocation):
     def validate(self):
         super().validate()
-        self.validate_employee_gender()
+        self.validate_employee_gender_for_maternity()
         self.validate_hajj_leave()
     
-    def validate_employee_gender(self):
-        gender  = frappe.db.get_value("Employee", self.employee, "gender")
-        if gender == "Male" and self.leave_type == "Maternity Leave":
-            frappe.throw("Maternity Leave allocation is only allowed for female workers.")
+    def validate_employee_gender_for_maternity(self):
+        employees_gender  = frappe.db.get_value("Employee", self.employee, "gender")
+        maternity_check  = frappe.db.get_value("Gender", employees_gender, "custom_maternity_required")
+        maternity_leave_check  = frappe.db.get_value("Leave Type", self.leave_type, "custom_is_maternity")
+        if not maternity_check and maternity_leave_check:
+            frappe.throw("Maternity Leave allocation is only allowed for gender eligible workers.")
 
     def validate_hajj_leave(self):
         employee_info = frappe.db.get_value("Employee", self.employee, ["one_fm_religion", "went_to_hajj"], as_dict=True)
         religion = employee_info.get("one_fm_religion")
+        religion_check  = frappe.db.get_value("Religion", religion, "custom_hajj_check_required")
+        maternity_leave_check  = frappe.db.get_value("Leave Type", self.leave_type, "one_fm_is_hajj_leave")
         went_to_hajj = employee_info.get("went_to_hajj")
-        if religion != "Muslim" or (religion == "Muslim" and went_to_hajj  == True):
+        if (not religion_check and maternity_leave_check) or (religion_check and went_to_hajj and maternity_leave_check):
             frappe.throw("Hajj Leave allocation is only allowed for a muslim staff Who has not performed Hajj before.")
-
-    def validate_against_leave_applications(self):
-        pass
-
 
 
 
@@ -60,3 +60,4 @@ def show_notification(title, msg, indicator):
         msg=_(msg),
         indicator=indicator
     )
+        
