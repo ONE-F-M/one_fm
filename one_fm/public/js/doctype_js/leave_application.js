@@ -40,21 +40,26 @@ frappe.ui.form.on("Leave Application", {
                     let from_date = values.custom_propose_from_date;
                     let to_date = values.custom_propose_to_date;
                     let total_days = dialog.get_value('custom_total_propose_leave_days');
-
-                    // Call the validate_proposeddate function with the new values
                     let is_valid = validate_proposeddate(frm,from_date, to_date,dialog);
-
-
                     if (is_valid) {
-                        // Set the new dates to the form
                         frm.set_value('custom_propose_from_date', from_date);
                         frm.set_value('custom_propose_to_date', to_date);
                         frm.set_value('custom_total_propose_leave_days', total_days);
-
-                        // Close the dialog and save the form
                         dialog.hide();
-                        frm.save();
-                        msgprint("New Dates Proposed successfully");
+                        frm.save().then(() => {
+                            frappe.msgprint("New Dates Proposed successfully");
+                            frappe.call({
+                                method: "one_fm.overrides.leave_application.send_proposed_date_email",
+                                args: {
+                                    doc_name: frm.doc.name
+                                },
+                                callback: function(response) {
+                                    if (response.message === "success") {
+                                        frappe.msgprint("Email sent successfully.");
+                                    }
+                                }
+                            });
+                        });
                     }
                 }
             });
