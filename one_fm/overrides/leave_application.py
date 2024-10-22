@@ -13,6 +13,7 @@ from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.api.tasks import remove_assignment
 from one_fm.overrides.employee import NotifyAttendanceManagerOnStatusChange
 from one_fm.utils import get_approver_user
+from hrms.hr.utils import get_holidays_for_employee
 
 
 def validate_active_staff(doc,event):
@@ -181,6 +182,12 @@ class LeaveApplicationOverride(LeaveApplication):
             args["status_in_arabic"] = translated_status.get("translated_text", args.get("status"))
             args["leave_type_in_arabic"] = leave_type_in_arabic if leave_type_in_arabic else self.leave_type
             email_template = frappe.get_doc("Email Template", template)
+            if args.get("status") == "Approved":
+                email_template = frappe.get_doc("Email Template", "Leave Employee Approval Notification")
+
+            if not email_template:
+                frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
+                return
             message = frappe.render_template(email_template.response_html, args)
             if is_app_user(self.employee):
                 push_notification_rest_api_for_leave_application(self.employee,email_template.subject,message,self.name)
