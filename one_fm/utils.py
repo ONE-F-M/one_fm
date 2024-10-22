@@ -3646,35 +3646,28 @@ def set_employee_status_to_vacation():
     # Get today's date
     current_date = today()
 
-    # Fetch all approved leave applications where `from_date` is today or earlier
+    # Fetch approved leave applications where `from_date` is today or earlier, along with the employee's status
     leave_applications = frappe.get_all('Leave Application', 
         filters={
             'status': 'Approved',
             'from_date': ['<=', current_date],
             'to_date': ['>', current_date]
-        }, 
-        fields=['employee', 'from_date']
+        },
+        fields=['employee', 'from_date', 'employee.status']  # Fetch employee status directly
     )
 
-    # Get a list of employees with approved leave applications
-    employees_on_leave = [leave['employee'] for leave in leave_applications]
-
-    if not employees_on_leave:
+    if not leave_applications:
         frappe.log_error(_("No employees found with approved leave applications for today or earlier."))
         return
 
-    # Fetch all employees with 'Active' status
-    active_employees = frappe.get_all('Employee', 
-        filters={
-            'status': 'Active'
-        }, 
-        fields=['name']
-    )
-
-    # Filter active employees who are in the leave applications list
+    # Filter employees who have 'Active' status and are on leave
     employees_to_set_vacation = [
-        employee['name'] for employee in active_employees if employee['name'] in employees_on_leave
+        leave['employee'] for leave in leave_applications if leave['status'] == 'Active'
     ]
+
+    if not employees_to_set_vacation:
+        frappe.log_error(_("No active employees found with approved leave applications for today or earlier."))
+        return
 
     # Update the status of the employees to 'Vacation'
     for employee in employees_to_set_vacation:
