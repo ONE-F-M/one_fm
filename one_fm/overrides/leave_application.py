@@ -129,7 +129,7 @@ class LeaveApplicationOverride(LeaveApplication):
         super_user_role = frappe.db.get_single_value("ONEFM General Setting", "super_user_role")
         user_roles = frappe.get_roles(employee.user_id)
         # If Reports to set or Super user role, then reliever is mandatory
-        if employee.reports_to or (super_user_role in user_roles) and not self.custom_reliever_:
+        if (employee.reports_to or (super_user_role in user_roles)) and not self.custom_reliever_:
             frappe.throw(msg=_("Please ensure that a Reliever is set"), title=_("No Reliever set"))
 
     def close_shifts(self):
