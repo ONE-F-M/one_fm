@@ -5,17 +5,18 @@ from frappe import _
 from one_fm.api.notification import create_notification_log
 from one_fm.api.v1.utils import response, validate_date, validate_time
 from one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue import fetch_approver
+from frappe.model.workflow import apply_workflow
+from frappe.utils import getdate
 
 @frappe.whitelist()
-def create_employee_checkin_issue(employee_id: str = None, log_type: str = None, issue_type: str = None, date: str = None,
-	issue_details: str = None, latitude: str = None, longitude: str = None) -> dict:
+def create_employee_checkin_issue(employee_id: str = None, log_type: str = None, issue_type: str = None,
+	issue_details: str = None, latitude: float = None, longitude: float = None) -> dict:
 	"""This method creates a employee checkin issue for a given employee.
 
 	Args:
 		employee (str): employee id
 		log_type (str): type of log(IN/OUT).
 		issue_type (str): type of issue requested.
-		date (str): yyyy-mm-dd
 		issue_details (str): reason to create a employee checkin issue
 		latitude (float, optional): Latitude od user.
 		longitude (float, optional): Longitude od user.
@@ -29,6 +30,7 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 		}
 	"""
 	try:
+		date = getdate()
 		if not employee_id:
 			return response("Bad Request", 400, None, "employee_id required.")
 
@@ -38,8 +40,6 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 		if not issue_type:
 			return response("Bad Request", 400, None, "issue_type required.")
 
-		if not date:
-			return response("Bad Request", 400, None, "date required.")
 
 		if issue_type == "Other":
 			if not issue_details:
@@ -65,11 +65,6 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 		except:
 			return response("Bad Request", 400, None, "Latitude and longitude must be float.")
 
-		if not isinstance(date, str):
-			return response("Bad Request", 400, None, "date must be of type str.")
-
-		if not validate_date(date):
-			return response("Bad Request", 400, None, "date must be of type yyyy-mm-dd.")
 
 		employee = frappe.db.get_value("Employee", {"employee_id": employee_id})
 
@@ -77,10 +72,13 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 			return response("Resource Not Found", 404, None, "No employee found with {employee_id}"
 				.format(employee_id=employee_id))
 
-		shift_details = get_shift_details(employee)
+		shift_details = fetch_approver(employee)
 
-		if shift_details.found:
-			shift, shift_type, shift_assignment, shift_supervisor = shift_details.data
+		if shift_details:
+			shift_assignment = shift_details['assigned_shift']
+			shift_supervisor = shift_details['shift_supervisor']
+			shift = shift_details['shift']
+			shift_type = shift_details['shift_type']
 		else:
 			return response("Resource Not Found", 404, None, "shift not found in employee schedule for {employee}"
 				.format(employee=employee))
@@ -96,6 +94,10 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 		if not shift_supervisor:
 			return response("Resource Not Found", 404, None, "shift supervisor not found for {employee}"
 				.format(employee=employee_id))
+		
+		if frappe.db.exists("Attendance", {"shift_assignment": shift_assignment}):
+			return response("Attendance Exists", 400, None, f"Attendance already marked for {date}")
+		
 
 		if not frappe.db.exists("Employee Checkin Issue", {"employee": employee, "date": date,
 			"assigned_shift": shift_assignment, "log_type": log_type, "issue_type": issue_type}):
@@ -112,7 +114,10 @@ def create_employee_checkin_issue(employee_id: str = None, log_type: str = None,
 			employee_checkin_issue_doc.shift_supervisor = shift_supervisor
 			employee_checkin_issue_doc.shift = shift
 			employee_checkin_issue_doc.shift_type = shift_type
+			employee_checkin_issue_doc.flags.ignore_permissions = 1
 			employee_checkin_issue_doc.save()
+			apply_workflow(employee_checkin_issue_doc, "Submit for Approval")
+
 			frappe.db.commit()
 			return response("Success", 201, employee_checkin_issue_doc.as_dict())
 

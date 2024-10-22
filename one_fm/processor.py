@@ -87,11 +87,11 @@ def is_user_id_company_prefred_email_in_employee(user_id):
 		return False if employee not exists for the user id / user id is company prefered email id
 	'''
 	user_id_company_prefred_in_employee = False
-	employee = frappe.db.exists('Employee', {'user_id': user_id})
+	employee = frappe.db.exists('Employee', {'user_id': user_id}) or frappe.db.exists('Employee', {'personal_email': user_id})
 	if employee:
-		employee_details = frappe.db.get_value("Employee", employee, ["prefered_email", "company_email", "prefered_contact_email", "status"], as_dict=1)
+		employee_details = frappe.db.get_value("Employee", employee, ["prefered_email", "company_email", "prefered_contact_email", "status", "personal_email"], as_dict=1)
 		if employee_details:
-			if all((employee_details.get("prefered_contact_email", "") == 'Company Email', employee_details.get("prefered_email", "") == employee_details.get("company_email", ""), employee_details.get("prefered_email", "") == user_id, employee_details.get("status", "") == "Active")):
+			if all((employee_details.get("prefered_contact_email", "") == 'Company Email', employee_details.get("prefered_email", "") == employee_details.get("company_email", ""), ((employee_details.get("prefered_email", "") == user_id) or (employee_details.get("personal_email", "") == user_id)), employee_details.get("status", "") == "Active")):
 				user_id_company_prefred_in_employee = True
 	return user_id_company_prefred_in_employee
 

@@ -46,13 +46,13 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
     if not reason:
         return response("Bad Request", 400, None, "reason required.")
 
-    if log_type == "IN" and permission_type not in ['Arrive Late', 'Forget to Checkin', 'Checkin Issue']:
-        return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
-            "Arrive Late", "Forget to Checkin", "Checkin Issue" for Log Type "IN"'.format(permission_type)))
+    if log_type == "IN" and permission_type not in ['Arrive Late', ]:
+        return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be \
+            "Arrive Late" for Log Type "IN"'.format(permission_type)))
 
-    if log_type == "OUT" and permission_type not in ['Leave Early', 'Forget to Checkout', 'Checkout Issue']:
+    if log_type == "OUT" and permission_type not in ['Leave Early', ]:
         return response("Bad Request", 400, None, _('Permission Type cannot be {0}. It should be one of \
-            "Leave Early", "Forget to Checkout", "Checkout Issue" for Log Type "OUT"'.format(permission_type)))
+            "Leave Early" for Log Type "OUT"'.format(permission_type)))
 
     if permission_type == "Arrive Late" and not arrival_time:
         return response("Bad Request", 400, None, "Arrival time required for late arrival shift permission.")
@@ -66,15 +66,8 @@ def create_shift_permission(employee_id: str = None, log_type: str = None, permi
     if not isinstance(permission_type, str):
         return response("Bad Request", 400, None, "permission_type must be of type str.")
 
-    if permission_type not in ["Arrive Late", "Leave Early", "Checkin Issue", "Checkout Issue"]:
-        return response("Bad Request", 400, None, "permission type must be either 'Arrive Late' or 'Leave Early' or 'Checkin Issue' or 'Checkout Issue'.")
-
-    if permission_type in ["Checkin Issue", "Checkout Issue"] and latitude and longitude:
-        try:
-            latitude = float(latitude)
-            longitude = float(longitude)
-        except:
-            return response("Bad Request", 400, None, "Latitude and longitude must be float.")
+    if permission_type not in ["Arrive Late", "Leave Early", ]:
+        return response("Bad Request", 400, None, "permission type must be either 'Arrive Late' or 'Leave Early'.")
 
     if not isinstance(date, str):
         return response("Bad Request", 400, None, "date must be of type str.")
