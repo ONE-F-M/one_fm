@@ -14,7 +14,7 @@ class LeaveAllocationOverride(LeaveAllocation):
         maternity_check  = frappe.db.get_value("Gender", employees_gender, "custom_maternity_required")
         maternity_leave_check  = frappe.db.get_value("Leave Type", self.leave_type, "custom_is_maternity")
         if not maternity_check and maternity_leave_check:
-            frappe.throw("Maternity Leave allocation is only allowed for gender eligible workers.")
+            frappe.throw("Maternity leave allocation is only allowed for gender eligible workers.")
 
     def validate_hajj_leave(self):
         employee_info = frappe.db.get_value("Employee", self.employee, ["one_fm_religion", "went_to_hajj"], as_dict=True)
