@@ -848,7 +848,7 @@
 
   // === Focus Search Form
   $(document).on("keydown", function (e) {
-    if (e.keyCode === 191) {
+    if (e.keyCode === 191 && !e.shiftKey) {
       // e.preventDefault();
       $("input[type=search]").focus();
       return;
