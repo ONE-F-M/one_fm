@@ -35,7 +35,7 @@
    "insert_after": "religion_arabic",
    "is_system_generated": 0,
    "is_virtual": 0,
-   "label": "Hajj check required",
+   "label": "Eligible for Hajj",
    "length": 0,
    "link_filters": null,
    "mandatory_depends_on": null,

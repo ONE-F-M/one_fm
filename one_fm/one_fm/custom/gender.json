@@ -35,7 +35,7 @@
    "insert_after": "gender_arabic",
    "is_system_generated": 0,
    "is_virtual": 0,
-   "label": "Maternity Required",
+   "label": "Eligible for Maternity Leave",
    "length": 0,
    "link_filters": null,
    "mandatory_depends_on": null,

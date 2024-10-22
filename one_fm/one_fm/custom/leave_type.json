@@ -169,7 +169,7 @@
    "insert_after": "is_compensatory",
    "is_system_generated": 0,
    "is_virtual": 0,
-   "label": "Is Maternity",
+   "label": "Eligible for Maternity Leave",
    "length": 0,
    "link_filters": null,
    "mandatory_depends_on": null,
