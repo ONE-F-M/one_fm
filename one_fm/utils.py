@@ -3653,7 +3653,7 @@ def set_employee_status_to_vacation():
             'from_date': ['<=', current_date],
             'to_date': ['>', current_date]
         },
-        fields=['employee', 'from_date', 'employee.status']  # Fetch employee status directly
+        fields=['employee', 'employee.status']  # Fetch employee status directly
     )
 
     if not leave_applications:
