@@ -1,22 +1,18 @@
 from ast import literal_eval
 import frappe,json
+import pandas as pd
 
 from frappe import _
-from frappe.utils import get_fullname, nowdate, add_to_date
+from frappe.utils import get_fullname, nowdate, add_to_date, getdate, date_diff
+
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
-
-from frappe.desk.form.assign_to import add
-from one_fm.api.notification import create_notification_log
-from frappe.utils import getdate, date_diff
-import pandas as pd
+from frappe.desk.form.assign_to import remove
+from erpnext.crm.utils import get_open_todos
 from one_fm.api.api import push_notification_rest_api_for_leave_application
-from one_fm.processor import is_user_id_company_prefred_email_in_employee
-from hrms.hr.utils import get_holidays_for_employee
-from one_fm.api.tasks import get_action_user,remove_assignment
-
-from .employee import NotifyAttendanceManagerOnStatusChange
-
+from one_fm.api.tasks import remove_assignment
+from one_fm.overrides.employee import NotifyAttendanceManagerOnStatusChange
+from one_fm.utils import get_approver_user
 
 
 def validate_active_staff(doc,event):
@@ -236,11 +232,24 @@ class LeaveApplicationOverride(LeaveApplication):
         It's a action that takes place on update of Leave Application.
         """
         #If Leave Approver Exist
-        
-        if self.leave_approver:
+        if self.workflow_state == "Open":
             try:
-                args = dict(self.as_dict()) #fetch fields from the doc.
-                args.update({"base_url": frappe.utils.get_url()})
+                employee =  frappe.db.get_values("Employee", self.employee, ["employee_name_in_arabic", "employee_id"], as_dict=1)
+                line_manager = frappe.db.get_value("Employee", {"user_id": self.leave_approver}, "employee_name_in_arabic")
+                args = frappe._dict({
+                    "employee_name_in_arabic": employee[0].employee_name_in_arabic,
+                    "employee_name": self.employee_name,
+                    "line_manager": self.leave_approver_name,
+                    "line_manager_in_arabic": line_manager,
+                    "employee_id": employee[0].employee_id,
+                    "leave_type": self.leave_type,
+                    "from_date": self.from_date,
+                    "to_date": self.to_date,
+                    "total_leave_days": self.total_leave_days,
+                    "workflow_state": self.workflow_state,
+                    "posting_date": self.posting_date,
+                    "base_url": frappe.utils.get_url()
+                })
 
                 #Fetch Email Template for Leave Approval. The email template is in HTML format.
                 template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
@@ -249,14 +258,13 @@ class LeaveApplicationOverride(LeaveApplication):
                     return
                 email_template = frappe.get_doc("Email Template", template)
                 message = frappe.render_template(email_template.response_html, args)
-
                 if self.proof_documents:
                     proof_doc = self.proof_documents
                     for p in proof_doc:
                         message+=f"<hr><img src='{p.attachments}' height='400'/>"
-
+                subject = f"Leave Application Submitted for Approval – {self.employee_name}"
                 #send notification
-                sendemail(recipients= [self.leave_approver], subject="Leave Application", message=message,
+                sendemail(recipients= [self.leave_approver], subject=subject, message=message,
                         reference_doctype=self.doctype, reference_name=self.name, attachments = [])
 
                 employee_id = frappe.get_value("Employee", {"user_id":self.leave_approver}, ["name"])
@@ -486,6 +494,14 @@ def update_attendance_recods(self):
 
     frappe.msgprint(_("Attendance are created for the leave Appication {0}!".format(self.name)), alert=True)
 
+
+def remove_assignment(attendance_check):
+    open_todo = get_open_todos("Attendance Check",attendance_check)
+    if open_todo:
+        for each in open_todo:
+            remove("Attendance Check",attendance_check,each.allocated_to,ignore_permissions=1)
+    
+
 @frappe.whitelist()
 def get_leave_details(employee, date):
     allocation_records = get_leave_allocation_records(employee, date)
@@ -524,29 +540,9 @@ def get_leave_details(employee, date):
 
 @frappe.whitelist()
 def get_leave_approver(employee):
-    employee_details = frappe.db.get_value(
-			"Employee",
-			{"name": employee},
-			["reports_to", "department"],
-			as_dict = True
-		)
-    reports_to = employee_details.get('reports_to')
-    department = employee_details.get('department')
-    employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-    approver = False
-    if reports_to:
-        approver = frappe.get_value("Employee", reports_to, ["user_id"])
-    elif len(employee_shift) > 0 and employee_shift[0].shift:
-        approver, Role = get_action_user(employee,employee_shift[0].shift)
-    else:
-        approvers = frappe.db.sql(
-                """select approver from `tabDepartment Approver` where parent= %s and parentfield = 'leave_approvers'""",
-                (department),
-            )
-        if approvers and len(approvers) > 0:
-            approvers = [approver[0] for approver in approvers]
-            approver = approvers[0]
+    approver = get_approver_user(employee)
     return approver
+
 
 @frappe.whitelist()
 def employee_leave_status():

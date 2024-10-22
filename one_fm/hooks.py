@@ -117,7 +117,8 @@ doctype_js = {
     "Task": "public/js/doctype_js/task.js",
     "HD Ticket": "public/js/doctype_js/hd_ticket.js",
     "Appraisal": "public/js/doctype_js/appraisal.js",
-    "Employee Performance Feedback":"public/js/doctype_js/employee_performance_feedback.js"
+    "Employee Performance Feedback":"public/js/doctype_js/employee_performance_feedback.js",
+    "Leave Allocation": "public/js/doctype_js/leave_allocation.js"
 }
 doctype_list_js = {
 	"Job Applicant" : "public/js/doctype_js/job_applicant_list.js",
@@ -394,6 +395,19 @@ doc_events = {
 		"before_insert": "one_fm.api.doc_methods.help_article.before_insert",
 		# "on_update": "one_fm.api.doc_methods.help_article.on_update",
 	},
+    "Shift Request":{
+        "before_save":[
+            "one_fm.overrides.shift_request.fill_to_date",
+            "one_fm.overrides.shift_request.send_shift_request_mail",
+            "one_fm.overrides.shift_request.validate_from_date"
+        ],
+        "on_update": [
+            "one_fm.overrides.shift_request.on_update",
+        ],
+        "validate": [
+            "one_fm.overrides.shift_request.validate",
+        ]
+    },
 	"Customer": {
 		"on_update":"one_fm.tasks.erpnext.customer.on_update",
 	},
@@ -495,6 +509,7 @@ override_doctype_class = {
 	"Employee Transfer": "one_fm.overrides.employee_transfer.EmployeeTransferOverride",
 	"Holiday List": "one_fm.overrides.holiday_list.HolidayListOverride",
 	"Leave Application": "one_fm.overrides.leave_application.LeaveApplicationOverride",
+    "Leave Allocation": "one_fm.overrides.leave_allocation.LeaveAllocationOverride",
 	"Employee": "one_fm.overrides.employee.EmployeeOverride",
 	"Employee Checkin": "one_fm.overrides.employee_checkin.EmployeeCheckinOverride",
 	"Timesheet": "one_fm.overrides.timesheet.TimesheetOveride",
@@ -686,11 +701,8 @@ scheduler_events = {
 		],
 		"15 13 * * *":[ # Attendance Check
 			'one_fm.one_fm.doctype.attendance_check.attendance_check.schedule_attendance_check',
-			'one_fm.one_fm.doctype.attendance_check.attendance_check.assign_attendance_manager_after_48_hours'
+			'one_fm.one_fm.doctype.attendance_check.attendance_check.attendance_check_pending_approval_check'
 		],
-		# "07 13 * * *":[ # Auto approve attendance check
-			# 'one_fm.one_fm.doctype.attendance_check.attendance_check.approve_attendance_check'
-		# ],
 		"15 12 * * *": [ # create shift assignment
 			'one_fm.api.tasks.assign_pm_shift'
 		],
@@ -783,9 +795,11 @@ fixtures = [
 		"dt": "Assignment Rule",
 		"filters": [["name", "in",
 			[
-				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To",
+				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To", "Shift Permission Approver",
 				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request",
-				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action"
+				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action",
+				"Timesheet Return to Draft", "Timesheet Approval Assignment", "Shift Request Draft", "Shift Request Pending Approval",
+				"Attendance Request Return to Draft", "Attendance Request Approval", "Employee Checkin Issue Approval"
 			]
 		]]
 	},

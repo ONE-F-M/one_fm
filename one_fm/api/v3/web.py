@@ -19,14 +19,16 @@ from one_fm.api.utils import set_up_face_recognition_server_credentials
 
 # setup channel for face recognition
 face_recognition_service_url = frappe.local.conf.face_recognition_service_url
-channels = [
-    grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
-]
+# channels = [
+#     grpc.secure_channel(i, grpc.ssl_channel_credentials()) for i in face_recognition_service_url
+# ]
 
 # setup stub for face recognition
-stubs = [
-    facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
-]
+# stubs = [
+#     facial_recognition_pb2_grpc.FaceRecognitionServiceStub(i) for i in channels
+# ]
+
+stubs = list()
 channel = frappe.local.conf.face_recognition_channel.get('url')
 bucketpath = frappe.local.conf.face_recognition_channel.get('bucket')
 
