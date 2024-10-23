@@ -453,7 +453,6 @@ class LeaveApplicationOverride(LeaveApplication):
 
     def on_update(self):
         if self.status=='Rejected':
-            self.notify_employee()
             attendance_range = []
             for i in pd.date_range(self.from_date, self.to_date):
                 attendance_range.append(getdate(i))
@@ -479,7 +478,6 @@ class LeaveApplicationOverride(LeaveApplication):
 
                     frappe.db.commit()
         if self.status == "Approved":
-            self.notify_employee()
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 # frappe.db.set_value(), will not call the validate.
                 if self.leave_type !='Sick Leave':
