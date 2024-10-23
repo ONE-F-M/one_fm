@@ -14,7 +14,7 @@ class LeaveAllocationOverride(LeaveAllocation):
         maternity_check  = frappe.db.get_value("Gender", employees_gender, "custom_maternity_required")
         maternity_leave_check  = frappe.db.get_value("Leave Type", self.leave_type, "custom_is_maternity")
         if not maternity_check and maternity_leave_check:
-            frappe.throw("Maternity Leave allocation is only allowed for gender eligible workers.")
+            frappe.throw("Maternity leave allocation is only allowed for eligible gender.")
 
     def validate_hajj_leave(self):
         employee_info = frappe.db.get_value("Employee", self.employee, ["one_fm_religion", "went_to_hajj"], as_dict=True)
@@ -23,7 +23,11 @@ class LeaveAllocationOverride(LeaveAllocation):
         hajj_leave_check  = frappe.db.get_value("Leave Type", self.leave_type, "one_fm_is_hajj_leave")
         went_to_hajj = employee_info.get("went_to_hajj")
         if (not religion_check and hajj_leave_check) or (religion_check and went_to_hajj and hajj_leave_check):
-            frappe.throw("Hajj Leave allocation is only allowed for a muslim staff Who has not performed Hajj before.")
+            frappe.throw("Hajj leave allocation is only allowed for muslim staff who have not performed hajj before.")
+    
+    def validate_against_leave_applications(self):
+        pass
+
 
 
 
