@@ -1,4 +1,71 @@
 frappe.ui.form.on("Leave Application", {
+    before_workflow_action: function(frm) {
+        if (frm.selected_workflow_action === 'Propose New Date') {
+            
+            // Create a custom modal using frappe.ui.Dialog
+            let dialog = new frappe.ui.Dialog({
+                title: 'Confirm New Dates',
+                fields: [
+                    {
+                        fieldtype: 'Date', 
+                        fieldname: 'custom_propose_from_date', 
+                        label: 'Proposed From Date', 
+                        default: frm.doc.custom_propose_from_date, 
+                        reqd: 1,
+                        change: function() {
+                            calculate_days(dialog); // Trigger calculation when date changes
+                        }
+                    },
+                    {
+                        fieldtype: 'Date', 
+                        fieldname: 'custom_propose_to_date', 
+                        label: 'Proposed To Date', 
+                        default: frm.doc.custom_propose_to_date, 
+                        reqd: 1,
+                        change: function() {
+                            calculate_days(dialog); // Trigger calculation when date changes
+                        }
+                    },
+                    {
+                        fieldtype: 'Data', 
+                        fieldname: 'custom_total_propose_leave_days', 
+                        label: 'Number of Days', 
+                        read_only: 1,
+                        default: '0' // Initially set to 0
+                    }
+                ],
+                primary_action_label: 'Confirm',
+                primary_action(values) {
+                    // Fetch the new values from the dialog before validation
+                    let from_date = values.custom_propose_from_date;
+                    let to_date = values.custom_propose_to_date;
+                    let total_days = dialog.get_value('custom_total_propose_leave_days');
+                    let is_valid = validate_proposeddate(frm,from_date, to_date,dialog);
+                    if (is_valid) {
+                        frm.set_value('custom_propose_from_date', from_date);
+                        frm.set_value('custom_propose_to_date', to_date);
+                        frm.set_value('custom_total_propose_leave_days', total_days);
+                        dialog.hide();
+                        frm.save().then(() => {
+                            frappe.msgprint("New Dates Proposed successfully");
+                            frappe.call({
+                                method: "one_fm.overrides.leave_application.send_proposed_date_email",
+                                args: {
+                                    doc_name: frm.doc.name
+                                },
+                                callback: function(response) {
+                                    if (response.message === "success") {
+                                        frappe.msgprint("Email sent successfully.");
+                                    }
+                                }
+                            });
+                        });
+                    }
+                }
+            });
+            dialog.show();
+        }
+    },  
     refresh: function(frm) {
         // frm.set_intro("Please save the form after adding a new row to the Proof Documents table before attaching the document")
         if (!frm.is_new()){
@@ -104,3 +171,38 @@ var validate_reliever = (frm) => {
         }
     }
 }
+
+var calculate_days = (dialog) => {
+    let from_date = dialog.get_value('custom_propose_from_date');
+    let to_date = dialog.get_value('custom_propose_to_date');
+    if (from_date && to_date) {
+        let days_diff = frappe.datetime.get_diff(to_date, from_date);
+        if (days_diff >= 0) {
+            dialog.set_value('custom_total_propose_leave_days', days_diff);
+        } else {
+            dialog.set_value('custom_total_propose_leave_days', '0');
+        }
+    } else {
+        dialog.set_value('custom_total_propose_leave_days', '0');
+    }
+}
+
+var validate_proposeddate =(frm,from_date, to_date,dialog)=>{
+    let custom_total_propose_leave_days =  dialog.get_value('custom_total_propose_leave_days'),
+    validate_annual_leave = frappe.db.get_value("Leave Type", frm.doc.leave_type, "one_fm_is_paid_annual_leave")
+    
+    if (frappe.datetime.get_diff(to_date, from_date) < 0) {
+        frappe.throw("Proposed From Date cannot be later than the To Date");
+        return false;
+    }
+    if (frappe.datetime.get_diff(from_date, frappe.datetime.now_date()) < 0) {
+        frappe.throw("Proposed From Date cannot be in the past.");
+        return false;
+    }
+    if (validate_annual_leave && frm.doc.total_leave_days >= 15){
+        if (custom_total_propose_leave_days < 15){
+            frappe.throw("You are not allowed to reduce the total leave days below 15 days. Please propose another period.")}
+    }
+    return true; // Validation passed
+    
+    }

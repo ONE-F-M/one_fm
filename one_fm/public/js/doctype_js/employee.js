@@ -49,6 +49,10 @@ frappe.ui.form.on('Employee', {
 	onload: function(frm) {
         frm.trigger('mandatory_reports_to');
 		is_employee_master(frm);
+		frm.trigger('check_religion_for_hajj');
+    },
+	one_fm_religion: function(frm) {
+        frm.trigger('check_religion_for_hajj');
     },
 	designation: function(frm) {
 		frm.trigger('mandatory_reports_to');
@@ -62,6 +66,17 @@ frappe.ui.form.on('Employee', {
         } else {
             frm.set_df_property("reports_to", "reqd", 1);
         }
+	},
+	check_religion_for_hajj: function(frm) {
+		frappe.db.get_value('Religion', frm.doc.one_fm_religion, 'custom_hajj_check_required')
+			.then(r => {
+				if (r.message && r.message.custom_hajj_check_required) {
+					frm.set_df_property('went_to_hajj', 'read_only', 0);
+				} else {
+					frm.set_df_property('went_to_hajj', 'read_only', 1);
+					frm.set_value('went_to_hajj', 0);
+				}
+			});
 	},
 	under_company_residency: function(frm){
 		if(frm.doc.employee_id){

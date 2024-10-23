@@ -1,22 +1,19 @@
 from ast import literal_eval
 import frappe,json
+import pandas as pd
 
 from frappe import _
-from frappe.utils import get_fullname, nowdate, add_to_date
+from frappe.utils import get_fullname, nowdate, add_to_date, getdate, date_diff
+
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
-
-from frappe.desk.form.assign_to import add
-from one_fm.api.notification import create_notification_log
-from frappe.utils import getdate, date_diff
-import pandas as pd
+from frappe.desk.form.assign_to import remove
+from erpnext.crm.utils import get_open_todos
 from one_fm.api.api import push_notification_rest_api_for_leave_application
-from one_fm.processor import is_user_id_company_prefred_email_in_employee
+from one_fm.api.tasks import remove_assignment
+from one_fm.overrides.employee import NotifyAttendanceManagerOnStatusChange
+from one_fm.utils import get_approver_user
 from hrms.hr.utils import get_holidays_for_employee
-from one_fm.api.tasks import get_action_user,remove_assignment
-
-from .employee import NotifyAttendanceManagerOnStatusChange
-
 
 
 def validate_active_staff(doc,event):
@@ -129,6 +126,12 @@ class LeaveApplicationOverride(LeaveApplication):
     def validate_reliever(self):
         if self.custom_reliever_ == self.employee:
             frappe.throw("Oops! You can't assign yourself as the reliever!")
+        employee = frappe.get_value("Employee", self.employee, ["reports_to", "user_id"], as_dict=1)    
+        super_user_role = frappe.db.get_single_value("ONEFM General Setting", "super_user_role")
+        user_roles = frappe.get_roles(employee.user_id)
+        # If Reports to set or Super user role, then reliever is mandatory
+        if (employee.reports_to or (super_user_role in user_roles)) and not self.custom_reliever_:
+            frappe.throw(msg=_("Please ensure that a Reliever is set"), title=_("No Reliever set"))
 
     def close_shifts(self):
         #delete the shifts if a leave application is approved
@@ -151,24 +154,54 @@ class LeaveApplicationOverride(LeaveApplication):
         frappe.db.commit()
 
     def custom_notify_employee(self):
-        template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
-        if not template:
-            frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
-            return
-        parent_doc = frappe.get_doc("Leave Application", self.name)
-        args = parent_doc.as_dict()
-        email_template = frappe.get_doc("Email Template", template)
-        message = frappe.render_template(email_template.response, args)
-        if is_app_user(self.employee):
-            push_notification_rest_api_for_leave_application(self.employee,email_template.subject,message,self.name)
-            frappe.msgprint(_("Push notification sent to {0} via mobile application").format(self.employee),alert=True)
-        else:
-            employee = frappe.get_doc("Employee", self.employee)
-            if not employee.user_id:
+        try:
+            template = frappe.db.get_single_value("HR Settings", "leave_status_notification_template")
+            if not template:
+                frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
                 return
-            sendemail(recipients= [employee.user_id], subject="Leave Application", message=message,
-                    reference_doctype=self.doctype, reference_name=self.name, attachments = [])
-            frappe.msgprint("Email Sent to Employee {}".format(employee.employee_name))
+            parent_doc = frappe.get_doc("Leave Application", self.name)
+            employee = frappe.db.get_value("Employee", self.employee, "employee_name_in_arabic", as_dict=True) or {}
+            leave_approver = frappe.db.get_value("Employee", {"company_email": self.leave_approver}, ["employee_name_in_arabic", "employee_name"], as_dict=True) or {}
+            leave_type_in_arabic = frappe.db.get_value('Leave Type', self.leave_type, 'custom_leave_type_name_in_arabic')
+            args = parent_doc.as_dict()
+            args["employee_name_in_arabic"] = employee.get("employee_name_in_arabic")
+            args["leave_approver_in_arabic"] = leave_approver.get("employee_name_in_arabic")
+            args["leave_approver_in_english"] = leave_approver.get("employee_name")
+            args["status"] = "Pending" if args.get("status") == "Open" else "Approved"
+
+            get_translated_status = frappe.db.sql(
+                """
+                SELECT translated_text 
+                FROM `tabTranslation`
+                WHERE LOWER(source_text) = LOWER(%s)
+                """,
+                (args.get('status'),),
+                as_dict=True
+            )
+            translated_status = next(iter(get_translated_status or []), {})
+            args["status_in_arabic"] = translated_status.get("translated_text", args.get("status"))
+            args["leave_type_in_arabic"] = leave_type_in_arabic if leave_type_in_arabic else self.leave_type
+            email_template = frappe.get_doc("Email Template", template)
+            if args.get("status") == "Approved":
+                email_template = frappe.get_doc("Email Template", "Leave Employee Approval Notification")
+
+            if not email_template:
+                frappe.msgprint(_("Please set default template for Leave Status Notification in HR Settings."))
+                return
+            message = frappe.render_template(email_template.response_html, args)
+            if is_app_user(self.employee):
+                push_notification_rest_api_for_leave_application(self.employee,email_template.subject,message,self.name)
+                frappe.msgprint(_("Push notification sent to {0} via mobile application").format(self.employee),alert=True)
+            else:
+                employee = frappe.get_doc("Employee", self.employee)
+                if not employee.user_id:
+                    return
+                personal_email = employee.personal_email or ""
+                sendemail(recipients= [employee.user_id, personal_email], subject="Leave Application", message=message,
+                        reference_doctype=self.doctype, reference_name=self.name, attachments = [])
+                frappe.msgprint("Email Sent to Employee {}".format(employee.employee_name))
+        except Exception as e:
+            frappe.log_error(message=frappe.get_traceback(), title="Leave Notification")
             
             
     def notify_employee(self):
@@ -236,11 +269,24 @@ class LeaveApplicationOverride(LeaveApplication):
         It's a action that takes place on update of Leave Application.
         """
         #If Leave Approver Exist
-        
-        if self.leave_approver:
+        if self.workflow_state == "Open":
             try:
-                args = dict(self.as_dict()) #fetch fields from the doc.
-                args.update({"base_url": frappe.utils.get_url()})
+                employee =  frappe.db.get_values("Employee", self.employee, ["employee_name_in_arabic", "employee_id"], as_dict=1)
+                line_manager = frappe.db.get_value("Employee", {"user_id": self.leave_approver}, "employee_name_in_arabic")
+                args = frappe._dict({
+                    "employee_name_in_arabic": employee[0].employee_name_in_arabic,
+                    "employee_name": self.employee_name,
+                    "line_manager": self.leave_approver_name,
+                    "line_manager_in_arabic": line_manager,
+                    "employee_id": employee[0].employee_id,
+                    "leave_type": self.leave_type,
+                    "from_date": self.from_date,
+                    "to_date": self.to_date,
+                    "total_leave_days": self.total_leave_days,
+                    "workflow_state": self.workflow_state,
+                    "posting_date": self.posting_date,
+                    "base_url": frappe.utils.get_url()
+                })
 
                 #Fetch Email Template for Leave Approval. The email template is in HTML format.
                 template = frappe.db.get_single_value('HR Settings', 'leave_approval_notification_template')
@@ -249,14 +295,13 @@ class LeaveApplicationOverride(LeaveApplication):
                     return
                 email_template = frappe.get_doc("Email Template", template)
                 message = frappe.render_template(email_template.response_html, args)
-
                 if self.proof_documents:
                     proof_doc = self.proof_documents
                     for p in proof_doc:
                         message+=f"<hr><img src='{p.attachments}' height='400'/>"
-
+                subject = f"Leave Application Submitted for Approval – {self.employee_name}"
                 #send notification
-                sendemail(recipients= [self.leave_approver], subject="Leave Application", message=message,
+                sendemail(recipients= [self.leave_approver], subject=subject, message=message,
                         reference_doctype=self.doctype, reference_name=self.name, attachments = [])
 
                 employee_id = frappe.get_value("Employee", {"user_id":self.leave_approver}, ["name"])
@@ -275,6 +320,7 @@ class LeaveApplicationOverride(LeaveApplication):
         self.assign_to_leave_approver()
         self.update_attachment_name()
         self.enqueue_notification_method(self.notify_leave_approver)
+        self.enqueue_notification_method(self.notify_employee)
         
     def enqueue_notification_method(self,method):
         frappe.enqueue(method,is_async=True, job_name= str("Leave Notification"),  queue="short")
@@ -433,6 +479,7 @@ class LeaveApplicationOverride(LeaveApplication):
 
                     frappe.db.commit()
         if self.status == "Approved":
+            self.notify_employee()
             if getdate(self.from_date) <= getdate() <= getdate(self.to_date):
                 # frappe.db.set_value(), will not call the validate.
                 if self.leave_type !='Sick Leave':
@@ -486,6 +533,14 @@ def update_attendance_recods(self):
 
     frappe.msgprint(_("Attendance are created for the leave Appication {0}!".format(self.name)), alert=True)
 
+
+def remove_assignment(attendance_check):
+    open_todo = get_open_todos("Attendance Check",attendance_check)
+    if open_todo:
+        for each in open_todo:
+            remove("Attendance Check",attendance_check,each.allocated_to,ignore_permissions=1)
+    
+
 @frappe.whitelist()
 def get_leave_details(employee, date):
     allocation_records = get_leave_allocation_records(employee, date)
@@ -524,29 +579,9 @@ def get_leave_details(employee, date):
 
 @frappe.whitelist()
 def get_leave_approver(employee):
-    employee_details = frappe.db.get_value(
-			"Employee",
-			{"name": employee},
-			["reports_to", "department"],
-			as_dict = True
-		)
-    reports_to = employee_details.get('reports_to')
-    department = employee_details.get('department')
-    employee_shift = frappe.get_list("Shift Assignment",fields=["*"],filters={"employee":employee}, order_by='creation desc',limit_page_length=1)
-    approver = False
-    if reports_to:
-        approver = frappe.get_value("Employee", reports_to, ["user_id"])
-    elif len(employee_shift) > 0 and employee_shift[0].shift:
-        approver, Role = get_action_user(employee,employee_shift[0].shift)
-    else:
-        approvers = frappe.db.sql(
-                """select approver from `tabDepartment Approver` where parent= %s and parentfield = 'leave_approvers'""",
-                (department),
-            )
-        if approvers and len(approvers) > 0:
-            approvers = [approver[0] for approver in approvers]
-            approver = approvers[0]
+    approver = get_approver_user(employee)
     return approver
+
 
 @frappe.whitelist()
 def employee_leave_status():
@@ -605,6 +640,29 @@ def reassign_to_applicant(employee: str, leave_name: str):
             reassign.reassign()
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Reassign Duties Back To Employee")
+
+@frappe.whitelist()
+def send_proposed_date_email(doc_name):
+    doc = frappe.get_doc("Leave Application", doc_name)
+    employee_name_eng = doc.employee_name
+    employee_info = frappe.db.get_value("Employee", doc.employee, ["employee_name_in_arabic"], as_dict=1)
+    employee_name_arabic = employee_info.get("employee_name_arabic")         
+    employee_id = doc.employee
+    leave_type_eng = doc.leave_type
+    leave_type_arabic = doc.leave_type
+    start_data = doc.from_date
+    end_date = doc.to_date
+    total_days = doc.total_leave_days
+    date_of_application = doc.posting_date
+    suggested_start_date = doc.custom_propose_from_date
+    suggested_end_date = doc.custom_propose_to_date
+    total_suggected_days = doc.custom_total_propose_leave_days
+    msg = frappe.render_template('one_fm/templates/emails/leave_proposal_status.html',context={"total_suggected_days":total_suggected_days,"suggested_end_date":suggested_end_date,"suggested_start_date":suggested_start_date,"date_of_application":date_of_application,"total_days":total_days,"employee_name_eng": employee_name_eng, "employee_name_arabic": employee_name_arabic,"employee_id":employee_id,"leave_type_eng":leave_type_eng,"leave_type_arabic":leave_type_arabic,"start_data":start_data,"end_date":end_date})
+    sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
+    employee = frappe.db.get_value("Employee", doc.employee, ["personal_email", "company_email","prefered_email"], as_dict=1)
+    recipient = [value for value in employee.values() if value is not None]
+    sendemail(sender=sender, recipients= recipient,
+            content=msg, subject=" Leave Application – Suggested Adjustment to Leave Dates", delayed=False, is_scheduler_email=False,is_external_mail=True)
 
 
 class ReassignDutiesToReliever(NotifyAttendanceManagerOnStatusChange):
@@ -729,6 +787,7 @@ class ReassignDocumentToLeaveApplicant:
             
             if key == "ONEFM General Setting":
                 self.reassign_operation_settings(settings=value)
+
 
 
             
