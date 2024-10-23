@@ -3649,6 +3649,40 @@ def send_work_anniversary_reminders():
                     send_work_anniversary_reminder(person_email, reminder_text, others, message, sender)
 
 
+def set_employee_status_to_vacation():
+    # Get today's date
+    current_date = today()
+
+    # Fetch approved leave applications where `from_date` is today or earlier, along with the employee's status
+    leave_applications = frappe.get_all('Leave Application', 
+        filters={
+            'status': 'Approved',
+            'from_date': ['<=', current_date],
+            'to_date': ['>', current_date]
+        },
+        fields=['employee', 'employee.status']  # Fetch employee status directly
+    )
+
+    if not leave_applications:
+        frappe.log_error(_("No employees found with approved leave applications for today or earlier."))
+        return
+
+    # Filter employees who have 'Active' status and are on leave
+    employees_to_set_vacation = [
+        leave['employee'] for leave in leave_applications if leave['status'] == 'Active'
+    ]
+
+    if not employees_to_set_vacation:
+        frappe.log_error(_("No active employees found with approved leave applications for today or earlier."))
+        return
+
+    # Update the status of the employees to 'Vacation'
+    for employee in employees_to_set_vacation:
+        frappe.db.set_value('Employee', employee, 'status', 'Vacation')
+
+    frappe.db.commit()
+    frappe.log(_("Employee statuses updated to 'Vacation' for {0} employees.").format(len(employees_to_set_vacation)))
+    
 
 def is_holiday(employee, date=None, raise_exception=True):
     try:
