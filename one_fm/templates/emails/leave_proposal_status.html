@@ -5,16 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bilingual Email Template (English & Arabic)</title>
     <style>
+        .subject {
+        text-align: center;
+        margin-bottom: 10px;
+    }
         body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
         }
         .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            display: flex;
+        justify-content: space-between;
+        border: 0px solid #fff;
+        padding: 0;
         }
         .header {
             background-color: #f4f4f4;
@@ -59,49 +62,46 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            Leave Application – Suggested Adjustment to Leave Dates <br/>
-            الموضوع: طلب الإجازة – اقتراح تعديل تواريخ الإجازة
-        </div>
-
-        <div class="content">
+    <div class="subject">
+        <h4 class="english" style="text-align: center;">Subject: Leave Application – Suggested Adjustment to Leave Dates</h4>
+        <h4 class="arabic" style="text-align: center;">الموضوع: طلب الإجازة – اقتراح تعديل تواريخ الإجازة</h4>
+    </div>
             <div class="bilingual">
                 <div class="english">
                     <p>Dear {{employee_name_eng}},</p>
                     <p>Due to operational needs, an adjustment to your leave dates has been suggested by your line manager. Below are the details of your application, along with the proposed changes:</p>
                 </div>
                 <div class="arabic">
-                    <p>عزيزي {{employee_name_arabic}} ،</p>
+                    <p>عزيزي {{ employee_name_arabic if employee_name_arabic else "" }} ،</p>
                     <p>نظرًا للاحتياجات التشغيلية، تم اقتراح تعديل على تواريخ إجازتك من قبل مديرك المباشر. فيما يلي تفاصيل طلبك مع التغييرات المقترحة:</p>
                 </div>
             </div> 
 
             <div class="section bilingual">
                 <div class="english">
-                    <div class="section-title">Original Leave Duration:</div>
-                    <div class="details">
                         <p><strong>Employee Name:</strong>{{employee_name_eng}}</p>
                         <p><strong>Employee ID:</strong> {{employee_id}}</p>
                         <p><strong>Leave Type:</strong> {{leave_type_eng}}</p>
+                        <div class="section-title">Original Leave Duration:</div>
+                        <div class="details">
                         <p><strong>Start Date:</strong> {{start_data}}</p>
                         <p><strong>End Date:</strong> {{end_date}}</p>
                         <p><strong>Total Days:</strong> {{total_days}} Days</p>
                         <p><strong>Date of Application:</strong> {{date_of_application}}</p>
-                        <p><strong>Status:</strong> Pending Confirmation</p>
+                        <p><strong>Status:</strong> {{status}}</p>
                     </div>
                 </div>
                 <div class="arabic">
-                    <div class="section-title">مدة الإجازة الأصلية:</div>
-                    <div class="details">
-                        <p><strong>اسم الموظف:</strong> {{employee_name_arabic}}</p>
+                        <p><strong>اسم الموظف:</strong> {{ employee_name_arabic if employee_name_arabic else "" }}</p>
                         <p><strong>رقم الموظف:</strong> {{employee_id}}</p>
-                        <p><strong>نوع الإجازة:</strong> {{leave_type_arabic}}</p>
+                        <p><strong>نوع الإجازة:</strong> {{_(leave_type_eng, "ar")}}</p>
+                        <div class="section-title">مدة الإجازة الأصلية:</div>
+                        <div class="details">
                         <p><strong>تاريخ البدء:</strong> {{start_data}}</p>
                         <p><strong>تاريخ الانتهاء:</strong> {{end_date}}</p>
                         <p><strong>إجمالي الأيام:</strong> {{total_days}} أيام</p>
                         <p><strong>تاريخ التقديم:</strong> {{date_of_application}}</p>
-                        <p><strong>الحالة:</strong> بانتظار التأكيد</p>
+                        <p><strong>الحالة:</strong> {{_(status, "ar")}}</p>
                     </div>
                 </div>
             </div>
@@ -110,17 +110,17 @@
                 <div class="english">
                     <div class="section-title">Suggested Leave Duration:</div>
                     <div class="details">
-                        <p><strong>Suggested Start Date:</strong> [{{suggested_start_date}}]</p>
-                        <p><strong>Suggested End Date:</strong> [{{suggested_end_date}}]</p>
-                        <p><strong>Total Suggested Days:</strong> [{{total_suggected_days}}]</p>
+                        <p><strong>Suggested Start Date:</strong> {{suggested_start_date}}</p>
+                        <p><strong>Suggested End Date:</strong> {{suggested_end_date}}</p>
+                        <p><strong>Total Suggested Days:</strong> {{total_suggected_days}}</p>
                     </div>
                 </div>
                 <div class="arabic">
                     <div class="section-title">مدة الإجازة المقترحة:</div>
                     <div class="details">
-                        <p><strong>تاريخ البدء المقترح:</strong> [{{suggested_start_date}}]</p>
-                        <p><strong>تاريخ الانتهاء المقترح:</strong> [{{suggested_end_date}}]</p>
-                        <p><strong>إجمالي الأيام المقترحة:</strong> [{{total_suggected_days}}]</p>
+                        <p><strong>تاريخ البدء المقترح:</strong> {{suggested_start_date}}</p>
+                        <p><strong>تاريخ الانتهاء المقترح:</strong> {{suggested_end_date}}</p>
+                        <p><strong>إجمالي الأيام المقترحة:</strong> {{total_suggected_days}}</p>
                     </div>
                 </div>
             </div>
@@ -144,7 +144,5 @@
                     إدارة ون للمرافق
                 </div>
             </div>
-        </div>
-    </div>
 </body>
 </html>

@@ -13,7 +13,7 @@ frappe.ui.form.on("Leave Application", {
                         default: frm.doc.custom_propose_from_date, 
                         reqd: 1,
                         change: function() {
-                            calculate_days(dialog); // Trigger calculation when date changes
+                            calculate_days(frm,dialog); // Trigger calculation when date changes
                         }
                     },
                     {
@@ -23,13 +23,13 @@ frappe.ui.form.on("Leave Application", {
                         default: frm.doc.custom_propose_to_date, 
                         reqd: 1,
                         change: function() {
-                            calculate_days(dialog); // Trigger calculation when date changes
+                            calculate_days(frm,dialog); // Trigger calculation when date changes
                         }
                     },
                     {
                         fieldtype: 'Data', 
                         fieldname: 'custom_total_propose_leave_days', 
-                        label: 'Number of Days', 
+                        label: 'Total Number of proposed Days', 
                         read_only: 1,
                         default: '0' // Initially set to 0
                     }
@@ -40,28 +40,39 @@ frappe.ui.form.on("Leave Application", {
                     let from_date = values.custom_propose_from_date;
                     let to_date = values.custom_propose_to_date;
                     let total_days = dialog.get_value('custom_total_propose_leave_days');
-                    let is_valid = validate_proposeddate(frm,from_date, to_date,dialog);
-                    if (is_valid) {
-                        frm.set_value('custom_propose_from_date', from_date);
-                        frm.set_value('custom_propose_to_date', to_date);
-                        frm.set_value('custom_total_propose_leave_days', total_days);
-                        dialog.hide();
-                        frm.save().then(() => {
-                            frappe.msgprint("New Dates Proposed successfully");
-                            frappe.call({
-                                method: "one_fm.overrides.leave_application.send_proposed_date_email",
-                                args: {
-                                    doc_name: frm.doc.name
-                                },
-                                callback: function(response) {
-                                    if (response.message === "success") {
-                                        frappe.msgprint("Email sent successfully.");
-                                    }
-                                }
-                            });
-                        });
-                    }
-                }
+                
+                    // Validate the proposed dates
+                    validate_proposeddate(frm, from_date, to_date, dialog)
+                        .then(is_valid => {
+                            if (is_valid) {
+                                // Set the new dates to the form
+                                frm.set_value('custom_propose_from_date', from_date);
+                                frm.set_value('custom_propose_to_date', to_date);
+                                frm.set_value('custom_total_propose_leave_days', total_days);
+                
+                                // Close the dialog and save the form
+                                dialog.hide();
+                                frm.save().then(() => {
+                                    frappe.msgprint("New Dates Proposed successfully");
+                
+                                    // Call the server-side method to send the email
+                                    frappe.call({
+                                        method: "one_fm.overrides.leave_application.send_proposed_date_email",
+                                        args: {
+                                            doc_name: frm.doc.name
+                                        },
+                                        callback: function(response) {
+                                            if (response.message === "success") {
+                                                frappe.msgprint("Email sent successfully.");
+                                            } else {
+                                                frappe.msgprint("Failed to send the email.");
+                                            }
+                                        }
+                                    });
+                                });
+                            }
+                        })
+                }                
             });
             dialog.show();
         }
@@ -172,37 +183,51 @@ var validate_reliever = (frm) => {
     }
 }
 
-var calculate_days = (dialog) => {
+
+var calculate_days = function (frm,dialog) {
     let from_date = dialog.get_value('custom_propose_from_date');
     let to_date = dialog.get_value('custom_propose_to_date');
-    if (from_date && to_date) {
-        let days_diff = frappe.datetime.get_diff(to_date, from_date);
-        if (days_diff >= 0) {
-            dialog.set_value('custom_total_propose_leave_days', days_diff);
-        } else {
-            dialog.set_value('custom_total_propose_leave_days', '0');
-        }
-    } else {
-        dialog.set_value('custom_total_propose_leave_days', '0');
+    if (from_date && to_date && frm.doc.employee && frm.doc.leave_type) {
+        return frappe.call({
+            method: "hrms.hr.doctype.leave_application.leave_application.get_number_of_leave_days",
+            args: {
+                employee: frm.doc.employee,
+                leave_type: frm.doc.leave_type,
+                from_date: from_date,
+                to_date: to_date
+            },
+            callback: function (r) {
+                console.log(r)
+                if (r && r.message) {
+                    dialog.set_value('custom_total_propose_leave_days', r.message);
+                }
+            },
+        });
     }
 }
 
-var validate_proposeddate =(frm,from_date, to_date,dialog)=>{
-    let custom_total_propose_leave_days =  dialog.get_value('custom_total_propose_leave_days'),
-    validate_annual_leave = frappe.db.get_value("Leave Type", frm.doc.leave_type, "one_fm_is_paid_annual_leave")
-    
-    if (frappe.datetime.get_diff(to_date, from_date) < 0) {
-        frappe.throw("Proposed From Date cannot be later than the To Date");
-        return false;
-    }
-    if (frappe.datetime.get_diff(from_date, frappe.datetime.now_date()) < 0) {
-        frappe.throw("Proposed From Date cannot be in the past.");
-        return false;
-    }
-    if (validate_annual_leave && frm.doc.total_leave_days >= 15){
-        if (custom_total_propose_leave_days < 15){
-            frappe.throw("You are not allowed to reduce the total leave days below 15 days. Please propose another period.")}
-    }
-    return true; // Validation passed
-    
-    }
+
+
+var validate_proposeddate = (frm, from_date, to_date, dialog) => {
+    return new Promise((resolve, reject) => {
+        let custom_total_propose_leave_days = dialog.get_value('custom_total_propose_leave_days');
+        if (frappe.datetime.get_diff(to_date, from_date) < 0) {
+            frappe.throw("Proposed From Date cannot be later than the To Date");
+            return reject(false);
+        }
+        if (frappe.datetime.get_diff(from_date, frappe.datetime.now_date()) < 0) {
+            frappe.throw("Proposed From Date cannot be in the past.");
+            return reject(false);
+        }
+        frappe.db.get_value("Leave Type", frm.doc.leave_type, "one_fm_is_paid_annual_leave")
+            .then(res => {
+                if (res.message.one_fm_is_paid_annual_leave && frm.doc.total_leave_days >= 15) {
+                    if (custom_total_propose_leave_days < 15) {
+                        frappe.throw("You are not allowed to reduce the total leave days below 15 days. Please propose another period.");
+                        return reject(false);
+                    }
+                }
+                resolve(true); 
+            })
+    });
+};

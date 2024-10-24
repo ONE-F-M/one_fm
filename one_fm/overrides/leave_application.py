@@ -642,25 +642,27 @@ def reassign_to_applicant(employee: str, leave_name: str):
 @frappe.whitelist()
 def send_proposed_date_email(doc_name):
     doc = frappe.get_doc("Leave Application", doc_name)
-    employee_name_eng = doc.employee_name
-    employee_info = frappe.db.get_value("Employee", doc.employee, ["employee_name_in_arabic"], as_dict=1)
-    employee_name_arabic = employee_info.get("employee_name_arabic")         
-    employee_id = doc.employee
-    leave_type_eng = doc.leave_type
-    leave_type_arabic = doc.leave_type
-    start_data = doc.from_date
-    end_date = doc.to_date
-    total_days = doc.total_leave_days
-    date_of_application = doc.posting_date
-    suggested_start_date = doc.custom_propose_from_date
-    suggested_end_date = doc.custom_propose_to_date
-    total_suggected_days = doc.custom_total_propose_leave_days
-    msg = frappe.render_template('one_fm/templates/emails/leave_proposal_status.html',context={"total_suggected_days":total_suggected_days,"suggested_end_date":suggested_end_date,"suggested_start_date":suggested_start_date,"date_of_application":date_of_application,"total_days":total_days,"employee_name_eng": employee_name_eng, "employee_name_arabic": employee_name_arabic,"employee_id":employee_id,"leave_type_eng":leave_type_eng,"leave_type_arabic":leave_type_arabic,"start_data":start_data,"end_date":end_date})
+    employee_info =  frappe.db.get_value("Employee", doc.employee, ["employee_name_in_arabic"], as_dict=1),
+    args = frappe._dict({
+                    "employee_name_eng" : doc.employee_name,
+                    "employee_name_arabic" : employee_info[0].get("employee_name_arabic"),     
+                    "employee_id" : doc.employee,
+                    "leave_type_eng" : doc.leave_type,
+                    "start_data" : doc.from_date,
+                    "end_date" : doc.to_date,
+                    "total_days" : doc.total_leave_days,
+                    "date_of_application" : doc.posting_date,
+                    "suggested_start_date" : doc.custom_propose_from_date,
+                    "suggested_end_date" : doc.custom_propose_to_date,
+                    "total_suggected_days" : doc.custom_total_propose_leave_days,
+                    "status":doc.workflow_state
+                })
+    msg = frappe.render_template('one_fm/templates/emails/leave_proposal_status.html', args)
     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
     employee = frappe.db.get_value("Employee", doc.employee, ["personal_email", "company_email","prefered_email"], as_dict=1)
-    recipient = [value for value in employee.values() if value is not None]
+    recipient = list({value for value in employee.values() if value is not None})
     sendemail(sender=sender, recipients= recipient,
-            content=msg, subject=" Leave Application – Suggested Adjustment to Leave Dates", delayed=False, is_scheduler_email=False,is_external_mail=True)
+            message=msg, subject=" Leave Application – Suggested Adjustment to Leave Dates", delayed=False, is_scheduler_email=False,is_external_mail=True)
 
 
 class ReassignDutiesToReliever(NotifyAttendanceManagerOnStatusChange):
