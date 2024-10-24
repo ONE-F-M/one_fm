@@ -7,6 +7,7 @@ frappe.ui.form.on('Employee', {
 		frm.trigger('set_queries');
 		set_mandatory(frm);
         set_shift_working_btn(frm);
+		filter_active_shifts(frm);
         filterDefaultShift(frm);
         setProjects(frm);
 		if(frappe.user.has_role('HR Manager') && !frm.doc.employee_id){
@@ -221,6 +222,15 @@ var yes_no_html_buttons = function(frm, val, html_field, field_name, label) {
 	});
 };
 
+const filter_active_shifts = (frm) => {
+    frm.set_query('shift', () => {
+        return {
+            filters: {
+                status: 'Active',
+            }
+        }
+    })
+}
 
 const filterDefaultShift = (frm) => {
     let state = 0;
