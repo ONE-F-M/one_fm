@@ -656,7 +656,8 @@ def send_proposed_date_email(doc_name):
                     "date_of_application" : doc.posting_date,
                     "suggested_start_date" : doc.custom_propose_from_date,
                     "suggested_end_date" : doc.custom_propose_to_date,
-                    "total_suggected_days" : doc.custom_total_propose_leave_days
+                    "total_suggected_days" : doc.custom_total_propose_leave_days,
+                    "status":doc.workflow_state
                 })
     msg = frappe.render_template('one_fm/templates/emails/leave_proposal_status.html', args)
     sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None

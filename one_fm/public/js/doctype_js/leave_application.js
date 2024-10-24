@@ -29,7 +29,7 @@ frappe.ui.form.on("Leave Application", {
                     {
                         fieldtype: 'Data', 
                         fieldname: 'custom_total_propose_leave_days', 
-                        label: 'Number of Days', 
+                        label: 'Total Number of proposed Days', 
                         read_only: 1,
                         default: '0' // Initially set to 0
                     }

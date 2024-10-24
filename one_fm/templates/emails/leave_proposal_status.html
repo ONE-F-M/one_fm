@@ -79,29 +79,29 @@
 
             <div class="section bilingual">
                 <div class="english">
-                    <div class="section-title">Original Leave Duration:</div>
-                    <div class="details">
                         <p><strong>Employee Name:</strong>{{employee_name_eng}}</p>
                         <p><strong>Employee ID:</strong> {{employee_id}}</p>
                         <p><strong>Leave Type:</strong> {{leave_type_eng}}</p>
+                        <div class="section-title">Original Leave Duration:</div>
+                        <div class="details">
                         <p><strong>Start Date:</strong> {{start_data}}</p>
                         <p><strong>End Date:</strong> {{end_date}}</p>
                         <p><strong>Total Days:</strong> {{total_days}} Days</p>
                         <p><strong>Date of Application:</strong> {{date_of_application}}</p>
-                        <p><strong>Status:</strong> Pending Confirmation</p>
+                        <p><strong>Status:</strong> {{status}}</p>
                     </div>
                 </div>
                 <div class="arabic">
-                    <div class="section-title">مدة الإجازة الأصلية:</div>
-                    <div class="details">
                         <p><strong>اسم الموظف:</strong> {{ employee_name_arabic if employee_name_arabic else "" }}</p>
                         <p><strong>رقم الموظف:</strong> {{employee_id}}</p>
                         <p><strong>نوع الإجازة:</strong> {{_(leave_type_eng, "ar")}}</p>
+                        <div class="section-title">مدة الإجازة الأصلية:</div>
+                        <div class="details">
                         <p><strong>تاريخ البدء:</strong> {{start_data}}</p>
                         <p><strong>تاريخ الانتهاء:</strong> {{end_date}}</p>
                         <p><strong>إجمالي الأيام:</strong> {{total_days}} أيام</p>
                         <p><strong>تاريخ التقديم:</strong> {{date_of_application}}</p>
-                        <p><strong>الحالة:</strong> بانتظار التأكيد</p>
+                        <p><strong>الحالة:</strong> {{_(status, "ar")}}</p>
                     </div>
                 </div>
             </div>
