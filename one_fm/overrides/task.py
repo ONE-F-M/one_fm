@@ -59,7 +59,7 @@ def sync_assign_to_field(doc):
                 'assign_to': assignments_to_be_added,
                 'doctype': doc.doctype,
                 'name': doc.name,
-                'description': doc.description,
+                'description': doc.subject,
             })
 
 
