@@ -1,6 +1,6 @@
 [
  {
-  "client_script": null,
+  "client_script": "",
   "docstatus": 0,
   "doctype": "DocType Layout",
   "document_type": "Employee",
@@ -421,6 +421,13 @@
    {
     "fieldname": "civil_id_expiry_date",
     "label": "Civil ID Expiry Date",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
+    "fieldname": "custom_civil_id_assurance_level",
+    "label": "Civil ID Assurance Level",
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
@@ -904,6 +911,13 @@
    {
     "fieldname": "payroll_cost_center",
     "label": "Payroll Cost Center",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
+   },
+   {
+    "fieldname": "custom_payroll_cycle_start_date",
+    "label": "Payroll Cycle Start Date",
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
@@ -1495,9 +1509,16 @@
     "parent": "Employee",
     "parentfield": "fields",
     "parenttype": "DocType Layout"
+   },
+   {
+    "fieldname": "custom_payroll_cycle_end_date",
+    "label": "Payroll Cycle End Date",
+    "parent": "Employee",
+    "parentfield": "fields",
+    "parenttype": "DocType Layout"
    }
   ],
-  "modified": "2023-12-03 14:06:06.531161",
+  "modified": "2024-10-27 15:49:19.569866",
   "name": "Employee",
   "route": "app/employee/"
  }
