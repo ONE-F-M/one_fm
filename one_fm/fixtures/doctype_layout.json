@@ -916,13 +916,6 @@
     "parenttype": "DocType Layout"
    },
    {
-    "fieldname": "custom_payroll_cycle_start_date",
-    "label": "Payroll Cycle Start Date",
-    "parent": "Employee",
-    "parentfield": "fields",
-    "parenttype": "DocType Layout"
-   },
-   {
     "fieldname": "bank_details_section",
     "label": "Bank Details",
     "parent": "Employee",
@@ -1510,13 +1503,6 @@
     "parentfield": "fields",
     "parenttype": "DocType Layout"
    },
-   {
-    "fieldname": "custom_payroll_cycle_end_date",
-    "label": "Payroll Cycle End Date",
-    "parent": "Employee",
-    "parentfield": "fields",
-    "parenttype": "DocType Layout"
-   }
   ],
   "modified": "2024-10-27 15:49:19.569866",
   "name": "Employee",
