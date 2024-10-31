@@ -2818,7 +2818,7 @@ def get_doctype_mandatory_fields(doctype):
 	mandatory_fields = []
 	labels = {}
 	employee_fields = []
-	for d in meta.get("fields", {"reqd": 1, "fieldtype":["!=", "Table"], "fieldname":["!=", "naming_series"]}):
+	for d in meta.get("fields", {"reqd": 1, "fieldtype": ["!=", "Table"], "fieldname": ["not in", ["naming_series", "title"]]}):
 		mandatory_fields.append(d.fieldname)
 		labels[d.fieldname] = d.label
 		if d.fieldtype == "Link" and d.options=="Employee":
