@@ -596,8 +596,7 @@ def mark_daily_attendance(start_date, end_date):
                         AND status="Absent"
                     """)
                 except:
-                    frappe.log_error(message = frappe.get_traceback(),title=f"Error in Attendance Marking for {i.employee_name}")
-                    continue
+                    pass
                 query_body+= f"""
                 (
                     "HR-ATT_{start_date}_{i.name}_Basic", "{naming_series}" , "{i.name}", "{i.employee_name}", 0, "Day Off", '', NULL,
@@ -628,8 +627,8 @@ def mark_daily_attendance(start_date, end_date):
                         AND status="Absent"
                     """)
                 except:
-                    frappe.log_error(message = frappe.get_traceback(),title=f"Error in Attendance Marking for {i.employee_name}")
-                    continue
+                    pass
+
                 query_body+= f"""
                 (
                     "HR-ATT_{start_date}_{i.name}_Basic", "{naming_series}" , "{i.name}", "{i.employee_name}", 0,  "Work From Home", '', NULL,
