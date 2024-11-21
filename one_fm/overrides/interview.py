@@ -43,3 +43,29 @@ def update_interview_rounds_in_job_applicant(doc, method):
         frappe.db.set_value('Job Applicant Interview Round', doc.interview_round_child_ref, 'interview', doc.name)
     if not doc.interview_details:
         doc.append('interview_details', {'interviewer': frappe.session.user})
+
+
+def validate_job_applicant_mandatory(doc, method):
+
+    if doc.status == "Cleared" and doc.docstatus == 1:
+
+        job_applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
+
+        # Validate mandatory fields before saving
+        mandatory_fields = [
+            "one_fm_passport_type",
+            "applicant_name",
+            "status",
+            "email_id",
+            "one_fm_first_name",
+            "one_fm_last_name",
+        ]
+        missing_fields = [field for field in mandatory_fields if not job_applicant.get(field)]
+
+        if missing_fields:
+            frappe.throw(
+                _("Job Applicant Doctype is missing mandatory fields which may cause errors when updating it: {0}").format(
+                    ", ".join(missing_fields)
+                ),
+                title=_("Job Applicant Validation"),
+            )

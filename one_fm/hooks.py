@@ -370,7 +370,7 @@ doc_events = {
 		"validate": "one_fm.hiring.utils.calculate_interview_feedback_average_rating",
 	},
 	"Interview": {
-		"validate": "one_fm.overrides.interview.update_interview_rounds_in_job_applicant",
+		"validate": ["one_fm.overrides.interview.update_interview_rounds_in_job_applicant", "one_fm.overrides.interview.validate_job_applicant_mandatory"]
 	},
 	"Issue": {
 		"after_insert": [
