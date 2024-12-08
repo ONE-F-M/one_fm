@@ -377,7 +377,8 @@ def get_assigned_sites(employee_id, project=None):
 		return []
 
 	except Exception as e:
-		return frappe.utils.response.report_error(e.http_status_code)
+		status_code = getattr(e, 'http_status_code', 500)
+		return frappe.utils.response.report_error(status_code)
 
 
 @frappe.whitelist()
