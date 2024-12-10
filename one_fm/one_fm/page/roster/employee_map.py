@@ -160,14 +160,14 @@ class CreateMap():
             es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability, es.day_off_ot, es.project from `tabEmployee Schedule`es  where \
                 es.employee in  ('{employees[0].employee}') and {self.str_filter} order by es.employee """
             self.attendance_query = f"SELECT at.status, at.leave_type, at.leave_application,  at.attendance_date,at.employee,at.employee_name, at.operations_shift, osh.start_time, osh.end_time from `tabAttendance`at left join `tabOperations Shift` osh on at.operations_shift=osh.name where at.employee in ('{employees[0].employee}')  and at.attendance_date between '{self.start}' and '{self.end}' and at.docstatus = 1 AND at.roster_type='{self.roster_type}' order by at.employee """
-            self.employee_query = f"SELECT name,employee_id,relieving_date, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in ('{employees[0].employee}') order by employee_name"
+            self.employee_query = f"SELECT name,employee_id,relieving_date, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in ('{employees[0].employee}') and shift_working = '1' order by employee_name"
         else:
             self.schedule_query  = f"SELECT  es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, \
                 es.shift,  es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability, es.day_off_ot, es.project from `tabEmployee Schedule`es  where \
                     es.employee in {self.employees} and {self.str_filter}   order by es.employee "
             self.attendance_query = f"SELECT at.status,at.leave_type,at.leave_application, at.attendance_date,at.employee,at.employee_name, at.operations_shift, osh.start_time, osh.end_time from `tabAttendance`at  left join `tabOperations Shift` osh on at.operations_shift=osh.name where at.employee in {self.employees}  and at.attendance_date between '{self.start}' and '{self.end}' and at.docstatus = 1 AND at.roster_type='{self.roster_type}' order by at.employee "
 
-            self.employee_query = f"SELECT name, employee_id,relieving_date, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} order by employee_name"
+            self.employee_query = f"SELECT name, employee_id,relieving_date, employee_name,day_off_category,number_of_days_off from `tabEmployee` where name in {self.employees} and shift_working = '1' order by employee_name"
 
 
         self.schedule_set = frappe.db.sql(self.schedule_query,as_dict=1) if self.employees else []

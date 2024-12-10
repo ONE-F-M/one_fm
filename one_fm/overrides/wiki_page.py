@@ -59,7 +59,11 @@ def get_open_drafts():
 	return f'<span class="count">{count}</span>'
 
 @frappe.whitelist()
-def preview(content, name, new, type, diff_css=False):
+def preview(name, new, type, diff_css=False, content=None):
+	
+	if not content:
+		frappe.throw("Content is required for preview generation")
+		
 	html = md_to_html(content)
 	if new:
 		return {"html": html}

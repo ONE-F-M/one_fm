@@ -16,7 +16,7 @@ from one_fm.utils import query_db_list
 @frappe.whitelist(allow_guest=True)
 def get_staff(assigned=1, employee_id=None, employee_name=None, company=None, project=None, site=None, shift=None, department=None, designation=None):
     date = cstr(add_to_date(nowdate(), days=1))
-    conds = ""
+    conds = "and shift_working = 1 "
 
     if employee_name:
         conds += 'and emp.employee_name="{name}" '.format(name=employee_name)
@@ -87,10 +87,10 @@ def get_staff_filters_data():
 @frappe.whitelist()
 def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, operations_role=None, designation=None, isOt=None, limit_start=0, limit_page_length=9999):
     try:
-        master_data, formatted_employee_data, post_count_data, employee_filters= {}, {}, {}, {}
+        master_data, formatted_employee_data, post_count_data, employee_filters= {}, {}, {}, {"shift_working": "1"}
         operations_roles_list = []
         employees = []
-        asa_filters = "em.status = 'Active'  and em.attendance_by_timesheet = '0' "
+        asa_filters = "em.status = 'Active' and em.attendance_by_timesheet = '0' "
         filters = {
             'date': ['between', (start_date, end_date)]
         }
