@@ -6,7 +6,6 @@ import time
 from frappe import _
 from frappe.utils import getdate
 from datetime import timedelta, date
-from one_fm.one_fm.doctype.attendance_check.attendance_check import get_assigned_shift
 
 
 def execute(filters=None):
@@ -49,10 +48,12 @@ def get_not_applicable(date,active_employees):
 
 def get_scheduled_employees(date):
     value = frappe.db.sql(f"""SELECT DISTINCT employee from `tabEmployee Schedule` where date = '{date}'  """,as_dict=1)
-    if value:
-        schedule_employees = [each.employee for each in value]
-        return schedule_employees
-        
+    return [each.employee for each in value] if value else list() 
+    
+
+def get_assigned_shift(date):
+    value = frappe.db.sql(f"""SELECT DISTINCT employee from `tabShift Assignment` where start_date = '{date}'  """,as_dict=1)
+    return [each.employee for each in value] if value else list() 
 
 
 def get_exited_employees(date):
