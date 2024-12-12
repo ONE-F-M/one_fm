@@ -87,7 +87,7 @@ def get_staff_filters_data():
 @frappe.whitelist()
 def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, operations_role=None, designation=None, isOt=None, limit_start=0, limit_page_length=9999):
     try:
-        master_data, formatted_employee_data, post_count_data, employee_filters= {}, {}, {}, {"shift_working": "1"}
+        master_data, formatted_employee_data, post_count_data, employee_filters= {}, {}, {}, {}
         operations_roles_list = []
         employees = []
         asa_filters = "em.status = 'Active' and em.attendance_by_timesheet = '0' "
@@ -134,7 +134,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 
         if isOt:
             employee_filters.update({'employee_availability' : 'Working'})
-            all_active_employees = frappe.db.sql("SELECT name from `tabEmployee` where status in ('Active','Vacation') and attendance_by_timesheet = '0' ",as_dict =1)
+            all_active_employees = frappe.db.sql("SELECT name from `tabEmployee` where status in ('Active','Vacation') and attendance_by_timesheet = '0' and shift_working= '1'",as_dict =1)
             all_active_employee_ids = [i.name for i in all_active_employees]
             employee_filters.update({'employee':['In',all_active_employee_ids]})
             employees = frappe.db.get_list("Employee Schedule", employee_filters, ["distinct employee", "employee_name"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
