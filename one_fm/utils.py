@@ -3916,3 +3916,45 @@ def background_enqueue_run(report_name, filters=None, user=None):
 		"name": track_instance.name,
 		"redirect_url": get_url_to_form("Prepared Report", track_instance.name)
 	}
+
+
+def authenticate_personal_gmail():
+
+    SCOPES = ["https://www.googleapis.com/auth/tasks"]
+
+    flow = InstalledAppFlow.from_client_secrets_file(
+        frappe.get_site_path("private", "personal_client_secret.json"), SCOPES
+    )
+    credentials = flow.run_local_server(port=0)
+    return credentials
+
+def get_personal_tasks_service():
+
+    credentials = authenticate_personal_gmail()
+
+    # Create and return the Google Tasks API service object
+    return build("tasks", "v1", credentials=credentials)
+
+
+def create_personal_task(title, notes, due_date):
+
+    try:
+        due_date_formatted = datetime.strptime(due_date, "%d-%m-%YT%H:%M:%SZ").isoformat() + "Z"
+
+        service = get_personal_tasks_service()
+
+        task = {
+            "title": title,
+            "notes": notes,
+            "due": due_date_formatted
+        }
+
+        result = service.tasks().insert(tasklist="@default", body=task).execute()
+        return result
+
+    except ValueError as ve:
+        return {"error": f"Invalid date format: {due_date}. Expected RFC 3339 format."}
+
+    except Exception as ex:
+        return {"error": f"An unexpected error occurred: {str(ex)}"}
+
