@@ -17,7 +17,7 @@ class OperationsRole(Document):
 		if frappe.db.exists("Contracts", {'project': self.project}):
 			start_date, end_date = frappe.db.get_value("Contracts", {'project': self.project}, ["start_date", "end_date"])
 			if start_date and end_date:
-				frappe.enqueue(set_post_active, post=self, operations_role=self.name, post_abbrv=post_abbrv, shift=self.shift, site=self.site, project=self.project, start_date=start_date, end_date=end_date, is_async=True, queue="long")
+				frappe.enqueue(set_post_active, post=self, operations_role=self.name, post_abbrv=post_abbrv, shift=self.shift, site=self.site, project=self.project, start_date=start_date, end_date=end_date, is_async=True, queue="long", timeout=6000)
 
 	def validate(self):
 		if not self.post_name:

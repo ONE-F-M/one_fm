@@ -526,6 +526,7 @@ override_doctype_class = {
     "Payroll Entry": "one_fm.overrides.payroll_entry.PayrollEntryOverride",
     "Salary Slip": "one_fm.overrides.salary_slip.SalarySlipOverride",
     "Interview Feedback": "one_fm.overrides.interview_feedback.InterviewFeedbackOverride",
+    "Leave Allocation": "one_fm.overrides.leave_allocation.LeaveAllocationOverride",
     
     # "User": "one_fm.overrides.user.UserOverride"
 }

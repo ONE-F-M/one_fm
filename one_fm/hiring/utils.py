@@ -670,7 +670,7 @@ def update_onboarding_doc_workflow_sate(doc):
 
 @frappe.whitelist()
 def get_interview_question_set(interview_round):
-	return frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'])
+	return frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'], order_by="idx")
 
 @frappe.whitelist()
 def get_interview_skill_and_question_set(interview_round, interviewer=False, interview_name=False):
