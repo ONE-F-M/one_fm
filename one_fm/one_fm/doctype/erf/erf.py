@@ -228,6 +228,8 @@ class ERF(Document):
 		self.fix_erf_employee_indexing()
 		self.validate_total_required_candidates()
 		if self.workflow_state == "Accepted":
+			if not self.base or not self.salary_structure:
+				frappe.throw(_('The Base field and Salary Structure field must be filled!'))
 			# self.validate_submit_to_hr()
 			# if not self.hiring_method:
 			# 	frappe.throw(_("Please set Hiring Method in HR section"))
