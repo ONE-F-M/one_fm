@@ -9,7 +9,6 @@ frappe.ui.form.on('Job Applicant', {
 			};
 		});
 		frappe.realtime.on('show_job_applicant_update_dialog', function(data) {
-			console.log("samdaniii I am in");
 	
 			var job_application_name = data.job_application_name;
 			var job_applicant_status = data.job_applicant_status;
