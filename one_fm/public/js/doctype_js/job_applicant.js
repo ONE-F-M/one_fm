@@ -8,7 +8,73 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			};
 		});
+		frappe.realtime.on('show_job_applicant_update_dialog', function(data) {
+			console.log("samdaniii I am in");
+	
+			var job_application_name = data.job_application_name;
+			var job_applicant_status = data.job_applicant_status;
+			var job_applicant = data.job_applicant;
+	
+			// Create the dialog with buttons
+			var dialog = new frappe.ui.Dialog({
+				title: __("Update Job Applicant"),
+				fields: [
+					{
+						fieldname: "info",
+						fieldtype: "HTML",
+						options: `<p>Do you want to update the Job Applicant <b>${job_application_name}</b> as <b>${job_applicant_status}</b> based on this interview result?</p>`,
+					},
+				],
+				// Explicitly prevent any default action for buttons
+				no_submit_on_enter: true,
+			});
+	
+			// Add primary button action
+			dialog.set_primary_action(`Mark as ${job_applicant_status}`, function() {
+				frappe.call({
+					method: "hrms.hr.doctype.interview.interview.update_job_applicant_status",
+					args: {
+						args: {
+							job_applicant: job_applicant,
+							status: job_applicant_status
+						}
+					},
+					callback: function() {
+						frappe.show_alert({
+							message: (`Job Applicant marked as ${job_applicant_status}`),
+							indicator: "green"
+						});
+					},
+				});
+				dialog.hide();
+			});
+	
+			// Add secondary button action for "Mark as Shortlisted"
+			dialog.set_secondary_action(function() {
+				frappe.call({
+					method: "hrms.hr.doctype.interview.interview.update_job_applicant_status",
+					args: {
+						args: {
+							job_applicant: job_applicant,
+							status: "Shortlisted"
+						}
+					},
+					callback: function() {
+						frappe.show_alert({
+							message: ("Job Applicant marked as Shortlisted"),
+							indicator: "green"
+						});
+					},
+				});
+				dialog.hide();
+			});
+			dialog.set_secondary_action_label("Mark as Shortlisted");
+	
+			// Show the dialog
+			dialog.show();
+		});
 	},
+
 	refresh(frm) {
 		// Changes the buttons for `PAM File Number` and `PAM Desigantion` once operator wants to changethe data of any
 		// if(frm.doc.pam_number_button == 0 || frm.is_new()){
