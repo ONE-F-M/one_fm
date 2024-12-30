@@ -21,7 +21,7 @@ frappe.ui.form.on('Job Applicant', {
 					{
 						fieldname: "info",
 						fieldtype: "HTML",
-						options: `<p>Do you want to update the Job Applicant <b>${job_application_name}</b> as <b>${job_applicant_status}</b> based on this interview result?</p>`,
+						options: `<p>Do you want to update the Job Applicant <b>${job_application_name}</b>  based on this interview result?</p>`,
 					},
 				],
 				// Explicitly prevent any default action for buttons
@@ -31,7 +31,7 @@ frappe.ui.form.on('Job Applicant', {
 			// Add primary button action
 			dialog.set_primary_action(`Mark as ${job_applicant_status}`, function() {
 				frappe.call({
-					method: "hrms.hr.doctype.interview.interview.update_job_applicant_status",
+					method: "one_fm.overrides.interview.update_job_applicant_status",
 					args: {
 						args: {
 							job_applicant: job_applicant,
@@ -51,7 +51,7 @@ frappe.ui.form.on('Job Applicant', {
 			// Add secondary button action for "Mark as Shortlisted"
 			dialog.set_secondary_action(function() {
 				frappe.call({
-					method: "hrms.hr.doctype.interview.interview.update_job_applicant_status",
+					method: "one_fm.overrides.interview.update_job_applicant_status",
 					args: {
 						args: {
 							job_applicant: job_applicant,
