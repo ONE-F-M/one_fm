@@ -3,6 +3,7 @@ from frappe import _
 import json
 from frappe.utils import get_link_to_form
 from hrms.hr.doctype.interview.interview import Interview
+from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 
 def validate_interview_overlap(self):
     interviewers = [entry.interviewer for entry in self.interview_details] or [""]
@@ -88,7 +89,9 @@ def update_job_applicant_status(args):
         else:
             job_applicant.status = args["status"]
         job_applicant.save()
-        
+
+        if job_applicant.status == "Accepted":
+            send_applicant_doc_magic_link(job_applicant.name, job_applicant.applicant_name, job_applicant.one_fm_designation)        
         frappe.msgprint(
 			_("Updated the Job Applicant status to {0}").format(job_applicant.status),
 			alert=True,
