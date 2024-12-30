@@ -16,6 +16,12 @@
   "performance_profile_resource",
   "performance_profile_guid",
   "job_offer_section",
+  "auto_email_job_offer",
+  "job_offer_workflow_state",
+  "auto_email_hiring_method",
+  "job_offer_print_format",
+  "job_offer_email_template",
+  "column_break_vjwl",
   "notify_finance_department_for_job_offer_salary_advance",
   "default_terms_and_conditions",
   "job_applicaion_section",
@@ -143,11 +149,57 @@
    "fieldtype": "Link",
    "label": "Default Terms and Conditions",
    "options": "Terms and Conditions"
+  },
+  {
+   "default": "0",
+   "description": "If Checked, then the system will Email Job Offer Automatically on Workflow State and Hiring Method",
+   "fieldname": "auto_email_job_offer",
+   "fieldtype": "Check",
+   "label": "Auto Email Job Offer"
+  },
+  {
+   "fieldname": "column_break_vjwl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "auto_email_job_offer",
+   "description": "Email Job Offer based on the Hiring Method selected here",
+   "fieldname": "auto_email_hiring_method",
+   "fieldtype": "Select",
+   "label": "Auto Email Hiring Method",
+   "mandatory_depends_on": "auto_email_job_offer",
+   "options": "\nBulk Recruitment\nA la carte Recruitment\nAll Recruitment"
+  },
+  {
+   "depends_on": "auto_email_job_offer",
+   "description": "Email Job Offer on the selected workflow state",
+   "fieldname": "job_offer_workflow_state",
+   "fieldtype": "Link",
+   "label": "Auto Email Job Offer Workflow State",
+   "mandatory_depends_on": "auto_email_job_offer",
+   "options": "Workflow State"
+  },
+  {
+   "depends_on": "auto_email_job_offer",
+   "description": "Selected Email Template will be used in Job Offer Auto Email. If not selected any default message will send to the candidate.",
+   "fieldname": "job_offer_email_template",
+   "fieldtype": "Link",
+   "label": "Job Offer Email Template",
+   "options": "Email Template"
+  },
+  {
+   "depends_on": "auto_email_job_offer",
+   "description": "Selected Print Format will use to attach in the email",
+   "fieldname": "job_offer_print_format",
+   "fieldtype": "Link",
+   "label": "Job Offer Print Format",
+   "mandatory_depends_on": "auto_email_job_offer",
+   "options": "Print Format"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2024-02-27 08:29:05.173163",
+ "modified": "2024-12-30 17:44:45.951842",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Hiring Settings",

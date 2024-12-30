@@ -10,6 +10,7 @@ from one_fm.utils import validate_mandatory_fields
 from one_fm.api.notification import create_notification_log
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, close_all_assignments
 from one_fm.qr_code_generator import get_qr_code
+from one_fm.hiring.doctype.hiring_settings.hiring_settings import get_job_offer_auto_email_settings
 
 
 class JobOfferOverride(JobOffer):
@@ -144,6 +145,62 @@ class JobOfferOverride(JobOffer):
             if mandatory_field_required:
                 frappe.throw(msg + '</ul>')
 
+    def on_update(self):
+        self.auto_email_job_offer()
+
+    def auto_email_job_offer(self):
+        """
+            Automatically sends a job offer email if specific conditions are met.
+
+            Conditions: Auto email job offer setting is enabled and The workflow state of the job offer matches
+            the configured state and the hiring method matches the configured method or is set to 'All Recruitment'.
+
+            Returns:
+                None
+        """
+        auto_email_settings = get_job_offer_auto_email_settings()
+        if not auto_email_settings.auto_email_job_offer:
+            return
+        if self.workflow_state != auto_email_settings.job_offer_workflow_state:
+            return
+        hiring_method = frappe.db.get_value('Job Applicant', self.job_applicant, 'one_fm_hiring_method')
+        if auto_email_settings.auto_email_hiring_method not in [hiring_method, 'All Recruitment']:
+            return
+
+        message = self.get_message_for_job_offer_email(auto_email_settings.job_offer_email_template)
+        attachment = frappe.attach_print(
+            'Job Offer', self.name, file_name=self.name, print_format=auto_email_settings.job_offer_print_format
+        )
+        email_args = {
+            "recipients": [self.applicant_email],
+            "message": message,
+            "subject": 'Job Offer: {0} [{1}]'.format(self.applicant_name, self.job_applicant),
+            "attachments": [attachment],
+            "reference_doctype": 'Job Offer',
+            "reference_name": self.name
+        }
+        frappe.sendmail(**email_args)
+
+    def get_message_for_job_offer_email(self, email_template=None):
+        """
+            Generates the message body for a job offer email.
+
+            If an email template is provided, it retrieves the HTML content of the template
+            and renders it with context from the current Job Offer document.
+            If no template is provided, it returns a default message.
+
+            Args:
+                email_template (str, optional): The name of the Email Template to use. Defaults to None.
+
+            Returns:
+                str: The rendered email message or a default message if no template is specified.
+        """
+        if email_template:
+            response_html = frappe.get_value('Email Template', email_template, 'response_html')
+            return frappe.render_template(response_html, self.as_dict())
+        else:
+            return _("Please find the Job Offer attached and revert back with sign on the Job Offer")
+
     def job_offer_validate_attendance_by_timesheet(self):
         if self.attendance_by_timesheet:
             self.shift_working = False
@@ -158,7 +215,7 @@ class JobOfferOverride(JobOffer):
 
     def reset_status_on_amend(self):
         if self.amended_from and self.status == "Rejected":
-            self.status = "Awaiting Response" 
+            self.status = "Awaiting Response"
 
 def assign_to_onboarding_officer(self):
 	try:
