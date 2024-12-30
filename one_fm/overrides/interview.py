@@ -53,14 +53,26 @@ class InterviewOverride(Interview):
         job_applicant_status = self.get_job_applicant_status()
         if not job_applicant_status:
             return
-
         job_application_name = frappe.db.get_value("Job Applicant", self.job_applicant, "applicant_name")
 
-        frappe.publish_realtime('show_job_applicant_update_dialog', {
-        'job_application_name': job_application_name,
-        'job_applicant_status': job_applicant_status,
-        'job_applicant': self.job_applicant
-        })
+        if job_applicant_status == "Accepted":
+            frappe.publish_realtime('show_job_applicant_update_dialog', {
+            'job_application_name': job_application_name,
+            'job_applicant_status': job_applicant_status,
+            'job_applicant': self.job_applicant
+            })
+        elif job_applicant_status == "Rejected":
+            frappe.msgprint(
+            _("Do you want to update the Job Applicant {0} as {1} based on this interview result?").format(
+                frappe.bold(job_application_name), frappe.bold(job_applicant_status)
+            ),
+            title=_("Update Job Applicant"),
+            primary_action={
+                "label": _("Mark as {0}").format(job_applicant_status),
+                "server_action": "one_fm.overrides.interview.update_job_applicant_status",
+                "args": {"job_applicant": self.job_applicant, "status": job_applicant_status},
+            },
+        )
 
 
 @frappe.whitelist()

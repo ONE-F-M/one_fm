@@ -21,7 +21,7 @@ frappe.ui.form.on('Job Applicant', {
 					{
 						fieldname: "info",
 						fieldtype: "HTML",
-						options: `<p>Do you want to update the Job Applicant <b>${job_application_name}</b>  based on this interview result?</p>`,
+						options: `<p>Update the Job Applicant <b>${job_application_name}</b> status based on this interview result.</p>`,
 					},
 				],
 				// Explicitly prevent any default action for buttons
