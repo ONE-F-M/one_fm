@@ -11,6 +11,7 @@ from one_fm.api.notification import create_notification_log
 from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError, close_all_assignments
 from one_fm.qr_code_generator import get_qr_code
 from one_fm.hiring.doctype.hiring_settings.hiring_settings import get_job_offer_auto_email_settings
+from frappe.model.workflow import apply_workflow
 
 
 class JobOfferOverride(JobOffer):
@@ -216,6 +217,28 @@ class JobOfferOverride(JobOffer):
     def reset_status_on_amend(self):
         if self.amended_from and self.status == "Rejected":
             self.status = "Awaiting Response"
+
+    def after_insert(self):
+        self.submit_job_offer_to_candidate()
+
+    def submit_job_offer_to_candidate(self):
+        applicant_details = frappe.db.get_value('Job Applicant', self.job_applicant, ['one_fm_hiring_method', 'one_fm_applicant_status'], as_dict=1)
+        if applicant_details.one_fm_hiring_method == 'Bulk Recruitment':# and applicant_details.one_fm_applicant_status == 'Selected':
+            # apply_workflow(job_offer, 'Submit for Candidate Response')
+            auto_email_settings = get_job_offer_auto_email_settings()
+            message = self.get_message_for_job_offer_email(auto_email_settings.job_offer_email_template)
+            attachment = frappe.attach_print(
+                'Job Offer', self.name, file_name=self.name, print_format=auto_email_settings.job_offer_print_format
+            )
+            email_args = {
+                "recipients": [self.applicant_email],
+                "message": message,
+                "subject": 'Job Offer: {0} [{1}]'.format(self.applicant_name, self.job_applicant),
+                "attachments": [attachment],
+                "reference_doctype": 'Job Offer',
+                "reference_name": self.name
+            }
+            frappe.sendmail(**email_args)
 
 def assign_to_onboarding_officer(self):
 	try:
