@@ -8,70 +8,74 @@ frappe.ui.form.on('Job Applicant', {
 				}
 			};
 		});
-		frappe.realtime.on('show_job_applicant_update_dialog', function(data) {
-	
-			var job_application_name = data.job_application_name;
-			var job_applicant_status = data.job_applicant_status;
-			var job_applicant = data.job_applicant;
-	
-			// Create the dialog with buttons
-			var dialog = new frappe.ui.Dialog({
-				title: __("Update Job Applicant"),
-				fields: [
-					{
-						fieldname: "info",
-						fieldtype: "HTML",
-						options: `<p>Update the Job Applicant <b>${job_application_name}</b> status based on this interview result.</p>`,
-					},
-				],
-				// Explicitly prevent any default action for buttons
-				no_submit_on_enter: true,
-			});
-	
-			// Add primary button action
-			dialog.set_primary_action(`Mark as ${job_applicant_status}`, function() {
-				frappe.call({
-					method: "one_fm.overrides.interview.update_job_applicant_status",
-					args: {
-						args: {
-							job_applicant: job_applicant,
-							status: job_applicant_status
-						}
-					},
-					callback: function() {
-						frappe.show_alert({
-							message: (`Job Applicant marked as ${job_applicant_status}`),
-							indicator: "green"
-						});
-					},
+		if (!frm.__is_realtime_listener_added) {
+			frappe.realtime.on('show_job_applicant_update_dialog', function(data) {	
+				var job_application_name = data.job_application_name;
+				var job_applicant_status = data.job_applicant_status;
+				var job_applicant = data.job_applicant;
+
+				// Create the dialog with buttons
+				var dialog = new frappe.ui.Dialog({
+					title: __("Update Job Applicant"),
+					fields: [
+						{
+							fieldname: "info",
+							fieldtype: "HTML",
+							options: `<p>Update the Job Applicant <b>${job_application_name}</b> status based on this interview result.</p>`,
+						},
+					],
+					// Explicitly prevent any default action for buttons
+					no_submit_on_enter: true,
 				});
-				dialog.hide();
-			});
-	
-			// Add secondary button action for "Mark as Shortlisted"
-			dialog.set_secondary_action(function() {
-				frappe.call({
-					method: "one_fm.overrides.interview.update_job_applicant_status",
-					args: {
+
+				// Add primary button action
+				dialog.set_primary_action(`Mark as ${job_applicant_status}`, function() {
+					frappe.call({
+						method: "one_fm.overrides.interview.update_job_applicant_status",
 						args: {
-							job_applicant: job_applicant,
-							status: "Shortlisted"
-						}
-					},
-					callback: function() {
-						frappe.show_alert({
-							message: ("Job Applicant marked as Shortlisted"),
-							indicator: "green"
-						});
-					},
+							args: {
+								job_applicant: job_applicant,
+								status: job_applicant_status
+							}
+						},
+						callback: function() {
+							frappe.show_alert({
+								message: (`Job Applicant marked as ${job_applicant_status}`),
+								indicator: "green"
+							});
+						},
+					});
+					dialog.hide();
 				});
-				dialog.hide();
+
+				// Add secondary button action for "Mark as Shortlisted"
+				dialog.set_secondary_action(function() {
+					frappe.call({
+						method: "one_fm.overrides.interview.update_job_applicant_status",
+						args: {
+							args: {
+								job_applicant: job_applicant,
+								status: "Shortlisted"
+							}
+						},
+						callback: function() {
+							frappe.show_alert({
+								message: ("Job Applicant marked as Shortlisted"),
+								indicator: "green"
+							});
+						},
+					});
+					dialog.hide();
+				});
+				dialog.set_secondary_action_label("Mark as Shortlisted");
+
+				// Show the dialog
+				dialog.show();
 			});
-			dialog.set_secondary_action_label("Mark as Shortlisted");
-	
-			// Show the dialog
-			dialog.show();
-		});
+
+			// Mark listener as added
+			frm.__is_realtime_listener_added = true;
+		}
 	},
 
 	refresh(frm) {
