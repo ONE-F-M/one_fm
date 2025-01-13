@@ -21,6 +21,8 @@ class JobApplicantOverride(JobApplicant):
 		super(JobApplicantOverride, self).validate()
 		self.validate_transfer_reminder_date()
 		self.convert_name_to_title_case()
+		if self.status == 'Open' and self.one_fm_applicant_status == 'Shortlisted':
+			self.mark_as_shortlisted_first = True
 
 	def set_hiring_method(self):
 		'''

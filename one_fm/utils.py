@@ -1533,8 +1533,6 @@ def validate_job_applicant(doc, method):
         set_required_documents(doc, method)
     if frappe.session.user != 'Guest' and not doc.one_fm_is_easy_apply:
         validate_mandatory_childs(doc)
-    if doc.one_fm_applicant_status in ["Shortlisted", "Selected"] and doc.status not in ["Rejected"]:
-        create_job_offer_from_job_applicant(doc.name)
     if doc.one_fm_number_of_kids and doc.one_fm_number_of_kids > 0:
         """This part is comparing the number of children with the listed children details in the table and ask user to add all childrens"""
         if doc.one_fm_number_of_kids != len(doc.one_fm_kids_details):
@@ -1721,6 +1719,10 @@ def set_job_applicant_status(doc, method):
                     else:
                         status = 'Verified - With Exception'
             doc.one_fm_document_verification = status
+
+def on_update_job_applicant(doc, method):
+    if doc.one_fm_applicant_status in ["Selected"] and doc.status not in ["Rejected"]:
+        create_job_offer_from_job_applicant(doc.name)
 
 def create_job_offer_from_job_applicant(job_applicant):
     if not frappe.db.exists('Job Offer', {'job_applicant': job_applicant, 'docstatus': ['<', 2]}):
@@ -3897,7 +3899,7 @@ def call_to_get_assurance_level(employees):
             batch_size=500
             all_results = []
             for i in range(0, len(employees), batch_size):
-                batch = employees[i:i + batch_size] 
+                batch = employees[i:i + batch_size]
                 try:
                     response = requests.post(url, headers=headers, json=batch)
                     if response.status_code == 200:

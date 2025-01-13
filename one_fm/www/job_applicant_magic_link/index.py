@@ -32,7 +32,7 @@ def get_magic_link():
                     job_applicant = frappe.get_doc('Job Applicant', magic_link.reference_docname)
                     # get other required data like nationality, gender, ...
                     civil_id_required = True if job_applicant.one_fm_nationality=='Kuwaiti' else False
-                    civil_id_required = True if job_applicant.one_fm_have_a_valid_visa_in_kuwait else False 
+                    civil_id_required = True if job_applicant.one_fm_have_a_valid_visa_in_kuwait else False
                     result['civil_id_required'] = civil_id_required
                     nationalities = frappe.get_all("Nationality", fields=["name as nationality", "nationality_arabic", "country"])
                     nationalities_dict = {}
@@ -44,7 +44,7 @@ def get_magic_link():
                     for i in countries:
                         countries_dict[i.name] = i
                         if nationalities_dict.get(i.name):
-                           countries_dict[i.name] = {**countries_dict[i.name], **nationalities_dict.get(i.name)} 
+                           countries_dict[i.name] = {**countries_dict[i.name], **nationalities_dict.get(i.name)}
 
                     result['job_applicant'] = job_applicant
                     result['nationalities'] = nationalities_dict
@@ -110,10 +110,10 @@ def upload_image():
         # append to File doctype
         file_url = "/files/user/magic_link/"+filename
         filedoc = frappe.get_doc({
-            "doctype":"File", 
+            "doctype":"File",
             "is_private":0,
-            "file_url":"/files/user/magic_link/"+filename, 
-            "attached_to_doctype":frappe.form_dict.reference_doctype, 
+            "file_url":"/files/user/magic_link/"+filename,
+            "attached_to_doctype":frappe.form_dict.reference_doctype,
             "attached_to_name":frappe.form_dict.reference_docname
         }).insert(ignore_permissions=True)
         filedoc.db_set('file_url', file_url)
@@ -157,7 +157,7 @@ def upload_image():
             if country_code:
                 result_dict.country = country_code
             # 'passport_file':filedoc.as_dict()
-            
+
             for k, v in dict(result_dict).items():
                 if(k=="country") and v:
                     frappe.db.set_value(frappe.form_dict.reference_doctype, frappe.form_dict.reference_docname, k, country_code)
@@ -193,7 +193,7 @@ def upload_image():
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Mindee-Passport")
             errors.append("We could not process your passport document.")
-        
+
     # civil id front
     if frappe.form_dict.civil_id_front:
         data_content = frappe._dict(frappe.form_dict.civil_id_front)
@@ -207,10 +207,10 @@ def upload_image():
         # append to File doctype
         file_url = "/files/user/magic_link/"+filename
         filedoc = frappe.get_doc({
-            "doctype":"File", 
+            "doctype":"File",
             "is_private":0,
-            "file_url":"/files/user/magic_link/"+filename, 
-            "attached_to_doctype":frappe.form_dict.reference_doctype, 
+            "file_url":"/files/user/magic_link/"+filename,
+            "attached_to_doctype":frappe.form_dict.reference_doctype,
             "attached_to_name":frappe.form_dict.reference_docname
         }).insert(ignore_permissions=True)
         filedoc.db_set('file_url', file_url)
@@ -286,10 +286,10 @@ def upload_image():
         # append to File doctype
         file_url = "/files/user/magic_link/"+filename
         filedoc = frappe.get_doc({
-            "doctype":"File", 
+            "doctype":"File",
             "is_private":0,
-            "file_url":"/files/user/magic_link/"+filename, 
-            "attached_to_doctype":frappe.form_dict.reference_doctype, 
+            "file_url":"/files/user/magic_link/"+filename,
+            "attached_to_doctype":frappe.form_dict.reference_doctype,
             "attached_to_name":frappe.form_dict.reference_docname
         }).insert(ignore_permissions=True)
         filedoc.db_set('file_url', file_url)
@@ -307,7 +307,7 @@ def upload_image():
 
     return frappe._dict({**response_data, **{'errors':errors}})
 
-       
+
 def is_date(string, fuzzy=False):
     """
     Return whether the string can be interpreted as a date.
@@ -321,7 +321,7 @@ def is_date(string, fuzzy=False):
 
     except ValueError:
         return False
-    
+
 def delete_existing_files(reference_doctype,reference_docname, file_url_filter, newly_created_docname):
     bench_path = frappe.utils.get_bench_path()
     try:
@@ -368,6 +368,13 @@ def update_job_applicant():
 def submit_job_applicant(job_applicant):
     try:
         set_expire_magic_link('Job Applicant', job_applicant, 'Job Applicant')
+        select_applicant_on_magic_link_submit(job_applicant)
         return {'msg':'Your application has been successfully submitted, we will be intouch soonest.'}
     except Exception as e:
         return {'error':e}
+
+def select_applicant_on_magic_link_submit(job_applicant_id):
+    job_applicant = frappe.get_doc('Job Applicant', job_applicant_id)
+    if job_applicant.status == 'Accepted' and job_applicant.one_fm_hiring_method == 'Bulk Recruitment':
+        job_applicant.one_fm_applicant_status = 'Selected'
+        job_applicant.save(ignore_permissions=True)
