@@ -9,7 +9,7 @@ frappe.ui.form.on('Job Applicant', {
 			};
 		});
 		if (!frm.__is_realtime_listener_added) {
-			frappe.realtime.on('show_job_applicant_update_dialog', function(data) {	
+			frappe.realtime.on('show_job_applicant_update_dialog', function(data) {
 				var job_application_name = data.job_application_name;
 				var job_applicant_status = data.job_applicant_status;
 				var job_applicant = data.job_applicant;
@@ -128,6 +128,22 @@ frappe.ui.form.on('Job Applicant', {
 				  },'Action');
 
 			if(frm.doc.one_fm_applicant_status != 'Selected' && frm.doc.status != 'Rejected'){
+				if(frm.doc.status != 'Accepted'){
+					frm.add_custom_button(__('Accept Applicant'), function() {
+						if(frm.doc.day_off_category && frm.doc.number_of_days_off && frm.doc.number_of_days_off > 0){
+							frappe.confirm('Are you sure you want to set Final Status as Accepted for this applicant?',
+							() => {
+								// action to perform if Yes is selected
+								change_applicant_status(frm, 'status', 'Accepted');
+							}, () => {
+								// action to perform if No is selected
+							})
+						}
+						else{
+							frappe.throw(__("Please Update Day off Details to Proceed !!"));
+						}
+					},"Action");
+				}
 				frm.add_custom_button(__('Select Applicant'), function() {
 					if(frm.doc.day_off_category && frm.doc.number_of_days_off && frm.doc.number_of_days_off > 0){
 						frappe.confirm('Are you sure you want to select this applicant?',

@@ -152,8 +152,13 @@ class JobOfferOverride(JobOffer):
 
     def submit_job_offer_to_candidate(self):
         if self.workflow_state == 'Open':
-            applicant_details = frappe.db.get_value('Job Applicant', self.job_applicant, ['one_fm_hiring_method', 'one_fm_applicant_status'], as_dict=1)
-            if applicant_details.one_fm_hiring_method == 'Bulk Recruitment' and applicant_details.one_fm_applicant_status == 'Selected':
+            applicant_details = frappe.db.get_value(
+                'Job Applicant',
+                self.job_applicant,
+                ['one_fm_hiring_method', 'one_fm_applicant_status', 'mark_as_shortlisted_first'],
+                as_dict=1
+            )
+            if applicant_details.one_fm_hiring_method == 'Bulk Recruitment' and applicant_details.one_fm_applicant_status == 'Selected' and not applicant_details.mark_as_shortlisted_first:
                 if frappe.session.user == 'Guest':
                     frappe.set_user('Administrator')
                 apply_workflow(self, 'Submit for Candidate Response')
