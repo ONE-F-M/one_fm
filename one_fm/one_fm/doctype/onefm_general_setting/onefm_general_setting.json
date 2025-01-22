@@ -188,37 +188,11 @@
    "in_list_view": 1,
    "label": "Default Shift Checker Threshold",
    "reqd": 1
-  },
-  {
-   "fieldname": "one_fm_tab",
-   "fieldtype": "Tab Break",
-   "label": "ONE FM"
-  },
-  {
-   "fieldname": "google_tab",
-   "fieldtype": "Tab Break",
-   "label": "Google"
-  },
-  {
-   "fieldname": "google_task_section",
-   "fieldtype": "Section Break",
-   "label": "Google Task"
-  },
-  {
-   "default": "0",
-   "fieldname": "google_task_synchronization_enabled",
-   "fieldtype": "Check",
-   "label": "Google Task Synchronization Enabled"
-  },
-  {
-   "fieldname": "sync_google_tasks_btn",
-   "fieldtype": "Button",
-   "label": "Sync Google Tasks"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-01-21 18:09:17.133524",
+ "modified": "2024-12-20 10:40:26.759927",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

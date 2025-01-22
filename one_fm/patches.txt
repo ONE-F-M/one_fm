@@ -100,3 +100,4 @@ one_fm.patches.v15_0.update_purchase_order_according_to_new_workflow
 one_fm.patches.v15_0.update_erf_for_job_offer
 one_fm.patches.v15_0.update_employees_operation_role
 one_fm.patches.v15_0.populate_project_type_task
+one_fm.patches.v15_0.update_employees_operation_role
