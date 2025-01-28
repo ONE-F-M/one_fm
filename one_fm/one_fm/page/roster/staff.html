@@ -22,14 +22,14 @@
                     <span>Staff</span>
                 </a>
             </li>
-            <li class="nav-item">
+            <!-- <li class="nav-item">
                 <a class="nav-link cursorpointer redirect_route" data-route="reports">
                     <span>
                         <i class="fas fa-chart-line"></i>
                     </span>
                     <span>Reports</span>
                 </a>
-            </li>
+            </li> -->
         </ul>
     </div>
     <!-- End Roster Nav bar section -->
@@ -373,10 +373,6 @@
     <div class="tab-content ml30 mr30">
         <div class="container-fluid borderradius8 pt30 pl30 pr30 pb30 bg-white">
             <div class="row d-none d-md-block d-lg-flex">
-                <!-- <div class="col-xs-12 col-sm-12 col-md-3 col-lg-3">
-                    <span class="font20 cardheadercolor fontw600 textchange">Staff Management</span>
-                    <div class="pt6 font16 lightgrey hideshowprjname d-none">Rostering Application</div>
-                </div> -->
                 <div class="col-xs-12 col-sm-12 col-md-9 col-lg-9 mt-0 mt-md-3 mt-lg-0">
                     <div class="d-md-flex justify-content-md-between justify-content-lg-end">
                         <div class="searchbox">
@@ -484,13 +480,8 @@
                                 <i class="fas fa-user-check"></i>
                             </a>
                             <a class="ml10 customiconhover editbtn d-none">
-                                <!-- data-toggle="modal"data-target="#cardeditusermodal"> -->
                                 <i class="fas fa-edit"></i>
                             </a>
-<!--                            <a class="ml10 customiconhover mobile-edit d-none">-->
-<!--                                &lt;!&ndash; data-toggle="modal"data-target="#cardeditusermodal"> &ndash;&gt;-->
-<!--                                <i class="fas fa-phone"></i>-->
-<!--                            </a>-->
                         </div>
                         <div
                             class="d-lg-flex d-md-flex align-items-center justify-content-md-end ipadpadd mt-0 mt-md-2 mt-lg-0">
@@ -532,11 +523,6 @@
                                     </a>
                                     <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
                                         <div class="customdropdownheight company-dropdown" data-filter-type="company">
-                                            <!-- <a class="dropdown-item filteronserviceboard">Company 1</a>
-                                            <a class="dropdown-item filteronserviceboard">Company 2</a>
-                                            <a class="dropdown-item filteronserviceboard">Company 3</a>
-                                            <a class="dropdown-item filteronserviceboard">Company 4</a>
-                                            <a class="dropdown-item filteronserviceboard">Company 5</a> -->
                                         </div>
                                         <div class="border-top text-right px-4 py-4">
                                             <a href="#"
@@ -557,9 +543,6 @@
                                     </a>
                                     <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
                                         <div class="customdropdownheight project-dropdown" data-filter-type="project">
-                                            <!-- <a class="dropdown-item filteronserviceboard">Project 1</a>
-                                            <a class="dropdown-item filteronserviceboard">Project 2</a>
-                                            <a class="dropdown-item filteronserviceboard">Project 3</a> -->
                                         </div>
                                         <div class="border-top text-right px-4 py-4">
                                             <a href="#"
@@ -580,9 +563,6 @@
                                     </a>
                                     <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
                                         <div class="customdropdownheight site-dropdown" data-filter-type="site">
-                                            <!-- <a class="dropdown-item filteronserviceboard">Site 1</a>
-                                            <a class="dropdown-item filteronserviceboard">Site 2</a>
-                                            <a class="dropdown-item filteronserviceboard">Site 3</a> -->
                                         </div>
                                         <div class="border-top text-right px-4 py-4">
                                             <a href="#"
@@ -603,9 +583,6 @@
                                     </a>
                                     <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
                                         <div class="customdropdownheight shift-dropdown" data-filter-type="shift">
-                                            <!-- <a class="dropdown-item filteronserviceboard">Shift 1</a>
-                                            <a class="dropdown-item filteronserviceboard">Shift 2</a>
-                                            <a class="dropdown-item filteronserviceboard">Shift 3</a> -->
                                         </div>
                                         <div class="border-top text-right px-4 py-4">
                                             <a href="#"
@@ -627,9 +604,6 @@
                                     <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
                                         <div class="customdropdownheight department-dropdown"
                                             data-filter-type="department">
-                                            <!-- <a class="dropdown-item filteronserviceboard">Department 1</a>
-                                            <a class="dropdown-item filteronserviceboard">Department 2</a>
-                                            <a class="dropdown-item filteronserviceboard">Department 3</a> -->
                                         </div>
                                         <div class="border-top text-right px-4 py-4">
                                             <a href="#"
@@ -651,9 +625,6 @@
                                     <div class="dropdown-menu customredropdown dropdown-menu-right customselect">
                                         <div class="customdropdownheight designation-dropdown"
                                             data-filter-type="designation">
-                                            <!-- <a class="dropdown-item filteronserviceboard">Designation 1</a>
-                                            <a class="dropdown-item filteronserviceboard">Designation 2</a>
-                                            <a class="dropdown-item filteronserviceboard">Designation 3</a> -->
                                         </div>
                                         <div class="border-top text-right px-4 py-4">
                                             <a href="#"
@@ -684,7 +655,6 @@
                                 </th>
                                 <th>Employee ID</th>
                                 <th>Employee Name</th>
-                                <!-- <th>Last Name</th> -->
                                 <th>Nationality</th>
                                 <th>Phone</th>
                                 <th>Email</th>
@@ -802,24 +772,6 @@
     else {
 
     }
-    /*side drawer for mobile device*/
-
-    /*$(".customredropdown .customdropdownheight .dropdown-item").click(function () {
-        var text = $(this).html();
-        $(this).parent().parent().parent().find(".dropdown-toggle .dropdowncustomres").html(text);
-        if (text === "Assigned") {
-
-            $(".hideshowprjname").addClass("d-none");
-            $(".btnunassignonclick").removeClass("d-block").addClass("d-none");
-            $(".rostercustomstafftab").removeClass("d-none").addClass("d-flex");;
-        }
-        else {
-
-            $(".hideshowprjname").removeClass("d-none");
-            $(".btnunassignonclick").removeClass("d-none").addClass("d-block");
-            $(".rostercustomstafftab").addClass("d-none").removeClass("d-flex");
-        }
-    });*/
     /* jquery for filer start */
 
     /*filter main check box(select all checkbox)*/
@@ -856,7 +808,6 @@
     /*datatable checkbox click*/
     $(".datatablecjeckbox").change(function () {
         let getdatatableval = this.checked;
-        /*var getdatatableval = $(this).is(":checked");*/
         console.log(getdatatableval, "1095");
         if (getdatatableval === true) {
             $(this).parent().parent().parent().css("background", "#E7EDFB");
@@ -930,14 +881,10 @@
     });
     /*clear fill form value on modal close*/
     render_staff("list");
-    /*staffmanagement();*/
     $(".editbtn").on("click", function () {
         staff_edit_dialog();
     });
 
-<!--    $(".mobile-edit").on("click", function () {-->
-<!--        editMobileNumber();-->
-<!--    });-->
 
     $("#edit-employee-btn").on("click", function () {
         editSingleEmployeeData();
@@ -948,9 +895,5 @@
             search_staff();
         }
     });
-
-    // Update mobile number
-    //WINDOW READYS
-
 
 </script>

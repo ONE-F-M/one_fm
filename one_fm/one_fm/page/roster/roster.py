@@ -1,16 +1,15 @@
 from pandas.core.indexes.datetimes import date_range
 from datetime import datetime
-from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
-from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, get_datetime, today, add_days, add_months, get_first_day, get_last_day, date_diff
-import pandas as pd, numpy as np
-from frappe import _
-import json, multiprocessing, os, time, itertools, frappe
-from multiprocessing.pool import ThreadPool as Pool
-from itertools import product
-from one_fm.api.notification import create_notification_log
-from one_fm.api.v1.utils import response
-from one_fm.utils import query_db_list
+import pandas as pd
+import json, time, itertools
 from distutils.util import strtobool
+
+import frappe
+from frappe import _
+from frappe.utils import nowdate, add_to_date, cstr, cint, getdate, now, today, add_days, add_months, get_first_day, get_last_day, date_diff
+
+from one_fm.one_fm.page.roster.employee_map  import CreateMap,PostMap
+from one_fm.api.v1.utils import response
 
 
 @frappe.whitelist(allow_guest=True)
@@ -133,7 +132,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
 
         exited_employee_query = """SELECT employee,employee_name from `tabEmployee` where {}""".format(exited_employee_filters)
         exited_employees = frappe.db.sql(exited_employee_query,as_dict=1)
-        # exited_employees = frappe.get_all("Employee",employee_filters,['employee','employee_name'])
 
         if isOt:
             employee_filters.update({'employee_availability' : 'Working'})
@@ -206,7 +204,6 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
         master_data.update({'operations_roles_data': post_map.template,'reliever':reliever})
         response("Success", 200, master_data)
     except Exception as e:
-        # print(frappe.get_traceback())
         return response("Server Error", 500, None, str(frappe.get_traceback()))
 
 def get_active_employees(start_date, end_date, master_data):
@@ -359,7 +356,6 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
             validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")
 
         emp_tuple = str(employee_list).replace('[', '(').replace(']',')')
-        # date_range = pd.date_range(start=start_date, end=end_date)
 
         if not cint(request_employee_schedule) and "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
             all_employee_shift_query = frappe.db.sql("""
@@ -371,22 +367,15 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
                 GROUP BY es.shift
             """.format(start_date=start_date, end_date=end_date, emp_tuple=emp_tuple), as_dict=1)
 
-            # for i in all_employee_shift_query:
-            #     if user_employee.name != i.supervisor:
-            #         validation_logs.append("You are not authorized to change this schedule. Please check the Request Employee Schedule option to place a request.")
-            #         break
-
         if len(validation_logs) > 0:
             frappe.log_error(str(validation_logs), 'Roster Schedule')
             frappe.throw(str(validation_logs))
         else:
             # extreme schedule
-
             extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
                 operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
                 request_employee_schedule=request_employee_schedule, employee_list=employee_list
             )
-            # employees_list = frappe.db.get_list("Employee", filters={"name": ["IN", employees]}, fields=["name", "employee_id", "employee_name"])
             update_roster(key="roster_view")
 
 
@@ -565,7 +554,6 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
                 end_datetime= VALUES(end_datetime)
             """
 
-            # validate_operations_post_overfill(no_of_schedules_on_date, operations_shift.name)
             if  can_create:
                 frappe.db.sql(query, values=[], as_dict=1)
                 frappe.db.commit()
@@ -917,7 +905,6 @@ def cancel_post(posts, args):
 
         for date in	pd.date_range(start=args.cancel_from_date, end=end_date):
             if frappe.db.exists("Post Schedule", {"date": cstr(date.date()), "post": post["post"]}):
-                # doc = frappe.get_doc("Post Schedule", {"date": cstr(date.date()), "post": post["post"]})
                 delete_existing_post_schedules(cstr(date.date()),post['post'])
 
             doc = frappe.new_doc("Post Schedule")
@@ -1053,7 +1040,6 @@ def delete_existing_post_schedules(date,post):
 def set_post_off(post, date, post_off_paid):
     if frappe.db.exists("Post Schedule", {"date": date, "post": post}):
         #Delete existing post schedules
-        # doc = frappe.get_doc("Post Schedule", {"date": date, "post": post})
         delete_existing_post_schedules(date,post)
 
     doc = frappe.new_doc("Post Schedule")
@@ -1288,8 +1274,6 @@ def assign_staff(employees, shift, custom_is_reliever, custom_operations_role_al
         for emp in json.loads(employees):
             emp_project, emp_site, emp_shift = frappe.db.get_value("Employee", emp, ["project", "site", "shift"])
             supervisor = frappe.db.get_value("Operations Shift", emp_shift, ["supervisor"])
-            # if user_employee.name != supervisor:
-            # 	validation_logs.append("You are not authorized to change assignment for employee {emp}. Please check the Request Employee Assignment option to place a request.".format(emp=emp))
 
     if len(validation_logs) > 0:
         frappe.throw(str(validation_logs))
