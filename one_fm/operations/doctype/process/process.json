@@ -9,8 +9,7 @@
  "engine": "InnoDB",
  "field_order": [
   "process_name",
-  "is_erp_process",
-  "erp_document"
+  "description"
  ],
  "fields": [
   {
@@ -22,26 +21,18 @@
    "unique": 1
   },
   {
-   "default": "0",
-   "fieldname": "is_erp_process",
-   "fieldtype": "Check",
-   "label": "Is ERP Process"
-  },
-  {
-   "depends_on": "is_erp_process",
-   "fieldname": "erp_document",
-   "fieldtype": "Table",
-   "label": "ERP Document",
-   "mandatory_depends_on": "is_erp_process",
-   "options": "Routine Task Document"
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-04-26 12:18:00.840896",
+ "modified": "2025-01-30 13:32:42.581170",
  "modified_by": "Administrator",
  "module": "Operations",
- "name": "Routine Task Process",
+ "name": "Process",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

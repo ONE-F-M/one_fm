@@ -1,7 +1,7 @@
 // Copyright (c) 2023, omar jaber and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Routine Task Process', {
+frappe.ui.form.on('Process', {
 	refresh: function(frm) {
 		frm.set_query("routine_task_document", "erp_document", function() {
 			return {

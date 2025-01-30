@@ -4,7 +4,7 @@
 import frappe
 from frappe.model.document import Document
 
-class RoutineTaskProcess(Document):
+class Process(Document):
 	pass
 
 @frappe.whitelist()
