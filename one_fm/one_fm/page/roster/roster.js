@@ -2882,7 +2882,13 @@ function unschedule_staff(page) {
 	let selected = [... new Set(classgrt)];
 	selected.forEach(function (i) {
 		let [employee, date] = i.split("|");
-		employees.push({ employee, date });
+
+		let parsedDate = new Date(date);
+		if (!isNaN(parsedDate.getTime())) {  
+			employees.push({ employee, date });
+		} else {
+			console.error(`Invalid date format found: ${i}`);
+		}
 	});
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
 	let d = new frappe.ui.Dialog({
@@ -2944,6 +2950,7 @@ function unschedule_staff(page) {
 				args: { employees,otRoster, start_date, end_date, never_end },
 				callback: function(res) {
 					// code snippet
+					console.log("response", res)
 					d.hide();
 					error_handler(res);
 					let element = get_wrapper_element().slice(1);
