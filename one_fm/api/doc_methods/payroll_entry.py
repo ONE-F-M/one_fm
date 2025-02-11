@@ -16,10 +16,7 @@ from pathlib import Path
 # from hrms.payroll.doctype.payroll_entry.payroll_entry import (
 # 	get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_salary_structure
 # )
-from one_fm.one_fm.doctype.hr_and_payroll_additional_settings.hr_and_payroll_additional_settings import (
-	get_projects_not_configured_in_payroll_cycle_but_linked_in_employee,
-	get_projects_configured_in_payroll_cycle
-)
+
 from itertools import groupby
 from operator import itemgetter
 from one_fm.processor import sendemail
