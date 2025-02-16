@@ -1512,12 +1512,28 @@ def determine_availability(current_date, start_date, total_days, day_off_categor
 
 
 @frappe.whitelist()
-def get_employee_details(employee_id):
-    employee = frappe.get_doc("Employee", employee_id)
-    return {
-        "project": employee.project,
-        "site": employee.site,
-        "shift": employee.shift,
-        "custom_is_reliever": employee.custom_is_reliever,
-        "custom_operations_role_allocation": employee.custom_operations_role_allocation
-    }
+def get_employee_details(employee_id=None, employees=None):
+    if employee_id:
+        employee = frappe.get_doc("Employee", employee_id)
+        return {
+            "employee_id": employee.name,
+            "project": employee.project,
+            "site": employee.site,
+            "shift": employee.shift,
+            "custom_is_reliever": employee.custom_is_reliever,
+            "custom_operations_role_allocation": employee.custom_operations_role_allocation
+        }
+
+    if employees:
+        employees = frappe.parse_json(employees)  # Convert JSON string to Python list
+        return [
+            {
+                "employee_id": emp.name,
+                "project": emp.project,
+                "site": emp.site,
+                "shift": emp.shift,
+                "custom_is_reliever": emp.custom_is_reliever,
+                "custom_operations_role_allocation": emp.custom_operations_role_allocation
+            }
+            for emp in frappe.get_all("Employee", filters={"name": ["in", employees]}, fields=["name", "project", "site", "shift", "custom_is_reliever", "custom_operations_role_allocation"])
+        ]

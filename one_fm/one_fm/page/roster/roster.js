@@ -2799,23 +2799,52 @@ function staff_edit_dialog() {
 		],
 		primary_action: function () {
 			let { shift, custom_operations_role_allocation, custom_is_reliever } = d.get_values();
-
-			$('#cover-spin').show(0);
+			
 			frappe.call({
-				method: 'one_fm.one_fm.page.roster.roster.assign_staff',
-				args: { employees, shift, custom_operations_role_allocation, custom_is_reliever},
+				method: 'one_fm.one_fm.page.roster.roster.get_employee_details',
+				args: { employees },
 				callback: function (r) {
-
-					d.hide();
-					$('#cover-spin').hide();
-					update_staff_view();
-					frappe.msgprint(__("Successful!"));
-					// render_staff($(".layoutSidenav_content").attr("data-view"));
-				},
-				freeze: true,
-				freeze_message: __('Editing Post....')
+					if (r.message) {
+						let non_relievers = r.message.filter(emp => !emp.custom_is_reliever);
+						let affectedEmployees = non_relievers.filter(emp => emp.shift !== shift || emp.custom_operations_role_allocation !== custom_operations_role_allocation);
+		
+						if (affectedEmployees.length > 0) {
+							let confirmationMessage = `<p>${__('You are about to change the default shift or operations role for the following employees:')}</p>`;
+							confirmationMessage += `<table class="table table-bordered">
+								<tr>
+									<th>${__('Employee ID')}</th>
+									<th>${__('Current Shift')}</th>
+									<th>${__('New Shift')}</th>
+									<th>${__('Current Role')}</th>
+									<th>${__('New Role')}</th>
+								</tr>`;
+		
+							affectedEmployees.forEach(emp => {
+								confirmationMessage += `<tr>
+									<td>${emp.employee_id}</td>
+									<td>${emp.shift || __("Not Set")}</td>
+									<td>${shift || __("Not Set")}</td>
+									<td>${emp.custom_operations_role_allocation || __("Not Set")}</td>
+									<td>${custom_operations_role_allocation || __("Not Set")}</td>
+								</tr>`;
+							});
+		
+							confirmationMessage += `</table><br/><p>${__('Do you want to continue?')}</p>`;
+		
+							frappe.confirm(
+								confirmationMessage,
+								() => {
+									proceedWithUpdate(employees, shift, custom_operations_role_allocation, custom_is_reliever, d);
+								}
+							);
+						} else {
+							proceedWithUpdate(employees, shift, custom_operations_role_allocation, custom_is_reliever, d);
+						}
+					}
+				}
 			});
 		}
+		
 	});
 
 	// Pre-populate if only one employee is selected
@@ -2839,6 +2868,27 @@ function staff_edit_dialog() {
 
 	d.show();
 }
+
+
+function proceedWithUpdate(employees, shift, custom_operations_role_allocation, custom_is_reliever, d) {
+
+	$('#cover-spin').show(0);
+	frappe.call({
+		method: 'one_fm.one_fm.page.roster.roster.assign_staff',
+		args: { employees, shift, custom_operations_role_allocation, custom_is_reliever},
+		callback: function (r) {
+
+			d.hide();
+			$('#cover-spin').hide();
+			update_staff_view();
+			frappe.msgprint(__("Successful!"));
+			// render_staff($(".layoutSidenav_content").attr("data-view"));
+		},
+		freeze: true,
+		freeze_message: __('Editing Post....')
+	});
+}
+
 
 function update_staff_view() {
 	frappe.realtime.on("staff_view", function (output) {
