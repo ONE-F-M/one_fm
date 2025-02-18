@@ -165,16 +165,20 @@ def get_shift_supervisor(shift, date=False):
 
 	for supervisor in supervisors:
 		# Return the supervisor if the supervisor working on the day
-		if frappe.db.exists(
-			"Employee Schedule",
-			{
-				"employee": supervisor.supervisor,
-				"date": date,
-				"employee_availability": "Working"
-			}
-		):
-			return supervisor.supervisor
-
+		shift_working = frappe.db.get_value("Employee", supervisor.supervisor, "shift_working")
+		if shift_working:
+			if frappe.db.exists(
+				"Employee Schedule",
+				{
+					"employee": supervisor.supervisor,
+					"date": date,
+					"employee_availability": "Working"
+				}
+			):
+				return supervisor.supervisor
+		else:
+			if not frappe.db.exists("Leave Application", {"employee": supervisor.supervisor, "status": "Approved", "from_date":["<=", date], "to_date":[">=", date]}):
+				return supervisor.supervisor
 	return None
 
 def get_supervisor_operations_shifts(supervisor=None, project=None, site=None):
