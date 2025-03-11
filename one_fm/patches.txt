@@ -101,3 +101,4 @@ one_fm.patches.v15_0.update_operations_shift_status
 one_fm.patches.v15_0.update_job_offer_and_onboard_employee_document
 one_fm.patches.v15_0.update_erf_in_job_offer_2
 one_fm.patches.v15_0.update_historical_rfp_purchased_quantity
+one_fm.patches.v15_0.update_job_offer_00784
