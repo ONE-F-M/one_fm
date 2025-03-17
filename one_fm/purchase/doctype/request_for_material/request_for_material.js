@@ -471,7 +471,7 @@ var set_item_field_property = function(frm) {
 	else if((frm.doc.docstatus == 1 && frm.doc.status == 'Approved')){
 		var fields = ['requested_item_name', 'requested_description', 'qty', 'uom', 'stock_uom'];
 		fields.forEach((field, i) => {
-			fields_dict[i] = {'fieldname': field, 'read_only': true}
+			fields_dict[i] = {'fieldname': field, 'read_only': false}
 		});
 	}
 	else{
