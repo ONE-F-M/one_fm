@@ -320,6 +320,9 @@ def get_employee_leave_attendance(employees,start_date):
 def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None, selected_days_only=0):
     try:
         _start_date = getdate(start_date)
+        if _start_date < getdate(today()):
+            frappe.throw("The start date cannot be in the past.")
+
 
         validation_logs = []
         user, user_roles, user_employee = get_current_user_details()
@@ -464,6 +467,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
     if shift_start>shift_end:
         next_day = True
     employees_date_dict = {}
+   
     for i in employees:
         if getdate(employees_dict.get(i.get('employee')).get('date_of_joining')) <= getdate(i.get('date')):
             if employees_date_dict.get(i['employee']):
@@ -504,7 +508,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
             <hr>
         """
         frappe.throw(error_head+error_msg)
-
+    
 
     if not cint(request_employee_schedule):
     # 	"""
