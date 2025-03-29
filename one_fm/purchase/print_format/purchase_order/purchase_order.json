@@ -1,7 +1,7 @@
 {
  "absolute_value": 0,
  "align_labels_right": 0,
- "creation": "2025-03-25 11:09:02.341358",
+ "creation": "2025-03-29 13:54:37.216425",
  "custom_format": 1,
  "default_print_language": "en",
  "disabled": 0,
@@ -17,7 +17,7 @@
  "margin_left": 0.0,
  "margin_right": 0.0,
  "margin_top": 0.0,
- "modified": "2025-03-26 10:33:26.432577",
+ "modified": "2025-03-29 14:16:58.094152",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Purchase Order",

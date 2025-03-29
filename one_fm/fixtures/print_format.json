@@ -92,7 +92,7 @@
   "show_section_headings": 0,
   "standard": "Yes"
  },
-{
+ {
   "absolute_value": 0,
   "align_labels_right": 0,
   "css": ".card-container-front{\n  width:54mm;\n  height: 86mm;\n  background-size: contain;\n  background-repeat: no-repeat;\n}\n.companyLogo{\n    text-align: center;\n    padding-bottom: 5px;\n}\n.companyLogo img{\n    width: 45mm;\n    height: auto;\n}\n.employeeAvatar{\n\tmargin:auto;\n\ttext-align:center;\n}\n.employeeAvatar img{\n   width: 30mm;\n    height: 40.3mm;\n    border-radius: 8px;\n    border: 1px solid black;\n    position:relative;\n}\n.employeeName{\n    width:100%;\n\tpadding: 7px 0;\n\tfont-size: 14px;\n\ttext-align: center;\n}\n.name .designation{\n\tfont-size: 12px;\n\ttext-transform: uppercase;\n}\n.employeeInformation-front{\n    width:55mm;\n    background-color:#4c4c4c;\n    color:white;\n\ttext-align: center;\n\t\n}\n.card-container-back{\n     width:54mm;\n  height: 86mm;\n  background-size: contain;\n  background-repeat: no-repeat;\n}\nimg{\n    max-width: 100%;\n    max-height: 100%;\n}\n.quote{\n    border: 2px solid black; \n    margin: 4px;\n    padding: 4px;\n    font-size: 11px;\n}\n.moto{\n    font-weight: bold;\n}\n.div2{\n    display: flex;\n    flex-direction: column; \n    width: 26.5mm;\n}\n.date{\n    text-align: left;\n    font-size: 7px;\n    margin-left: 40mm;\n    border:1px solid black;\n    background-color:#979797;\n\n}\n.employeeInformation-back{\n    background-color:#4c4c4c;\n    color:white;\n\tmargin: auto;\n    padding: 0.20mm;\n    width:55mm;\n    height:9.2mm;\n\ttext-align: center;\n}",
