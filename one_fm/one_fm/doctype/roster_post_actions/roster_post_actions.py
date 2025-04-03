@@ -184,6 +184,7 @@ def create_roster_post_actions():
             check_list = []
             second_overfilled_check_list = []
             second_check_list = []
+            second_check_dict = {}
             for val in list_of_dict_of_operations_roles_not_filled:
                 if val["operations_role"] in operations_roles and val["shift"] in shift_dict[supervisor]:
                     check_list.append(val)
@@ -193,15 +194,17 @@ def create_roster_post_actions():
                     second_overfilled_check_list.append(val)
             
             for item in check_list:
-                for second_item in second_check_list:
-                    if (item["date"] == second_item["date"]) and (item["shift"] == second_item["shift"]) and (item["operations_role"] == second_item["operations_role"]):
-                        second_item["quantity"] = second_item["quantity"] + 1
-                        break
-                item.update({"quantity": 1})
+                key = (item["date"], item["shift"], item["operations_role"])
+                 
+                if key in second_check_dict:
+                    second_check_dict[key]["quantity"] += 1  # Increment if already exists
+                else:
+                    new_item = item.copy()  # Avoid modifying original data
+                    new_item["quantity"] = 1  # Initialize quantity
+                    second_check_dict[key] = new_item
                 
-                second_check_list.append(item)
-                check_list.remove(item)
-            
+            second_check_list = list(second_check_dict.values())
+
             if second_check_list and len(second_check_list) > 0:
                 roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
                 roster_post_actions_doc.start_date = start_date
