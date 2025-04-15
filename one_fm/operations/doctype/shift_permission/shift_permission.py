@@ -132,7 +132,6 @@ class ShiftPermission(Document):
 										WHERE name = %s
 									""", (date_time, self.assigned_shift))
 						if frappe.db.exists("Employee Checkin", {"shift_assignment": self.assigned_shift, "log_type": self.log_type}):
-
 							frappe.db.sql("""
 											UPDATE `tabEmployee Checkin`
 											SET shift_actual_start = %s, late_entry = 0
@@ -140,15 +139,7 @@ class ShiftPermission(Document):
 											AND log_type = %s
 										""", (date_time, self.assigned_shift, self.log_type))
 						else:
-							self.create_checkin(
-								data=dict(
-									shift_assignment=self.assigned_shift,
-									log_type=self.log_type,
-									late_entry=0,
-									shift_actual_start=date_time,
-									employee=self.employee
-								)
-							)
+							create_checkin(self)
 
 				else:
 					if self.leaving_time:
@@ -167,24 +158,10 @@ class ShiftPermission(Document):
 											AND log_type = %s
 										""", (date_time, self.assigned_shift, self.log_type))
 						else:
-							self.create_checkin(
-								data=dict(
-									shift_assignment=self.assigned_shift,
-									log_type=self.log_type,
-									early_exit=0,
-									shift_actual_end=date_time,
-									employee=self.employee
-								)
-							)
+							create_checkin(self)
 
 			frappe.db.commit()
 
-	def create_checkin(self, data: dict) -> None:
-		data.update({"doctype": "Employee Checkin"})
-		doc = frappe.get_doc(data)
-		doc.insert(ignore_permissions=True)
-		frappe.db.commit()
-		
 
 	def assign_to_owner(self):
 		# Assign back to owner if Shift permission is Returned to Draft state from Pending Approver
