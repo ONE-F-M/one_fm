@@ -34,8 +34,16 @@ class EmployeeSchedule(Document):
 			)
 			if employee_schedule:
 				frappe.db.set_value("Employee Schedule", employee_schedule.name, "day_off_ot", 0)
-
+    
+	def validate_schedule_date(self):
+		"""Validate that the schedule date is not in the past"""
+		today = frappe.utils.getdate()
+		if today > frappe.utils.getdate(self.date):
+			frappe.throw("Employee Schedules cannot be created for a past date.")
+   
+   
 	def validate(self):
+		self.validate_schedule_date()
 		if self.employee_availability=='Working' and self.shift_type and self.date:
 			start_time, end_time = frappe.db.get_value("Shift Type", self.shift_type, ['start_time', 'end_time'])
 			end_date = self.date
