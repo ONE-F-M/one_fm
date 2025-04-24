@@ -37,8 +37,8 @@ class EmployeeSchedule(Document):
     
 	def validate_schedule_date(self):
 		"""Validate that the schedule date is not in the past"""
-		today = frappe.utils.getdate()
-		if today > frappe.utils.getdate(self.date):
+		today = getdate()
+		if today > getdate(self.date):
 			frappe.throw("Employee Schedules cannot be created for a past date.")
    
    
