@@ -24,7 +24,7 @@ def get_context(context):
 
 
 @frappe.whitelist(allow_guest=True)
-def create_recruitment_documents(job_applicant, career_history_details, best_references):
+def create_recruitment_documents(job_applicant, career_history_details, best_references, interest_reason):
     '''
         Method to create Recruitment Documents
         Best References
@@ -34,7 +34,7 @@ def create_recruitment_documents(job_applicant, career_history_details, best_ref
             career_history_details: Career History details as json
             best_references: Best References details as json
     '''
-    create_career_history_from_portal(job_applicant, career_history_details)
+    create_career_history_from_portal(job_applicant, career_history_details, interest_reason)
     create_best_references_from_portal(job_applicant, best_references)
 
 
@@ -93,7 +93,7 @@ def create_best_references_from_portal(job_applicant, best_references):
                 )
 
 @frappe.whitelist(allow_guest=True)
-def create_career_history_from_portal(job_applicant, career_history_details):
+def create_career_history_from_portal(job_applicant, career_history_details, interest_reason):
     '''
         Method to create Career History from Portal
         args:
@@ -104,8 +104,10 @@ def create_career_history_from_portal(job_applicant, career_history_details):
     # Create Career History
     career_history = frappe.new_doc('Career History')
     career_history.job_applicant = job_applicant
+    career_history.about_the_opportunity = interest_reason
 
     career_histories = json.loads(career_history_details)
+
     for history in career_histories:
         career_history_fields = ['company_name', 'country_of_employment', 'start_date', 'responsibility_one',
            'job_title', "employment_type", 'monthly_salary_in_kwd', 'first_contact_name',

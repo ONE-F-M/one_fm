@@ -53,7 +53,7 @@ class CareerHistory(Document):
 			self.name = "New "+self.doctype
 		career_history = frappe.db.exists('Career History', {'job_applicant': self.job_applicant, 'name': ['!=', self.name], 'docstatus': ['<', 2]})
 		if career_history:
-			frappe.throw(_("""Career History <b><a href="#Form/Career History/{0}">{0}</a></b> is exists against \
+			frappe.throw(_("""Career History <b><a href="#Form/Career History/{0}">{0}</a></b> already exists against \
 				Job Applicant {1}.!""").format(career_history, self.applicant_name))
 
 	def calculate_promotions_and_experience(self):
@@ -97,9 +97,9 @@ class CareerHistory(Document):
 
 	def	on_submit(self):
 		if not self.validated_by_recruiter_on:
-			frappe.throw("You can only submit Career History once 'Validate by Recruiter On' is set.")
+			frappe.throw("You can only submit Career History once 'Validated by Recruiter On' is set.")
 		elif getdate(self.validated_by_recruiter_on) > getdate(nowdate()):
-			frappe.throw("Validate by Recruiter On cannot be future date.")
+			frappe.throw("Validated by Recruiter On cannot be future date.")
 		self.career_history_score_action()
 		update_interview_and_feedback(self, True)
 
