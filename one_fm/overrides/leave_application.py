@@ -17,6 +17,14 @@ from one_fm.utils import get_approver_user, leave_application_on_cancel
 from hrms.hr.utils import get_holidays_for_employee
 from one_fm.one_fm.doctype.reliever_assignment.reliever_assignment import ReassignRelieverAssignment, reassign_responsibilities
 
+from frappe.workflow.doctype.workflow_action.workflow_action import (
+
+    get_workflow_name,
+    get_workflow_action_url,
+    get_doc_workflow_state
+)
+from one_fm.overrides.workflow import get_next_possible_transitions
+
 
 def validate_active_staff(doc,event):
     emp_details = frappe.get_value("Employee",doc.employee,['status','relieving_date'],as_dict =1 )
@@ -306,12 +314,54 @@ class LeaveApplicationOverride(LeaveApplication):
                     frappe.msgprint(_("Please set default template for Leave Approval Notification in HR Settings."))
                     return
                 email_template = frappe.get_doc("Email Template", template)
+
+                if email_template.get("add_workflow_action_buttons_to_email"):
+                    doc = frappe.get_doc(self.doctype, self.name)
+                    user = self.leave_approver or ""
+                    args["show_workflow_buttons"] = 1
+                    args["workflow_buttons_html"] = get_workflow_action_buttons_html(doc, user)
+                else:
+                    args["show_workflow_buttons"] = 0
+                    args["workflow_buttons_html"] = ""
+
                 message = frappe.render_template(email_template.response_html, args)
                 subject = f'طلب الإجازة تم تقديمه للموافقة – {employee[0].employee_name_in_arabic} | Leave Application Submitted for Approval  – {self.employee_name}'
                 sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
                 sendemail(sender=sender, recipients= [self.leave_approver],message=message, subject=subject, delayed=False, is_scheduler_email=False,is_external_mail=True)
             except Exception as e:
                 frappe.log_error(message=frappe.get_traceback(), title="Leave Notification")
+
+    def get_workflow_action_buttons_html(doc, user):
+        doctype = doc.get('doctype')
+        workflow = get_workflow_name(doctype)
+        message_html = ""
+
+        if workflow:
+            transitions = get_next_possible_transitions(
+                workflow, get_doc_workflow_state(doc), doc
+            )
+
+            action_details = []
+
+            for transition in transitions:
+                action_details.append(
+                    frappe._dict(
+                        {
+                            "action_name": transition.action,
+                            "action_link": get_workflow_action_url(transition.action, doc, user),
+                        }
+                    )
+                )
+
+            if action_details:
+                message_html += "<div>"
+                for action in action_details:
+                    message_html += '<a href="{0}" class="btn btn-primary btn-action" style="margin-right: 10px;">{1}</a>'.format(
+                        action.action_link, action.action_name
+                    )
+                message_html += "</div>"
+
+        return message_html
 
     def after_insert(self):
         self.assign_to_leave_approver()

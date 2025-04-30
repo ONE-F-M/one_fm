@@ -111,3 +111,4 @@ one_fm.patches.v15_0.fix_stale_leave_application_employee_status
 one_fm.patches.v15_0.update_leave_application_workflow_state
 one_fm.patches.v15_0.update_employee_HR-EMP-03572
 one_fm.patches.v15_0.add_roster_post_view_index
+one_fm.patches.v15_0.create_email_template_custom_field
