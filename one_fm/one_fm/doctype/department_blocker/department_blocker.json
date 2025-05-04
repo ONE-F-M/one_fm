@@ -1,0 +1,56 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-05-04 14:31:46.981881",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "blocker",
+  "name1",
+  "since",
+  "assigned"
+ ],
+ "fields": [
+  {
+   "fieldname": "blocker",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Blocker",
+   "reqd": 1
+  },
+  {
+   "fieldname": "name1",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "since",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Since",
+   "reqd": 1
+  },
+  {
+   "fieldname": "assigned",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Assigned",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-05-04 15:02:20.130270",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Department Blocker",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

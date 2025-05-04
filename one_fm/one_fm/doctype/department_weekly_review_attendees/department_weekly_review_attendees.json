@@ -1,0 +1,87 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-05-04 14:17:26.559804",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "attended",
+  "reason",
+  "tasks_completed",
+  "tasks_pending",
+  "blockers"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name"
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "attended",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Attended"
+  },
+  {
+   "columns": 2,
+   "fieldname": "reason",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reason"
+  },
+  {
+   "columns": 1,
+   "fieldname": "tasks_completed",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Tasks Completed",
+   "non_negative": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "tasks_pending",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Tasks Pending",
+   "non_negative": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "blockers",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Blockers",
+   "non_negative": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-05-04 14:26:18.842470",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Department Weekly Review Attendees",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
