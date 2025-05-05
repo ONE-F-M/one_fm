@@ -7,7 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "blocker",
-  "name1",
+  "employee_name",
   "since",
   "assigned"
  ],
@@ -20,31 +20,32 @@
    "reqd": 1
   },
   {
-   "fieldname": "name1",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Name",
-   "reqd": 1
+    "fieldname": "employee_name",
+    "fieldtype": "Data",
+    "in_list_view": 1,
+    "label": "Employee Name",
+    "reqd": 1
   },
   {
    "fieldname": "since",
-   "fieldtype": "Data",
+   "fieldtype": "Date",
    "in_list_view": 1,
    "label": "Since",
    "reqd": 1
   },
   {
    "fieldname": "assigned",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Assigned",
+   "options": "User",
    "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-05-04 15:02:20.130270",
+ "modified": "2025-05-05 09:22:33.864844",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Department Blocker",

@@ -15,7 +15,7 @@
   "section_break_mxpc",
   "attendees",
   "section_break_nmce",
-  "problems_that_are_stopping_your_work",
+  "blockers",
   "section_break_ztyz",
   "company",
   "amended_from",
@@ -74,7 +74,7 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "problems_that_are_stopping_your_work",
+   "fieldname": "blockers",
    "fieldtype": "Table",
    "label": "Problems that are stopping your work",
    "options": "Department Blocker"
