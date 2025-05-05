@@ -61,17 +61,17 @@ const load_department_blockers = (frm, department) => {
         args: { department },
         callback: function (r) {
             if (r.message && Array.isArray(r.message)) {
-                frm.clear_table("problems_that_are_stopping_your_work");
+                frm.clear_table("blockers");
 
                 r.message.forEach(item => {
-                    const row = frm.add_child("problems_that_are_stopping_your_work");
+                    const row = frm.add_child("blockers");
                     row.blocker = item.blocker_details;
                     row.employee_name = item.employee_name;
                     row.since = item.date;
                     row.assigned = item.assigned_to;
                 });
 
-                frm.refresh_field("problems_that_are_stopping_your_work");
+                frm.refresh_field("blockers");
             }
         }
     });
