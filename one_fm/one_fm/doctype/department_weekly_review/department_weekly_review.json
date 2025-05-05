@@ -77,7 +77,7 @@
    "fieldname": "blockers",
    "fieldtype": "Table",
    "label": "Problems that are stopping your work",
-   "options": "Department Blocker"
+   "options": "Department Blockers"
   },
   {
    "fieldname": "section_break_ztyz",
@@ -109,7 +109,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-05-04 16:32:41.375362",
+ "modified": "2025-05-05 10:07:03.280085",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Department Weekly Review",

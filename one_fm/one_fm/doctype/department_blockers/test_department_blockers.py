@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestDepartmentBlocker(FrappeTestCase):
+class TestDepartmentBlockers(FrappeTestCase):
 	pass

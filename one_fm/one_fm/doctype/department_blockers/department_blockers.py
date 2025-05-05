@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class DepartmentBlocker(Document):
+class DepartmentBlockers(Document):
 	pass

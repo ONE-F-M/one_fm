@@ -20,11 +20,11 @@
    "reqd": 1
   },
   {
-    "fieldname": "employee_name",
-    "fieldtype": "Data",
-    "in_list_view": 1,
-    "label": "Employee Name",
-    "reqd": 1
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee Name",
+   "reqd": 1
   },
   {
    "fieldname": "since",
@@ -48,7 +48,7 @@
  "modified": "2025-05-05 09:22:33.864844",
  "modified_by": "Administrator",
  "module": "One Fm",
- "name": "Department Blocker",
+ "name": "Department Blockers",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",
