@@ -3984,3 +3984,11 @@ def update_fields_in_doctypes(data):
 						doc.set(field, value)  # Re-set the actual value
 					doc.save()
 
+@frappe.whitelist()
+def get_current_year_and_week():
+    dt = now_datetime()
+    iso_year, week_number, _ = dt.isocalendar()
+    return {
+        "year": iso_year,
+        "week": week_number
+    }

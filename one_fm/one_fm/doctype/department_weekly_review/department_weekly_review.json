@@ -1,0 +1,136 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "OWS-DWR-.MM.-.YYYY.-.####",
+ "creation": "2025-05-04 13:42:15.675518",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_i4gq",
+  "department",
+  "column_break_mvoc",
+  "week",
+  "column_break_bmjz",
+  "year",
+  "section_break_mxpc",
+  "attendees",
+  "section_break_nmce",
+  "problems_that_are_stopping_your_work",
+  "section_break_ztyz",
+  "company",
+  "amended_from",
+  "column_break_tmsy"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_i4gq",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Department",
+   "options": "Department",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_mvoc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "week",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Week",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_bmjz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "year",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Year",
+   "options": "Fiscal Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_mxpc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "attendees",
+   "fieldtype": "Table",
+   "label": "Attendees",
+   "options": "Department Weekly Review Attendees",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_nmce",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "problems_that_are_stopping_your_work",
+   "fieldtype": "Table",
+   "label": "Problems that are stopping your work",
+   "options": "Department Blocker"
+  },
+  {
+   "fieldname": "section_break_ztyz",
+   "fieldtype": "Section Break",
+   "label": "More Information"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Department Weekly Review",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_tmsy",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-05-04 16:32:41.375362",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Department Weekly Review",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
