@@ -70,8 +70,7 @@
    "fieldname": "operations_roles_not_filled",
    "fieldtype": "Table",
    "label": "Post Types Not Filled",
-   "options": "Post Types Not Filled",
-   "reqd": 1
+   "options": "Post Types Not Filled"
   },
   {
    "fetch_from": "supervisor.employee_name",
@@ -127,7 +126,7 @@
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-16 17:04:43.288091",
+ "modified": "2025-05-08 15:45:52.987293",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Post Actions",
