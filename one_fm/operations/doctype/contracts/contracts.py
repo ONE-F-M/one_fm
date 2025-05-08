@@ -14,7 +14,6 @@ from frappe.utils import (
     get_last_day, get_datetime, flt, add_days,add_months,get_date_str
 )
 from frappe import _
-
 from one_fm.processor import sendemail
 
 class Contracts(Document):
@@ -24,6 +23,38 @@ class Contracts(Document):
         self.update_contract_dates()
         # if self.overtime_rate == 0:
         # 	frappe.msgprint(_("Overtime rate not set."), alert=True, indicator='orange')
+
+
+    def on_update(self):
+        self.update_project_start_end_date()
+
+
+    
+    def update_project_start_end_date(self):
+        if not (self.project and self.start_date and self.end_date):
+            return
+
+        changed = False
+        if self.is_new():
+            changed = True
+        else:
+            before = self.get_doc_before_save()
+            if before:
+                changed = (
+                    before.start_date != self.start_date or
+                    before.end_date   != self.end_date
+                )
+
+        if not changed:
+            return
+
+        frappe.db.set_value(
+            "Project", self.project,
+            {
+                "expected_start_date": self.start_date,
+                "expected_end_date":   self.end_date
+            }
+        )
 
 
 
@@ -449,6 +480,7 @@ def insert_login_credential(url, user_name, password, client):
 
 #renew contracts by one year
 def auto_renew_contracts():
+    from one_fm.operations.doctype.operations_post.operations_post import create_new_schedule_for_project
     filters = {
         'end_date' : today(),
         'is_auto_renewal' : 1,
@@ -465,6 +497,7 @@ def auto_renew_contracts():
         contract_doc.end_date = add_days(contract_doc.end_date, duration + 1)
         contract_doc.save()
         frappe.db.commit()
+        create_new_schedule_for_project(contract_doc.project)
 
 def get_service_items_invoice_amounts(contract, date, current_month=False):
     # use date args instead of system date

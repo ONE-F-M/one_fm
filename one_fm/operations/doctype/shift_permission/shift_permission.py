@@ -51,7 +51,7 @@ class ShiftPermission(Document):
 
 	# This method validates the permission date and avoid creating permission for previous days
 	def validate_date(self):
-		if getdate(self.date) < getdate():
+		if getdate(self.date) < getdate() and frappe.session.user not in ['Administrator']:
 			frappe.throw(_("Please note that shift permission can not be created for past date")) if self.is_new() else frappe.throw("Please note that shift permission can not be updated to a past date")
 
 	# This method validates any dublicate permission for the employee on same day
@@ -122,7 +122,6 @@ class ShiftPermission(Document):
 			if self.assigned_shift:
 				if self.log_type == "IN":
 					if self.arrival_time:
-
 						date_str = frappe.utils.get_date_str(self.date)
 						arrival_time_str = str(self.arrival_time)
 						date_time = datetime.strptime(date_str + " " + arrival_time_str, '%Y-%m-%d %H:%M:%S')
@@ -131,13 +130,15 @@ class ShiftPermission(Document):
 										SET start_datetime = %s
 										WHERE name = %s
 									""", (date_time, self.assigned_shift))
-
-						frappe.db.sql("""
-										UPDATE `tabEmployee Checkin`
-										SET shift_actual_start = %s, late_entry = 0
-										WHERE shift_assignment = %s
-										AND log_type = %s
-									""", (date_time, self.assigned_shift, self.log_type))
+						if frappe.db.exists("Employee Checkin", {"shift_assignment": self.assigned_shift, "log_type": self.log_type}):
+							frappe.db.sql("""
+											UPDATE `tabEmployee Checkin`
+											SET shift_actual_start = %s, late_entry = 0
+											WHERE shift_assignment = %s
+											AND log_type = %s
+										""", (date_time, self.assigned_shift, self.log_type))
+						else:
+							create_checkin(self)
 
 				else:
 					if self.leaving_time:
@@ -147,13 +148,15 @@ class ShiftPermission(Document):
 										SET end_datetime = %s
 										WHERE name = %s
 									""", (date_time, self.assigned_shift))
-
-						frappe.db.sql("""
-										UPDATE `tabEmployee Checkin`
-										SET shift_actual_end = %s, early_exit = 0
-										WHERE shift_assignment = %s
-										AND log_type = %s
-									""", (date_time, self.assigned_shift, self.log_type))
+						if frappe.db.exists("Employee Checkin", {"shift_assignment": self.assigned_shift, "log_type": self.log_type}):
+							frappe.db.sql("""
+											UPDATE `tabEmployee Checkin`
+											SET shift_actual_end = %s, early_exit = 0
+											WHERE shift_assignment = %s
+											AND log_type = %s
+										""", (date_time, self.assigned_shift, self.log_type))
+						else:
+							create_checkin(self)
 
 			frappe.db.commit()
 
@@ -216,7 +219,6 @@ def approve_open_shift_permission(start_date, end_date):
 		for i in shift_permissions:
 			try:
 				shift_permission = frappe.get_doc("Shift Permission", i.name)
-				create_checkin(shift_permission)
 				apply_workflow(shift_permission, 'Approve')
 			except Exception as e:
 				error_list += str(e)+'\n\n'

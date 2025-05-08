@@ -13,6 +13,7 @@
   "column_break_5",
   "hiring_method",
   "validated_by_recruiter_on",
+  "recruiter_assigned",
   "section_break_8",
   "calculate_promotions_and_experience_automatically",
   "total_years_of_experience",
@@ -28,6 +29,7 @@
   "tugs",
   "about_the_opportunity_section",
   "about_the_opportunity",
+  "what_are_the_factors_you_are_looking_for_in_a_new_job",
   "amended_from"
  ],
  "fields": [
@@ -88,7 +90,7 @@
   {
    "fieldname": "about_the_opportunity",
    "fieldtype": "Small Text",
-   "label": "What is it that Makes You Interested in this Opportunity"
+   "label": "What is it that makes you interested in this opportunity?"
   },
   {
    "collapsible": 1,
@@ -164,14 +166,27 @@
    "options": "Career History",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fetch_from": "erf.recruiter_assigned",
+   "fieldname": "recruiter_assigned",
+   "fieldtype": "Link",
+   "label": "Recruiter Assigned",
+   "options": "User"
+  },
+  {
+   "fieldname": "what_are_the_factors_you_are_looking_for_in_a_new_job",
+   "fieldtype": "Small Text",
+   "label": "What are the factors you are looking for in a new job?"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2022-03-12 13:19:49.870457",
+ "modified": "2025-04-29 11:55:46.051340",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -222,6 +237,7 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "title_field": "applicant_name",
  "track_changes": 1
 }

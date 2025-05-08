@@ -141,3 +141,9 @@ def fetch_designation_of_users(list_of_users: list = []):
 							""",(tuple(loads(list_of_users)), ) ,as_dict=1)
 	except Exception as e:
 		frappe.log_error(frappe.get_traceback(), "Error encountered while fetching users designation (MOM)")
+
+
+@frappe.whitelist()
+def get_project_users(project):
+    doc = frappe.get_doc("Project", project)
+    return [u.full_name for u in doc.users]

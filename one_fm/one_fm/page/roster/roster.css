@@ -8,9 +8,8 @@
 @import url("/css/main.css");
 @import url("/css/material_blue.css");
 
-
 body[data-route="roster"] .page-container {
-  margin-top: 0px;
+	margin-top: 0px;
 }
 
 body[data-route="roster"] .collapse {

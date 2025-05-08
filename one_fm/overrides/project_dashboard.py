@@ -14,6 +14,6 @@ def get_data(**kwargs):
 			{"label": _("Material"), "items": ["Material Request", "BOM", "Stock Entry"]},
 			{"label": _("Sales"), "items": ["Sales Order", "Delivery Note", "Sales Invoice"]},
 			{"label": _("Purchase"), "items": ["Purchase Order", "Purchase Receipt", "Purchase Invoice"]},
-			{"label": _("Operations"), "items": ["MOM"]},
+			{"label": _("Operations"), "items": ["MOM", "Operations Site", "Operations Shift", "Operations Role", "Operations Post"]},
 		],
 	}

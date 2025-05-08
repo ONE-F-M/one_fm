@@ -5,6 +5,7 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "section_break_ukec",
   "start_date",
   "col_br_1",
   "end_date",
@@ -13,12 +14,17 @@
   "column_break_bi2pf",
   "action_type",
   "section_break_t1lpn",
+  "column_break_wtzd",
   "supervisor",
   "supervisor_name",
   "column_break_yxhnr",
   "site_supervisor",
   "site_supervisor_name",
   "site_supervisor_user",
+  "column_break_ptva",
+  "project_manager",
+  "project_manager_name",
+  "project_manager_user",
   "section_break_h7sd9",
   "employees_not_rostered"
  ],
@@ -29,6 +35,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Start Date",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -39,6 +46,7 @@
    "fieldname": "end_date",
    "fieldtype": "Date",
    "label": "End Date",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -67,14 +75,15 @@
    "in_standard_filter": 1,
    "label": "Shift  Supervisor",
    "options": "Employee",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "employees_not_rostered",
    "fieldtype": "Table",
    "ignore_user_permissions": 1,
    "label": "Employees Not Rostered",
-   "options": "Employees Not Rostered"
+   "options": "Employees Not Rostered",
+   "read_only": 1
   },
   {
    "fetch_from": "supervisor.employee_name",
@@ -115,7 +124,8 @@
    "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Site Supervisor",
-   "options": "Employee"
+   "options": "Employee",
+   "read_only": 1
   },
   {
    "fetch_from": "site_supervisor.user_id",
@@ -124,12 +134,50 @@
    "fieldtype": "Link",
    "hidden": 1,
    "label": "Site Supervisor User",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ptva",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project_manager",
+   "fieldtype": "Link",
+   "label": "Project Manager",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project_manager.employee_name",
+   "fieldname": "project_manager_name",
+   "fieldtype": "Data",
+   "label": "Project Manager Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project_manager.user_id",
+   "fetch_if_empty": 1,
+   "fieldname": "project_manager_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Project Manager User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_ukec",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_wtzd",
+   "fieldtype": "Column Break"
   }
  ],
+ "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-12-25 10:57:14.741275",
+ "modified": "2025-05-05 15:31:05.731428",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Employee Actions",

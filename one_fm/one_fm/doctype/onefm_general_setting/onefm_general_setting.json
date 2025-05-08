@@ -15,6 +15,8 @@
   "enable_face_recognition_endpoint",
   "roster_settings_section",
   "default_shift_checker_threshold",
+  "column_break_tusm",
+  "reliever_default_shift_checker_threshold",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
@@ -214,11 +216,22 @@
    "fieldname": "sync_google_tasks_btn",
    "fieldtype": "Button",
    "label": "Sync Google Tasks"
+  },
+  {
+   "fieldname": "column_break_tusm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Any reliever assigned to the same shift up to this number of times will be reported in Default Shift Checker",
+   "fieldname": "reliever_default_shift_checker_threshold",
+   "fieldtype": "Int",
+   "label": "Reliever Default Shift Checker Threshold ",
+   "reqd": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2025-01-21 18:09:17.133524",
+ "modified": "2025-04-25 09:56:02.132468",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

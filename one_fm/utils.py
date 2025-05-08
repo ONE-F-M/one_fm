@@ -3696,7 +3696,6 @@ def send_work_anniversary_reminders():
 
 def set_employee_status():
     from one_fm.one_fm.doctype.reliever_assignment.reliever_assignment import assign_responsibilities ,reassign_responsibilities
-    from one_fm.overrides.leave_application import reassign_to_applicant,reassign_to_reliever
     # Get today's date
     current_date = getdate(today())
 
@@ -3727,13 +3726,10 @@ def set_employee_status():
             if current_date == getdate(from_date) and status == "Active":
                 frappe.db.set_value('Employee', employee, 'status', 'Vacation')
                 if reliever:
-                    frappe.enqueue(reassign_to_applicant(employee=employee, leave_name=leave_application))
                     frappe.enqueue(assign_responsibilities, leave_application=leave_application)
                 employees_set_to_vacation += 1
             elif current_date == add_days(getdate(to_date), 1) and status == "Vacation":
                 frappe.db.set_value('Employee', employee, 'status', 'Active')
-                if reliever:
-                    frappe.enqueue(reassign_to_reliever(reliever=reliever, leave_name=leave_application, employee=employee))
                 if reliever and frappe.db.exists("Reliever Assignment", {"name": leave_application}):
                     frappe.enqueue(reassign_responsibilities, leave_application=leave_application)
                 employees_set_to_active += 1
@@ -3985,3 +3981,37 @@ def get_workflow_action_buttons_html(doc, user):
             message_html += "</div>"
 
     return message_html
+
+def update_fields_in_doctypes(data):
+	"""
+	Update multiple Doctypes with different filters and fields.
+
+	:param data: List of dicts, each with keys:
+		- doctype: str
+		- filters: dict
+		- field_value_map: dict
+
+	Example:
+	[
+		{
+			"doctype": "Operations Post",
+			"filters": {"site": self.name, "project": doc_before_save.project},
+			"field_value_map": {"project": self.project, "site": self.name}
+		}
+	]
+	"""
+	for entry in data:
+		doctype = entry.get("doctype")
+		filters = entry.get("filters")
+		field_value_map = entry.get("field_value_map")
+
+		if doctype and filters and field_value_map:
+			if frappe.db.exists(doctype, filters):
+				docs = frappe.get_all(doctype, filters=filters, pluck="name")
+				for docname in docs:
+					doc = frappe.get_doc(doctype, docname)
+					for field, value in field_value_map.items():
+						doc.set(field, None)   # Clear the field to reset fetched values
+						doc.set(field, value)  # Re-set the actual value
+					doc.save()
+

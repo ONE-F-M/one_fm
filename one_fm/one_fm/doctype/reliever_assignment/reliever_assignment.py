@@ -433,16 +433,21 @@ class ReassignRelieverAssignment(Document):
 									.where(ReferenceType[fieldname] == value_to_replace) \
 									.where(ReferenceType[status_field].isin(status_to_check)) \
 								.run()
-	
-	def reassign_roles(self,data):
+		
+	def reassign_roles(self, data):
 		doclist = json.loads(data.doclist)
-		reliever_roles = set(doclist.get("reliever",{}).get("roles",[]))
-		employe_on_leave_roles = set(doclist.get("employee_on_leave",{}).get("roles",[]))
-		reliever_user = frappe.get_doc("User", self._reliever_user_id )
-		roles_to_remove_from_reliver = employe_on_leave_roles - reliever_roles
-		if roles_to_remove_from_reliver:
-			reliever_user.remove_roles(*roles_to_remove_from_reliver)
-		frappe.db.set_value("User", reliever_roles, "role_profile_name", doclist.get("reliever").get("role_profile_name"))
+		reliever_info = doclist.get("reliever", {})
+		employee_info = doclist.get("employee_on_leave", {})
+		reliever_roles = set(reliever_info.get("roles", []))
+		employee_roles = set(employee_info.get("roles", []))
+		roles_to_remove = employee_roles - reliever_roles
+		if self._reliever_user_id:
+			reliever_user = frappe.get_doc("User", self._reliever_user_id)
+			if roles_to_remove:
+				reliever_user.remove_roles(*roles_to_remove)
+			if reliever_info.get("role_profile_name"):
+				frappe.db.set_value("User", self._reliever_user_id, "role_profile_name", reliever_info["role_profile_name"])
+
 
 	def reassign_reportees(self,data):
 		Employee = DocType(data.reference_doctype)
@@ -598,7 +603,6 @@ class ReassignRelieverAssignment(Document):
 									.where(ReferenceType.name == reference_name) \
 									.where(ReferenceType[fieldname] == value_to_replace) \
 									.where(ReferenceType[status_field].isin(status_to_check)).run()
-						
 
 def reassign_responsibilities(leave_application):
 	try:

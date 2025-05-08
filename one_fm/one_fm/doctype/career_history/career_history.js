@@ -13,6 +13,10 @@ frappe.ui.form.on('Career History', {
 		if(frm.doc.total_years_of_experience){
 			set_total_years_of_experience_str(frm, frm.doc.total_years_of_experience);;
 		}
+		frm.add_custom_button(__('Best Reference'), function() {
+			frappe.route_options = {"job_applicant": frm.doc.job_applicant};
+			frappe.set_route("List", "Best Reference");
+		  },'View');
 	},
 	job_applicant: function(frm) {
     set_job_applicant_details(frm);
@@ -95,9 +99,14 @@ var calculate_promotions_and_experience = function(frm) {
 		for (var company in start_date_in_company) {
 			if (start_date_in_company.hasOwnProperty(company)) {
 				var start_date = start_date_in_company[company];
-				if(end_date_in_company[company]){
-					total_years_of_experience += calculate_total_years_of_experience(start_date, end_date_in_company[company]);
+				var end_date = end_date_in_company[company];
+
+				if (!end_date)
+				{
+					end_date = new Date().toISOString().split('T')[0];
 				}
+
+				total_years_of_experience += calculate_total_years_of_experience(start_date, end_date);
 			}
 			if(promotions[company]){
 				total_number_of_promotions += promotions[company].length-1;

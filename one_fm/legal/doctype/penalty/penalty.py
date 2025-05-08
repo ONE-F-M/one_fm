@@ -32,7 +32,8 @@ class Penalty(Document):
 
 	def notify_employee(self):
 		link = get_link_to_form(self.doctype, self.name)
-		subject = _("Penalty Issued by {issuer_name}.".format(issuer_name=self.issuer_name))
+		issuer_name = self.issuer_name or "Administrator"
+		subject = _(f"Penalty Issued by {issuer_name}.".format(issuer_name=issuer_name))
 		message = _("""
 			You have been issued a penalty.<br>
 			Please take necessary action within 48 hours.<br>

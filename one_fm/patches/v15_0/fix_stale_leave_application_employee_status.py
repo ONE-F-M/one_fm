@@ -2,7 +2,6 @@ import frappe
 from frappe.utils import today
 
 from one_fm.one_fm.doctype.reliever_assignment.reliever_assignment import reassign_responsibilities
-from one_fm.overrides.leave_application import reassign_to_reliever
 
 def execute():
     query_past_leaves = """
@@ -58,9 +57,6 @@ def execute():
         employee = obj["employee"]
         reliever = obj.get("custom_reliever_")
         leave_application = obj["name"]
-
-        if reliever:
-            frappe.enqueue(reassign_to_reliever, reliever=reliever, leave_name=leave_application, employee=employee)
 
         if reliever and frappe.db.exists("Reliever Assignment", {"name": leave_application}):
             frappe.enqueue(reassign_responsibilities, leave_application=leave_application)

@@ -87,51 +87,61 @@ def filter_purchase_uoms(doctype, txt, searchfield, start, page_len, filters):
 class PurchaseOrderOverride(PurchaseOrder):  
 
     def on_submit(self):
-        self.update_rfp()
-
+        self.update_purchased_quantities()
+    
     def on_update_after_submit(self):
-        self.update_rfp_after_submit()
+        self.update_purchased_quantities()
 
     def on_cancel(self):
-        self.update_rfp(is_cancel=True)
+        self.update_purchased_quantities()
 
-    def update_rfp(self, is_cancel: bool = False):
-        if self.one_fm_request_for_purchase:
-            for obj in self.items:
-                purchased_quantity = frappe.db.get_value(
-                    "Request for Purchase Item",
-                    {
-                        "parent": self.one_fm_request_for_purchase,
-                        "parentfield": "items",
-                        "parenttype": "Request for Purchase",
-                        "item_code": obj.item_code,
-                    },
-                    "purchased_quantity"
-                ) or 0 
-                new_qty = (purchased_quantity - obj.qty) if is_cancel else (purchased_quantity + obj.qty)
-                self.update_purchased_qty(new_qty=new_qty, rfp=self.one_fm_request_for_purchase, item_code=obj.item_code)
-
-
-
-    def update_rfp_after_submit(self):
-        if self.one_fm_request_for_purchase:
-            purchase_orders = frappe.db.get_list("Purchase Order", filters={"one_fm_request_for_purchase": self.one_fm_request_for_purchase,"name": ["not in", [self.name]]}, pluck='name')
-            for obj in self.items:
-                item_qty = frappe.db.get_list("Purchase Order Item", {"parent": ["IN", purchase_orders], "item_code": obj.item_code, 
-                                                                      'parentfield': 'items',}, pluck="qty")
-                self.update_purchased_qty(new_qty=sum(item_qty), rfp=self.one_fm_request_for_purchase, item_code=obj.item_code)
-
-
-    @staticmethod
-    def update_purchased_qty(new_qty: int, rfp: str, item_code:str):
-        frappe.db.sql(
-            """
-            UPDATE `tabRequest for Purchase Item`
-            SET purchased_quantity = %s
-            WHERE parenttype = 'Request for Purchase'
-            AND parent = %s
-            AND item_code = %s
-            """,
-            (new_qty, rfp, item_code),
+    def update_purchased_quantities(self):
+        if not self.one_fm_request_for_purchase:
+            return
+    
+        # Fetch all purchase orders linked to the same Request for Purchase
+        purchase_orders = frappe.db.get_list(
+            "Purchase Order", 
+            filters={"one_fm_request_for_purchase": self.one_fm_request_for_purchase, "docstatus": 1},
+            pluck='name'
         )
+
+        request_for_material = frappe.db.get_value(
+                "Request for Purchase", 
+                {"name": self.one_fm_request_for_purchase},
+                "request_for_material"
+            )
+    
+        for obj in self.items:
+
+            # Sum purchased quantities from all purchase orders
+            item_qty = frappe.db.get_all(
+                "Purchase Order Item", 
+                {"parent": ["IN", purchase_orders], "item_code": obj.item_code, 'parentfield': 'items'},
+                pluck="qty"
+            )
+            new_qty = sum(item_qty) if item_qty else 0
+            
+            
+            # Update purchased quantity in Request for Purchase Item
+            update_purchased_qty(new_qty, self.one_fm_request_for_purchase, obj.item_code, "Request for Purchase Item", "purchased_quantity")
+
+
+            # If Request for Material exists, update the corresponding quantity
+            if request_for_material:
+                update_purchased_qty(new_qty, request_for_material, obj.item_code, "Request for Material Item", "purchased_qty")
+
+
+def update_purchased_qty(new_qty, parent, item_code, doctype, qty_field):
+    frappe.db.sql(
+        f"""
+        UPDATE `tab{doctype}`
+        SET {qty_field} = %s
+        WHERE parenttype = %s
+        AND parent = %s
+        AND item_code = %s
+        """,
+        (new_qty, doctype.replace(" Item", ""), parent, item_code),
+    )
+
                 

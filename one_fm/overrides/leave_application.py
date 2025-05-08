@@ -639,27 +639,6 @@ def get_leave_approver(employee):
     approver = get_approver_user(employee)
     return approver
 
-
-def reassign_to_reliever(reliever: str, leave_name: str, employee: str):
-    try:
-        reliever_employee = frappe.db.get_value("Employee", reliever, ["name", "user_id"], as_dict=1)
-        employee = frappe.db.get_value("Employee", employee, ["name", "user_id"], as_dict=1)
-        reassign = ReassignDutiesToReliever(reliever=reliever_employee, leave_name=leave_name, employee_object=employee)
-        reassign.reassign()
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Reassign Employee Duties To Reliever")
-
-
-def reassign_to_applicant(employee: str, leave_name: str):
-    try:
-        reassigned_documents = frappe.db.get_list("Reassigned Documents", filters={"parent": leave_name}, fields=["reassigned_doctype", "names"])
-        if reassigned_documents:
-            employee = frappe.db.get_value("Employee", employee, ["name", "user_id"], as_dict=1)
-            reassign = ReassignDocumentToLeaveApplicant(reassigned_documents=reassigned_documents, employee=employee)
-            reassign.reassign()
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Reassign Duties Back To Employee")
-
 @frappe.whitelist()
 def send_proposed_date_email(doc_name):
     frappe.db.set_value("Leave Application",doc_name,'workflow_state',"New Dates Proposed")

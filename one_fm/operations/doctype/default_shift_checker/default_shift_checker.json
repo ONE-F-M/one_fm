@@ -11,6 +11,7 @@
   "column_break_fxzs",
   "start_date",
   "end_date",
+  "is_reliever",
   "default_operations_role_allocation",
   "actions_section",
   "status",
@@ -23,7 +24,9 @@
   "new_operations_role_allocation",
   "section_break_yzvl",
   "assigned_shifts_outside_default_shift",
-  "amended_from"
+  "amended_from",
+  "section_break_wkho",
+  "reliever_assigned_to_the_same_shift"
  ],
  "fields": [
   {
@@ -111,10 +114,12 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.is_reliever==0",
    "fieldname": "assigned_shifts_outside_default_shift",
    "fieldtype": "Table",
    "label": "Assigned Shifts Outside Default Shift",
-   "options": "Default Shift Checker Shift"
+   "options": "Default Shift Checker Shift",
+   "read_only": 1
   },
   {
    "fetch_from": "employee.shift",
@@ -155,13 +160,30 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_reliever",
+   "fieldtype": "Check",
+   "label": "Is Reliever",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_wkho",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.is_reliever==1",
+   "fieldname": "reliever_assigned_to_the_same_shift",
+   "fieldtype": "Table",
+   "label": "Reliever Assigned to the Same Shift",
+   "options": "Default Shift Checker Shift"
   }
  ],
  "in_create": 1,
  "index_web_pages_for_search": 1,
- "is_submittable": 1,
  "links": [],
- "modified": "2025-02-18 12:06:18.214897",
+ "modified": "2025-05-06 08:24:15.457029",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Default Shift Checker",

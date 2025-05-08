@@ -5734,6 +5734,21 @@
     "skip_multiple_action": 0,
     "state": "Pending Approver",
     "workflow_builder_id": null
+   },
+   {
+    "action": "Approve",
+    "allow_self_approval": 1,
+    "allowed": "Administrator",
+    "custom_confirm_message": null,
+    "custom_confirm_transition": 0,
+    "next_state": "Approved",
+    "parent": "Shift Permission",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "skip_creation_of_workflow_action": 0,
+    "skip_multiple_action": 0,
+    "state": "Pending Approver",
+    "workflow_builder_id": null
    }
   ],
   "workflow_data": null,

@@ -1,3 +1,4 @@
+from one_fm.overrides.attendance_request import approve_pending_attendance_request
 import pandas as pd
 import frappe, erpnext
 from frappe import _
@@ -504,6 +505,7 @@ def mark_all_attendance():
     frappe.enqueue(approve_open_shift_permission, start_date=str(start_date), end_date=str(end_date))
     frappe.enqueue(approve_pending_employee_checkin_issue)
     frappe.enqueue(mark_open_timesheet_and_create_attendance)
+    frappe.enqueue(approve_pending_attendance_request)
     frappe.enqueue(mark_daily_attendance, start_date=start_date, end_date=end_date, timeout=4000, queue='long')
 
 def mark_daily_attendance(start_date, end_date):

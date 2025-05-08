@@ -12,16 +12,47 @@ USER_ALLOWED_STATUSES = ["Open", "Working", "Pending Review"]
 
 def validate_task(doc, method):
     # When new doc is added, then sync field after insert
-    if not doc.is_new():
+    if not doc.is_new() and doc.status != "Pending Review":
         sync_assign_to_field(doc)
+    
+
+    all_asssigned_users = doc.get_assigned_users()
+    assignees = doc.custom_assigned_to 
+    if doc.status == "Pending Review" and assignees:
+        for assignee in assignees:
+            if assignee.user in list(all_asssigned_users):  
+                todos = frappe.get_all(
+                    "ToDo",
+                    filters={
+                        "reference_type": doc.doctype,
+                        "reference_name": doc.name,
+                        "allocated_to": assignee.user,
+                        "status": ["!=", "Closed"]  # only update if not already closed
+                    },
+                    pluck="name"
+                )
+
+                if todos: 
+                    frappe.db.set_value("ToDo", {"name": ["in", todos]}, "status", "Closed")
 
     roles = get_user_roles()
     is_manager = is_project_manager(doc.project) if doc.project else False
     if "Projects User" in roles and "Projects Manager" not in roles and not is_manager and (doc.project or doc.owner != frappe.session.user):
         validate_updated_fields(doc)
+    
+    check_completed_by_and_completed_on(doc,method)
 
 def after_task_insert(doc, method):
     sync_assign_to_field(doc)
+
+
+def check_completed_by_and_completed_on(doc, method):
+    if doc.status == "Pending Review" or doc.status=="Completed":
+        if not doc.completed_on or doc.completed_on != frappe.utils.nowdate():
+            doc.completed_on = frappe.utils.nowdate()
+        if doc.custom_assigned_to:
+            if not doc.completed_by or doc.completed_by!=doc.custom_assigned_to[0].user:
+                doc.completed_by = doc.custom_assigned_to[0].user
 
 def validate_updated_fields(doc):
     if doc.has_value_changed('status'):

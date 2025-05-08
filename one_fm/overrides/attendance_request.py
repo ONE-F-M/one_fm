@@ -1,3 +1,4 @@
+from frappe.workflow.doctype.workflow_action.workflow_action import apply_workflow
 import frappe, pandas as pd
 from frappe import _
 from frappe.utils import getdate, get_link_to_form, format_date
@@ -14,7 +15,8 @@ from one_fm.utils import (
 class AttendanceRequestOverride(AttendanceRequest):
 	def validate(self):
 		validate_active_employee(self.employee)
-		validate_dates(self, self.from_date, self.to_date)
+		if self.has_value_changed("from_date") or self.has_value_changed("to_date"):
+			validate_dates(self, self.from_date, self.to_date)
 		if self.half_day:
 			if not getdate(self.from_date) <= getdate(self.half_day_date) <= getdate(self.to_date):
 				frappe.throw(_("Half day date should be in between from date and to date"))
@@ -37,8 +39,9 @@ class AttendanceRequestOverride(AttendanceRequest):
 				self.approver_user = approver.user_id
 
 	def on_submit(self):
-		if not self.reports_to():
-			frappe.throw("You are not the employee supervisor")
+		if not frappe.flags.get("ignore_supervisor_check", False):
+			if not self.reports_to():
+				frappe.throw("You are not the employee supervisor")
 		self.create_attendance()
 
 	def on_cancel(self):
@@ -251,3 +254,23 @@ def mark_future_attendance_request():
 			frappe.get_doc("Attendance Request", row.name).mark_attendance(str(getdate()))
 		except Exception as e:
 			frappe.log_error(str(e), 'Attendance Request')
+
+
+@frappe.whitelist()
+def approve_pending_attendance_request():
+    """
+    Get attendance requests for the future where date is today
+    and workflow state is 'Pending Approval' and approve it.
+    """
+    attendance_requests = frappe.db.sql(f"""
+        SELECT name FROM `tabAttendance Request`
+        WHERE '{getdate()}' BETWEEN from_date AND to_date
+        AND workflow_state = 'Pending Approval'
+    """, as_dict=1)
+    for row in attendance_requests:
+        try:
+            frappe.flags.ignore_supervisor_check = True
+            doc = frappe.get_doc("Attendance Request", row.name)
+            apply_workflow(doc, "Approve")
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Attendance Request Marking")

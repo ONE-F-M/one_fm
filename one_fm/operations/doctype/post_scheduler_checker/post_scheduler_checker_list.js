@@ -1,9 +1,11 @@
 frappe.listview_settings['Post Scheduler Checker'] = {
 	onload: function (listview) {
-        listview.page.add_inner_button("Create Checker for Today", function() {
-            generate_checker();
-        })
-    },
+		if (frappe.user.has_role("System Manager")) {
+			listview.page.add_inner_button("Create Checker for Today", function() {
+				generate_checker();
+			});
+		}
+	}
 };
 
 const generate_checker = function(){

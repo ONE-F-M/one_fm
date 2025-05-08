@@ -46,13 +46,19 @@
                     <a class="flex-sm-fill text-sm-center nav-link postviewclick">Post View</a>
                 </nav>
             </div>
-            <div class="d-flex justify-content-center align-items-center">
+            <div class="d-flex justify-content-center align-items-center" id="rosterTypeButtons">
                 <nav class="nav nav-pills flex-column flex-sm-row mt-2">
                     <a class="flex-sm-fill text-sm-center nav-link active bg-primary basicRosterClick">Basic Roster</a>
                     <a class="flex-sm-fill text-sm-center nav-link otRosterClick">OT Roster</a>
                 </nav>
-            </div>
-        </div>
+				<div class="dropdown flex-column flex-sm-row mt-2">
+					<button class="btn btn-warning dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">View</button>
+					<div class="dropdown-menu">
+						<a id="rosterEmployeeActions" class="dropdown-item">Employees with Missing Schedules</a>
+					</div>
+				</div>
+			</div>
+        </div> 
         <div class="container-fluid borderradius8 mt-2 pl30 pr30 bg-white">
             <div class="d-flex justify-content-between align-items-center pl30 pr30">
                 <div class="listoffilter" style="width: 100%;">
@@ -94,6 +100,9 @@
                             <select class="form-control select2plg" id="rosteringrelieverselect" name="rosteringrelieverselect">
                                 <option value="">Filter Relievers</option>
                             </select>
+                        </div>
+                        <div class="col-sm-12 col-md-3 mb20 d-flex align-items-center">
+                            <div class="align-items-center colorblue cursorpointer clear_roster_filters"><i class="fas fa-close mr-2"></i>Clear Filters</div>
                         </div>
                     </div>
                 </div>

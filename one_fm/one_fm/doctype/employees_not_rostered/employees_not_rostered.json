@@ -7,7 +7,9 @@
  "field_order": [
   "employee",
   "employee_name",
-  "missing_dates"
+  "shift_allocation",
+  "missing_dates",
+  "take_action"
  ],
  "fields": [
   {
@@ -35,12 +37,28 @@
    "in_standard_filter": 1,
    "label": "Missing Dates",
    "read_only": 1
+  },
+  {
+   "fetch_from": "employee.shift",
+   "fieldname": "shift_allocation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Shift Allocation",
+   "options": "Operations Shift"
+  },
+  {
+   "bold": 1,
+   "fieldname": "take_action",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Take Action",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2023-12-13 12:40:03.948912",
+ "modified": "2025-04-24 14:09:28.118419",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Employees Not Rostered",

@@ -10,6 +10,24 @@ frappe.ui.form.on('MOM', {
 		frm.refresh_fields("attendees");
 	},
 	project: function(frm) {
+		if(frm.doc.project_type != "External"){
+			frappe.call({
+                method: "one_fm.operations.doctype.mom.mom.get_project_users",
+                args: {
+                    project: frm.doc.project
+                },
+                callback(r) {
+                    if (r.message) {
+                        frm.clear_table("general_attendance");
+                        r.message.forEach(user => {
+                            let row = frm.add_child("general_attendance");
+                            row.attendee_name = user;
+                        });
+                        frm.refresh_field("general_attendance");
+                    }
+                }
+            });
+        }
 		if(!frm.doc.site){
 			frm.clear_table("attendees");
 		}
