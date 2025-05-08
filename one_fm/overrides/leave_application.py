@@ -13,17 +13,9 @@ from erpnext.crm.utils import get_open_todos
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.api.tasks import remove_assignment
 from one_fm.overrides.employee import NotifyAttendanceManagerOnStatusChange
-from one_fm.utils import get_approver_user, leave_application_on_cancel
+from one_fm.utils import get_approver_user, leave_application_on_cancel, get_workflow_action_buttons_html
 from hrms.hr.utils import get_holidays_for_employee
 from one_fm.one_fm.doctype.reliever_assignment.reliever_assignment import ReassignRelieverAssignment, reassign_responsibilities
-
-from frappe.workflow.doctype.workflow_action.workflow_action import (
-
-    get_workflow_name,
-    get_confirm_workflow_action_url,
-    get_doc_workflow_state
-)
-from one_fm.overrides.workflow import get_next_possible_transitions
 
 
 def validate_active_staff(doc,event):
@@ -330,38 +322,6 @@ class LeaveApplicationOverride(LeaveApplication):
                 sendemail(sender=sender, recipients= [self.leave_approver],message=message, subject=subject, delayed=False, is_scheduler_email=False,is_external_mail=True)
             except Exception as e:
                 frappe.log_error(message=frappe.get_traceback(), title="Leave Notification")
-
-    def get_workflow_action_buttons_html(doc, user):
-        doctype = doc.get('doctype')
-        workflow = get_workflow_name(doctype)
-        message_html = ""
-
-        if workflow:
-            transitions = get_next_possible_transitions(
-                workflow, get_doc_workflow_state(doc), doc
-            )
-
-            action_details = []
-
-            for transition in transitions:
-                action_details.append(
-                    frappe._dict(
-                        {
-                            "action_name": transition.action,
-                            "action_link": get_confirm_workflow_action_url(doc, transition.action, user),
-                        }
-                    )
-                )
-
-            if action_details and len(action_details) > 0:
-                message_html += "<div>"
-                for action in action_details:
-                    message_html += '<a href="{0}" class="btn btn-primary btn-action" style="margin-right: 10px;">{1}</a>'.format(
-                        action.action_link, action.action_name
-                    )
-                message_html += "</div>"
-
-        return message_html
 
     def after_insert(self):
         self.assign_to_leave_approver()

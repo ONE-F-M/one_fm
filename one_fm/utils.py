@@ -59,7 +59,6 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2 import service_account
 
 
-
 def get_common_email_args(doc):
 	doctype = doc.get("doctype")
 	docname = doc.get("name")
@@ -3953,3 +3952,36 @@ def background_enqueue_run(report_name, filters=None, user=None):
 		"name": track_instance.name,
 		"redirect_url": get_url_to_form("Prepared Report", track_instance.name)
 	}
+
+def get_workflow_action_buttons_html(doc, user):
+    from one_fm.overrides.workflow import get_next_possible_transitions
+    doctype = doc.get('doctype')
+    workflow = get_workflow_name(doctype)
+    message_html = ""
+
+    if workflow:
+        transitions = get_next_possible_transitions(
+            workflow, get_doc_workflow_state(doc), doc
+        )
+
+        action_details = []
+
+        for transition in transitions:
+            action_details.append(
+                frappe._dict(
+                    {
+                        "action_name": transition.action,
+                        "action_link": get_confirm_workflow_action_url(doc, transition.action, user),
+                    }
+                )
+            )
+
+        if action_details and len(action_details) > 0:
+            message_html += "<div>"
+            for action in action_details:
+                message_html += '<a href="{0}" class="btn btn-primary btn-action" style="margin-right: 10px;">{1}</a>'.format(
+                    action.action_link, action.action_name
+                )
+            message_html += "</div>"
+
+    return message_html
