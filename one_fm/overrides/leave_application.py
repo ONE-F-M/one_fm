@@ -20,7 +20,7 @@ from one_fm.one_fm.doctype.reliever_assignment.reliever_assignment import Reassi
 from frappe.workflow.doctype.workflow_action.workflow_action import (
 
     get_workflow_name,
-    get_workflow_action_url,
+    get_confirm_workflow_action_url,
     get_doc_workflow_state
 )
 from one_fm.overrides.workflow import get_next_possible_transitions
@@ -348,12 +348,12 @@ class LeaveApplicationOverride(LeaveApplication):
                     frappe._dict(
                         {
                             "action_name": transition.action,
-                            "action_link": get_workflow_action_url(transition.action, doc, user),
+                            "action_link": get_confirm_workflow_action_url(doc, transition.action, user),
                         }
                     )
                 )
 
-            if action_details:
+            if action_details and len(action_details) > 0:
                 message_html += "<div>"
                 for action in action_details:
                     message_html += '<a href="{0}" class="btn btn-primary btn-action" style="margin-right: 10px;">{1}</a>'.format(

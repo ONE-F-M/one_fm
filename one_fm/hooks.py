@@ -164,6 +164,7 @@ website_generators = ["Client"]
 
 before_install = "one_fm.install.before_install.execute"
 # after_install = "one_fm.install.after_install"
+after_install = ["one_fm.setup.setup.after_install"]
 #revert staging
 
 # Desk Notifications

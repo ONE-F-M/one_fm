@@ -10,7 +10,7 @@ from frappe.model.workflow import get_workflow_name
 from six import string_types
 from frappe.workflow.doctype.workflow_action.workflow_action import get_doc_workflow_state
 from frappe.desk.reportview import get_match_cond, get_filters_cond
-
+from frappe.model.workflow import is_transition_condition_satisfied
 
 
 class WorkflowStateError(frappe.ValidationError): pass
@@ -246,15 +246,21 @@ def filter_allowed_users(users, doc, transition):
 
 def get_next_possible_transitions(workflow_name, state,doc=None):
 	wt= frappe.get_all("Workflow Transition")
+	filters = [['parent', '=', workflow_name], ['state', '=', state]]
+
 	if wt:
 		trans_doc = frappe.get_doc("Workflow Transition",wt[0]['name'])
 		if hasattr(trans_doc,'skip_creation_of_workflow_action'):
-			return frappe.get_all('Workflow Transition',
-				fields='*',
-				filters=[['parent', '=', workflow_name],
-						 ['state', '=', state],
-						 ['skip_creation_of_workflow_action', '!=', 1]])
+			filters.append(['skip_creation_of_workflow_action', '!=', 1])
+	
+	transitions = frappe.get_all('Workflow Transition', fields='*', filters=filters)
+	valid_transitions = []
+	for transition in transitions:
+		if is_transition_condition_satisfied(transition, doc):
+			valid_transitions.append(transition)
 
+	return valid_transitions
+			
 def get_doc_history(doc, transition=None):
 	from collections import defaultdict
 
