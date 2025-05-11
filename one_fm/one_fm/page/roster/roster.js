@@ -764,6 +764,10 @@ function setup_topbar_events(page) {
 	$("#rosterEmployeeActions").on("click", function() {
 		roster_employee_actions(page);
 	});
+
+	$("#rosterDayOffIssues").on("click", function() {
+		roster_day_off_issues(page);
+	});
 }
 
 //Bind events to Edit options in Roster/Post view
@@ -3883,6 +3887,29 @@ function roster_employee_actions(page){
 
 	frappe.call({
 		method: "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_employees_with_missing_schedules",
+		// freeze: true,
+		async: true,
+		callback: function(r) {
+			dialog.fields_dict.employees_table.$wrapper.html(r.message);
+		}
+	});
+	dialog.show();
+}
+
+function roster_day_off_issues(){
+	let dialog = new frappe.ui.Dialog({
+		title: "Employees with Day Off Issues",
+		fields: [
+			{
+				fieldname: "employees_table",
+				fieldtype: "HTML",
+				options: "<div id='employees_table'></div>"
+			}
+		]
+	})	
+	dialog.$wrapper.find(".modal-dialog").css("max-width", "75%");
+	frappe.call({
+		method: "one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.get_day_off_issue_of_employees",
 		// freeze: true,
 		async: true,
 		callback: function(r) {

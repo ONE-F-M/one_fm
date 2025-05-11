@@ -1,6 +1,8 @@
 # Copyright (c) 2022, omar jaber and contributors
 # For license information, please see license.txt
 
+from collections import OrderedDict
+from datetime import datetime
 from itertools import groupby
 import frappe
 from frappe.utils import (
@@ -8,6 +10,7 @@ from frappe.utils import (
 )
 from frappe.model.document import Document
 from frappe.query_builder.functions import Count
+from one_fm.one_fm.page.roster.roster import get_current_user_details
 from one_fm.operations.doctype.operations_shift.operations_shift import get_shift_supervisor
 
 monthname_dict = {
@@ -256,3 +259,233 @@ def create_checker(parent, roster_data):
 @frappe.whitelist()
 def generate_checker():
 	frappe.enqueue(check_roster_day_off, queue='long', timeout=4000)
+
+
+@frappe.whitelist()
+def get_day_off_issue_of_employees():
+	"""
+		Returns employees with missing day offs based on the current user's role.
+		- Operations Manager: All employees
+		- Project Manager: Employees under the project manager
+		- Site Supervisor: Employees under the site supervisor
+		- Shift Supervisor: Employees under the shift supervisor
+	"""
+	# Get current user details
+	user, user_roles, user_employee = get_current_user_details()
+
+	if not user_employee or not any(role in user_roles for role in ["Operations Manager", "Project Manager", "Site Supervisor", "Shift Supervisor"]):
+		frappe.throw("No employee record linked to current user")
+	else:
+		#Get base employee list based on role
+		if "Operations Manager" in user_roles:
+			Employee = frappe.qb.DocType('Employee')
+			employees = frappe.db.sql( frappe.qb.from_(Employee).select("*").where((Employee.status=="Active") & (Employee.shift_working == 1)), as_dict=1)
+		elif "Project Manager" in user_roles:
+			employees = get_project_manager_employees(user_employee.name)
+		elif "Site Supervisor" in user_roles:
+			employees = get_site_supervisor_employees(user_employee.name)
+		elif "Shift Supervisor" in user_roles:
+			employees = get_shift_supervisor_employees(user_employee.name)
+		else:	
+			return OrderedDict()
+			
+		roster_day_off_data = get_day_off_details_of_employees(employees)
+
+		html_output = render_day_off_issues_html(roster_day_off_data)
+		return html_output
+
+
+def get_day_off_details_of_employees(employees):
+	# Get all active employees
+	# Validate their offs for next 2 months
+	try:
+		
+		roster_day_off_data = []
+
+		for employee in employees:
+			data = validate_day_offs(employee)
+			if len(data) > 0: roster_day_off_data = roster_day_off_data + data
+
+		return roster_day_off_data
+		
+
+	except Exception:
+		frappe.log_error(frappe.get_traceback())
+
+
+def validate_day_offs(employee):
+	start_date = None
+	end_date = None
+	today = getdate()
+
+	if employee.day_off_category == "Monthly":
+		start_date = get_first_day(today)
+		end_date = get_last_day(today)
+	elif employee.day_off_category == "Weekly":
+		start_date = get_first_day_of_week(today)
+		end_date = get_last_day_of_week(today)
+
+
+	EmployeeSchedule = frappe.qb.DocType("Employee Schedule")
+
+	datalist = []  # contains row-wise child table data
+
+	for i in range(2):
+		# QB conditions
+		employee_name = (EmployeeSchedule.employee == employee.name)
+		employee_day_off_ot = (EmployeeSchedule.day_off_ot == 0)
+		employee_schedule_date = (EmployeeSchedule.date[start_date:end_date])
+		employee_availability = (EmployeeSchedule.employee_availability == "Day Off")
+
+		# Calculate no of off days
+		od = frappe.db.sql(
+			frappe.qb.from_(EmployeeSchedule)
+			.select(Count("name").as_("off_days"))
+			.where(employee_schedule_date & employee_name & employee_day_off_ot & employee_availability)
+			.groupby(EmployeeSchedule.shift),
+			as_dict=1
+		)
+		off_days = od[0].off_days if len(od) > 0 else 0
+
+		# Calculate no of ot days
+		ot = frappe.db.sql(
+			frappe.qb.from_(EmployeeSchedule)
+			.select(Count("name").as_("ot_days"))
+			.where(employee_name & employee_schedule_date & (EmployeeSchedule.day_off_ot == 1))
+			.groupby(EmployeeSchedule.shift),
+			as_dict=1
+		)
+		ot_days = ot[0].ot_days if len(ot) > 0 else 0
+
+		if employee.number_of_days_off != (off_days + ot_days):
+			day_off_diff = ''
+			if off_days > employee.number_of_days_off and not ot_days:
+				day_off_diff = f"{off_days - employee.number_of_days_off} day(s) off scheduled more, please reduce by {off_days - employee.number_of_days_off}"
+			elif off_days < employee.number_of_days_off and not ot_days:
+				day_off_diff = f"{employee.number_of_days_off - off_days} day(s) off scheduled less, please schedule {employee.number_of_days_off - off_days} more day off"
+			elif ot_days < employee.number_of_days_off and not off_days:
+				day_off_diff = f"{employee.number_of_days_off - ot_days} day(s) off scheduled less, please schedule {employee.number_of_days_off - ot_days} more day off"
+			elif ot_days > employee.number_of_days_off and not off_days:
+				day_off_diff = f"{ot_days - employee.number_of_days_off} day(s) off OT scheduled more, please schedule {ot_days - employee.number_of_days_off} day off OT less"
+			elif ot_days and off_days:
+				day_off_diff = f"{ot_days} OT and {off_days} day(s) off scheduled, actual day off should be {employee.number_of_days_off}"
+
+			start_date_split = str(start_date).split('-')
+			end_date_split = str(end_date).split('-')
+			datalist.append({
+				"monthweek": f"{monthname_dict[start_date_split[1]]} {start_date_split[2]} - {monthname_dict[end_date_split[1]]} {end_date_split[2]}",
+				"day_off_schedule": off_days,
+				"days_off_ot": ot_days,
+				"employee": employee.name,
+				"day_off_difference": day_off_diff,
+				"employee_id": employee.employee_id,
+				"employee_name": employee.employee_name,
+				"day_off_category": employee.day_off_category,
+				"number_of_days_off": employee.number_of_days_off,
+				"shift": employee.shift,
+			})
+
+		# Advance to next week/month
+		start_date = add_days(end_date, 1)
+		if employee.day_off_category == "Monthly":
+			end_date = get_last_day(start_date)
+		elif employee.day_off_category == "Weekly":
+			end_date = get_last_day_of_week(start_date)
+
+	return datalist
+
+
+def render_day_off_issues_html(roster_day_off_data):
+	"""
+	Day off issues : {employee_docname: {"employee_id": ..., "employee_name": ..., "monthweek": [...],"day_off_category": ...}}
+	"""
+	if len(roster_day_off_data) > 0:
+		html = "<table class='table table-bordered'>"
+		html += """<thead>
+					<tr>
+						<th>Employee ID</th>
+						<th>Employee Name</th>
+						<th>Month/Week</th>
+						<th>Day off Category</th>
+						<th>Day Off Difference</th>
+						<th></th>
+					</tr>
+				</thead><tbody>"""
+		
+	
+		for info in roster_day_off_data:
+			html += f"""<tr>
+							<td>{info["employee_id"]}</td>
+							<td>{info["employee_name"]}</td>
+							<td>{info["monthweek"]}</td>
+							<td>{info["day_off_category"]}</td>
+							<td>{info["day_off_difference"]}</td>
+							<td><a class="btn btn-warning" target="_blank" href="/app/roster?main_view='roster'&sub_view='basic'&roster_type='basic'&shift={info["shift"]}&employee_id={info["employee_id"]}">Take Action</a></td>
+						</tr>"""
+		html += "</tbody></table>"
+		return html
+
+	html = """
+		<div class="alert text-center" role="alert">
+			<h5 class="mb-0">No Day Off Issues.Employees have correct number of days off. Great Job</h5>
+		</div>
+	"""
+	return html
+
+
+def get_project_manager_employees(user_employee):
+	"""Employees in projects managed by current user"""
+	return _get_employees_with_join(
+		join_clause="""
+			JOIN `tabOperations Shift` os ON e.shift = os.name
+			JOIN `tabOperations Site` site ON os.site = site.name 
+			JOIN `tabProject` p ON site.project = p.name
+		""",
+		where_clause="p.account_manager = %(user_employee)s",
+		user_employee=user_employee
+	)
+
+
+def get_site_supervisor_employees(user_employee):
+	"""Employees in sites managed by current user"""
+	return _get_employees_with_join(
+		join_clause="""
+			JOIN `tabOperations Shift` os ON e.shift = os.name
+			JOIN `tabOperations Site` site ON os.site = site.name
+		""",
+		where_clause="site.account_supervisor = %(user_employee)s",
+		user_employee=user_employee
+	)
+
+
+def get_shift_supervisor_employees(user_employee):
+	"""Employees in shifts managed by current user"""
+	return _get_employees_with_join(
+		join_clause="""
+			JOIN `tabOperations Shift` os ON e.shift = os.name
+			JOIN `tabOperations Shift Supervisor` oss 
+				ON os.name = oss.parent AND oss.parenttype = 'Operations Shift'
+		""",
+		where_clause="oss.supervisor = %(user_employee)s",
+		user_employee=user_employee
+	)
+
+
+def _get_employees_with_join(join_clause, where_clause, user_employee):
+	"""Generic query builder for role-based employee fetching (returns employee records only)"""
+	return frappe.db.sql(f"""
+		SELECT 
+			e.name,
+			e.employee_name,
+			e.day_off_category,
+			e.number_of_days_off,
+			e.employee_id,
+			e.shift
+		FROM `tabEmployee` e
+		{join_clause}
+		WHERE
+			e.status = 'Active'
+			AND e.shift_working = 1
+			AND {where_clause}
+	""", {"user_employee": user_employee}, as_dict=True)
+
