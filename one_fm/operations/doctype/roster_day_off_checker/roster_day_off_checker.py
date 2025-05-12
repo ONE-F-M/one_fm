@@ -114,7 +114,8 @@ def validate_offs(employee):
 		# Calculate no of off days
 		od = frappe.db.sql(frappe.qb.from_(EmployeeSchedule)        
 			.select(Count("name").as_("off_days"))
-			.where(employee_schedule_date & employee_name & employee_day_off_ot & employee_availability), 
+			.where(employee_schedule_date & employee_name & employee_day_off_ot & employee_availability)
+			.groupby(EmployeeSchedule.shift), 
 		as_dict=1) 
 		off_days = od[0].off_days if len(od) > 0 else 0 
 
