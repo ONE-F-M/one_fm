@@ -294,7 +294,6 @@ career_history = Class.extend({
       <div class="col-lg-12 col-md-12 mb-3 add_more_contact_${company_no}">
         <button class="btn btn-dark float-left btn_add_more_contact_${company_no}" type="button">{{ _(" + Add more contact person") }}</button>
       </div>
-
       <div class="col-lg-12 col-md-12 mb-3">
         <label>Tell us some details about your best boss from ${stringifyNumber(company_no)} company you worked</label>
       </div>
@@ -314,7 +313,8 @@ career_history = Class.extend({
         <label>Why is He/She the best?</label>
         <input type="text" class="form-control why_best_boss${company_no}" placeholder="Why is he/she the best?"/>
       </div>
-       <div class="col-lg-12 col-md-12 mb-3">
+
+       <div class="col-lg-12 col-md-12 mb-3 mt-5" style="width: 100%">
         <label> Tell us some details about your best colleague from ${stringifyNumber(company_no)} company you worked</label>
       </div>
       <div class="col-lg-6 col-md-6 mb-3">
