@@ -1,6 +1,7 @@
 # Copyright (c) 2022, omar jaber and contributors
 # For license information, please see license.txt
 
+import calendar
 from collections import OrderedDict
 from datetime import datetime
 from itertools import groupby
@@ -383,6 +384,8 @@ def validate_day_offs(employee):
 				"day_off_category": employee.day_off_category,
 				"number_of_days_off": employee.number_of_days_off,
 				"shift": employee.shift,
+				"month":start_date_split[1],
+				"year":start_date_split[0]
 			})
 
 		# Advance to next week/month
@@ -420,7 +423,7 @@ def render_day_off_issues_html(roster_day_off_data):
 							<td>{info["monthweek"]}</td>
 							<td>{info["day_off_category"]}</td>
 							<td>{info["day_off_difference"]}</td>
-							<td><a class="btn btn-warning" target="_blank" href="/app/roster?main_view='roster'&sub_view='basic'&roster_type='basic'&shift={info["shift"]}&employee_id={info["employee_id"]}">Take Action</a></td>
+							<td><a class="btn btn-warning" target="_blank" href="/app/roster?main_view='roster'&sub_view='basic'&roster_type='basic'&shift={info["shift"]}&employee_id={info["employee_id"]}&month={info["month"]}&year={info["year"]}">Take Action</a></td>
 						</tr>"""
 		html += "</tbody></table>"
 		return html

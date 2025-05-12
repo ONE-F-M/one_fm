@@ -671,6 +671,17 @@ function setup_preset_filters (page) {
 		}, 500);
 	}
 
+	if (page.datepicker && pageFilters.month && pageFilters.year) {
+		const newDate = moment(`${pageFilters.year}-${pageFilters.month}-01`, "YYYY-MM-DD").toDate();
+		page.datepicker.setDate(newDate);
+		page.datepicker.set('defaultDate', newDate);
+		if (calendarSettings1) {
+			calendarSettings1.date = moment(newDate);
+			displayCalendar(calendarSettings1, page);
+		}
+	}
+
+
 	function toggle_between_views() {
 		if(mainView === 'roster') {
 			if(subView === 'roster') {
