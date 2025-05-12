@@ -113,3 +113,5 @@ one_fm.patches.v15_0.update_employee_HR-EMP-03572
 one_fm.patches.v15_0.add_roster_post_view_index
 one_fm.patches.v15_0.update_project_start_end_date_from_contracts
 one_fm.patches.v15_0.revert_reliever_assignments
+one_fm.patches.v15_0.update_designation_disabled_field
+one_fm.patches.v15_0.update_hr_settings_leave_threshold

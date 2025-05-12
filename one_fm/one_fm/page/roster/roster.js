@@ -779,6 +779,10 @@ function setup_topbar_events(page) {
 	$("#rosterDayOffIssues").on("click", function() {
 		roster_day_off_issues(page);
 	});
+	
+	$("#rosterPostActions").on("click", function() {
+		roster_post_actions(page);
+	});
 }
 
 //Bind events to Edit options in Roster/Post view
@@ -2628,7 +2632,7 @@ function render_staff_card_view(data) {
 
 function setup_staff_filters(page) {
 	const { page: pageFilters, employee: employeeFilters } = get_preset_filters()
-
+	
 	let filters = {
 		assigned: pageFilters.assigned === '0' ? 0 : 1,
 		company: pageFilters.company || '',
@@ -3902,6 +3906,52 @@ function roster_employee_actions(page){
 		async: true,
 		callback: function(r) {
 			dialog.fields_dict.employees_table.$wrapper.html(r.message);
+		}
+	});
+	dialog.show();
+}
+
+function roster_post_actions(page){
+	let dialog = new frappe.ui.Dialog({
+		title: "Overfilled/Underfilled Posts",
+		fields: [
+			{
+				fieldname: "post_types_not_filled_section",
+				fieldtype: "Section Break",
+				label:"Not Filled Posts",
+				collapsible: 1
+			},
+			{
+				fieldname: "posts_notfilled_table",
+				fieldtype: "HTML",
+				options: "<div id='posts_notfilled_table'></div>"
+			},
+			{
+				fieldname: "post_types_overfilled_section",
+				fieldtype: "Section Break",
+				label:"Overfilled Posts",
+				collapsible: 1
+				
+			},
+			{
+				fieldname: "posts_overfilled_table",
+				fieldtype: "HTML",
+				options: "<div id='posts_overfilled_table'></div>"
+			}
+
+		]
+	})
+	dialog.$wrapper.find(".modal-dialog").css("max-width", "75%");
+
+
+	frappe.call({
+		method: "one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_overfilled_underfilled_posts",
+		// freeze: true,
+		async: true,
+		callback: function(r) {
+			
+			dialog.fields_dict.posts_notfilled_table.$wrapper.html(r.message.under_filled);
+			dialog.fields_dict.posts_overfilled_table.$wrapper.html(r.message.over_filled);
 		}
 	});
 	dialog.show();

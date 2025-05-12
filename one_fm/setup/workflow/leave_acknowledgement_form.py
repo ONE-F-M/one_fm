@@ -1,0 +1,112 @@
+import frappe
+
+from .utils import create_workflow
+
+def execute():
+    workflow_data = {
+        "docstatus": 0,
+        "doctype": "Workflow",
+        "document_type": "Leave Acknowledgement Form",
+        "is_active": 1,
+        "name": "Leave Acknowledgement Form",
+        "override_status": 0,
+        "send_email_alert": 0,
+        "states": [
+        {
+            "allow_edit": "Employee",
+            "avoid_status_override": 0,
+            "doc_status": "0",
+            "is_optional_state": 0,
+            "parent": "Leave Acknowledgement Form",
+            "parentfield": "states",
+            "parenttype": "Workflow",
+            "state": "Pending Confirmation",
+            "update_field": "is_active",
+            "update_value": "0",
+        },
+        {
+            "allow_edit": "HR User",
+            "avoid_status_override": 0,
+            "doc_status": "0",
+            "is_optional_state": 0,
+            "parent": "Leave Acknowledgement Form",
+            "parentfield": "states",
+            "parenttype": "Workflow",
+            "state": "Pending HR",
+            "update_field": "is_active",
+            "update_value": "0",
+
+        },
+        {
+            "allow_edit": "System Manager",
+            "avoid_status_override": 0,
+            "doc_status": "1",
+            "is_optional_state": 0,
+            "parent": "Leave Acknowledgement Form",
+            "parentfield": "states",
+            "parenttype": "Workflow",
+            "state": "Approved",
+            "update_field": "is_active",
+            "update_value": "1",
+        },
+        {
+            "allow_edit": "System Manager",
+            "avoid_status_override": 0,
+            "doc_status": "2",
+            "is_optional_state": 0,
+            "parent": "Leave Acknowledgement Form",
+            "parentfield": "states",
+            "parenttype": "Workflow",
+            "state": "Cancelled",
+            "update_field": "is_active",
+            "update_value": "0",
+        }
+        ],
+        "transitions": [
+        {
+            "action": "Confirm",
+            "allow_self_approval": 1,
+            "allowed": "Employee",
+            "allowed_user_field": "employee",
+            "condition": "doc.civil_id_assurance_level == \"High\"",
+            "custom_confirm_transition": 0,
+            "next_state": "Approved",
+            "parent": "Leave Acknowledgement Form",
+            "parentfield": "transitions",
+            "parenttype": "Workflow",
+            "skip_creation_of_workflow_action": 0,
+            "skip_multiple_action": 0,
+            "state": "Pending Confirmation",
+        },
+        {
+            "action": "Confirm",
+            "allow_self_approval": 1,
+            "allowed": "HR User",
+            "condition": "doc.civil_id_assurance_level != \"High\"",
+            "custom_confirm_transition": 0,
+            "next_state": "Approved",
+            "parent": "Leave Acknowledgement Form",
+            "parentfield": "transitions",
+            "parenttype": "Workflow",
+            "skip_creation_of_workflow_action": 0,
+            "skip_multiple_action": 0,
+            "state": "Pending HR",
+        },
+        {
+            "action": "Cancel",
+            "allow_self_approval": 1,
+            "allowed": "System Manager",
+            "custom_confirm_transition": 0,
+            "next_state": "Cancelled",
+            "parent": "Leave Acknowledgement Form",
+            "parentfield": "transitions",
+            "parenttype": "Workflow",
+            "skip_creation_of_workflow_action": 0,
+            "skip_multiple_action": 0,
+            "state": "Approved",
+        }
+        ],
+        "workflow_name": "Leave Acknowledgement Form",
+        "workflow_state_field": "workflow_state"
+        }
+    create_workflow(workflow_data=workflow_data)

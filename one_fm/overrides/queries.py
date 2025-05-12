@@ -96,3 +96,21 @@ def employee_query(doctype, txt, searchfield, start, page_len, filters):
         {"txt": "%%%s%%" % txt, "_txt": txt.replace("%", ""), "start": start, "page_len": page_len},
 
     )
+
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def designation_query(doctype, txt, searchfield, start, page_len, filters):
+    return frappe.db.sql("""
+        SELECT name
+        FROM `tabDesignation`
+        WHERE disabled = 0
+        AND name LIKE %(txt)s
+        ORDER BY name
+        LIMIT %(start)s, %(page_len)s
+    """, {
+        "txt": f"%{txt}%",
+        "start": start,
+        "page_len": page_len
+    })
