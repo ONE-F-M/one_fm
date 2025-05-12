@@ -150,7 +150,7 @@ career_history = Class.extend({
   },
   when_did_you_left_the_company: function(company_no) {
     var when_did_you_left_the_company_html = `<div class="row mx-auto col-lg-12 col-md-12 mt-5 mb-12 when_did_you_left_${company_no}">
-      <label  class="form-label">When did you leave the company?</label>
+      <label  class="form-label">When did you leave the company?<span style="color: red">*</span></label>
       <input type="date" class="form-control when_did_you_left_${company_no}_date"/>
     </div>`
     $(".company_"+(company_no.toString())).append(when_did_you_left_the_company_html);
@@ -405,7 +405,6 @@ career_history = Class.extend({
     $('.btn-submit-career-history').click(function(){
       var {career_histories, interest_reason} = me.get_details_from_form();
       var all_best_references = me.get_all_best_references();
-
       if(!validateResponsibilities(career_histories)){
         return frappe.msgprint(frappe._("Kindly fill the responsibility for the most recent job"));
       }
@@ -497,6 +496,9 @@ career_history = Class.extend({
       }
       else{
         career_history['left_the_company'] = $(`.when_did_you_left_${company_no}_date`).val();
+        if(validateEndDate(career_history['left_the_company'])){
+          return frappe.msgprint(frappe._("Kindly fill the when did you left the company field"));
+        }
       }
       career_history['factors_in_new_job'] = $(`.factors_in_new_job_${company_no}_text`).val();
 
@@ -555,4 +557,8 @@ function validateResponsibilities(data) {
   return lastObject.responsibility_one !== undefined 
     && lastObject.responsibility_one !== null 
     && lastObject.responsibility_one.trim() !== '';
+}
+
+function validateEndDate(data){
+  return !data;
 }
