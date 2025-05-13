@@ -405,6 +405,10 @@ career_history = Class.extend({
     $('.btn-submit-career-history').click(function(){
       var {career_histories, interest_reason} = me.get_details_from_form();
       var all_best_references = me.get_all_best_references();
+      if(!validateBestReferencesAndColleague(all_best_references)){
+        return frappe.msgprint(frappe._("Kindly fill the best reference for the most recent job"));
+      }
+
       if(!validateResponsibilities(career_histories)){
         return frappe.msgprint(frappe._("Kindly fill the responsibility for the most recent job"));
       }
@@ -562,3 +566,15 @@ function validateResponsibilities(data) {
 function validateEndDate(data){
   return !data;
 }
+
+function validateBestReferencesAndColleague(data) {
+  if (data.length === 0) {
+    return true;
+  }
+  const lastObject = data[data.length - 1];
+  const isBossValid = lastObject.best_boss_name && lastObject.best_boss_name.trim() !== '';
+  const isColleagueValid = lastObject.best_colleague_name && lastObject.best_colleague_name.trim() !== '';
+
+  return isBossValid && isColleagueValid;
+
+  }
