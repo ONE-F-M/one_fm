@@ -156,17 +156,19 @@ var calculate_career_history_score = function(frm) {
 };
 
 var set_total_years_of_experience_str = function(frm, total_years_of_experience) {
-	let years = total_years_of_experience - (total_years_of_experience%1);
-	let months = Math.round((total_years_of_experience%1)*12);
+	let years = Math.floor(total_years_of_experience);
+	let fractionalPart = total_years_of_experience - years;
+	let months = Math.floor(fractionalPart * 12);
 	let total_years_of_experience_str = '';
-	if(years > 0){
+	if (years > 0) {
 		total_years_of_experience_str = years + " Year(s) ";
 	}
-	if(months > 0){
+	if (months > 0) {
 		total_years_of_experience_str += months + " Month(s) ";
 	}
 	frm.set_df_property('total_years_of_experience', 'description', total_years_of_experience_str);
 };
+
 
 var set_job_applicant_details = function(frm) {
   if(frm.doc.job_applicant){
