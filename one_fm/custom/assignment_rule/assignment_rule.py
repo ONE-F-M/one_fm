@@ -2,10 +2,6 @@ import frappe
 import json
 import os
 
-import os
-import json
-import frappe
-
 def get_assignment_rule(file_name):
     """
     Executes the creation of an assignment rule from a JSON file.
