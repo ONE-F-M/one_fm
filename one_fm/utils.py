@@ -3958,7 +3958,6 @@ def get_workflow_action_buttons_html(doc, user):
     doctype = doc.get('doctype')
     workflow = get_workflow_name(doctype)
     message_html = ""
-
     if workflow:
         transitions = get_next_possible_transitions(
             workflow, get_doc_workflow_state(doc), doc
@@ -3967,11 +3966,18 @@ def get_workflow_action_buttons_html(doc, user):
         action_details = []
 
         for transition in transitions:
+            if transition.get("custom_requires_frontend_input"):
+                action_name = f"{transition.action} (open in ERP)"
+                action_link = f"{frappe.utils.get_url()}/app/{doctype.lower().replace(' ', '-')}/{doc.name}"
+            else:
+                action_name = transition.action
+                action_link = get_confirm_workflow_action_url(doc, transition.action, user)
+
             action_details.append(
                 frappe._dict(
                     {
-                        "action_name": transition.action,
-                        "action_link": get_confirm_workflow_action_url(doc, transition.action, user),
+                        "action_name": action_name,
+                        "action_link": action_link,
                     }
                 )
             )
@@ -3979,7 +3985,7 @@ def get_workflow_action_buttons_html(doc, user):
         if action_details and len(action_details) > 0:
             message_html += "<div>"
             for action in action_details:
-                message_html += '<a href="{0}" class="btn btn-primary btn-action" style="margin-right: 10px;">{1}</a>'.format(
+                message_html += '<a href="{0}" class="btn btn-primary btn-action" style="margin-right: 10px; margin-bottom: 10px">{1}</a>'.format(
                     action.action_link, action.action_name
                 )
             message_html += "</div>"
