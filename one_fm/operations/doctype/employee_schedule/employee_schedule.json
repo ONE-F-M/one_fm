@@ -62,7 +62,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Employee Availability",
-   "options": "Working\nDay Off\nSick Leave\nAnnual Leave\nEmergency Leave",
+   "options": "Working\nDay Off\nClient Day Off\nSick Leave\nAnnual Leave\nEmergency Leave",
    "reqd": 1
   },
   {
@@ -219,7 +219,7 @@
   }
  ],
  "links": [],
- "modified": "2024-05-31 10:39:39.670488",
+ "modified": "2025-05-14 11:22:13.245469",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Employee Schedule",
