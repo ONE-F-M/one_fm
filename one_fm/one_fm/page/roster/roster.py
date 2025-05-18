@@ -129,6 +129,29 @@ def build_exited_employee_filters(start_date, end_date, employee_search_id=None,
     
     return " and ".join(filters)
 
+def employee_schedule_filter(start_date, end_date, shift, site, project, employees):
+
+    filter_params = {
+        "date": ["between", (start_date, end_date)],
+    }
+
+    if project:
+        filter_params["project"] = project
+    elif site:
+        filter_params["site"] = site
+    elif shift:
+        filter_params["shift"] = shift
+    
+    schedule_employees = frappe.db.get_all("Employee Schedule", filter_params, ["distinct employee", "employee_name"], order_by="employee_name asc" , ignore_permissions=True)
+
+    employee_map = {emp["employee"]: emp for emp in employees if "employee" in emp}
+
+    for emp in schedule_employees:
+        employee_map[emp["employee"]] = emp
+
+    return sorted(employee_map.values(), key=lambda x: x["employee_name"])
+
+    
 @frappe.whitelist()
 def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_search_id=None, employee_search_name=None, project=None, site=None, shift=None, department=None, operations_role=None, designation=None, relievers=False, isOt=None, limit_start=0, limit_page_length=9999):
     try:
@@ -188,6 +211,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
             employees = frappe.db.get_list("Employee", employee_filters, ["employee", "employee_name", "day_off_category", "number_of_days_off"], order_by="employee_name asc" ,limit_start=limit_start, limit_page_length=limit_page_length, ignore_permissions=True)
             employees.extend(exited_employees)
             employees = filter_redundant_employees(employees)
+            employees = employee_schedule_filter(start_date, end_date, shift, site, project, employees)
 
 
             master_data.update({"total": len(employees)})
