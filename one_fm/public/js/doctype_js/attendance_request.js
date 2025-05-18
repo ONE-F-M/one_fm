@@ -5,6 +5,33 @@ frappe.ui.form.on('Attendance Request', {
   validate: (frm) => {
     validate_from_date(frm);
   },
+  onload: function(frm) {
+    if (frm.is_new()) {
+        // Set employee field based on current user
+        if (!frm.doc.employee) {
+            frappe.call({
+                method: "frappe.client.get_value",
+                args: {
+                    doctype: "Employee",
+                    filters: {
+                        user_id: frappe.session.user
+                    },
+                    fieldname: "name"
+                },
+                callback: function(response) {
+                    if (response.message) {
+                        frm.set_value("employee", response.message.name);
+                    }
+                }
+            });
+        }
+
+      // Set from_date and to_date to today's date
+      const today = frappe.datetime.get_today();
+      if (!frm.doc.from_date) frm.set_value("from_date", today);
+      if (!frm.doc.to_date) frm.set_value("to_date", today);
+  }
+},
   check_workflow: (frm)=>{
     if(frm.doc.workflow_state=='Pending Approval'){
       // Disable action button/worklow if not approver
