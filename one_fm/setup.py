@@ -1,8 +1,8 @@
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from one_fm.custom.property_setter.property_setter import create_property_setter, delete_property_setter
-from one_fm.custom.workflow.workflow import get_workflow, create_workflow, delete_workflow
-from one_fm.custom.assignment_rule.assignment_rule import get_assignment_rule, create_assignment_rule, delete_assignment_rule
+from one_fm.custom.workflow.workflow import get_workflow_json_file, create_workflow, delete_workflow
+from one_fm.custom.assignment_rule.assignment_rule import get_assignment_rule_json_file, create_assignment_rule, delete_assignment_rule
 
 # Custom field imports
 from one_fm.custom.custom_field.supplier_group import get_supplier_group_custom_fields
@@ -35,10 +35,10 @@ def get_field_properties():
 	return field_properties
 
 def create_workflows():
-	pass
+	create_workflow(get_workflow_json_file("erf.json"))
 
 def create_assignment_rules():
-	pass
+	create_assignment_rule(get_assignment_rule_json_file("roster_post_action_site_supervisor.json"))
 
 def delete_custom_fields(custom_fields: dict):
 	"""
@@ -56,7 +56,7 @@ def delete_custom_fields(custom_fields: dict):
 		frappe.clear_cache(doctype=doctype)
 
 def delete_workflows():
-	pass
+	delete_workflow(get_workflow_json_file("erf.json"))
 
 def delete_assignment_rules():
-	pass
+	delete_assignment_rule(get_assignment_rule_json_file("roster_post_action_site_supervisor.json"))

@@ -1,22 +1,31 @@
 import frappe
+from frappe.custom.doctype.property_setter.property_setter import delete_property_setter as core_delete_property_setter
 
 def create_property_setter(property_setters:dict):
-    '''
-        Method used to create/update property setter.
-        Args:
-            :param property_setters: example `{'Sales Invoice': [dict(property='read_only')]}`"""
-            property_setters (dict): List of dictionary representing the property setter data.
-                - is_system_generated(int): To state this property is system generated
-                - doctype_or_field(str): Whether the property setter for DocType or Filed
-                - doc_type(str): The internal document type associated with the Property Setter
-                - property(str): Which property we need to update(eg: field_order)
-                - property_type(str): Set the property type
-                - value(str): Value of the property
-                - doctype(str): The DocType Property Setter
-                - name(str): Name of the Property Setter record
-        Returns:
-            None
-    '''
+    """
+    Create or update Property Setters.
+
+    Args:
+        property_setters (dict): A dictionary where keys are DocTypes and values are lists of property setter dicts.
+            Example:
+                {
+                    'Sales Invoice': [
+                        {
+                            'doctype': 'Property Setter',
+                            'doctype_or_field': 'DocField',
+                            'doc_type': 'Sales Invoice',
+                            'property': 'read_only',
+                            'property_type': 'Check',
+                            'value': '1',
+                            'name': 'Sales Invoice-read_only',
+                            'is_system_generated': 1
+                        }
+                    ]
+                }
+
+    Returns:
+        None
+    """
     doctypes_to_update = set()
     for doctypes, field_properties in property_setters.items():
         if isinstance(field_properties, dict):
@@ -31,7 +40,10 @@ def create_property_setter(property_setters:dict):
             doctypes_to_update.add(doctype)
 
             for field_property in field_properties:
-                property_setter = frappe.db.get_value("Property Setter", {"doc_type": doctype, "property": field_property["property"]})
+                property_setter = frappe.db.get_value(
+                    "Property Setter",
+                    {"doc_type": doctype, "property": field_property["property"]}
+                )
                 if not property_setter:
                     try:
                         field_property = field_property.copy()
@@ -50,16 +62,33 @@ def create_property_setter(property_setters:dict):
         frappe.db.updatedb(doctype)
 
 def delete_property_setter(property_setters: dict):
-	"""
-	:param property_setters: a dict like `{'Property Setter': [{property: 'field_order', ...}]}`
-	"""
-	for doctype, field_properties in property_setters.items():
-		frappe.db.delete(
-			"Property Setter",
-			{
-				"property": ("in", [field_property["property"] for field_property in field_properties]),
-				"doc_type": doctype,
-			},
-		)
+    """
+    Delete property setters based on doc_type and property.
+    Args:
+        property_setters (dict): A dictionary where keys are DocTypes and values are lists of property dicts.
+            Example:
+                {
+                    'Sales Invoice': [
+                        {'property': 'read_only', 'field_name': 'posting_date'},
+                        {'property': 'field_order'}
+                    ]
+                }
 
-		frappe.clear_cache(doctype=doctype)
+    Returns:
+        None
+    """
+    for doctype, field_properties in property_setters.items():
+        for prop in field_properties:
+            property_name = prop.get("property")
+            field_name = prop.get("field_name")
+            row_name = prop.get("row_name")
+
+            if property_name:
+                core_delete_property_setter(
+                    doc_type=doctype,
+                    property=property_name,
+                    field_name=field_name,
+                    row_name=row_name
+                )
+
+        frappe.clear_cache(doctype=doctype)

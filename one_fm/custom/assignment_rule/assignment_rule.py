@@ -1,68 +1,76 @@
 import frappe
 import json
 import os
+from one_fm.utils import get_json_file
 
-def get_assignment_rule(file_name):
+def get_assignment_rule_json_file(file_name):
     """
-    Executes the creation of an assignment rule from a JSON file.
-
+    Get the workflow JSON file.
     Args:
         file_name (str): The name of the JSON file located in the 'assignment_rule' folder.
-
     Return:
-        The json data
-    Raises:
-        frappe.throw: If the file is not a .json file or the file is not found.
+        dict: The JSON data loaded from the file.
     """
-    data = {}
-    folder = frappe.get_app_path('one_fm', 'custom', 'assignment_rule')
-
-    if not file_name.endswith(".json"):
-        frappe.throw('Only JSON files are allowed')
-
-    file_path = os.path.join(folder, file_name)
-    if os.path.isfile(file_path):
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-    else:
-        frappe.throw(f"File not found: {file_path}")
-
-    return data
+    folder = frappe.get_app_path("one_fm", "custom", "assignment_rule")
+    return get_json_file(file_name, folder)
 
 def create_assignment_rule(assignment_rule:dict):
-    '''
-        Method used to create/update assignment_rule.
-        Args:
-            assignment_rule (dict): A dictionary representing the assignment rule data.
-                - name (str): The name of the assignment_rule.
-                - document_type (str): The document type associated with the assignment rule.
-                - priority (int): To sate the assignment rule priority.
-                - disabled (int): Whether the assignment rule is enabled (1) or disabled (0).
-                - description (str): Discription in the assignment rule used to content in the email notification.
-                - doctype (str): The internal document type associated with the workflow.
-                - is_assignment_rule_with_workflow (int): Whether the assignment rule is showing workflow buttons in the notification (1) or not showing (0).
-                - assign_condition (str): To eval the condition to assign the document
-                - close_condition (str): To eval the condition to un-assign the document
-                - rule (str): Selction rule
-                - assignment_days (List): List of days to assign
-        Returns:
-            None
-    '''
-    if not frappe.db.exists("Assignment Rule", assignment_rule['name']):
-        frappe.get_doc(assignment_rule).insert(ignore_permissions=True)
-    else:
-        assignment_rule_obj = frappe.get_doc("Assignment Rule", assignment_rule['name'])
-        assignment_rule_obj.update(assignment_rule)
-        assignment_rule_obj.save()
+    """
+    Create or update an Assignment Rule.
+
+    Args:
+        assignment_rule (dict): A dictionary representing the assignment rule data.
+            - name (str): The name of the assignment rule.
+            - document_type (str): The document type associated with the assignment rule.
+            - priority (int): The priority of the assignment rule.
+            - disabled (int): 1 if the rule is disabled, 0 otherwise.
+            - description (str): Description for email notification.
+            - doctype (str): Internal doctype (should be 'Assignment Rule').
+            - is_assignment_rule_with_workflow (int): 1 to show workflow buttons in the notification.
+            - assign_condition (str): Condition to assign the document.
+            - close_condition (str): Condition to unassign the document.
+            - rule (str): Selection rule.
+            - assignment_days (list): List of days to assign.
+
+    Returns:
+        None
+    """
+    if not assignment_rule or not isinstance(assignment_rule, dict):
+        frappe.error_log("Invalid assignment rule data.")
+        return
+
+    if "name" not in assignment_rule:
+        frappe.error_log("Missing required field: 'name'.")
+        return
+
+    try:
+        if not frappe.db.exists("Assignment Rule", assignment_rule["name"]):
+            frappe.get_doc(assignment_rule).insert(ignore_permissions=True)
+        else:
+            doc = frappe.get_doc("Assignment Rule", assignment_rule["name"])
+            doc.update(assignment_rule)
+            doc.save()
+    except Exception as e:
+        frappe.error_log(f"Failed to create or update Assignment Rule '{assignment_rule['name']}': {str(e)}")
 
 def delete_assignment_rule(assignment_rule:dict):
-    '''
-        Method used to delete assignment rule
-        Args:
-            assignment_rule (dict): A dictionary representing the assignment rule data.
-                - name (str): The name of the assignment rule.
-        Returns:
-            None
-    '''
-    if 'name' in assignment_rule and frappe.db.exists("Assignment Rule", assignment_rule['name']):
-        frappe.delete_doc('Assignment Rule', assignment_rule['name'], ignore_permissions=True)
+    """
+    Delete an Assignment Rule.
+    Args:
+        assignment_rule (dict): A dictionary with at least the 'name' of the rule.
+    Returns:
+        None
+    """
+    if not assignment_rule or not isinstance(assignment_rule, dict):
+        frappe.error_log("Invalid assignment rule data.")
+
+    name = assignment_rule.get("name")
+    if not name:
+        frappe.error_log("Missing 'name' in assignment rule.")
+        return
+
+    try:
+        if frappe.db.exists("Assignment Rule", name):
+            frappe.delete_doc("Assignment Rule", name, ignore_permissions=True)
+    except Exception as e:
+        frappe.error_log(f"Failed to delete Assignment Rule '{name}': {str(e)}")

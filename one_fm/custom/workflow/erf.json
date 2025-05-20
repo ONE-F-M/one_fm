@@ -1,0 +1,231 @@
+{
+  "workflow_name": "ERF",
+  "document_type": "ERF",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Open",
+      "doc_status": "0",
+      "update_field": "",
+      "update_value": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "System Manager",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Open",
+      "doc_status": "0",
+      "update_field": "",
+      "update_value": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Hiring Manager",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Open",
+      "doc_status": "0",
+      "update_field": "",
+      "update_value": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "HR Manager",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Open",
+      "doc_status": "0",
+      "update_field": "",
+      "update_value": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submit to Recruitment Manager",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Open",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Accepted",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Accepted",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Rejected",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Rejected",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Hold",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Hold",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Cancelled",
+      "doc_status": "2",
+      "update_field": "status",
+      "update_value": "Cancelled",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Closed",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Closed",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Accepted",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "GRD Supervisor",
+      "doctype": "Workflow Document State"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Open",
+      "action": "Submit to Recruitment Manager",
+      "next_state": "Submit to Recruitment Manager",
+      "allowed": "Hiring Manager",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "condition": "",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submit to Recruitment Manager",
+      "action": "Accept",
+      "next_state": "Accepted",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submit to Recruitment Manager",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Accepted",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Accepted",
+      "action": "Hold",
+      "next_state": "Hold",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Hold",
+      "action": "Accept",
+      "next_state": "Accepted",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Hold",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Accepted",
+      "action": "Close",
+      "next_state": "Closed",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "condition": "doc.status == \"Accepted\"",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submit to Recruitment Manager",
+      "action": "Close",
+      "next_state": "Closed",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    }
+  ]
+}
