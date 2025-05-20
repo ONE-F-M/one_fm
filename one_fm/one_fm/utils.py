@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import today, add_days, get_url, time_diff_in_hours, cstr, getdate
+from frappe.utils import today, add_days, get_url, time_diff_in_hours, cstr, getdate,nowdate
 from frappe.integrations.offsite_backup_utils import get_latest_backup_file, send_email, validate_file_size, get_chunk_site
 from one_fm.api.notification import create_notification_log
 from frappe.utils.user import get_users_with_role
@@ -522,3 +522,43 @@ def validate_store_keeper_project_supervisor_roles(doc):
         frappe.log_error(e, "Validate Purchase Order(store keeper)")
         return False
    
+
+@frappe.whitelist()
+def has_linked_schedules(field,value):
+    """
+        Returns true if there are linked  employee schedules for days after today 
+    """
+    today = getdate()
+    if field not in ['Operations Site','Operations Shift']:
+        return False
+    doctype_field_dict = {
+        'Operations Site':'site',
+        'Operations Shift':'shift'
+    }
+    doctype_field = doctype_field_dict.get(field)
+    if not doctype_field:
+        return False
+    
+    employee_schedules = frappe.db.exists("Employee Schedule",{doctype_field:value,'date':['>',today]})
+    return True if bool(employee_schedules) else False
+
+
+@frappe.whitelist()
+def delete_linked_schedules(field,value):
+    """
+        Delete all  future schedules linked to the site
+    
+    """
+    if field not in ['Operations Site','Operations Shift']:
+        return False
+    doctype_field_dict = {
+        'Operations Site':'site',
+        'Operations Shift':'shift'
+    }
+    doctype_field = doctype_field_dict.get(field)
+    if not doctype_field:
+        return False
+    query = f" DELETE FROM `tabEmployee Schedule`  WHERE {doctype_field} = '{value}' AND date > '{nowdate()}' "
+   
+    frappe.db.sql(query)
+    frappe.db.commit()

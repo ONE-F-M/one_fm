@@ -671,6 +671,8 @@ def update_onboarding_doc_workflow_sate(doc):
 
 @frappe.whitelist()
 def get_interview_question_set(interview_round):
+	if not interview_round:
+		frappe.throw(_("Interview Round is required."))
 	return frappe.get_all('Interview Questions', filters ={'parent': interview_round}, fields=['questions', 'answer', 'weight'], order_by="idx")
 
 @frappe.whitelist()

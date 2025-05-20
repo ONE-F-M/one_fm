@@ -36,15 +36,15 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Action",
-   "options": "\nUpdate POC\nDo Nothing"
+   "options": "\nUpdate POC\nDelete POC\nDo Nothing"
   },
   {
-   "depends_on": "eval:doc.action=='Update POC'",
+   "depends_on": "eval:doc.action=='Update POC' || doc.action=='Delete POC'",
    "fieldname": "destination",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Destination Doctype",
-   "mandatory_depends_on": "eval:doc.action=='Update POC'",
+   "mandatory_depends_on": "eval:doc.action=='Update POC' || doc.action=='Delete POC'",
    "options": "\nOperations Site\nProject\nBoth"
   },
   {
@@ -72,7 +72,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-11-12 11:37:42.805329",
+ "modified": "2025-05-19 01:37:51.447744",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Missing POC Attendance",

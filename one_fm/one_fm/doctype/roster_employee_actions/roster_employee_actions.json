@@ -144,6 +144,7 @@
   {
    "fieldname": "project_manager",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "label": "Project Manager",
    "options": "Employee",
    "read_only": 1
@@ -152,6 +153,7 @@
    "fetch_from": "project_manager.employee_name",
    "fieldname": "project_manager_name",
    "fieldtype": "Data",
+   "ignore_user_permissions": 1,
    "label": "Project Manager Name",
    "read_only": 1
   },
@@ -177,7 +179,7 @@
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-05 15:31:05.731428",
+ "modified": "2025-05-15 16:32:55.572646",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Roster Employee Actions",

@@ -1033,6 +1033,9 @@ body[data-route="roster"] .redboxcolor {
 body[data-route="roster"] .greyboxcolor {
   background: #7f7f7f;
 }
+body[data-route="roster"] .silverboxcolor {
+  background: #b1b1b1;
+}
 body[data-route="roster"] .lightblueboxcolor {
   background: #63a8f8;
 }

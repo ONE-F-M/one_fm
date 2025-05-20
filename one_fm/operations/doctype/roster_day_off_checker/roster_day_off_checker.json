@@ -1,50 +1,47 @@
 {
  "actions": [],
- "autoname": "format:{date}-{supervisor_name}-{site_supervisor_name}",
+ "autoname": "format:OPR-RDOC-{employee}-{monthweek}",
  "creation": "2022-10-06 13:46:44.016881",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "date",
-  "supervisor",
-  "supervisor_name",
+  "monthweek",
   "column_break_3",
-  "site_supervisor",
   "status",
+  "section_break_qccb",
+  "shift_supervisor",
+  "shift_supervisor_name",
+  "shift_supervisor_user",
+  "column_break_yuke",
+  "site_supervisor",
   "site_supervisor_name",
   "site_supervisor_user",
+  "column_break_hope",
+  "project_manager",
+  "project_manager_name",
+  "project_manager_user",
+  "employee_details_section",
+  "employee",
+  "project_allocation",
+  "day_off_category",
+  "column_break_ljlg",
+  "employee_id",
+  "site_allocation",
+  "number_of_days_off",
+  "column_break_kncm",
+  "employee_name",
+  "shift_allocation",
+  "day_off_difference",
   "detail_section_section",
-  "detail",
   "amended_from"
  ],
  "fields": [
   {
-   "fieldname": "supervisor",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Shift Supervisor",
-   "options": "Employee"
-  },
-  {
    "fieldname": "detail_section_section",
    "fieldtype": "Section Break",
    "label": "Detail Section"
-  },
-  {
-   "fieldname": "detail",
-   "fieldtype": "Table",
-   "label": "Detail",
-   "options": "Roster Day Off Detail"
-  },
-  {
-   "fetch_from": "supervisor.employee_name",
-   "fetch_if_empty": 1,
-   "fieldname": "supervisor_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Shift Supervisor Name",
-   "read_only": 1
   },
   {
    "fieldname": "column_break_3",
@@ -63,7 +60,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Site Supervisor",
-   "options": "Employee"
+   "options": "Employee",
+   "read_only": 1
   },
   {
    "fetch_from": "site_supervisor.employee_name",
@@ -98,13 +96,162 @@
    "fieldtype": "Link",
    "hidden": 1,
    "label": "Site Supervisor User",
-   "options": "User"
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_qccb",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "shift_supervisor",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Shift Supervisor",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift_supervisor.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "shift_supervisor_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Shift Supervisor Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift_supervisor.user_id",
+   "fetch_if_empty": 1,
+   "fieldname": "shift_supervisor_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Shift Supervisor User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_yuke",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_hope",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "project_manager",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Project Manager",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project_manager.employee_name",
+   "fetch_if_empty": 1,
+   "fieldname": "project_manager_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Project Manager Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "project_manager.user_id",
+   "fetch_if_empty": 1,
+   "fieldname": "project_manager_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Project Manager User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee_details_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ljlg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_kncm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.project",
+   "fieldname": "project_allocation",
+   "fieldtype": "Data",
+   "label": "Project Allocation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.day_off_category",
+   "fieldname": "day_off_category",
+   "fieldtype": "Data",
+   "label": "Day Off Category",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.site",
+   "fieldname": "site_allocation",
+   "fieldtype": "Data",
+   "label": "Site Allocation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.number_of_days_off",
+   "fieldname": "number_of_days_off",
+   "fieldtype": "Data",
+   "label": "Number of Days Off",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.shift",
+   "fieldname": "shift_allocation",
+   "fieldtype": "Data",
+   "label": "Shift Allocation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "day_off_difference",
+   "fieldtype": "Data",
+   "label": "Day Off Difference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "monthweek",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Month/Week",
+   "read_only": 1
   }
  ],
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-04-16 17:05:32.285607",
+ "modified": "2025-05-19 13:04:04.953036",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Roster Day Off Checker",

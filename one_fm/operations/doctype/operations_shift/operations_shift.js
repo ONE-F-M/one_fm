@@ -5,6 +5,7 @@ frappe.ui.form.on('Operations Shift', {
 	onload: function (frm) {
 		frm.__previous_shift_type = frm.doc.shift_type
 	},
+
 	refresh: function(frm) {
 		if(!frm.doc.__islocal){
 			frm.add_custom_button(
@@ -28,7 +29,7 @@ frappe.ui.form.on('Operations Shift', {
 									},
 								],
 								get_data: function() {
-									console.log(this);
+									
 									return this.data;
 								},
 								data: [],
@@ -46,7 +47,7 @@ frappe.ui.form.on('Operations Shift', {
 										callback: function(r) {
 											if(!r.exc) {
 												let {designations, skills} = r.message;
-												console.log(designations, skills);
+												
 												post_dialog.fields_dict["skills"].grid.remove_all();
 												post_dialog.fields_dict["designations"].grid.remove_all();
 
@@ -100,7 +101,7 @@ frappe.ui.form.on('Operations Shift', {
 								],
 								data: [],
 								get_data: function() {
-									console.log(this);
+									
 									return this.data;
 								},
 							},
@@ -134,7 +135,7 @@ frappe.ui.form.on('Operations Shift', {
 									},
 								],
 								get_data: function() {
-									console.log(this);
+									
 									return this.data;
 								},
 								data: [],
@@ -168,6 +169,9 @@ frappe.ui.form.on('Operations Shift', {
 				}
 			).addClass('btn-primary');
 		}
+	},
+	before_save: function(frm) {
+		validate_linked_schedules(frm);
 	},
 	automate_roster: function(frm) {
 		// If the flag is set, do nothing to prevent looping
@@ -223,3 +227,45 @@ frappe.ui.form.on('Operations Shift', {
 	}
 	
 });
+
+function  validate_linked_schedules(frm){
+	if (frm.doc.status =="Inactive" && !frm.__confirmed_inactive && !frm.is_new()){
+		frappe.call({
+			method:"one_fm.one_fm.utils.has_linked_schedules",
+			args:{
+				field: "Operations Shift",
+				value: frm.doc.name,
+			},
+			callback: (response) => {
+				
+				if(response.message==true){
+					frappe.confirm(
+						"The future Employee Schedules linked to the Operations Shift will be deleted on confirmation. Do you want to proceed?",
+						()=>{
+							
+							frappe.call({
+								method:"one_fm.one_fm.utils.delete_linked_schedules",
+								args:{
+									field: "Operations Shift",
+									value: frm.doc.name
+								},
+								freeze:1,
+								freeze_message:__("Deleting Linked Schedules ..."),
+								callback: (response) => {
+									frm.__confirmed_inactive = true;
+									frm.save();
+								}
+							})
+						},
+						()=>{
+							frappe.validated=false
+							frm.reload_doc();
+						}
+					)
+				}
+				frappe.validated=false
+			}})			
+		
+	}
+
+}

@@ -1,0 +1,86 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-05-18 11:55:08.824459",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "attendee_name",
+  "project_role",
+  "column_break_krcm",
+  "action",
+  "email_address",
+  "phone",
+  "destination_doctype"
+ ],
+ "fields": [
+  {
+   "fieldname": "attendee_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Attendees Full Name",
+   "options": "Contact",
+   "reqd": 1
+  },
+  {
+   "fieldname": "project_role",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Project Role",
+   "mandatory_depends_on": "eval: doc.project_type != 'External'",
+   "options": "\nDeveloper\nScrum Master\nProduct Owner\nProject Team Member\nProject Lead\nProject Manager"
+  },
+  {
+   "fieldname": "column_break_krcm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Action",
+   "options": "\nDo Nothing\nAdd as POC"
+  },
+  {
+   "fieldname": "email_address",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email Address",
+   "mandatory_depends_on": "eval: doc.action == \"Add as POC\"",
+   "options": "Email",
+   "read_only_depends_on": "eval: doc.action != \"Add as POC\""
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone",
+   "mandatory_depends_on": "eval: doc.action == \"Add as POC\"",
+   "options": "Phone",
+   "read_only_depends_on": "eval: doc.action != \"Add as POC\""
+  },
+  {
+   "fieldname": "destination_doctype",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Destination Doctype",
+   "mandatory_depends_on": "eval: doc.action == \"Add as POC\"",
+   "options": "\nOperations Site\nProject\nBoth",
+   "read_only_depends_on": "eval: doc.action != \"Add as POC\""
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-05-19 01:42:10.444980",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "POC Check General Attendees",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

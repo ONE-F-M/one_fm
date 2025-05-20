@@ -12,10 +12,11 @@
  "fields": [
   {
    "fieldname": "attendee_name",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Attendees Full Name"
+   "label": "Attendees Full Name",
+   "options": "Contact"
   },
   {
    "default": "0",
@@ -29,7 +30,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-11-14 08:37:04.066773",
+ "modified": "2025-05-18 22:28:23.892528",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "General Attendance",

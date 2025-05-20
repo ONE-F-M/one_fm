@@ -44,8 +44,14 @@ class MOM(Document):
 			poc_check.supervisor_name = self.supervisor_name
 			poc_check.mom = self.name
 			attendees_list = []
+			general_attendees_list = []
 			for each in self.attendees:
 				attendees_list.append({'poc_name':each.poc_name,'poc_designation':each.poc_designation})
+
+			for attendees in self.general_attendance:
+				general_attendees_list.append({'attendee_name':attendees.attendee_name})
+
+			poc_check.general_attendees = general_attendees_list
 			poc_check.mom_poc_table = attendees_list
 			poc_check_doc = frappe.get_doc(poc_check)
 			poc_check_doc.save()

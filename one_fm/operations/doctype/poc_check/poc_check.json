@@ -16,6 +16,9 @@
   "mom",
   "section_break_mmpv",
   "mom_poc_table",
+  "section_break_ttu2",
+  "general_attendees",
+  "section_break_cemp",
   "naming_series"
  ],
  "fields": [
@@ -86,12 +89,26 @@
    "fieldtype": "Select",
    "label": "Series",
    "options": "POC-CHK-.#####"
+  },
+  {
+   "fieldname": "section_break_ttu2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "general_attendees",
+   "fieldtype": "Table",
+   "label": "General Attendees",
+   "options": "POC Check General Attendees"
+  },
+  {
+   "fieldname": "section_break_cemp",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-12 11:41:40.180994",
+ "modified": "2025-05-18 12:33:40.114274",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "POC Check",

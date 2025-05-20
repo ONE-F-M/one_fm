@@ -25,7 +25,7 @@ frappe.ui.form.on('Operations Site', {
 				}
 			}
 		}
-		console.log(changes);
+		
 		if(changes && ids){
 			frm.add_custom_button(
 				__('Review Changes'),
@@ -146,7 +146,7 @@ function quick_entry_shifts_and_posts(frm){
 									callback: function(r) {
 										if(!r.exc) {
 											let {designations, skills} = r.message;
-											console.log(designations, skills);
+											
 											post_dialog.fields_dict["skills"].grid.remove_all();
 											post_dialog.fields_dict["designations"].grid.remove_all();
 
@@ -198,7 +198,7 @@ function quick_entry_shifts_and_posts(frm){
 							],
 							data: [],
 							get_data: function() {
-								console.log(this);
+								
 								return this.data;
 							},
 						},
@@ -232,7 +232,7 @@ function quick_entry_shifts_and_posts(frm){
 								},
 							],
 							get_data: function() {
-								console.log(this);
+								
 								return this.data;
 							},
 							data: [],
@@ -242,7 +242,7 @@ function quick_entry_shifts_and_posts(frm){
 					],
 					primary_action: function(){
 						let values = post_dialog.get_values();
-						console.log(values);
+						
 						let {qty, post_names} = values;
 						if(post_names === undefined || qty !== post_names.length){frappe.msgprint(__('Please make sure the number of posts and Post names are same.'))};
 						frappe.call({
@@ -271,7 +271,7 @@ function changes_action(frm, action, ids){
 	frappe.call('one_fm.operations.doctype.operations_site.operations_site.changes_action', {
 		action, ids, parent: frm.doc.name
 	}).then((r) => {
-		console.log(r);
+		
 		frm.reload_doc();
 	});
 }
@@ -313,7 +313,7 @@ function get_contact(doc){
 
 function set_contact(doc){
 	let {email_ids, phone_nos} = doc;
-	console.log(email_ids, phone_nos);
+	
 	let contact_details = ``;
 	for(let i=0; i<email_ids.length;i++){
 		contact_details += `<p>Email: ${email_ids[i].email_id}</p>\n`;
@@ -322,6 +322,6 @@ function set_contact(doc){
 	for(let j=0; j<phone_nos.length;j++){
 		contact_details += `<p>Phone: ${phone_nos[j].phone}</p>\n`;
 	}
-	console.log(contact_details);
+	
 	$('div[data-fieldname="contact_html"]').empty().append(`<div class="address-box">${contact_details}</div>`);
 }

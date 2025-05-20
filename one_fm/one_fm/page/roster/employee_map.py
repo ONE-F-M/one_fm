@@ -142,16 +142,18 @@ class CreateMap():
         else:
             employee_tuple = tuple(employee_list)  # Format as ('HR-EMP-00081', 'HR-EMP-00082')
 
+
         # Construct the queries
         self.schedule_query = f"""
             SELECT es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, 
                 es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability, 
                 es.day_off_ot, es.project 
             FROM `tabEmployee Schedule` es 
-            WHERE es.employee IN {employee_tuple} 
-            AND {self.str_filter} 
+            WHERE {self.str_filter} 
+            AND es.employee IN {employee_tuple}
             ORDER BY es.employee
         """
+
 
         self.attendance_query = f"""
             SELECT at.status, at.leave_type, at.leave_application, at.attendance_date, at.employee, 
@@ -276,7 +278,7 @@ class CreateMap():
         schedule = []
         for one in self.schedule_set:
             try:
-                if one.employee==row[0]:
+                if one.employee == row[0]:
                     schedule.append(one.update(self.employee_period_details[row[0]]))
             except KeyError:
                 pass

@@ -116,3 +116,4 @@ one_fm.patches.v15_0.revert_reliever_assignments
 one_fm.patches.v15_0.update_designation_disabled_field
 one_fm.patches.v15_0.update_hr_settings_leave_threshold
 one_fm.patches.v15_0.add_roster_index
+one_fm.patches.v15_0.delete_all_roaster_day_off_checker_records
