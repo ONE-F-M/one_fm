@@ -410,12 +410,12 @@ def get_departments():
 
 
 @frappe.whitelist()
-def get_operations_posts(shift=None):
+def get_operations_roles(shift=None):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
 
 		if shift is None and ("Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles):
-			return frappe.get_list("Operations Post", limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Operations Role", limit_page_length=9999, order_by="name asc")
 
 		if "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles or "Shift Supervisor" in user_roles:
 			return frappe.get_list("Operations Post", {"site_shift": shift}, "post_template", limit_page_length=9999, order_by="name asc")

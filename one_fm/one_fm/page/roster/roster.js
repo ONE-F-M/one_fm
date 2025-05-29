@@ -8,14 +8,7 @@ frappe.pages['roster'].on_page_load = function (wrapper) {
 	$('#page-roster').empty().append(frappe.render_template('roster'));
 
 	load_js(page);
-
-	$(".mobile-edit").on("click", function () {
-		;
-	})
-
-
 };
-
 
 
 // Initializes the page with default values
@@ -25,7 +18,6 @@ function load_js(page) {
 	window.clickcount = 0;
 	window.employees_list = [];
 	window.isMonth = 1;
-	window.classgrtw = [];
 	window.classgrt = [];
 
 	setup_staff_filters(page);
@@ -59,7 +51,7 @@ function load_js(page) {
 				today: moment()
 			};
 			let element = get_wrapper_element();
-			if (element == '.rosterMonth' || element == '.rosterOtMonth' || element == '.postMonth') {
+			if (element == '.rosterMonth' || element == '.postMonth') {
 				displayCalendar(calendarSettings1, page);
 				GetHeaders(0);
 
@@ -68,13 +60,6 @@ function load_js(page) {
 				$(element).find('.rosterViewTH').children().removeClass("hightlightedtable");
 				$(element).find('.rosterViewTH').find("#data-day_" + evt.getDate()).addClass("hightlightedtable");
 
-			} else {
-				displayWeekCalendar(weekCalendarSettings, page);
-				GetWeekHeaders(0);
-				element = element.slice(1);
-				page[element](page);
-				$(element).find('.rosterViewTH').children().removeClass("hightlightedtable");
-				$(element).find('.rosterViewTH').find("#data-day_" + evt.getDate()).addClass("hightlightedtable");
 			}
 		});
 		$('.flatpickr-next-month').on('click', function () {
@@ -84,58 +69,25 @@ function load_js(page) {
 			decrementMonth(page);
 		});
 		$rosterMonth = $('.rosterMonth');
-		$rosterOtMonth = $('.rosterOtMonth');
 		$postMonth = $('.postMonth');
-		$postWeek = $('.postWeek');
 
 		function basicRosterClick() {
 			window.isOt = false;
-			$(".otRosterClick").removeClass("active");
-			$(".otRosterClick").removeClass("bg-primary");
-			$(".basicRosterClick").addClass("active");
-			$(".basicRosterClick").addClass("bg-primary");
+			$(".basicRosterClick").addClass("active bg-primary");
 			$rosterMonth.removeClass("d-none");
-			$rosterOtMonth.addClass("d-none");
 			$(".switch-container").removeClass("d-none");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
 			get_roster_data(page);
 		};
-		function otRosterClick() {
-			window.isOt = true;
-			$(".basicRosterClick").removeClass("active");
-			$(".basicRosterClick").removeClass("bg-primary");
-			$(".otRosterClick").addClass("active");
-			$(".otRosterClick").addClass("bg-primary");
-			$(".filterhideshow").addClass("d-none");
-			$rosterMonth.addClass("d-none");
-			$rosterOtMonth.removeClass("d-none");
-			$(".switch-container").removeClass("d-none");
-			$(this).parent().addClass("active");
-			displayCalendar(calendarSettings1, page);
-			GetHeaders(1, ".rosterOtMonth");
-			let wrapper_element = get_wrapper_element();
-			if (page.employee_search_name) {
-				$(wrapper_element).find(".search-employee-name").val(page.employee_search_name);
-			}
-			if (page.employee_search_id) {
-				$(wrapper_element).find(".search-employee-id").val(page.employee_search_id);
-			}
-
-			get_roster_data(page, true);
-
-		};
+		
 		$(".rosterviewclick").click(function () {
 			$("#rosterTypeButtons").removeClass("d-none");
 			$("#rosterTypeButtons").addClass("d-flex");
 			$rosterMonth.removeClass("d-none");
-			$rosterOtMonth.addClass("d-none");
 			$postMonth.addClass("d-none");
-			$postWeek.addClass("d-none");
-			$(".postviewclick").removeClass("active");
-			$(".postviewclick").removeClass("bg-primary");
-			$(".rosterviewclick").addClass("active");
-			$(".rosterviewclick").addClass("bg-primary");
+			$(".postviewclick").removeClass("active bg-primary");
+			$(".rosterviewclick").addClass("active bg-primary");
 			$(".switch-container").removeClass("d-none");
 			$(".Postfilterhideshow").addClass("d-none");
 			$(".filterhideshow").addClass("d-none");
@@ -144,22 +96,16 @@ function load_js(page) {
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
 			$(".basicRosterClick").click(basicRosterClick);
-			$(".otRosterClick").click(otRosterClick);
 			get_roster_data(page);
 		});
 		$(".postviewclick").click(function () {
 			$("#rosterTypeButtons").removeClass("d-flex");
 			$("#rosterTypeButtons").addClass("d-none");
 			$(".basicRosterClick").off('click');
-			$(".otRosterClick").off('click');
 			$rosterMonth.addClass("d-none");
-			$rosterOtMonth.addClass("d-none");
 			$postMonth.removeClass("d-none");
-			$postWeek.addClass("d-none");
-			$(".postviewclick").addClass("active");
-			$(".postviewclick").addClass("bg-primary");
-			$(".rosterviewclick").removeClass("active");
-			$(".rosterviewclick").removeClass("bg-primary");
+			$(".postviewclick").addClass("active bg-primary");
+			$(".rosterviewclick").removeClass("active bg-primary");
 			$(".switch-container").addClass("d-none");
 			$(".Postfilterhideshow").addClass("d-none");
 			$(".filterhideshow").addClass("d-none");
@@ -170,13 +116,11 @@ function load_js(page) {
 			get_post_data(page);
 		});
 		$(".basicRosterClick").click(basicRosterClick);
-		$(".otRosterClick").click(otRosterClick);
 
 		//week view click jquery
 		$('.postmonthviewclick').click(function () {
 			$rosterMonth.addClass("d-none");
 			$postMonth.removeClass("d-none");
-			$postWeek.addClass("d-none");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".postMonth");
 			get_post_data(page);
@@ -184,7 +128,6 @@ function load_js(page) {
 		$('.monthviewclick').click(function () {
 			$rosterMonth.removeClass("d-none");
 			$postMonth.addClass("d-none");
-			$postWeek.addClass("d-none");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
 			let wrapper_element = get_wrapper_element();
@@ -416,7 +359,7 @@ function load_js(page) {
 
 				d.show();
 			}
-			else{
+			else {
 				frappe.throw(frappe._("Insufficient permissions to Edit Post."));
 
 			}
@@ -446,184 +389,10 @@ function load_js(page) {
 		GetTodaySelectedDate();
 
 		page.rosterMonth = get_roster_data;
-		page.rosterOtMonth = get_roster_data;
-		//page.rosterWeek = get_roster_week_data;
-		page.postWeek = get_post_week_data;
 		page.postMonth = get_post_data;
 
 	}
 
-
-	// Show Active Post value change
-	$(`input[name="chkpostActivePost"]`).on("change", function () {
-
-		if ($(this).is(":checked")) {
-			$("#calenderviewtable tbody tr td").not(".redboxcolor").parent().removeClass("d-none");
-			if ($(`input[name="chkpostCancelPost"]`).is(":checked")) {
-				$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().removeClass("d-none");
-			}
-			else {
-				$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().addClass("d-none");
-			}
-		}
-		else {
-			$("#calenderviewtable tbody tr td").not(".redboxcolor").parent().addClass("d-none");
-
-			if ($(`input[name="chkpostCancelPost"]`).is(":checked")) {
-				$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().removeClass("d-none");
-			}
-			else {
-				$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().addClass("d-none");
-			}
-		}
-
-	});
-	// Show InActive Post value change
-	$(`input[name="chkpostCancelPost"]`).on("change", function () {
-
-		if ($(this).is(":checked")) {
-			$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().removeClass("d-none");
-		}
-		else {
-			$("#calenderviewtable tbody tr td").find(".redboxcolor").parent().parent().addClass("d-none");
-		}
-		//chkpostCancelPost
-	});
-
-
-	$(`input[id="chkAllStaff"]`).on("change", function () {
-		if ($(this).is(":checked")) {
-			$("#chkschedule").prop("checked", true);
-			$("#chkunschedule").prop("checked", true);
-			$("#chkassgined").prop("checked", true);
-			$("#chkunassgined").prop("checked", true);
-
-			$("#scheduledStaff1").removeClass("d-none");
-			$("#scheduledStaff2").removeClass("d-none");
-
-			$("#chilldtable1").removeClass("d-none");
-			$("#chilldtable2").removeClass("d-none");
-			$("#unScheduleStaff").removeClass("d-none");
-			$("#chilldtable3").removeClass("d-none");
-			$("#rowchilldtable3").removeClass("d-none");
-		}
-		else {
-			$("#chkschedule").prop("checked", false);
-			$("#chkunschedule").prop("checked", false);
-			$("#chkassgined").prop("checked", false);
-			$("#chkunassgined").prop("checked", false);
-
-			$("#scheduledStaff1").addClass("d-none");
-			$("#scheduledStaff2").addClass("d-none");
-
-			$("#chilldtable1").addClass("d-none");
-			$("#chilldtable2").addClass("d-none");
-
-			$("#rowchilldtable1").addClass("d-none");
-			$("#rowchilldtable2").addClass("d-none");
-
-			$("#unScheduleStaff").addClass("d-none");
-			$("#chilldtable3").addClass("d-none");
-			$("#rowchilldtable3").addClass("d-none");
-		}
-	});
-
-	$(`input[id="chkassgined"]`).on("change", function () {
-		if ($(this).is(":checked")) {
-			$("#chkschedule").prop("checked", true);
-			$("#chkunschedule").prop("checked", true);
-			$("#chkassgined").prop("checked", true);
-
-			$("#chkschedule").prop("disabled", true);
-			$("#chkunschedule").prop("disabled", true);
-
-			$("#scheduledStaff1").removeClass("d-none");
-			$("#scheduledStaff2").removeClass("d-none");
-
-			$("#chilldtable1").removeClass("d-none");
-			$("#chilldtable2").removeClass("d-none");
-			$("#unScheduleStaff").removeClass("d-none");
-			$("#chilldtable3").removeClass("d-none");
-			$("#rowchilldtable3").removeClass("d-none");
-		}
-		else {
-			$("#chkschedule").prop("checked", false);
-			$("#chkunschedule").prop("checked", false);
-			$("#chkassgined").prop("checked", false);
-
-			$("#chkschedule").prop("disabled", false);
-			$("#chkunschedule").prop("disabled", false);
-
-			$("#scheduledStaff1").addClass("d-none");
-			$("#scheduledStaff2").addClass("d-none");
-
-			$("#chilldtable1").addClass("d-none");
-			$("#chilldtable2").addClass("d-none");
-
-			$("#rowchilldtable1").addClass("d-none");
-			$("#rowchilldtable2").addClass("d-none");
-
-			$("#unScheduleStaff").addClass("d-none");
-			$("#chilldtable3").addClass("d-none");
-			$("#rowchilldtable3").addClass("d-none");
-		}
-	});
-
-	$(`input[id="chkschedule"]`).on("change", function () {
-		if ($(this).is(":checked")) {
-
-			$("#scheduledStaff1").removeClass("d-none");
-			$("#scheduledStaff2").removeClass("d-none");
-
-			$("#chilldtable1").removeClass("d-none");
-			$("#chilldtable2").removeClass("d-none");
-
-
-			$("#rowchilldtable1").removeClass("d-none");
-			$("#rowchilldtable2").removeClass("d-none");
-
-			$("#unScheduleStaff").addClass("d-none");
-			$("#chilldtable3").addClass("d-none");
-			$("#rowchilldtable3").addClass("d-none");
-
-			$("#chkunschedule").prop("checked", false);
-		}
-		else {
-			$("#scheduledStaff1").addClass("d-none");
-			$("#scheduledStaff2").addClass("d-none");
-
-			$("#chilldtable1").addClass("d-none");
-			$("#chilldtable2").addClass("d-none");
-
-			$("#rowchilldtable1").addClass("d-none");
-			$("#rowchilldtable2").addClass("d-none");
-		}
-	});
-
-	$(`input[id="chkunschedule"]`).on("change", function () {
-		if ($(this).is(":checked")) {
-
-			$("#unScheduleStaff").removeClass("d-none");
-			$("#chilldtable3").removeClass("d-none");
-			$("#rowchilldtable3").removeClass("d-none");
-
-			$("#scheduledStaff1").addClass("d-none");
-			$("#scheduledStaff2").addClass("d-none");
-
-			$("#chilldtable1").addClass("d-none");
-			$("#chilldtable2").addClass("d-none");
-
-			$("#rowchilldtable1").addClass("d-none");
-			$("#rowchilldtable2").addClass("d-none");
-
-			$("#chkschedule").prop("checked", false);
-		}
-		else {
-			$("#unScheduleStaff").addClass("d-none");
-			$("#chilldtable3").addClass("d-none");
-			$("#rowchilldtable3").addClass("d-none");
-		}
-	});
 
 	//table custom accordian click
 	$(".clickablerow").click(function () {
@@ -644,8 +413,8 @@ function load_js(page) {
 	setup_preset_filters(page)
 }
 
-function get_preset_filters () {
-	const { main_view, sub_view, roster_type, staff_view_mode, employee_id, employee_name,...pageFilters } = frappe.utils.get_query_params();
+function get_preset_filters() {
+	const { main_view, sub_view, roster_type, staff_view_mode, employee_id, employee_name, ...pageFilters } = frappe.utils.get_query_params();
 
 	return {
 		view: { main_view, sub_view, roster_type, staff_view_mode },
@@ -655,9 +424,9 @@ function get_preset_filters () {
 }
 
 // Setup and populate preset filters set via query params
-function setup_preset_filters (page) {
+function setup_preset_filters(page) {
 	// To avoid re-rendering of roster page
-	if(window.preset_filters_applied) return
+	if (window.preset_filters_applied) return
 
 	const { view: viewFilters, page: pageFilters, employee: employeeFilters } = get_preset_filters()
 
@@ -665,9 +434,9 @@ function setup_preset_filters (page) {
 
 	if (mainView) {
 		setTimeout(() => {
-		  $("#page-roster")
-			.find(`.redirect_route[data-route="${mainView}"]`)
-			.click();
+			$("#page-roster")
+				.find(`.redirect_route[data-route="${mainView}"]`)
+				.click();
 		}, 500);
 	}
 
@@ -683,26 +452,21 @@ function setup_preset_filters (page) {
 
 
 	function toggle_between_views() {
-		if(mainView === 'roster') {
-			if(subView === 'roster') {
+		if (mainView === 'roster') {
+			if (subView === 'roster') {
 				setTimeout(() => {
 					$(".rosterviewclick").click()
-				  }, 1000);
+				}, 1000);
 			}
-			if(subView === 'post') {
+			if (subView === 'post') {
 				setTimeout(() => {
 					$(".postviewclick").click()
-				  }, 1000);
+				}, 1000);
 			}
-			if(rosterType === 'basic') {
+			if (rosterType === 'basic') {
 				setTimeout(() => {
 					$(".basicRosterClick").click()
-				  }, 1000);
-			}
-			if(rosterType === 'ot') {
-				setTimeout(() => {
-					$(".otRosterClick").click()
-				  }, 1000);
+				}, 1000);
 			}
 		}
 	}
@@ -712,23 +476,23 @@ function setup_preset_filters (page) {
 			setTimeout(() => {
 				const { employee_id: employeeID, employee_name: employeeName } = employeeFilters;
 
-			    let wrapper_element = get_wrapper_element();
+				let wrapper_element = get_wrapper_element();
 				if (employeeID) {
 					$(wrapper_element).find(".search-employee-id").val(employeeID);
 				}
-			    if (employeeName) {
+				if (employeeName) {
 					$(wrapper_element).find(".search-employee-name").val(employeeName);
 				}
 			}, 1000);
 		} else if (mainView === 'staff') {
 			setTimeout(() => {
 				const { company, project, site, shift, department, designation } = pageFilters;
-			    if(company) $('.staff-company-dropdown').html(company)
-			    if(project) $('.staff-project-dropdown').html(project)
-			    if(site) $('.staff-site-dropdown').html(site)
-			    if(shift) $('.staff-shift-dropdown').html(shift)
-			    if(department) $('.staff-department-dropdown').html(department)
-			    if(designation) $('.staff-designation-dropdown').html(designation)
+				if (company) $('.staff-company-dropdown').html(company)
+				if (project) $('.staff-project-dropdown').html(project)
+				if (site) $('.staff-site-dropdown').html(site)
+				if (shift) $('.staff-shift-dropdown').html(shift)
+				if (department) $('.staff-department-dropdown').html(department)
+				if (designation) $('.staff-designation-dropdown').html(designation)
 
 				render_staff(staffViewMode || "list")
 			}, 1000);
@@ -743,9 +507,6 @@ function setup_preset_filters (page) {
 
 // Show popups on clicking edit options in Roster view
 function setup_topbar_events(page) {
-	$('.scheduleleave').on('click', function () {
-		schedule_leave(page);
-	});
 
 	$('.changepost').on('click', function () {
 		schedule_change_post(page);
@@ -772,15 +533,15 @@ function setup_topbar_events(page) {
 		clear_selection(page);
 	});
 
-	$("#rosterEmployeeActions").on("click", function() {
+	$("#rosterEmployeeActions").on("click", function () {
 		roster_employee_actions(page);
 	});
 
-	$("#rosterDayOffIssues").on("click", function() {
+	$("#rosterDayOffIssues").on("click", function () {
 		roster_day_off_issues(page);
 	});
-	
-	$("#rosterPostActions").on("click", function() {
+
+	$("#rosterPostActions").on("click", function () {
 		roster_post_actions(page);
 	});
 }
@@ -793,18 +554,16 @@ function bind_events(page) {
 	wrapper_element.find('#paginate-parent').pageMe({ pagerSelector: '#myPager', showPrevNext: false, hidePageNumbers: false, perPage: 9999 });
 	if (["Operations Manager", "Site Supervisor", "Shift Manager", "Shift Supervisor", "Projects Manager"].some(i => frappe.user_roles.includes(i))) {
 		let $rosterMonth = $('.rosterMonth');
-		let $rosterOtMonth = $('.rosterOtMonth');
 		let $postMonth = $('.postMonth');
-		let $postWeek = $('.postWeek');
 		$postMonth.find(".hoverselectclass").on("click", function () {
-            // Loop through all rows and if there is a checked row, unselect all cells in that row.
-            $(this).closest("tbody").children("tr").each(function (i, cell) {
-                const checked_row = $(cell).find('input[name="selectallcheckbox"]:checked');
-                if (checked_row.length > 0) {
-                    $(checked_row).prop('checked', false);
-                    $(cell).find("div").removeClass("selectclass");
-                }
-            });
+			// Loop through all rows and if there is a checked row, unselect all cells in that row.
+			$(this).closest("tbody").children("tr").each(function (i, cell) {
+				const checked_row = $(cell).find('input[name="selectallcheckbox"]:checked');
+				if (checked_row.length > 0) {
+					$(checked_row).prop('checked', false);
+					$(cell).find("div").removeClass("selectclass");
+				}
+			});
 
 			$(this).toggleClass("selectclass");
 			// If the id is not already in the array, add it. If it is, remove it
@@ -818,78 +577,24 @@ function bind_events(page) {
 				$(".Postfilterhideshow").removeClass("d-none");
 			}
 		});
-
-		$postWeek.find(".hoverselectclass").on("click", function () {
-            // Loop through all rows and if there is a checked row, unselect all cells in that row.
-            $(this).closest("tbody").children("tr").each(function (i, cell) {
-                const checked_row = $(cell).find('input[name="selectallcheckbox"]:checked');
-                if (checked_row.length > 0) {
-                    $(checked_row).prop('checked', false);
-                    $(cell).find("div").removeClass("selectclass");
-                }
-            });
-
-			$(this).toggleClass("selectclass");
-			// If the id is not already in the array, add it. If it is, remove it
-
-			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-
-			if (classgrt.join(",") === "") {
-				$(".Postfilterhideshow").addClass("d-none");
-			}
-			else {
-				$(".Postfilterhideshow").removeClass("d-none");
-			}
-		});
-
 
 		//add array on each of data select from calender
 		$rosterMonth.find(".hoverselectclass").on("click", function () {
-           // Loop through all rows and if there is a checked row, unselect all cells in that row.
-           $(this).closest("tbody").children("tr").each(function (i, cell) {
-                const checked_row = $(cell).find('input[name="selectallcheckbox"]:checked');
-                if (checked_row.length > 0) {
-                    $(checked_row).prop('checked', false);
-                    $(cell).find("div").removeClass("selectclass");
-                }
-            });
+			// Loop through all rows and if there is a checked row, unselect all cells in that row.
+			$(this).closest("tbody").children("tr").each(function (i, cell) {
+				const checked_row = $(cell).find('input[name="selectallcheckbox"]:checked');
+				if (checked_row.length > 0) {
+					$(checked_row).prop('checked', false);
+					$(cell).find("div").removeClass("selectclass");
+				}
+			});
 
-            // select cell
-            $(this).toggleClass("selectclass");
+			// select cell
+			$(this).toggleClass("selectclass");
 			//Show Day Off and Schedule Leave button if hidden for basic roster
 			if ($(".dayoff").is(":hidden")) {
 				$(".dayoff").show();
 			}
-			if ($(".scheduleleave").is(":hidden")) {
-				$(".scheduleleave").show();
-			}
-
-			// If the id is not already in the array, add it. If it is, remove it
-			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
-
-			if (classgrt.join(",") === "") {
-				$(".filterhideshow").addClass("d-none");
-			}
-			else {
-				$(".filterhideshow").removeClass("d-none");
-			}
-		});
-
-		$rosterOtMonth.find(".hoverselectclass").on("click", function () {
-            // Loop through all rows and if there is a checked row, unselect all cells in that row.
-            $(this).closest("tbody").children("tr").each(function (i, cell) {
-                const checked_row = $(cell).find('input[name="selectallcheckbox"]:checked');
-                if (checked_row.length > 0) {
-                    $(checked_row).prop('checked', false);
-                    $(cell).find("div").removeClass("selectclass");
-                }
-            });
-
-            $(this).toggleClass("selectclass");
-
-			//Hide Day Off and schedule leave button for OT Roster
-			$(".dayoff").hide();
-			$(".scheduleleave").hide();
 
 			// If the id is not already in the array, add it. If it is, remove it
 			classgrt.indexOf(this.getAttribute("data-selectid")) === -1 ? classgrt.push(this.getAttribute("data-selectid")) : classgrt.splice(classgrt.indexOf(this.getAttribute("data-selectid")), 1);
@@ -903,46 +608,10 @@ function bind_events(page) {
 		});
 
 
-		/*on checkbox select change*/
-		$postWeek.find(`input[name="selectallcheckbox"]`).on("change", function () {
-            let $checked_employee = $(this);
-            let selected_employee = $checked_employee.parent().parent().parent().attr('data-name');
-			if ($checked_employee.is(":checked")) {
-				$checked_employee.parent().parent().parent().children("td").children().not("label").each(function (i, v) {
-					let date = $(v).attr('data-date');
-					if (moment(date).isAfter(moment())) {
-						$(v).addClass("selectclass");
-					}
-				});
-				$checked_employee.parent().parent().parent().children("td").children().not("label").removeClass("hoverselectclass");
-				$(".Postfilterhideshow").removeClass("d-none");
 
-			}
-			else {
-				$checked_employee.parent().parent().parent().children("td").children().not("label").addClass("hoverselectclass");
-				$checked_employee.closest('tr').children("td").children().not("label").each(function (i, v) {
-					classgrt.splice(classgrt.indexOf($(v).attr('data-selectid')), 1);
-				});
-				$checked_employee.parent().parent().parent().children("td").children().not("label").removeClass("selectclass");
-				$(".Postfilterhideshow").addClass("d-none");
-			}
-
-            // Check for rows that are not selected full and unselect cells in that row.
-            $checked_employee.closest("tbody").children("tr").each(function (i, cell) {
-                const unchecked_row = $(cell).find('input[name="selectallcheckbox"]:not(:checked)');
-                if (unchecked_row.length > 0) {
-                    $(cell).find("div").removeClass("selectclass");
-                }
-            });
-
-			$(".selectclass").map(function () {
-				classgrt.push($(this).attr("data-selectid"));
-				classgrt = [... new Set(classgrt)];
-			});
-		});
 		/*on checkbox select change*/
 		$postMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
-          	if ($(this).is(":checked")) {
+			if ($(this).is(":checked")) {
 				$(this).parent().parent().parent().children("td").children().not("label").each(function (i, v) {
 					let date = $(v).attr('data-date');
 					if (moment(date).isAfter(moment())) {
@@ -961,13 +630,13 @@ function bind_events(page) {
 				$(".Postfilterhideshow").addClass("d-none");
 			}
 
-            // Check for rows that are not selected full and unselect cells in that row.
-            $(this).closest("tbody").children("tr").each(function (i, cell) {
-                const unchecked_row = $(cell).find('input[name="selectallcheckbox"]:not(:checked)');
-                if (unchecked_row.length > 0) {
-                    $(cell).find("div").removeClass("selectclass");
-                }
-            });
+			// Check for rows that are not selected full and unselect cells in that row.
+			$(this).closest("tbody").children("tr").each(function (i, cell) {
+				const unchecked_row = $(cell).find('input[name="selectallcheckbox"]:not(:checked)');
+				if (unchecked_row.length > 0) {
+					$(cell).find("div").removeClass("selectclass");
+				}
+			});
 
 
 			$(".selectclass").map(function () {
@@ -978,20 +647,17 @@ function bind_events(page) {
 		});
 
 		//on checkbox select change
-        $rosterMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
-            let $checked_employee = $(this);
-            let selected_employee = $checked_employee.parent().parent().parent().attr('data-name');
+		$rosterMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
+			let $checked_employee = $(this);
+			let selected_employee = $checked_employee.parent().parent().parent().attr('data-name');
 
 			//Show Day Off and Schedule Leave button if hidden for basic roster
 			if ($(".dayoff").is(":hidden")) {
 				$(".dayoff").show();
 			}
-			if ($(".scheduleleave").is(":hidden")) {
-				$(".scheduleleave").show();
-			}
 
 			if ($checked_employee.is(":checked")) {
-                $checked_employee.closest('tr').children("td").children().not("label").each(function (i, v) {
+				$checked_employee.closest('tr').children("td").children().not("label").each(function (i, v) {
 
 					let [employee, date] = $(v).attr('data-selectid').split('|');
 					classgrt.push($(v).attr('data-selectid'));
@@ -1013,59 +679,17 @@ function bind_events(page) {
 				$(".filterhideshow").addClass("d-none");
 			}
 
-            // Check for rows that are not selected full and unselect cells in that row.
-            $checked_employee.closest("tbody").children("tr").each(function (i, cell) {
-                const unchecked_row = $(cell).find('input[name="selectallcheckbox"]:not(:checked)');
-                if (unchecked_row.length > 0) {
-                    $(cell).find("div").removeClass("selectclass");
-                }
-            });;
+			// Check for rows that are not selected full and unselect cells in that row.
+			$checked_employee.closest("tbody").children("tr").each(function (i, cell) {
+				const unchecked_row = $(cell).find('input[name="selectallcheckbox"]:not(:checked)');
+				if (unchecked_row.length > 0) {
+					$(cell).find("div").removeClass("selectclass");
+				}
+			});;
 
 
 			$(".selectclass").map(function () {
 				classgrt.push($(this).attr("data-selectid"));
-				classgrt = [... new Set(classgrt)];
-			});
-		});
-		$rosterOtMonth.find(`input[name="selectallcheckbox"]`).on("change", function () {
-            let $checked_employee = $(this);
-
-			//Hide Day Off and schedule leave button for OT Roster
-			$(".dayoff").hide();
-			$(".scheduleleave").hide();
-			if ($(this).is(":checked")) {
-				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
-
-					let [employee, date] = $(v).attr('data-selectid').split('|');
-					var r = Date.parse(date)
-
-					if (moment(date).isAfter(moment())) {
-						$(v).addClass("selectclass");
-					}
-				});
-				$(".filterhideshow").removeClass("d-none");
-			}
-			else {
-
-				$(this).closest('tr').children("td").children().not("label").each(function (i, v) {
-					classgrt.splice(classgrt.indexOf($(v).attr('data-selectid')), 1);
-				});
-				$(this).closest('tr').children("td").children().not("label").removeClass("selectclass");
-				$(".filterhideshow").addClass("d-none");
-			}
-
-            // Check for rows that are not selected full and unselect cells in that row.
-            $(this).closest("tbody").children("tr").each(function (i, cell) {
-                const unchecked_row = $(cell).find('input[name="selectallcheckbox"]:not(:checked)');
-                if (unchecked_row.length > 0) {
-                    $(cell).find("div").removeClass("selectclass");
-                }
-            });
-
-			$(".selectclass").map(function () {
-
-				classgrt.push($(this).attr("data-selectid"));
-
 				classgrt = [... new Set(classgrt)];
 			});
 		});
@@ -1108,13 +732,13 @@ function bind_events(page) {
 
 	// manage employee selection
 
-	$('.checkboxcontainer.simplecheckbox').click((e)=>{
-		if(window.clickcount>0){
+	$('.checkboxcontainer.simplecheckbox').click((e) => {
+		if (window.clickcount > 0) {
 			window.clickcount = 0;
 		} else {
 			let employee = e.target.parentNode.parentNode.parentNode.getAttributeNode('data-name').value;
-			if(window.employees_list.includes(employee)){
-				window.employees_list = window.employees_list.filter(function(value, index, arr){
+			if (window.employees_list.includes(employee)) {
+				window.employees_list = window.employees_list.filter(function (value, index, arr) {
 					return value != employee;
 				});
 			} else {
@@ -1136,12 +760,6 @@ function bind_search_bar_event(page) {
 			page.employee_search_name = frappe.utils.xss_sanitise($(wrapper_element).find(".search-employee-name").val());
 			if (wrapper_element == ".rosterMonth") {
 				get_roster_data(page);
-			} else if (wrapper_element == ".rosterWeek") {
-				get_roster_week_data(page);
-			} else if (wrapper_element == ".rosterOtMonth") {
-				get_roster_data(page, true);
-			} else if (wrapper_element == ".rosterOtWeek") {
-				get_roster_week_data(page, true);
 			}
 		}
 	});
@@ -1150,12 +768,6 @@ function bind_search_bar_event(page) {
 		page.employee_search_name = '';
 		if (wrapper_element == ".rosterMonth") {
 			get_roster_data(page);
-		} else if (wrapper_element == ".rosterWeek") {
-			get_roster_week_data(page);
-		} else if (wrapper_element == ".rosterOtMonth") {
-			get_roster_data(page, true);
-		} else if (wrapper_element == ".rosterOtWeek") {
-			get_roster_week_data(page, true);
 		}
 	});
 	$(wrapper_element).find(".search-employee-id").keypress(function (event) {
@@ -1164,12 +776,6 @@ function bind_search_bar_event(page) {
 			page.employee_search_id = frappe.utils.xss_sanitise($(wrapper_element).find(".search-employee-id").val());
 			if (wrapper_element == ".rosterMonth") {
 				get_roster_data(page);
-			} else if (wrapper_element == ".rosterWeek") {
-				get_roster_week_data(page);
-			} else if (wrapper_element == ".rosterOtMonth") {
-				get_roster_data(page, true);
-			} else if (wrapper_element == ".rosterOtWeek") {
-				get_roster_week_data(page, true);
 			}
 		}
 	});
@@ -1178,12 +784,6 @@ function bind_search_bar_event(page) {
 		page.employee_search_id = '';
 		if (wrapper_element == ".rosterMonth") {
 			get_roster_data(page);
-		} else if (wrapper_element == ".rosterWeek") {
-			get_roster_week_data(page);
-		} else if (wrapper_element == ".rosterOtMonth") {
-			get_roster_data(page, true);
-		} else if (wrapper_element == ".rosterOtWeek") {
-			get_roster_week_data(page, true);
 		}
 	});
 }
@@ -1191,10 +791,9 @@ function bind_search_bar_event(page) {
 
 // Get data for Roster monthly view and render it
 // isOt Parms is passed for Roster OT
-function get_roster_data(page, isOt) {
-	if (window.isOt) {isOt = true;}
+function get_roster_data(page) {
 	classgrt = [];
-	classgrtw = [];
+
 	let employee_search_name = '';
 	let employee_search_id = ''
 	if (page.employee_search_name) {
@@ -1203,23 +802,24 @@ function get_roster_data(page, isOt) {
 	if (page.employee_search_id) {
 		employee_search_id = page.employee_search_id;
 	}
-	let {start_date, end_date} = page;
+	let { start_date, end_date } = page;
 	let { project, site, shift, department, operations_role, designation, relievers } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	if (project || site || shift || department || operations_role || designation || relievers){
+	if (project || site || shift || department || operations_role || designation || relievers) {
 		$(".clear_roster_filters").removeClass("d-none")
 		$('#cover-spin').show(0);
 		frappe.call({
 			method: "one_fm.one_fm.page.roster.roster.get_roster_view", //dotted path to server method
 			type: "POST",
-			args: { start_date, end_date, employee_search_id, employee_search_name, project, site,
-				shift, department, operations_role, designation, relievers, isOt, limit_start, limit_page_length
+			args: {
+				start_date, end_date, employee_search_id, employee_search_name, project, site,
+				shift, department, operations_role, designation, relievers, limit_start, limit_page_length
 			},
-			callback: function(res) {
+			callback: function (res) {
 				// code snippet
 
 				error_handler(res);
-				render_roster(res.data, page, isOt);
+				render_roster(res.data, page);
 			}
 		});
 	} else {
@@ -1228,14 +828,21 @@ function get_roster_data(page, isOt) {
 }
 // Function responsible for Rendering the Table
 let classmap = {
-	'Working': 'bluebox',
+	'Working': 'lightblueboxcolor',
 	'Day Off': 'greyboxcolor',
 	'Client Day Off': 'silverboxcolor',
 	'Sick Leave': 'purplebox',
 	'Emergency Leave': 'purplebox',
 	'Annual Leave': 'purplebox',
 	'ASA': 'pinkboxcolor',
-	'Day Off OT': 'yellowboxcolor'
+	'Day Off OT': 'yellowboxcolor',
+	'Present': 'greenboxcolor',
+	'Absent': 'redboxcolor',
+	'Work From Home': 'greenboxcolor',
+	'Half Day': 'greenboxcolor',
+	'On Leave': 'purplebox',
+	"Holiday": "greyboxcolor",
+	"On Hold": "orangeboxcolor"
 };
 let leavemap = {
 	'Day Off': 'DO',
@@ -1252,7 +859,7 @@ let attendancemap = {
 	'Work From Home': 'greenboxcolor',
 	'Half Day': 'greenboxcolor',
 	'On Leave': 'purplebox',
-	"Holiday":"greyboxcolor",
+	"Holiday": "greyboxcolor",
 	"On Hold": "orangeboxcolor"
 };
 let attendance_abbr_map = {
@@ -1260,7 +867,7 @@ let attendance_abbr_map = {
 	'Absent': 'A',
 	'Work From Home': 'WFH',
 	'Half Day': 'HD',
-	"Holiday":"H",
+	"Holiday": "H",
 	'On Leave': 'OL',
 	'On Hold': 'OH'
 };
@@ -1269,11 +876,11 @@ let reliever_data;
 
 // Renders on get_roster_data function
 function render_roster(res, page, isOt) {
-	let { operations_roles_data, employees_data,reliever,total } = res;
-	reliever_data =  reliever
+	let { operations_roles_data, employees_data, reliever, total } = res;
+	reliever_data = reliever
 	page.pagination.total = total;
-	let $rosterMonth = isOt ? $('.rosterOtMonth') : $('.rosterMonth');
-	let $rosterMonthbody = isOt ? $('.rosterOtMonth').find('#calenderviewtable tbody') : $('.rosterMonth').find('#calenderviewtable tbody');
+	let $rosterMonth = $('.rosterMonth');
+	let $rosterMonthbody = $('.rosterMonth').find('#calenderviewtable tbody');
 	$rosterMonthbody.empty();
 	for (operations_role_name in operations_roles_data) {
 		let pt_row = `
@@ -1319,389 +926,204 @@ function render_roster(res, page, isOt) {
 		</td>
 	</tr>`;
 	$rosterMonthbody.append(emp_row_wrapper);
-	for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
-		// let { employee_name, employee, date } = employees_data[employee_key];
+
+	const transformed = Object.keys(employees_data)
+		.sort()
+		.reduce((acc, employeeKey) => {
+			const dateToRecords = employees_data[employeeKey];
+			// Get the dates in sorted order
+			const sortedDates = Object.keys(dateToRecords).sort();
+			// Map each date to its array of records (already an array)
+			acc[employeeKey] = sortedDates.map(date => dateToRecords[date]);
+			return acc;
+		}, {});
+
+	for (employee_key in transformed) {
+		let { start_date, end_date } = page;
+		let employee = employees_data[employee_key][start_date][0]['employee']
+		let employee_id = employees_data[employee_key][start_date][0]['employee_id']
+		let employee_day_off = employees_data[employee_key][start_date][0]['day_off_category']
 
 
-		let employee = employees_data[employee_key][0]['employee']
-		let employee_id = employees_data[employee_key][0]['employee_id']
-		let employee_day_off = employees_data[employee_key][0]['day_off_category']
-		if(employees_data[employee_key][0]['number_of_days_off']){
-			employee_day_off += " " + employees_data[employee_key][0]['number_of_days_off'] + " Day(s) off"
+		if (employees_data[employee_key][start_date][0]['number_of_days_off']) {
+			employee_day_off += " " + employees_data[employee_key][start_date][0]['number_of_days_off'] + " Day(s) off"
 		}
 
-
-
 		let emp_row = `
-		<tr data-name="${employee}">
-			<td class="sticky">
-				<label class="checkboxcontainer simplecheckbox">
-					<span class="lightgrey font16 customfontweight fontw400 postname" style="color:black">${employee_key}</span>
-					<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
-					<span class="checkmark"></span>
-				</label>
-				<label >
-					<span class="lightgrey employee_day_off"><span id="employee_id" style="color:black; font-size:13px">${employee_id}</span> - ${employee_day_off}</span>
-				</label>
-			</td>
-		</tr>
-		`;
+			<tr data-name="${employee}">
+				<td class="sticky">
+					<label class="checkboxcontainer simplecheckbox">
+						<span class="lightgrey font16 customfontweight fontw400 postname" style="color:black">${employee_key}</span>
+						<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
+						<span class="checkmark"></span>
+					</label>
+					<label >
+						<span class="lightgrey employee_day_off"><span id="employee_id" style="color:black; font-size:13px">${employee_id}</span> - ${employee_day_off}</span>
+					</label>
+				</td>
+			</tr>`;
+			
 		$rosterMonth.find('#rowchildtable tbody').append(emp_row);
 
-		let { start_date, end_date } = page;
 		start_date = moment(start_date);
 		end_date = moment(end_date);
 		let i = 0;
-		let j = 0;
+		let basic_count = 0;
+		let ot_count = 0;
 		let day = start_date;
+		let relieving_date = "";
+
 		while (day <= end_date) {
-			// for(let day = start_date; day <= end_date; start_date.add(1, 'days')){
 			let sch = ``;
+			let date_key = day.format("YYYY-MM-DD");
 
+			let abbrv = ``;
+			let data_selectid = ``; 
+			let data_ot = ``;
+			let tooltiptext = ``;
+			let bgclass = ``;		
 
-			let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, actual_shift, roster_type, attendance, asa, day_off_ot,leave_type,leave_application,relieving_date } = employees_data[employee_key][i];
-			//OT schedule view
-			var r = Date.parse(date)
-			let shift_start = moment(start_datetime, "YYYY-MM-DD HH:mm:ss").format("LT");
-			let shift_end = moment(end_datetime, "YYYY-MM-DD HH:mm:ss").format("LT");
-			start_time = moment(start_time, "HH:mm").format("LT");
-			end_time = moment(end_time, "HH:mm").format("LT");
+			// Construct variables for sch based on conditions by looping over employees_data[employee_key][date_key] adding first shift details in data-selectid and second shift details in data-ot
+			for (let k = 0; k < employees_data[employee_key][date_key].length; k++) {
+				let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, actual_shift, roster_type, attendance, day_off_ot, leave_type, leave_application, relieving_date } = employees_data[employee_key][date_key][k];
+				let shift_start = start_time ? moment(start_time, "HH:mm").format("LT") : moment(start_datetime, "YYYY-MM-DD HH:mm:ss").format("LT") ;
+				let shift_end = end_time ? moment(end_time, "HH:mm").format("LT") : moment(end_datetime, "YYYY-MM-DD HH:mm:ss").format("LT");
 
-			if (isOt) {
-				if ((actual_shift && shift) && (actual_shift!=shift) && roster_type == 'Over-Time' && day_off_ot==0) {
+				if (!relieving_date) { relieving_date = relieving_date; }
 
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}<br>Start: ${shift_start}<br>End: ${shift_end}</span></div>
-					</td>`;
-				} else if (post_abbrv && roster_type == 'Over-Time' && !asa && day_off_ot==0) {
-
-					j++;
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}<br>Start: ${shift_start}<br>End: ${shift_end}</span></div>
-					</td>`;
-				} else if(post_abbrv && roster_type == 'Over-Time' && asa && day_off_ot==0){
-
-					j++;
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
-					</td>`;
-				}else if(post_abbrv && roster_type == 'Over-Time' && day_off_ot==1){
-
-					j++;
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}<br>Start: ${shift_start}<br>End: ${shift_end}</span></div>
-					</td>`;
+				// Basic roster, scheduled shift same as default shift allocation and day_off_ot is 0
+				if (!attendance && roster_type == "Basic" && shift == actual_shift && day_off_ot == 0 ) {
+					employee_availability == "Working" ? basic_count++ : '';
+					bgclass == "" ? bgclass += "samebasic" : bgclass += "samebasic";
+					data_selectid = `${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}`;
 				}
-				else if (employee_availability && !post_abbrv) {
+				// Basic roster, scheduled shift different than default shift allocation and day_off_ot is 0
+				else if (!attendance && roster_type == "Basic" && shift != actual_shift && day_off_ot == 0 ){
+					employee_availability == "Working" ? basic_count++ : '';
+					bgclass += "diffbasic"; 						
+					data_selectid = `${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}`;
+				}
+				// Over-Time roster, scheduled shift same as default shift allocation
+				else if (!attendance && roster_type == "Over-Time" && shift == actual_shift) {
+					ot_count++;
+					bgclass == "" ? bgclass += "sameot" : bgclass += "-sameot"; 
+					data_ot = `${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}`;
+				}
+				// Over-Time roster, scheduled shift different than default shift allocation
+				else if (!attendance && roster_type == "Over-Time" && shift != actual_shift) {
+					ot_count++;
+					bgclass == "" ? bgclass += "diffot" : bgclass += "-diffot"; 
+					data_ot = `${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}`;
+				}
+				// Basic roster, scheduled shift same as default shift allocation and day_off_ot is 1
+				else if (!attendance && roster_type == "Basic" && shift == actual_shift && day_off_ot == 1 ){
+					employee_availability == "Working" ? basic_count++ : '';
+					bgclass += "samedayoffot"; 
+					data_selectid = `${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}`;
+				}
+				// Basic roster, scheduled shift different than default shift allocation and day_off_ot is 0
+				else if (!attendance && roster_type == "Basic" && shift != actual_shift && day_off_ot == 1 ){
+					employee_availability == "Working" ? basic_count++ : '';
+					bgclass += "diffdayoffot";
+					data_selectid = `${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}`;
+				}
+				else if (attendance && in_list(["Day Off", "On Leave", "Absent", "On Hold"], attendance)) {
+					data_selectid = `${employee + "|" + date + "|" + employee_availability}`;
+					if (attendance && attendance == "Absent") {
+						if (roster_type == "Over-Time") { bgclass == "" ? bgclass += "absentot" : bgclass += "-absentot"; }
+						else if (roster_type == "Basic" && day_off_ot == 1) { bgclass += "absentdayoffot"; }
+						else if (roster_type == "Basic" && day_off_ot == 0) { bgclass += "absentbasic"; }
+					} 
+					else { bgclass = classmap[attendance]; }
+				}
+				else if (attendance && attendance == "Present") {
+					data_selectid = `${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}`;
+					if (roster_type == "Over-Time") { 
+						ot_count++;
+						bgclass == "" ? bgclass += "presentot" : bgclass += "-presentot"; 
+					} else if (roster_type == "Basic" && day_off_ot == 1) { 
+						basic_count++;
+						bgclass += "presentdayoffot"; 
+					} else if (roster_type == "Basic" && day_off_ot == 0) { 
+						basic_count++;
+						bgclass += "presentbasic"; 
+					}
+				}
 
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
-							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
-					</td>`;
-				} else if (attendance && !employee_availability) {
 
-					if (attendance == 'Present') { j++; }
-					sch = `
-					<td>
-						<div class="forbidden tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift+`<br>Start: ${start_time}<br>End: ${end_time}`}</span></div>
-					</td>`;
+				// Set abbreviation and tooltiptext for Attendance - Present, Present (Day off OT), Present OT and Absent, On Leave
+				if (k == (employees_data[employee_key][date_key].length - 1)) {
+					if (attendance && attendance == "On Leave" && !employee_availability) {
+						tooltiptext += `${leave_application}<br>${leave_type}`;
+						abbrv += `${attendance_abbr_map[attendance]}<br>`;
+					
+					} else if (attendance && !employee_availability){
+						tooltiptext += `${roster_type}:<br>${shift}<br>Start: ${shift_start}<br>End: ${shift_end}`;
+						abbrv += `${attendance_abbr_map[attendance]}<br>`;
+
+					} else if (employee_availability && !post_abbrv) {
+						tooltiptext = ``;
+						abbrv += `${leavemap[employee_availability]}<br>`;
+						bgclass = classmap[employee_availability];			
+					} else {
+						tooltiptext += `${roster_type}:<br>${shift}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
+						abbrv += `${post_abbrv}<br>`;				
+					}
 				} else {
-
-					if(moment(date)>=moment(relieving_date)){
-
-						sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">EX<span class="customtooltiptext">Exited</span></div>
-					</td>`;
+					if (attendance && !employee_availability) {
+						abbrv += `${attendance_abbr_map[attendance]}<br>`;
+					} else {
+						abbrv += `${post_abbrv}<br>`;				
 					}
-					else{
-
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date}"></div>
-					</td>`;
-					}
+					tooltiptext += `${roster_type}:<br>${shift}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
 				}
-				i++;
-				start_date.add(1, 'days');
-				$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee}"]`).append(sch);
-
 			}
-			//Basic schedule view
-			else {
 
-			 	if ((actual_shift && shift) && (actual_shift!=shift) && day_off_ot==0) {
-									sch = `
-				<td>
-					<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
-						data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}<br>Start: ${shift_start}<br>End: ${shift_end}</span></div>
-				</td>`;
-				}
-				else if (post_abbrv && roster_type == 'Basic' && !asa && day_off_ot==0) {
 
-					j++;
-					sch = `
+
+			if (relieving_date && moment(start_date) >= moment(relieving_date)) {
+				sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}<br>Start: ${shift_start}<br>End: ${shift_end}</span></div>
+						<div class="${moment().isBefore(moment(start_date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
+							data-selectid="${data_selectid}">EX<span class="customtooltiptext">Exited</span></div>
 					</td>`;
-				}
-				else if(post_abbrv && roster_type == 'Basic' && asa && day_off_ot==0){
-
-					j++;
-					sch = `
+			
+			} else if (!data_selectid && !data_ot) {
+				sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['ASA']} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${"<strong>Scheduled:</strong> <br>" + shift + "<br>" + "<strong>Assigned:</strong> <br>" + asa}</span></div>
+						<div class="${moment().isBefore(moment(start_date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
+							data-selectid="${employee + "|" + start_date}"></div>
 					</td>`;
-				}else if(post_abbrv && roster_type == 'Basic' && day_off_ot==1){
-
-					j++;
-					sch = `
+			} else {
+				let tooltip = tooltiptext ? `<span class="customtooltiptext ${bgclass}">${tooltiptext}</span>` : ""; 
+				sch = `
 					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap['Day Off OT']} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}<span class="customtooltiptext">${shift}<br>Start: ${shift_start}<br>End: ${shift_end}</span></div>
+						<div class="${moment().isBefore(moment(start_date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${bgclass} d-flex justify-content-center align-items-center text-white so customtooltip"
+							data-selectid="${data_selectid}" data-ot="${data_ot}">${abbrv} ${tooltip}</div>
 					</td>`;
-				}
-				else if (employee_availability && !post_abbrv) {
-
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center text-white so"
-							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
-					</td>`;
-				} else if (attendance && !employee_availability) {
-
-					if(day_off_ot){
-												sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkgreenbox d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift+`<br>Start: ${start_time}<br>End: ${end_time}`}</span></div>
-					</td>`;
-					}
-					else{
-												if (attendance == 'Present') {
-															sch = `
-						<td>
-							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
-								data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift+`<br>Start: ${start_time}<br>End: ${end_time}`}</span></div>
-						</td>`;
-							j++;
-
-						}
-						else if (attendance == "On Leave"){
-														sch = `
-						<td>
-							<div class="forbidden tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
-								data-selectid="${employee + "|" + date + "|" + attendance}">${leavemap[leave_type]?leavemap[leave_type]:'LV'}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift +`<br>Start: ${start_time}<br>End: ${end_time}`}</span></div>
-						</td>`;
-
-						}
-						else{
-							sch = `
-						<td>
-							<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${attendancemap[attendance]} d-flex justify-content-center align-items-center text-white so customtooltip"
-								data-selectid="${employee + "|" + date + "|" + attendance}">${attendance_abbr_map[attendance]}<span class="customtooltiptext">${leave_application ? leave_application+'|'+leave_type : shift +`<br>Start: ${start_time}<br>End: ${end_time}`}</span></div>
-						</td>`;
-
-						}
-					}
-
-
-
-				} else {
-
-					if(moment(date)>=moment(relieving_date)){
-
-						sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">EX<span class="customtooltiptext">Exited</span></div>
-					</td>`;
-					}
-					else{
-
-					sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date}"></div>
-					</td>`;
-					}
-				}
-				i++;
-				start_date.add(1, 'days');
-				$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee}"]`).append(sch);
-
 			}
+
+
+			i++;
+			start_date.add(1, 'days');
+			$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee}"]`).append(sch);
+
 		}
-		$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i - 1]['employee']}"]`).append(`<td>${j}</td>`);
+		$rosterMonth.find(`#rowchildtable tbody tr[data-name="${employee}"]`).append(`<td><span>${basic_count}<br>${ot_count}</span></td>`);
 
 	}
 	bind_events(page);
 }
 
 
-// Get data for Roster weekly view and render it
-function get_roster_week_data(page, isOt) {
-	classgrt = [];
-	classgrtw = [];
-	let employee_search_name = '';
-	if (page.employee_search_name) {
-		employee_search_name = page.employee_search_name;
-	}
-	let { start_date, end_date } = page;
-	let { project, site, shift, department, operations_role } = page.filters;
-	let { limit_start, limit_page_length } = page.pagination;
-
-
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_roster_view', { start_date, end_date, employee_search_name, project, site, shift, department, operations_role, isOt, limit_start, limit_page_length })
-		.then(res => {
-			let { operations_roles_data, employees_data, total } = res;
-			page.pagination.total = total;
-
-			let $rosterWeek;
-			if (isOt) $rosterWeek = $('.rosterOtWeek');
-			else $rosterWeek = $('.rosterWeek');
-			let $rosterWeekbody = $rosterWeek.find('#calenderweekviewtable tbody');
-			$rosterWeekbody.empty();
-			for (operations_role_name in operations_roles_data) {
-				let pt_row = `
-				<tr class="colorclass scheduledStaff" data-name="${operations_role_name}">
-					<td class="sticky">
-						<div class="d-flex">
-							<div class="font16 paddingdiv cursorpointer orangecolor">
-								<i class="fa fa-plus" aria-hidden="true"></i>
-							</div>
-							<div class="font16 paddingdiv borderleft cursorpointer">
-								${operations_role_name}
-							</div>
-						</div>
-					</td>
-				</tr>
-				`;
-				$rosterWeekbody.append(pt_row);
-				let { start_date, end_date } = page;
-				start_date = moment(start_date);
-				end_date = moment(end_date);
-				let i = 0;
-				let day = start_date;
-				while (day <= end_date) {
-					let { date, operations_role, count, highlight } = operations_roles_data[operations_role_name][i];
-
-					let pt_count = `
-					<td class="${highlight}">
-						<div class="text-center" data-selectid="${operations_role + "|" + date}">${count}</div>
-					</td>`;
-					$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(operations_role)}"]`).append(pt_count);
-					i++;
-					start_date.add(1, 'days');
-				}
-				$rosterWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(operations_roles_data[operations_role_name][i - 1]['operations_role'])}"]`).append(`<td></td>`);
-			}
-			let emp_row_wrapper = `
-			<tr class="collapse tableshowclass show">
-				<td colspan="33" class="p-0">
-					<table id="rowchildtable" class="table subcalenderweektable mb-0 text-center" style="width:100%">
-						<tbody id="paginate-parent">
-						</tbody>
-					</table>
-				</td>
-			</tr>`;
-			$rosterWeekbody.append(emp_row_wrapper);
-
-			for (employee_key in Object.keys(employees_data).sort().reduce((a, c) => (a[c] = employees_data[c], a), {})) {
-				let { employee_name, employee, date } = employees_data[employee_key];
-				let employee_day_off = employees_data[employee_key][0]['employee_day_off']
-				let emp_row = `
-				<tr data-name="${employee_key}">
-					<td class="sticky">
-						<label class="checkboxcontainer simplecheckbox">
-							<span class="lightgrey font16 customfontweight fontw400 postname">${employee_key}</span>
-							<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
-							<span class="checkmark"></span>
-						</label>
-						<label >
-							<span class="lightgrey employee_day_off">${employee_day_off}</span>
-						</label>
-					</td>
-				</tr>`;
-				$rosterWeek.find('#rowchildtable tbody').append(emp_row);
-
-				let { start_date, end_date } = page;
-				start_date = moment(start_date);
-				end_date = moment(end_date);
-				let i = 0;
-				let j = 0;
-				let day = start_date;
-				while (day <= end_date) {
-					let sch = ``;
-					let classmap = {
-						'Working': 'bluebox',
-						'Day Off': 'greyboxcolor',
-						'Sick Leave': 'purplebox',
-						'Emergency Leave': 'purplebox',
-						'Annual Leave': 'purplebox'
-					};
-					let leavemap = {
-						'Day Off': 'DO',
-						'Sick Leave': 'SL',
-						'Annual Leave': 'AL',
-						'Emergency Leave': 'EL',
-						'Leave Without Pay': 'LWP',
-						'Working': '!'
-					};
-					let { employee, employee_name, date, operations_role, post_abbrv, employee_availability, shift } = employees_data[employee_key][i];
-
-					if (employee_availability && post_abbrv) {
-						j++;
-						sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date + "|" + operations_role + "|" + shift + "|" + employee_availability}">${post_abbrv}</div>
-					</td>`;
-					} else if (employee_availability && !post_abbrv) {
-						sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox ${classmap[employee_availability]} d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date + "|" + employee_availability}">${leavemap[employee_availability]}</div>
-					</td>`;
-					} else {
-						sch = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} tablebox borderbox d-flex justify-content-center align-items-center so"
-							data-selectid="${employee + "|" + date}"></div>
-					</td>`;
-					}
-					i++;
-					start_date.add(1, 'days');
-					$rosterWeek.find(`#rowchildtable tbody tr[data-name="${employee_name}"]`).append(sch);
-				}
-				$rosterWeek.find(`#rowchildtable tbody tr[data-name="${employees_data[employee_key][i - 1]['employee_name']}"]`).append(`<td>${j}</td>`);
-			}
-			bind_events(page);
-		});
-}
-
 // Get data for Post view monthly and render it
 function get_post_data(page) {
 	classgrt = [];
-	classgrtw = [];
+
 	let { start_date, end_date } = page;
 	let { project, site, shift, department, operations_role } = page.filters;
 	let { limit_start, limit_page_length } = page.pagination;
-	if (project || site || shift || department || operations_role){
+	if (project || site || shift || department || operations_role) {
 		$('#cover-spin').show(0);
 
 		frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
@@ -1776,94 +1198,12 @@ function get_post_data(page) {
 					$postMonth.find(`#calenderviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(`<td></td>`);
 				}
 				bind_events(page);
-			}).catch(e =>{
+			}).catch(e => {
 				console.log(e);
 			});
 	}
 }
 
-// Get data for Post view weekly and render it
-function get_post_week_data(page) {
-	classgrt = [];
-	classgrtw = [];
-	let { start_date, end_date } = page;
-	let { project, site, shift, operations_role } = page.filters;
-
-	let { limit_start, limit_page_length } = page.pagination;
-	frappe.xcall('one_fm.one_fm.page.roster.roster.get_post_view', { start_date, end_date, project, site, shift, operations_role, limit_start, limit_page_length })
-		.then(res => {
-
-			page.pagination.total = res.total;
-			let $postWeek = $('.postWeek');
-			let $postWeekbody = $('.postWeek').find('#calenderweekviewtable tbody');
-			$postWeekbody.empty();
-
-			for (post_name in res.post_data) {
-				let row = `
-			<tr class="colorclass" data-name="${post_name}">
-				<td class="sticky">
-					<label class="checkboxcontainer simplecheckbox mx-4">
-						<span class="lightgrey font16 customfontweight fontw400 postname">
-							${post_name}
-						</span>
-						<span class="tooltiptext">${post_name}</span>
-
-						<input type="checkbox" name="selectallcheckbox" class="selectallcheckbox">
-						<span class="checkmark"></span>
-					</label>
-				</td>
-			</tr>`;
-				$postWeekbody.append(row);
-				let { start_date, end_date } = page;
-				start_date = moment(start_date);
-				end_date = moment(end_date);
-				let i = 0;
-				let day = start_date;
-				while (day <= end_date) {
-					let schedule = ``;
-					let classmap = {
-						'Planned': 'blueboxcolor',
-						'Post Off': 'greyboxcolor',
-						'Suspended': 'yellowboxcolor',
-						'Cancelled': 'redboxcolor'
-					};
-
-					let { project, site, shift, date, post_status, operations_role, post, name } = res["post_data"][post_name][i];
-					if (name) {
-						schedule = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} hoverselectclass tablebox ${classmap[post_status]} d-flex justify-content-center align-items-center so"
-							data-selectid="${post + '_' + date}"
-							data-date="${date}"
-							data-project="${project}"
-							data-site="${site}"
-							data-shift="${shift}"
-							data-name="${name}"
-							data-post="${post}"
-							data-post_status="${post_status}"
-							data-post-type="${operations_role}">
-						</div>
-					</td>`;
-					}
-					else {
-						schedule = `
-					<td>
-						<div class="${moment().isBefore(moment(date)) ? 'hoverselectclass' : 'forbidden'} hoverselectclass tablebox darkblackox d-flex justify-content-center align-items-center so"
-							data-selectid="${post_name + '_' + start_date.format('YYYY-MM-DD')}"
-							data-date="${start_date.format('YYYY-MM-DD')}"
-							data-post="${post_name}"
-						</div>
-					</td>`;
-					}
-					i++;
-					start_date.add(1, 'days');
-					$postWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(schedule);
-				}
-				$postWeek.find(`#calenderweekviewtable tbody tr[data-name="${escape_values(post_name)}"]`).append(`<td></td>`);
-			}
-			bind_events(page);
-		});
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 function escape_values(string) {
 	if (string && string.includes("'")) {
@@ -1885,7 +1225,7 @@ function setup_filters(page) {
 			get_sites(page);
 			get_shifts(page);
 			get_departments(page);
-			get_operations_posts(page);
+			get_operations_roles(page);
 			get_designations(page);
 			get_relievers(page);
 		})
@@ -1908,9 +1248,9 @@ function get_projects(page) {
 			parent.select2({ data: project_data });
 
 			const selectedProject = page.filters['project'];
-            if (selectedProject) {
-	           parent.val(selectedProject).trigger("change");
-            }
+			if (selectedProject) {
+				parent.val(selectedProject).trigger("change");
+			}
 
 			$(parent).on('select2:select', function (e) {
 				page.filters.project = $(this).val();
@@ -1938,16 +1278,14 @@ function get_sites(page) {
 			parent.select2({ data: site_data });
 
 			const selectedSite = page.filters['site'];
-            if (selectedSite) {
-	           parent.val(selectedSite).trigger("change");
-            }
+			if (selectedSite) {
+				parent.val(selectedSite).trigger("change");
+			}
 
 			$(parent).on('select2:select', function (e) {
 				page.filters.site = $(this).val();
 				get_shifts(page);
 				let element = get_wrapper_element().slice(1);
-
-
 				page[element](page);
 			});
 		});
@@ -1969,26 +1307,22 @@ function get_shifts(page) {
 			parent.select2({ data: shift_data });
 
 			const selectedShift = page.filters['shift'];
-            if (selectedShift) {
-	           parent.val(selectedShift).trigger("change");
-            }
+			if (selectedShift) {
+				parent.val(selectedShift).trigger("change");
+			}
 
 			$(parent).on('select2:select', function (e) {
 				page.filters.shift = $(this).val();
 				let element = get_wrapper_element().slice(1);
-
-
 				page[element](page);
 
 			})
-
-
 		});
 }
 
-function get_operations_posts(page) {
+function get_operations_roles(page) {
 	let { employee_id, shift } = page;
-	frappe.xcall('one_fm.api.mobile.roster.get_operations_posts', { employee_id, shift })
+	frappe.xcall('one_fm.api.mobile.roster.get_operations_roles', { employee_id, shift })
 		.then(res => {
 			let parent = $('[data-page-route="roster"] #rosteringpostselect');
 			let operations_role_data = [];
@@ -1999,15 +1333,13 @@ function get_operations_posts(page) {
 			parent.select2({ data: operations_role_data });
 
 			const selectedOperationsRole = page.filters['operations_role'];
-            if (selectedOperationsRole) {
-	           parent.val(selectedOperationsRole).trigger("change");
-            }
+			if (selectedOperationsRole) {
+				parent.val(selectedOperationsRole).trigger("change");
+			}
 
 			$(parent).on('select2:select', function (e) {
 				page.filters.operations_role = $(this).val();
 				let element = get_wrapper_element().slice(1);
-
-
 				page[element](page);
 			});
 
@@ -2026,22 +1358,20 @@ function get_departments(page) {
 			parent.select2({ data: department_data });
 
 			const selectedDepartment = page.filters['department'];
-            if (selectedDepartment) {
-	           parent.val(selectedDepartment).trigger("change");
-            }
+			if (selectedDepartment) {
+				parent.val(selectedDepartment).trigger("change");
+			}
 
 			$(parent).on('select2:select', function (e) {
 				page.filters.department = $(this).val();
 				let element = get_wrapper_element().slice(1);
-
-
 				page[element](page);
 			});
 
 		});
 }
 
-function get_designations(page){
+function get_designations(page) {
 	frappe.xcall('one_fm.api.mobile.roster.get_designations')
 		.then(res => {
 			let parent = $('[data-page-route="roster"] #rosteringdesignationselect');
@@ -2053,9 +1383,9 @@ function get_designations(page){
 			parent.select2({ data: designation_data });
 
 			const selectedDesignation = page.filters['designation'];
-            if (selectedDesignation) {
-	           parent.val(selectedDesignation).trigger("change");
-            }
+			if (selectedDesignation) {
+				parent.val(selectedDesignation).trigger("change");
+			}
 
 			$(parent).on('select2:select', function (e) {
 				page.filters.designation = $(this).val();
@@ -2069,18 +1399,18 @@ function get_designations(page){
 		})
 }
 
-function get_relievers(page){
+function get_relievers(page) {
 	let parent = $('[data-page-route="roster"] #rosteringrelieverselect');
 	let reliever_data = [
-		{'id': 'True', 'text': 'Relievers Only'},
-		{'id': 'False', 'text': 'Non Relievers Only'},
+		{ 'id': 'True', 'text': 'Relievers Only' },
+		{ 'id': 'False', 'text': 'Non Relievers Only' },
 	];
 	parent.select2({ data: reliever_data });
 
 	const selectedReliverStatus = page.filters['relievers'];
-    if (selectedReliverStatus) {
-	    parent.val(selectedReliverStatus).trigger("change");
-    }
+	if (selectedReliverStatus) {
+		parent.val(selectedReliverStatus).trigger("change");
+	}
 
 	$(parent).on('select2:select', function (e) {
 		page.filters.relievers = $(this).val();
@@ -2101,14 +1431,9 @@ function incrementMonth(page) {
 	calendarSettings1.date.add(1, "Months");
 
 	let element = get_wrapper_element();
-	if (element == '.rosterMonth' || element == '.rosterOtMonth' || element == '.postMonth') {
+	if (element == '.rosterMonth' || element == '.postMonth') {
 		GetHeaders(1);
 		displayCalendar(calendarSettings1);
-		element = element.slice(1);
-		page[element](page);
-	} else {
-		GetWeekHeaders(1);
-		displayWeekCalendar(calendarSettings1);
 		element = element.slice(1);
 		page[element](page);
 	}
@@ -2122,14 +1447,9 @@ function decrementMonth(page) {
 	}
 	calendarSettings1.date.subtract(1, "Months");
 	let element = get_wrapper_element();
-	if (element == '.rosterMonth' || element == 'rosterOtMonth' || element == '.postMonth') {
+	if (element == '.rosterMonth' || element == '.postMonth') {
 		GetHeaders(1);
 		displayCalendar(calendarSettings1);
-		element = element.slice(1);
-		page[element](page);
-	} else {
-		GetWeekHeaders(1);
-		displayWeekCalendar(calendarSettings1);
 		element = element.slice(1);
 		page[element](page);
 	}
@@ -2171,21 +1491,13 @@ function ChangeRosteringDate(seldate, this1) {
 function get_wrapper_element(element) {
 	if (element) return element;
 	let roster_element = $(".rosterMonth").attr("class").split(/\s+/).includes("d-none");
-	let roster_ot_element = $(".rosterOtMonth").attr("class").split(/\s+/).includes("d-none");
 	let post_element = $(".postMonth").attr("class").split(/\s+/).includes("d-none");
-	let post_week_element = $(".postWeek").attr("class").split(/\s+/).includes("d-none");
 
-	if (roster_element && !post_element && post_week_element) {
+	if (roster_element && !post_element) {
 		element = '.postMonth';
 		return element;
-	} else if (!roster_element && post_element && post_week_element) {
+	} else if (!roster_element && post_element) {
 		element = '.rosterMonth';
-		return element;
-	} else if (!roster_ot_element && post_element && post_week_element) {
-		element = '.rosterOtMonth';
-		return element;
-	} else if (roster_element && post_element && !post_week_element) {
-		element = '.postWeek';
 		return element;
 	}
 }
@@ -2297,30 +1609,30 @@ function staffmanagement() {
 	table = $('[data-page-route="roster"] #staffdatatable').on('processing.dt', function (e, settings, processing) {
 		$('.dataTables_processing')
 			.css('display', processing ? 'flex' : 'none');
-		}).on('preXhrpreXhr.dt', function (e, settings, data) {
-		}).DataTable({
-			"dom": '<"top"fl><"position-relative table-responsive customtableborder"tr><"bottom"ip><"clear">',
-			"paging": true,
-			"processing": true,
-			"ordering": true,
-			"info": true,
-			"autowidth": true,
+	}).on('preXhrpreXhr.dt', function (e, settings, data) {
+	}).DataTable({
+		"dom": '<"top"fl><"position-relative table-responsive customtableborder"tr><"bottom"ip><"clear">',
+		"paging": true,
+		"processing": true,
+		"ordering": true,
+		"info": true,
+		"autowidth": true,
 
-			"language": {
-				"loadingRecords": "Loading...",
-				"processing": "Processing...",
-				"search": '<i class="fas fa-search"></i>',
-				"searchPlaceholder": "Search",
-				"paginate": {
-					"previous": "<",
-					"next": ">"
-				},
+		"language": {
+			"loadingRecords": "Loading...",
+			"processing": "Processing...",
+			"search": '<i class="fas fa-search"></i>',
+			"searchPlaceholder": "Search",
+			"paginate": {
+				"previous": "<",
+				"next": ">"
 			},
-			"lengthMenu": [[50, 100, 500, -1], [50, 100, 500, "All"]],
-			order: [],
-			columnDefs: [{ orderable: false, targets: [0] }]
+		},
+		"lengthMenu": [[50, 100, 500, -1], [50, 100, 500, "All"]],
+		order: [],
+		columnDefs: [{ orderable: false, targets: [0] }]
 
-		}).columns.adjust();
+	}).columns.adjust();
 }
 //datatable function call for staff
 
@@ -2386,31 +1698,31 @@ function notificationmsg(title, message) {
 		icon: "far fa-check-circle notifycolor",
 		target: "_blank"
 	},
-	{
-		element: "body",
-		type: "success",
-		showProgressbar: false,
-		placement: {
-			from: "top",
-			align: "right"
-		},
-		offset: 20,
-		spacing: 10,
-		z_index: 1080,
-		delay: 3300,
-		timer: 500,
-		url_target: "_blank",
-		mouse_over: null,
-		animate: {
-			enter: "animated fadeInDown",
-			exit: "animated fadeOutRight"
-		},
-		onShow: null,
-		onShown: null,
-		onClose: null,
-		onClosed: null,
-		icon_type: "class",
-	});
+		{
+			element: "body",
+			type: "success",
+			showProgressbar: false,
+			placement: {
+				from: "top",
+				align: "right"
+			},
+			offset: 20,
+			spacing: 10,
+			z_index: 1080,
+			delay: 3300,
+			timer: 500,
+			url_target: "_blank",
+			mouse_over: null,
+			animate: {
+				enter: "animated fadeInDown",
+				exit: "animated fadeOutRight"
+			},
+			onShow: null,
+			onShown: null,
+			onClose: null,
+			onClosed: null,
+			icon_type: "class",
+		});
 }
 
 
@@ -2426,7 +1738,7 @@ function render_staff(view) {
 
 	const { project, site, shift, department, operations_role, designation } = filters
 
-	if (project || site || shift || department || operations_role || designation){
+	if (project || site || shift || department || operations_role || designation) {
 		$(".clear_staff_filters").removeClass("d-none")
 	} else {
 		$(".clear_staff_filters").addClass("d-none")
@@ -2455,7 +1767,7 @@ function render_staff_list_view(data) {
 	data.forEach(function (employee) {
 
 
-		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department,site_supervisor,shift_supervisor,custom_operations_role_allocation,custom_is_reliever } = employee;
+		let { name, employee_id, employee_name, nationality, mobile_no, email, designation, project, site, shift, department, site_supervisor, shift_supervisor, custom_operations_role_allocation, custom_is_reliever } = employee;
 		let row = `
 		<tr>
 			<td>
@@ -2634,7 +1946,7 @@ function render_staff_card_view(data) {
 
 function setup_staff_filters(page) {
 	const { page: pageFilters, employee: employeeFilters } = get_preset_filters()
-	
+
 	let filters = {
 		assigned: pageFilters.assigned === '0' ? 0 : 1,
 		company: pageFilters.company || '',
@@ -2656,7 +1968,7 @@ function setup_staff_filters(page) {
 		page.filters = filters;
 		page.pagination = pagination;
 		page.employee_search_id = employeeFilters.employee_id || ''
-	    page.employee_search_name = employeeFilters.employee_name || ''
+		page.employee_search_name = employeeFilters.employee_name || ''
 	} else {
 		cur_page.page.page.filters = filters;
 		cur_page.page.page.pagination = pagination;
@@ -2736,10 +2048,10 @@ function staff_edit_dialog() {
 	let employees = [];
 	$(".checkboxcontainer").map(function (i, data) {
 		let selected = data.querySelectorAll('input[type="checkbox"]:checked');
-		if (selected.length){
+		if (selected.length) {
 			let id = ''
 			id = selected[0].getAttribute('data-employee-id');
-			if (id){
+			if (id) {
 				employees.push(id);
 			}
 		}
@@ -2774,7 +2086,7 @@ function staff_edit_dialog() {
 					let site = d.get_value('site');
 					if (site) {
 						return {
-							"filters": { site,'status':'Active' },
+							"filters": { site, 'status': 'Active' },
 							"page_len": 9999
 						};
 					}
@@ -2792,10 +2104,11 @@ function staff_edit_dialog() {
 					}
 				}
 			},
-			{'label': 'Is Reliever', 'fieldname': 'custom_is_reliever', 'fieldtype': 'Check', onchange: function () {
-				let is_reliever = d.get_value('custom_is_reliever');
-				d.set_df_property('custom_operations_role_allocation', 'reqd', !is_reliever);
-			}
+			{
+				'label': 'Is Reliever', 'fieldname': 'custom_is_reliever', 'fieldtype': 'Check', onchange: function () {
+					let is_reliever = d.get_value('custom_is_reliever');
+					d.set_df_property('custom_operations_role_allocation', 'reqd', !is_reliever);
+				}
 			},
 			{
 				'label': 'Default Operations Role', 'fieldname': 'custom_operations_role_allocation', 'fieldtype': 'Link', 'options': 'Operations Role', 'reqd': 1, get_query: function () {
@@ -2815,7 +2128,7 @@ function staff_edit_dialog() {
 			$('#cover-spin').show(0);
 			frappe.call({
 				method: 'one_fm.one_fm.page.roster.roster.assign_staff',
-				args: { employees, shift, custom_operations_role_allocation, custom_is_reliever},
+				args: { employees, shift, custom_operations_role_allocation, custom_is_reliever },
 				callback: function (r) {
 
 					d.hide();
@@ -2966,67 +2279,7 @@ function GetTodaySelectedDate() {
 	let element = get_wrapper_element().slice(1);
 	$(element).find("#data-day_" + tdate).addClass("hightlightedtable");
 }
-//function for get selected date
 
-//on next month title display on arrow click
-function rosterweekincrement() {
-	weekCalendarSettings.date.add(1, "Weeks");
-	GetWeekHeaders(1);
-	displayWeekCalendar(weekCalendarSettings);
-	let element = get_wrapper_element().slice(1);
-	if (element == "rosterWeek") {
-		get_roster_week_data(cur_page.page.page);
-	} else {
-		get_post_week_data(cur_page.page.page);
-	}
-}
-//on next month title display on arrow click
-
-//on previous month title display on arrow click
-function rosterweekdecrement() {
-	weekCalendarSettings.date.subtract(1, "Weeks");
-	GetWeekHeaders(1);
-	displayWeekCalendar(weekCalendarSettings);
-	let element = get_wrapper_element().slice(1);
-	if (element == "rosterWeek") {
-		get_roster_week_data(cur_page.page.page);
-	} else {
-		get_post_week_data(cur_page.page.page);
-	}
-}
-//on previous month title display on arrow click
-
-//display title of calender ex: Month of Jul 1 - 31, 2020
-
-
-function displayWeekCalendar(weekCalendarSettings, page) {
-	if (!page) {
-		page = cur_page.page.page;
-	}
-	let element = get_wrapper_element();
-	const weekcalendar = $(element).find('.calenderweektitlechange')[0];
-	let startcalendarmonth = weekCalendarSettings.date.startOf("week").format("MMM");
-	let endcalendarmonth = weekCalendarSettings.date.endOf("week").format("MMM");
-	let calendaryear = weekCalendarSettings.date.format("YYYY");
-	let startofday, endofday;
-
-	if (page.start_date) {
-		startofday = moment(page.start_date, 'YYYY-MM-DD').startOf("week").date();
-		endofday = moment(page.start_date, 'YYYY-MM-DD').endOf("week").date();
-		page.start_date = moment(page.start_date, 'YYYY-MM-DD').startOf("week").format('YYYY-MM-DD');
-		page.end_date = moment(page.start_date, 'YYYY-MM-DD').endOf("week").format('YYYY-MM-DD');
-		startcalendarmonth = moment(page.start_date, 'YYYY-MM-DD').startOf("week").format("MMM");
-		endcalendarmonth = moment(page.start_date, 'YYYY-MM-DD').endOf("week").format("MMM");
-	} else {
-		startofday = weekCalendarSettings.date.startOf("week").date();
-		endofday = weekCalendarSettings.date.endOf("week").date();
-		page.start_date = weekCalendarSettings.date.startOf("week").format('YYYY-MM-DD');
-		page.end_date = weekCalendarSettings.date.endOf("week").format('YYYY-MM-DD');
-	}
-
-	weekcalendar.innerHTML = "";
-	weekcalendar.innerHTML = "Month of <span> " + startcalendarmonth + "</span> <span> " + startofday + "</span> - <span> " + endcalendarmonth + " </span> <span> " + endofday + "</span>, " + calendaryear + "";
-}
 
 function unschedule_staff(page) {
 	let employees = [];
@@ -3116,74 +2369,6 @@ function unschedule_staff(page) {
 	d.show();
 }
 
-function schedule_leave(page) {
-	let employees = [];
-	let selected = [... new Set(classgrt)];
-	selected.forEach(function (i) {
-		let [employee, date] = i.split("|");
-		employees.push({ employee, date });
-	});
-	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
-	let d = new frappe.ui.Dialog({
-		'title': 'Leaves',
-		'fields': [
-			{ 'label': 'Type of Leave', 'fieldname': 'leave_type', 'fieldtype': 'Select', 'reqd': 1, 'options': '\nSick Leave\nAnnual Leave\nEmergency Leave' },
-			{
-				'label': 'Start Date', 'fieldname': 'start_date', 'fieldtype': 'Date', 'reqd': 1, 'default': date, onchange: function () {
-					let start_date = d.get_value('start_date');
-					if (start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
-						frappe.throw(__("Start Date cannot be before today."));
-					}
-				}
-			},
-			{
-				'label': 'End Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'reqd': 1, 'default': date, onchange: function () {
-					let end_date = d.get_value('end_date');
-					let start_date = d.get_value('start_date');
-					if (end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
-						frappe.throw(__("End Date cannot be before today."));
-					}
-					if (start_date && end_date && moment(end_date).isBefore(moment(frappe.datetime.nowdate()))) {
-						frappe.throw(__("End Date cannot be before Start Date."));
-					}
-				}
-			}
-		],
-		primary_action: function () {
-			$('#cover-spin').show(0);
-			let { leave_type, start_date, end_date } = d.get_values();
-			frappe.xcall('one_fm.one_fm.page.roster.roster.schedule_leave',
-				{ employees, leave_type, start_date, end_date })
-				.then(res => {
-					d.hide();
-					$('#cover-spin').hide();
-					let element = get_wrapper_element().slice(1);
-					page[element](page);
-				});
-		}
-	});
-	d.show();
-}
-
-function change_post(page) {
-	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
-	let d = new frappe.ui.Dialog({
-		'title': 'Change Post',
-		'fields': [
-			{
-				'label': 'Choose Operations Role', 'fieldname': 'operations_role', 'fieldtype': 'Link', 'options': 'Operations Role', 'reqd': 1, get_query: function () {
-				}
-			},
-		],
-		primary_action: function () {
-			d.hide();
-			let element = get_wrapper_element().slice(1);
-			page[element](page);
-
-		}
-	});
-	d.show();
-}
 
 function schedule_change_post(page) {
 	let date = frappe.datetime.add_days(frappe.datetime.nowdate(), '1');
@@ -3193,17 +2378,14 @@ function schedule_change_post(page) {
 	if (selected.length > 0) {
 		selected.forEach(function (i) {
 			let [employee, date] = i.split("|");
-							employees.push({employee, date});
-				employees = [... new Set(employees)];
-					});
+			employees.push({ employee, date });
+			employees = [... new Set(employees)];
+		});
 	}
 	var hide_day_off_ot_check = 0;
 	var hide_keep_days_off_check = 0;
 	let element = get_wrapper_element();
-	if (element == ".rosterOtMonth") {
-		hide_day_off_ot_check = 1;
-		hide_keep_days_off_check = 1;
-	}
+
 	let d = new frappe.ui.Dialog({
 		'title': 'Schedule/Change Post',
 		'fields': [
@@ -3221,10 +2403,10 @@ function schedule_change_post(page) {
 				}, get_query: function () {
 
 
-						return {
-							"filters": { 'status':"Active" },
-							"page_len": 9999
-						};
+					return {
+						"filters": { 'status': "Active" },
+						"page_len": 9999
+					};
 
 				}
 			},
@@ -3241,21 +2423,21 @@ function schedule_change_post(page) {
 			{ 'fieldname': 'cb1', 'fieldtype': 'Section Break' },
 			{
 				'label': 'Selected Days Only', 'fieldname': 'selected_days_only', 'fieldtype': 'Check', 'default': 0, onchange: function () {
-					if (d.get_value('selected_days_only')==1) {
+					if (d.get_value('selected_days_only') == 1) {
 						// Set the date to null and refresh the field
-						d.fields_dict.end_date.df.read_only  = 1;
-						d.fields_dict.start_date.df.read_only  = 1;
-						d.fields_dict.project_end_date.df.read_only  = 1;
-						d.fields_dict.project_end_date.df.hidden  = 1;
-						d.fields_dict.project_end_date.value  = '';
+						d.fields_dict.end_date.df.read_only = 1;
+						d.fields_dict.start_date.df.read_only = 1;
+						d.fields_dict.project_end_date.df.read_only = 1;
+						d.fields_dict.project_end_date.df.hidden = 1;
+						d.fields_dict.project_end_date.value = '';
 						d.fields_dict.end_date.refresh()
 						d.fields_dict.start_date.refresh()
 						d.fields_dict.project_end_date.refresh()
 					} else {
-						d.fields_dict.end_date.df.read_only  = 0;
-						d.fields_dict.start_date.df.read_only  = 0;
-						d.fields_dict.project_end_date.df.read_only  = 0;
-						d.fields_dict.project_end_date.df.hidden  = 0;
+						d.fields_dict.end_date.df.read_only = 0;
+						d.fields_dict.start_date.df.read_only = 0;
+						d.fields_dict.project_end_date.df.read_only = 0;
+						d.fields_dict.project_end_date.df.hidden = 0;
 						d.fields_dict.end_date.refresh()
 						d.fields_dict.start_date.refresh()
 						d.fields_dict.project_end_date.refresh()
@@ -3269,22 +2451,22 @@ function schedule_change_post(page) {
 					let end_date = d.get_value('end_date');
 					if (start_date && moment(start_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
 						// Set the date to null and refresh the field
-						d.fields_dict.start_date.value  = '';
+						d.fields_dict.start_date.value = '';
 						d.fields_dict.start_date.refresh()
 						frappe.throw(__("Start Date cannot be before today."));
 					}
 					if (start_date && end_date && moment(end_date).isBefore(moment(start_date))) {
 						// Set the date to null and refresh the field
-						d.fields_dict.start_date.value  = '';
+						d.fields_dict.start_date.value = '';
 						d.fields_dict.start_date.refresh()
 						frappe.throw(__("From Date cannot be after Till Date."));
 					}
 				}
 			},
-			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check', default:0 },
+			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check', default: 0 },
 			{ 'label': 'Keep Days Off', 'fieldname': 'keep_days_off', 'fieldtype': 'Check', default: 0, 'hidden': hide_keep_days_off_check },
 			{ 'label': 'Request Employee Schedule', 'fieldname': 'request_employee_schedule', 'fieldtype': 'Check' },
-			{ 'label': 'Day Off OT', 'fieldname': 'day_off_ot', 'fieldtype': 'Check' , 'hidden': hide_day_off_ot_check},
+			{ 'label': 'Day Off OT', 'fieldname': 'day_off_ot', 'fieldtype': 'Check', 'hidden': hide_day_off_ot_check },
 			{ 'fieldname': 'cb1', 'fieldtype': 'Column Break' },
 			{
 				'label': 'Till Date', 'fieldname': 'end_date', 'fieldtype': 'Date', 'depends_on': 'eval:doc.project_end_date==0', default: 0, onchange: function () {
@@ -3292,13 +2474,13 @@ function schedule_change_post(page) {
 					let start_date = d.get_value('start_date');
 					if (end_date && moment(end_date).isSameOrBefore(moment(frappe.datetime.nowdate()))) {
 						// Set the date to null and refresh the field
-						d.fields_dict.end_date.value  = '';
+						d.fields_dict.end_date.value = '';
 						d.fields_dict.end_date.refresh()
 						frappe.throw(__("End Date cannot be before today."));
 					}
 					if (start_date && end_date && moment(end_date).isBefore(moment(start_date))) {
 						// Set the date to null and refresh the field
-						d.fields_dict.end_date.value  = '';
+						d.fields_dict.end_date.value = '';
 						d.fields_dict.end_date.refresh()
 						frappe.throw(__("End Date cannot be before Start Date."));
 					}
@@ -3310,24 +2492,22 @@ function schedule_change_post(page) {
 			let data = d.get_values();
 			$('#cover-spin').show(0);
 			let element = get_wrapper_element();
-			if (element == ".rosterOtMonth") {
-				data.otRoster = true;
-			} else if (element == ".rosterMonth") {
+			if (element == ".rosterMonth") {
 				data.otRoster = false;
 			}
 
-			if (!employees){
+			if (!employees) {
 				frappe.throw(__('Please select employees to roster.'))
 			}
 			// update fields
-			if(!data.project_end_date){data.project_end_date=0}
-			if(!data.end_date){data.end_date=''}
+			if (!data.project_end_date) { data.project_end_date = 0 }
+			if (!data.end_date) { data.end_date = '' }
 			data.employees = employees;
 			frappe.call({
 				method: "one_fm.one_fm.page.roster.roster.schedule_staff",
 				type: "POST",
 				args: data,
-				callback: function(res) {
+				callback: function (res) {
 					// code snippet
 					d.hide();
 					error_handler(res);
@@ -3348,42 +2528,42 @@ function schedule_change_post(page) {
 
 
 async function updateEmployeeDefaults(employees, data) {
-    let employees_to_update = [];
+	let employees_to_update = [];
 
-   // Use a Map to store only unique employee records
-   let uniqueEmployeeIDs = [...new Set(employees.map(emp => emp.employee))];
+	// Use a Map to store only unique employee records
+	let uniqueEmployeeIDs = [...new Set(employees.map(emp => emp.employee))];
 
-   let validProjects = await frappe.db.get_list("Project", {
-    filters: { "custom_exclude_from_default_shift_checker": ["!=", 1] },
-		});
+	let validProjects = await frappe.db.get_list("Project", {
+		filters: { "custom_exclude_from_default_shift_checker": ["!=", 1] },
+	});
 
 	// Extract project names (IDs) that are valid
 	let validProjectIDs = validProjects.map(project => project.name);
 
-    // Bulk fetch all employees' details in a single query
-    let fetchedEmployees = await frappe.db.get_list("Employee", {
-        filters: [["name", "in", uniqueEmployeeIDs],["project", "in", validProjectIDs]],
-        fields: ["name", "employee_name", "shift", "custom_operations_role_allocation", "custom_is_reliever", "project", "site"],
-        limit_page_length: uniqueEmployeeIDs.length // Fetch all in one call
-    });
+	// Bulk fetch all employees' details in a single query
+	let fetchedEmployees = await frappe.db.get_list("Employee", {
+		filters: [["name", "in", uniqueEmployeeIDs], ["project", "in", validProjectIDs]],
+		fields: ["name", "employee_name", "shift", "custom_operations_role_allocation", "custom_is_reliever", "project", "site"],
+		limit_page_length: uniqueEmployeeIDs.length // Fetch all in one call
+	});
 
-    // Process fetched employees
-    fetchedEmployees.forEach(emp => {
-        if (!emp.custom_is_reliever && (emp.shift !== data.shift || emp.custom_operations_role_allocation !== data.operations_role)) {
-            employees_to_update.push({
-                employee: emp.name,
+	// Process fetched employees
+	fetchedEmployees.forEach(emp => {
+		if (!emp.custom_is_reliever && (emp.shift !== data.shift || emp.custom_operations_role_allocation !== data.operations_role)) {
+			employees_to_update.push({
+				employee: emp.name,
 				employee_name: emp.employee_name,
-                current_shift: emp.shift,
-                new_shift: data.shift,
-                current_role: emp.custom_operations_role_allocation,
-                new_role: data.operations_role
-            });
-        }
-    });
+				current_shift: emp.shift,
+				new_shift: data.shift,
+				current_role: emp.custom_operations_role_allocation,
+				new_role: data.operations_role
+			});
+		}
+	});
 
 
-    if (employees_to_update.length > 0) {
-        let table_html = `
+	if (employees_to_update.length > 0) {
+		let table_html = `
 			<div style="max-height: 300px; overflow-y: auto;">
 				<table style="border-collapse: collapse; width: 100%; text-align: left;">
 					<thead>
@@ -3430,7 +2610,7 @@ async function updateEmployeeDefaults(employees, data) {
 				});
 			}
 		);
-    }
+	}
 }
 
 
@@ -3460,7 +2640,6 @@ function clear_staff_filters(page) {
 
 function clear_selection(page) {
 	classgrt = [];
-	classgrtw = [];
 
 	$(".filterhideshow").addClass("d-none");
 	$(".Postfilterhideshow").addClass("d-none");
@@ -3608,7 +2787,7 @@ function dayoff(page) {
 			{ 'label': 'Selected days only', 'fieldname': 'selected_dates', 'fieldtype': 'Check', 'default': 0 },
 			{ 'label': 'Set Reliever', 'fieldname': 'set_reliever', 'fieldtype': 'Check', 'default': 0 },
 			{ 'label': 'Client Day Off', 'fieldname': 'client_day_off', 'fieldtype': 'Check', 'default': 0 },
-			{ 'label': 'Reliever', 'fieldname': 'selected_reliever', 'fieldtype': 'Select', 'options': reliever_options,'depends_on': 'eval:doc.set_reliever==1' },
+			{ 'label': 'Reliever', 'fieldname': 'selected_reliever', 'fieldtype': 'Select', 'options': reliever_options, 'depends_on': 'eval:doc.set_reliever==1' },
 			{ 'label': 'Repeat', 'fieldname': 'repeat', 'fieldtype': 'Select', 'depends_on': 'eval:doc.selected_dates==0', 'options': 'Does not repeat\nWeekly\nMonthly' },
 			{ 'fieldtype': 'Section Break', 'fieldname': 'sb1', 'depends_on': 'eval:doc.repeat=="Weekly" && doc.selected_dates==0' },
 			{ 'label': 'Sunday', 'fieldname': 'sunday', 'fieldtype': 'Check' },
@@ -3622,7 +2801,7 @@ function dayoff(page) {
 			{ 'label': 'Friday', 'fieldname': 'friday', 'fieldtype': 'Check' },
 			{ 'fieldtype': 'Section Break', 'fieldname': 'sb2', 'depends_on': 'eval:doc.selected_dates==0' },
 			{ 'label': 'Repeat Till', 'fieldtype': 'Date', 'fieldname': 'repeat_till', 'depends_on': 'eval:doc.repeat!= "Does not repeat" && doc.project_end_date==0' },
-			{'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
+			{ 'label': 'Project End Date', 'fieldname': 'project_end_date', 'fieldtype': 'Check' },
 		],
 		primary_action: function () {
 			$('#cover-spin').show(0);
@@ -3635,10 +2814,10 @@ function dayoff(page) {
 			args["employees"] = employees;
 			args["client_day_off"] = client_day_off;
 
-			if(set_reliever == 0){
-				args['selected_reliever']=""
-			}else{
-				args['selected_reliever']=selected_reliever
+			if (set_reliever == 0) {
+				args['selected_reliever'] = ""
+			} else {
+				args['selected_reliever'] = selected_reliever
 			}
 
 			if (selected_dates == 1) {
@@ -3672,7 +2851,7 @@ function dayoff(page) {
 				method: "one_fm.one_fm.page.roster.roster.dayoff",
 				type: "POST",
 				args: args,
-				callback: function(res) {
+				callback: function (res) {
 					// code snippet
 					d.hide();
 					error_handler(res);
@@ -3686,196 +2865,12 @@ function dayoff(page) {
 	d.show();
 }
 
-// Edit mobile number
-function editMobileNumber(){
-	employees_pk = $(".datatablecjeckbox:checked").map(function () {
-		return $(this).attr("data-employee-id");
-	}).get();
-	const table_fields = [
-		{
-			fieldname: "employee", fieldtype: "Link",
-			in_list_view: 1, label: "Employee",
-			options: "Employee", reqd: 1
-		},
-		{
-			fieldname: "employee_id", fieldtype: "Data",
-			in_list_view: 1, label: "Employee ID", reqd:1,
-			read_only: 1, depends_on: "employee",
-			fetch_from: "employee.employee_id"
-		},
-		{
-			fieldname: "employee_name", fieldtype: "Data",
-			in_list_view: 1, label: "Name", reqd:1,
-			read_only: 1, depends_on: "employee",
-			fetch_from: "employee.employee_name"
-		}
-	];
-
-	let d = new frappe.ui.Dialog({
-		title: 'Enter details',
-		fields: [
-			{
-				label: 'First Name',
-				fieldname: 'first_name',
-				fieldtype: 'Data'
-			},
-			{
-				label: 'Last Name',
-				fieldname: 'last_name',
-				fieldtype: 'Data'
-			},
-			{
-				fieldname: "employees",
-				fieldtype: "Table",
-				label: "Employees",
-				cannot_delete_rows: true,
-				in_place_edit: true,
-				reqd: 1,
-				data: [],
-				fields: table_fields
-			}
-		],
-		primary_action_label: 'Submit',
-		primary_action(values) {
-
-			d.hide();
-		}
-	});
-
-	d.show();
-
-	employees_pk.forEach((item, i) => {
-		d.fields_dict.employees.df.data.push(
-			{ employee: item}
-		);
-	});
-	d.fields_dict.employees.grid.refresh();
-}
-
-
-function editSingleEmployeeData(){
-	let d = new frappe.ui.Dialog({
-		title: 'Update Employee Record',
-		fields: [
-			{
-				label: 'Employee',
-				fieldname: 'employee',
-				fieldtype: 'Link',
-				options: "Employee",
-				reqd:1,
-				ignore_user_permissions: 1,
-				change: function (x) {
-					employee_pk = d.fields_dict.employee.value;
-					if(employee_pk){
-					frappe.xcall('one_fm.one_fm.page.roster.roster.get_employee_detail', { employee_pk })
-						.then(res => {
-							d.fields_dict.employee_id.value = res.employee_id;
-							d.fields_dict.employee_name.value = res.employee_name;
-							d.fields_dict.enrolled.value = res.enrolled;
-							d.fields_dict.cell_number.value = res.cell_number;
-							d.fields_dict.employee_id.refresh();
-							d.fields_dict.employee_name.refresh();
-							d.fields_dict.enrolled.refresh();
-							d.fields_dict.cell_number.refresh();
-						});
-
-					}
-				}
-			},
-			{
-				label: 'Employee ID',
-				fieldname: 'employee_id',
-				fieldtype: 'Data',
-				depends_on: 'employee',
-				read_only: 1
-			},
-			{
-				label: 'Employee Name',
-				fieldname: 'employee_name',
-				fieldtype: 'Data',
-				depends_on: 'employee',
-				read_only: 1
-			},
-
-			{
-			   fieldname: "column_break0",
-			   fieldtype: "Column Break"
-			},
-			{
-				label: 'Phone Number',
-				fieldname: 'cell_number',
-				fieldtype: 'Data',
-				depends_on: 'employee',
-				read_only: 1
-			},
-			{
-				label: 'Enrolled',
-				fieldname: 'enrolled',
-				fieldtype: 'Data',
-				depends_on: 'employee',
-				read_only: 1
-			},
-			{
-				label: '<i style="color:red">Action</i>',
-				fieldname: 'action_type',
-				fieldtype: 'Select',
-				depends_on: 'employee',
-				options: ["Update Phone Number", "Reset Enrollment"],
-				reqd: 1,
-			},
-			{
-				label: 'New Phone Number',
-				fieldname: 'new_phone_number',
-				fieldtype: 'Data',
-				depends_on: "eval:doc.action_type=='Update Phone Number'",
-				options: ""
-			},
-
-		],
-		primary_action_label: 'Submit',
-		primary_action(values) {
-			// action to perform if Yes is selected
-			d.hide();
-			makeCall(values);
-		}
-	});
-
-	d.show();
-}
-
-
-function makeCall(argsObject){
-	frappe.confirm('Are you sure you want to proceed?',
-		() => {
-			let postvalue = {employee_id: argsObject.employee_id};
-			if (argsObject.action_type === 'Update Phone Number') {
-				postvalue.field = 'cell_number';
-				postvalue.value = argsObject.new_phone_number;
-			} else {
-				postvalue.field = 'enrolled';
-				postvalue.value = 0;
-			}
-			frappe.call({
-				method: "one_fm.api.v1.utils.update_employee", //dotted path to server method
-				args: postvalue,
-				callback: function(r) {
-					// code snippet
-					frappe.msgprint(r.message);
-				}
-			});
-		}, () => {
-			// action to perform if No is selected
-	})
-}
-
-
-
 let error_handler = (res) => {
-	if (res.error){
+	if (res.error) {
 		$('#cover-spin').hide();
 		frappe.throw(res.error);
-	} else if (res.data){
-		if(res.data.message){
+	} else if (res.data) {
+		if (res.data.message) {
 			frappe.msgprint(res.data.message);
 			$('#cover-spin').hide();
 		} else {
@@ -3887,7 +2882,7 @@ let error_handler = (res) => {
 }
 
 
-function roster_employee_actions(page){
+function roster_employee_actions(page) {
 	let dialog = new frappe.ui.Dialog({
 		title: "Employee with Missing Schedules",
 		fields: [
@@ -3905,21 +2900,21 @@ function roster_employee_actions(page){
 		method: "one_fm.one_fm.doctype.roster_employee_actions.roster_employee_actions.get_employees_with_missing_schedules",
 		// freeze: true,
 		async: true,
-		callback: function(r) {
+		callback: function (r) {
 			dialog.fields_dict.employees_table.$wrapper.html(r.message);
 		}
 	});
 	dialog.show();
 }
 
-function roster_post_actions(page){
+function roster_post_actions(page) {
 	let dialog = new frappe.ui.Dialog({
 		title: "Overfilled/Underfilled Posts",
 		fields: [
 			{
 				fieldname: "post_types_not_filled_section",
 				fieldtype: "Section Break",
-				label:"Not Filled Posts",
+				label: "Not Filled Posts",
 				collapsible: 1
 			},
 			{
@@ -3930,9 +2925,9 @@ function roster_post_actions(page){
 			{
 				fieldname: "post_types_overfilled_section",
 				fieldtype: "Section Break",
-				label:"Overfilled Posts",
+				label: "Overfilled Posts",
 				collapsible: 1
-				
+
 			},
 			{
 				fieldname: "posts_overfilled_table",
@@ -3949,8 +2944,8 @@ function roster_post_actions(page){
 		method: "one_fm.one_fm.doctype.roster_post_actions.roster_post_actions.get_overfilled_underfilled_posts",
 		// freeze: true,
 		async: true,
-		callback: function(r) {
-			
+		callback: function (r) {
+
 			dialog.fields_dict.posts_notfilled_table.$wrapper.html(r.message.under_filled);
 			dialog.fields_dict.posts_overfilled_table.$wrapper.html(r.message.over_filled);
 		}
@@ -3958,7 +2953,7 @@ function roster_post_actions(page){
 	dialog.show();
 }
 
-function roster_day_off_issues(){
+function roster_day_off_issues() {
 	let dialog = new frappe.ui.Dialog({
 		title: "Employees with Day Off Issues",
 		fields: [
@@ -3968,13 +2963,13 @@ function roster_day_off_issues(){
 				options: "<div id='employees_table'></div>"
 			}
 		]
-	})	
+	})
 	dialog.$wrapper.find(".modal-dialog").css("max-width", "75%");
 	frappe.call({
 		method: "one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.get_day_off_issue_of_employees",
 		// freeze: true,
 		async: true,
-		callback: function(r) {
+		callback: function (r) {
 			dialog.fields_dict.employees_table.$wrapper.html(r.message);
 		}
 	});

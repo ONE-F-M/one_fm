@@ -230,7 +230,7 @@ body[data-route="roster"] .switch-container {
 
 .customtooltip .customtooltiptext {
   visibility: hidden;
-  width: 200px;
+  width: 220px;
   background-color: black;
   color: #fff;
   text-align: center;
@@ -239,7 +239,7 @@ body[data-route="roster"] .switch-container {
   position: absolute;
   z-index: 1;
   top: 150%;
-  left: 50%;
+  left: 0%;
   margin-left: -60px;
 }
 

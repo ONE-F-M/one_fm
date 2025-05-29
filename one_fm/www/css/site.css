@@ -1011,17 +1011,8 @@ body[data-route="roster"] .legendboxview {
   min-width: 30px;
   border-radius: 4px;
 }
-body[data-route="roster"] .greenboxcolor {
-  background: #6cb233;
-}
 body[data-route="roster"] .purplebox {
   background: #7030a0;
-}
-body[data-route="roster"] .yellowboxcolor {
-  background: #ffc000;
-}
-body[data-route="roster"] .lightgreenboxcolor {
-  background: #c1e8a2;
 }
 body[data-route="roster"] .pinkboxcolor {
   background: #ff05d5;
@@ -1036,18 +1027,204 @@ body[data-route="roster"] .greyboxcolor {
 body[data-route="roster"] .silverboxcolor {
   background: #b1b1b1;
 }
-body[data-route="roster"] .lightblueboxcolor {
-  background: #63a8f8;
-}
 body[data-route="roster"] .orangeboxcolor {
   background: #ff9a36;
 }
 body[data-route="roster"] .blueboxcolor {
-  background: #0070c0;
+  background: #0e65eb;
 }
-body[data-route="roster"] .lightgreenbox {
+body[data-route="roster"] .darkblackox {
+  background: #262626;
+}
+body[data-route="roster"] .samedayoffot {
+  background: #fadd87;
+}
+body[data-route="roster"] .diffdayoffot {
+  background: #f1c232;
+}
+body[data-route="roster"] .samebasic {
+  background: #83a6e2;
+}
+body[data-route="roster"] .diffbasic {
+  background: #b4a7d6;
+}
+body[data-route="roster"] .sameot {
+  background: #0e65eb;
+}
+body[data-route="roster"] .diffot {
+  background: #674ea7;
+}
+
+body[data-route="roster"] .presentbasic {
+  background: #a9d189;
+}
+
+body[data-route="roster"] .presentdayoffot {
   background: #70ad47;
 }
+
+body[data-route="roster"] .presentot {
+  background: #006400;
+}
+
+body[data-route="roster"] .absentbasic, .absentot, .absentdayoffot {
+  background: #ff0000;
+}
+
+
+body[data-route="roster"] .presentbasic-presentot {
+  background: linear-gradient(
+    to bottom,
+    #a9d189 0%,
+    #a9d189 50%,
+    #006400 50%,
+    #006400 100%
+  );
+}
+
+body[data-route="roster"] .presentbasic-absentot {
+  background: linear-gradient(
+    to bottom,
+    #a9d189 0%,
+    #a9d189 50%,
+    #ff0000 50%,
+    #ff0000 100%
+  );
+}
+
+body[data-route="roster"] .presentdayoffot-absentot {
+  background: linear-gradient(
+    to bottom,
+    #70ad47 0%,
+    #70ad47 50%,
+    #ff0000 50%,
+    #ff0000 100%
+  );
+}
+
+body[data-route="roster"] .absentbasic-presentot {
+  background: linear-gradient(
+    to bottom,
+    #ff0000 0%,
+    #ff0000 50%,
+    #006400 50%,
+    #006400 100%
+  );
+}
+
+body[data-route="roster"] .absentdayoffot-presentot {
+  background: linear-gradient(
+    to bottom,
+    #ff0000 0%,
+    #ff0000 50%,
+    #006400 50%,
+    #006400 100%
+  );
+}
+
+body[data-route="roster"] .absentbasic-absentot {
+  background: linear-gradient(
+    to bottom,
+    #ff0000 0%,
+    #ff0000 50%,
+    #ff0000 50%,
+    #ff0000 100%
+  );
+}
+
+
+body[data-route="roster"] .presentdayoffot-presentot {
+  background: linear-gradient(
+    to bottom,
+    #70ad47 0%,
+    #70ad47 50%,
+    #006400 50%,
+    #006400 100%
+  );
+}
+
+body[data-route="roster"] .samebasic-sameot {
+  background: linear-gradient(
+    to bottom,
+    #83a6e2 0%,
+    #83a6e2 50%,
+    #0e65eb 50%,
+    #0e65eb 100%
+  );
+}
+
+
+body[data-route="roster"] .samedayoffot-sameot {
+  background: linear-gradient(
+    to bottom,
+    #fadd87 0%,
+    #fadd87 50%,
+    #0e65eb 50%,
+    #0e65eb 100%
+  );
+}
+
+body[data-route="roster"] .samebasic-diffot {
+  background: linear-gradient(
+    to bottom,
+    #83a6e2 0%,
+    #83a6e2 50%,
+    #674ea7 50%,
+    #674ea7 100%
+  );
+}
+
+body[data-route="roster"] .samedayoffot-diffot {
+  background: linear-gradient(
+    to bottom,
+    #fadd87 0%,
+    #fadd87 50%,
+    #674ea7 50%,
+    #674ea7 100%
+  );
+}
+
+body[data-route="roster"] .diffbasic-sameot {
+  background: linear-gradient(
+    to bottom,
+    #b4a7d6 50%,
+    #b4a7d6 100%
+    #3c78d8 0%,
+    #3c78d8 50%,
+  );
+}
+
+body[data-route="roster"] .diffdayoffot-sameot {
+  background: linear-gradient(
+    to bottom,
+    #f1c232 0%,
+    #f1c232 50%,
+    #3c78d8 50%,
+    #3c78d8 100%
+  );
+}
+
+
+body[data-route="roster"] .diffbasic-diffot {
+  background: linear-gradient(
+    to bottom,
+    #b4a7d6 0%,
+    #b4a7d6 50%,
+    #674ea7 50%,
+    #674ea7 100%
+  );
+}
+
+body[data-route="roster"] .diffdayoffot-diffot {
+  background: linear-gradient(
+    to bottom,
+    #f1c232 0%,
+    #f1c232 50%,
+    #674ea7 50%,
+    #674ea7 100%
+  );
+}
+
 body[data-route="roster"] .darkblackox {
   background: #262626;
 }
@@ -1061,6 +1238,7 @@ body[data-route="roster"] .borderbox {
 body[data-route="roster"] .darkbluefontcolor {
   color: #007bff !important;
 }
+
 body[data-route="roster"]
   #calenderviewtable
   > thead
@@ -1138,6 +1316,7 @@ body[data-route="roster"] .subtable > tbody > tr > td:first-child {
 }
 body[data-route="roster"] .subtable > tbody > tr > td {
   font-size: 14px;
+  vertical-align: middle;
   padding: 5px 5px;
   height: 50px;
   max-width: 50px !important;
