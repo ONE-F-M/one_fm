@@ -190,14 +190,7 @@ def get_roster_view(start_date, end_date, assigned=0, scheduled=0, employee_sear
             filters.update({"operations_role": role_value})
             str_filters +=" and es.operations_role = '{}'".format(role_value)
 
-        if project:
-            str_filters +=" and es.project = '{}'".format(project)
-
-        if site:
-            str_filters +=" and es.site = '{}'".format(site)
-
-        if shift:
-            str_filters +=" and es.shift = '{}'".format(shift)
+        
             
 
         employee_filters = build_employee_filters(employee_search_id, employee_search_name, project, site, shift, department, relievers)
