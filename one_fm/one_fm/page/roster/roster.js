@@ -71,15 +71,6 @@ function load_js(page) {
 		$rosterMonth = $(".rosterMonth");
 		$postMonth = $(".postMonth");
 
-		function basicRosterClick() {
-			window.isOt = false;
-			$(".basicRosterClick").addClass("active bg-primary");
-			$rosterMonth.removeClass("d-none");
-			$(".switch-container").removeClass("d-none");
-			displayCalendar(calendarSettings1, page);
-			GetHeaders(1, ".rosterMonth");
-			get_roster_data(page);
-		};
 		
 		$(".rosterviewclick").click(function () {
 			$("#rosterTypeButtons").removeClass("d-none");
@@ -96,14 +87,12 @@ function load_js(page) {
 			$(".postviewfilterbg").addClass("d-none");
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(1, ".rosterMonth");
-			$(".basicRosterClick").click(basicRosterClick);
 			get_roster_data(page);
 		});
 		$(".postviewclick").click(function () {
 			$("#rosterTypeButtons").removeClass("d-flex");
 			$("#rosterTypeButtons").addClass("d-none");
 			$(".view-actions").addClass("d-none");
-			$(".basicRosterClick").off("click");
 			$rosterMonth.addClass("d-none");
 			$postMonth.removeClass("d-none");
 			$(".postviewclick").addClass("active bg-primary");
@@ -117,7 +106,6 @@ function load_js(page) {
 			GetHeaders(0, ".postMonth");
 			get_post_data(page);
 		});
-		$(".basicRosterClick").click(basicRosterClick);
 
 		$(".postmonthviewclick").click(function () {
 			$rosterMonth.addClass("d-none");
@@ -456,11 +444,6 @@ function setup_preset_filters(page) {
 			if (subView === "post") {
 				setTimeout(() => {
 					$(".postviewclick").click()
-				}, 1000);
-			}
-			if (rosterType === "basic") {
-				setTimeout(() => {
-					$(".basicRosterClick").click()
 				}, 1000);
 			}
 		}
