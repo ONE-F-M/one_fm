@@ -18,7 +18,6 @@ def add_employee_schedule_index():
 
 
 def add_employee_index():
-	frappe.db.add_index("Employee", ["shift_working", "department", "project", "site", "shift", "custom_operations_role_allocation", "designation"], "roster_index")
 	frappe.db.add_index("Employee", ["employee_name"], "employee_name")
 
 
