@@ -31,7 +31,7 @@ def add_attendance_index():
 def add_post_schedule_index():
 	frappe.db.add_index("Post Schedule", ["date", "post_status"], "post_status_date")
 	frappe.db.add_index("Post Schedule", ["project", "site", "shift", "operations_role", "date"], "post_map")
-	frappe.db.add_index("Post Schedule", ["operations_role", "dat"], "role_date")
+	frappe.db.add_index("Post Schedule", ["operations_role", "date"], "role_date")
 
 
 def add_operations_post_index():
