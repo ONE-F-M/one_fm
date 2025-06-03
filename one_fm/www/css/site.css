@@ -1220,6 +1220,26 @@ body[data-route="roster"] .diffdayoffot-diffot {
     to bottom,
     #f1c232 0%,
     #f1c232 50%,
+    #3c78d8 50%,
+    #3c78d8 100%
+  );
+}
+
+body[data-route="roster"] .greyboxcolor-sameot {
+  background: linear-gradient(
+    to bottom,
+    #7f7f7f 0%,
+    #7f7f7f 50%,
+    #3c78d8 50%,
+    #3c78d8 100%
+  );
+}
+
+body[data-route="roster"] .greyboxcolor-diffot {
+  background: linear-gradient(
+    to bottom,
+    #7f7f7f 0%,
+    #7f7f7f 50%,
     #674ea7 50%,
     #674ea7 100%
   );
