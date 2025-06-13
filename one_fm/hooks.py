@@ -644,7 +644,7 @@ scheduler_events = {
 		],
 		"10 4 * * *": [ #“At 04:10.”
 			'one_fm.utils.check_grp_operator_submission_four',
-			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.schedule_roster_checker',
+			'one_fm.operations.doctype.post_scheduler_checker.post_scheduler_checker.generate_checker',
 			'one_fm.operations.doctype.roster_day_off_checker.roster_day_off_checker.generate_checker',
             'one_fm.operations.doctype.default_shift_checker.default_shift_checker.create_default_shift_checker'
 		],

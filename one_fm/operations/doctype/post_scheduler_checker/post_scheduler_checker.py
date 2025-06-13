@@ -172,4 +172,40 @@ def get_post_schedules(project, post, first_day, last_day):
 
 @frappe.whitelist()
 def generate_checker():
-	frappe.enqueue(schedule_roster_checker)
+	count = frappe.db. sql("""
+			SELECT
+				COUNT (*)
+			FROM
+				`tabContracts` c JOIN `tabProject` p ON p.name = c.project
+			WHERE
+				c.workflow_state = 'Active' AND p.is_active = 'Yes'
+	""") [0] (0)
+
+	if count:
+		page = 1
+		page_size = 10
+		iterations = math.ceil (count / page_size)
+		for page in range(page, iterations):
+			offset = (page - 1) * page_size
+			frappe.enqueue(create_post_schedule_checker_from_contracts, page=page, offset=offset)
+
+def create_post_schedule_checker_from_contracts(page, offset):
+	contracts = frappe.db.sql("""
+		SELECT
+			c.name
+		FROM
+			`tabContracts` c JOIN `tabProject` p ON p.name = c.project
+		WHERE
+			c.workflow_state = 'Active' AND p.is_active = 'Yes'
+		LIMIT %s OFFSET %s
+	""", (page_size, offset), as_dict=1)
+
+	if not contracts:
+		return
+
+	for row in [obj.get("name") for obj in contracts]:
+		try:
+			doc = frappe.get_doc({"doctype":"Post Scheduler Checker", 'contract': row}).insert(ignore_permissions=True)
+		except Exception as e:
+			print(e)
+	frappe.db.commit()
