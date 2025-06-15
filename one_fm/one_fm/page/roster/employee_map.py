@@ -126,8 +126,6 @@ class CreateMap:
 
 
 		self.str_filter = f"es.date between '{self.start}' and '{self.end}'"
-		if operations_role:
-			self.str_filter += f" and es.operations_role = '{operations_role}'"
 					
 		# Prepare a tuple of employee IDs for SQL IN clause
 		if len(employees) == 1:
@@ -153,7 +151,8 @@ class CreateMap:
 		return f"""
 			SELECT es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, 
 				es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability, 
-				es.day_off_ot, es.project, emp.shift as actual_shift 
+				es.day_off_ot, es.project, es.site, emp.project as actual_project,
+				emp.site as actual_site, emp.shift as actual_shift
 			FROM `tabEmployee Schedule` es 
 			JOIN `tabEmployee` emp
 			ON es.employee = emp.name

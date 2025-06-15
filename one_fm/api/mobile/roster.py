@@ -8,7 +8,7 @@ from frappe.client import attach_file
 from one_fm.api.v1.utils import response
 from one_fm.utils import query_db_list
 from one_fm.one_fm.page.roster.roster import get_post_view as _get_post_view#, get_roster_view as _get_roster_view
-from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
+# from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
 
 
 @frappe.whitelist()
@@ -292,10 +292,10 @@ def get_assigned_projects(employee_id):
 	try:
 		user, user_roles, user_employee = get_current_user_details()
 		if "Operations Manager"  in user_roles or 'Operation Admin' in user_roles:
-			return frappe.get_list("Project", {"project_type": "External", "is_active": "Yes"}, limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Project", {"project_type": "External", "is_active": "Yes"}, "name as project", limit_page_length=9999, order_by="name asc")
 		
 		if "Projects Manager" in user_roles:
-			return frappe.get_list("Project", {"account_manager": employee_id, "project_type": "External", "is_active": "Yes"}, limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Project", {"account_manager": employee_id, "project_type": "External", "is_active": "Yes"}, "name as project", limit_page_length=9999, order_by="name asc")
 		return []
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
@@ -309,14 +309,14 @@ def get_assigned_sites(employee_id, project=None):
 		if project:
 			filters.update({"project": project})
 		if project is None and ("Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles):
-			return frappe.get_list("Operations Site", filters, limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Operations Site", filters, ["name as site", "project"], limit_page_length=9999, order_by="name asc")
 
 		elif "Operations Manager" in user_roles or "Projects Manager" in user_roles:
-			return frappe.get_list("Operations Site", filters, limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Operations Site", filters, ["name as site", "project"], limit_page_length=9999, order_by="name asc")
 
 		elif "Site Supervisor" in user_roles:
 			filters.update({"account_supervisor": employee_id})
-			return frappe.get_list("Operations Site", filters, limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Operations Site", filters, ["name as site", "project"], limit_page_length=9999, order_by="name asc")
 		return []
 
 	except Exception as e:
@@ -342,6 +342,30 @@ def get_assigned_shifts(employee_id, project=None, site=None):
 		frappe.log_error(frappe.traceback(), str(e))
 		return frappe.utils.response.report_error(str(e))
 
+def get_supervisor_operations_shifts(supervisor=None, project=None, site=None):
+	query = """
+		select
+			distinct shift.name as shift, site, project
+		from
+			`tabOperations Shift Supervisor` supervisor,
+			`tabOperations Shift` shift
+		where
+			supervisor.parenttype='Operations Shift'
+			and
+			supervisor.parent=shift.name
+			and
+			status='Active'
+	"""
+	if supervisor:
+		query += " and supervisor.supervisor='{0}'".format(supervisor)
+	if project:
+		query += " and shift.project='{0}'".format(project)
+	if site:
+		query += " and shift.site='{0}'".format(site)
+
+	shifts = frappe.db.sql(query, as_dict=True)
+
+	return shifts
 
 @frappe.whitelist()
 def get_departments():
@@ -358,13 +382,36 @@ def get_operations_roles(shift=None):
 		user, user_roles, user_employee = get_current_user_details()
 
 		if shift is None and ("Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles):
-			return frappe.get_list("Operations Role", {"status": "Active"}, limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Operations Role", {"status": "Active"}, ["name as operations_role", "project", "site", "shift"], limit_page_length=9999, order_by="name asc")
 
 		if "Operations Manager" in user_roles or "Projects Manager" in user_roles or "Site Supervisor" in user_roles or "Shift Supervisor" in user_roles:
-			return frappe.get_list("Operations Post", {"site_shift": shift, "status": "Active"}, "post_template", limit_page_length=9999, order_by="name asc")
+			return frappe.get_list("Operations Post", {"site_shift": shift, "status": "Active"}, ["post_template as operations_role", "project", "site", "site_shift as shift"], limit_page_length=9999, order_by="name asc")
 		return []
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
+
+
+@frappe.whitelist()
+def get_employees():
+	try:
+		user, user_roles, user_employee = get_current_user_details()
+		filters = {"status": ["IN", ["Active", "Vacation"]], "shift_working": 1}
+		if "Operations Manager" in user_roles:
+			pass			
+		elif "Projects Manager" in user_roles:
+			projects = frappe.get_all("Project", {"account_manager": user_employee.name}, ["name as project"], limit_page_length=9999, order_by="name asc")
+			filters["project"] = ["IN", [project.project for project in projects]]
+		elif "Site Supervisor" in user_roles:
+			sites = frappe.get_all("Operations Site", {"account_supervisor": user_employee.name}, ["name as site"], limit_page_length=9999, order_by="name asc")
+			filters["site"] = ["IN", [site.site for site in sites]]
+		elif "Shift Supervisor" in user_roles:
+			shifts = frappe.get_all("Operations Shift Supervisor", {"supervisor": user_employee.name}, ["distinct parent as shift"], limit_page_length=9999, order_by="parent asc")
+			filters["shift"] = ["IN", [shift.shift for shift in shifts]]
+		employees = frappe.get_all("Employee", filters=filters, fields=["name as employee", "employee_name", "employee_id", "custom_is_reliever as is_reliever", "custom_operations_role_allocation as operations_role", "shift", "site", "project"], limit_page_length=9999, order_by="name asc")
+		return employees
+	except Exception as e:
+		return frappe.utils.response.report_error(e.http_status_code)
+	
 
 @frappe.whitelist()
 def get_designations():
@@ -372,6 +419,8 @@ def get_designations():
 		return frappe.db.get_list("Designation", limit_page_length=9999, order_by="name asc")
 	except Exception as e:
 		return frappe.utils.response.report_error(e.http_status_code)
+
+
 
 @frappe.whitelist()
 def get_post_details(post_name):

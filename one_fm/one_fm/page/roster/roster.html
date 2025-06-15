@@ -1,7 +1,6 @@
 <!-- ============================================================== -->
 <!-- Main section start -->
 <!-- ============================================================== -->
-
 <div class="layoutSidenav_content" data-view="roster">
 	<div id="cover-spin"></div>
 
@@ -30,77 +29,85 @@
 
 	<!-- Rostering body rosterviewclick-->
 	<div class="ml-3 mr-3 bg-white">
-		<div class="container-fluid">
-			<div class="d-flex justify-content-center align-items-center">
-				<nav class="nav nav-pills flex-column flex-sm-row mt-2">
-					<a class="flex-sm-fill text-sm-center nav-link active bg-primary rosterviewclick">Staff View</a>
-					<a class="flex-sm-fill text-sm-center nav-link postviewclick">Post View</a>
-				</nav>
-				<div class="dropdown flex-column flex-sm-row mt-2 ml-2 view-actions">
-					<button class="btn btn-warning dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">View</button>
-					<div class="dropdown-menu">
-						<a id="rosterEmployeeActions" class="dropdown-item">Employees with Missing Schedules</a>
-						<a id="rosterDayOffIssues" class="dropdown-item">Employees with Day Off Issues</a>
-						<a id="rosterPostActions" class="dropdown-item">Posts with Count Issues</a>
+		<div class="container-fluid px-5">
+			<div class="d-flex justify-content-between align-items-center">
+				<div class="d-flex">
+					<nav class="nav nav-pills flex-column flex-sm-row mt-2">
+						<a class="flex-sm-fill text-sm-center nav-link active bg-primary rosterviewclick">Staff View</a>
+						<a class="flex-sm-fill text-sm-center nav-link postviewclick">Post View</a>
+					</nav>
+					<div class="dropdown flex-column flex-sm-row mt-2 ml-2 view-actions">
+						<button class="btn btn-warning dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">View</button>
+						<div class="dropdown-menu">
+							<a id="rosterEmployeeActions" class="dropdown-item">Employees with Missing Schedules</a>
+							<a id="rosterDayOffIssues" class="dropdown-item">Employees with Day Off Issues</a>
+							<a id="rosterPostActions" class="dropdown-item">Posts with Count Issues</a>
+						</div>
 					</div>
 				</div>
+				<div class="d-flex flex-fill px-4 input-search" style="position:relative;">
+					<div id="search-bar-container" class="form-control mt-2 p-2 d-flex flex-wrap align-items-center" style="min-height:44px; cursor:text; background:#f3f3f3; position:relative;">
+						<!-- Selected Tags will be inserted here -->
+						<input id="search-bar" type="text" placeholder="Search" aria-label="Search" style="border:none;outline:none;flex:1;min-width:80px;background:transparent;">
+						<button id="clear-filters" title="Reset Roster" style="background:transparent;border:none;cursor:pointer;"><i class="fa fa-refresh" aria-hidden="true"></i></button>
+					</div>
+					<div class="dropdown-content d-none" id="dropdownContent">
+						 <div class="section project-section">
+							<div class="section-title p-2">Project</div>
+							<div class="section-list px-2" id="rosteringprojectselect" name="rosteringprojectselect">
+							</div>
+						</div>
+						<div class="section site-section">
+							<div class="section-title p-2">Site</div>
+							<div class="section-list px-2" id="rosteringsiteselect" name="rosteringsiteselect">
+							</div>
+						</div>
+						<div class="section shift-section">
+							<div class="section-title p-2">Shift</div>
+							<div class="section-list px-2" id="rosteringshiftselect" name="rosteringshiftselect">
+							</div>
+						</div>
+						<div class="section role-section">
+							<div class="section-title p-2">Role</div>
+							<div class="section-list px-2" id="rosteringroleselect" name="rosteringroleselect">
+							</div>
+						</div>
+						<div class="section employee-section">
+							<div class="section-title p-2">Employees</div>
+							<div class="section-list px-2" id="rosteringemployeeselect" name="rosteringemployeeselect">
+							</div>
+						</div>
+						<div class="section reliever-section">
+							<div class="section-title p-2">Relievers</div>
+							<div class="section-list px-2" id="rosteringrelieverselect" name="rosteringrelieverselect">
+							</div>
+						</div>
+						<div class="dropdown-apply-container p-2" style="width:100%; text-align:right">
+							<button id="dropdown-apply-btn" class="btn btn-primary" style="min-width:100px;">Apply</button>
+						</div>
+					</div>
+				</div>
+				<div class="mt-2 ml-2">
+					<ul class="nav nav-justified d-flex align-items-center rostercustomstafftab customrosteringtab">
+						<li class="p-2"> 
+							<a href="#" onclick="decrementMonth();" class="residenavli customarrowtab"> 
+								<i class="fas fa-chevron-left"></i> 
+							</a>
+						</li>
+						<li class="p-2" style="border-left: 1px solid #63799b !important;border-right: 1px solid #63799b !important;">
+							<div class="calendarmonth" style="font-weight: 600;">June 2025</div>
+						</li>
+						<li class="p-2"> 
+							<a href="#" onclick="incrementMonth();" class="residenavli customarrowtab"> 
+								<i class="fas fa-chevron-right"></i> 
+							</a>
+						</li>
+					</ul>
+				</div>
+
 			</div>
-			
 		</div> 
-		<div class="container-fluid borderradius8 mt-2 pl30 pr30 bg-white">
-			<div class="d-flex justify-content-between align-items-center pl30 pr30">
-				<div class="listoffilter" style="width: 100%;">
-					<div class="row">
-						<div class="col-sm-12 col-md-3 custompageselecttype mb20">
-							<select class="form-control select2plg" id="rosteringprojectselect"
-								name="rosteringprojectselect">
-								<option value="">Select Project</option>
-							</select>
-						</div>
-						<div class="col-sm-12 col-md-3 custompageselecttype mb20">
-							<select class="form-control select2plg" id="rosteringsiteselect" name="rosteringsiteselect">
-								<option value="">Select Site</option>
-							</select>
-						</div>
-						<div class="col-sm-12 col-md-3 custompageselecttype mb20">
-							<select class="form-control select2plg" id="rosteringshiftselect"
-								name="rosteringshiftselect">
-								<option value="">Select Shift</option>
-							</select>
-						</div>
-						<div class="col-sm-12 col-md-3 custompageselecttype mb20">
-							<select class="form-control select2plg" id="rosteringdepartmentselect"
-								name="rosteringdepartmentselect">
-								<option value="">Select Department</option>
-							</select>
-						</div>
-						<div class="col-sm-12 col-md-3 custompageselecttype mb20">
-							<select class="form-control select2plg" id="rosteringpostselect" name="rosteringpostselect">
-								<option value="">Select Operations Role</option>
-							</select>
-						</div>
-						<div class="col-sm-12 col-md-3 custompageselecttype mb20">
-							<select class="form-control select2plg" id="rosteringdesignationselect" name="rosteringdesignationselect">
-								<option value="">Select Designation</option>
-							</select>
-						</div>
-						<div class="col-sm-12 col-md-3 custompageselecttype mb20">
-							<select class="form-control select2plg" id="rosteringrelieverselect" name="rosteringrelieverselect">
-								<option value="">Filter Relievers</option>
-							</select>
-						</div>
-						<div class="col-sm-12 col-md-3 mb20 d-flex align-items-center">
-							<div class="align-items-center colorblue cursorpointer clear_roster_filters"><i class="fas fa-close mr-2"></i>Clear Filters</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="container-fluid ml30 pl30 pr30">
-			<small id="passwordHelpInline" class="text-muted" style="font-size: small;">
-				<span style="color:red">*</span> Select atleast one filter to view the roster
-			</small>
-		</div>
+
 		<div class="container-fluid pl30 pr30 d-none filterhideshow lightbluedtbg mt30">
 			<div class="row py-4 py-md-4 py-lg-0">
 				<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0 d-flex justify-content-between align-items-center">
@@ -135,49 +142,6 @@
 					<!--ROSTER AND POST VIEW HERE-->
 					<div id="partialcalenderview">
 						<div class="cardheadercolor rosterMonth shadow rounded">
-							<div class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom border-left bg-white border-right">
-								<div class="d-lg-flex justify-content-lg-between align-items-lg-center">
-									<div class="font20 cardheadercolor fontw600 textchange calendertitlechange">
-										Month of
-										April 1-30, 2020</div>
-									<div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
-										<div style="margin-right: 10px;">
-											<ul
-												class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-												<li class="calenderlink">
-													<input class="residenavli search-employee-id" type="text"
-														placeholder="Search Employee ID (↵)">
-												</li>
-											</ul>
-										</div>
-										<div class="">
-											<ul
-												class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-												<li class="calenderlink">
-													<input class="residenavli search-employee-name" type="text"
-														placeholder="Search Employee Name (↵)">
-												</li>
-												<li class="active calenderlink"><a href="#"
-														class="residenavli active monthviewclick">Month</a></li>
-											</ul>
-										</div>
-										<div class="ml20">
-											<ul
-												class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-												<li class=""><a href="#" class="residenavli customarrowtab bg-white"
-														style="background:#fff !important"
-														onClick="decrementMonth();"><i
-															class="fas fa-chevron-left"></i></a></li>
-												<li class="bordertableft"><a href="#"
-														class="residenavli customarrowtab bg-white"
-														style="background:#fff !important"
-														onClick="incrementMonth();"><i
-															class="fas fa-chevron-right"></i></a></li>
-											</ul>
-										</div>
-									</div>
-								</div>
-							</div>
 							<div class="card-body p-0" id="tableviewchange">
 								<div class="table-responsive table-bordered table-parent">
 									<table id="calenderviewtable" class="mb-0 table table-striped customcarddetailtable structuredetaildatatable">
@@ -194,36 +158,6 @@
 							</div>
 						</div>
 						<div class="cardheadercolor postMonth shadow rounded d-none">
-							<div
-								class="card-header pt30 pb30 pl30 pr30 customheadermobpadd border-top border-bottom-0 border-left bg-white border-right">
-								<div class="d-lg-flex justify-content-lg-between align-items-lg-center">
-									<div class="font20 cardheadercolor fontw600 textchange calendertitlechange">
-										Month of
-										April 1-30, 2020</div>
-									<div class="d-flex mt-3 mt-lg-0 justify-content-between justify-content-lg-start">
-										<div class="">
-											<ul
-												class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-												<li class="active calenderlink">
-													<a href="#" class="residenavli active postmonthviewclick">Month</a>
-												</li>
-											</ul>
-										</div>
-										<div class="ml20">
-											<ul
-												class="nav nav-tabs d-flex nav-justified rostercustomstafftab customrosteringtab">
-												<li class=""><a href="#" class="residenavli customarrowtab bg-white"
-														style="background:#fff !important" onclick="decrementMonth()"><i
-															class="fas fa-chevron-left"></i></a></li>
-												<li class="bordertableft"><a href="#"
-														class="residenavli customarrowtab bg-white"
-														style="background:#fff !important" onclick="incrementMonth()"><i
-															class="fas fa-chevron-right"></i></a></li>
-											</ul>
-										</div>
-									</div>
-								</div>
-							</div>
 							<div class="card-body p-0" id="tableviewchange">
 								<div class="table-responsive table-bordered table-parent">
 									<table id="calenderviewtable"
@@ -249,13 +183,7 @@
 		<!-- Roster footer -->
 		<div class="container-fluid borderradius8 pl30 pr30 pb-30 bg-white">
 			<div class="row">
-				<div class="col-md-3 col-sm-12 col-xxl-2" style="display: flex; justify-content: center;">
-					<div class="dateblock" class="input-group date">
-						<div id="datepicker" class="input-group date">
-						</div>
-					</div>
-				</div>
-				<div class="col-md-9 col-sm-12 col-xxl-8">
+				<div class="col-md-12 col-sm-12 col-xxl-8">
 					<div class="listoffilter rosterviewfilterbg">
 						<div class="row">
 							<div class="col-sm-12 col-md-3 custompageselecttype mb10">

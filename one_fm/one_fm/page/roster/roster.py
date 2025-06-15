@@ -145,10 +145,10 @@ def combine_filters(filters):
 
 def get_employees_for_roster_view(start_date, end_date, employee_search_id=None, employee_search_name=None,
 	project=None, site=None, shift=None, department=None, operations_role=None, designation=None,
-	relievers=False):
+	reliever=False):
 	try:
 		Employee = DocType("Employee")
-		employee_filters = build_employee_filters(Employee, start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, relievers, operations_role, designation)
+		employee_filters = build_employee_filters(Employee, start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, reliever, operations_role, designation)
 
 		# Employee query
 		employee_query = (
@@ -160,7 +160,7 @@ def get_employees_for_roster_view(start_date, end_date, employee_search_id=None,
 		if employee_filters:
 			employee_query = employee_query.where(employee_filters)
 		
-		if relievers or employee_search_id or employee_search_name or designation or department:
+		if reliever or employee_search_id or employee_search_name or designation or department:
 			employees = frappe.db.sql(employee_query, as_dict=True)
 			return employees
 
@@ -177,8 +177,17 @@ def get_employees_for_roster_view(start_date, end_date, employee_search_id=None,
 			schedule_query = schedule_query.where(employee_schedule_filters)
 
 		# Combine both queries using UNION (no need for .distinct(), UNION removes duplicates)
-		combined_query = employee_query.union(schedule_query).orderby("employee_name", order=Order.asc)
-
+		# combined_query = employee_query.union(schedule_query).orderby("employee_name", order=Order.asc)
+        
+		combined_query = (
+            frappe.qb
+            .from_(
+                employee_query.union_all(schedule_query).as_("combined")
+            )
+            .select("name", "employee_name")
+            .distinct()
+            .orderby("employee_name", order=Order.asc)
+        )
 		# Execute the query
 		employees = frappe.db.sql(combined_query, as_dict=True)
 		return employees
@@ -189,13 +198,13 @@ def get_employees_for_roster_view(start_date, end_date, employee_search_id=None,
 @frappe.whitelist()
 def get_roster_view(start_date, end_date, employee_search_id=None, employee_search_name=None,
 	project=None, site=None, shift=None, department=None, operations_role=None, designation=None,
-	relievers=False, limit_start=0, limit_page_length=9999):
+	reliever=False, limit_start=0, limit_page_length=9999):
 	try:
 		limit_start = cint(limit_start)
 		limit_page_length = cint(limit_page_length)
 		master_data = {}
 		employees = get_employees_for_roster_view(start_date, end_date, employee_search_id, employee_search_name, project, 
-			site, shift, department, operations_role, designation, relievers)
+			site, shift, department, operations_role, designation, reliever)
 		master_data["total"] = len(employees)
 		employees = employees[limit_start:limit_start + limit_page_length]
 
@@ -1559,7 +1568,7 @@ def assign_staff(employees, shift, custom_is_reliever, custom_operations_role_al
 	if not employees:
 		frappe.throw("Please select employees first")
 	
-	shift_name_val, site_val, project_val = frappe.db.get_value("Operations Shift", shift, ["name", "site", "project"]) # Renamed args
+	shift_name_val, site_val, project_val = frappe.db.get_value("Operations Shift", shift, ["name", "site", "project"]) 
 	
 	try:
 		employees_list_json = json.loads(employees)
@@ -1711,7 +1720,7 @@ def create_employee_schedule():
 		frappe.db.commit() # Commit once after processing all employees
 
 
-def create_or_update_schedule_for_employee(employee, date_val, availability, operations_shift_doc, operations_role_doc): # Renamed args
+def create_or_update_schedule_for_employee(employee, date_val, availability, operations_shift_doc, operations_role_doc):
 	"""
 	Create or update an Employee Schedule record for the given employee and date.
 	"""
@@ -1770,35 +1779,28 @@ def create_or_update_schedule_for_employee(employee, date_val, availability, ope
 			new_schedule_doc.employee_name = employee.employee_name
 			new_schedule_doc.department = employee.department
 			new_schedule_doc.update(schedule_values)
-			new_schedule_doc.insert(ignore_permissions=True) # commit is handled by main function
+			new_schedule_doc.insert(ignore_permissions=True) 
 			
 	except Exception as e:
 		frappe.log_error(f"Error for employee {employee.name} on {date_str}: {str(e)} \nTraceback: {frappe.get_traceback()}", "Employee Schedule Error")
 
 
-def determine_availability(current_date, start_of_month, total_month_days, day_off_category, num_days_off): # Renamed args
-	"""
-	Determine the availability of an employee based on day-off category and number of days off.
-	"""
-	if not num_days_off: # If num_days_off is 0 or None, always Working
-		return "Working"
+def determine_availability(current_date, start_date, total_days, day_off_category, num_days_off):
+    """
+    Determine the availability of an employee based on day-off category and number of days off.
+    """
+    if day_off_category == "Weekly":
+        # Weekly schedule logic
+        day_of_week = current_date.weekday()
+        week_day_index = (day_of_week + 1) % 7  # Sunday = 0
+        return "Working" if week_day_index < (7 - num_days_off) else "Day Off OT"
 
-	if day_off_category == "Weekly":
-		day_of_week = current_date.weekday() # Monday is 0 and Sunday is 6
-		# Consider num_days_off starting from a specific day, e.g. Sunday.
-		# This example assumes days off are at the end of the week (e.g. Sat, Sun for 2 days off)
-		# Standard: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
-		# If Sunday is day 0 for logic: week_day_index = (day_of_week + 1) % 7
-		# If days off are Saturday & Sunday (for num_days_off=2), these are indices 5 and 6.
-		# Working days are 0,1,2,3,4. So, if day_of_week < (7 - num_days_off)
-		return "Working" if day_of_week < (7 - num_days_off) else "Day Off OT" # Assuming days off are at end of week
+    elif day_off_category == "Monthly":
+        # Monthly schedule logic
+        day_index = date_diff(current_date, start_date)
+        return "Working" if day_index < total_days - num_days_off else "Day Off OT"
 
-	elif day_off_category == "Monthly":
-		# This logic assumes days off are at the end of the month.
-		day_index_in_month = date_diff(current_date, start_of_month) # 0-indexed day of the month
-		return "Working" if day_index_in_month < (total_month_days - num_days_off) else "Day Off OT"
-
-	return "Working"  # Default to working if no category matches or num_days_off is invalid
+    return "Working"  # Default to working if no category matches
 
 
 @frappe.whitelist()
