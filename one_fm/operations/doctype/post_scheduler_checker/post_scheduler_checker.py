@@ -7,6 +7,7 @@ from frappe.utils import getdate, get_last_day, get_first_day, date_diff
 from frappe.model.document import Document
 from one_fm.utils import get_week_start_end
 from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts, get_shift_supervisor
+import math
 
 class PostSchedulerChecker(Document):
 	def autoname(self):
@@ -174,12 +175,12 @@ def get_post_schedules(project, post, first_day, last_day):
 def generate_checker():
 	count = frappe.db. sql("""
 			SELECT
-				COUNT (*)
+				COUNT(*)
 			FROM
 				`tabContracts` c JOIN `tabProject` p ON p.name = c.project
 			WHERE
 				c.workflow_state = 'Active' AND p.is_active = 'Yes'
-	""") [0] (0)
+	""")[0][0]
 
 	if count:
 		page = 1
@@ -187,9 +188,9 @@ def generate_checker():
 		iterations = math.ceil (count / page_size)
 		for page in range(page, iterations):
 			offset = (page - 1) * page_size
-			frappe.enqueue(create_post_schedule_checker_from_contracts, page=page, offset=offset)
+			frappe.enqueue(create_post_schedule_checker_from_contracts, page_size=page_size, offset=offset)
 
-def create_post_schedule_checker_from_contracts(page, offset):
+def create_post_schedule_checker_from_contracts(page_size, offset):
 	contracts = frappe.db.sql("""
 		SELECT
 			c.name
