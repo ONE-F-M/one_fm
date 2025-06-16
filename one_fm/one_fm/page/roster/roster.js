@@ -172,6 +172,9 @@ function load_js(page) {
 			$(".postviewfilterbg").removeClass("d-none");
 			$(".employee-section").addClass("d-none");
 			$(".reliever-section").addClass("d-none");
+			delete page.filters.employee_search_name;
+			render_selected_tags(page);
+			update_clear_button(page);
 
 			displayCalendar(calendarSettings1, page);
 			GetHeaders(0, ".postMonth");
