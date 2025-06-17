@@ -19,43 +19,25 @@ from one_fm.utils import (
 
 
 
-def extend_user_permission(user: str) -> list:
-    """
-    Extend the user permissions to include all active employees
-    that report to the user's employee ID, or are part of the shifts,
-    sites, or projects managed by the user.
-
-    Args:
-        user (str): The system user.
-
-    Returns:
-        list: A list of unique employee names.
-    """
-    employee_ids = set()
-    employee_id = get_employee_doc(user)
-
-    # Direct reports
-    direct_reports = frappe.get_all("Employee", filters={
-        'reports_to': employee_id
-    }, fields=["name"])
-    employee_ids.update(emp["name"] for emp in direct_reports)
-
-    # Related fields to check
-    related_fields = {
-        'Operations Shift': 'shift',
-        'Operations Site': 'site',
-        'Project': 'project'
-    }
-
-    for doctype, field in related_fields.items():
-        values = get_manager(doctype, employee_id) or []
-        if values:
-            related_employees = frappe.get_all("Employee", filters={
-                field: ['in', values]
-            }, fields=["name"])
-            employee_ids.update(emp["name"] for emp in related_employees)
-
-    return list(employee_ids)
+def extend_user_permission(user):
+	"""
+		Extend the user permissions of the 
+	Args:
+		data (_type_): _description_
+	"""
+	
+	employee_set = []
+	employee_id = get_employee_doc(user)
+	shifts = get_manager('Operations Shift',employee_id)
+	if shifts:
+		employee_set+= frappe.get_all("Employee",{'shift':['in',shifts]})
+	sites = get_manager('Operations Site',employee_id)
+	if sites:
+		employee_set+= frappe.get_all("Employee",{'site':['in',sites]})
+	projects = get_manager('Project',employee_id)
+	if projects:
+		employee_set+= frappe.get_all("Employee",{'project':['in',projects]})
+	return employee_set
 	
 
 def get_employee_doc(user):
@@ -120,7 +102,7 @@ def get_custom_user_permissions(user=None):
 			if out.get("Employee"):
 				if data:
 					for each in data:
-						out['Employee'].append({'doc':each,'applicable_for':None,'is_default':0})
+						out['Employee'].append({'doc':each.name,'applicable_for':None,'is_default':0})
 		frappe.cache().hset("user_permissions", user, out)
 		
 	except frappe.db.SQLError as e:
