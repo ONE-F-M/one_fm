@@ -182,13 +182,15 @@ def generate_checker():
 				c.workflow_state = 'Active' AND p.is_active = 'Yes'
 	""")[0][0]
 
-	if count:
-		page = 1
-		page_size = 10
-		iterations = math.ceil (count / page_size)
-		for page in range(page, iterations):
-			offset = (page - 1) * page_size
-			frappe.enqueue(create_post_schedule_checker_from_contracts, page_size=page_size, offset=offset)
+	if count == 0:
+		return
+	
+	page = 1
+	page_size = 10
+	iterations = math.ceil (count / page_size)
+	for current_page in range(page, iterations + 1):
+		offset = (current_page - 1) * page_size
+		frappe.enqueue(create_post_schedule_checker_from_contracts, page_size=page_size, offset=offset)
 
 def create_post_schedule_checker_from_contracts(page_size, offset):
 	contracts = frappe.db.sql("""
