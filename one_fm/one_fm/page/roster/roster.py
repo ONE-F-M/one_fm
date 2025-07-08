@@ -624,24 +624,24 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 						skipped_ot_overlap.append(f"{employee_name_iter} on {current_processing_date}")
 						continue
 
-				# if current_processing_date not in omitted_days:
-				already_scheduled = int(schedule_data.get(current_processing_date, 0))
-				num_to_add_this_day = daily_add_count[current_processing_date]
+				if current_processing_date not in omitted_days:
+					already_scheduled = int(schedule_data.get(current_processing_date,0))
+					num_to_add_this_day = daily_add_count[current_processing_date]
 
-				if already_scheduled + num_to_add_this_day > post_number:
-					omitted_days.add(current_processing_date)
-
-
-				employee_doc = employees_dict.get(employee_name_iter)
-				name = f"{datevalue['date']}_{employee_name_iter}_{roster_type}"
-				query_values.append(f"""
-					(
-						'{name}', '{employee_name_iter}', '{employee_doc.employee_name}', '{employee_doc.department}', '{datevalue['date']}', '{operations_shift_doc.name}',
-						'{operations_shift_doc.site}', '{operations_shift_doc.project}', '{operations_shift_doc.shift_type}', 'Working',
-						'{operations_role_doc.name}', '{operations_role_doc.post_abbrv}', '{roster_type}',
-						{day_off_ot}, '{datevalue.get('start_datetime')}', '{datevalue.get('end_datetime')}', '{owner}', '{owner}', '{creation}', '{creation}'
-					)""")
-				can_create = True
+					if num_to_add_this_day + already_scheduled <= post_number:
+						employee_doc = employees_dict.get(employee_name_iter)
+						name = f"{datevalue['date']}_{employee_name_iter}_{roster_type}"
+						query_values.append(f"""
+							(
+								'{name}', '{employee_name_iter}', '{employee_doc.employee_name}', '{employee_doc.department}', '{datevalue['date']}', '{operations_shift_doc.name}',
+								'{operations_shift_doc.site}', '{operations_shift_doc.project}', '{operations_shift_doc.shift_type}', 'Working',
+								'{operations_role_doc.name}', '{operations_role_doc.post_abbrv}', '{roster_type}',
+								{day_off_ot}, '{datevalue.get('start_datetime')}', '{datevalue.get('end_datetime')}', '{owner}', '{owner}', '{creation}', '{creation}'
+							)""")
+						can_create = True
+					else:
+						if current_processing_date not in omitted_days: 
+							omitted_days.append(current_processing_date)
 
 
 		if query_values:
