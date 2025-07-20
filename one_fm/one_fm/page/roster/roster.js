@@ -3159,6 +3159,30 @@ function editSingleEmployeeData(){
 	d.show();
 }
 
+function makeCall(argsObject){
+	frappe.confirm('Are you sure you want to proceed?',
+		() => {
+			let postvalue = {employee_id: argsObject.employee_id};
+			if (argsObject.action_type === 'Update Phone Number') {
+				postvalue.field = 'cell_number';
+				postvalue.value = argsObject.new_phone_number;
+			} else {
+				postvalue.field = 'enrolled';
+				postvalue.value = 0;
+			}
+			frappe.call({
+				method: "one_fm.api.v1.utils.update_employee", //dotted path to server method
+				args: postvalue,
+				callback: function(r) {
+					// code snippet
+					frappe.msgprint(r.message);
+				}
+			});
+		}, () => {
+			// action to perform if No is selected
+	})
+}
+
 
 let error_handler = (res) => {
 	$("#cover-spin").hide();
