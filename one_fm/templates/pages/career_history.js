@@ -194,6 +194,73 @@ career_history = Class.extend({
         var interestSection = $(`
             <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
                 <div class="col-lg-12 col-md-12 mb-3">
+                    <label class="form-label">
+                        Rate from 1 to 10 how much you value working with the right leaders and supportive team members.                    </label>
+                    <input type="number" 
+                          name="project_and_technology" 
+                          class="form-control project_and_technology"
+                          min="1" max="10" step="0.1"
+                          required>
+                </div>
+            </div>
+            <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
+                <div class="col-lg-12 col-md-12 mb-3">
+                    <label class="form-label">
+                        On a scale of 1 to 10, how important is working on diverse and technically satisfying projects to you in your next role?
+                    </label>
+                    <input type="number" 
+                          name="manager_and_team" 
+                          class="form-control manager_and_team"
+                          min="1" max="10" step="0.1"
+                          required>
+                </div>
+            </div>
+            <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
+                <div class="col-lg-12 col-md-12 mb-3">
+                    <label class="form-label">
+                        How important is total compensation (including salary, benefits, and bonuses) to you when considering a new job? Rate from 1 to 10.                    </label>
+                    <input type="number" 
+                          name="compensation" 
+                          class="form-control compensation"
+                          min="1" max="10" step="0.1"
+                          required>
+                </div>
+            </div>
+            <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
+                <div class="col-lg-12 col-md-12 mb-3">
+                    <label class="form-label">
+                      On a scale of 1 to 10, how critical is long-term growth and career advancement potential in your next role?                    </label>
+                    <input type="number" 
+                          name="continuing_growth_rate" 
+                          class="form-control continuing_growth_rate"
+                          min="1" max="10" step="0.1"
+                          required>
+                </div>
+            </div>
+            <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
+                <div class="col-lg-12 col-md-12 mb-3">
+                    <label class="form-label">
+                        How important is it to you to take on a role that challenges you and expands your skills and responsibilities? Rate from 1 to 10.                    </label>
+                    <input type="number" 
+                          name="jobstretch_and_learning" 
+                          class="form-control jobstretch_and_learning"
+                          min="1" max="10" step="0.1"
+                          required>
+                </div>
+            </div>
+            <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
+                <div class="col-lg-12 col-md-12 mb-3">
+                    <label class="form-label">
+                        Rate from 1 to 10 how much you prioritize a healthy work/life balance when evaluating a job opportunity.                    </label>
+                    <input type="number" 
+                          name="work_life_balance" 
+                          class="form-control work_life_balance"
+                          min="1" max="10" step="0.1"
+                          required>
+                </div>
+            </div>
+            <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
+                <div class="col-lg-12 col-md-12 mb-3">
                     <label class="form-label">What makes you interested in this opportunity?</label>
                     <textarea rows="4" cols="50" 
                         name="interest_reason" 
@@ -403,7 +470,7 @@ career_history = Class.extend({
     // Submit Career History
     var me = this;
     $('.btn-submit-career-history').click(function(){
-      var {career_histories, interest_reason} = me.get_details_from_form();
+      var {career_histories, interest_reason,project_and_technology, manager_and_team,compensation,continuing_growth_rate,jobstretch_and_learning,work_life_balance} =  me.get_details_from_form();
       var all_best_references = me.get_all_best_references();
       if(!validateBestReferencesAndColleague(all_best_references)){
         return frappe.msgprint(frappe._("Kindly fill the best reference for the most recent job"));
@@ -422,7 +489,13 @@ career_history = Class.extend({
             job_applicant: $('#job_applicant').attr("data"),
             career_history_details: career_histories,
             best_references: all_best_references,
-            interest_reason: interest_reason
+            interest_reason: interest_reason,
+            project_and_technology: project_and_technology,
+            manager_and_team: manager_and_team,
+            compensation: compensation,
+            continuing_growth_rate: continuing_growth_rate,
+            jobstretch_and_learning: jobstretch_and_learning,
+            work_life_balance: work_life_balance
           },
           btn: this,
           callback: function(r){
@@ -542,7 +615,13 @@ career_history = Class.extend({
       career_histories.push(career_history);
     }
     let interest_reason = $('[name="interest_reason"]').val();
-    return {career_histories, interest_reason};
+    let project_and_technology = $('[name="project_and_technology"]').val();
+    let manager_and_team = $('[name="manager_and_team"]').val();
+    let compensation = $('[name="compensation"]').val();
+    let continuing_growth_rate = $('[name="continuing_growth_rate"]').val();
+    let jobstretch_and_learning = $('[name="jobstretch_and_learning"]').val();
+    let work_life_balance = $('[name="work_life_balance"]').val();
+    return {career_histories, interest_reason,project_and_technology, manager_and_team,compensation,continuing_growth_rate,jobstretch_and_learning,work_life_balance};
   }
 });
 
