@@ -3,7 +3,7 @@
 
 from datetime import datetime
 import frappe
-from frappe.utils import getdate, get_last_day, get_first_day, date_diff, add_days, add_months
+from frappe.utils import getdate, get_last_day, get_first_day, date_diff, add_days, add_months, nowdate
 from frappe.model.document import Document
 from one_fm.utils import get_week_start_end
 from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts, get_shift_supervisor
@@ -155,7 +155,15 @@ def schedule_roster_checker():
 			items = get_post_scheduler_items(contract, project)
 
 			if len(items) > 0:
-				yesterday_repeat_count = frappe.db.get_value("Post Scheduler Checker", { "project": project, "check_date": add_days(today, -1) }, ["repeat_count"])
+				yesterday_repeat_count = frappe.db.get_value(
+					"Post Scheduler Checker",
+					{
+						"project": project,
+						"check_date": add_days(today, -1),
+						"creation": ["between", [add_days(nowdate(), -1), nowdate()]],
+					},
+					["repeat_count"]
+				)
 
 				# Delete exising for target contract against date
 				frappe.delete_doc_if_exists("Post Scheduler Checker", f"{project}-{str(today)}")

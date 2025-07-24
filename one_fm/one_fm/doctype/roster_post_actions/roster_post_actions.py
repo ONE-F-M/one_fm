@@ -176,7 +176,17 @@ def create_roster_post_actions():
                 continue
 
             try:
-                yesterday_repeat_count = frappe.db.get_value("Roster Post Actions", { "start_date": add_days(start_date, -1), "end_date": add_days(end_date, -1), "operations_role": role, "operations_shift": shift }, ["repeat_count"])
+                # If start date lies within current month then check for yesterday else check for first day of month (for next month)
+                yesterday_repeat_count = frappe.db.get_value(
+                    "Roster Post Actions",
+                    {
+                        "start_date": add_days(start_date, -1) if getdate(start_date).month == getdate(nowdate()).month and getdate(start_date).year == getdate(nowdate()).year else get_first_day(start_date),
+                        "operations_role": role,
+                        "operations_shift": shift,
+                        "creation": ["between", [add_days(nowdate(), -1), nowdate()]],
+                    },
+                    ["repeat_count"]
+                )
 
                 roster_post_actions_doc = frappe.new_doc("Roster Post Actions")
                 roster_post_actions_doc.start_date = start_date

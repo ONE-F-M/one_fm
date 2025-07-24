@@ -199,7 +199,16 @@ def check_roster_day_off():
 				if day_off_data["day_off_difference"]:
 					duration = day_off_data["monthweek"]
 
-					yesterday_repeat_count = frappe.db.get_value("Roster Day Off Checker", { "employee": employee.name, "monthweek": duration, "date": add_days(today, -1) }, ["repeat_count"])
+					yesterday_repeat_count = frappe.db.get_value(
+						"Roster Day Off Checker",
+						{
+							"employee": employee.name,
+							"monthweek": duration,
+							"date": add_days(today, -1),
+							"creation": ["between", [add_days(nowdate(), -1), nowdate()]],
+						},
+						["repeat_count"]
+					)
 
 					# Delete exising for target duration against employee
 					frappe.delete_doc_if_exists("Roster Day Off Checker", f"OPR-RDOC-{employee.name}-{duration}")
@@ -385,13 +394,15 @@ def get_day_off_details_of_employees(employees):
 	# Get all active employees
 	# Validate their offs for next 2 months
 	try:
+		leave_dates_by_employee = get_leave_dates_by_employee()
 		roster_day_off_data = []
 
 		for employee in employees:
-			comparison_dates = get_day_off_comparison_dates(employee)
+			employee_leave_dates = leave_dates_by_employee.get(employee.name)
+			comparison_dates = get_day_off_comparison_dates(employee, employee_leave_dates)
 
 			for period in comparison_dates:	# Always 2 iterations only because we have just two period for comparison
-				day_off_data = get_employee_day_off_comparison(employee, period["start_date"], period["end_date"], period["calculated_number_of_days_off"])
+				day_off_data = get_employee_day_off_comparison(employee, period["start_date"], period["end_date"], period["calculated_number_of_days_off"], period["working_dates"])
 
 				if day_off_data["day_off_difference"]:
 					roster_day_off_data.append({

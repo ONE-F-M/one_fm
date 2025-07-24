@@ -6,7 +6,7 @@ from frappe.model.document import Document
 from frappe import _
 from frappe.query_builder import DocType
 from frappe.query_builder.functions import Count
-from frappe.utils import getdate, get_first_day, get_last_day, add_days, add_months
+from frappe.utils import getdate, get_first_day, get_last_day, add_days, add_months, nowdate
 
 class DefaultShiftChecker(Document):
 	def on_submit(self):
@@ -133,7 +133,16 @@ def create_checker(start_date, end_date, is_day_off_reliever=False, is_weekend_r
 	# Create Default Shift Checker records
 	for employee in query.run(as_dict=True):
 		try:
-			yesterday_repeat_count = frappe.db.get_value("Default Shift Checker", { "employee": employee.employee, "start_date": add_days(start_date, -1) }, ["repeat_count"])
+			yesterday_repeat_count = frappe.db.get_value(
+				"Default Shift Checker",
+				{
+					"employee": employee.employee,
+					# If start date lies within current month then check for yesterday else check for first day of month (for next month)
+					"start_date": add_days(start_date, -1) if getdate(start_date).month == getdate(nowdate()).month and getdate(start_date).year == getdate(nowdate()).year else get_first_day(start_date),
+					"creation": ["between", [add_days(nowdate(), -1), nowdate()]],
+				},
+				["repeat_count"]
+			)
 
 			doc = frappe.new_doc("Default Shift Checker")
 			doc.employee = employee.employee

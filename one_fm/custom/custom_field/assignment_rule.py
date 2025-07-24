@@ -4,10 +4,11 @@ def get_assignment_rule_custom_fields():
             {
                 "fieldname": "custom_routine_task",
                 "fieldtype": "Link",
-                "insert_after": "disabled",
-                "label": "Routine Task",
-                "options": "Routine Task",
-                "read_only": 1
+                "insert_after": "rule",
+                "label": "Process Task",
+                "options": "Process Task",
+                "depends_on": "eval:doc.rule == \"Based on Process Task\"",
+                "mandatory_depends_on": "eval:doc.rule == \"Based on Process Task\""
             },
             {
                 "fieldname": "is_assignment_rule_with_workflow",

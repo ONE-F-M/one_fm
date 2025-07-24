@@ -175,7 +175,6 @@
    "read_only": 1
   },
   {
-   "fetch_from": "erf.recruiter_assigned",
    "fieldname": "recruiter_assigned",
    "fieldtype": "Link",
    "label": "Recruiter Assigned",
@@ -223,7 +222,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-20 12:13:13.011994",
+ "modified": "2025-07-22 03:42:08.629303",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",

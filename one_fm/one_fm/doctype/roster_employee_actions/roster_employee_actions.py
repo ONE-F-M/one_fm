@@ -7,7 +7,7 @@ from collections import OrderedDict
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import  add_to_date, cstr, getdate, add_days, add_months, get_first_day, get_last_day
+from frappe.utils import  add_to_date, cstr, getdate, add_days, add_months, get_first_day, get_last_day, nowdate
 from frappe.permissions import get_doctype_roles
 
 from one_fm.one_fm.page.roster.roster import get_current_user_details
@@ -94,7 +94,16 @@ def create_roster_employee_actions():
 					[datetime.strptime(date.strip(), "%Y-%m-%d") for date in dates]
 				)
 
-				yesterday_repeat_count = frappe.db.get_value("Roster Employee Actions", { "start_date": add_days(start_date, -1), "end_date": add_days(end_date, -1), "employee": employee }, ["repeat_count"])
+				yesterday_repeat_count = frappe.db.get_value(
+					"Roster Employee Actions",
+					{
+						# If start date lies within current month then check for yesterday else check for first day of month (for next month)
+						"start_date": add_days(start_date, -1) if getdate(start_date).month == getdate(nowdate()).month and getdate(start_date).year == getdate(nowdate()).year else get_first_day(start_date),
+						"employee": employee,
+						"creation": ["between", [add_days(nowdate(), -1), nowdate()]],
+					},
+					["repeat_count"]
+				)
 
 				roster_employee_actions = frappe.new_doc("Roster Employee Actions")
 				roster_employee_actions.start_date = start_date

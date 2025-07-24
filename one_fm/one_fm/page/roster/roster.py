@@ -3,7 +3,7 @@ import json
 from distutils.util import strtobool
 from collections import defaultdict
 from pandas.core.indexes.datetimes import date_range
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from functools import reduce
 from operator import and_
 
@@ -364,7 +364,7 @@ def schedule_overtime(employees, shift, operations_role,start_date,end_date=None
 		# extreme schedule
 		extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
 			operations_role=operations_role, otRoster="true", keep_days_off=0, day_off_ot=0,
-			request_employee_schedule=0, employee_list=employee_list
+			employee_list=employee_list
 		)
 		update_roster(key="roster_view")
 
@@ -375,7 +375,7 @@ def schedule_overtime(employees, shift, operations_role,start_date,end_date=None
 
 
 @frappe.whitelist()
-def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, request_employee_schedule=0, day_off_ot=None, end_date=None, selected_days_only=0):
+def schedule_staff(employees, shift, operations_role, otRoster, start_date, project_end_date, keep_days_off=0, keep_days_off_ot=0, day_off_ot=None, end_date=None, selected_days_only=0):
 	try:
 		_start_date = getdate(start_date)
 
@@ -424,7 +424,7 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 
 		emp_tuple = str(employee_list).replace("[", "(").replace("]",")")
 
-		if not cint(request_employee_schedule) and "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
+		if "Projects Manager" not in user_roles and "Operations Manager" not in user_roles:
 			all_employee_shift_query = frappe.db.sql("""
 				SELECT DISTINCT es.shift, s.supervisor
 				FROM `tabEmployee Schedule` es JOIN `tabOperations Shift` s ON es.shift = s.name
@@ -440,8 +440,8 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 		else:
 			# extreme schedule
 			extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
-				operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, day_off_ot=day_off_ot,
-				request_employee_schedule=request_employee_schedule, employee_list=employee_list
+				operations_role=operations_role, otRoster=otRoster, keep_days_off=keep_days_off, keep_days_off_ot=keep_days_off_ot, day_off_ot=day_off_ot,
+				employee_list=employee_list
 			)
 			update_roster(key="roster_view")
 
@@ -456,7 +456,7 @@ def update_roster(key):
 
 
 def extreme_schedule(employees, shift, operations_role, otRoster, start_date, end_date, keep_days_off, day_off_ot,
-	request_employee_schedule, employee_list, selected_reliever=None):
+	employee_list, selected_reliever=None, keep_days_off_ot=0):
 	if not employees:
 		frappe.throw("Please select employees before rostering")
 		return
@@ -486,7 +486,7 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			employees = new_employees.copy()
 
 
-	# check keep days_off
+	# if keeps_days_off is checked
 	if cint(keep_days_off):
 		days_off_list = frappe.db.get_list("Employee Schedule", filters={
 			"employee":["IN", [i["employee"] for i in employees]],
@@ -509,6 +509,23 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 				if new_employees:
 					employees = new_employees.copy()
 
+	# if keeps_days_off_ot is checked
+	if cint(keep_days_off_ot):
+		day_off_ot_list = frappe.db.get_list("Employee Schedule", filters={
+			"employee": ["IN", [i["employee"] for i in employees]],
+			"date": ["IN", [i["date"] for i in employees]],
+			"roster_type": "Basic",
+			"day_off_ot": 1
+		}, fields=["employee", "date"])
+
+		# Build a quick lookup map for (employee, date) → True if day_off_ot is set
+		day_off_ot_map = {(i.employee, str(i.date)): True for i in day_off_ot_list}
+
+		# Inject day_off_ot = 1 into employees if Basic schedule has it
+		for i in employees:
+			if day_off_ot_map.get((i["employee"], i["date"])):
+				i["day_off_ot"] = 1
+
 	employees_list_db = frappe.db.get_list("Employee", filters={"name": ["IN", employee_list]}, fields=["name", "employee_name", "department","date_of_joining"], ignore_permissions=True)
 	employees_dict = {}
 	for i in employees_list_db:
@@ -526,8 +543,12 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 		if employee_detail and employee_detail.get("date_of_joining"):
 			if getdate(employee_detail.get("date_of_joining")) <= getdate(i.get("date")):
 				if employees_date_dict.get(i["employee"]):
-					employees_date_dict[i["employee"]].append({"date":i["date"],
-						"start_datetime": datetime.strptime(f"{i['date']} {shift_start_time}", "%Y-%m-%d %H:%M:%S"), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end_time}", "%Y-%m-%d %H:%M:%S")})
+					employees_date_dict[i["employee"]].append({
+						"date":i["date"],
+						"start_datetime": datetime.strptime(f"{i['date']} {shift_start_time}", "%Y-%m-%d %H:%M:%S"), 
+						"end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end_time}", "%Y-%m-%d %H:%M:%S"),
+						"day_off_ot": i.get("day_off_ot")
+					})
 				else:
 					employees_date_dict[i["employee"]] =[{"date":i["date"], "start_datetime": datetime.strptime(f"{i['date']} {shift_start_time}", "%Y-%m-%d %H:%M:%S"), "end_datetime":datetime.strptime(f"{add_days(i['date'], 1) if next_day else i['date']} {shift_end_time}", "%Y-%m-%d %H:%M:%S")}]
 		else:
@@ -568,151 +589,121 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 		frappe.throw(error_head+error_msg)
 
 
-	if not cint(request_employee_schedule):
-		query = """
-			INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `employee_name`, `department`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`,
-			`operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `start_datetime`, `end_datetime`, `owner`, `modified_by`, `creation`, `modified`)
-			VALUES
+	query = """
+		INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `employee_name`, `department`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`,
+		`operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `start_datetime`, `end_datetime`, `owner`, `modified_by`, `creation`, `modified`)
+		VALUES
+	"""
+	can_create = False
+	omitted_days = set()
+
+	# Create a temporary structure to count new schedules per day from the current batch
+	daily_add_count = defaultdict(int)
+	for emp, date_values in employees_date_dict.items():
+		for dateval in date_values:
+			daily_add_count[dateval.get("date")] +=1
+
+	query_values = [] # Prepare values for bulk insert
+	skipped_ot_no_basic = []
+	skipped_ot_overlap = []
+
+
+	for employee_name_iter, date_values in employees_date_dict.items():
+		for datevalue in date_values:
+			current_processing_date = datevalue.get("date")
+
+			# For each date, check overfill status
+			post_data = validate_overfilled_post([current_processing_date], operations_shift_doc.name, operations_role_doc.name)
+			post_number = post_data.get("post_number", 0)
+			schedule_data = post_data.get("schedule_dict", {})
+
+			if roster_type == "Over-Time":
+				# Query for existing Basic schedule for this employee and date
+				basic_schedule = frappe.db.get_value(
+					"Employee Schedule",
+					{
+						"employee": employee_name_iter,
+						"date": current_processing_date,
+						"roster_type": "Basic",
+						"employee_availability": "Working"
+					},
+					["start_datetime", "end_datetime"]
+				)
+				if not basic_schedule:
+					skipped_ot_no_basic.append(f"{employee_name_iter} on {current_processing_date}")
+					continue
+
+				# Check for overlap
+				ot_start = datevalue.get("start_datetime")
+				ot_end = datevalue.get("end_datetime")
+				basic_start = basic_schedule[0]
+				basic_end = basic_schedule[1]
+
+				# If Over-Time overlaps with Basic, skip scheduling Over-Time
+				if not (ot_end <= basic_start or ot_start >= basic_end):
+					skipped_ot_overlap.append(f"{employee_name_iter} on {current_processing_date}")
+					continue
+
+			# if current_processing_date not in omitted_days:
+			already_scheduled = int(schedule_data.get(current_processing_date, 0))
+			num_to_add_this_day = daily_add_count[current_processing_date]
+
+			if already_scheduled + num_to_add_this_day > post_number:
+				omitted_days.add(current_processing_date)
+
+
+			employee_doc = employees_dict.get(employee_name_iter)
+			name = f"{datevalue['date']}_{employee_name_iter}_{roster_type}"
+			day_off_ot_val = datevalue.get('day_off_ot') or day_off_ot  
+			query_values.append(f"""
+				(
+					'{name}', '{employee_name_iter}', '{employee_doc.employee_name}', '{employee_doc.department}', '{datevalue['date']}', '{operations_shift_doc.name}',
+					'{operations_shift_doc.site}', '{operations_shift_doc.project}', '{operations_shift_doc.shift_type}', 'Working',
+					'{operations_role_doc.name}', '{operations_role_doc.post_abbrv}', '{roster_type}',
+					{day_off_ot_val}, '{datevalue.get('start_datetime')}', '{datevalue.get('end_datetime')}', '{owner}', '{owner}', '{creation}', '{creation}'
+				)""")
+			can_create = True
+
+
+	if query_values:
+		query += ",\n".join(query_values)
+		query += f"""
+			ON DUPLICATE KEY UPDATE
+			modified_by = VALUES(modified_by),
+			modified = VALUES(modified),
+			operations_role = VALUES(operations_role),
+			post_abbrv = VALUES(post_abbrv),
+			roster_type = VALUES(roster_type),
+			shift = VALUES(shift),
+			project = VALUES(project),
+			site = VALUES(site),
+			shift_type = VALUES(shift_type),
+			day_off_ot = VALUES(day_off_ot),
+			employee_availability = "Working",
+			start_datetime= VALUES(start_datetime),
+			end_datetime= VALUES(end_datetime)
 		"""
-		can_create = False
-		omitted_days = set()
-
-		# Create a temporary structure to count new schedules per day from the current batch
-		daily_add_count = defaultdict(int)
-		for emp, date_values in employees_date_dict.items():
-			for dateval in date_values:
-				daily_add_count[dateval.get("date")] +=1
-
-		query_values = [] # Prepare values for bulk insert
-		skipped_ot_no_basic = []
-		skipped_ot_overlap = []
-
-
-		for employee_name_iter, date_values in employees_date_dict.items():
-			for datevalue in date_values:
-				current_processing_date = datevalue.get("date")
-
-				# For each date, check overfill status
-				post_data = validate_overfilled_post([current_processing_date], operations_shift_doc.name, operations_role_doc.name)
-				post_number = post_data.get("post_number", 0)
-				schedule_data = post_data.get("schedule_dict", {})
-
-				if roster_type == "Over-Time":
-					# Query for existing Basic schedule for this employee and date
-					basic_schedule = frappe.db.get_value(
-						"Employee Schedule",
-						{
-							"employee": employee_name_iter,
-							"date": current_processing_date,
-							"roster_type": "Basic",
-							"employee_availability": "Working"
-						},
-						["start_datetime", "end_datetime"]
-					)
-					if not basic_schedule:
-						skipped_ot_no_basic.append(f"{employee_name_iter} on {current_processing_date}")
-						continue
-
-					# Check for overlap
-					ot_start = datevalue.get("start_datetime")
-					ot_end = datevalue.get("end_datetime")
-					basic_start = basic_schedule[0]
-					basic_end = basic_schedule[1]
-
-					# If Over-Time overlaps with Basic, skip scheduling Over-Time
-					if not (ot_end <= basic_start or ot_start >= basic_end):
-						skipped_ot_overlap.append(f"{employee_name_iter} on {current_processing_date}")
-						continue
-
-				# if current_processing_date not in omitted_days:
-				already_scheduled = int(schedule_data.get(current_processing_date, 0))
-				num_to_add_this_day = daily_add_count[current_processing_date]
-
-				if already_scheduled + num_to_add_this_day > post_number:
-					omitted_days.add(current_processing_date)
-
-
-				employee_doc = employees_dict.get(employee_name_iter)
-				name = f"{datevalue['date']}_{employee_name_iter}_{roster_type}"
-				query_values.append(f"""
-					(
-						'{name}', '{employee_name_iter}', '{employee_doc.employee_name}', '{employee_doc.department}', '{datevalue['date']}', '{operations_shift_doc.name}',
-						'{operations_shift_doc.site}', '{operations_shift_doc.project}', '{operations_shift_doc.shift_type}', 'Working',
-						'{operations_role_doc.name}', '{operations_role_doc.post_abbrv}', '{roster_type}',
-						{day_off_ot}, '{datevalue.get('start_datetime')}', '{datevalue.get('end_datetime')}', '{owner}', '{owner}', '{creation}', '{creation}'
-					)""")
-				can_create = True
-
-
-		if query_values:
-			query += ",\n".join(query_values)
-			query += f"""
-				ON DUPLICATE KEY UPDATE
-				modified_by = VALUES(modified_by),
-				modified = VALUES(modified),
-				operations_role = VALUES(operations_role),
-				post_abbrv = VALUES(post_abbrv),
-				roster_type = VALUES(roster_type),
-				shift = VALUES(shift),
-				project = VALUES(project),
-				site = VALUES(site),
-				shift_type = VALUES(shift_type),
-				day_off_ot = VALUES(day_off_ot),
-				employee_availability = "Working",
-				start_datetime= VALUES(start_datetime),
-				end_datetime= VALUES(end_datetime)
-			"""
-			if can_create:
-				frappe.db.sql(query, values=[])
-				frappe.db.commit()
-
-
-		if skipped_ot_no_basic:
-			frappe.msgprint("Over-Time schedule was not created for the following because no Basic schedule exists:<br>" + "<br>".join(skipped_ot_no_basic))
-		if skipped_ot_overlap:
-			frappe.msgprint("Over-Time schedule was not created for the following because it overlaps with Basic schedule:<br>" + "<br>".join(skipped_ot_overlap))
-
-
-		if omitted_days:
-			omitted_days_str = ", ".join(datetime.strptime(date, "%Y-%m-%d").strftime("%d-%m-%Y") for date in sorted(set(omitted_days)))
-			title = "This action has overfilled the post for the following dates."
-			msg = f"""
-			<b>Role: {operations_role_doc.post_abbrv}</b> ({operations_role_doc.name}) <br>
-			<b>Shift:</b> {operations_shift_doc.name}<br>
-			<b>Dates:</b> {omitted_days_str}
-			"""
-			frappe.msgprint(_(msg), _(title))
-
-	else: # request_employee_schedule is true
-		from_schedule = frappe.db.get_list(
-			"Employee Schedule",
-			filters={
-				"shift": shift,
-				"date": ["BETWEEN", [start_date, end_date if end_date else start_date]],
-				"employee": ["IN", employee_list]
-			},
-			fields=["shift", "site", "project", "employee", "employee_name", "operations_role"],
-			group_by="employee DESC"
-		)
-		if len(from_schedule):
-			if otRoster == "false":
-				roster_type_val = "Basic"
-			elif otRoster == "true":
-				roster_type_val = "Over-Time"
-
-			for emp_item in from_schedule:
-				req_es_doc = frappe.new_doc("Request Employee Schedule")
-				req_es_doc.employee = emp_item.employee
-				req_es_doc.from_shift = emp_item.shift
-				req_es_doc.from_operations_role = emp_item.operations_role
-				req_es_doc.to_shift = shift
-				req_es_doc.to_operations_role = operations_role_doc.name
-				req_es_doc.start_date = start_date
-				req_es_doc.end_date = end_date if end_date else start_date
-				req_es_doc.roster_type = roster_type_val
-				req_es_doc.save(ignore_permissions=True)
+		if can_create:
+			frappe.db.sql(query, values=[])
 			frappe.db.commit()
-			frappe.msgprint("Request Employee Schedule created successfully")
+
+
+	if skipped_ot_no_basic:
+		frappe.msgprint("Over-Time schedule was not created for the following because no Basic schedule exists:<br>" + "<br>".join(skipped_ot_no_basic))
+	if skipped_ot_overlap:
+		frappe.msgprint("Over-Time schedule was not created for the following because it overlaps with Basic schedule:<br>" + "<br>".join(skipped_ot_overlap))
+
+
+	if omitted_days:
+		omitted_days_str = ", ".join(datetime.strptime(date, "%Y-%m-%d").strftime("%d-%m-%Y") for date in sorted(set(omitted_days)))
+		title = "This action has overfilled the post for the following dates."
+		msg = f"""
+		<b>Role: {operations_role_doc.post_abbrv}</b> ({operations_role_doc.name}) <br>
+		<b>Shift:</b> {operations_shift_doc.name}<br>
+		<b>Dates:</b> {omitted_days_str}
+		"""
+		frappe.msgprint(_(msg), _(title))
+
 
 	frappe.enqueue(update_employee_shift, employees=list(employees_date_dict.keys()), shift=shift, owner=owner, creation=creation)
 
@@ -1510,7 +1501,6 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 
 def reliever_roster_assignment(reliver_emp_name, roster_list_arg):
 	day_off_ot = 0
-	request_employee_schedule = 0
 	keep_days_off = 0
 	employee_list_for_extreme = [reliver_emp_name]
 	otRoster = "false"
@@ -1528,11 +1518,11 @@ def reliever_roster_assignment(reliver_emp_name, roster_list_arg):
 
 			employees_for_extreme = [{"employee":reliver_emp_name,"date":date_val_str}]
 
-			extreme_schedule(employees_for_extreme, shift_val, operations_role_val, otRoster,
-				start_date_val.strftime("%Y-%m-%d"),
-				end_date_val.strftime("%Y-%m-%d"),
-				keep_days_off, day_off_ot,
-				request_employee_schedule, employee_list_for_extreme, selected_reliever=reliver_emp_name)
+			extreme_schedule(employees=employees_for_extreme, shift=shift_val, operations_role=operations_role_val, otRoster=otRoster,
+				start_date=start_date_val.strftime("%Y-%m-%d"),
+				end_date=end_date_val.strftime("%Y-%m-%d"),
+				keep_days_off=keep_days_off, day_off_ot=day_off_ot,
+				employee_list=employee_list_for_extreme, selected_reliever=reliver_emp_name)
 		else:
 			frappe.log_error(f"Skipping reliever assignment due to incomplete roster_data: {roster_data_item}", "Reliever Assignment")
 
@@ -1684,61 +1674,99 @@ def get_employee_detail(employee_pk):
 
 
 def create_employee_schedule():
-	"""
-	Generate employee schedules for the month after the next.
-	"""
-	# Determine the target month (month after next)
-	today_date = getdate(nowdate())
-	target_month_start = get_first_day(add_months(today_date, 1))
-	target_month_end = get_last_day(add_months(today_date, 1))
+    """
+    Generate employee schedules for the month after the next.
+    """
+    today_date = getdate(nowdate())
+    target_month_start = get_first_day(add_months(today_date, 1))
+    target_month_end = get_last_day(add_months(today_date, 1))
+    weeks = split_into_weeks_with_sunday_as_first_day(target_month_start, target_month_end)
 
-	shifts_with_auto_roster = frappe.get_all(
-	"Operations Shift",
-	filters={"automate_roster": 1},
-	fields=["name"]
-	)
+    shifts_with_auto_roster = frappe.get_all(
+        "Operations Shift",
+        filters={"automate_roster": 1},
+        fields=["name"]
+    )
+    shift_names = [shift["name"] for shift in shifts_with_auto_roster]
 
-	shift_names = [shift["name"] for shift in shifts_with_auto_roster]
+    if not shift_names:
+        return
 
-	if shift_names:
-		employees_auto_roster = frappe.get_all(
-		"Employee",
-		filters={"shift": ["in", shift_names], "status": "Active"}, # Added Active status filter
-		fields=["name", "employee_name", "department", "day_off_category", "number_of_days_off", "custom_operations_role_allocation", "shift"]
-		)
+    employees = frappe.get_all(
+        "Employee",
+        filters={
+            "shift": ["in", shift_names],
+            "status": "Active"
+        },
+        fields=[
+            "name", "employee_name", "department", "day_off_category", "number_of_days_off",
+            "custom_operations_role_allocation", "shift", "date_of_joining", "relieving_date"
+        ]
+    )
 
-		for employee_doc in employees_auto_roster:
-			total_days = date_diff(target_month_end, target_month_start) + 1 # Use target_month_end
+    leave_dates_by_employee = get_leave_dates_by_employee_during_date_range(target_month_start, target_month_end)
 
-			if not employee_doc.shift or not employee_doc.custom_operations_role_allocation:
-				frappe.log_error(
-					f"Missing shift or operations role for employee {employee_doc.name}",
-					"Employee Schedule Creation Error"
-				)
-				continue
+    for emp in employees:
+        if not emp.shift or not emp.custom_operations_role_allocation:
+            frappe.log_error(
+                f"Missing shift or operations role for employee {emp.name}",
+                "Employee Schedule Creation Error"
+            )
+            continue
 
-			try: # Add try-except for Doctype fetching
-				operations_shift_doc = frappe.get_doc("Operations Shift", employee_doc.shift, ignore_permissions=True)
-				operations_role_doc = frappe.get_doc("Operations Role", employee_doc.custom_operations_role_allocation, ignore_permissions=True)
-			except frappe.DoesNotExistError:
-				 frappe.log_error(
-					f"Invalid shift or operations role document for employee {employee_doc.name}",
-					"Employee Schedule Creation Error"
-				)
-				 continue
+        try:
+            shift_doc = frappe.get_doc("Operations Shift", emp.shift, ignore_permissions=True)
+            role_doc = frappe.get_doc("Operations Role", emp.custom_operations_role_allocation, ignore_permissions=True)
+        except frappe.DoesNotExistError:
+            frappe.log_error(
+                f"Invalid shift or operations role for employee {emp.name}",
+                "Employee Schedule Creation Error"
+            )
+            continue
+
+        leave_dates = set(map(getdate, leave_dates_by_employee.get(emp.name, [])))
+        day_off_category = emp.day_off_category
+        num_days_off = emp.number_of_days_off or 0
+
+        if day_off_category == "Weekly":
+            for week in weeks:
+                process_schedule_range(emp, week["start"], week["end"], leave_dates, num_days_off, day_off_category, shift_doc, role_doc)
+
+        elif day_off_category == "Monthly":
+            process_schedule_range(emp, target_month_start, target_month_end, leave_dates, num_days_off, day_off_category, shift_doc, role_doc)
+
+    frappe.db.commit()
 
 
-			for day_offset in range(total_days):
-				current_date = add_days(target_month_start, day_offset)
-				availability = determine_availability(
-					current_date,
-					target_month_start,
-					total_days,
-					employee_doc.day_off_category,
-					employee_doc.number_of_days_off
-				)
-				create_or_update_schedule_for_employee(employee_doc, current_date, availability, operations_shift_doc, operations_role_doc)
-		frappe.db.commit() # Commit once after processing all employees
+def process_schedule_range(emp, range_start, range_end, leave_dates, num_days_off, day_off_category, shift_doc, role_doc):
+    start_date = max(range_start, emp.date_of_joining or date.min)
+    end_date = min(range_end, emp.relieving_date or date.max)
+
+    total_days_in_range = date_diff(get_last_day(end_date), get_first_day(start_date)) + 1 if day_off_category == "Monthly" else 7 # total days in month/week
+    active_days = date_diff(end_date, start_date) + 1 # active days within the company considering joining/relieving date
+    leave_in_range = {d for d in leave_dates if start_date <= d <= end_date}
+
+    actual_working_days = active_days - len(leave_in_range)
+	
+    if actual_working_days <= 0:
+        return
+	
+    calculated_no_of_days_off = round(actual_working_days / total_days_in_range * num_days_off)
+
+    for day_offset in range(active_days):
+        current_date = add_days(start_date, day_offset)
+        if current_date in leave_in_range:
+            continue
+
+        availability = determine_availability(
+            current_date,
+            start_date,
+            active_days,
+            day_off_category,
+            calculated_no_of_days_off
+        )
+
+        create_or_update_schedule_for_employee(emp, current_date, availability, shift_doc, role_doc)
 
 
 def create_or_update_schedule_for_employee(employee, date_val, availability, operations_shift_doc, operations_role_doc):
@@ -1805,6 +1833,35 @@ def create_or_update_schedule_for_employee(employee, date_val, availability, ope
 	except Exception as e:
 		frappe.log_error(f"Error for employee {employee.name} on {date_str}: {str(e)} \nTraceback: {frappe.get_traceback()}", "Employee Schedule Error")
 
+def get_leave_dates_by_employee_during_date_range(start_date, end_date):
+    leave_applications = frappe.db.sql("""
+        SELECT employee, from_date, to_date
+        FROM `tabLeave Application`
+        WHERE leave_type IN ('Annual Leave', 'Leave Without Pay')
+		AND status = 'Approved'
+        AND (
+            (from_date BETWEEN %(start_date)s AND %(end_date)s)
+            OR
+            (to_date BETWEEN %(start_date)s AND %(end_date)s)
+        )
+    """, { "start_date": start_date, "end_date": end_date }, as_dict=True)
+
+    leave_dates_by_employee = {}
+
+    for row in leave_applications:
+        employee = row.employee
+        from_date = getdate(row.from_date)
+        to_date = getdate(row.to_date)
+        
+        days_count = date_diff(to_date, from_date) + 1  # inclusive
+        leave_days = [(add_days(from_date, i)) for i in range(days_count)]
+
+        if employee not in leave_dates_by_employee:
+            leave_dates_by_employee[employee] = set()
+
+        leave_dates_by_employee[employee].update(leave_days)
+
+    return leave_dates_by_employee
 
 def determine_availability(current_date, start_date, total_days, day_off_category, num_days_off):
     """
@@ -1822,6 +1879,45 @@ def determine_availability(current_date, start_date, total_days, day_off_categor
         return "Working" if day_index < total_days - num_days_off else "Day Off OT"
 
     return "Working"  # Default to working if no category matches
+
+def split_into_weeks_with_sunday_as_first_day(start_date, end_date):
+    """
+    Splits a given date range into weeks, with each week starting on Sunday.
+
+    Args:
+        start_date (str or datetime.date): The starting date of the range.
+        end_date (str or datetime.date): The ending date of the range.
+
+    Returns:
+        list[dict]: A list of dictionaries, each containing:
+            - "start" (datetime.date): Start date of the week (clipped to `start_date` if necessary).
+            - "end" (datetime.date): End date of the week (clipped to `end_date` if necessary).
+    """
+    start = getdate(start_date)
+    end = getdate(end_date)
+
+    weekday = start.weekday()  # Monday=0 ... Sunday=6
+    days_to_sunday = (weekday + 1) % 7
+    start_sunday = add_days(start, -days_to_sunday)
+
+    week_ranges = []
+
+    current = start_sunday
+    while current <= end:
+        week_start = current
+        week_end = add_days(week_start, 6)
+
+        actual_start = max(week_start, start)
+        actual_end = min(week_end, end)
+
+        week_ranges.append({
+            "start": getdate(actual_start),
+            "end": getdate(actual_end)
+        })
+
+        current = add_days(week_end, 1)
+
+    return week_ranges
 
 
 @frappe.whitelist()

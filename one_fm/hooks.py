@@ -741,7 +741,7 @@ scheduler_events = {
 			"one_fm.one_fm.doctype.missing_checkin.missing_checkin.create_missing_checkin_record",
 			"one_fm.api.tasks.notify_approver_about_pending_shift_request"
 		],
-        "0 0 15 * *": [
+        "0 0 1 * *": [
             "one_fm.one_fm.page.roster.roster.create_employee_schedule"
         ],
         "* * * * *": [ # Runs every minute
@@ -884,14 +884,13 @@ jenv = {
 }
 
 after_migrate = [
-    # "one_fm.after_migrate.execute.comment_timesheet_in_hrms",
     "one_fm.after_migrate.execute.replace_send_birthday_reminder",
     "one_fm.after_migrate.execute.replace_send_anniversary_reminder",
     "one_fm.after_migrate.execute.disable_workflow_emails",
-    # "one_fm.after_migrate.execute.comment_payment_entry_in_hrms",
     "one_fm.after_migrate.execute.comment_process_expired_allocation_in_hrms",
     "one_fm.after_migrate.execute.replace_prompt_message_in_goal",
-    "one_fm.after_migrate.execute.update_all_ticket_features"
+    "one_fm.after_migrate.execute.update_all_ticket_features",
+    "one_fm.overrides.scheduled_job_type.update_scheduled_job_type_from_process_task"
 ]
 
 before_migrate = [
