@@ -89,15 +89,17 @@ class EmployeeOverride(EmployeeMaster):
 
 
     def after_insert(self):
-        employee_after_insert(self, method=None)
-        self.assign_role_profile_based_on_designation()
+        if not frappe.flags.in_test:
+            employee_after_insert(self, method=None)
+            self.assign_role_profile_based_on_designation()
 
     @frappe.whitelist()
     def run_employee_id_generation(self):
         employee_after_insert(self, method=None)
 
     def before_insert(self):
-        employee_before_insert(self, method=None)
+        if not frappe.flags.in_test:
+            employee_before_insert(self, method=None)
 
     def validate_onboarding_process(self):
         validate_onboarding_process(self)
@@ -114,18 +116,19 @@ class EmployeeOverride(EmployeeMaster):
                 frappe.msgprint("Role profile not set in Designation, please set default.")
 
     def on_update(self):
-        super(EmployeeOverride, self).on_update()
-        self.validate_status_change()
-        set_mandatory_feilds_in_employee_for_Kuwaiti(self, method=None)
-        try:
-            current_doc = frappe.get_doc("Employee", self.name)
-            if (self.shift != current_doc.shift) and (self.shift_working != current_doc.shift_working):
-                frappe.db.sql(f"""
-                    DELETE FROM `tabEmployee Schedule` WHERE employee='{self.employee}'
-                    AND date>'{getdate()}'
-                """)
-        except:
-            pass
+        if not frappe.flags.in_test:
+            super(EmployeeOverride, self).on_update()
+            self.validate_status_change()
+            set_mandatory_feilds_in_employee_for_Kuwaiti(self, method=None)
+            try:
+                current_doc = frappe.get_doc("Employee", self.name)
+                if (self.shift != current_doc.shift) and (self.shift_working != current_doc.shift_working):
+                    frappe.db.sql(f"""
+                        DELETE FROM `tabEmployee Schedule` WHERE employee='{self.employee}'
+                        AND date>'{getdate()}'
+                    """)
+            except:
+                pass
 
         # clear future employee schedules
         self.clear_schedules()

@@ -6,42 +6,87 @@ from __future__ import unicode_literals
 import frappe
 import unittest
 from one_fm.api.tasks import update_shift_assignment_from_permission
-employees = frappe.get_test_records('Employee')
+from one_fm.tests.test_records import get_holiday_list_and_company,get_sample_employees,get_salary_components,get_salary_structure
+from frappe.model.naming import NamingSeries 
+company_data = get_holiday_list_and_company()
+employee_data = get_sample_employees()
+salary_component_data = get_salary_components()
+salary_structure_data = get_salary_structure()
+
+frappe.local.flags.ignore_chart_of_accounts = 1
+
 class TestShiftPermission(unittest.TestCase):
+    def create_salary_components(self):
+        for each in salary_component_data:
+            if frappe.db.exists("Salary Component",each.get('salary_component')):
+                frappe.delete_doc("Salary Component",each.get('salary_component'),force=1)
+            frappe.get_doc(each).insert(ignore_permissions=True)
+
+    def create_salary_structure(self):
+        for each in salary_structure_data:
+            if frappe.db.exists("Salary Structure",each.get('name')):
+                frappe.delete_doc("Salary Structure",each.get('name'),force=1)
+            frappe.get_doc(each).insert(ignore_permissions=True)
+        
 
     def setUp(self):
-        # Create Employee
+
+        # Create Dependencies
+        shift_1_start_time = "08:00:00"
+        shift_1_end_time = "17:00:00"
+        shift_2_start_time = "18:00:00"
+        shift_2_end_time = "06:00:00"
+        for each in company_data:
+            if each.get("doctype") == "Holiday List":
+                if  frappe.db.exists("Holiday List",each.get('holiday_list_name')):
+                    frappe.delete_doc("Holiday List",each.get('holiday_list_name'),force=1)
+                frappe.get_doc(each).insert(ignore_permissions=True)
+            elif each.get("doctype") == "Company":
+                if frappe.db.exists("Company",each.get('company_name')):
+                    frappe.delete_doc("Company",each.get('company_name'),force=1)
+                frappe.get_doc(each).insert(ignore_permissions=True)
         
-        self.employee = frappe.get_doc({
-            "doctype": "Employee",
-            "employee_name": "Test Employee",
-            "status": "Active",
-            "company": frappe.defaults.get_user_default("Company") or "Test Company"
-        }).insert(ignore_permissions=True)
+        self.create_salary_components()
+        if employee_data:
+            
+            naming_series = employee_data[0].get('naming_series')
+            employee_naming_series = NamingSeries(naming_series)
+            employee_naming_series.update_counter(1) #Ensure that the counter always starts from 1
+            for one in employee_data:
+                emp = frappe.get_doc(one)
+                emp.flags.ignore_validate = True
+                emp.insert(ignore_permissions=True)
+            
 
+
+        
+        
         # Create Shift Type
-        self.shift_type = frappe.get_doc({
-            "doctype": "Shift Type",
-            "shift_type_name": "Test Shift Type",
-            "start_time": "08:00:00",
-            "end_time": "17:00:00"
-        }).insert(ignore_permissions=True)
+            self.shift_type_1 = frappe.get_doc({
+                "doctype": "Shift Type",
+                "shift_type_name": "Test Shift Type",
+                "start_time": "08:00:00",
+                "shift_type":"Day",
+                "end_time": "17:00:00"
+            }).insert(ignore_permissions=True)
 
-        # Create Shift Assignment
-        self.today = frappe.utils.today()
-        self.shift_assignment = frappe.get_doc({
-            "doctype": "Shift Assignment",
-            "employee": self.employee.name,
-            "shift_type": self.shift_type.name,
-            "start_date": self.today,
-            "status": "Active",
-            "company": self.employee.company
-        }).insert(ignore_permissions=True)
-        self.shift_assignment.reload()
+            # Create Shift Assignment
+            self.today = frappe.utils.today()
+            self.shift_assignment_1 = frappe.get_doc({
+                "doctype": "Shift Assignment",
+                "employee": 'HR-EMP-00001',
+                "shift_type": self.shift_type_1.name,
+                "start_date": frappe.utils.today(),
+                "start_datetime": frappe.utils.get_datetime(frappe.utils.today() +' '+ shift_1_start_time),
+                "end_datetime": frappe.utils.get_datetime(frappe.utils.today() +' '+ shift_2_end_time),
+                "status": "Active",
+                "company": "_Test Company"
+            }).insert(ignore_permissions=True)
+            self.shift_assignment_1.reload()
 
     def tearDown(self):
         # Clean up created records
-        frappe.delete_doc("Shift Assignment", self.shift_assignment.name, ignore_permissions=True)
+        frappe.delete_doc("Shift Assignment", self.shift_assignment_1.name, ignore_permissions=True)
         frappe.delete_doc("Shift Type", self.shift_type.name, ignore_permissions=True)
         frappe.delete_doc("Employee", self.employee.name, ignore_permissions=True)
         frappe.db.commit()
@@ -89,13 +134,13 @@ class TestShiftPermission(unittest.TestCase):
             "date": self.today,
             "roster_type": "Basic",
             "shift_type": self.shift_type.name,
-            "assigned_shift": self.shift_assignment.name,
+            "assigned_shift": self.shift_assignment_1.name,
             "leaving_time": leaving_time,
             "log_type": "OUT",
             "docstatus": 1
         }).insert(ignore_permissions=True)
 
-        # Prepare roster (simulate what your app passes)
+    #     # Prepare roster (simulate what your app passes)
         class DummyRoster:
             def __init__(self, employee):
                 self.employee = employee
@@ -108,9 +153,9 @@ class TestShiftPermission(unittest.TestCase):
         update_shift_assignment_from_permission(roster)
 
         # Reload and assert
-        self.shift_assignment.reload()
+        self.shift_assignment_1.reload()
         self.assertEqual(
-            self.shift_assignment.end_datetime.strftime("%H:%M:%S"),
+            self.shift_assignment_1.end_datetime.strftime("%H:%M:%S"),
             leaving_time
         )
 	
