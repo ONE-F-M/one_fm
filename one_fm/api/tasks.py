@@ -696,6 +696,71 @@ def issue_penalty(employee, date, penalty_code, shift, issuing_user, penalty_loc
 	penalty_issuance.submit()
 	frappe.msgprint(_('A penalty has been issued against {0}'.format(employee_name)))
 
+
+def fetch_non_shift_without_assignment(date,s_type):
+	"""
+	Fetch all employees with the following conditions
+	1. status is 'Active' 
+	2. shift_working = 0
+	3. Attendance_by_timesheet = 0 
+	4. Do not have a basic shift assignment for that day
+	"""
+	if s_type == "AM":
+		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,
+				name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
+				WHERE E.shift_working = 0
+				AND E.status='Active'
+				AND E.attendance_by_timesheet != 1
+				AND E.default_shift IN(
+					SELECT name from `tabShift Type` st
+					WHERE st.start_time >= '01:00:00'
+					AND  st.start_time < '13:00:00')
+				AND NOT EXISTS(SELECT * from `tabHoliday` h
+					WHERE
+						h.parent = E.holiday_list
+					AND h.holiday_date = '{date}')
+				
+						 
+				AND E.employee
+				NOT IN (Select employee from `tabShift Assignment` tSA
+				WHERE
+				tSA.employee = E.employee
+				AND tSA.start_date='{date}'
+				AND tSA.roster_type = "Basic"
+				AND tSA.shift_type IN(
+					SELECT name from `tabShift Type` st
+					WHERE st.start_time >= '01:00:00'
+					AND  st.start_time < '13:00:00'	))
+		""".format(date=cstr(date)), as_dict=1)
+	else:
+		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, name as employee, employee_name, department, holiday_list, default_shift as shift_type, checkin_location, shift, site from `tabEmployee` E
+				WHERE E.shift_working = 0
+				AND E.status='Active'
+				AND E.attendance_by_timesheet != 1
+				AND E.default_shift IN(
+					SELECT name from `tabShift Type` st
+					WHERE st.start_time < '01:00:00' OR st.start_time >= '13:00:00'
+					)
+				AND NOT EXISTS(SELECT * from `tabHoliday` h
+					WHERE
+						h.parent = E.holiday_list
+					AND h.holiday_date = '{date}')
+						 
+				AND E.employee
+					NOT IN (Select employee from `tabShift Assignment` tSA
+					WHERE
+					tSA.employee = E.employee
+					AND tSA.start_date='{date}'
+					AND tSA.roster_type = "Basic"
+					AND tSA.shift_type IN(
+						SELECT name from `tabShift Type` st
+						WHERE st.start_time < '01:00:00'
+						AND  st.start_time >= '13:00:00'	))
+		""".format(date=cstr(date)), as_dict=1)
+	return roster
+
+
+
 def fetch_non_shift(date, s_type):
 	if s_type == "AM":
 		roster = frappe.db.sql("""SELECT @roster_type := 'Basic' as roster_type, @start_datetime := "{date} 08:00:00" as start_datetime, @end_datetime := "{date} 17:00:00" as end_datetime,
@@ -805,8 +870,6 @@ def get_shift_type(time):
 
 def create_shift_assignment(roster, date, time):
 	try:
-		
-		
 		owner = frappe.session.user
 		creation = now()
 		shift_type = get_shift_type(time)
@@ -1015,6 +1078,59 @@ def validate_shift_assignment(is_scheduled_event=True):
 		msg = frappe.render_template('one_fm/templates/emails/missing_shift_assignment.html', context={"rosters": roster})
 		sendemail(sender=sender, recipients= recipient, content=msg, subject="Missed Shift Assignments List", delayed=False, is_scheduler_email=is_scheduled_event)
 
+
+def update_shift_assignment_from_permission(roster):
+	"""Fetch all the approved shift permissions for today 
+	and update the shift assignments if the shift type are the same"""
+	try:
+		roster_employees = {i.employee:roster.index(i) for i in roster}
+		today = frappe.utils.today()
+		all_shift_permissions = frappe.get_all("Shift Permission",{'date':today,'docstatus':1},['name','arrival_time','leaving_time','log_type','employee','roster_type'])
+		#Ensure that the entry or exit times are updated from the shift permission
+		
+		for each in all_shift_permissions:
+			if frappe.db.exists("Shift Assignment",
+						{"start_date":today,
+					'employee':each.employee,
+					'roster_type':each.roster_type}):
+				shift_assignment_doc = frappe.get_doc("Shift Assignment",{
+					"start_date":today,
+					'employee':each.employee,
+					'roster_type':each.roster_type
+					})
+				if each.log_type =="IN":
+					datetime_value = frappe.utils.get_datetime(today+' '+str(each.arrival_time))
+					field_name = 'start_datetime'
+					
+				else:
+					datetime_value = frappe.utils.get_datetime(today+' '+str(each.leaving_time))
+					field_name = 'end_datetime'
+
+				shift_assignment_doc.db_set(field_name,datetime_value)
+			else:
+				#The shift details were missed during initial creation and is in the batch about to created by the validating method.
+				if roster_employees.get(each.employee):
+					current_employee_index = roster_employees.get(each.employee)
+					
+					if each.log_type == "IN":
+						roster[current_employee_index].start_datetime = today+' '+str(each.arrival_time)
+					else:
+						roster[current_employee_index].end_datetime = today+' '+str(each.leaving_time)
+	except:
+		frappe.log_error(title = "Error Updating Shift Assignment from Shift Permission",message = frappe.get_traceback())
+
+
+		
+
+
+
+
+			
+			
+
+
+
+@frappe.whitelist()
 def validate_am_shift_assignment(is_scheduled_event=True):
 	"""
     Args:
@@ -1050,14 +1166,14 @@ def validate_am_shift_assignment(is_scheduled_event=True):
 				AND E.status IN ("Left", "Vacation", "Court Case"))
 	""".format(date=cstr(date)), as_dict=1)
 
-	non_shift = fetch_non_shift(date, "PM")
+	non_shift = fetch_non_shift_without_assignment(date, "AM")
 	if non_shift:
 		roster.extend(non_shift)
 
 	# remove approved leaves for today
 	todays_leaves = get_today_leaves(str(date))
 	roster = [i for i in roster if not i.employee in todays_leaves]
-
+	update_shift_assignment_from_permission(roster)
 	if len(roster)>0:
 		sender = frappe.get_value("Email Account", filters = {"default_outgoing": 1}, fieldname = "email_id") or None
 		recipient = frappe.get_value("Email Account", {"name":"Support"}, ["email_id"])
@@ -1094,7 +1210,7 @@ def validate_pm_shift_assignment():
 				E.name = ES.employee
 				AND E.status IN ("Left", "Vacation", "Court Case"))
 	""".format(date=cstr(date)), as_dict=1)
-	non_shift = fetch_non_shift(date, "PM")
+	non_shift = fetch_non_shift_without_assignment(date, "PM")
 	if non_shift:
 		roster.extend(non_shift)
 
