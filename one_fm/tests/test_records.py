@@ -9,9 +9,13 @@ def get_sample_employees():
             "naming_series":"HR-EMP-",
             "date_of_joining": "2010-01-01",
             "doctype": "Employee",
+            "employment_type":"Full-time",
             "job_offer_salary_structure":"Sample Salary Structure",
             "one_fm_basic_salary":100,
-            
+            "last_name":"Sample Last",
+            "one_fm_first_name_in_arabic":"Sample",
+            "department": "Accounts - _TC3",
+            "one_fm_last_name_in_arabic":"Sample",
             "one_fm_nationality":"Indian",
             "first_name": "_Test Employee",
             "gender": "Female",
@@ -21,6 +25,7 @@ def get_sample_employees():
             },
             {
             "company": "_Test Company",
+            "employment_type":"Full-time",
             "date_of_birth": "1980-01-01",
             "naming_series":"HR-EMP-",
             "date_of_joining": "2010-01-01",
@@ -28,7 +33,10 @@ def get_sample_employees():
             "job_offer_salary_structure":"Sample Salary Structure",
             "one_fm_basic_salary":100,
             "doctype": "Employee",
-            
+            "last_name":"Sample Last",
+            "department": "Accounts - _TC3",
+            "one_fm_first_name_in_arabic":"Sample",
+            "one_fm_last_name_in_arabic":"Sample",
             "first_name": "_Test Employee 1",
             "gender": "Male",
             "naming_series": "_T-Employee-",
@@ -37,14 +45,17 @@ def get_sample_employees():
             },
             {
             "company": "_Test Company",
+            "employment_type":"Full-time",
             "date_of_birth": "1980-01-01",
             "job_offer_salary_structure":"Sample Salary Structure",
             "one_fm_basic_salary":100,
             "naming_series":"HR-EMP-",
             "date_of_joining": "2010-01-01",
-            
+            "last_name":"Sample Last",
+            "one_fm_first_name_in_arabic":"Sample",
+            "one_fm_last_name_in_arabic":"Sample",
             "one_fm_nationality":"Kuwaiti",
-            "department": "_Test Department 1 - _TC",
+            "department": "Accounts - _TC3",
             "doctype": "Employee",
             "first_name": "_Test Employee 2",
             "gender": "Male",
@@ -236,6 +247,24 @@ def get_salary_components():
             "create_separate_payment_entry_against_benefit_claim":0,
             "doctype":"Salary Component",
             "accounts":[]},
-           
+    ]
 
+def get_test_nationality():
+    """Return a salary component and salary structure"""
+    return [
+         
+             {
+                 "nationality_english":"Indian",
+                 "nationality_arabic":"هندي",
+                 "country":"India",
+                 "doctype":"Nationality"
+                 },
+                 {
+                 "nationality_english":"Kuwaiti",
+                 "nationality_arabic":"هندي",
+                 "country":"Kuwait",
+                 "doctype":"Nationality",
+                 
+                 }
+         
     ]

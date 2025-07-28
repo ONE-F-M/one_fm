@@ -852,14 +852,15 @@ def assign_pm_shift():
 
 def end_previous_shifts(time):
 	shift_type = get_shift_type(time)
-	query = f"""
-		UPDATE `tabShift Assignment`
-		SET end_date=DATE(end_datetime)
-		WHERE
-		end_date IS NULL AND shift_type IN {tuple(shift_type)} AND docstatus=1 AND roster_type in ('Basic', 'Over-Time')
-	;"""
-	shift_assignments = frappe.db.sql(query, values=[], as_dict=1)
-	frappe.db.commit()
+	if shift_type:
+		query = f"""
+			UPDATE `tabShift Assignment`
+			SET end_date=DATE(end_datetime)
+			WHERE
+			end_date IS NULL AND shift_type IN {tuple(shift_type)} AND docstatus=1 AND roster_type in ('Basic', 'Over-Time')
+		;"""
+		shift_assignments = frappe.db.sql(query, values=[], as_dict=1)
+		frappe.db.commit()
 
 def get_shift_type(time):
 	if time == "AM":

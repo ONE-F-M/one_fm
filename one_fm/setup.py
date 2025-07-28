@@ -20,6 +20,7 @@ from one_fm.custom.custom_field.attendance import get_attendance_custom_fields
 from one_fm.custom.custom_field.todo import get_todo_custom_fields
 from one_fm.custom.custom_field.scheduled_job_type import get_scheduled_job_type_custom_fields
 from one_fm.custom.custom_field.task import get_task_custom_fields
+from one_fm.custom.custom_field.company import get_company_custom_fields
 # Property setter imports
 from one_fm.custom.property_setter.assignment_rule import get_assignment_rule_properties
 from one_fm.custom.property_setter.task import get_task_properties
@@ -50,6 +51,7 @@ def get_custom_fields():
 	custom_fields.update(get_todo_custom_fields())
 	custom_fields.update(get_scheduled_job_type_custom_fields())
 	custom_fields.update(get_task_custom_fields())
+	custom_fields.update(get_company_custom_fields())
 	return custom_fields
 
 def add_property_setter(property_setters):

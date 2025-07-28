@@ -84,7 +84,8 @@ class EmployeeOverride(EmployeeMaster):
                 frappe.throw(f"Enrollment field is read-only and cannot be modified.")
 
     def before_save(self):
-        self.assign_role_profile_based_on_designation()
+        if not frappe.flags.in_test:
+            self.assign_role_profile_based_on_designation()
         # get_assurance_level_of_employee(self)
 
 

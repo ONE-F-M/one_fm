@@ -131,6 +131,7 @@ one_fm.patches.v15_0.update_contracts_end_date
 one_fm.patches.v15_0.add_task_type_for_todo_type
 one_fm.patches.v15_0.add_task_workflow # update Workflow
 one_fm.patches.v15_0.add_task_custom_field # Task field
+one_fm.patches.v15_0.add_task_custom_field # Company name in Arabic field
 
 [post_model_sync]
 one_fm.patches.v15_0.create_attendance_check_process_task #re run again
