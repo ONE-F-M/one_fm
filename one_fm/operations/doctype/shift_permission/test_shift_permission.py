@@ -27,6 +27,8 @@ class TestShiftPermission(unittest.TestCase):
         for one in genders:
             if not frappe.db.exists("Gender",one.get('gender')):
                 frappe.get_doc(one).insert(ignore_permissions=True)
+
+
     def create_salary_components(self):
         for each in salary_component_data:
             if frappe.db.exists("Salary Component",each.get('salary_component')):
@@ -173,11 +175,7 @@ class TestShiftPermission(unittest.TestCase):
        
         # Reload and assert
         self.shift_assignment_2.reload()
-        print("\n\n\n\n\n\n\n\n")
-        print(self.shift_assignment_2.start_datetime.strftime("%H:%M:%S"))
-        print("\n\n\n\n\n\n\n\n")
-        print(self.shift_permission.arrival_time)
-        print("\n\n\n\n\n\n\n\n")
+        
         self.assertEqual(
             self.shift_assignment_2.start_datetime.strftime("%H:%M:%S"),
             str(self.shift_permission.arrival_time)
