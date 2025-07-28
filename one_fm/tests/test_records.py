@@ -2,6 +2,35 @@ import frappe
 frappe.flags.in_test = True
 
 
+def get_departments():
+    return [
+        {
+        "docstatus":0,
+        "department_name":"All Departments",
+        "department_code":"accounts_test",
+        "company":"_Test Company",
+        "is_group":1,
+        "disabled":0,
+        "doctype":"Department",
+        "expense_approvers":[],
+        "issue_types":[],
+        "shift_request_approver":[],
+        "leave_approvers":[]
+         },
+        {
+        "docstatus":0,
+        "department_name":"Accounts",
+        "parent_department":"All Departments",
+        "company":"_Test Company",
+        "is_group":0,
+        "disabled":0,
+        "doctype":"Department",
+        "expense_approvers":[],
+        "issue_types":[],
+        "shift_request_approver":[],
+        "leave_approvers":[]
+         }
+    ]
 def get_gender_data():
     return [
         {
