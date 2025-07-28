@@ -50,6 +50,7 @@ class TestShiftPermission(unittest.TestCase):
         
 
     def setUp(self):
+        self.create_genders()
         # Create Dependencies
         shift_1_start_time = "08:00:00"
         shift_1_end_time = "17:00:00"
