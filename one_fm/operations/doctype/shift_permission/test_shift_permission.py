@@ -8,18 +8,25 @@ import unittest
 
 from one_fm.api.tasks import validate_am_shift_assignment,validate_pm_shift_assignment
 from one_fm.tests.test_records import get_holiday_list_and_company,\
-    get_sample_employees,get_salary_components,get_salary_structure,get_test_nationality
+    get_sample_employees,get_salary_components,get_salary_structure,\
+        get_test_nationality,get_gender_data
 from frappe.model.naming import NamingSeries 
 company_data = get_holiday_list_and_company()
 employee_data = get_sample_employees()
 salary_component_data = get_salary_components()
 salary_structure_data = get_salary_structure()
 nationalities = get_test_nationality()
+genders = get_gender_data()
 
 frappe.local.flags.ignore_chart_of_accounts = 1
 frappe.local.flags.in_test = 1
 
 class TestShiftPermission(unittest.TestCase):
+    def create_genders(self):
+        """Create Gender records if they do not exist"""
+        for one in genders:
+            if not frappe.db.exists("Gender",one.get('gender')):
+                frappe.get_doc(one).insert(ignore_permissions=True)
     def create_salary_components(self):
         for each in salary_component_data:
             if frappe.db.exists("Salary Component",each.get('salary_component')):

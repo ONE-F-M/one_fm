@@ -1,6 +1,21 @@
 import frappe
 frappe.flags.in_test = True
 
+
+def get_gender_data():
+    return [
+        {
+           "gender":"Female",
+           "custom_maternity_required":0,
+           "doctype":"Gender"
+        },
+        {
+           "gender":"Male",
+           "custom_maternity_required":0,
+           "doctype":"Gender"
+        }
+    ]
+
 def get_sample_employees():
     return [
         {
