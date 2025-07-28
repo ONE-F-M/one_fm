@@ -49,7 +49,7 @@ class TestShiftPermission(unittest.TestCase):
                 frappe.delete_doc("Salary Structure",each.get('name'),force=1)
             frappe.get_doc(each).insert(ignore_permissions=True)
         
-    def create_departments():
+    def create_departments(self):
         for each in departments:
             if frappe.db.exists("Department",each.get('department_name')):
                 
