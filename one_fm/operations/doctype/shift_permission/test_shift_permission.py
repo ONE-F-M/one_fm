@@ -192,37 +192,4 @@ class TestShiftPermission(unittest.TestCase):
             str(self.shift_permission.arrival_time)
         )
 
-    # def test_update_shift_assignment_end_datetime(self):
-    #     # Create Shift Permission (OUT)
-    #     leaving_time = "16:30:00"
-    #     shift_permission = frappe.get_doc({
-    #         "doctype": "Shift Permission",
-    #         "employee": self.employee.name,
-    #         "date": self.today,
-    #         "roster_type": "Basic",
-    #         "shift_type": self.shift_type.name,
-    #         "assigned_shift": self.shift_assignment_1.name,
-    #         "leaving_time": leaving_time,
-    #         "log_type": "OUT",
-    #         "docstatus": 1
-    #     }).insert(ignore_permissions=True)
-
-    # #     # Prepare roster (simulate what your app passes)
-    #     class DummyRoster:
-    #         def __init__(self, employee):
-    #             self.employee = employee
-    #             self.start_datetime = None
-    #             self.end_datetime = None
-
-    #     roster = [DummyRoster(self.employee.name)]
-
-    #     # Call the function
-    #     update_shift_assignment_from_permission(roster)
-
-    #     # Reload and assert
-    #     self.shift_assignment_1.reload()
-    #     self.assertEqual(
-    #         self.shift_assignment_1.end_datetime.strftime("%H:%M:%S"),
-    #         leaving_time
-    #     )
-	
+   
