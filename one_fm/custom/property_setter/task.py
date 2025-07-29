@@ -55,7 +55,7 @@ def get_task_properties():
             "field_name": "status",
             "property": "read_only",
             "property_type": "Check",
-            "value": 1,
+            "value": 0,
             "is_system_generated": 0
         }
     ]
