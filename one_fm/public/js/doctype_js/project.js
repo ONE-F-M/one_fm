@@ -1,132 +1,125 @@
+
 frappe.ui.form.on('Project', {
-    refresh: function(frm) {
+    refresh(frm) {
         frm.set_df_property('project_type', 'reqd', true);
-        if (frm.doc.project_type === "External"){
-            
-            cur_frm.get_field("poc").grid.toggle_reqd("poc", true);
-            cur_frm.get_field("poc").grid.toggle_reqd("designation", true);
-
+        if (frm.doc.project_type === "External") {
+            const pocField = cur_frm.get_field("poc").grid;
+            pocField.toggle_reqd("poc", true);
+            pocField.toggle_reqd("designation", true);
         }
-        if(!frm.doc.__islocal && frm.doc.project_type === "External"){
-            remove_existing();
-            let data_onefm = "Project Structure";
-            create_dashboard_section("Timesheet", data_onefm);
-            dashboard_link_doctype(frm, "Operations Site", data_onefm);
-            dashboard_link_doctype(frm, "Operations Shift", data_onefm);
-            
-            data_onefm = "Operations Action";
-            create_dashboard_section("Timesheet", data_onefm);
-            dashboard_link_doctype(frm, "MOM", data_onefm);
-
-            data_onefm = "Communication";
-            create_dashboard_section("Timesheet", data_onefm);
-            dashboard_link_doctype(frm, "Contracts", data_onefm);
+        if (!frm.doc.__islocal && frm.doc.project_type === "External") {
+            remove_existing_sections();
+            add_dashboard_sections(frm);
         }
-        frm.set_query("income_account", function() {
-            return {
-                filters:{
-                    root_type:'Income',
-                    is_group: 0
-                }
-            };
-        });
-        frm.set_query("cost_center", function() {
-            return {
-                filters:{
-                    is_group: 0
-                }
-            };
-        });
+        frm.set_query("income_account", () => ({
+            filters: { root_type: 'Income', is_group: 0 }
+        }));
+        frm.set_query("cost_center", () => ({
+            filters: { is_group: 0 }
+        }));
         frm.refresh_field("income_account");
         frm.refresh_field("cost_center");
     },
-    before_save: function(frm) {
-        validate_linked_schedules(frm)
+    before_save(frm) {
+        validate_linked_schedules(frm);
     }
 });
 
-// Remove existing sections
-function remove_existing(){
-    $(`[data-onefm="Project Structure"]`).remove();
-    $(`[data-onefm="Operations Action"]`).remove();
-    $(`[data-onefm="Communication"]`).remove();
+function remove_existing_sections() {
+    ["Project Structure", "Operations Action", "Communication"].forEach(section => {
+        $(`[data-onefm="${section}"]`).remove();
+    });
 }
 
-function create_dashboard_section(data_doctype, title){
-    let parent = $(`.form-dashboard-wrapper [data-doctype="${data_doctype}"]`).closest('div.row');
+function add_dashboard_sections(frm) {
+    const sections = [
+        {
+            title: "Project Structure",
+            doctypes: ["Operations Site", "Operations Shift"]
+        },
+        {
+            title: "Operations Action",
+            doctypes: ["MOM"]
+        },
+        {
+            title: "Communication",
+            doctypes: ["Contracts"]
+        }
+    ];
+    sections.forEach(({ title, doctypes }) => {
+        create_dashboard_section("Timesheet", title);
+        doctypes.forEach(dt => dashboard_link_doctype(frm, dt, title));
+    });
+}
+
+
+function create_dashboard_section(data_doctype, title) {
+    const parent = $(`.form-dashboard-wrapper [data-doctype="${data_doctype}"]`).closest('div.row');
     parent.append(`<div class="col-xs-6" data-onefm="${title}"><h6>${title}</h6></div>`);
-    console.log(parent);
 }
 
-function dashboard_link_doctype (frm, doctype, data_onefm){
-
-    let parent = $(`[data-onefm="${data_onefm}"]`);    
+function dashboard_link_doctype(frm, doctype, data_onefm) {
+    const parent = $(`[data-onefm="${data_onefm}"]`);
     parent.find(`[data-doctype="${doctype}"]`).remove();
-    parent.append(frappe.render_template("dashboard_link_doctype", {doctype}));
-    let self = parent.find(`[data-doctype="${doctype}"]`);
-
+    parent.append(frappe.render_template("dashboard_link_doctype", { doctype }));
+    const self = parent.find(`[data-doctype="${doctype}"]`);
 
     set_open_count(frm, doctype);
 
-    // bind links
-    self.find(".badge-link").on('click', function() {
-        frappe.route_options = {"project": frm.doc.name}
+    // Bind links
+    self.find(".badge-link").on('click', () => {
+        frappe.route_options = { project: frm.doc.name };
         frappe.set_route("List", doctype);
     });
 
-    // bind open notifications
-    self.find('.open-notification').on('click', function() {
+    // Bind open notifications
+    self.find('.open-notification').on('click', () => {
         frappe.route_options = {
-            "project": frm.doc.name,
-            "status": "Draft"
-        }
+            project: frm.doc.name,
+            status: "Draft"
+        };
         frappe.set_route("List", doctype);
     });
 
-    // bind new
-    if(frappe.model.can_create(doctype)) {
+    // Bind new
+    if (frappe.model.can_create(doctype)) {
         self.find('.btn-new').removeClass('hidden');
     }
-    self.find('.btn-new').on('click', function() {
-        frappe.new_doc(doctype,{
-            "project": frm.doc.name
-        });
+    self.find('.btn-new').on('click', () => {
+        frappe.new_doc(doctype, { project: frm.doc.name });
     });
 }
 
-function set_open_count (frm, doctype){
-    
-    let method = '';
-    let links = {};
 
-    method = 'one_fm.api.dashboard_utils.get_open_count';
-    links = {
-        'fieldname': 'project',
-        'transactions': [
+function set_open_count(frm, doctype) {
+    const method = 'one_fm.api.dashboard_utils.get_open_count';
+    const links = {
+        fieldname: 'project',
+        transactions: [
             {
-                'label': __(doctype),
-                'items': [doctype]
-            },
+                label: __(doctype),
+                items: [doctype]
+            }
         ]
     };
 
-    if(method!=""){
-        frappe.call({
-            type: "GET",
-            method: method,
-            args: {
-                doctype: frm.doctype,
-                name: frm.doc.name,
-                links: links,
-            },
-            callback: function(r) {
-                // update badges
-                $.each(r.message.count, function(i, d) {
+    frappe.call({
+        type: "GET",
+        method,
+        args: {
+            doctype: frm.doctype,
+            name: frm.doc.name,
+            links
+        },
+        callback(r) {
+            // update badges if possible
+            if (frm.dashboard && typeof frm.dashboard.set_badge_count === "function") {
+                (r.message.count || []).forEach(d => {
                     frm.dashboard.set_badge_count(d.name, cint(d.open_count), cint(d.count));
                 });
             }
-        });
-    }
+        }
+    });
 }
 
 function validate_linked_schedules (frm) {
