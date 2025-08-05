@@ -2,9 +2,9 @@ frappe.ui.form.on('Project', {
     refresh(frm) {
         frm.set_df_property('project_type', 'reqd', true);
         if (frm.doc.project_type === "External") {
-            const pocField = cur_frm.get_field("poc").grid;
-            pocField.toggle_reqd("poc", true);
-            pocField.toggle_reqd("designation", true);
+            const poc_field = cur_frm.get_field("poc").grid;
+            poc_field.toggle_reqd("poc", true);
+            poc_field.toggle_reqd("designation", true);
         }
         frm.set_query("income_account", () => ({
             filters: { root_type: 'Income', is_group: 0 }
