@@ -106,6 +106,7 @@ frappe.query_reports["Operations Monthly Attendance Sheet"] = {
 				year_filter.refresh();
 				year_filter.set_input(year_filter.df.default);
 				attach_report_additional_day_details()
+				attach_status_map()
 			},
 		});
 	}
@@ -127,6 +128,20 @@ function attach_report_additional_day_details () {
 			frappe.query_report.additional_details = {
 				...(report.additional_details || {}),
 				days: res.message
+			};
+		},
+	});
+}
+
+function attach_status_map () {
+	const report = frappe.query_report;
+
+	return frappe.call({
+		method: "one_fm.one_fm.report.operations_monthly_attendance_sheet.operations_monthly_attendance_sheet.get_attendance_status_map",
+		callback: function (res) {
+			frappe.query_report.additional_details = {
+				...(report.additional_details || {}),
+				status_map: Object.entries(res.message).map(([status, key]) => ({ status, key })).filter(i => i.key !== "CDO")
 			};
 		},
 	});

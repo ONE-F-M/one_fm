@@ -284,3 +284,8 @@ def get_report_additional_day_details(month, year):
 		days.append({"date": date, "weekday": weekday})
 
 	return days
+
+@frappe.whitelist()
+def get_attendance_status_map():
+	"""Returns the status map for attendance"""
+	return status_map

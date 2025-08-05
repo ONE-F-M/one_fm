@@ -9,6 +9,16 @@ $(document).ready(function() {
 
 // Career History
 
+var DEFAULT_RANKED_FACTORS = [
+    "Projects & Technology",
+    "Manager & Teams",
+    "Compensation",
+    "Continuing Growth Rate",
+    "Job Stretch & Learning",
+    "Work/Life Balance",
+    "Company Mission & Values (optional addition)"
+];
+
 career_history = Class.extend({
   init: function(){
     var me = this;
@@ -189,22 +199,123 @@ career_history = Class.extend({
     });
   },
   
-  show_final_interest_step: function(TOTAL_COMPANY_NO) {
+show_final_interest_step: function(TOTAL_COMPANY_NO) {
+    // Remove existing sections to prevent duplicates if this function is called multiple times.
+    // Be cautious with this selector if 'final-interest-section' elements are meant to persist.
+    // If the table is part of what should be removed and re-added, this is fine.
     $('.final-interest-section').remove();
-        var interestSection = $(`
-            <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
-                <div class="col-lg-12 col-md-12 mb-3">
-                    <label class="form-label">What makes you interested in this opportunity?</label>
-                    <textarea rows="4" cols="50" 
-                        name="interest_reason" 
-                        class="form-control what_make_your_interested_in_this_opportunity"
-                        required></textarea>
-                </div>
-            </div>
-        `);
 
-        $('.section_' + (TOTAL_COMPANY_NO)).after(interestSection);
-  },
+    var interestSection = $(`
+        <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
+            <div class="col-lg-12 col-md-12 mb-3">
+                <label class="form-label">Which career factors are most important to you?<span style="color: red">*</span></label>
+                <h6>Instructions for Candidate:</h6>
+                <ul style="font-size: smaller; font-weight: bold;">
+                    <li>Think about what really drives your career decisions.</li>
+                    <li>Please drag and drop the rows in the table below to rank the career factors from 1 (most important) to 7 (least important) based on what matters most to you.</li>
+                    <li>There are no right or wrong answers — your response helps us understand how to align the role with your career goals.</li>
+                </ul>
+                <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden sortable-table" name="rank_and_factors">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                            <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Factor</th>
+                            <th class="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sortableRows" class="divide-y divide-gray-200">
+                        <!-- Corrected: Each row needs its own <tr> tag -->
+                        <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                            <td class="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900 rank-cell">1</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Projects & Technology</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">A mix of more satisfying and engaging work</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                            <td class="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900 rank-cell">2</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Manager & Teams</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Working with the right types of people and leaders</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                            <td class="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900 rank-cell">3</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Compensation</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Total rewards including salary, benefits, and bonuses</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                            <td class="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900 rank-cell">4</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Continuing Growth Rate</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Long-term career advancement and opportunity</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                            <td class="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900 rank-cell">5</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Job Stretch & Learning</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Bigger challenges, scope, and learning potential</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                            <td class="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900 rank-cell">6</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Work/Life Balance</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Time and flexibility for personal life and well-being</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors duration-150 ease-in-out">
+                            <td class="py-4 px-6 whitespace-nowrap text-sm font-medium text-gray-900 rank-cell">7</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Company Mission & Values (optional addition)</td>
+                            <td class="py-4 px-6 whitespace-nowrap text-sm text-gray-700">Alignment with your personal purpose and values</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row mx-auto col-lg-12 col-md-12 mb-3 final-interest-section">
+            <div class="col-lg-12 col-md-12 mb-3">
+                <label class="form-label">What makes you interested in this opportunity?</label>
+                <textarea rows="4" cols="50"
+                    name="interest_reason"
+                    class="form-control what_make_your_interested_in_this_opportunity"
+                    required></textarea>
+            </div>
+        </div>
+    `);
+
+    // Append the new HTML content to the DOM
+    $('.section_' + (TOTAL_COMPANY_NO)).after(interestSection);
+
+    // --- SortableJS Initialization (Corrected) ---
+    // Get the tbody element where the rows are located
+    const sortableList = document.getElementById('sortableRows');
+
+    // Check if the element exists before initializing SortableJS
+    if (sortableList) {
+        new Sortable(sortableList, {
+            animation: 150, // ms, animation speed moving items when sorting, `0` — no animation
+            ghostClass: 'sortable-ghost', // Class name for the drop placeholder
+            chosenClass: 'sortable-chosen', // Class name for the chosen item
+            dragClass: 'sortable-drag', // Class name for the dragging item
+            // handle: '.rank-cell', // Uncomment this if you only want to drag by the rank number cell
+
+            // Callback when an item is dropped
+            onEnd: function (evt) {
+                console.log('Item moved:', evt.oldIndex, 'to', evt.newIndex);
+                updateRanks(); // Call function to re-assign ranks after sorting
+            }
+        });
+
+        // Function to update the rank numbers in the first column
+        function updateRanks() {
+            // Select all direct <tr> children of the sortable tbody
+            Array.from(sortableList.children).forEach(function(row, index) {
+                // Find the cell with the 'rank-cell' class and update its text content
+                const rankCell = row.querySelector('.rank-cell');
+                if (rankCell) {
+                    rankCell.textContent = index + 1;
+                }
+            });
+        }
+        updateRanks();
+
+    } else {
+        console.error("Element with ID 'sortableRows' not found after appending. SortableJS not initialized.");
+    }
+    // --- END SortableJS Initialization ---
+},
 
   create_company_section_html: function(company_no) {
     $('.main_section').delay(400).fadeIn();
@@ -399,11 +510,46 @@ career_history = Class.extend({
       me.next_career_history(company_no);
     });
   },
+  // Function to get the current order of factors from the sortable table
+getRankedFactorsData:function() {
+    const rankedFactors = [];
+    const sortableList = document.getElementById('sortableRows'); // Get the tbody by its ID
+
+    if (sortableList) {
+        // Iterate over each table row (<tr>) directly within the sortable tbody
+        Array.from(sortableList.children).forEach(function(row, index) {
+            // Find the cells containing the factor and description.
+            // Based on your HTML: <td>Rank</td> <td>Factor</td> <td>Description</td>
+            const factorCell = row.children[1]; // Second td for Factor
+            const descriptionCell = row.children[2]; // Third td for Description
+
+            if (factorCell && descriptionCell) {
+                rankedFactors.push({
+                    // The rank is simply its current index + 1 in the reordered list
+                    rank: index + 1,
+                    factor: factorCell.textContent.trim(),
+                    description: descriptionCell.textContent.trim()
+                });
+            }
+        });
+    }
+    return rankedFactors;
+},
+
   submit_career_history: function() {
     // Submit Career History
     var me = this;
     $('.btn-submit-career-history').click(function(){
-      var {career_histories, interest_reason} = me.get_details_from_form();
+      var {career_histories, interest_reason} =  me.get_details_from_form();
+      var rank_and_factors = me.getRankedFactorsData()
+      
+      var isDefaultOrder = rank_and_factors.every(function(row, idx) {
+            return row.factor === DEFAULT_RANKED_FACTORS[idx];
+        });
+
+      if (isDefaultOrder) {
+            return frappe.msgprint(frappe._("Please drag and rank the factors according to your preference before submitting."));
+        }
       var all_best_references = me.get_all_best_references();
       if(!validateBestReferencesAndColleague(all_best_references)){
         return frappe.msgprint(frappe._("Kindly fill the best reference for the most recent job"));
@@ -422,7 +568,8 @@ career_history = Class.extend({
             job_applicant: $('#job_applicant').attr("data"),
             career_history_details: career_histories,
             best_references: all_best_references,
-            interest_reason: interest_reason
+            interest_reason: interest_reason,
+            rank_and_factors:rank_and_factors
           },
           btn: this,
           callback: function(r){
@@ -542,7 +689,13 @@ career_history = Class.extend({
       career_histories.push(career_history);
     }
     let interest_reason = $('[name="interest_reason"]').val();
-    return {career_histories, interest_reason};
+    let project_and_technology = $('[name="project_and_technology"]').val();
+    let manager_and_team = $('[name="manager_and_team"]').val();
+    let compensation = $('[name="compensation"]').val();
+    let continuing_growth_rate = $('[name="continuing_growth_rate"]').val();
+    let jobstretch_and_learning = $('[name="jobstretch_and_learning"]').val();
+    let work_life_balance = $('[name="work_life_balance"]').val();
+    return {career_histories, interest_reason,project_and_technology, manager_and_team,compensation,continuing_growth_rate,jobstretch_and_learning,work_life_balance};
   }
 });
 

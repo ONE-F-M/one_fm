@@ -28,9 +28,11 @@
   "shoves_and_tugs_cb_column",
   "tugs",
   "about_the_opportunity_section",
+  "column_break_clfa",
   "about_the_opportunity",
   "what_are_the_factors_you_are_looking_for_in_a_new_job",
-  "amended_from"
+  "amended_from",
+  "rank_and_factors"
  ],
  "fields": [
   {
@@ -177,11 +179,21 @@
    "fieldname": "what_are_the_factors_you_are_looking_for_in_a_new_job",
    "fieldtype": "Small Text",
    "label": "What are the factors you are looking for in a new job?"
+  },
+  {
+   "fieldname": "column_break_clfa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rank_and_factors",
+   "fieldtype": "Table",
+   "label": "Rank and Factors",
+   "options": "Rank and Factors"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2025-07-22 03:42:08.629303",
+ "modified": "2025-07-27 14:11:16.588067",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History",

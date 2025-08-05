@@ -10,7 +10,7 @@
  "is_standard": "Yes",
  "letter_head": "ONEFM",
  "letterhead": null,
- "modified": "2025-07-24 09:33:16.895777",
+ "modified": "2025-08-03 16:37:40.113571",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Operations Monthly Attendance Sheet",
@@ -31,6 +31,18 @@
   },
   {
    "role": "Payroll Operator"
+  },
+  {
+   "role": "Operations Manager"
+  },
+  {
+   "role": "Operation Admin"
+  },
+  {
+   "role": "Operations Supervisor"
+  },
+  {
+   "role": "Site Supervisor"
   }
  ]
 }

@@ -2316,7 +2316,6 @@ function staff_edit_dialog() {
 			callback: function (r) {
 				if (r.message) {
 					let employee_details = r.message;
-					console.log(employee_details)
 					// Populate fields
 					d.set_value("project", employee_details.project);
 					d.set_value("site", employee_details.site);
@@ -2447,12 +2446,9 @@ function schedule_change_post(page) {
 		selected.forEach(function (i) {
 			let [employee, date] = i.split("|");
 			employees.push({ employee, date });
-			employees = [... new Set(employees)]; // This might be redundant if items are unique from classgrt
+			employees = [... new Set(employees)];
 		});
 	}
-	var hide_day_off_ot_check = 0;
-	var hide_keep_days_off_check = 0;
-	// let element = get_wrapper_element(); // element is not used here
 
 	let d = new frappe.ui.Dialog({
 		"title": "Schedule/Change Basic",
@@ -2524,9 +2520,6 @@ function schedule_change_post(page) {
 				}
 			},
 			{ "label": "Project End Date", "fieldname": "project_end_date", "fieldtype": "Check", default: 0 },
-			{ "label": "Keep Days Off", "fieldname": "keep_days_off", "fieldtype": "Check", default: 0, "hidden": hide_keep_days_off_check },
-			{ "label": "Request Employee Schedule", "fieldname": "request_employee_schedule", "fieldtype": "Check" },
-			{ "label": "Day Off OT", "fieldname": "day_off_ot", "fieldtype": "Check", "hidden": hide_day_off_ot_check },
 			{ "fieldname": "cb1", "fieldtype": "Column Break" },
 			{
 				"label": "Till Date", "fieldname": "end_date", "fieldtype": "Date", "depends_on": "eval:doc.project_end_date==0", default: 0, onchange: function () {
@@ -2542,6 +2535,17 @@ function schedule_change_post(page) {
 					}
 				}
 			},
+			{ "fieldtype": "Section Break"},
+			{ "label": "Keep Days Off", "fieldname": "keep_days_off", "fieldtype": "Check", default: 0, onchange: function () {
+				if (d.get_value("keep_days_off") == 1) d.set_value("day_off_ot", 0);
+			} },
+			{ "label": "Keep Days Off OT", "fieldname": "keep_days_off_ot", "fieldtype": "Check", default: 0, onchange: function () {
+				if (d.get_value("keep_days_off_ot") == 1) d.set_value("day_off_ot", 0);
+			} },
+			{ "label": "Day Off OT", "fieldname": "day_off_ot", "fieldtype": "Check", onchange: function () {
+				if (d.get_value("day_off_ot") == 1) d.set_value("keep_days_off", 0);
+				if (d.get_value("day_off_ot") == 1) d.set_value("keep_days_off_ot", 0);
+			}},
 		],
 		primary_action: function () {
 			let values = d.get_values();

@@ -8,6 +8,7 @@ from frappe.utils import cint
 import datetime
 from frappe import _
 from frappe.model.workflow import get_workflow_name
+import frappe.utils
 from six import string_types
 from frappe.workflow.doctype.workflow_action.workflow_action import get_doc_workflow_state
 from frappe.desk.reportview import get_match_cond, get_filters_cond
@@ -134,7 +135,7 @@ def apply_workflow(doc, action):
 			transition = t
 
 	if not transition:
-		frappe.throw(_("Not a valid Workflow Action"), WorkflowTransitionError)
+		return {"message": f"This action is no longer valid. The document has already been {doc.workflow_state}."}
 
 	if not has_approval_access(user, doc, transition):
 		frappe.throw(_("Self approval is not allowed"))
@@ -433,3 +434,33 @@ def export_query():
 		xlsx_file = make_xlsx(xlsx_data, "Query Report")
 
 		frappe.response['filecontent'] = xlsx_file.getvalue()
+
+
+@frappe.whitelist(allow_guest=True)
+def confirm_action(doctype, docname, user, action):
+	if not frappe.utils.verified_command.verify_request():
+		return
+
+	logged_in_user = frappe.session.user
+	if logged_in_user == "Guest" and user:
+		# to allow user to apply action without login
+		frappe.set_user(user)
+
+	doc = frappe.get_doc(doctype, docname)
+	result = apply_workflow(doc, action)
+	
+	if isinstance(result, dict):
+		# Error case: show message
+		frappe.respond_as_web_page(
+			_("Error"),
+			_(result.get("message")),
+			indicator_color="red",
+		)
+	else:
+		# Success case
+		frappe.db.commit()
+		frappe.workflow.doctype.workflow_action.workflow_action.return_success_page(result)
+
+	# reset session user
+	if logged_in_user == "Guest":
+		frappe.set_user(logged_in_user)

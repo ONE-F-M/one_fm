@@ -63,6 +63,13 @@
     height: 70px !important;
   }
 
+  .legend span {
+    border-left: 2px solid #000;
+    padding-right: 12px;
+    padding-left: 5px;
+    margin-right: 3px;
+  }
+
   @media print {
     .attendance-page {
       page-break-after: always;
@@ -73,6 +80,7 @@
 {% var CHUNK_SIZE = 35; %}
 
 {% var monthDays = report.additional_details ? report.additional_details.days : [] %}
+{% var statusMap = report.additional_details ? report.additional_details.status_map : [] %}
 
 {% var totalColumns = 44; %}
 {% var fixedColumns = 1 + 2 + 1; %}
@@ -186,6 +194,17 @@
         <td colspan="16"></td>
         <td colspan="6">Stamp</td>
         <td colspan="16"></td>
+      </tr>
+
+      <!-- Status Map -->
+       <tr>
+        <td colspan="44" class="legend">
+          {% for (var s = 0; s < statusMap.length; s++) { %}
+            <span>
+              {{ statusMap[s].key }} - {{ statusMap[s].status }}
+            </span>
+          {% } %}
+        </td>
       </tr>
     </table>
   </div>

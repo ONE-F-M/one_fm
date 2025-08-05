@@ -22,16 +22,6 @@ def get_asset_custom_fields():
                 "label": "Asset Transfer",
                 "insert_after": "transfer_from_warehouse",
                 "options": "Asset Transfer Detail"
-            },
-            {
-                "fieldname": "workflow_state",
-                "fieldtype": "Link",
-                "label": "Workflow State",
-                "hidden": 1,
-                "no_copy": 1,
-                "allow_on_submit": 1,
-                "in_list_view": 1,
-                "options": "Workflow State"
             }
         ]
     }

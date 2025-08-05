@@ -49,10 +49,14 @@ from one_fm.overrides.assignment_rule import do_assignment, get_user_based_on_pr
 from one_fm.overrides.goal import get_childrens
 from frappe.core.doctype.user_permission import user_permission
 from one_fm.permissions import get_custom_user_permissions
+import frappe.workflow.doctype.workflow_action.workflow_action as wa
+from one_fm.overrides.workflow import confirm_action as custom_confirm_action
 
 
-__version__ = '15.4.0'
 
+__version__ = '15.4.1'
+
+wa.confirm_action = custom_confirm_action
 user_permission.get_user_permissions = get_custom_user_permissions
 StockController.make_batches = make_batches_with_supplier_batch_id
 Interview.validate_overlap = validate_interview_overlap
