@@ -104,7 +104,8 @@ def get_post_scheduler_items(contract, project):
 						first_day = getdate(post.start_date)
 					if post.end_date and post.end_date < last_day:
 						if post.end_date < first_day:
-							continue # Skip if end date is before first day meaning the post is not active in this period
+							# Skip if end date is before first day meaning the post is not active in this period
+							continue
 						elif post.end_date == first_day:
 							last_day = first_day # If end date is same as first day, set last day to first day
 						else:
