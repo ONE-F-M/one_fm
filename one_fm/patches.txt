@@ -89,7 +89,7 @@ one_fm.patches.v15_0.add_supervisor_in_shift #1
 one_fm.patches.v15_0.fix_sle
 one_fm.patches.v15_0.patch_employee_checkin
 one_fm.patches.v15_0.submit_shift_permissions
-one_fm.patches.v15_0.update_shift_request
+one_fm.patches.v15_0.update_shift_request #2025-06-11
 one_fm.patches.v15_0.add_task_assignments_to_form_field
 one_fm.patches.v15_0.disable_wrong_shift_request
 one_fm.patches.v15_0.update_shift_request_day_off
@@ -121,6 +121,11 @@ one_fm.patches.v15_0.add_custom_process_field_property_setter
 one_fm.patches.v15_0.add_update_custom_field #ToDo field
 one_fm.patches.v15_0.add_update_property_setter #2025-05-20
 one_fm.patches.v15_0.add_update_assignment_rule #2025-07-2
+one_fm.patches.v15_0.add_update_custom_field #2025-06-09 Leave Type
+one_fm.patches.v15_0.add_update_custom_field #2025-06-09 Add Employee Custom Fields
+one_fm.patches.v15_0.remove_shift_request_pending_approval_assignment_rule #2025-06-11
+one_fm.patches.v15_0.remove_shift_request_workflow
+one_fm.patches.v15_0.add_update_assignment_rule #2025-05-20
 one_fm.patches.v15_0.add_update_workflow #2025-06-04
 one_fm.patches.v15_0.add_update_custom_field #2025-07-11 Scheduled Job Type
 one_fm.patches.v15_0.update_attendance_check_client_day_off

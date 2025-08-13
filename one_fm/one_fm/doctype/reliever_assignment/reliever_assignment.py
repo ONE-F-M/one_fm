@@ -155,29 +155,15 @@ class RelieverAssignment(Document):
 					replaced_with = self.reliever_name
 					value_to_replace =self.on_leave_employee_name 
 				self.add_assigned_documents(todo.reference_type, "Docfield", todo, fieldname=fieldname)
-				# Shift Request uses table multiselect field for approvers
-				if todo.reference_type == "Shift Request":
-					ShiftRequest = DocType("Shift Request")
-					ShiftRequestApprovers = DocType("Shift Request Approvers")
-					frappe.qb.update(ShiftRequestApprovers) \
-						.join(ShiftRequest) \
-						.on(ShiftRequest.name == ShiftRequestApprovers.parent) \
-						.set(ShiftRequestApprovers.user, replaced_with) \
-						.where(ShiftRequestApprovers.parent == todo.reference_name) \
-						.where(ShiftRequestApprovers.parentfield == "custom_shift_approvers") \
-						.where(ShiftRequestApprovers.user == value_to_replace)\
-						.where(ShiftRequest.workflow_state.isin(status_to_check)) \
+				ReferenceType = DocType(todo.reference_type)
+				for fieldname in fieldnames:						
+					frappe.qb.update(ReferenceType) \
+						.set(ReferenceType[fieldname], replaced_with) \
+						.set(ReferenceType.modified, now()) \
+						.where(ReferenceType.name == todo.reference_name) \
+						.where(ReferenceType[fieldname] == value_to_replace) \
+						.where(ReferenceType[status_field].isin(status_to_check)) \
 					.run()
-				else:
-					ReferenceType = DocType(todo.reference_type)
-					for fieldname in fieldnames:						
-						frappe.qb.update(ReferenceType) \
-							.set(ReferenceType[fieldname], replaced_with) \
-							.set(ReferenceType.modified, now()) \
-							.where(ReferenceType.name == todo.reference_name) \
-							.where(ReferenceType[fieldname] == value_to_replace) \
-							.where(ReferenceType[status_field].isin(status_to_check)) \
-						.run()
 
 
 	def assign_projects(self):
@@ -410,29 +396,15 @@ class ReassignRelieverAssignment(Document):
 						if "name" in fieldname:
 							replaced_with = self.on_leave_employee_name
 							value_to_replace = self.reliever_name
-						# Shift Request uses table multiselect field for approvers
-						if todo.get('reference_type') == "Shift Request":
-							ShiftRequest = DocType("Shift Request")
-							ShiftRequestApprovers = DocType("Shift Request Approvers")
-							frappe.qb.update(ShiftRequestApprovers) \
-								.join(ShiftRequest) \
-								.on(ShiftRequest.name == ShiftRequestApprovers.parent) \
-								.set(ShiftRequestApprovers.user, replaced_with) \
-								.where(ShiftRequestApprovers.parent == todo.get('reference_name')) \
-								.where(ShiftRequestApprovers.parentfield == "custom_shift_approvers") \
-								.where(ShiftRequestApprovers.user == value_to_replace)\
-								.where(ShiftRequest.workflow_state.isin(status_to_check)) \
+						ReferenceType = DocType(todo.get('reference_type'))
+						for fieldname in fieldnames:
+							frappe.qb.update(ReferenceType) \
+								.set(ReferenceType[fieldname], replaced_with) \
+								.set(ReferenceType.modified, now()) \
+								.where(ReferenceType.name == todo.get('reference_name')) \
+								.where(ReferenceType[fieldname] == value_to_replace) \
+								.where(ReferenceType[status_field].isin(status_to_check)) \
 							.run()
-						else:
-							ReferenceType = DocType(todo.get('reference_type'))
-							for fieldname in fieldnames:
-								frappe.qb.update(ReferenceType) \
-									.set(ReferenceType[fieldname], replaced_with) \
-									.set(ReferenceType.modified, now()) \
-									.where(ReferenceType.name == todo.get('reference_name')) \
-									.where(ReferenceType[fieldname] == value_to_replace) \
-									.where(ReferenceType[status_field].isin(status_to_check)) \
-								.run()
 		
 	def reassign_roles(self, data):
 		doclist = json.loads(data.doclist)
@@ -583,26 +555,14 @@ class ReassignRelieverAssignment(Document):
 				if "name" in fieldname:
 						value_to_replace = self.reliever_name
 						replaced_with = self.on_leave_employee_name 
-				if reference_type == "Shift Request":
-					ShiftRequest = DocType("Shift Request")
-					ShiftRequestApprovers = DocType("Shift Request Approvers")
-					frappe.qb.update(ShiftRequestApprovers) \
-							.join(ShiftRequest) \
-							.on(ShiftRequest.name == ShiftRequestApprovers.parent) \
-							.set(ShiftRequestApprovers.user, replaced_with) \
-							.where(ShiftRequestApprovers.parent == reference_name) \
-							.where(ShiftRequestApprovers.parentfield == "custom_shift_approvers") \
-							.where(ShiftRequestApprovers.user == value_to_replace) \
-							.where(ShiftRequest.workflow_state.isin(status_to_check)).run()
-				else:
-					ReferenceType = DocType(reference_type)
-					for fieldname in fieldnames:
-						frappe.qb.update(ReferenceType) \
-									.set(ReferenceType[fieldname], replaced_with) \
-									.set(ReferenceType.modified, now()) \
-									.where(ReferenceType.name == reference_name) \
-									.where(ReferenceType[fieldname] == value_to_replace) \
-									.where(ReferenceType[status_field].isin(status_to_check)).run()
+				ReferenceType = DocType(reference_type)
+				for fieldname in fieldnames:
+					frappe.qb.update(ReferenceType) \
+						.set(ReferenceType[fieldname], replaced_with) \
+						.set(ReferenceType.modified, now()) \
+						.where(ReferenceType.name == reference_name) \
+						.where(ReferenceType[fieldname] == value_to_replace) \
+						.where(ReferenceType[status_field].isin(status_to_check)).run()
 
 def reassign_responsibilities(leave_application):
 	try:

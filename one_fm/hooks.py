@@ -400,7 +400,6 @@ doc_events = {
     "Shift Request":{
         "before_save":[
             "one_fm.overrides.shift_request.fill_to_date",
-            "one_fm.overrides.shift_request.send_shift_request_mail",
             "one_fm.overrides.shift_request.validate_from_date"
         ],
         "on_update": [

@@ -1,96 +1,39 @@
 import frappe
-import datetime, click
 from frappe.utils.fixtures import sync_fixtures
-from one_fm.overrides.shift_request import fetch_approver
-from one_fm.utils import get_approver
-from one_fm.api.notification import get_employee_user_id
+from one_fm.setup import delete_custom_fields
+from one_fm.custom.custom_field.shift_request import get_shift_request_custom_fields
+from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+
+
 
 def execute():
-    sync_fixtures("one_fm")
-    # Pending Approval and Draft 
-    open_shift_requests = frappe.get_all("Shift Request", 
-        fields=["name", "shift_approver", "department", "workflow_state", "employee"], 
-        filters={"shift_approver": ("is", "set"), "workflow_state": ["in", ["Pending Approval", "Draft"]]},
-        order_by="creation desc")
+    sync_fixtures("one_fm") 
+    pending_worflows = frappe.get_all(
+        "Shift Request",
+        filters={"workflow_state": "Pending Approver"},
+        fields=["name", "parent"]
+    )
+    delete_custom_fields({
+        "Shift Request": [
+            {
+                "fieldname": "shift_approver",
+            },
+            {
+                "fieldname": "custom_shift_approvers",
+            }
+        ]
+    })
+    create_custom_fields(get_shift_request_custom_fields())
+    if pending_worflows:
+        update_existing_pending_approver_to_pending_approval(pending_worflows)
 
-    update_sr(open_shift_requests)
-
-    submitted_shift_requests = frappe.get_all("Shift Request", 
-        fields=["name", "shift_approver", "department", "workflow_state", "employee"], 
-        filters={"shift_approver": ("is", "set"), "workflow_state": ["in", ["Approved", "Rejected"]]},
-        order_by="creation desc")
-
-    update_submitted_sr(submitted_shift_requests)
-
-def update_submitted_sr(shift_requests):
-    for shift_request in shift_requests:
-        if frappe.db.exists("Shift Request Approvers", {"parent": shift_request.name}):
-            continue
-        approver_user_id = shift_request.shift_approver
-        doc = frappe.get_doc("Shift Request", shift_request.name)
+def update_existing_pending_approver_to_pending_approval(pending_worflows):
+    for pending_worflow in pending_worflows:
         try:
-            doc.append("custom_shift_approvers", {
-                "user": approver_user_id
-            })
-            for approver in doc.custom_shift_approvers:
-                approver.set_user_and_timestamp()
-                approver.set_new_name()
-                insert_approver(approver)
-        except Exception:
-            click.echo(frappe.get_traceback())
+            doc = frappe.get_doc("Shift Request", pending_worflow["name"])
+            doc.workflow_state = "Pending Approval"
+            doc.save()
+            frappe.db.commit()     
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), f"Failed to update {pending_worflow['name']}")
 
-
-
-def update_sr(shift_requests):
-    for shift_request in shift_requests:
-        if frappe.db.exists("Shift Request Approvers", {"parent": shift_request.name}):
-            continue
-        employee_user_id = get_employee_user_id(shift_request.employee)
-        approver_user_id = shift_request.shift_approver
-        doc = frappe.get_doc("Shift Request", shift_request.name)
-            
-        if shift_request.department == "Operations - ONEFM":        
-            other_approvers = []
-            if shift_request.department == "Operations - ONEFM":
-                other_approvers =[user.approver for user in frappe.get_all("Department Approver", filters={"parent": shift_request.department, "parentfield": "shift_request_approver"}, fields=["approver"]) if user.approver != employee_user_id and user.approver != approver_user_id]
-
-            other_approvers.append(approver_user_id)
-            for approver in other_approvers:
-                doc.append("custom_shift_approvers", {
-                    "user": approver
-                })
-        else:
-            doc.append("custom_shift_approvers", {
-                "user": approver_user_id
-            })
-
-        for approver in doc.custom_shift_approvers:
-            approver.set_user_and_timestamp()
-            approver.set_new_name()
-            insert_approver(approver)
-
-
-def insert_approver(approver):
-    # Migrate directly using sql for submitted Shift Requests
-    values = {
-        'name': approver.name,
-        'owner': approver.owner,
-        'creation': approver.creation.strftime("%Y-%m-%d %H:%M:%S.%f") if not isinstance(approver.creation, str) else approver.creation,
-        'modified': approver.modified.strftime("%Y-%m-%d %H:%M:%S.%f") if not isinstance(approver.modified, str) else approver.modified,
-        'modified_by': approver.modified_by,
-        'docstatus': approver.docstatus,
-        'idx': approver.idx,
-        'user': approver.user,
-        'parent': approver.parent,
-        'parenttype': approver.parenttype,
-        'parentfield': approver.parentfield
-    }
-
-    frappe.db.sql("""
-        insert into `tabShift Request Approvers` 
-            (name, owner, creation, modified, modified_by, docstatus, idx, user, parent, parentfield, parenttype) 
-        values 
-            (%(name)s, %(owner)s, %(creation)s, %(modified)s, %(modified_by)s, %(docstatus)s, %(idx)s, %(user)s, %(parent)s, %(parentfield)s, %(parenttype)s)
-    """, values=values)
-
-    frappe.db.commit()

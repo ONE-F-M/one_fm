@@ -1,0 +1,54 @@
+{
+    "name": "Shift Request Pending Approval - Reports To",
+    "document_type": "Shift Request",
+    "due_date_based_on": "from_date",
+    "priority": 1,
+    "disabled": 0,
+    "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table cellpadding=\"0\" cellspacing=\"0\" border=\"1\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Shift Type</td>\n                <td style=\"padding: 10px;\">{{shift_type}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Purpose</td>\n                <td style=\"padding: 10px;\">{{purpose}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Operations Shift</td>\n                <td style=\"padding: 10px;\">{{operations_shift}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Approver</td>\n                <td style=\"padding: 10px;\">{{approver}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">From Date</td>\n                <td style=\"padding: 10px;\">{{from_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            </tbody></table><p></p>",
+    "is_assignment_rule_with_workflow": 1,
+    "assign_condition": "workflow_state == 'Pending Approval'",
+    "unassign_condition": "workflow_state in (\"Draft\", \"Cancelled\")",
+    "close_condition": "workflow_state in (\"Approved\", \"Rejected\")",
+    "rule": "Based on Field",
+    "field": "custom_reports_to_user",
+    "last_user": null,
+    "doctype": "Assignment Rule",
+    "assignment_days": [
+      {
+        "name": "65fa0af465",
+        "day": "Monday",
+        "doctype": "Assignment Rule Day"
+      },
+      {
+        "name": "bd0c852556",
+        "day": "Tuesday",
+        "doctype": "Assignment Rule Day"
+      },
+      {
+        "name": "f9ded109d1",
+        "day": "Wednesday",
+        "doctype": "Assignment Rule Day"
+      },
+      {
+        "name": "c358c13980",
+        "day": "Thursday",
+        "doctype": "Assignment Rule Day"
+      },
+      {
+        "name": "0c888e0e8e",
+        "day": "Friday",
+        "doctype": "Assignment Rule Day"
+      },
+      {
+        "name": "95412b44ea",
+        "day": "Saturday",
+        "doctype": "Assignment Rule Day"
+      },
+      {
+        "name": "529747be3d",
+        "day": "Sunday",
+        "doctype": "Assignment Rule Day"
+      }
+    ],
+    "users": []
+  }

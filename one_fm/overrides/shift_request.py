@@ -2,19 +2,15 @@ import frappe
 import datetime, json
 import pandas as pd
 from frappe import _
-from frappe.utils import getdate, today, cstr, add_to_date, add_days, get_url_to_form
+from frappe.utils import getdate, today, cstr, add_to_date, add_days
 from frappe.model.workflow import apply_workflow
-from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from frappe.utils import getdate, cstr
-from hrms.hr.utils import share_doc_with_approver
 from hrms.hr.doctype.shift_request.shift_request import *
 from one_fm.utils import (
-    workflow_approve_reject, send_workflow_action_email, get_approver
+    workflow_approve_reject, get_approver
 )
-from one_fm.api.notification import create_notification_log, get_employee_user_id
+from one_fm.api.notification import get_employee_user_id
 from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
-from one_fm.processor import sendemail
-
 
 class OverlappingShiftError(frappe.ValidationError):
     pass
@@ -22,13 +18,7 @@ class OverlappingShiftError(frappe.ValidationError):
 class ShiftRequestOverride(ShiftRequest):
     def on_submit(self):
         if self.workflow_state != 'Update Request':
-            self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approver' else self.db_set("status", 'Draft')
-
-
-    def on_update(self):
-        for approver in self.custom_shift_approvers:
-            share_doc_with_approver(self, approver.user)
-
+            self.db_set("status", self.workflow_state) if self.workflow_state!='Pending Approval' else self.db_set("status", 'Draft')
 
     def validate_approver(self):
         if not self.is_new() and self.workflow_state == "Approved":
@@ -70,7 +60,7 @@ class ShiftRequestOverride(ShiftRequest):
                 shift_assignment_doc = frappe.get_doc("Shift Assignment", shift["name"])
                 shift_assignment_doc.cancel()
                 shift_assignment_doc.delete()
-        if self.from_date <= getdate() <= self.to_date and schedule_exists:
+        if getdate(self.from_date) <= getdate() <= getdate(self.to_date) and schedule_exists:
             schedule = frappe.get_doc("Employee Schedule",{"employee":self.employee, "date":cstr(getdate())})
             if schedule:
                 sa = frappe.get_doc(dict(
@@ -92,7 +82,7 @@ def validate(doc, event=None):
     # ensure status is not pending
     if doc.is_new():
         doc.status = 'Draft'
-    if doc.status == 'Pending Approver':
+    if doc.status == 'Pending Approval':
         doc.status == 'Draft'
     if doc.status == 'Draft' and doc.purpose == 'Assign Unrostered Employee':
         if check_for_roster(doc):
@@ -118,7 +108,7 @@ def validate(doc, event=None):
 
 def shift_request_submit(self):
     if self.workflow_state != 'Update Request':
-        self.db_set("status", self.workflow_state) if self.workflow_state != 'Pending Approver' else self.db_set(
+        self.db_set("status", self.workflow_state) if self.workflow_state != 'Pending Approval' else self.db_set(
             "status", 'Draft')
 
 
@@ -133,26 +123,7 @@ def on_update(doc, event):
         workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])
 
     if doc.workflow_state == 'Draft':
-        send_workflow_action_email(doc,[approver.user for approver in doc.custom_shift_approvers])
         validate_shift_overlap(doc)
-
-    if doc.workflow_state == 'Pending Approver':
-        assign_approver(doc, doc.approver)
-
-
-def assign_approver(doc, approver_id):
-    add_assignment({
-        'doctype': doc.doctype,
-        'name': doc.name,
-        'assign_to': [approver_id],
-        'description':
-            _(
-                f"""
-						Please Note that a Shift Request {doc.name} has been submitted.<br>
-						Please review and take necessary actions
-					"""
-            )
-    })
 
 
 def validate_shift_overlap(doc):
@@ -951,23 +922,3 @@ def daterange(start_date, end_date):
     end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
     for n in range(int((end_date - start_date).days)):
         yield start_date + datetime.timedelta(n)
-
-
-def send_shift_request_mail(doc, method):
-    if doc.workflow_state == 'Pending Approver':
-        try:
-            title = f"Urgent Notification: {doc.doctype} Requires Your Immediate Review"
-            context = dict(
-                employee_name=doc.employee_name,
-                from_date=doc.from_date,
-                to_date=doc.to_date,
-                department=doc.department,
-                checkin_site=doc.check_in_site,
-                checkout_site=doc.check_out_site,
-                doc_link=get_url_to_form(doc.doctype, doc.name)
-            )
-            msg = frappe.render_template('one_fm/templates/emails/shift_request_notification.html', context=context)
-            recipients = [approver.user for approver in doc.custom_shift_approvers]
-            sendemail(recipients=recipients, subject=title, content=msg)
-        except:
-            frappe.log_error(frappe.get_traceback(), "Error while sending shift request notification")
