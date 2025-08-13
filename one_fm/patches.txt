@@ -124,7 +124,7 @@ one_fm.patches.v15_0.add_update_assignment_rule #2025-07-2
 one_fm.patches.v15_0.add_update_workflow #2025-06-04
 one_fm.patches.v15_0.add_update_custom_field #2025-07-11 Scheduled Job Type
 one_fm.patches.v15_0.update_attendance_check_client_day_off
-one_fm.patches.v15_0.update_erf_in_job_applicant_and_offer
+one_fm.patches.v15_0.update_erf_in_job_applicant_and_offer #2025-08-14
 one_fm.patches.v15_0.delete_employee_schedule_for_employee_on_leave #2025-07-17 rerun
 one_fm.patches.v15_0.update_on_boarding_EMP-ONB-2025-00315
 one_fm.patches.v15_0.update_contracts_end_date
