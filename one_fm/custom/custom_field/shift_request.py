@@ -244,14 +244,6 @@ def get_shift_request_custom_fields():
                 "reqd": 1
             },
             {
-                "fieldname": "custom_shift_approvers",
-                "fieldtype": "Table MultiSelect",
-                "label": "Shift Approvers",
-                "insert_after": "shift_approver",
-                "options": "Shift Request Approvers",
-                "read_only": 1
-            },
-            {
                 "name": "Shift Request-custom_approval",
                 "label": "Approval",
                 "fieldname": "custom_approval",
