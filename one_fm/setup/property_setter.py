@@ -1,0 +1,151 @@
+
+# Property setter imports
+from one_fm.custom.property_setter.asset import get_asset_properties
+from one_fm.custom.property_setter.asset_category_account import get_asset_category_account_properties
+from one_fm.custom.property_setter.asset_finance_book import get_asset_finance_book_properties
+from one_fm.custom.property_setter.assignment_rule import get_assignment_rule_properties
+from one_fm.custom.property_setter.attendance import get_attendance_properties
+from one_fm.custom.property_setter.attendance_request import get_attendance_request_properties
+from one_fm.custom.property_setter.bank_account import get_bank_account_properties
+from one_fm.custom.property_setter.budget import get_budget_properties
+from one_fm.custom.property_setter.company import get_company_properties
+from one_fm.custom.property_setter.customer import get_customer_properties
+from one_fm.custom.property_setter.erf_salary_detail import get_erf_salary_detail_properties
+from one_fm.custom.property_setter.expense_claim import get_expense_claim_properties
+from one_fm.custom.property_setter.interview_feedback import get_interview_feedback_properties
+from one_fm.custom.property_setter.job_opening import get_job_opening_properties
+from one_fm.custom.property_setter.leave_application import get_leave_application_properties
+from one_fm.custom.property_setter.leave_type import get_leave_type_properties
+from one_fm.custom.property_setter.location import get_location_properties
+from one_fm.custom.property_setter.purchase_invoice import get_purchase_invoice_properties
+from one_fm.custom.property_setter.religion import get_religion_properties
+from one_fm.custom.property_setter.sales_invoice import get_sales_invoice_properties
+from one_fm.custom.property_setter.sales_invoice_advance import get_sales_invoice_advance_properties
+from one_fm.custom.property_setter.shift_request import get_shift_request_properties
+from one_fm.custom.property_setter.shift_type import get_shift_type_properties
+from one_fm.custom.property_setter.skill_assessment import get_skill_assessment_properties
+from one_fm.custom.property_setter.stock_entry_detail import get_stock_entry_detail_properties
+from one_fm.custom.property_setter.task import get_task_properties
+from one_fm.custom.property_setter.delivery_note import get_delivery_note_properties
+from one_fm.custom.property_setter.delivery_note_item import get_delivery_note_item_properties
+from one_fm.custom.property_setter.depreciation_schedule import get_depreciation_schedule_properties
+from one_fm.custom.property_setter.designation import get_designation_properties
+from one_fm.custom.property_setter.email_template import get_email_template_properties
+from one_fm.custom.property_setter.employee_advance import get_employee_advance_properties
+from one_fm.custom.property_setter.employee_incentive import get_employee_incentive_properties
+from one_fm.custom.property_setter.employee_performance_feedback import get_employee_performance_feedback_properties
+from one_fm.custom.property_setter.gender import get_gender_properties
+from one_fm.custom.property_setter.goal import get_goal_properties
+from one_fm.custom.property_setter.hd_ticket import get_hd_ticket_properties
+from one_fm.custom.property_setter.health_insurance_provider_detail import get_health_insurance_provider_detail_properties
+from one_fm.custom.property_setter.help_article import get_help_article_properties
+from one_fm.custom.property_setter.help_category import get_help_category_properties
+from one_fm.custom.property_setter.interview import get_interview_properties
+from one_fm.custom.property_setter.issue import get_issue_properties
+from one_fm.custom.property_setter.item_barcode import get_item_barcode_properties
+from one_fm.custom.property_setter.item_group import get_item_group_properties
+from one_fm.custom.property_setter.item import get_item_properties
+from one_fm.custom.property_setter.job_applicant import get_job_applicant_properties
+from one_fm.custom.property_setter.journal_entry_account import get_journal_entry_account_properties
+from one_fm.custom.property_setter.notification_log import get_notification_log_properties
+from one_fm.custom.property_setter.notification_settings import get_notification_settings_properties
+from one_fm.custom.property_setter.packed_item import get_packed_item_properties
+from one_fm.custom.property_setter.payment_entry_reference import get_payment_entry_reference_properties
+from one_fm.custom.property_setter.payroll_employee_detail import get_payroll_employee_detail_properties
+from one_fm.custom.property_setter.payroll_entry import get_payroll_entry_properties
+from one_fm.custom.property_setter.project_type import get_project_type_properties
+from one_fm.custom.property_setter.project import get_project_properties
+from one_fm.custom.property_setter.purchase_order_item import get_purchase_order_item_properties
+from one_fm.custom.property_setter.purchase_order import get_purchase_order_properties
+from one_fm.custom.property_setter.purchase_receipt import get_purchase_receipt_properties
+from one_fm.custom.property_setter.purchase_receipt_item import get_purchase_receipt_item_properties
+from one_fm.custom.property_setter.salary_component_account import get_salary_component_account_properties
+from one_fm.custom.property_setter.salary_slip import get_salary_slip_properties
+from one_fm.custom.property_setter.sales_invoice_item import get_sales_invoice_item_properties
+from one_fm.custom.property_setter.sales_invoice_timesheet import get_sales_invoice_timesheet_properties
+from one_fm.custom.property_setter.shift_assignment import get_shift_assignment_properties
+from one_fm.custom.property_setter.stock_entry import get_stock_entry_properties
+from one_fm.custom.property_setter.supplier import get_supplier_properties
+from one_fm.custom.property_setter.timesheet_detail import get_timesheet_detail_properties
+from one_fm.custom.property_setter.timesheet import get_timesheet_properties
+from one_fm.custom.property_setter.todo import get_todo_properties
+from one_fm.custom.property_setter.vehicle import get_vehicle_properties
+from one_fm.custom.property_setter.warehouse import get_warehouse_properties
+from one_fm.custom.property_setter.job_offer import get_job_offer_properties
+
+def get_field_properties():
+	"""ONEFM specific field properties that need to be added to the masters in ERPNext"""
+	field_properties = get_assignment_rule_properties()
+	field_properties.extend(get_asset_category_account_properties())
+	field_properties.extend(get_asset_finance_book_properties())
+	field_properties.extend(get_asset_properties())
+	field_properties.extend(get_attendance_properties())
+	field_properties.extend(get_attendance_request_properties())
+	field_properties.extend(get_bank_account_properties())
+	field_properties.extend(get_budget_properties())
+	field_properties.extend(get_company_properties())
+	field_properties.extend(get_customer_properties())
+	field_properties.extend(get_delivery_note_properties())
+	field_properties.extend(get_delivery_note_item_properties())
+	field_properties.extend(get_depreciation_schedule_properties())
+	field_properties.extend(get_designation_properties())
+	field_properties.extend(get_email_template_properties())
+	field_properties.extend(get_employee_advance_properties())
+	field_properties.extend(get_employee_incentive_properties())
+	field_properties.extend(get_employee_performance_feedback_properties())
+	field_properties.extend(get_erf_salary_detail_properties())
+	field_properties.extend(get_expense_claim_properties())
+	field_properties.extend(get_gender_properties())
+	field_properties.extend(get_goal_properties())
+	field_properties.extend(get_hd_ticket_properties())
+	field_properties.extend(get_health_insurance_provider_detail_properties())
+	field_properties.extend(get_help_article_properties())
+	field_properties.extend(get_help_category_properties())
+	field_properties.extend(get_interview_properties())
+	field_properties.extend(get_interview_feedback_properties())
+	field_properties.extend(get_issue_properties())
+	field_properties.extend(get_item_properties())
+	field_properties.extend(get_item_barcode_properties())
+	field_properties.extend(get_item_group_properties())
+	field_properties.extend(get_job_applicant_properties())
+	field_properties.extend(get_job_offer_properties())
+	field_properties.extend(get_job_opening_properties())
+	field_properties.extend(get_journal_entry_account_properties())
+	field_properties.extend(get_leave_application_properties())
+	field_properties.extend(get_leave_type_properties())
+	field_properties.extend(get_location_properties())
+	field_properties.extend(get_notification_log_properties())
+	field_properties.extend(get_notification_settings_properties())
+	field_properties.extend(get_packed_item_properties())
+	field_properties.extend(get_payment_entry_reference_properties())
+	field_properties.extend(get_payroll_employee_detail_properties())
+	field_properties.extend(get_payroll_entry_properties())
+	field_properties.extend(get_project_properties())
+	field_properties.extend(get_project_type_properties())
+	field_properties.extend(get_purchase_invoice_properties())
+	field_properties.extend(get_purchase_order_properties())
+	field_properties.extend(get_purchase_order_item_properties())
+	field_properties.extend(get_purchase_receipt_properties())
+	field_properties.extend(get_purchase_receipt_item_properties())
+	field_properties.extend(get_religion_properties())
+	field_properties.extend(get_salary_component_account_properties())
+	field_properties.extend(get_salary_slip_properties())
+	field_properties.extend(get_sales_invoice_properties())
+	field_properties.extend(get_sales_invoice_advance_properties())
+	field_properties.extend(get_sales_invoice_item_properties())
+	field_properties.extend(get_sales_invoice_timesheet_properties())
+	field_properties.extend(get_shift_assignment_properties())
+	field_properties.extend(get_shift_request_properties())
+	field_properties.extend(get_shift_type_properties())
+	field_properties.extend(get_skill_assessment_properties())
+	field_properties.extend(get_stock_entry_properties())
+	field_properties.extend(get_stock_entry_detail_properties())
+	field_properties.extend(get_supplier_properties())
+	field_properties.extend(get_task_properties())
+	field_properties.extend(get_timesheet_properties())
+	field_properties.extend(get_timesheet_detail_properties())
+	field_properties.extend(get_todo_properties())
+	field_properties.extend(get_vehicle_properties())
+	field_properties.extend(get_warehouse_properties())
+
+	return field_properties

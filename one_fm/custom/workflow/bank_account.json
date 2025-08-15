@@ -1,0 +1,27 @@
+{
+  "name": "Bank Account",
+  "workflow_name": "Bank Account",
+  "document_type": "Bank Account",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    { "state": "Draft", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Accommodation User", "doctype": "Workflow Document State" },
+    { "state": "Draft", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Open Request", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Employee", "doctype": "Workflow Document State" },
+    { "state": "Open Request", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Processing Bank Account Opening", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Payroll Operator", "doctype": "Workflow Document State" },
+    { "state": "Rejected by Accounts", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Payroll Operator", "doctype": "Workflow Document State" },
+    { "state": "Active Account", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Payroll Operator", "doctype": "Workflow Document State" }
+  ],
+  "transitions": [
+    { "state": "Draft", "action": "Open Request", "next_state": "Open Request", "allowed": "Employee", "allow_self_approval": 1, "allowed_user_field": "owner", "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "doc.new_account == 1", "doctype": "Workflow Transition" },
+    { "state": "Draft", "action": "Open Request", "next_state": "Open Request", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "doc.new_account == 1", "doctype": "Workflow Transition" },
+    { "state": "Open Request", "action": "Process Bank Account Opening", "next_state": "Processing Bank Account Opening", "allowed": "Payroll Operator", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Open Request", "action": "Reject", "next_state": "Rejected by Accounts", "allowed": "Payroll Operator", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Processing Bank Account Opening", "action": "Open Bank Account", "next_state": "Active Account", "allowed": "Payroll Operator", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Draft", "action": "Open Bank Account", "next_state": "Active Account", "allowed": "Payroll Operator", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "doc.new_account != 1", "doctype": "Workflow Transition" }
+  ]
+}

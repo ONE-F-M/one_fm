@@ -1,0 +1,16 @@
+{
+  "name": "Inovice",
+  "workflow_name": "Inovice",
+  "document_type": "Sales Invoice",
+  "is_active": 0,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    { "state": "Submission for approval", "doc_status": "0", "update_field": "customer", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Accounts User", "doctype": "Workflow Document State" }
+  ],
+  "transitions": [
+    { "state": "Submission for approval", "action": "Approve", "next_state": "Submission for approval", "allowed": "Accounts Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" }
+  ]
+}

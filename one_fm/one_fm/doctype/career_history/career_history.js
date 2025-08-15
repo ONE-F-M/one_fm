@@ -2,7 +2,12 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('Career History', {
-	onload: function(frm) {
+		onload: function(frm) {
+			setTimeout(() => {
+			$('div[data-fieldname="rank_and_factors"] .row-index').hide(); // Hide row number
+			$('div[data-fieldname="rank_and_factors"] .grid-head-row .row-index').hide(); // Hide header NO
+		}, 500);
+
         frm.doc.career_history_company.sort((a, b) => {
             return new Date(b.start_date) - new Date(a.start_date);
         });

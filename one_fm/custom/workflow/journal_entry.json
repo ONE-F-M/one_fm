@@ -1,0 +1,269 @@
+{
+  "name": "Journal Entry",
+  "workflow_name": "Journal Entry",
+  "document_type": "Journal Entry",
+  "is_active": 0,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Open",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Junior Accounts User",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Rejected",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Accounts User",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Draft",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Accounts Manager",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Draft",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Accounts User",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Cancellation Requested",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Accounts User",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Published",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Accounts User",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Cancelled",
+      "doc_status": "2",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Accounts Manager",
+      "doctype": "Workflow Document State"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Open",
+      "action": "Post as Draft",
+      "next_state": "Draft",
+      "allowed": "Junior Accounts User",
+      "allow_self_approval": 1,
+      "allowed_user_field": "owner",
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Open",
+      "action": "Post as Draft",
+      "next_state": "Draft",
+      "allowed": "Accounts User",
+      "allow_self_approval": 1,
+      "allowed_user_field": "owner",
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Open",
+      "action": "Post as Draft",
+      "next_state": "Draft",
+      "allowed": "Accounts Manager",
+      "allow_self_approval": 1,
+      "allowed_user_field": "",
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Open",
+      "action": "Post as Draft",
+      "next_state": "Draft",
+      "allowed": "Senior Accounts User",
+      "allow_self_approval": 1,
+      "allowed_user_field": "owner",
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Publish",
+      "next_state": "Published",
+      "allowed": "Accounts Manager",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Return",
+      "next_state": "Open",
+      "allowed": "Accounts Manager",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "Accounts Manager",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Publish",
+      "next_state": "Published",
+      "allowed": "Senior Accounts User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Return",
+      "next_state": "Open",
+      "allowed": "Senior Accounts User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "Senior Accounts User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Publish",
+      "next_state": "Published",
+      "allowed": "Accounts User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "condition": "doc.auto_repeat not in ['',None]",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Return",
+      "next_state": "Open",
+      "allowed": "Accounts User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "condition": "doc.auto_repeat not in ['',None]",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "Accounts User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "condition": "doc.auto_repeat not in ['',None]",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Published",
+      "action": "Request Cancel",
+      "next_state": "Cancellation Requested",
+      "allowed": "Junior Accounts User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Cancellation Requested",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Accounts Manager",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Published",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Senior Accounts User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    }
+  ]
+}

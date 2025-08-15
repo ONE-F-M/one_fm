@@ -1,0 +1,25 @@
+{
+  "name": "RFM Approver",
+  "document_type": "Request for Material",
+  "priority": 0,
+  "disabled": 0,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n\t\t\t<br>\n\t\t\tThe details of the request are as follows:<br>\n\t\t\t</p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n\t\t\t\t<thead>\n\t\t\t\t\t<tr>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n\t\t\t\t\t\t<th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n\t\t\t\t\t</tr>\n\t\t\t\t</thead>\n\t\t\t\t<tbody>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Type</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{type}}</td>\n\t\t\t\t</tr>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Required Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{schedule_date}}</td>\n\t\t\t\t</tr>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Transaction Date</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{transaction_date}}</td>\n\t\t\t\t</tr>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Company</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{company}}</td>\n\t\t\t\t</tr>\n\t\t\n\t\t\t\t<tr>\n\t\t\t\t\t<td style=\"padding: 10px;\">Employee</td>\n\t\t\t\t\t<td style=\"padding: 10px;\">{{employee}}</td>\n\t\t\t\t</tr>\n\t\t\t\t</tbody></table><p></p>",
+  "is_assignment_rule_with_workflow": 0,
+  "assign_condition": "workflow_state == 'Pending Approval'",
+  "unassign_condition": "",
+  "close_condition": "workflow_state in ('Approved', 'Rejected') and per_received == 100",
+  "rule": "Based on Field",
+  "field": "request_for_material_approver",
+  "last_user": "",
+  "doctype": "Assignment Rule",
+  "assignment_days": [
+    { "day": "Monday", "doctype": "Assignment Rule Day" },
+    { "day": "Tuesday", "doctype": "Assignment Rule Day" },
+    { "day": "Wednesday", "doctype": "Assignment Rule Day" },
+    { "day": "Thursday", "doctype": "Assignment Rule Day" },
+    { "day": "Friday", "doctype": "Assignment Rule Day" },
+    { "day": "Saturday", "doctype": "Assignment Rule Day" },
+    { "day": "Sunday", "doctype": "Assignment Rule Day" }
+  ],
+  "users": []
+}

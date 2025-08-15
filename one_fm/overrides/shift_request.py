@@ -878,16 +878,52 @@ def get_employees(doctype, txt, searchfield, start, page_len, filters):
 
 def check_for_roster(doc):
     to_date = getdate(doc.to_date) if doc.to_date else getdate()
-    schedule_date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=to_date)]
-    new_date_range = [i for i in schedule_date_range]
-    if new_date_range:
-        for date in new_date_range:
-            if frappe.db.exists("Employee Schedule", {'date': date, 'employee': doc.employee, 'employee_availability': 'Working'}):
-                return True
-            elif frappe.db.exists("Shift Assignment", {"docstatus": 1, "start_date": date, "employee": doc.employee}):
-                return True
-            else:
-                return False
+    date_range = [str(i.date()) for i in pd.date_range(start=doc.from_date, end=to_date)]
+
+    if not date_range:
+        return False
+
+    # Fetch all relevant 'Working' schedules for the employee
+    emp_schedules = frappe.db.get_all(
+        "Employee Schedule",
+        filters={
+            'employee': doc.employee,
+            'employee_availability': 'Working',
+            'date': ['in', date_range]
+        },
+        fields=["date"]
+    )
+    scheduled_dates = {str(es["date"]) for es in emp_schedules}
+
+    # Fetch all relevant shift assignments (docstatus = 1)
+    shift_assignments = frappe.db.get_all(
+        "Shift Assignment",
+        filters={
+            'employee': doc.employee,
+            'docstatus': 1,
+            'start_date': ['in', date_range]
+        },
+        fields=["start_date"]
+    )
+    assigned_dates = {str(sa["start_date"]) for sa in shift_assignments}
+
+    deletable_dates = scheduled_dates - assigned_dates
+
+    if assigned_dates & scheduled_dates:
+        return True
+
+    if deletable_dates:
+        frappe.db.sql(
+            f'''
+            DELETE FROM `tabEmployee Schedule`
+            WHERE employee = %s
+            AND employee_availability = 'Working'
+            AND date IN ({', '.join(['%s'] * len(deletable_dates))})
+            ''',
+            (doc.employee, *deletable_dates)
+        )
+
+    return False
 
 
 @frappe.whitelist()

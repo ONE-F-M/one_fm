@@ -325,24 +325,51 @@ def get_current_user_details():
 	return user, user_roles, user_employee
 
 
-def get_employee_leave_attendance(employees,start_date):
-	"""Returns a dict of employees and their corresponding attendance dates if it falls on or after the start date
+def get_employee_leave_attendance(employees, start_date):
+    """
+    Returns a dict of employees and their corresponding attendance dates if it falls on or after the start date,
+    including dates from approved Annual Leave applications (from_date >= start_date).
+    """
+    attendance_dict = {}
+    # Get attendance marked as On Leave
+    all_attendance = frappe.get_all(
+        "Attendance",
+        {
+            "attendance_date": [">=", start_date],
+            "employee": ["IN", employees],
+            "docstatus": 1,
+            "status": "On Leave"
+        },
+        ["attendance_date", "employee"]
+    )
+    for each in all_attendance:
+        attendance_dict.setdefault(each.employee, []).append(each.attendance_date)
 
-	Args:
-		employees (list): list of employees
+    # Get approved Annual Leave applications with from_date >= start_date
+    leave_applications = frappe.get_all(
+        "Leave Application",
+        {
+            "employee": ["IN", employees],
+            "from_date": [">=", start_date],
+            "leave_type": "Annual Leave",
+            "status": "Approved"
+        },
+        ["employee", "from_date", "to_date"]
+    )
+    for leave in leave_applications:
+        from_date = getdate(leave.from_date)
+        to_date = getdate(leave.to_date)
+        days_count = date_diff(to_date, from_date) + 1  # inclusive
+        leave_days = [(add_days(from_date, i)).strftime("%Y-%m-%d") for i in range(days_count)]
+        # Add leave days to attendance_dict, ensuring uniqueness
+        if leave.employee in attendance_dict:
+            attendance_dict[leave.employee].extend(leave_days)
+            # Make unique
+            attendance_dict[leave.employee] = list(sorted(set(attendance_dict[leave.employee])))
+        else:
+            attendance_dict[leave.employee] = leave_days
 
-	Returns:
-		dict: list of dictionaries
-	"""
-	attendance_dict = {}
-	all_attendance = frappe.get_all("Attendance", {"attendance_date": [">=", start_date ], "employee": ["IN",employees], "docstatus": 1, "status": "On Leave" }, ["attendance_date","employee"])
-	if all_attendance:
-		for each in all_attendance:
-			if attendance_dict.get(each.employee):
-				attendance_dict[each.employee].append(each.attendance_date)
-			else:
-				attendance_dict[each.employee] = [each.attendance_date]
-	return attendance_dict
+    return attendance_dict
 
 @frappe.whitelist()
 def schedule_overtime(employees, shift, operations_role,start_date,end_date=None, selected_days_only=0,project_end_date=None):
@@ -416,8 +443,23 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 						employees.append({"employee": obj, "date": str(day.date())})
 			end_date = end_date_val
 
-		elif not cint(project_end_date) and not end_date and not selected_days_only:
-			validation_logs.append("Please set an end date for scheduling the staff.")
+		elif not end_date and not cint(project_end_date) and cint(selected_days_only):
+			# If no end date and no project end date selected and selected_days_only is true
+			employees_valid_dates = []
+			for obj in employees:
+				if getdate(obj.get("date")) not in employee_leave_attendance.get(obj.get("employee"),[]):
+					employees_valid_dates.append({"employee": obj.get("employee"), "date": str(getdate(obj.get("date")))})
+			employees = employees_valid_dates
+
+		elif not cint(project_end_date) and not end_date and not cint(selected_days_only):
+			end_date_val =  getdate(employees[-1].get("date")) if employees else get_last_day(getdate(start_date))
+			employees = []
+			list_of_date = date_range(start_date, end_date_val)
+			for obj in employee_list:
+				for day in list_of_date:
+					if  day.date() not in employee_leave_attendance.get(obj,[]):
+						employees.append({"employee": obj, "date": str(day.date())})
+			end_date = end_date_val
 
 		elif cint(project_end_date) and end_date:
 			validation_logs.append("Please select either the project end date or set a custom date. You cannot set both!")

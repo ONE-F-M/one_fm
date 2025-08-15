@@ -1,0 +1,270 @@
+{
+  "name": "Job Offer",
+  "workflow_name": "Job Offer",
+  "document_type": "Job Offer",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Open",
+      "doc_status": "0",
+      "update_field": "",
+      "update_value": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Open",
+      "doc_status": "0",
+      "update_field": "",
+      "update_value": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submit for Candidate Response",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Awaiting Response",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submit for Candidate Response",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Awaiting Response",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submit to Onboarding Officer",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Accepted",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submit to Onboarding Officer",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Accepted",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Offer Rejected",
+      "doc_status": "2",
+      "update_field": "status",
+      "update_value": "Rejected",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Offer Rejected",
+      "doc_status": "2",
+      "update_field": "status",
+      "update_value": "Rejected",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Cancelled",
+      "doc_status": "2",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Senior Recruiter",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Process Onboarding",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Accepted",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Onboarding Officer Rejected",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Open",
+      "action": "Submit for Candidate Response",
+      "next_state": "Submit for Candidate Response",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Open",
+      "action": "Submit for Candidate Response",
+      "next_state": "Submit for Candidate Response",
+      "allowed": "Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submit for Candidate Response",
+      "action": "Offer Accepted",
+      "next_state": "Submit to Onboarding Officer",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submit for Candidate Response",
+      "action": "Offer Accepted",
+      "next_state": "Submit to Onboarding Officer",
+      "allowed": "Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submit for Candidate Response",
+      "action": "Offer Rejected",
+      "next_state": "Offer Rejected",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submit for Candidate Response",
+      "action": "Offer Rejected",
+      "next_state": "Offer Rejected",
+      "allowed": "Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submit to Onboarding Officer",
+      "action": "Accept",
+      "next_state": "Accepted",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submit to Onboarding Officer",
+      "action": "Reject",
+      "next_state": "Onboarding Officer Rejected",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Onboarding Officer Rejected",
+      "action": "Submit to Onboarding Officer",
+      "next_state": "Submit to Onboarding Officer",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Onboarding Officer Rejected",
+      "action": "Submit to Onboarding Officer",
+      "next_state": "Submit to Onboarding Officer",
+      "allowed": "Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Accepted",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Onboarding Officer Rejected",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Senior Recruiter",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "Onboard Employee",
+  "workflow_name": "Onboard Employee",
+  "document_type": "Onboard Employee",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    { "state": "Open", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Inform Applicant", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Applicant Attended", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Work Contract", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Duty Commencement", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Bank Account", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Mobile App Enrolment", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Completed", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" },
+    { "state": "Cancelled", "doc_status": "2", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Onboarding Officer", "doctype": "Workflow Document State" }
+  ],
+  "transitions": [
+    { "state": "Open", "action": "Inform Applicant", "next_state": "Inform Applicant", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "", "doctype": "Workflow Transition" },
+    { "state": "Inform Applicant", "action": "Applicant Attended", "next_state": "Applicant Attended", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Applicant Attended", "action": "Work Contract", "next_state": "Work Contract", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "doc.employment_type != 'Service Provider'", "doctype": "Workflow Transition" },
+    { "state": "Applicant Attended", "action": "Submit", "next_state": "Completed", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "doc.employment_type == 'Service Provider' and doc.employee", "doctype": "Workflow Transition" },
+    { "state": "Work Contract", "action": "Duty Commencement", "next_state": "Duty Commencement", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Duty Commencement", "action": "Open Bank Account", "next_state": "Bank Account", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "doc.salary_mode == 'Bank'", "doctype": "Workflow Transition" },
+    { "state": "Duty Commencement", "action": "Mobile App Enrolment", "next_state": "Mobile App Enrolment", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "doc.salary_mode != 'Bank'", "doctype": "Workflow Transition" },
+    { "state": "Bank Account", "action": "Mobile App Enrolment", "next_state": "Mobile App Enrolment", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Mobile App Enrolment", "action": "Mark Completed", "next_state": "Completed", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Inform Applicant", "action": "Cancel", "next_state": "Cancelled", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Applicant Attended", "action": "Cancel", "next_state": "Cancelled", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Work Contract", "action": "Cancel", "next_state": "Cancelled", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Duty Commencement", "action": "Cancel", "next_state": "Cancelled", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Bank Account", "action": "Cancel", "next_state": "Cancelled", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Mobile App Enrolment", "action": "Cancel", "next_state": "Cancelled", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Completed", "action": "Cancel", "next_state": "Cancelled", "allowed": "Onboarding Officer", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 1, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" }
+  ]
+}

@@ -1,0 +1,229 @@
+{
+  "name": "PIFSS Form 103",
+  "workflow_name": "PIFSS Form 103",
+  "document_type": "PIFSS Form 103",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Draft",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Draft",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "HR User",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Form Printed",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Printed",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "HR User",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Pending by GRD",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Pending by GRD",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "GRD Operator",
+      "message": "You Need To Set The Reference Number Taken from PIFSS website",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Awaiting Response",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Awaiting Response by PIFSS",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "GRD Operator",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Rejected",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Rejected",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "GRD Operator",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Under Process",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Under Process",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "GRD Operator",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Accepted",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Accepted",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "GRD Operator",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Completed",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Completed",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "GRD Operator",
+      "doctype": "Workflow Document State"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Draft",
+      "action": "Print",
+      "next_state": "Form Printed",
+      "allowed": "HR User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Form Printed",
+      "action": "Submit to GRD",
+      "next_state": "Pending by GRD",
+      "allowed": "HR User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending by GRD",
+      "action": "Apply",
+      "next_state": "Awaiting Response",
+      "allowed": "GRD Operator",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "condition": "",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Awaiting Response",
+      "action": "Under Process",
+      "next_state": "Under Process",
+      "allowed": "GRD Operator",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Awaiting Response",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "GRD Operator",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Awaiting Response",
+      "action": "Accept",
+      "next_state": "Accepted",
+      "allowed": "GRD Operator",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Under Process",
+      "action": "Under Process",
+      "next_state": "Awaiting Response",
+      "allowed": "GRD Operator",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Under Process",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "GRD Operator",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "condition": "",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Under Process",
+      "action": "Accept",
+      "next_state": "Accepted",
+      "allowed": "GRD Operator",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Accepted",
+      "action": "Done",
+      "next_state": "Completed",
+      "allowed": "GRD Operator",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Rejected",
+      "action": "Restart Application",
+      "next_state": "Pending by GRD",
+      "allowed": "GRD Operator",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    }
+  ]
+}

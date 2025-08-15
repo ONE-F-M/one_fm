@@ -1,0 +1,24 @@
+{
+  "name": "HD Ticket - Bug Buster",
+  "document_type": "HD Ticket",
+  "priority": 0,
+  "disabled": 0,
+  "description": "{{ description }}",
+  "is_assignment_rule_with_workflow": 0,
+  "assign_condition": "status == 'Open' and ticket_type == 'Bug'",
+  "unassign_condition": "ticket_type != 'Bug'",
+  "close_condition": "status == 'Closed'",
+  "rule": "Based on Field",
+  "field": "custom_bug_buster",
+  "doctype": "Assignment Rule",
+  "assignment_days": [
+    { "day": "Monday", "doctype": "Assignment Rule Day" },
+    { "day": "Tuesday", "doctype": "Assignment Rule Day" },
+    { "day": "Wednesday", "doctype": "Assignment Rule Day" },
+    { "day": "Thursday", "doctype": "Assignment Rule Day" },
+    { "day": "Friday", "doctype": "Assignment Rule Day" },
+    { "day": "Saturday", "doctype": "Assignment Rule Day" },
+    { "day": "Sunday", "doctype": "Assignment Rule Day" }
+  ],
+  "users": []
+}

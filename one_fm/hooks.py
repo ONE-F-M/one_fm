@@ -165,7 +165,7 @@ website_generators = ["Client"]
 # ------------
 
 before_install = "one_fm.install.before_install.execute"
-after_install = "one_fm.setup.after_install"
+after_install = "one_fm.setup.setup.after_install"
 #revert staging
 
 # Desk Notifications
@@ -745,8 +745,7 @@ scheduler_events = {
             "one_fm.one_fm.page.roster.roster.create_employee_schedule"
         ],
         "* * * * *": [ # Runs every minute
-            "one_fm.operations.doctype.process_task.process_task.create_task_on_cron_process_task",
-            "one_fm.overrides.todo.sync_google_tasks_with_todos"
+            "one_fm.operations.doctype.process_task.process_task.create_task_on_cron_process_task"
         ]
 	}
 }
@@ -792,44 +791,7 @@ fixtures = [
 	# 	'filters': [['dt', 'in', ['Shift Request', 'Shift Permission', 'Employee', 'Project', 'Location', 'Employee Checkin', 'Shift Assignment', 'Shift Type', 'Operations Site']]]
 	# },
 	{
-		"dt": "Property Setter"
-	},
-	{
-		"dt": "Workflow State"
-	},
-	{
-		"dt": "Workflow Action Master"
-	},
-	{
-		"dt": "Workflow"
-	},
-	{
-		"dt": "Role",
-		"filters": [["name", "in",["Operations Manager", "Shift Supervisor", "Site Supervisor", "Projects Manager", "HR Supervisor", "Attendance Manager"]]]
-	},
-	{
-		"dt": "Assignment Rule",
-		"filters": [["name", "in",
-			[
-				"RFM Approver", "Shift Permission Approver", "Attendance Check Reports To", "Shift Permission Approver",
-				"Attendance Check Site Supervisor", "Attendance Check Shift Supervisor", "Subcontract Staff Request",
-				"Purchase Order Approver Action", "Purchase Order Finance Manager Action", "Purchase Order Purchase Manager Action",
-				"Timesheet Return to Draft", "Timesheet Approval Assignment", "Shift Request Draft", "Shift Request Pending Approval",
-				"Attendance Request Return to Draft", "Attendance Request Approval", "Employee Checkin Issue Approval"
-			]
-		]]
-	},
-	{
 		"dt": "Email Template"
-	},
-	{
-		"doctype": "DocType Layout",
-		"filters": {
-			"name": ("in", (
-					"Employee",
-				)
-			)
-		}
 	},
 	{
 		"dt": "HD Ticket Template",

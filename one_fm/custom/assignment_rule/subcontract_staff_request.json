@@ -1,0 +1,23 @@
+{
+  "name": "Subcontract Staff Request",
+  "document_type": "Subcontract Staff Request",
+  "priority": 0,
+  "disabled": 0,
+  "description": "Your subcontract staff request {{name}} has just been {{workflow_state}}.",
+  "is_assignment_rule_with_workflow": 0,
+  "assign_condition": "workflow_state in ('Approved', \"Rejected\")",
+  "rule": "Based on Field",
+  "field": "owner",
+  "last_user": "a.adekunle@one-fm.com",
+  "doctype": "Assignment Rule",
+  "assignment_days": [
+    { "day": "Monday", "doctype": "Assignment Rule Day" },
+    { "day": "Tuesday", "doctype": "Assignment Rule Day" },
+    { "day": "Wednesday", "doctype": "Assignment Rule Day" },
+    { "day": "Thursday", "doctype": "Assignment Rule Day" },
+    { "day": "Friday", "doctype": "Assignment Rule Day" },
+    { "day": "Saturday", "doctype": "Assignment Rule Day" },
+    { "day": "Sunday", "doctype": "Assignment Rule Day" }
+  ],
+  "users": []
+}

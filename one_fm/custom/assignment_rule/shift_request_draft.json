@@ -1,0 +1,25 @@
+{
+  "name": "Shift Request Draft",
+  "document_type": "Shift Request",
+  "priority": 0,
+  "disabled": 0,
+  "description": "Automatic Assignment",
+  "is_assignment_rule_with_workflow": 0,
+  "assign_condition": "workflow_state ==\"Draft\" and creation < modified",
+  "unassign_condition": "workflow_state in ('Pending Approver', )",
+  "close_condition": "workflow_state in ('Pending Approver', )",
+  "rule": "Based on Field",
+  "field": "owner",
+  "last_user": "Administrator",
+  "doctype": "Assignment Rule",
+  "assignment_days": [
+    { "day": "Monday", "doctype": "Assignment Rule Day" },
+    { "day": "Tuesday", "doctype": "Assignment Rule Day" },
+    { "day": "Wednesday", "doctype": "Assignment Rule Day" },
+    { "day": "Thursday", "doctype": "Assignment Rule Day" },
+    { "day": "Friday", "doctype": "Assignment Rule Day" },
+    { "day": "Saturday", "doctype": "Assignment Rule Day" },
+    { "day": "Sunday", "doctype": "Assignment Rule Day" }
+  ],
+  "users": []
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Sales Invoice",
+  "workflow_name": "Sales Invoice",
+  "document_type": "Sales Invoice",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    { "state": "Draft", "doc_status": "0", "is_optional_state": 1, "avoid_status_override": 0, "allow_edit": "Accounts User", "doctype": "Workflow Document State" },
+    { "state": "Pending Approval from Operations Manager", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Accounts User", "doctype": "Workflow Document State" },
+    { "state": "Approved by Operations Manager", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Accounts Manager", "doctype": "Workflow Document State" },
+    { "state": "Rejected by Operations Manager", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Accounts User", "doctype": "Workflow Document State" },
+    { "state": "Approved by Finance", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Accounts Manager", "doctype": "Workflow Document State" },
+    { "state": "Rejected by Finance", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Accounts User", "doctype": "Workflow Document State" },
+    { "state": "Cancelled", "doc_status": "2", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Accounts Manager", "doctype": "Workflow Document State" },
+    { "state": "Approved", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Accounts Manager", "doctype": "Workflow Document State" }
+  ],
+  "transitions": [
+    { "state": "Draft", "action": "Approve", "next_state": "Pending Approval from Operations Manager", "allowed": "Accounts User", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Pending Approval from Operations Manager", "action": "Approve", "next_state": "Approved by Operations Manager", "allowed": "Operations Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Pending Approval from Operations Manager", "action": "Reject", "next_state": "Rejected by Operations Manager", "allowed": "Operations Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Approved by Operations Manager", "action": "Approve", "next_state": "Approved by Finance", "allowed": "Accounts Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Approved by Operations Manager", "action": "Reject", "next_state": "Rejected by Finance", "allowed": "Accounts Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Approved by Finance", "action": "Approve", "next_state": "Approved", "allowed": "Accounts Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Approved by Finance", "action": "Reject", "next_state": "Rejected by Finance", "allowed": "Accounts Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" }
+  ]
+}

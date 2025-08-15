@@ -1,0 +1,24 @@
+{
+  "name": "Default Shift Checker -Site Supervisor",
+  "document_type": "Default Shift Checker",
+  "priority": 0,
+  "disabled": 0,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table cellpadding=\"0\" cellspacing=\"0\" border=\"1\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Start Date</td>\n                <td style=\"padding: 10px;\">{{start_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">End Date</td>\n                <td style=\"padding: 10px;\">{{end_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Shift Supervisor</td>\n                <td style=\"padding: 10px;\">{{shift_supervisor}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Site Supervisor</td>\n                <td style=\"padding: 10px;\">{{site_supervisor}}</td>\n            </tr>\n            </tbody>\n            </table>\n<p></p>",
+  "is_assignment_rule_with_workflow": 0,
+  "assign_condition": "status in (\"Pending\", \"Overdue\")",
+  "unassign_condition": "status == \"Cancelled\"",
+  "close_condition": "status == \"Completed\"",
+  "rule": "Based on Field",
+  "field": "site_supervisor_user",
+  "doctype": "Assignment Rule",
+  "assignment_days": [
+    { "day": "Monday", "doctype": "Assignment Rule Day" },
+    { "day": "Tuesday", "doctype": "Assignment Rule Day" },
+    { "day": "Wednesday", "doctype": "Assignment Rule Day" },
+    { "day": "Thursday", "doctype": "Assignment Rule Day" },
+    { "day": "Friday", "doctype": "Assignment Rule Day" },
+    { "day": "Saturday", "doctype": "Assignment Rule Day" },
+    { "day": "Sunday", "doctype": "Assignment Rule Day" }
+  ],
+  "users": []
+}

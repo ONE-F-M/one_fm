@@ -1,0 +1,102 @@
+{
+  "name": "Duty Commencement",
+  "workflow_name": "Duty Commencement",
+  "document_type": "Duty Commencement",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Open",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submitted for Applicant Review",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Applicant Signed and Uploaded",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Applicant not Signed",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Cancelled",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Open",
+      "action": "Submit for Review",
+      "next_state": "Submitted for Applicant Review",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submitted for Applicant Review",
+      "action": "Applicant Signed and Upload",
+      "next_state": "Applicant Signed and Uploaded",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Applicant Signed and Uploaded",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submitted for Applicant Review",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    }
+  ]
+}

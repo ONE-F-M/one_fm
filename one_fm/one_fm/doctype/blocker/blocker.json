@@ -80,7 +80,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-06 21:53:56.777085",
+ "modified": "2025-07-25 13:25:33.509792",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Blocker",
@@ -107,7 +107,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Head Office Employee",
+   "role": "Employee",
    "share": 1,
    "write": 1
   }

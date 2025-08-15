@@ -1,0 +1,129 @@
+{
+  "name": "RFM",
+  "workflow_name": "RFM",
+  "document_type": "Request for Material",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Draft",
+      "doc_status": "0",
+      "update_field": "",
+      "update_value": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Employee",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Pending Approval",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Draft",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Employee",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Approved",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Approved",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Employee",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Rejected",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Rejected",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Employee",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Cancelled",
+      "doc_status": "2",
+      "update_field": "status",
+      "update_value": "Cancelled",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Employee",
+      "doctype": "Workflow Document State"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Draft",
+      "action": "Submit for Approval",
+      "next_state": "Pending Approval",
+      "allowed": "Employee",
+      "allow_self_approval": 1,
+      "allowed_user_field": "owner",
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Approval",
+      "action": "Approve",
+      "next_state": "Approved",
+      "allowed": "Employee",
+      "allow_self_approval": 1,
+      "allowed_user_field": "request_for_material_approver",
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Approval",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "Employee",
+      "allow_self_approval": 1,
+      "allowed_user_field": "request_for_material_approver",
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Approved",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Employee",
+      "allow_self_approval": 1,
+      "allowed_user_field": "request_for_material_approver",
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Rejected",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Employee",
+      "allow_self_approval": 1,
+      "allowed_user_field": "request_for_material_approver",
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    }
+  ]
+}

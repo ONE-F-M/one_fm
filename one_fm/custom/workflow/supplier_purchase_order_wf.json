@@ -1,0 +1,23 @@
+{
+  "name": "Supplier Purchase Order WF",
+  "workflow_name": "Supplier Purchase Order WF",
+  "document_type": "Supplier Purchase Order",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    { "state": "Pending", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Employee", "doctype": "Workflow Document State" },
+    { "state": "Approved by Financial", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "HR Manager", "doctype": "Workflow Document State" },
+    { "state": "Rejected by Financial", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "HR Manager", "doctype": "Workflow Document State" },
+    { "state": "Approved by Management", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "HR Manager", "doctype": "Workflow Document State" },
+    { "state": "Rejected by Management", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "HR Manager", "doctype": "Workflow Document State" }
+  ],
+  "transitions": [
+    { "state": "Pending", "action": "Approve", "next_state": "Approved by Financial", "allowed": "HR Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Pending", "action": "Reject", "next_state": "Rejected by Financial", "allowed": "HR Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Approved by Financial", "action": "Approve", "next_state": "Approved by Management", "allowed": "HR Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Approved by Financial", "action": "Reject", "next_state": "Rejected by Management", "allowed": "HR Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" }
+  ]
+}

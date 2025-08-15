@@ -182,7 +182,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-05-05 16:18:17.672693",
+ "modified": "2025-07-25 13:25:45.927992",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Monthly Action",
@@ -212,7 +212,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Head Office Employee",
+   "role": "Employee",
    "share": 1,
    "submit": 1,
    "write": 1

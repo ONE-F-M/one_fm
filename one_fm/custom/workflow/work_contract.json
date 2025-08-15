@@ -1,0 +1,233 @@
+{
+  "name": "Work Contract",
+  "workflow_name": "Work Contract",
+  "document_type": "Work Contract",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Open",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Open",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submitted for Applicant Review",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Processing",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Applicant Signed",
+      "doc_status": "0",
+      "update_field": "",
+      "update_value": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Applicant not Signed",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Process Finished",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submitted to Legal",
+      "doc_status": "0",
+      "update_field": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Send to Authorised Signatory",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Legal User",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Awaiting Employee Received Copy",
+      "doc_status": "0",
+      "update_field": "",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Legal User",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Completed",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Process Finished",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Cancelled",
+      "doc_status": "0",
+      "update_field": "status",
+      "update_value": "Process Finished",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Open",
+      "action": "Submit for Review",
+      "next_state": "Submitted for Applicant Review",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submitted for Applicant Review",
+      "action": "Applicant Signed",
+      "next_state": "Applicant Signed",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submitted for Applicant Review",
+      "action": "Applicant not Signed",
+      "next_state": "Applicant not Signed",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Applicant Signed",
+      "action": "Submit to Legal",
+      "next_state": "Submitted to Legal",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submitted to Legal",
+      "action": "Submit for Review",
+      "next_state": "Submitted for Applicant Review",
+      "allowed": "Legal User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "condition": "doc.rejection_reason",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submitted to Legal",
+      "action": "Send to Authorised Signatory",
+      "next_state": "Send to Authorised Signatory",
+      "allowed": "Legal User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submitted to Legal",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Legal User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Send to Authorised Signatory",
+      "action": "Authority Signed",
+      "next_state": "Awaiting Employee Received Copy",
+      "allowed": "Legal User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Send to Authorised Signatory",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Legal User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Awaiting Employee Received Copy",
+      "action": "Mark Completed",
+      "next_state": "Completed",
+      "allowed": "Legal User",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Completed",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    }
+  ]
+}

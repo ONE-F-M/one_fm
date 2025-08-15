@@ -1,0 +1,23 @@
+{
+  "name": "Shift Permission",
+  "workflow_name": "Shift Permission",
+  "document_type": "Shift Permission",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    { "state": "Draft", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Employee", "doctype": "Workflow Document State" },
+    { "state": "Pending Approver", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Shift Supervisor", "doctype": "Workflow Document State" },
+    { "state": "Approved", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Shift Supervisor", "doctype": "Workflow Document State" },
+    { "state": "Rejected", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Shift Supervisor", "doctype": "Workflow Document State" }
+  ],
+  "transitions": [
+    { "state": "Draft", "action": "Submit for Review", "next_state": "Pending Approver", "allowed": "Employee", "allow_self_approval": 1, "allowed_user_field": "owner", "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "", "doctype": "Workflow Transition" },
+    { "state": "Pending Approver", "action": "Return To Draft", "next_state": "Draft", "allowed": "Shift Supervisor", "allow_self_approval": 1, "allowed_user_field": "shift_supervisor", "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "frappe.session.user in [doc.approver_user_id, 'abdullah@one-fm.com']", "doctype": "Workflow Transition" },
+    { "state": "Pending Approver", "action": "Approve", "next_state": "Approved", "allowed": "Shift Supervisor", "allow_self_approval": 1, "allowed_user_field": "shift_supervisor", "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "frappe.session.user in [doc.approver_user_id, 'abdullah@one-fm.com']", "doctype": "Workflow Transition" },
+    { "state": "Pending Approver", "action": "Reject", "next_state": "Rejected", "allowed": "Shift Supervisor", "allow_self_approval": 1, "allowed_user_field": "shift_supervisor", "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "frappe.session.user in [doc.approver_user_id, 'abdullah@one-fm.com']", "doctype": "Workflow Transition" },
+    { "state": "Pending Approver", "action": "Approve", "next_state": "Approved", "allowed": "Administrator", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" }
+  ]
+}

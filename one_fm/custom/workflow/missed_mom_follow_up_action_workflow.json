@@ -1,0 +1,21 @@
+{
+  "name": "Missed MOM Follow-up Action Workflow",
+  "workflow_name": "Missed MOM Follow-up Action Workflow",
+  "document_type": "MOM Followup",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    { "state": "Assign to Site Supervisor", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Site Supervisor", "doctype": "Workflow Document State" },
+    { "state": "Review by Projects Manager", "doc_status": "0", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Projects Manager", "doctype": "Workflow Document State" },
+    { "state": "Approved By Projects Manager", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Projects Manager", "doctype": "Workflow Document State" },
+    { "state": "Issue Penalty", "doc_status": "1", "is_optional_state": 0, "avoid_status_override": 0, "allow_edit": "Projects Manager", "doctype": "Workflow Document State" }
+  ],
+  "transitions": [
+    { "state": "Assign to Site Supervisor", "action": "Submit for Review", "next_state": "Review by Projects Manager", "allowed": "Site Supervisor", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "condition": "doc.reason_for_missed_mom", "doctype": "Workflow Transition" },
+    { "state": "Review by Projects Manager", "action": "Approve", "next_state": "Approved By Projects Manager", "allowed": "Projects Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" },
+    { "state": "Review by Projects Manager", "action": "Reject & Issue Penalty", "next_state": "Issue Penalty", "allowed": "Projects Manager", "allow_self_approval": 1, "skip_multiple_action": 0, "skip_creation_of_workflow_action": 0, "custom_confirm_transition": 0, "custom_requires_frontend_input": 0, "doctype": "Workflow Transition" }
+  ]
+}

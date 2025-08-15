@@ -45,7 +45,7 @@ from hrms.hr.doctype.goal.goal import get_children
 from erpnext.controllers.stock_controller import StockController
 from one_fm.overrides.stock_controller import make_batches_with_supplier_batch_id
 from frappe.automation.doctype.assignment_rule.assignment_rule import AssignmentRule
-from one_fm.overrides.assignment_rule import do_assignment, get_user_based_on_process_task, get_user 
+from one_fm.overrides.assignment_rule import do_assignment, get_user_based_on_process_task, get_user
 from one_fm.overrides.goal import get_childrens
 from frappe.core.doctype.user_permission import user_permission
 from one_fm.permissions import get_custom_user_permissions
@@ -54,7 +54,7 @@ from one_fm.overrides.workflow import confirm_action as custom_confirm_action
 
 
 
-__version__ = '15.3.0'
+__version__ = '15.4.1'
 
 wa.confirm_action = custom_confirm_action
 user_permission.get_user_permissions = get_custom_user_permissions

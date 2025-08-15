@@ -1,0 +1,166 @@
+{
+  "name": "Subcontract Staff Shortlist",
+  "workflow_name": "Subcontract Staff Shortlist",
+  "document_type": "Subcontract Staff Shortlist",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Draft",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Operations Supervisor",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Pending Operations Manager",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Operations Manager",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Pending Onboarding Officer",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Approved",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Rejected",
+      "doc_status": "0",
+      "is_optional_state": 1,
+      "avoid_status_override": 0,
+      "allow_edit": "Operations Manager",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Return",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Operations Manager",
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Cancelled",
+      "doc_status": "2",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Onboarding Officer",
+      "doctype": "Workflow Document State"
+    }
+  ],
+  "transitions": [
+    {
+      "state": "Draft",
+      "action": "Submit for Review",
+      "next_state": "Pending Operations Manager",
+      "allowed": "Operations Supervisor",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Operations Manager",
+      "action": "Submit to Onboarding Officer",
+      "next_state": "Pending Onboarding Officer",
+      "allowed": "Operations Manager",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Operations Manager",
+      "action": "Return",
+      "next_state": "Draft",
+      "allowed": "Operations Manager",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Operations Manager",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "Operations Manager",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Onboarding Officer",
+      "action": "Approve",
+      "next_state": "Approved",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Onboarding Officer",
+      "action": "Return",
+      "next_state": "Draft",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Onboarding Officer",
+      "action": "Reject",
+      "next_state": "Rejected",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Approved",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Onboarding Officer",
+      "allow_self_approval": 1,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "custom_requires_frontend_input": 0,
+      "doctype": "Workflow Transition"
+    }
+  ]
+}

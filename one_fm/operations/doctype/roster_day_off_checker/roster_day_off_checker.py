@@ -233,7 +233,7 @@ def check_roster_day_off():
 
 
 	except Exception:
-		frappe.log_error(frappe.get_traceback())
+		frappe.log_error(title="Error creating day off checkers", message=frappe.get_traceback())
 
 def get_employee_day_off_comparison(employee, start_date, end_date, calculated_day_offs = 0, working_dates = []):
 	date_ranges = split_date_range_for_past_and_future(start_date, end_date)
@@ -266,22 +266,27 @@ def get_employee_day_off_comparison(employee, start_date, end_date, calculated_d
 			conditions &= Attendance.attendance_date.isin(working_dates)
 
 		# Calculate no of off days
-		od = frappe.db.sql(frappe.qb.from_(Attendance)
+		od = (
+			frappe.qb.from_(Attendance)
 			.select(Count("name").as_("off_days"))
 			.where(conditions & (Attendance.status == "Day Off") & (Attendance.day_off_ot == 0) & (Attendance.docstatus == 1))
-			.groupby(Attendance.employee),
-		as_dict=1)
-		attendance_off_days = (od[0].off_days if len(od) > 0 else 0)
-		off_days = off_days + attendance_off_days
+			.groupby(Attendance.employee)
+		).run(as_dict=True)
+		
+		attendance_off_days = od[0].off_days if od else 0
+		off_days += attendance_off_days
 		availed_off_days = attendance_off_days
 
 		# Calculate no of ot days
-		ot = frappe.db.sql( frappe.qb.from_(Attendance)
+		ot = (
+			frappe.qb.from_(Attendance)
 			.select(Count("name").as_("ot_days"))
 			.where(conditions & (Attendance.day_off_ot == 1))
-			.groupby(Attendance.employee), as_dict=1)
-		attendance_ot_days = (ot[0].ot_days if len(ot) > 0 else 0)
-		ot_days = ot_days + attendance_ot_days
+			.groupby(Attendance.employee)
+		).run(as_dict=True)
+
+		attendance_ot_days = ot[0].ot_days if ot else 0
+		ot_days += attendance_ot_days
 		availed_ot_days = attendance_ot_days
 
 	if date_ranges["future"]:
@@ -303,22 +308,27 @@ def get_employee_day_off_comparison(employee, start_date, end_date, calculated_d
 			conditions &= EmployeeSchedule.date.isin(working_dates)
 
 		# Calculate no of off days
-		od = frappe.db.sql(frappe.qb.from_(EmployeeSchedule)
+		od = (
+			frappe.qb.from_(EmployeeSchedule)
 			.select(Count("name").as_("off_days"))
 			.where(conditions & (EmployeeSchedule.employee_availability == "Day Off") & (EmployeeSchedule.day_off_ot == 0))
-			.groupby(EmployeeSchedule.employee),
-		as_dict=1)
-		schedule_off_days = (od[0].off_days if len(od) > 0 else 0)
-		off_days = off_days + schedule_off_days
+			.groupby(EmployeeSchedule.employee)
+		).run(as_dict=True)
+
+		schedule_off_days = od[0].off_days if od else 0
+		off_days += schedule_off_days
 		rostered_off_days = schedule_off_days
 
 		# Calculate no of ot days
-		ot = frappe.db.sql( frappe.qb.from_(EmployeeSchedule)
+		ot = (
+			frappe.qb.from_(EmployeeSchedule)
 			.select(Count("name").as_("ot_days"))
 			.where(conditions & (EmployeeSchedule.day_off_ot == 1))
-			.groupby(EmployeeSchedule.employee), as_dict=1)
-		schedule_ot_days = (ot[0].ot_days if len(ot) > 0 else 0)
-		ot_days = ot_days + schedule_ot_days
+			.groupby(EmployeeSchedule.employee)
+		).run(as_dict=True)
+
+		schedule_ot_days = ot[0].ot_days if ot else 0
+		ot_days += schedule_ot_days
 		rostered_ot_days = schedule_ot_days
 
 	day_off_diff = ""
@@ -421,7 +431,7 @@ def get_day_off_details_of_employees(employees):
 		return roster_day_off_data
 
 	except Exception:
-		frappe.log_error(frappe.get_traceback())
+		frappe.log_error(title="Error fetching employee day off details", message=frappe.get_traceback())
 
 def render_day_off_issues_html(roster_day_off_data):
 	"""

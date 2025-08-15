@@ -1,0 +1,24 @@
+{
+  "name": "Attendance Request Approval",
+  "document_type": "Attendance Request",
+  "priority": 0,
+  "disabled": 0,
+  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">From Date</td>\n                <td style=\"padding: 10px;\">{{from_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">To Date</td>\n                <td style=\"padding: 10px;\">{{to_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Reason</td>\n                <td style=\"padding: 10px;\">{{reason}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Explanation</td>\n                <td style=\"padding: 10px;\">{{explanation}}</td>\n            </tr>\n            </tbody></table><p></p>",
+  "is_assignment_rule_with_workflow": 1,
+  "assign_condition": "workflow_state == 'Pending Approval'",
+  "close_condition": "workflow_state in ('Approved', 'Draft', 'Rejected')",
+  "rule": "Based on Field",
+  "field": "approver_user",
+  "last_user": "",
+  "doctype": "Assignment Rule",
+  "assignment_days": [
+    { "day": "Monday", "doctype": "Assignment Rule Day" },
+    { "day": "Tuesday", "doctype": "Assignment Rule Day" },
+    { "day": "Wednesday", "doctype": "Assignment Rule Day" },
+    { "day": "Thursday", "doctype": "Assignment Rule Day" },
+    { "day": "Friday", "doctype": "Assignment Rule Day" },
+    { "day": "Saturday", "doctype": "Assignment Rule Day" },
+    { "day": "Sunday", "doctype": "Assignment Rule Day" }
+  ],
+  "users": []
+}

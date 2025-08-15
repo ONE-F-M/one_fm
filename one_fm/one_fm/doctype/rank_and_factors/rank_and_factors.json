@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-07-27 14:07:13.933702",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "column_break_acxo",
+  "rank",
+  "factors",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "rank",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Rank",
+   "reqd": 1
+  },
+  {
+   "fieldname": "factors",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Factors",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_acxo",
+   "fieldtype": "Column Break"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-07-27 16:02:48.653771",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Rank and Factors",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
