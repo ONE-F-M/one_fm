@@ -148,7 +148,9 @@ one_fm.patches.v15_0.revert_responsibilities
 one_fm.patches.v15_0.update_hd_ticket_prompt_fields
 one_fm.patches.v15_0.create_absentees_report_process_task
 one_fm.patches.v15_0.add_github_issue_url_in_hd_ticket
+one_fm.patches.v15_0.add_values_to_rank_factor_table
 one_fm.patches.v15_0.create_enrollment_status_process_task
+one_fm.patches.v15_0.update_existing_designation_to_main_head_hunt_doctype
 
 [post_model_sync]
 one_fm.patches.v15_0.create_attendance_check_process_task #re run again

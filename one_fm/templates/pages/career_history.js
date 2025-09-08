@@ -724,13 +724,6 @@ function validateEndDate(data){
 }
 
 function validateBestReferencesAndColleague(data) {
-  if (data.length === 0) {
-    return true;
-  }
-  const lastObject = data[data.length - 1];
-  const isBossValid = lastObject.best_boss_name && lastObject.best_boss_name.trim() !== '';
-  const isColleagueValid = lastObject.best_colleague_name && lastObject.best_colleague_name.trim() !== '';
-
-  return isBossValid && isColleagueValid;
-
+  // Best reference is now non-mandatory
+  return true;
   }

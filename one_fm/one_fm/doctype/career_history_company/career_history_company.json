@@ -60,7 +60,7 @@
   },
   {
    "fieldname": "responsibility_one",
-   "fieldtype": "Small Text",
+   "fieldtype": "Text",
    "label": "Responsibility"
   },
   {
@@ -191,14 +191,16 @@
    "options": "Employment Type"
   }
  ],
+ "grid_page_length": 50,
  "istable": 1,
  "links": [],
- "modified": "2025-04-24 11:57:02.272177",
+ "modified": "2025-09-03 01:57:42.193543",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Career History Company",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

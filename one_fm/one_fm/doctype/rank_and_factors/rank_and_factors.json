@@ -21,14 +21,16 @@
   },
   {
    "fieldname": "factors",
-   "fieldtype": "Small Text",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Factors",
+   "options": "Career Move Factors",
    "reqd": 1
   },
   {
+   "fetch_from": "factors.description",
    "fieldname": "description",
-   "fieldtype": "Small Text",
+   "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Description",
    "reqd": 1
@@ -38,15 +40,17 @@
    "fieldtype": "Column Break"
   }
  ],
+ "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-07-27 16:02:48.653771",
+ "modified": "2025-09-07 11:58:45.467392",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Rank and Factors",
  "owner": "Administrator",
  "permissions": [],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

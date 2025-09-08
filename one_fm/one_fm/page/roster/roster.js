@@ -430,9 +430,11 @@ function load_js(page) {
 		$("#chkassgined").trigger("change");
 
 
+		const { page: pageFilters } = get_preset_filters();
+
 		//display title of calender ex: Month of Jul 1 - 31, 2020
 		window.calendarSettings1 = {
-			date: moment().set("date", 4),
+			date: pageFilters.year && pageFilters.month ? moment(`${pageFilters.year}-${pageFilters.month}-01`) : moment().set("date", 4),
 			today: moment()
 		};
 		window.weekCalendarSettings = {
@@ -689,7 +691,7 @@ function setup_preset_filters(page) {
 
 	const { view: viewFilters, page: pageFilters, employee: employeeFilters } = get_preset_filters()
 
-	const { main_view: mainView, sub_view: subView, roster_type: rosterType, staff_view_mode: staffViewMode } = viewFilters
+	const { main_view: mainView, sub_view: subView, staff_view_mode: staffViewMode } = viewFilters
 
 	if (mainView) {
 		setTimeout(() => {
@@ -697,14 +699,6 @@ function setup_preset_filters(page) {
 				.find(`.redirect_route[data-route="${mainView}"]`)
 				.click();
 		}, 500);
-	}
-
-	if (pageFilters.month && pageFilters.year) {
-		const newDate = moment(`${pageFilters.year}-${pageFilters.month}-01`, "YYYY-MM-DD").toDate();
-		if (calendarSettings1) {
-			calendarSettings1.date = moment(newDate);
-			displayCalendar(calendarSettings1, page);
-		}
 	}
 
 

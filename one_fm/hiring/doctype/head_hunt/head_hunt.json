@@ -15,6 +15,8 @@
   "column_break_7",
   "lead_owner",
   "status",
+  "suggested_position",
+  "date",
   "applicants_details_section",
   "items",
   "notes_section",
@@ -54,10 +56,10 @@
    "options": "DocType"
   },
   {
-   "default": "__user",
    "fieldname": "lead_owner",
    "fieldtype": "Dynamic Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Head Hunter",
    "oldfieldname": "lead_owner",
    "oldfieldtype": "Link",
@@ -108,16 +110,33 @@
    "options": "Head Hunt",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date"
+  },
+  {
+   "fieldname": "suggested_position",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Suggested Position",
+   "options": "Designation"
   }
  ],
+ "grid_page_length": 50,
  "icon": "fa fa-user",
  "is_submittable": 1,
  "links": [],
- "modified": "2021-02-17 08:05:43.903086",
+ "modified": "2025-09-07 10:33:49.463527",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Head Hunt",
  "name_case": "Title Case",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -176,9 +195,10 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "search_fields": "lead_owner,status",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "title_field": "lead_owner"
+ "states": []
 }

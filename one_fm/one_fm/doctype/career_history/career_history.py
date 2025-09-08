@@ -69,6 +69,8 @@ class CareerHistory(Document):
 			promotions = {}
 			salary_hikes = {}
 			end_date_in_company = {}
+			# Track latest entry per company for missing end date
+			latest_entry_per_company = {}
 			for item in self.career_history_company:
 				if item.company_name not in start_date_in_company:
 					start_date_in_company[item.company_name] = item.start_date
@@ -82,7 +84,17 @@ class CareerHistory(Document):
 					salary_hikes[item.company_name] = [item.monthly_salary_in_kwd]
 				elif salary_hikes[item.company_name] != item.monthly_salary_in_kwd:
 					salary_hikes[item.company_name].append(item.monthly_salary_in_kwd)
-
+				# Track latest entry for missing end date
+				if not item.end_date:
+					if item.company_name not in latest_entry_per_company:
+						latest_entry_per_company[item.company_name] = item
+					else:
+						# Compare start dates
+						if getdate(item.start_date) > getdate(latest_entry_per_company[item.company_name].start_date):
+							latest_entry_per_company[item.company_name] = item
+			# For companies with missing end date, set it to today for the latest entry
+			for company, entry in latest_entry_per_company.items():
+				end_date_in_company[company] = today()
 		for company in start_date_in_company:
 			start_date = start_date_in_company[company]
 			if company in end_date_in_company:

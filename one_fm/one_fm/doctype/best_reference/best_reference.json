@@ -60,7 +60,7 @@
   },
   {
    "fieldname": "why_he",
-   "fieldtype": "Data",
+   "fieldtype": "Text",
    "in_list_view": 1,
    "label": "Why He/She?"
   },
@@ -148,8 +148,9 @@
    "options": "Interview Feedback"
   }
  ],
+ "grid_page_length": 50,
  "links": [],
- "modified": "2022-03-04 10:15:57.795759",
+ "modified": "2025-09-03 01:49:11.005650",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Best Reference",
@@ -168,6 +169,8 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }

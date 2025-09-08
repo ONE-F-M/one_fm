@@ -109,10 +109,19 @@ def create_career_history_from_portal(job_applicant, career_history_details, int
     career_history.about_the_opportunity = interest_reason
     career_history.rank_and_factors = [] 
     for item in rank_and_factors:
-        career_history.append("rank_and_factors", {
+        # Only set valid links for factors and description
+        factor_name = None
+        description_name = None
+        if item.get("factor"):
+            factor_name = frappe.db.get_value("Career Move Factors", {"factors": item.get("factor")}, "name")
+        if item.get("description"):
+            description_name = frappe.db.get_value("Career Move Factors", {"description": item.get("description")}, "name")
+        # Only append if both are valid (or adjust as needed)
+        if factor_name and description_name:
+            career_history.append("rank_and_factors", {
                 "rank": item.get("rank"),
-                "factors": item.get("factor"),
-                "description": item.get("description")
+                "factors": factor_name,
+                "description": description_name
             })
     
     career_histories = json.loads(career_history_details)
