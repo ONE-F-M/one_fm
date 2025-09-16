@@ -1,231 +1,125 @@
-# Frappe/ERPNext Development Agent
-
-## Agent: frappe-dev
-
-**Description:** Specialized agent for Frappe framework and ERPNext custom application development, focusing on simple, working solutions and best practices.
-
-**Capabilities:**
-- DocType design and controller development
-- API endpoint creation and debugging
-- Database query optimization using Frappe Query Builder
-- Client-side scripting (JavaScript) for forms
-- Custom report development
-- Workflow and automation setup
-- Performance troubleshooting and optimization
-- Testing and deployment guidance
-
----
-
-## Instructions for Jules.google.com
-
-### Primary Role
-You are a Frappe/ERPNext development specialist focused on delivering simple, working solutions. Your approach emphasizes:
-
-- **Practical Implementation:** Provide ready-to-use code that follows Frappe conventions
-- **Clear Explanations:** Explain the "why" behind Frappe patterns and design decisions  
-- **Debugging Excellence:** Help troubleshoot issues with systematic, step-by-step approaches
-- **Best Practices:** Suggest improvements without overengineering solutions
-
-### Framework Standards
-
-**Follow these conventions exactly:**
-
-**DocType Naming:**
-- Use Title Case with singular form (e.g., "Sales Order", "Purchase Receipt")
-- Child tables: Parent DocType + relation (e.g., "Sales Order Item")
-
-**Field/Variable Naming:**
-- Field labels: Title Case
-- Field names: snake_case (First Name → first_name)
-- Link fields: Match linked DocType in snake_case (Employee → employee)
-- Document variables: snake_case of DocType (sales_order = frappe.get_doc("Sales Order", "SO-0001"))
-
-**Code Style:**
-- Always use double quotes for strings in Python and JavaScript
-- Use tabs for indentation (Frappe legacy standard)
-- Prefer frappe.qb (Query Builder) over raw SQL
-- Wrap all user-facing strings in _("") for Python, __("") for JavaScript
-
-### Solution Patterns
-
-**DocType Controller Structure:**
-```python
-import frappe
-from frappe.model.document import Document
-
-class YourDocType(Document):
-    def validate(self):
-        self.validate_mandatory_fields()
-        self.calculate_totals()
-    
-    def before_save(self):
-        self.set_missing_values()
-    
-    def on_submit(self):
-        self.update_related_records()
-```
-
-**API Development:**
-```python
-@frappe.whitelist()
-def custom_api_method():
-    if not frappe.has_permission("DocType Name", "read"):
-        frappe.throw(title=_("Permission Denied"), message=_("No permission"))
-    
-    try:
-        # Implementation
-        return {"status": "success", "data": data}
-    except Exception:
-        frappe.throw(title=_("API Error"), message=frappe.get_traceback())
-```
-
-**Database Queries:**
-```python
-from frappe.query_builder import DocType
-
-Item = DocType("Item")
-query = (
-    frappe.qb.from_(Item)
-    .select(Item.name, Item.item_name, Item.description)
-    .where(Item.disabled == 0)
-    .where(Item.item_group == item_group)
-).run(as_dict=True)
-```
-
-### When to Keep Simple vs. Complex
-
-**Prefer simple solutions for:**
-- Basic CRUD operations
-- Standard validations
-- Common API endpoints
-- Regular reports
-- Standard workflows
-
-**Add complexity only when:**
-- Business requirements specifically demand it
-- Simple solutions proven insufficient
-- Performance issues require optimization
-
-### Testing Requirements
-
-Always include relevant test cases showing:
-- Expected inputs and outputs
-- Key business logic assertions
-- Validation scenarios
-- Error handling cases
-
-### Response Guidelines
-
-- Provide working, complete code examples
-- Include clear comments explaining Frappe-specific patterns
-- Show both Python controller and JavaScript client-side code when relevant
-- Explain security considerations (permissions, input validation)
-- Suggest performance optimizations where applicable
-- Include debugging steps for common issues
-
-### Context Awareness
-
-- Always verify requirements and identify gaps before proceeding
-- Ask for clarification on business logic specifics
-- Consider ERPNext standard DocTypes and their relationships
-- Recommend standard ERPNext features before custom development
-- Think about multi-company, multi-currency scenarios when relevant
-- All the `frappe.[function name]` functions' existence can be verified from https://github.com/frappe/frappe/blob/version-15/frappe/__init__.py.
----
----
-
-## Open SWE Configuration (XML Format)
-
-The following XML-formatted sections are specifically for Open SWE by Langchain:
-
 <general_rules>
-This is a Frappe/ERPNext custom application development project. Always prioritize simple, working solutions over complex implementations.
+This is a Frappe/ERPNext custom application for One Facility Management (one_fm). Always prioritize simple, working solutions over complex implementations.
 
 NAMING CONVENTIONS:
-- DocTypes: Title Case, singular form, spaces between words, US English spelling (e.g., "Sales Order", "Purchase Receipt")
+- DocTypes: Title Case, singular form, spaces between words (e.g., "Sales Order", "Purchase Receipt")
 - Child tables: Parent DocType + relation (e.g., "Sales Order Item")
 - Field labels: Title Case
 - Field names: snake_case version of labels ("First Name" → first_name)
 - Link fields: Match linked DocType in snake_case (Employee → employee)
-- Table fields: Plural representing relation (items for "Sales Order Item")
 - Document variables: snake_case of DocType (sales_order = frappe.get_doc("Sales Order", "SO-0001"))
-- Name variables: Suffix with _name (sales_order_name)
-- Child table iterations: Use "d" (for d in sales_order.items)
 
 CODE STYLE:
 - Always use double quotes for strings in Python and JavaScript
 - Use tabs for indentation (Frappe legacy standard)
-- Prefer Frappe Query Builder (frappe.qb) over raw SQL
-- Never use .format() for SQL - use parameterized queries (%s)
+- Prefer frappe.qb (Query Builder) over raw SQL
 - Wrap all user-facing strings in _("") for Python, __("") for JavaScript
-- Always check permissions with frappe.has_permission() before document access
-- Implement error handling with frappe.throw() using translatable messages
-- Keep all business logic in Python controllers (server-side)
-- Use frappe.cache() for expensive operations
-- Implement proper database indexing for frequent queries
+- Import frappe modules at top of files: import frappe
+- Use frappe.throw() for error handling with proper titles
+- Follow Python PEP 8 for general code style (except indentation)
 
-DEVELOPMENT WORKFLOW:
-- Use bench commands for all framework operations
-- Enable developer mode: bench --site [site-name] set-config developer_mode 1
-- Clear cache after changes: bench --site [site-name] clear-cache
-- Run database migrations: bench --site [site-name] migrate
-- Test all DocType validation logic, API endpoints, and database operations
-- Focus on step-by-step debugging: check permissions, document existence, basic validation
-- Use print statements for simple debugging with console output
-- Read error messages carefully - Frappe errors are usually clear
+FUNCTION CREATION RULES:
+- Before creating new utility functions, always first search in the one_fm/api/ directory to see if one exists
+- If no existing function found, search in one_fm/utils.py for similar functionality
+- Create new utility functions in one_fm/utils.py or create new files in one_fm/api/ for whitelisted endpoints
+- Place business logic in DocType controllers (.py files) rather than utilities when specific to a DocType
+- Use existing Frappe framework functions where possible before creating custom ones
+
+DEVELOPMENT PATTERNS:
+- Always check existing functions before creating new ones
+- Use frappe.get_doc() for single document operations
+- Use frappe.get_all() or frappe.db.sql() for bulk operations
+- Keep client scripts (.js files) minimal - focus on form interactions only
+- Use proper permission checking with frappe.has_permission()
+- Follow the validate() → before_save() → after_insert() → on_submit() lifecycle
+- Create fixtures for reference data in one_fm/fixtures/
+- Use print statements for debugging with console output
+- Read error messages carefully - Frappe errors are usually descriptive
 </general_rules>
 
 <repository_structure>
-Standard Frappe application structure following framework conventions:
+ONE FM is a Frappe/ERPNext custom application with the following structure:
 
-frappe_app/
-├── frappe_app/
-│   ├── hooks.py                 # App configuration, event hooks, scheduled tasks
-│   ├── modules.txt              # Module definitions
-│   ├── patches.txt              # Database migration scripts
-│   ├── doctypes/               # DocType definitions
-│   │   └── [doctype_name]/
-│   │       ├── [doctype_name].py      # Controller logic (validate, before_save, on_submit)
-│   │       ├── [doctype_name].json    # DocType metadata and field definitions
-│   │       └── [doctype_name].js      # Client-side form scripts
+one_fm/
+├── one_fm/                     # Main application module
+│   ├── hooks.py                # App configuration, event hooks, scheduled tasks
+│   ├── modules.txt             # Module definitions (14 modules: One Fm, GRD, Operations, etc.)
+│   ├── patches.txt             # Database migration scripts
 │   ├── api/                    # Whitelisted API endpoints (@frappe.whitelist())
-│   ├── utils/                  # Common utility functions
-│   ├── reports/               # Custom reports and dashboards
-│   └── fixtures/              # Reference data and default records
-├── setup.py                   # App installation configuration
-└── requirements.txt           # Python dependencies
+│   ├── utils.py                # Common utility functions
+│   ├── accommodation/          # Accommodation management module
+│   ├── developer/             # Development tools and debugging utilities
+│   ├── fleet_management/      # Vehicle and fleet management
+│   ├── grd/                   # Guard and security operations
+│   ├── gsd/                   # General services department
+│   ├── hiring/                # HR and recruitment processes
+│   ├── legal/                 # Legal document management
+│   ├── operations/            # Core operations management
+│   ├── paci/                  # PACI integration and processes
+│   ├── purchase/              # Procurement and purchasing
+│   ├── subcontract/           # Subcontractor management
+│   ├── uniform_management/    # Uniform distribution and tracking
+│   ├── public/                # Static assets (CSS, JS, images)
+│   ├── templates/             # Jinja2 templates
+│   ├── fixtures/              # Default data and configurations
+│   ├── patches/               # Version-specific database patches
+│   └── tests/                 # Main test suite
+├── job_applicant_magic_link/   # Vue.js frontend app for job applications
+│   ├── src/                   # Vue.js source files
+│   ├── package.json           # Node.js dependencies and build scripts
+│   ├── vite.config.js         # Vite build configuration
+│   └── tailwind.config.js     # Tailwind CSS configuration
+├── setup.py                   # App installation and metadata
+├── requirements.txt           # Python dependencies
+├── hooks.py → one_fm/hooks.py # App hooks configuration
+└── .github/workflows/         # CI/CD pipelines for different branches
 
-KEY ARCHITECTURAL PATTERNS:
+KEY MODULES:
+- One Fm: Core application functionality
+- Operations: Daily operations and scheduling
+- GRD: Guard duty and security management
+- Hiring: Recruitment and employee onboarding
+- Fleet Management: Vehicle tracking and maintenance
+- Uniform Management: Employee uniform distribution
+- Developer: Internal development tools and utilities
+
+ARCHITECTURE PATTERNS:
 - Each DocType has three files: .py (controller), .json (metadata), .js (client scripts)
-- Link fields automatically create relationships between DocTypes
-- Child tables are separate DocTypes linked to parent via "parent" and "parenttype" fields
-- Fixtures provide initial data that can be exported/imported across environments
-- Hooks.py configures app behavior including document events, scheduled tasks, and permissions
-- All custom business logic resides in DocType controllers or API functions
-- Client scripts handle form interactions and field validations
-- Reports can be Query Report, Script Report, or Print Format types
+- Business logic resides in DocType controllers
+- API endpoints are whitelisted functions in api/ directory
+- Client scripts handle form interactions only
+- Custom reports and dashboards in individual module directories
+- Patches handle database migrations between versions
 </repository_structure>
 
 <dependencies_and_installation>
 SYSTEM REQUIREMENTS:
-- Frappe Framework v15 (latest)
-- ERPNext v15 (latest)
-- Python 3.11
-- Node.js 20+ for frontend asset building
-- MariaDB 10.6 database
+- Frappe Framework v15 (version-15 branch)
+- ERPNext v15 (compatible version)
+- Python 3.8+ (3.11 recommended)
+- Node.js 16+ for frontend building
+- MariaDB 10.6+ database
 - Redis for caching and background jobs
+
+PYTHON DEPENDENCIES (requirements.txt):
+- Core: frappe, erpnext
+- External APIs: twilio, firebase-admin, google-cloud-* packages
+- Data Processing: pandas, datefinder, html2text
+- AI/ML: llama_index, openai
+- Security: bleach, paramiko
+- Utilities: qrcode, gspread, deep-translator
 
 INSTALLATION COMMANDS:
 ```bash
 # Install app in development mode
-bench get-app [app-name] [repo-url]
-bench --site [site-name] install-app [app-name]
+bench get-app one_fm https://github.com/ONE-F-M/one_fm
+bench --site [site-name] install-app one_fm
 
 # Install Python dependencies
 bench setup requirements
 
-# Build frontend assets
-bench build --app [app-name]
+# Build frontend assets (for job_applicant_magic_link Vue app)
+cd job_applicant_magic_link && npm install && npm run build
 
 # Run database migrations
 bench --site [site-name] migrate
@@ -234,138 +128,149 @@ bench --site [site-name] migrate
 bench start
 ```
 
-DEVELOPMENT ENVIRONMENT SETUP:
+DEVELOPMENT SETUP:
 ```bash
-# Enable developer mode (shows full tracebacks, auto-reload)
+# Enable developer mode
 bench --site [site-name] set-config developer_mode 1
 
-# Clear cache (required after DocType changes)
+# Clear cache after changes
 bench --site [site-name] clear-cache
 
-# Run database migrations
-bench --site [site-name] migrate
+# Build specific app assets
+bench build --app one_fm
 ```
 
-ESSENTIAL BENCH COMMANDS:
-- bench --site [site-name] console - IPython console with Frappe context
-- bench --site [site-name] mariadb - Opens SQL console for database access
-- bench --site [site-name] set-config [key] [value] - Set configuration values
-- bench start - Start development server with all processes
-- bench get-app [app-name] [repo-url] - Clone app from repository
-- bench build --app [app-name] - Build frontend assets for app
-- bench update - Update apps, run migrations, build assets
+FRONTEND DEVELOPMENT (job_applicant_magic_link):
+```bash
+cd job_applicant_magic_link
+npm install          # Install Vue.js dependencies
+npm run dev          # Start development server
+npm run build        # Build for production
+```
 
-DOCTYPE CREATION:
-DocTypes are created through the Frappe Desk web interface, not command line. Enable developer mode first, then navigate to DocType List and create new DocTypes through the web form. This generates .py, .json, and .js files in your app's doctypes folder.
-
-DEPENDENCY MANAGEMENT:
-- Add Python packages to requirements.txt in app root
-- Frontend dependencies managed via package.json
-- Use bench setup requirements after adding new Python dependencies
-- Run bench build after frontend package changes
-- Fixtures are automatically installed when app is installed on site
+BUILD SCRIPTS:
+- No specific linting scripts configured in main app
+- Vue.js app uses Prettier with configuration in .prettierrc.json
+- Standard Frappe framework commands for building and testing
+- CI/CD pipelines handle automated building and deployment
 </dependencies_and_installation>
 
 <testing_instructions>
 TESTING FRAMEWORK:
-Uses Python unittest.TestCase framework. All test files must be in tests/ directories and prefixed with "test_".
+- Python unittest for backend testing
+- Tests located in individual DocType folders as test_[doctype_name].py
+- Main test suite in one_fm/tests/ directory
+- Core test files include: test_user.py, test_shift_assignment.py, test_purchase_order.py
 
 RUNNING TESTS:
 ```bash
 # Run all tests for the app
-bench --site [site-name] run-tests --app [app-name]
+bench --site [site-name] run-tests --app one_fm
 
 # Run specific test module
-bench --site [site-name] run-tests --app [app-name] --module [module-name]
+bench --site [site-name] run-tests --app one_fm --module test_user
 
-# Run with coverage report
-bench --site [site-name] run-tests --app [app-name] --coverage
-
-# Run specific test class or method
-bench --site [site-name] run-tests --app [app-name] --module test_file.TestClass.test_method
+# Run tests with coverage
+bench --site [site-name] run-tests --app one_fm --coverage
 ```
 
 TEST STRUCTURE REQUIREMENTS:
 ```python
-import unittest
 import frappe
+import unittest
 
 class TestYourDocType(unittest.TestCase):
     def setUp(self):
-        # Create test data
+        # Create test data - use ignore_permissions=True for setup
         pass
     
-    def test_validation(self):
-        # Test DocType validation logic
+    def test_validation_logic(self):
+        # Test DocType validation and business rules
         doc = frappe.get_doc({
             "doctype": "Your DocType",
             # Test data
         })
-        doc.insert()
+        doc.insert(ignore_permissions=True)
         self.assertTrue(doc.name)
     
     def tearDown(self):
-        # CRITICAL: Always rollback to prevent data pollution
+        # CRITICAL: Always clean up test data
         frappe.db.rollback()
 ```
 
-CRITICAL TESTING AREAS:
-1. DocType Controller Logic:
-   - Test validate() method with valid/invalid data
-   - Test before_save(), on_submit(), on_cancel() workflows
-   - Test calculated fields and totals
-   - Verify frappe.throw() calls with proper error messages
+TESTING FOCUS AREAS:
+1. DocType Controllers:
+   - Validation logic in validate() method
+   - Business rules in before_save(), on_submit()
+   - Field calculations and auto-population
+   - Error handling with frappe.throw()
 
-2. API Endpoint Security:
-   - Test permission checking with frappe.has_permission()
-   - Verify input sanitization and validation
-   - Test error responses and proper HTTP status codes
-   - Validate return data structure
+2. API Endpoints:
+   - Permission validation with frappe.has_permission()
+   - Input sanitization and validation
+   - Proper return data structure
+   - Error responses with meaningful messages
 
-3. Database Operations:
-   - Test Frappe Query Builder queries
-   - Verify database transactions and rollbacks
-   - Test data integrity constraints
-   - Validate indexing and performance
+3. Module-Specific Logic:
+   - Operations: Shift assignments and scheduling
+   - GRD: Security operations and reporting
+   - Hiring: Recruitment workflow validation
+   - Fleet Management: Vehicle tracking accuracy
+   - Uniform Management: Distribution tracking
 
-4. Permission System:
-   - Test role-based access control
-   - Verify document-level permissions
-   - Test field-level read/write permissions
-   - Validate user and role restrictions
+4. Integration Testing:
+   - External API integrations (Twilio, Firebase, Google Cloud)
+   - Database query performance
+   - Background job execution
+   - Multi-module workflow validation
 
-5. Integration Workflows:
-   - Test document submission/cancellation workflows
-   - Verify inter-DocType relationships
-   - Test automated calculations and updates
-   - Validate background job execution
+PRE-COMMIT CHECKLIST:
+- All tests pass: bench --site [site-name] run-tests --app one_fm
+- No JavaScript console errors
+- Python code follows PEP 8 (except tabs for indentation)
+- All user-facing strings are translatable
+- Proper error handling in place
+- Database migrations tested if schema changes made
 
-PRE-COMMIT REQUIREMENTS:
-- All tests must pass: bench --site [site-name] run-tests --app [app-name]
-- No JavaScript console errors in browser testing
-- Python code must follow PEP 8 style guidelines
-- All user-facing strings must be translatable
-- No hardcoded values in business logic
-- Proper error handling with meaningful messages
-
-DEBUGGING TEST FAILURES:
-- Use frappe.local.dev_mode = True for detailed error traces
-- Monitor bench start terminal output for real-time error information
+DEBUGGING TECHNIQUES:
 - Use bench --site [site-name] console for interactive debugging
-- Use print() statements in test methods for debugging
-- Verify test data setup in setUp() method
-- Ensure proper cleanup in tearDown() method
-- Test database state before and after operations
-- All the `frappe.[function name]` functions' existence can be verified from https://github.com/frappe/frappe/blob/version-15/frappe/__init__.py.
-
+- Enable developer mode for detailed error traces
+- Monitor bench start output for real-time logs
+- Use print() statements in controllers for debugging
+- Check browser console for JavaScript errors
+- Verify permissions and user roles for access issues
 </testing_instructions>
 
----
+<pull_request_formatting>
+Pull requests must follow the template structure defined in pull_request_template.md:
 
-## Usage Notes
+REQUIRED SECTIONS:
+- **Type Classification**: Mark as Feature, Chore, or Bug with checkboxes
+- **Clear Description**: Concise explanation of the change
+- **Solution Description**: Detailed code changes for reviewers
+- **Business Logic**: Indicate if DocType business logic is involved
+- **Areas Affected**: List all areas impacted by changes
+- **Testing Verification**: Confirm testing with existing and new data
+- **Browser Testing**: Specify which browsers were tested (Chrome, Safari, Firefox)
 
-**For Jules.google.com users:** This file provides comprehensive Frappe/ERPNext development guidance with practical examples and debugging approaches.
+SPECIAL CONSIDERATIONS:
+- **Child Table Creation**: If child tables created, confirm attachment testing
+- **Custom Field Deletion**: If custom fields deleted, confirm delete patch written
+- **Patch Requirements**: If database patches required, confirm patch testing
+- **Behavior Changes**: Explicitly state if existing feature behavior changes
+- **Screenshots**: Include UI screenshots for frontend changes
 
-**For Open SWE users:** The XML-formatted sections above contain all necessary context for autonomous development tasks including repository structure, dependencies, and testing procedures.
+TITLE FORMAT:
+Use descriptive titles that clearly indicate the change type and affected area:
+- Feature: "Add employee shift scheduling automation"
+- Bug: "Fix salary calculation error in payroll processing" 
+- Chore: "Update dependencies for security patches"
 
-Both tools can use this single file while accessing the information most relevant to their specific requirements and parsing capabilities.
+CHECKLIST REQUIREMENTS:
+All applicable checkboxes in the template must be marked before approval. Reviewers will verify:
+- Proper testing coverage
+- Documentation updates if needed
+- No breaking changes to existing functionality
+- Performance impact assessment
+- Security considerations addressed
+</pull_request_formatting>
