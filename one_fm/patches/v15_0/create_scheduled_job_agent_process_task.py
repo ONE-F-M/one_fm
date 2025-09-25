@@ -19,13 +19,13 @@ def execute():
             "doctype": "Task Type"
         }).insert(ignore_permissions=True)
 
-    method = "onefm_mcp.agents.rq_job_agent.run_rq_job_monitoring"
-    document_type = "RQ Job"
+    method = "onefm_mcp.agents.scheduled_job_ticket_agent.run_scheduled_job_agent"
+    document_type = "Scheduled Job Log"
     if not frappe.db.exists("Method", method):
         frappe.get_doc({
             "method": method,
             "document_type": document_type,
-            "description": "To monitor failed RQ jobs and create corresponding HD tickets for each one.",
+            "description": "To monitor failed scheduled jobs and create corresponding HD tickets for each one.",
             "doctype": "Method"
         }).insert(ignore_permissions=True)
 
@@ -36,11 +36,11 @@ def execute():
     "is_automated": 1,
     "is_active": 1,
     "erp_document": document_type,
-    "task": "Create an HD ticket for each unique failed RQ job.",
+    "task": "Create an HD ticket for each unique failed Scheduled job.",
     "task_type": task_type,
     "method": method,
     "frequency": "Cron",
-    "cron_format": "15,45 * * * *",
+    "cron_format": "0,30 * * * *",
     "hours_per_frequency": 0.5,
     "coordination_needed": "No",
     "start_date": "2025-09-25",
