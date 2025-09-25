@@ -23,6 +23,7 @@ def execute():
     if not frappe.db.exists("Method", method):
         frappe.get_doc({
             "name": method,
+            "method": "onefm_mcp.agents.rq_job_agent.run_rq_job_monitoring",
             "description": "To monitor failed RQ jobs and create corresponding HD tickets for each one.",
             "doctype": "Method"
         }).insert(ignore_permissions=True)
