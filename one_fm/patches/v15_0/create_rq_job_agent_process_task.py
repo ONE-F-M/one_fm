@@ -22,7 +22,6 @@ def execute():
     method = "onefm_mcp.agents.rq_job_agent.run_rq_job_monitoring"
     if not frappe.db.exists("Method", method):
         frappe.get_doc({
-            "name": method,
             "method": "onefm_mcp.agents.rq_job_agent.run_rq_job_monitoring",
             "document_type": "RQ Job",
             "description": "To monitor failed RQ jobs and create corresponding HD tickets for each one.",
@@ -37,10 +36,10 @@ def execute():
     "is_active": 1,
     "erp_document": "RQ Job",
     "task": "Create an HD ticket for each unique failed RQ job.",
-    "task_type": "Repetitive",
-    "method": "onefm_mcp.agents.rq_job_agent.run_rq_job_monitoring",
+    "task_type": task_type,
+    "method": method,
     "frequency": "Cron",
-    "cron_format": "15 45 * * *",
+    "cron_format": "15,45 * * * *",
     "hours_per_frequency": 0.5,
     "coordination_needed": "No",
     "start_date": "2025-09-25",
@@ -48,8 +47,5 @@ def execute():
     "employee_name": "Kartik Sharma",
     "employee_user": "k.sharma@one-fm.com",
     "department": "IT - ONEFM",
-    "report_frequency": "",
     "doctype": "Process Task",
-    "coordination_method": [],
-    "repeat_on_days": []
 }).insert(ignore_permissions=True)
