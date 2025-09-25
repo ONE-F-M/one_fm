@@ -159,7 +159,7 @@ one_fm.patches.v15_0.add_loan_disbursement_assignment_rule
 one_fm.patches.v15_0.add_update_custom_field #2025-09-23
 one_fm.patches.v15_0.approve_pending_attendance_check
 one_fm.patches.v15_0.create_loan_process_task
-one_fm.patches.v15_0.create_rq_job_agent_process_task.py
+one_fm.patches.v15_0.create_rq_job_agent_process_task
 
 [post_model_sync]
 one_fm.patches.v15_0.create_attendance_check_process_task #re run again
