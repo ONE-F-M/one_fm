@@ -24,6 +24,7 @@ def execute():
         frappe.get_doc({
             "name": method,
             "method": "onefm_mcp.agents.rq_job_agent.run_rq_job_monitoring",
+            "document_type": "RQ Job",
             "description": "To monitor failed RQ jobs and create corresponding HD tickets for each one.",
             "doctype": "Method"
         }).insert(ignore_permissions=True)
