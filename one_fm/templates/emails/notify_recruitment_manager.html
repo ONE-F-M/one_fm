@@ -27,39 +27,36 @@
     
     </style>
     
+    <div class="salutation">
+        <h4 class="salutation">Dear Recruiter, </h1>
+    </div>
     
     <table>
       <tbody class="notify_recruitment_manager">
         <tr>
-          <th>ERF Name</th>
+          <th>Document Type</th>
+          <td>{{ doc_type }}</td>
+        </tr>
+        <tr>
+          <th>Document Name</th>
           <td>{{ erf_name }}</td>
         </tr>
         <tr>
-          <th>Project</th>
-          <td>{{ project }}</td>
+          <th>Description</th>
+          <td>A new Employee Requisition Form has been submitted and requires your attention. Please review this request in the ERP and take the necessary action.</td>
         </tr>
         <tr>
-          <th>Department</th>
-          <td>{{ department }}</td>
+            <th>Content</th>
+            <td>The details of the requisition are shown below:<br>
+              <b>Job Title:</b> {{ job_title }}<br>
+              <b>Department:</b> {{ department }}<br>
+              <b>Date Required:</b> {{ date_of_deployment }}<br>
+              <b>Requested By:</b> {{ requester }}
+
+            </td>
         </tr>
         <tr>
-            <th>Designation</th>
-            <td>{{ designation }}</td>
-        </tr>
-        <tr>
-          <th>Requester</th>
-          <td>{{ requester }}</td>
-        </tr>
-        <tr>
-          <th>Reason For Request</th>
-          <td>{{ reason_for_request }}</td>
-        </tr>
-        <tr>
-          <th>Expected Date of Deployment</th>
-          <td>{{ date_of_deployment }}</td>
-        </tr>
-        <tr>
-          <th>Link to document</th>
+          <th>Document Link</th>
           <td><a href={{doc_link}}>Doc Link</a></td>
         </tr>
       </tbody>

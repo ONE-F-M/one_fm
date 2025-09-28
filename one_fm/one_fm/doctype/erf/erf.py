@@ -168,11 +168,11 @@ class ERF(Document):
 
 	def notify_recruitment_manager(self):
 		try:
-			role_profile = frappe.db.get_list("Role Profile", {"role_profile": ["IN", ["Recruitment Manager", "Director"]]}, pluck="name", ignore_permissions=True)
+			role_profile = frappe.db.get_list("Role Profile", {"role_profile": ["IN", ["Recruitment Team Leader", "Junior Recruiter", "Senior Recruiter", "Recruitment Supervisor", "Director"]]}, pluck="name", ignore_permissions=True)
 			if role_profile:
 				manager_emails = frappe.db.get_list("User", {"role_profile_name": ["IN", role_profile]}, pluck="name")
 				if manager_emails:
-					title = f"Urgent Notification: {self.name} Requires Your Immediate Review"
+					title = f"New Employee Requisition Submitted: {self.job_title} - {self.name}"
 					context = {
 						"erf_name" : self.name,
 						"designation": self.designation,
@@ -181,7 +181,9 @@ class ERF(Document):
 						"doc_link": get_url_to_form(self.doctype, self.name),
 						"project": self.project,
 						"department": self.department,
-						"date_of_deployment": self.expected_date_of_deployment
+						"date_of_deployment": self.expected_date_of_deployment,
+						"job_title": self.job_title,
+						"doc_type": self.doctype
 					}
 					msg = frappe.render_template('one_fm/templates/emails/notify_recruitment_manager.html', context=context)
 					frappe.enqueue(sendemail, recipients=manager_emails, subject=title, content=msg, at_front=True, is_async=True)
