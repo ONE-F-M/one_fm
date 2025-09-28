@@ -168,28 +168,32 @@ class ERF(Document):
 
 	def notify_recruitment_manager(self):
 		try:
-			role_profile = frappe.db.get_list("Role Profile", {"role_profile": ["IN", ["Recruitment Team Leader", "Junior Recruiter", "Senior Recruiter", "Recruitment Supervisor", "Director"]]}, pluck="name", ignore_permissions=True)
-			if role_profile:
-				manager_emails = frappe.db.get_list("User", {"role_profile_name": ["IN", role_profile]}, pluck="name")
-				if manager_emails:
-					title = f"New Employee Requisition Submitted: {self.job_title} - {self.name}"
-					context = {
-						"erf_name" : self.name,
-						"designation": self.designation,
-						"requester": self.erf_requested_by_name,
-						"reason_for_request": self.reason_for_request,
-						"doc_link": get_url_to_form(self.doctype, self.name),
-						"project": self.project,
-						"department": self.department,
-						"date_of_deployment": self.expected_date_of_deployment,
-						"job_title": self.job_title,
-						"doc_type": self.doctype
-					}
-					msg = frappe.render_template('one_fm/templates/emails/notify_recruitment_manager.html', context=context)
-					frappe.enqueue(sendemail, recipients=manager_emails, subject=title, content=msg, at_front=True, is_async=True)
-					frappe.msgprint(_('Recruitment manager will be notified by email.'))
+			# Get all users with the "ERF Reviewer" role
+			manager_emails = frappe.get_all(
+				"Has Role",
+				filters={"role": "ERF Reviewer"},
+				fields=["parent as user"],
+				pluck="user"
+			)
+			if manager_emails:
+				title = f"New Employee Requisition Submitted: {self.job_title} - {self.name}"
+				context = {
+					"erf_name" : self.name,
+					"designation": self.designation,
+					"requester": self.erf_requested_by_name,
+					"reason_for_request": self.reason_for_request,
+					"doc_link": get_url_to_form(self.doctype, self.name),
+					"project": self.project,
+					"department": self.department,
+					"date_of_deployment": self.expected_date_of_deployment,
+					"job_title": self.job_title,
+					"doc_type": self.doctype
+				}
+				msg = frappe.render_template('one_fm/templates/emails/notify_recruitment_manager.html', context=context)
+				frappe.enqueue(sendemail, recipients=manager_emails, subject=title, content=msg, at_front=True, is_async=True)
+				frappe.msgprint(_('Recruitment manager will be notified by email.'))
 		except:
-			frappe.log_error(frappe.get_traceback(), "Error while sending mail to recruitment manager(ERF) ")
+			frappe.log_error(title="Error while sending mail to recruitment manager(ERF) ", message=frappe.get_traceback())
 
 
 
