@@ -11,7 +11,7 @@ def execute():
             "process_owner": "Administrator"
         }).insert(ignore_permissions=True)
 
-    task_type = "Repetitive"
+    task_type = "Routine"
     if not frappe.db.exists("Task Type", task_type):
         frappe.get_doc({
             "name": task_type,
