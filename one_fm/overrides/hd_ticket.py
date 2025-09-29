@@ -1,6 +1,6 @@
 import frappe, requests, re, json
 from frappe import _
-from frappe.utils import getdate
+from frappe.utils import getdate, now, get_fullname
 from json import dumps
 from httplib2 import Http
 from frappe.desk.form.assign_to import get as get_assignments,add as add_assignment
@@ -130,16 +130,25 @@ class HDTicketOverride(HDTicket):
         except Exception as e:
              frappe.log_error(frappe.get_traceback(), "Error while sending google notification")
 
+    @property
+    def get_name_for_mailing(self):
+        try:
+            employee_name = frappe.db.get_value("Employee", {"user_id": self.raised_by}, "employee_name")
+            if employee_name:
+                return employee_name
+            return self.raised_by.split("@")[0]
+        except (AttributeError, IndexError):
+            return self.raised_by
+
     def notify_ticket_raiser_of_resolution_details(self):
-        if self.status == "Closed":
-            previous_doc = self.get_doc_before_save() # Check if status was just changed to Closed
-            if previous_doc and previous_doc.status != "Closed":
+        if self.status == "Resolved":
+            previous_doc = self.get_doc_before_save()
+            if previous_doc and previous_doc.status != "Resolved":
                 try:
-                    subject = f"HD Ticket {self.name} Closed"
-                    employee=  frappe.db.get_value("Employee", {"user_id": self.raised_by}, ["employee_name"], as_dict=1)
+                    subject = f"HD Ticket {self.name} Resolved"
 
                     args = frappe._dict({
-                        "employee_name": employee.employee_name,
+                        "employee_name": self.get_name_for_mailing,
                         "ticket_subject": self.subject,
                         "resolution_details": self.resolution_details,
                         "base_url": frappe.utils.get_url(),
@@ -154,10 +163,9 @@ class HDTicketOverride(HDTicket):
     def notify_ticket_raiser_of_receipt(self):
         try:
             subject = f"HD Ticket {self.name} Raised"
-            employee=  frappe.db.get_value("Employee", {"user_id": self.raised_by}, ["employee_name"], as_dict=1)
 
             args = frappe._dict({
-                "employee_name": employee.employee_name,
+                "employee_name": self.get_name_for_mailing,
                 "ticket_subject": self.subject,
                 "base_url": frappe.utils.get_url(),
                 "doc_type": self.doctype,
@@ -453,3 +461,53 @@ def create_github_issue(name, description):
     except Exception as e:
         frappe.log_error(message=frappe.get_traceback(), title="GitHub Issue Creation Error")
         return {'error': 'GitHub Issue Error', 'message': f"GitHub issue could not be created:\n {str(e)}"}
+
+
+
+@frappe.whitelist()
+def update_ticket_with_feedback(ticket_id, feedback, action):
+    try:
+        if not ticket_id or not feedback or not action:
+            return {
+                "success": False,
+                "message": "Missing required parameters"
+            }
+        
+        ticket = frappe.get_doc("HD Ticket", ticket_id)
+        user_name = get_fullname(frappe.session.user) or frappe.session.user
+        current_time = now()
+        
+        if action == "close":
+            ticket.feedback = feedback.strip()
+            ticket.status = "Closed"
+            ticket.add_comment("Comment", f"Ticket closed by {user_name}. Feedback: {feedback.strip()}")
+            message = "Ticket has been closed successfully with your feedback."
+            
+        elif action == "reopen":
+            current_description = ticket.description or ""
+            feedback_section = f"\n\n--- Reopen Feedback ({current_time}) by {user_name} ---\n{feedback.strip()}"
+            ticket.description = current_description + feedback_section
+            ticket.status = "Open"
+            ticket.add_comment("Comment", f"Ticket reopened by {user_name}. Reason: {feedback.strip()}")
+            message = "Ticket has been reopened successfully. Your feedback has been added to the description."
+            
+        else:
+            return {
+                "success": False,
+                "message": "Invalid action specified"
+            }
+        
+        ticket.save(ignore_permissions=True)
+        frappe.db.commit()
+        
+        return {
+            "success": True,
+            "message": message
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error in update_ticket_with_feedback: {str(e)}")
+        return {
+            "success": False,
+            "message": "An error occurred while updating the ticket"
+        }

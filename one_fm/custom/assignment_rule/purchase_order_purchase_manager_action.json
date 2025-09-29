@@ -1,24 +1,49 @@
 {
-  "name": "Purchase Order Purchase Manager Action",
-  "document_type": "Purchase Order",
-  "priority": 0,
-  "disabled": 0,
-  "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Name</td>\n                <td style=\"padding: 10px;\">{{ name }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Supplier</td>\n                <td style=\"padding: 10px;\">{{supplier}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Currency</td>\n                <td style=\"padding: 10px;\">{{currency}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Exchange Rate</td>\n                <td style=\"padding: 10px;\">{{conversion_rate}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            </tbody></table><p></p>",
-  "is_assignment_rule_with_workflow": 1,
-  "assign_condition": "workflow_state == 'Pending Purchase Manager'",
-  "unassign_condition": "workflow_state != 'Pending Purchase Manager'",
-  "rule": "Round Robin",
-  "doctype": "Assignment Rule",
-  "assignment_days": [
-    { "day": "Monday", "doctype": "Assignment Rule Day" },
-    { "day": "Tuesday", "doctype": "Assignment Rule Day" },
-    { "day": "Wednesday", "doctype": "Assignment Rule Day" },
-    { "day": "Thursday", "doctype": "Assignment Rule Day" },
-    { "day": "Friday", "doctype": "Assignment Rule Day" },
-    { "day": "Saturday", "doctype": "Assignment Rule Day" },
-    { "day": "Sunday", "doctype": "Assignment Rule Day" }
-  ],
-  "users": [
-    { "user": "a.kuriakose@one-fm.com", "doctype": "Assignment Rule User" }
-  ]
+    "name": "Purchase Order Purchase Manager Action",
+    "document_type": "Purchase Order",
+    "priority": 0,
+    "disabled": 0,
+    "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table border=\"1\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Name</td>\n                <td style=\"padding: 10px;\">{{ name }}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Supplier</td>\n                <td style=\"padding: 10px;\">{{supplier}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Currency</td>\n                <td style=\"padding: 10px;\">{{currency}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Exchange Rate</td>\n                <td style=\"padding: 10px;\">{{conversion_rate}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            </tbody></table><p></p>",
+    "is_assignment_rule_with_workflow": 1,
+    "assign_condition": "workflow_state == 'Pending Purchase Manager'",
+    "unassign_condition": "workflow_state != 'Pending Purchase Manager'",
+    "rule": "Round Robin",
+    "last_user": "a.kuriakose@one-fm.com",
+    "doctype": "Assignment Rule",
+    "users": [
+        {
+            "user": "s.rafeeq@one-fm.com",
+            "doctype": "Assignment Rule User"
+        }
+    ],
+    "assignment_days": [
+        {
+            "day": "Monday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Tuesday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Wednesday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Thursday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Friday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Saturday",
+            "doctype": "Assignment Rule Day"
+        },
+        {
+            "day": "Sunday",
+            "doctype": "Assignment Rule Day"
+        }
+    ]
 }

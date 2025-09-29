@@ -59,26 +59,28 @@
 </head>
 <body>
      <div class="subject-container">
-        <h1 class="title">HD Ticket {{doc_name}} Closed</h1>
+        <h1 class="title">HD Ticket {{doc_name}} Resolved</h1>
     </div>
     <table class="core-table">
+         <tr>
+            <th>Document Type</th>
+            <td>{{ doc_type }}</td>
+        </tr>
+
         <tr>
           <th>Document Name</th>
           <td>{{ doc_name }}</td>
         </tr>
-        <tr>
-            <th>Document Type</th>
-            <td>{{ doc_type }}</td>
-        </tr>
+
         <tr>
           <th>Description</th>
           <td>
             <div class="container">
               Dear {{ employee_name }},
               <br><br>
-              Your ticket has been closed. 
+              Your ticket has been resolved.
               <br><br>
-              If you are still experiencing the issue you may reply back to this email and we will do our best to help.
+              Please confirm the action and proceed to either Close or Reopen the ticket by clicking the document link below.
             </div>
           </td>
         </tr>
@@ -104,7 +106,7 @@
         </tr>
         <tr>
             <th>Document Link</th>
-            <td><a href="{{ base_url }}/helpdesk/tickets/{{ doc_name }}" target="_blank">Click Here</a></td>
+            <td><a href="{{ base_url }}/helpdesk/my-tickets/{{ doc_name }}" target="_blank">Click Here</a></td>
         </tr>
     </table>
 </body>
