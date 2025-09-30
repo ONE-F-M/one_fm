@@ -871,13 +871,18 @@ def unschedule_staff(employees, roster_type, start_date=None, end_date=None, nev
 		if not employees:
 			response("Error", 400, None, {"message": "Employees must be selected."})
 
-		if not selected_days_only and not _start_date:
+		if not cint(selected_days_only) and not _start_date:
 			frappe.throw("Must provide a start date if selected days are not targetted")
 
-		if _start_date:
+		# Handle selected days only scenario
+		if cint(selected_days_only):
+			# When selected_days_only is true, we use the employee data as-is with their selected dates
+			# No need to filter or modify the employees list
+			pass
+		elif _start_date:
 			employees = [i for i in employees if getdate(i["date"])>=_start_date]
 
-		if end_date:
+		if end_date and not cint(selected_days_only):
 			end_date_val = getdate(end_date)
 			employees = []
 			list_of_date = date_range(start_date, end_date_val)
@@ -890,7 +895,7 @@ def unschedule_staff(employees, roster_type, start_date=None, end_date=None, nev
 		roster_type_query = "roster_type in ('Basic', 'Over-Time')" if roster_type == "Basic" else f"roster_type = '{roster_type}'"
 
 		# check if no end date
-		if cint(never_end) == 1:
+		if cint(never_end) == 1 and not cint(selected_days_only):
 			employees_to_delete = []
 			for i in employees:
 				if not i["employee"] in employees_to_delete:
@@ -901,10 +906,12 @@ def unschedule_staff(employees, roster_type, start_date=None, end_date=None, nev
 				DELETE FROM `tabEmployee Schedule` WHERE employee IN {employees_to_delete} and date>="{start_date}" and {roster_type_query}
 			""")
 		else:
+			# For selected days only or normal deletion, delete specific employee schedules for specific dates
 			for i in employees:
-				frappe.db.sql(f"""
-					DELETE FROM `tabEmployee Schedule` WHERE employee="{i["employee"]}" and date="{i["date"]}" and {roster_type_query}
-				""")
+				if "employee" in i and "date" in i:
+					frappe.db.sql(f"""
+						DELETE FROM `tabEmployee Schedule` WHERE employee="{i["employee"]}" and date="{i["date"]}" and {roster_type_query}
+					""")
 		response("Success", 200, {"message":"Staff(s) unscheduled successfully"})
 	except Exception as e:
 		frappe.throw(str(e))
