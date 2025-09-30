@@ -343,8 +343,8 @@ def cleanhtml(raw_html):
 
 @frappe.whitelist()
 def get_ticket_details(name: str):
-    fields = ['subject', 'description',]
-    hd_ticket = frappe.db.get_value('HD Ticket',{'status': 'Draft', "name": name}, fields, as_dict=True)
+    fields = ['subject', 'description', 'priority', 'custom_process']
+    hd_ticket = frappe.db.get_value('HD Ticket', name, fields, as_dict=True)
     if not hd_ticket:
         frappe.throw(_("Ticket not found"), frappe.DoesNotExistError)
     return {
