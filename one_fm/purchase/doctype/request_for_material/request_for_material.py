@@ -588,6 +588,8 @@ def create_partial_request_for_purchase(source_name, items):
 def make_request_for_purchase(source_name, target_doc=None):
     
     def set_missing_values(source, target):
+        if not target.get("items"):
+            frappe.throw(_("Cannot create RFP. At least one line item must have a specified Item Code."))
         target.run_method('_update_linked_rfm_quantities')
         
         
@@ -596,8 +598,6 @@ def make_request_for_purchase(source_name, target_doc=None):
             qty = obj.qty - obj.custom_rfp_quantity
             target.qty = qty
             target.custom_request_for_material_item = obj.name
-            if not obj.item_code:
-                frappe.throw(_("Please specify the Item Code in each line before you create RFP"))
 
     doclist = get_mapped_doc("Request for Material", source_name, 	{
         "Request for Material": {
@@ -616,12 +616,13 @@ def make_request_for_purchase(source_name, target_doc=None):
                 ["requested_description", "description"],
                 ["requested_item_name", "item_name"],
                 ["name", "request_for_material_item"],
+                ["name", "custom_request_for_material_item"],
                 ["parent", "request_for_material"]
             ],
             "postprocess": update_item,
-            "condition": lambda doc: (doc.custom_rfp_quantity < doc.qty and doc.reject_item==0)
+            "condition": lambda doc: (doc.item_code and doc.custom_rfp_quantity < doc.qty and doc.reject_item==0)
         }
-    }, target_doc)
+    }, target_doc, set_missing_values)
     doclist.save()
     frappe.db.commit()
     

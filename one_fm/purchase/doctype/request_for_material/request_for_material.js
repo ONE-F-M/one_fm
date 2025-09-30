@@ -254,7 +254,6 @@ frappe.ui.form.on('Request for Material', {
 		}
 	},
 	make_request_for_purchase: function(frm) {
-				validate_item_code(frm)
 
                 if (frm.is_dirty()) {
                         frappe.msgprint(__("Please save your changes before creating a Request for Purchase."));

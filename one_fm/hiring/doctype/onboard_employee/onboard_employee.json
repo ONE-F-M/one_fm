@@ -1452,6 +1452,7 @@
    "label": "IBAN"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "job_offer.day_off_category",
    "fieldname": "day_off_category",
    "fieldtype": "Select",
@@ -1459,6 +1460,7 @@
    "options": "Weekly\nMonthly"
   },
   {
+   "allow_on_submit": 1,
    "fetch_from": "job_offer.number_of_days_off",
    "fieldname": "number_of_days_off",
    "fieldtype": "Int",
@@ -1563,10 +1565,11 @@
    "label": "Visa Centralized Number"
   }
  ],
+ "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-03-17 11:42:27.040482",
+ "modified": "2025-09-23 18:38:56.825335",
  "modified_by": "Administrator",
  "module": "Hiring",
  "name": "Onboard Employee",
@@ -1617,6 +1620,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

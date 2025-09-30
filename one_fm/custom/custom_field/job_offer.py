@@ -86,7 +86,8 @@ def get_job_offer_custom_fields():
                 "fieldtype": "Int",
                 "insert_after": "day_off_category",
                 "label": "Number of Days Off",
-                "reqd": 1
+                "reqd": 1,
+                "allow_on_submit": 1
             },
             {
                 "fieldname": "day_off_category",
@@ -94,7 +95,8 @@ def get_job_offer_custom_fields():
                 "insert_after": "onboarding_officer",
                 "label": "Day Off Category",
                 "options": "Weekly\nMonthly",
-                "reqd": 1
+                "reqd": 1,
+                "allow_on_submit": 1
             },
             {
                 "fieldname": "base",

@@ -5,7 +5,7 @@ def get_hd_ticket_properties():
             "doc_type":"HD Ticket",
             "field_name":"status",
             "property":"options",
-            "value":"Draft\nOpen\nReplied\nOn Hold\nResolved\nClosed",
+            "value":"Draft\nOpen\nReplied\nOn Hold\nPending Deployment\nResolved\nClosed",
             "default_value":"Open"
         },
         {

@@ -286,10 +286,145 @@ class RequestforPurchase(Document):
 				frappe.log_error(f"Error deleting PO {po.name}: {str(e)}")
 				frappe.throw(_("Error deleting Purchase Order {0}: {1}").format(po.name, str(e)))
 
+ 
+ 
+	def update_purchase_order(self, item_qty_dict):
+		"""
+		Update all draft Purchase Orders linked to this RFP so that:
+		- Quantities are reduced as per item_qty_dict (never increased)
+		- If a PO has no items left, it is deleted
+		- Items in the dict not present in any PO are ignored (never added)
+		"""
+		if not item_qty_dict:
+			return
+		draft_pos = frappe.get_all(
+			"Purchase Order",
+			filters={
+				"one_fm_request_for_purchase": self.name,
+				"docstatus": 0
+			},
+			fields=["name"]
+		)
+		
+		item_po_map = {}
+		po_docs = {}
+		for po_row in draft_pos:
+			po = frappe.get_doc("Purchase Order", po_row.name)
+			po_docs[po.name] = po
+			for item in list(po.items):
+				# Remove items not in the dict
+				if item.item_code not in item_qty_dict:
+					po.items.remove(item)
+					continue
+				if item.item_code not in item_po_map:
+					item_po_map[item.item_code] = []
+				item_po_map[item.item_code].append((po, item))
+		# For each item_code in the dict, reduce qty across POs (never increase, never add new rows)
+		for item_code, new_total_qty in item_qty_dict.items():
+			ordered_quantity = self.get_ordered_qty_for_item(item_code)
+			new_total_qty = max(0, new_total_qty - ordered_quantity)
+			po_items = item_po_map.get(item_code, [])
+			po_items.sort(key=lambda x: x[0].name)
+			current_total = sum(i.qty for _, i in po_items)
+			# Only reduce if needed
+			if new_total_qty < current_total:
+				qty_left = new_total_qty
+				for po, item in po_items:
+					if qty_left <= 0:
+						po.items.remove(item)
+					elif item.qty > qty_left:
+						item.qty = qty_left
+						qty_left = 0
+					else:
+						qty_left -= item.qty
+			# If new_total_qty >= current_total, do nothing (never increase or add)
+		# Remove any POs with no items
+		for po in po_docs.values():
+			if not po.items:
+				po.delete()
+			else:
+				po.save(ignore_permissions=True)
+		
+		# Fetch all valid purchase orders linked to this Request for Purchase
+		
+		
+	def get_ordered_qty_for_item(self, item_code):
+		# Calculate the total ordered quantity for the given item_code across all submitted POs
+		ordered_qty = frappe.db.get_value(
+			"Purchase Order Item",
+			{
+				"item_code": item_code,
+				"parent": ["in", [po for po in frappe.db.get_list("Purchase Order", {"one_fm_request_for_purchase": self.name, "docstatus": 1}, pluck="name")]]
+			},
+			"sum(qty)"
+		) or 0
+		return ordered_qty
+		
+    
+	@frappe.whitelist()
+	def update_rfp_items(self, updated_items, reason):
+		updated_item_names = {}
+		removed_item_names = {}
+		
+
+		updated_items_data = json.loads(updated_items)
+		updated_items_map = {item['name']: item for item in updated_items_data}
+
+		# Validation and Update Phase
+		items_to_remove = []
+		for item in self.items_to_order:
+			if item.name in updated_items_map:
+				new_qty = frappe.utils.flt(updated_items_map[item.name]['qty'])
+
+				
+
+				ordered_qty = self.get_ordered_qty_for_item(item.item_code)
+				if new_qty < ordered_qty:
+					frappe.throw(_("New quantity for item {0} cannot be less than the already ordered quantity ({1}).").format(item.item_code, ordered_qty))
+
+				# item.db_set('qty',new_qty)
+				item.qty = new_qty
+				updated_item_names[item.item_code] = new_qty
+				#Update the same quantity in the main items table
+				for main_item in self.items:
+					if main_item.item_code == item.item_code:
+						# main_item.db_set('qty',new_qty)
+						main_item.qty = new_qty
+						break
+			else:
+				# Item is being removed
+				ordered_qty = self.get_ordered_qty_for_item(item.item_code)
+				if ordered_qty > 0:
+					frappe.throw(_("Cannot remove item {0} as it has already been ordered.").format(item.item_code))
+				items_to_remove.append(item)
+				removed_item_names[item.item_code] = item.qty
+
+		for item in items_to_remove:
+			self.remove(item)
+			# Also remove from main items table
+			for main_item in self.items:
+				if main_item.item_code == item.item_code:
+					self.remove(main_item)
+					break
+
+		# Propagate changes to draft POs
+		#return the names and quantity of the updated and removed items as a string
+		
+		reason = "Reason for Item Update: " + reason
+		self.add_comment("Comment", reason)
+		self.save()
+		version = frappe.new_doc("Version")
+		if version.update_version_info(self.get_doc_before_save(), self):
+			version.insert(ignore_permissions=True)
+		self.update_purchase_order(updated_item_names)
+		
+		frappe.msgprint(_("Request for Purchase updated successfully."))
+
 
 
 @frappe.whitelist()
 def check_related_pos_before_cancel(doc):
+    
     doc_dict = json.loads(doc)
     
     approved_pos = frappe.db.get_list('Purchase Order', {

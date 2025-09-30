@@ -37,7 +37,7 @@ def get_working_site_supervisor(project, date):
 		return None
 
 	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), str(e))
+		frappe.log_error(title=str(e), message=frappe.get_traceback())
 
 	
 def get_post_scheduler_items(contract, project):
@@ -189,7 +189,7 @@ def schedule_roster_checker():
 				post_scheduler_checker.save()
 			
 		except Exception as e:
-			frappe.log_error(frappe.get_traceback(), "Error while generating Post Scheduler Checker")
+			frappe.log_error(title="Error while generating Post Scheduler Checker", message=frappe.get_traceback())
 			continue
 
 	frappe.db.commit()

@@ -228,7 +228,8 @@ class JobOfferOverride(JobOffer):
             self.operation_site = ''
 
     def before_cancel(self):
-        employee = self.get_onload('employee')
+        onload = self.get("__onload")
+        employee = onload.get('employee') if onload else None
         if employee:
             frappe.throw(_("Not Allowed to Reject the Job Offer, it is linked with Employee {0}".format(employee)))
 

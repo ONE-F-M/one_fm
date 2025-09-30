@@ -72,6 +72,9 @@ from one_fm.custom.property_setter.todo import get_todo_properties
 from one_fm.custom.property_setter.vehicle import get_vehicle_properties
 from one_fm.custom.property_setter.warehouse import get_warehouse_properties
 from one_fm.custom.property_setter.job_offer import get_job_offer_properties
+from one_fm.custom.property_setter.hd_service_level_agreement_fulfilled_on_status import get_hd_service_level_agreement_fulfilled_on_status_properties
+from one_fm.custom.property_setter.hd_pause_service_level_agreement_on_status import get_hd_pause_service_level_agreement_on_status_properties
+
 
 def get_field_properties():
 	"""ONEFM specific field properties that need to be added to the masters in ERPNext"""
@@ -147,5 +150,7 @@ def get_field_properties():
 	field_properties.extend(get_todo_properties())
 	field_properties.extend(get_vehicle_properties())
 	field_properties.extend(get_warehouse_properties())
+	field_properties.extend(get_hd_service_level_agreement_fulfilled_on_status_properties())
+	field_properties.extend(get_hd_pause_service_level_agreement_on_status_properties())
 
 	return field_properties

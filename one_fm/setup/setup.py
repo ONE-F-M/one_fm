@@ -31,7 +31,7 @@ def add_property_setter(property_setters):
 			property=property.get("property"),
 			value=property.get("value"),
 			property_type=property.get("property_type"),
-			for_doctype=property.get("doctype_or_field"),
+			for_doctype=property.get("doctype_or_field") == "DocType",
 			validate_fields_for_doctype=False
 		)
 

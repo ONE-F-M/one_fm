@@ -116,10 +116,10 @@ one_fm.patches.v15_0.add_roster_index
 one_fm.patches.v15_0.add_roster_index #03-06-2025
 one_fm.patches.v15_0.delete_all_roaster_day_off_checker_records
 one_fm.patches.v15_0.update_operation_post_start_and_end_date
-one_fm.patches.v15_0.add_custom_process_field_property_setter
-one_fm.patches.v15_0.add_update_property_setter #2025-05-20
-one_fm.patches.v15_0.add_update_assignment_rule #2025-07-2
-one_fm.patches.v15_0.add_update_workflow #2025-06-04
+one_fm.patches.v15_0.add_custom_process_field_property_setter #2025-09-28
+one_fm.patches.v15_0.add_update_property_setter #2025-05-28
+one_fm.patches.v15_0.add_update_assignment_rule #2025-09-27
+one_fm.patches.v15_0.add_update_workflow #2025-09-27
 one_fm.patches.v15_0.update_attendance_check_client_day_off
 one_fm.patches.v15_0.update_erf_in_job_applicant_and_offer
 one_fm.patches.v15_0.delete_employee_schedule_for_employee_on_leave #2025-07-17 rerun
@@ -153,10 +153,9 @@ one_fm.patches.v15_0.add_loan_application_workflow
 one_fm.patches.v15_0.add_loan_product_property_setter
 one_fm.patches.v15_0.update_expired_leave_policy_assignments
 one_fm.patches.v15_0.add_contract_compliance_checker_assignment_rule
-one_fm.patches.v15_0.create_compliance_checker_process_task
 one_fm.patches.v15_0.create_loan_management_process
 one_fm.patches.v15_0.add_loan_disbursement_assignment_rule
-one_fm.patches.v15_0.add_update_custom_field #2025-09-22
+one_fm.patches.v15_0.add_update_custom_field #2025-09-23
 one_fm.patches.v15_0.approve_pending_attendance_check
 one_fm.patches.v15_0.create_loan_process_task
 one_fm.patches.v15_0.delete_issue_log_custom_field_error_log
@@ -170,3 +169,4 @@ one_fm.patches.v15_0.add_values_to_rank_factor_table
 one_fm.patches.v15_0.update_existing_designation_to_main_head_hunt_doctype
 one_fm.patches.v15_0.attendance_check_create #09-09-2025
 one_fm.patches.v15_0.update_job_applicant_field
+one_fm.patches.v15_0.create_compliance_checker_process_task
