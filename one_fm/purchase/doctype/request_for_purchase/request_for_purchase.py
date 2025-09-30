@@ -393,6 +393,27 @@ def make_request_for_quotation(source_name, target_doc=None):
 	return doclist
 
 @frappe.whitelist()
+def refresh_dashboard_connections(rfp_name):
+	"""
+	Utility function to refresh dashboard connections for a Request for Purchase.
+	This can help troubleshoot connection display issues.
+	"""
+	if not frappe.has_permission("Request for Purchase", "write", rfp_name):
+		frappe.throw(_("No permission to modify this Request for Purchase"))
+	
+	# Clear any cached data that might be affecting the dashboard
+	frappe.clear_cache(doctype="Request for Purchase")
+	frappe.clear_document_cache("Request for Purchase", rfp_name)
+	
+	# Get current connections to verify they exist
+	connections = get_purchase_order_connections(rfp_name)
+	
+	return {
+		"message": f"Dashboard connections refreshed. Found {connections['total_count']} Purchase Orders.",
+		"connections": connections
+	}
+
+@frappe.whitelist()
 def get_purchase_order_connections(rfp_name):
 	"""
 	Debug function to check Purchase Order connections for a Request for Purchase.
