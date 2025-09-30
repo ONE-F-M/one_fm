@@ -86,6 +86,30 @@ def filter_purchase_uoms(doctype, txt, searchfield, start, page_len, filters):
 
 class PurchaseOrderOverride(PurchaseOrder):  
 
+    def validate(self):
+        super().validate()
+        self._validate_rfp_link()
+
+    def _validate_rfp_link(self):
+        """
+        Ensure that if this Purchase Order is linked to a Request for Material
+        that has an associated Request for Purchase, the one_fm_request_for_purchase
+        field is properly set to maintain dashboard connections.
+        """
+        if self.request_for_material and not self.one_fm_request_for_purchase:
+            # Check if there's an RFP linked to this RFM
+            rfp = frappe.db.get_value(
+                "Request for Purchase", 
+                {"request_for_material": self.request_for_material, "docstatus": 1},
+                "name"
+            )
+            if rfp:
+                self.one_fm_request_for_purchase = rfp
+                frappe.msgprint(
+                    f"Automatically linked Purchase Order to Request for Purchase {rfp}",
+                    alert=True
+                )  
+
     def on_submit(self):
         self.update_purchased_quantities()
         self.update_ordered_and_pending_quantities()

@@ -393,6 +393,28 @@ def make_request_for_quotation(source_name, target_doc=None):
 	return doclist
 
 @frappe.whitelist()
+def get_purchase_order_connections(rfp_name):
+	"""
+	Debug function to check Purchase Order connections for a Request for Purchase.
+	This helps troubleshoot dashboard connection issues.
+	"""
+	if not frappe.has_permission("Request for Purchase", "read", rfp_name):
+		frappe.throw(_("No permission to access this Request for Purchase"))
+	
+	connections = frappe.db.get_all(
+		"Purchase Order",
+		filters={"one_fm_request_for_purchase": rfp_name},
+		fields=["name", "supplier", "status", "workflow_state", "docstatus", "transaction_date"],
+		order_by="transaction_date desc"
+	)
+	
+	return {
+		"total_count": len(connections),
+		"connections": connections,
+		"rfp_name": rfp_name
+	}
+
+@frappe.whitelist()
 def make_quotation_comparison_sheet(source_name, target_doc=None):
 	doclist = get_mapped_doc("Request for Purchase", source_name, 	{
 		"Request for Purchase": {
