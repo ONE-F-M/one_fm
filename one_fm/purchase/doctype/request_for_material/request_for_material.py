@@ -616,6 +616,7 @@ def make_request_for_purchase(source_name, target_doc=None):
                 ["requested_description", "description"],
                 ["requested_item_name", "item_name"],
                 ["name", "request_for_material_item"],
+                ["name", "custom_request_for_material_item"],
                 ["parent", "request_for_material"]
             ],
             "postprocess": update_item,

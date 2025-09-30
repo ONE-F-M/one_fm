@@ -59,6 +59,9 @@ class HDTicketOverride(HDTicket):
         if (self.status == "Closed" or self.status == "Resolved") and not self.resolution_details:
             frappe.throw(_("Please fill in Resolution Details before closing the ticket."))
 
+        if self.status == "Pending Deployment" and not self.resolution_details:
+            frappe.throw(_("Please fill in Resolution Details before updating the status to Pending Deployment."))
+
     def send_google_chat_notification(self):
         """Hangouts Chat incoming webhook to send the Issues Created, in Card Format."""
         # Fetch the Key and Token for the API

@@ -324,10 +324,7 @@ career_history = Class.extend({
     }
     var company_section_html = `
     <div class="section_${company_no}">
-      <h3 class="mx-auto">
-        Hello, {{job_applicant.applicant_name}}, tell us about the
-        ${stringifyNumber(company_no)} company you worked for!
-      </h3>
+      <h3 class="mx-auto">Hello, {{job_applicant.applicant_name}}, alone</h3>
 
       <div
         class="row border-top"
@@ -651,6 +648,8 @@ career_history = Class.extend({
       const selectedExperienceType = $(this).val();
       const companyDetailsElement = $(`.company_details_${company_no}`);
       if (selectedExperienceType === 'Fresher') {
+        heading_html = '<h3 class="mx-auto">Hello, {{job_applicant.applicant_name}}, tell us about your learning and development journey!</h3>';
+        $(`.section_${company_no} h3.mx-auto`).replaceWith($(heading_html));
          $('.next-btn').remove();
         const fresherDetailsHTML = `
         <div class="learning-journey-block my-3 col-lg-12 col-md-12">
@@ -668,6 +667,8 @@ career_history = Class.extend({
           // Show submit button by default for Fresher
           $('.submit-btn').fadeIn();
       } else if (selectedExperienceType === 'Experienced') {
+         heading_html = '<h3 class="mx-auto">Hello, {{job_applicant.applicant_name}}, tell us about the ' + stringifyNumber(company_no) + ' company you worked for!</h3>';
+      $(`.section_${company_no} h3.mx-auto`).replaceWith($(heading_html));
         $('.final-interest-section').remove();
         $('.submit-btn').fadeOut();
         const experienceDetailsHTML = `
@@ -828,10 +829,6 @@ career_history = Class.extend({
       const learningJourneyItemsContainer = $(`.learning-journey-items`);
       const currentItemCount = learningJourneyItemsContainer.children().length;
 
-      // If more than 1 journey items are added then no need for showes and tugs
-      if (currentItemCount >= 1) {
-        $(`.shoves-tugs-block`).fadeOut();
-      }
 
       const learningJourneyItem = `
         <div class="learning-journey-item mb-3" data-item-index="${currentItemCount + 1}">

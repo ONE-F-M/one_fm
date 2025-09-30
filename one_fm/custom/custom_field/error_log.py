@@ -2,11 +2,13 @@ def get_error_log_custom_fields():
     return {
         "Error Log": [
             {
-                "fieldname": "issue_log",
-                "fieldtype": "Data",
+                "fieldname": "hd_ticket",
+                "fieldtype": "Link",
                 "insert_after": "error",
-                "label": "Issue Log",
-                "read_only": 1
+                "label": "HD Ticket",
+                "read_only": 1,
+                "options": "HD Ticket"
             }
         ]
     }
+

@@ -64,6 +64,7 @@ jobs:
         
         # Add additional apps here
         bench get-app erpnext https://github.com/frappe/erpnext --branch version-15
+        bench get-app telephony https://github.com/frappe/telephony --branch develop
         bench get-app helpdesk https://github.com/frappe/helpdesk --branch main
         bench get-app hrms https://github.com/frappe/hrms --branch version-15
         bench get-app lending https://github.com/frappe/lending --branch version-15
@@ -77,7 +78,7 @@ jobs:
       run: bench --site frappe.test set-config face_recognition_service_url [${{secrets.FACE_REG_URL}}]
     - name: install apps
       working-directory: /home/runner/frappe-bench
-      run: bench --site frappe.test install-app  erpnext  helpdesk hrms lending payments one_fm
+      run: bench --site frappe.test install-app  erpnext telephony helpdesk hrms lending payments one_fm
     - name: setup requirements
       working-directory: /home/runner/frappe-bench
       run: bench setup requirements --dev

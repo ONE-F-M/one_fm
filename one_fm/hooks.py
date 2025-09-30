@@ -824,7 +824,9 @@ override_whitelisted_methods = {
 
 override_doctype_dashboards = {
     'Project': 'one_fm.overrides.project_dashboard.get_data',
+    'HD Ticket': 'one_fm.overrides.hd_ticket_dashboard.get_data',
 }
+
 
 
 

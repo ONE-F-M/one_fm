@@ -16,5 +16,5 @@ def create_issue_log(error_log):
         'ticket_type': 'Bug',
     }).insert(ignore_permissions=True)
     issue_log.add_comment("Comment", error_log.error)
-    frappe.db.set_value("Error Log", error_log.name, 'issue_log', issue_log.name)
+    frappe.db.set_value("Error Log", error_log.name, 'hd_ticket', issue_log.name)
     return issue_log.name

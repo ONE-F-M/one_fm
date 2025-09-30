@@ -622,6 +622,8 @@ def update_all_ticket_features():
         any_changes = True
     if update_hd_ticket_side_bar():
         any_changes = True
+    if update_ticket_status():
+        any_changes = True
 
     if any_changes:
         bench_path = frappe.utils.get_bench_path()
@@ -667,3 +669,43 @@ def disable_sync_on_developer_mode():
             0
         )
         print(f"Disabled Google Task Synchronization")
+
+
+def update_ticket_status():
+    """
+    Replaces the standard Helpdesk ticketStatus.ts file with the custom version from one_fm
+    and triggers a build to apply the changes.
+    """
+    print("🚀 Overriding Helpdesk ticketStatus.ts file...")
+
+    # Get the base path of the bench directory
+    bench_path = frappe.utils.get_bench_path()
+
+    # Define the source and destination file paths
+    source_file = os.path.join(
+        bench_path, "apps", "helpdesk", "desk", "src", "stores", "ticketStatus.ts"
+    )
+    replacement_file = os.path.join(
+        bench_path, "apps", "one_fm", "one_fm", "public", "js", "form_overrides", "hd_ticket", "ticketStatus.ts"
+    )
+
+    # Ensure the custom replacement file actually exists before proceeding
+    if not os.path.exists(replacement_file):
+        print(f"❌ Error: Replacement file not found at: {replacement_file}")
+        return False
+
+    try:
+        # Copy the content from your custom file to the source file, overwriting it
+        print(f"📄 Copying from {replacement_file} to {source_file}")
+        shutil.copy2(replacement_file, source_file)
+        print("✅ Successfully replaced ticketStatus.ts.")
+        
+        return True
+
+    except FileNotFoundError:
+        print(f"⚠️ Warning: Original file not found at: {source_file}. Skipping replacement.")
+    except Exception as e:
+        print(f"🔥 An unexpected error occurred: {e}")
+        frappe.log_error("ONEFM TicketStatus.ts Override Failed", frappe.get_traceback())
+
+    return False

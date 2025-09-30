@@ -18,15 +18,14 @@ def execute():
     } )
 
 
-    if not frappe.db.exists("Property Setter", "HD Ticket-status-options"):
-        frappe.get_doc({
-            "doctype": "Property Setter",
-            "doctype_or_field": "DocField",
-            "doc_type": "HD Ticket",
-            "field_name": "status",
-            "property": "options",
-            "value": "Draft\nOpen\nReplied\nOn Hold\nResolved\nClosed",
-            "default_value": "Open",
-            "is_system_generated": 0,
-            "docstatus": 0
-        }).insert(ignore_permissions=True)
+    frappe.get_doc({
+        "doctype": "Property Setter",
+        "doctype_or_field": "DocField",
+        "doc_type": "HD Ticket",
+        "field_name": "status",
+        "property": "options",
+        "value":"Draft\nOpen\nReplied\nOn Hold\nPending Deployment\nResolved\nClosed",
+        "default_value": "Open",
+        "is_system_generated": 0,
+        "docstatus": 0
+    }).insert(ignore_permissions=True)
