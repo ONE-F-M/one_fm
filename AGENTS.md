@@ -114,7 +114,7 @@ def update_customer_credit(customer: str, new_limit: float):
 ### Critical Security Rules
 
 1. **Never use `ignore_permissions=True`** without explicit role/permission checks first
-2. **Always add type annotations** to whitelisted methods (v15 requirement)
+2. **Strongly recommend adding type annotations** to whitelisted methods (for v15 code quality and consistency)
 3. **Use `frappe.get_list()` instead of `frappe.get_all()`** - get_list checks permissions
 4. **Never use `eval()` or `exec()`** with user input - use `frappe.safe_eval()` if absolutely necessary
 5. **Validate file paths** - never allow directory traversal (../)
@@ -334,7 +334,7 @@ frappe.enqueue(
 
 # Enqueue with unique job ID (prevents duplicates)
 job_id = f"data_import::{record_name}"
-if not frappe.queue.is_job_enqueued(job_id):
+if not frappe.utils.background_jobs.is_job_enqueued(job_id):
     frappe.enqueue(
         method="myapp.tasks.import_data",
         job_id=job_id,
@@ -536,8 +536,7 @@ def validate_custom(doc, method):
     """Custom validation logic for Sales Order"""
     # Add custom validation
     if doc.custom_discount_percent and doc.custom_discount_percent > 20:
-        if not frappe.has_permission("Sales Order", "set_discount_above_20", doc=doc):
-            frappe.throw(_("Discount cannot exceed 20% without special permission"))
+		frappe.throw(_("Discount cannot exceed 20% without special permission"))
     
     # Call custom calculation
     calculate_custom_totals(doc)
@@ -988,9 +987,9 @@ class TestCustomDoctype(FrappeTestCase):
     
     def test_whitelisted_method(self):
         """Test API method"""
-        from custom_app.api.custom import get_summary
+        from custom_app.api.customer import get_customer_summary
         
-        result = get_summary("TEST-001")
+        result = get_customer_summary("TEST-001")
         
         self.assertIsNotNone(result)
         self.assertIn("total", result)
@@ -1041,7 +1040,6 @@ class TestCustomDoctype(FrappeTestCase):
                 "territory": "_Test Territory"
             }).insert(ignore_permissions=True)
         
-        frappe.db.commit()  # Persist test fixtures
 ```
 
 ### Running Tests
@@ -1195,13 +1193,7 @@ def update_customer_credit_limit(customer: str, new_limit: float) -> dict:
     
     # Update using db_set (bypasses controller but logs change)
     customer_doc.db_set("credit_limit", new_limit)
-    
-    # Log the change
-    frappe.log_error(
-        title=f"Credit Limit Updated: {customer}",
-        message=f"New limit: {new_limit} by {frappe.session.user}"
-    )
-    
+        
     return {
         "success": True,
         "customer": customer,
