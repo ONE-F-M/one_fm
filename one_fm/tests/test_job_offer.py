@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 
 class TestJobOffer(FrappeTestCase):
+	"""Test suite for the JobOfferOverride class."""
 	def setUp(self):
 		self.onboarding_officer = "test_onboarding_officer@example.com"
 		if not frappe.db.exists("User", self.onboarding_officer):
