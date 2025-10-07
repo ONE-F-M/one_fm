@@ -31,6 +31,7 @@ def create_erf(**kwargs):
     return doc
 
 class TestJobApplicant(FrappeTestCase):
+    """Test suite for the overridden JobApplicant doctype."""
     def setUp(self):
         # Create dependent documents
         if not frappe.db.exists("Company", "_Test Company"):
