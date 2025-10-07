@@ -108,8 +108,11 @@ frappe.pages['face-recognition'].on_page_load = function(wrapper) {
 			});
 			console.log(recordedBlob);
 			upload_file(recordedBlob, 'enroll');
-		})	
-	});	
+		})
+		.catch((error) => {
+			handle_camera_error(error, null, 'enrollment');
+		});	
+	});
 }
 
 function load_gmap(position){
@@ -345,6 +348,9 @@ function send_log(log_type, skip_attendance){
         console.log(recordedBlob, skip_attendance);
         upload_file(recordedBlob, 'verify', log_type, skip_attendance);
     })
+    .catch((error) => {
+        handle_camera_error(error, log_type, 'checkin verification');
+    });
 }
 
 function upload_file(file, method, log_type, skip_attendance){
@@ -482,8 +488,114 @@ function show_cues(){
 
 function make_support_issue(){
 	let user = frappe.session.user;
-	let {latitude, longitude} = cur_page.page.page.position.coords;
+	let latitude = 0.0;
+	let longitude = 0.0;
+	
+	// Try to get location if available
+	if (cur_page && cur_page.page && cur_page.page.page && cur_page.page.page.position && cur_page.page.page.position.coords) {
+		latitude = cur_page.page.page.position.coords.latitude;
+		longitude = cur_page.page.page.position.coords.longitude;
+	}
+	
 	let loc = `${latitude},${longitude}`;
     frappe.call('one_fm.api.doc_methods.notification_log.make_support_issue', {user, loc});
 	frappe.msgprint(__("Please inform your in-line supervisor in person or via direct call about the issue and confirm attendance/exit."))
-}   
+}
+
+function handle_camera_error(error, log_type, context) {
+	console.error("Camera error:", error);
+	
+	let error_message = "";
+	let user_message = "";
+	
+	// Identify specific camera error types
+	switch(error.name) {
+		case 'NotAllowedError':
+			error_message = "Camera permission denied by user";
+			user_message = __("Camera access was denied. Please allow camera permission and try again.");
+			break;
+		case 'NotFoundError':
+			error_message = "No camera device found";
+			user_message = __("No camera found on this device. Please use a device with a camera.");
+			break;
+		case 'NotReadableError':
+			error_message = "Camera hardware issue - device in use or hardware failure";
+			user_message = __("Camera is not accessible. It may be in use by another application or there's a hardware issue.");
+			break;
+		case 'OverconstrainedError':
+			error_message = "Camera constraints cannot be satisfied";
+			user_message = __("Camera configuration is not supported by your device.");
+			break;
+		default:
+			error_message = `Camera error: ${error.name || 'Unknown'} - ${error.message || 'No details'}`;
+			user_message = __("Camera access failed. Please check your camera and try again.");
+	}
+	
+	// Show user-friendly error message
+	frappe.msgprint({
+		title: __("Camera Access Failed"),
+		indicator: "red",
+		message: user_message + "<br><br>" + __("An Employee Checkin Issue will be created automatically.")
+	});
+	
+	// Hide loading spinner if visible
+	$('#cover-spin').hide();
+	
+	// Create Employee Checkin Issue automatically when camera access fails during checkin attempts
+	if (log_type && (log_type === 'IN' || log_type === 'OUT')) {
+		create_checkin_issue_for_camera_failure(log_type, error_message, context);
+	}
+}
+
+function create_checkin_issue_for_camera_failure(log_type, error_details, context) {
+	try {
+		let latitude = 0.0;
+		let longitude = 0.0;
+		
+		// Try to get location if available
+		if (cur_page && cur_page.page && cur_page.page.page && cur_page.page.page.position && cur_page.page.page.position.coords) {
+			latitude = cur_page.page.page.position.coords.latitude;
+			longitude = cur_page.page.page.position.coords.longitude;
+		}
+		
+		let issue_details = `Camera Failing: ${error_details}`;
+		if (context) {
+			issue_details += ` (Context: ${context})`;
+		}
+		
+		// Call the existing create_checkin_issue API endpoint
+		frappe.call({
+			method: 'one_fm.operations.doctype.employee_checkin_issue.employee_checkin_issue.create_checkin_issue',
+			args: {
+				employee: frappe.session.user,
+				issue_type: 'Camera Failing',
+				log_type: log_type,
+				latitude: latitude,
+				longitude: longitude,
+				reason: issue_details
+			},
+			callback: function(response) {
+				if (response.message && response.message.status_code === 200) {
+					frappe.msgprint({
+						title: __("Employee Checkin Issue Created"),
+						indicator: "green",
+						message: __("An Employee Checkin Issue has been created for the camera failure. Please contact your supervisor.")
+					});
+				} else {
+					console.error("Failed to create checkin issue:", response);
+					// Fall back to the existing support issue system
+					make_support_issue();
+				}
+			},
+			error: function(error) {
+				console.error("Error creating checkin issue:", error);
+				// Fall back to the existing support issue system
+				make_support_issue();
+			}
+		});
+	} catch (e) {
+		console.error("Error in create_checkin_issue_for_camera_failure:", e);
+		// Fall back to the existing support issue system
+		make_support_issue();
+	}
+}

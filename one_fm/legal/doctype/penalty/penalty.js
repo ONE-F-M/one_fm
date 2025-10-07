@@ -133,6 +133,36 @@ function load_camera(d){
 
 		return Promise.all([ stopped ]).then(() => data);
 	})
+	.catch((error) => {
+		console.error("Camera error in penalty module:", error);
+		
+		let error_message = "";
+		switch(error.name) {
+			case 'NotAllowedError':
+				error_message = __("Camera access was denied. Please allow camera permission and try again.");
+				break;
+			case 'NotFoundError':
+				error_message = __("No camera found on this device. Please use a device with a camera.");
+				break;
+			case 'NotReadableError':
+				error_message = __("Camera is not accessible. It may be in use by another application or there's a hardware issue.");
+				break;
+			case 'OverconstrainedError':
+				error_message = __("Camera configuration is not supported by your device.");
+				break;
+			default:
+				error_message = __("Camera access failed. Please check your camera and try again.");
+		}
+		
+		frappe.msgprint({
+			title: __("Camera Access Failed"),
+			indicator: "red",
+			message: error_message + "<br><br>" + __("Please contact your supervisor for assistance.")
+		});
+		
+		// Close the dialog if camera access fails
+		d.hide();
+	});
 }
 
 

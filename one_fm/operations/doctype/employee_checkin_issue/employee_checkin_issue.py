@@ -177,8 +177,24 @@ def create_checkin_issue(employee, issue_type, log_type, latitude, longitude, re
 		checkin_issue_doc.shift_supervisor = shift_detail['shift_supervisor']
 		checkin_issue_doc.shift = shift_detail['shift']
 		checkin_issue_doc.shift_type = shift_detail['shift_type']
+		
+		# Enhanced issue details for camera failures
 		if reason:
-			checkin_issue_doc.issue_details = reason
+			issue_details = reason
+			if issue_type == 'Camera Failing':
+				# Add additional context for camera failures
+				import datetime
+				current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+				browser_info = frappe.request.headers.get('User-Agent', 'Unknown')
+				
+				issue_details += f"\n\nTimestamp: {current_time}"
+				issue_details += f"\nLocation: {latitude}, {longitude}"
+				issue_details += f"\nBrowser/Device: {browser_info}"
+				issue_details += f"\nEmployee: {employee}"
+				issue_details += f"\nLog Type: {log_type}"
+				
+			checkin_issue_doc.issue_details = issue_details
+			
 		checkin_issue_doc.save(ignore_permissions=True)
 		frappe.db.commit()
 		response("Success", 200, checkin_issue_doc.as_dict())
