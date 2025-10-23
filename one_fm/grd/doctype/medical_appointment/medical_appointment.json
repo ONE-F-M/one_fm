@@ -1,1 +1,506 @@
-{"name":"Medical Appointment","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"idx":0,"issingle":0,"is_tree":0,"istable":0,"editable_grid":1,"track_changes":1,"module":"GRD","autoname":"naming_series:","sort_field":"date_of_application","sort_order":"DESC","read_only":0,"in_create":0,"allow_copy":0,"allow_rename":0,"allow_import":0,"hide_toolbar":0,"track_seen":0,"max_attachments":0,"document_type":"","engine":"InnoDB","is_submittable":1,"show_name_in_global_search":0,"custom":1,"beta":0,"has_web_view":0,"allow_guest_to_view":0,"email_append_to":0,"migration_hash":"b8cd6398cd7eef7c1237e86942f442da","quick_entry":0,"track_views":0,"is_virtual":0,"allow_events_in_timeline":0,"allow_auto_repeat":0,"show_preview_popup":0,"index_web_pages_for_search":0,"is_calendar_and_gantt":0,"naming_rule":"By \"Naming Series\" field","make_attachments_public":0,"show_title_field_in_link":0,"translated_doctype":0,"default_view":"List","force_re_route_to_default_view":0,"queue_in_background":0,"grid_page_length":50,"protect_attached_files":0,"row_format":"Dynamic","rows_threshold_for_grid_search":0,"doctype":"DocType","links":[],"actions":[],"states":[],"permissions":[{"name":"be0d9e8eb4","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"permissions","parenttype":"DocType","idx":1,"permlevel":0,"role":"System Manager","read":1,"write":1,"create":1,"submit":0,"cancel":0,"delete":1,"amend":0,"report":1,"export":1,"import":0,"share":1,"print":1,"email":1,"if_owner":0,"select":0,"set_user_permissions":0,"doctype":"DocPerm"},{"name":"8ccf1e2b81","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"permissions","parenttype":"DocType","idx":2,"permlevel":0,"role":"Operations Manager","read":1,"write":1,"create":1,"submit":0,"cancel":0,"delete":1,"amend":0,"report":1,"export":1,"import":0,"share":1,"print":1,"email":1,"if_owner":0,"select":0,"set_user_permissions":0,"doctype":"DocPerm"},{"name":"eb86981842","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"permissions","parenttype":"DocType","idx":3,"permlevel":0,"role":"Government Relations Operator","read":1,"write":1,"create":1,"submit":0,"cancel":0,"delete":1,"amend":0,"report":1,"export":1,"import":0,"share":1,"print":1,"email":1,"if_owner":1,"select":0,"set_user_permissions":0,"doctype":"DocPerm"},{"name":"8f7628af69","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"permissions","parenttype":"DocType","idx":4,"permlevel":0,"role":"GRD Supervisor","read":1,"write":1,"create":1,"submit":0,"cancel":0,"delete":1,"amend":0,"report":1,"export":1,"import":0,"share":1,"print":1,"email":1,"if_owner":1,"select":0,"set_user_permissions":0,"doctype":"DocPerm"}],"fields":[{"name":"kunillq1um","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":1,"fieldname":"naming_series","label":"Series","fieldtype":"Select","options":"MAP-.YYYY.-","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun13b3f79","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":2,"fieldname":"company_name","label":"Company Name ","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"One Facilities Management","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunh11dlrm","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":3,"fieldname":"employee","label":"Employee","fieldtype":"Link","options":"Employee","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":1,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":1,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunqfc0fp4","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":4,"fieldname":"date_of_application","label":"Date of Application","fieldtype":"Date","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":1,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":1,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun4jpnea7","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":5,"fieldname":"preparation","label":"Preparation","fieldtype":"Link","options":"Preparation","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kundu32phl","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":6,"fieldname":"column_break_4","fieldtype":"Column Break","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kungv5spqo","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":7,"fieldname":"appointment_type","label":"Appointment Type","fieldtype":"Select","options":"\nRenewal\nLocal Transfer","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kundcsrgkr","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":8,"fieldname":"pro_user","label":"PRO User","fieldtype":"Link","options":"User","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":1,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kung2ls7qp","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":9,"fieldname":"section_break_9","label":"Registration Details","fieldtype":"Section Break","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun0uagblo","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":10,"fieldname":"date_and_time_confirmation","label":"Date and Time Confirmation","fieldtype":"Datetime","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"description":"Date and Time for the booked Appointment ","in_list_view":1,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun9c71olb","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":11,"fieldname":"upload_appointment_form","label":"Upload Appointment Form","fieldtype":"Attach","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunob020cc","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":12,"fieldname":"required_transportation","label":"Required Transportation","fieldtype":"Select","options":"\nYes\nNo","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunuv22pff","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":13,"fieldname":"section_break_13","fieldtype":"Section Break","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunur43jee","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":14,"fieldname":"preparing_documents","label":"Preparing Documents","fieldtype":"Select","options":"\nYes\nNo","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"No","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun05qr61b","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":15,"fieldname":"column_break_14","fieldtype":"Column Break","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunhog6vtj","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":16,"fieldname":"preparing_documents_on","label":"Preparing Documents On","fieldtype":"Datetime","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunkqldn3t","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":17,"fieldname":"section_break_4","fieldtype":"Section Break","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kune6p5h0i","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":18,"fieldname":"category","label":"Category","fieldtype":"Data","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"Organization","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunhr4p5uj","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":19,"fieldname":"service_user","label":"Service User","fieldtype":"Data","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"Expat","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun5gei1fk","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":20,"fieldname":"application","label":"Application","fieldtype":"Data","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"Criminal Evidence","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kungtv9sdd","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":21,"fieldname":"governorate","label":"Governorate","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"Hawally","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kungoceqf2","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":22,"fieldname":"column_break_7","fieldtype":"Column Break","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun5qj153a","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":23,"fieldname":"service_location","label":"Service Location","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"Personnel Identification Dept - Um Alhayman","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunrtljbvl","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":24,"fieldname":"service_type","label":"Service Type","fieldtype":"Data","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"Fingerprint for Companies","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunh9qibrf","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":25,"fieldname":"section_break_12","label":"Employee Details","fieldtype":"Section Break","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunuf3kq6d","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":26,"fieldname":"civil_id","label":"Civil ID","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":1,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.one_fm_civil_id","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kundl1rbbm","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":27,"fieldname":"full_name","label":"Full Name","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.employee_name","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunu7mcqem","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":28,"fieldname":"first_name_arabic","label":"First Name in Arabic","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.one_fm_first_name_in_arabic","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunkcnvlo5","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":29,"fieldname":"second_name_arabic","label":"Second Name in Arabic","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.one_fm_second_name_in_arabic","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunsehgo9p","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":30,"fieldname":"third_name_arabic","label":"Third Name in Arabic","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.one_fm_third_name_in_arabic","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun1suerrn","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":31,"fieldname":"last_name_arabic","label":"Last Name in Arabic","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.one_fm_last_name_in_arabic","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunkhkds5p","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":32,"fieldname":"moi_reference_number","label":"MOI Reference Number","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun1838gcg","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":33,"fieldname":"column_break_18","fieldtype":"Column Break","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun9mtn7ld","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":34,"fieldname":"employee_id","label":"Employee ID","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":1,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.employee_id","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunsbh8k81","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":35,"fieldname":"nationality","label":"Nationality","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.one_fm_nationality","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kuna1jc1au","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":36,"fieldname":"first_name_english","label":"First Name","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.first_name","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunflfu33n","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":37,"fieldname":"second_name_english","label":"Second Name","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.middle_name","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunc3s2ajt","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":38,"fieldname":"third_name_english","label":"Third Name","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.one_fm_third_name","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kuncvvns0k","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":39,"fieldname":"last_name_english","label":"Last Name","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"fetch_from":"employee.last_name","is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunooj5i62","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":40,"fieldname":"section_break_24","fieldtype":"Section Break","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunm797hrs","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":41,"fieldname":"grd_operator_renewal","label":"GRD Operator Renewal","fieldtype":"Link","options":"User","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunn9edbse","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":42,"fieldname":"grd_operator_transfer","label":"GRD Operator Transfer","fieldtype":"Data","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kuna5h0s5m","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":43,"fieldname":"grd_supervisor","label":"GRD Supervisor","fieldtype":"Link","options":"User","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kuneh78krl","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":44,"fieldname":"transport_user","label":"Transport user","fieldtype":"Link","options":"User","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kuntuhhjek","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":45,"fieldname":"operations_manager","label":"Operations Manager","fieldtype":"Link","options":"User","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":1,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunf5s0tqj","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":46,"fieldname":"reminded_grd_operator","label":"Reminded GRD Operator","fieldtype":"Check","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":1,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"0","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun3jptcnl","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":47,"fieldname":"reminded_grd_operator_again","label":"Reminded GRD Operator Again","fieldtype":"Check","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":1,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"0","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunnol6jm1","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":48,"fieldname":"reminded_grd_operator_documents","label":"Reminded GRD Operator Documents","fieldtype":"Check","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":1,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"0","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunhpf50es","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":49,"fieldname":"reminded_grd_operator_documents_again","label":"Reminded GRD Operator Documents Again","fieldtype":"Check","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":1,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"0","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunhshrn2k","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":50,"fieldname":"notify_operations","label":"Notify Operations","fieldtype":"Check","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":1,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"0","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun5bk2aur","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":51,"fieldname":"notify_transport","label":"Notify Transport","fieldtype":"Check","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"0","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun178kokf","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":52,"fieldname":"completed_on","label":"Completed On","fieldtype":"Data","search_index":0,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kun52kha7v","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":53,"fieldname":"website","label":"website","fieldtype":"Attach","search_index":0,"hidden":1,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":0,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":0,"allow_on_submit":1,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"default":"https://www.moi.gov.kw/main/eservices/residence/","in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":0,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"},{"name":"kunhmka600","creation":"2025-10-23 01:25:21.000000","modified":"2025-10-23 01:25:21.000000","modified_by":"Administrator","owner":"Administrator","docstatus":0,"parent":"Medical Appointment","parentfield":"fields","parenttype":"DocType","idx":54,"fieldname":"amended_from","label":"Amended From","fieldtype":"Link","options":"Medical Appointment","search_index":1,"hidden":0,"set_only_once":0,"allow_in_quick_entry":0,"print_hide":1,"report_hide":0,"reqd":0,"bold":0,"in_global_search":0,"collapsible":0,"unique":0,"no_copy":1,"allow_on_submit":0,"show_preview_popup":0,"permlevel":0,"ignore_user_permissions":0,"columns":0,"in_list_view":0,"fetch_if_empty":0,"in_filter":0,"remember_last_selected_value":0,"ignore_xss_filter":0,"print_hide_if_no_value":0,"allow_bulk_edit":0,"in_standard_filter":0,"in_preview":0,"read_only":1,"precision":"","length":0,"translatable":0,"hide_border":0,"hide_days":0,"hide_seconds":0,"non_negative":0,"is_virtual":0,"show_dashboard":0,"sort_options":0,"show_on_timeline":0,"make_attachment_public":0,"doctype":"DocField"}]}
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2025-10-23 01:25:21",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company_name",
+  "employee",
+  "date_of_application",
+  "preparation",
+  "column_break_4",
+  "appointment_type",
+  "pro_user",
+  "section_break_9",
+  "date_and_time_confirmation",
+  "upload_appointment_form",
+  "required_transportation",
+  "section_break_13",
+  "preparing_documents",
+  "column_break_14",
+  "preparing_documents_on",
+  "section_break_4",
+  "category",
+  "service_user",
+  "application",
+  "governorate",
+  "column_break_7",
+  "service_location",
+  "service_type",
+  "section_break_12",
+  "civil_id",
+  "full_name",
+  "first_name_arabic",
+  "second_name_arabic",
+  "third_name_arabic",
+  "last_name_arabic",
+  "moi_reference_number",
+  "column_break_18",
+  "employee_id",
+  "nationality",
+  "first_name_english",
+  "second_name_english",
+  "third_name_english",
+  "last_name_english",
+  "section_break_24",
+  "grd_operator_renewal",
+  "grd_operator_transfer",
+  "grd_supervisor",
+  "transport_user",
+  "operations_manager",
+  "reminded_grd_operator",
+  "reminded_grd_operator_again",
+  "reminded_grd_operator_documents",
+  "reminded_grd_operator_documents_again",
+  "notify_operations",
+  "notify_transport",
+  "completed_on",
+  "website",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "MAP-.YYYY.-"
+  },
+  {
+   "default": "One Facilities Management",
+   "fieldname": "company_name",
+   "fieldtype": "Data",
+   "label": "Company Name "
+  },
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1
+  },
+  {
+   "fieldname": "date_of_application",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date of Application"
+  },
+  {
+   "fieldname": "preparation",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Preparation",
+   "options": "Preparation"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "appointment_type",
+   "fieldtype": "Select",
+   "label": "Appointment Type",
+   "options": "\nRenewal\nLocal Transfer"
+  },
+  {
+   "fieldname": "pro_user",
+   "fieldtype": "Link",
+   "label": "PRO User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_9",
+   "fieldtype": "Section Break",
+   "label": "Registration Details"
+  },
+  {
+   "description": "Date and Time for the booked Appointment ",
+   "fieldname": "date_and_time_confirmation",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Date and Time Confirmation"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "upload_appointment_form",
+   "fieldtype": "Attach",
+   "label": "Upload Appointment Form"
+  },
+  {
+   "fieldname": "required_transportation",
+   "fieldtype": "Select",
+   "label": "Required Transportation",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "section_break_13",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "No",
+   "fieldname": "preparing_documents",
+   "fieldtype": "Select",
+   "label": "Preparing Documents",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "preparing_documents_on",
+   "fieldtype": "Datetime",
+   "label": "Preparing Documents On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_4",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Organization",
+   "fieldname": "category",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Category"
+  },
+  {
+   "default": "Expat",
+   "fieldname": "service_user",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Service User"
+  },
+  {
+   "default": "Criminal Evidence",
+   "fieldname": "application",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Application"
+  },
+  {
+   "default": "Hawally",
+   "fieldname": "governorate",
+   "fieldtype": "Data",
+   "label": "Governorate"
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Personnel Identification Dept - Um Alhayman",
+   "fieldname": "service_location",
+   "fieldtype": "Data",
+   "label": "Service Location"
+  },
+  {
+   "default": "Fingerprint for Companies",
+   "fieldname": "service_type",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Service Type"
+  },
+  {
+   "fieldname": "section_break_12",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Civil ID",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.employee_name",
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_first_name_in_arabic",
+   "fieldname": "first_name_arabic",
+   "fieldtype": "Data",
+   "label": "First Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_second_name_in_arabic",
+   "fieldname": "second_name_arabic",
+   "fieldtype": "Data",
+   "label": "Second Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_third_name_in_arabic",
+   "fieldname": "third_name_arabic",
+   "fieldtype": "Data",
+   "label": "Third Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_last_name_in_arabic",
+   "fieldname": "last_name_arabic",
+   "fieldtype": "Data",
+   "label": "Last Name in Arabic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "moi_reference_number",
+   "fieldtype": "Data",
+   "label": "MOI Reference Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Data",
+   "label": "Nationality",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.first_name",
+   "fieldname": "first_name_english",
+   "fieldtype": "Data",
+   "label": "First Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.middle_name",
+   "fieldname": "second_name_english",
+   "fieldtype": "Data",
+   "label": "Second Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.one_fm_third_name",
+   "fieldname": "third_name_english",
+   "fieldtype": "Data",
+   "label": "Third Name",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fetch_from": "employee.last_name",
+   "fieldname": "last_name_english",
+   "fieldtype": "Data",
+   "label": "Last Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_24",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "grd_operator_renewal",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Operator Renewal",
+   "options": "User"
+  },
+  {
+   "fieldname": "grd_operator_transfer",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "GRD Operator Transfer"
+  },
+  {
+   "fieldname": "grd_supervisor",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "GRD Supervisor",
+   "options": "User"
+  },
+  {
+   "fieldname": "transport_user",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Transport user",
+   "options": "User"
+  },
+  {
+   "fieldname": "operations_manager",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Operations Manager",
+   "no_copy": 1,
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminded GRD Operator",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator_again",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminded GRD Operator Again",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator_documents",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminded GRD Operator Documents",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reminded_grd_operator_documents_again",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Reminded GRD Operator Documents Again",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_operations",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify Operations",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "notify_transport",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Notify Transport"
+  },
+  {
+   "fieldname": "completed_on",
+   "fieldtype": "Data",
+   "label": "Completed On",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "https://www.moi.gov.kw/main/eservices/residence/",
+   "fieldname": "website",
+   "fieldtype": "Attach",
+   "hidden": 1,
+   "label": "website"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Medical Appointment",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-10-23 21:47:27.751741",
+ "modified_by": "Administrator",
+ "module": "GRD",
+ "name": "Medical Appointment",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Government Relations Operator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "if_owner": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Supervisor",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "date_of_application",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

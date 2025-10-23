@@ -4,13 +4,13 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import get_datetime, now_datetime
+from frappe.utils import today
 
 
 class MedicalAppointment(Document):
 	def validate(self):
-		if self.workflow_state == "Done" and self.date_and_time_confirmation:
-			if get_datetime(self.date_and_time_confirmation) > now_datetime():
+		if self.workflow_state == "Pending Confirmation" and self.date_and_time_confirmation:
+			if self.date_and_time_confirmation > today():
 				frappe.throw(
 					_("You are not allowed to action medical appointment before the appointment date."),
 					title=_("Appointment Date is in the future"),
