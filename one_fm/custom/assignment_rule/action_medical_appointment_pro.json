@@ -11,42 +11,34 @@
   "close_condition": "workflow_state == \"Completed\"",
   "rule": "Based on Field",
   "field": "pro_user",
-  "last_user": "c.akeru@one-fm.com",
   "doctype": "Assignment Rule",
   "users": [],
   "assignment_days": [
     {
-      "name": "mkbvh6ftjf",
       "day": "Monday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "mkb0fma9fg",
       "day": "Tuesday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "mkbfbc0cm5",
       "day": "Wednesday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "mkbjjnj8cc",
       "day": "Thursday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "mkb2924lr2",
       "day": "Friday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "mkbjl5kdov",
       "day": "Saturday",
       "doctype": "Assignment Rule Day"
     },
     {
-      "name": "mkburd666b",
       "day": "Sunday",
       "doctype": "Assignment Rule Day"
     }
