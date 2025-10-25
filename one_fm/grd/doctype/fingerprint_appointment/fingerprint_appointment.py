@@ -20,12 +20,11 @@ class FingerprintAppointment(Document):
 
     def validate(self):
         self.set_grd_values()
-        if self.workflow_state == "Done" and self.date_and_time_confirmation and getdate(self.date_and_time_confirmation) > getdate(today()):
+        if self.workflow_state == "Pending Confirmation" and self.date_and_time_confirmation and self.date_and_time_confirmation > today():
             frappe.throw(_("You are not allowed to confirm fingerprint capturing before the appointment date."), title=_("Appointment Date is in the future"))
 
     def on_update(self):
         self.check_workflow()
-        self.check_appointment_date()
 
     def on_submit(self):
         self.db_set('status', 'Completed')
@@ -136,11 +135,6 @@ class FingerprintAppointment(Document):
         sendemail(recipients=[user_email],
             sender=self.grd_supervisor,
             subject="Transportation Required For Fingerprint Appointment", content=content)
-
-    def check_appointment_date(self):
-        today = date.today()
-        if self.date_and_time_confirmation and getdate(self.date_and_time_confirmation) <= getdate(today):
-            frappe.throw(_("You can't set previous/Today's dates"))
 
 def before_one_day_of_appointment_date():
     today = date.today()
