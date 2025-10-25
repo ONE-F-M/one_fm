@@ -14,6 +14,7 @@
   "column_break_4",
   "fingerprint_appointment_type",
   "status",
+  "pro_user",
   "section_break_9",
   "date_and_time_confirmation",
   "upload_appointment_form",
@@ -436,11 +437,18 @@
    "fieldname": "upload_appointment_form",
    "fieldtype": "Attach",
    "label": "Upload Appointment Form"
+  },
+  {
+   "fieldname": "pro_user",
+   "fieldtype": "Link",
+   "label": "PRO User",
+   "options": "User",
+   "reqd": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2021-09-26 19:26:39.276865",
+ "modified": "2025-10-25 20:00:44.466751",
  "modified_by": "Administrator",
  "module": "GRD",
  "name": "Fingerprint Appointment",
@@ -480,7 +488,6 @@
    "read": 1,
    "report": 1,
    "role": "Government Relations Operator",
-   "set_user_permissions": 1,
    "share": 1,
    "write": 1
   },
@@ -494,12 +501,13 @@
    "read": 1,
    "report": 1,
    "role": "GRD Supervisor",
-   "set_user_permissions": 1,
    "share": 1,
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "date_of_application",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

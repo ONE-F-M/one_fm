@@ -194,3 +194,4 @@ one_fm.patches.v15_0.update_job_applicant_field
 one_fm.patches.v15_0.create_compliance_checker_process_task
 one_fm.patches.v15_0.update_preparation_records
 one_fm.patches.v15_0.update_hr_settings_with_grd_settings #2025-10-07
+one_fm.patches.v15_0.add_assignment_rule_and_wf_fingerprint_appointment
