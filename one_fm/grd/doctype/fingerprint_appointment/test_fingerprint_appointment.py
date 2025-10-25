@@ -4,33 +4,28 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-# import frappe
 import unittest
+from frappe.utils import today, add_days, getdate
+from frappe.test_runner import make_test_records
 
 class TestFingerprintAppointment(unittest.TestCase):
-	pass
+    def setUp(self):
+        make_test_records("User", [dict(email="test_pro_user@example.com", first_name="Test PRO User", roles=[{"role": "System Manager"}])])
+        make_test_records("Employee", [dict(employee_name="Test Employee", user_id="test_pro_user@example.com")])
 
-def test():
-	print(frappe.session.user)
-	# docs = frappe.get_all("Fingerprint Appointment", {"status":"Draft"})
-	# print(docs)
-	# subject = _("Reminder: Draft Fingerprint Appointments")
-	# #for_users = frappe.db.sql_list("""select grd_operator from `tabFingerprint Appointment`""")
-	# for_users = frappe.db.sql("SELECT DISTINCT parent FROM `tabHas Role` WHERE role=%s", ("Government Relations Operator",))
-	# print(for_users)
-	# message = "Below is the list of Draft(Click on the name to open the form).<br><br>"
-	# for doc in docs:
-	# 	message += "<a href='/desk#Form/Fingerprint Appointment/{doc}'>{doc}</a> <br>".format(doc=doc.name) 
+    def test_validate_done_with_future_date(self):
+        # Create a Fingerprint Appointment with a future date
+        appointment = frappe.new_doc("Fingerprint Appointment")
+        appointment.employee = "Test Employee"
+        appointment.pro_user = "test_pro_user@example.com"
+        appointment.date_and_time_confirmation = add_days(today(), 5)
+        appointment.workflow_state = "Done"
 
+        # Expect a validation error to be thrown
+        with self.assertRaises(frappe.ValidationError) as cm:
+            appointment.save()
 
-	# for user in for_users:
-	# 	notification = frappe.new_doc("Notification Log")
-	# 	notification.subject = subject
-	# 	notification.email_content = message
-	# 	notification.document_type = "Notification Log"
-	# 	notification.for_user = user
-	# 	notification.save()
+        self.assertTrue("You are not allowed to confirm fingerprint capturing before the appointment date." in str(cm.exception))
 
-	# 	notification.document_name = notification.name
-		# notification.save(ignore_permissions=True)
-		#frappe.db.commit()
+    def tearDown(self):
+        frappe.db.rollback()

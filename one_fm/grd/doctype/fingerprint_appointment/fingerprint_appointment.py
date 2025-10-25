@@ -20,6 +20,8 @@ class FingerprintAppointment(Document):
 
     def validate(self):
         self.set_grd_values()
+        if self.workflow_state == "Done" and self.date_and_time_confirmation and getdate(self.date_and_time_confirmation) > getdate(today()):
+            frappe.throw(_("You are not allowed to confirm fingerprint capturing before the appointment date."), title=_("Appointment Date is in the future"))
 
     def on_update(self):
         self.check_workflow()
