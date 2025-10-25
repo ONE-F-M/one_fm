@@ -26,8 +26,8 @@ def set_title_mi_as_civil_id():
         print("===========")
 
 def set_title_moi_as_civil_id():
-    for doc in frappe.get_all('MOI Residency Jawazat'):
-        moi_doc = frappe.get_doc('MOI Residency Jawazat',doc.name)
+    for doc in frappe.get_all('Residency'):
+        moi_doc = frappe.get_doc('Residency',doc.name)
         moi_doc.title = moi_doc.one_fm_civil_id
         print(doc.name)
         print(moi_doc.title)

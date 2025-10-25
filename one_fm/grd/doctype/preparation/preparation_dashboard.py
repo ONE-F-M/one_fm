@@ -12,7 +12,7 @@ def get_data():
                 'items': ['Medical Insurance']
             },
             {
-                'items': ['MOI Residency Jawazat']
+                'items': ['Residency']
             },
             {
                 'items': ['PACI']

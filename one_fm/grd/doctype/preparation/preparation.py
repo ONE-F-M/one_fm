@@ -340,7 +340,7 @@ def handle_extension(source,row):
 
 def handle_cancelation(source,row):
     """Cancel all the linked GRD documents for an employee"""
-    cancel_delete_doc("MOI Residency Jawazat",source,row)
+    cancel_delete_doc("Residency",source,row)
     cancel_delete_doc("PACI",source,row)
     cancel_delete_doc("Medical Insurance",source,row)
     cancel_delete_doc("Work Permit",source,row)

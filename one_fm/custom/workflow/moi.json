@@ -1,7 +1,7 @@
 {
   "name": "MOI",
   "workflow_name": "MOI",
-  "document_type": "MOI Residency Jawazat",
+  "document_type": "Residency",
   "is_active": 1,
   "override_status": 0,
   "send_email_alert": 0,
