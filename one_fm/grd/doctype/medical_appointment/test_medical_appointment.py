@@ -12,7 +12,7 @@ class TestMedicalAppointment(unittest.TestCase):
 		appointment.employee = "_Test Employee"
 		appointment.pro_user = "Administrator"
 		appointment.date_and_time_confirmation = add_to_date(now_datetime(), days=1)
-		appointment.workflow_state = "Done"
+		appointment.workflow_state = "Pending Confirmation"
 
 		# Check that a validation error is thrown
 		self.assertRaises(frappe.ValidationError, appointment.save)
