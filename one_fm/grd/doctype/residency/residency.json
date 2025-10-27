@@ -94,7 +94,7 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "MOI Residency Jawazat",
+   "options": "Residency",
    "print_hide": 1,
    "read_only": 1
   },
@@ -530,7 +530,7 @@
  "modified": "2023-03-07 10:15:12.819781",
  "modified_by": "Administrator",
  "module": "GRD",
- "name": "MOI Residency Jawazat",
+ "name": "Residency",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [

@@ -111,7 +111,7 @@ def get_data():
 			"items": [
 				{
 					"type": "doctype",
-					"name": "MOI Residency Jawazat",
+					"name": "Residency",
 					"onboard": 1,
 				},
 				{

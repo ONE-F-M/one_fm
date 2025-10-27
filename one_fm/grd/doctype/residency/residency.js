@@ -1,6 +1,6 @@
 // Copyright (c) 2020, ONE FM and contributors
 // For license information, please see license.txt
-frappe.ui.form.on('MOI Residency Jawazat', {
+frappe.ui.form.on('Residency', {
 	refresh(frm){
 			if(frm.doc.docstatus === 1 && frm.doc.category == "Transfer"){
 				frm.add_custom_button(__('Go to PACI'),

@@ -175,9 +175,9 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "MOI Residency Jawazat List",
+   "label": "Residency List",
    "link_count": 0,
-   "link_to": "MOI Residency Jawazat",
+   "link_to": "Residency",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
