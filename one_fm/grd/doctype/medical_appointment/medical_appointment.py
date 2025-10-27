@@ -1,4 +1,4 @@
-# Copyright (c) 2024, one_fm and contributors
+# Copyright (c) 2025, one_fm and contributors
 # For license information, please see license.txt
 
 import frappe
