@@ -179,6 +179,7 @@ one_fm.patches.v15_0.add_employee_uniform_workflow
 one_fm.patches.v15_0.add_update_custom_field #2025-10-17
 one_fm.patches.v15_0.update_rfp_records
 one_fm.patches.v15_0.update_purchase_order_property_setter
+one_fm.patches.v15_0.rename_moi_residency_jawazath
 
 [post_model_sync]
 one_fm.patches.v15_0.add_assignment_rule_assign_rfp_to_purchase_officer #re-run
