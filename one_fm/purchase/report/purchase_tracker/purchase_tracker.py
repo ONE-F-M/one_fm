@@ -3,10 +3,9 @@
 
 import frappe
 
-
 def get_data(filters):
     filters = filters or {}
-    conditions = ["rfp.docstatus = 1"]  # only submitted RFP
+    conditions = ["rfp.docstatus = 1"] # only submitted RFP
     params = {}
 
     # Date range on creation
@@ -47,6 +46,7 @@ def get_data(filters):
             rfp.name AS rfp_no,
             DATE(rfp.creation) AS rfp_date,
             rfp.type AS type,
+            rfp.currency,
             rfp.employee AS employee_id,
             rfp.employee_name AS employee_name,
             rfp.department AS department,
@@ -57,7 +57,8 @@ def get_data(filters):
             item.qty AS qty,
             item.uom AS uom,
             item.supplier AS supplier,
-            (item.rate * item.qty) AS rfp_amount
+            (item.rate * item.qty) AS rfp_amount,
+            item.base_amount AS rfp_amount_company_currency
         FROM `tabRequest for Purchase` rfp
         INNER JOIN `tabRequest for Purchase Quotation Item` item ON item.parent = rfp.name
         LEFT JOIN `tabRequest for Material` rfm ON rfm.name = rfp.request_for_material
@@ -100,39 +101,58 @@ def get_data(filters):
 
     return rows
 
-
 def get_columns(filters=None):
     filters = filters or {}
     rfp_type = (filters.get('rfp_type') or '').strip()
 
-    base_columns = [
+    columns = [
         {"label": "RFP No", "fieldname": "rfp_no", "fieldtype": "Link", "options": "Request for Purchase", "width": 120},
         {"label": "RFP Date", "fieldname": "rfp_date", "fieldtype": "Date", "width": 100},
         {"label": "Type", "fieldname": "type", "fieldtype": "Data", "width": 80},
+    ]
+
+    # Conditional Columns
+    employee_columns = [
         {"label": "Employee ID", "fieldname": "employee_id", "fieldtype": "Link", "options": "Employee", "width": 110},
         {"label": "Employee Name", "fieldname": "employee_name", "fieldtype": "Data", "width": 140},
         {"label": "Department", "fieldname": "department", "fieldtype": "Link", "options": "Department", "width": 120},
     ]
 
-    # Conditional columns
-    extra_columns = []
-    if rfp_type != 'Individual':  # Include Project & Operation Site unless Individual
-        extra_columns.append({"label": "Project", "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 120})
-        extra_columns.append({"label": "Operation Site", "fieldname": "operation_site", "fieldtype": "Link", "options": "Operations Site", "width": 140})
-    if rfp_type not in ['Individual', 'Stock']:  # Include ERF unless Individual or Stock
-        extra_columns.append({"label": "ERF No", "fieldname": "erf_no", "fieldtype": "Link", "options": "ERF", "width": 110})
+    project_columns = [
+        {"label": "Project", "fieldname": "project", "fieldtype": "Link", "options": "Project", "width": 120},
+        {"label": "Operation Site", "fieldname": "operation_site", "fieldtype": "Link", "options": "Operations Site", "width": 140},
+    ]
+
+    erf_column = [
+        {"label": "ERF No", "fieldname": "erf_no", "fieldtype": "Link", "options": "ERF", "width": 110},
+    ]
+
+    if not rfp_type:
+        # Show all conditional columns
+        columns.extend(employee_columns)
+        columns.extend(project_columns)
+        columns.extend(erf_column)
+    elif rfp_type == 'Project':
+        columns.extend(project_columns)
+    elif rfp_type in ['Individual', 'Department']:
+        columns.extend(employee_columns)
+    elif rfp_type == 'Onboarding':
+        columns.extend(erf_column)
+    # If rfp_type is 'Stock', no extra columns are added.
 
     tail_columns = [
         {"label": "Item", "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 130},
         {"label": "Quantity", "fieldname": "qty", "fieldtype": "Float", "width": 90},
         {"label": "UoM", "fieldname": "uom", "fieldtype": "Link", "options": "UOM", "width": 70},
         {"label": "Supplier", "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 140},
-        {"label": "RFP Amount", "fieldname": "rfp_amount", "fieldtype": "Currency", "width": 110},
+        {"label": "RFP Amount", "fieldname": "rfp_amount", "fieldtype": "Currency", "options": "currency", "width": 110},
+        {"label": "RFP Amount (Company Currency)", "fieldname": "rfp_amount_company_currency", "fieldtype": "Currency", "width": 110},
         {"label": "Purchase Order", "fieldname": "purchase_order", "fieldtype": "Data", "width": 160},
+        {"label": "Currency", "fieldname": "currency", "fieldtype": "Data", "hidden": 1},
     ]
 
-    return base_columns + extra_columns + tail_columns
-
+    columns.extend(tail_columns)
+    return columns
 
 def execute(filters=None):
     columns = get_columns(filters or {})
