@@ -21,7 +21,7 @@ import datetime
 from one_fm.grd.doctype.work_permit import work_permit
 from one_fm.grd.doctype.medical_insurance import medical_insurance
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
-from one_fm.grd.doctype.moi_residency_jawazat import moi_residency_jawazat
+from one_fm.grd.doctype.residency import residency
 from one_fm.grd.doctype.paci import paci
 from one_fm.grd.doctype.fingerprint_appointment import fingerprint_appointment
 from one_fm.processor import sendemail
@@ -133,7 +133,7 @@ class Preparation(Document):
         medical_insurance.valid_work_permit_exists(self.name)
 
     def recall_create_moi_renewal_and_extend(self):
-        moi_residency_jawazat.set_employee_list_for_moi(self.name)
+        residency.set_employee_list_for_moi(self.name)
 
     def recall_create_paci(self):
         paci.create_PACI_renewal(self.name)
@@ -301,7 +301,7 @@ def handle_creation_of_grd_docs(row,source):
         work_permit.create_wp_renewal(employee_doc,row.renewal_or_extend,source)
         frappe.db.commit() #because Medical Insurance depends on the work permit
         medical_insurance.create_mi_record(frappe.get_doc('Work Permit',{'preparation':source,'employee':employee_doc.employee}))
-        moi_residency_jawazat.create_moi_record(employee_doc,row.renewal_or_extend,preparation_name=source)
+        residency.create_moi_record(employee_doc,row.renewal_or_extend,preparation_name=source)
         paci.create_PACI(employee_doc,row.renewal_or_extend,source)   
     except:
         frappe.log_error(title=f"Error Creating New GRD documents  for {row.employee} </b>",message=frappe.get_traceback()) 

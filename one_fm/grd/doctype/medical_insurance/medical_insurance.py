@@ -11,7 +11,7 @@ from datetime import date
 from frappe.core.doctype.communication.email import make
 from frappe.utils import now_datetime
 from one_fm.grd.doctype.residency_payment_request import residency_payment_request
-from one_fm.grd.doctype.moi_residency_jawazat import moi_residency_jawazat
+from one_fm.grd.doctype.residency import residency
 from one_fm.processor import sendemail
 from one_fm.utils import is_scheduler_emails_enabled
 
@@ -46,7 +46,7 @@ class MedicalInsurance(Document):
             self.recall_create_moi_transfer()
 
     def recall_create_moi_transfer(self):
-        moi_residency_jawazat.creat_moi_for_transfer(self.work_permit)
+        residency.create_moi_for_transfer(self.work_permit)
 
 
     def set_depend_on_fields(self):
