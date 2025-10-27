@@ -19,7 +19,7 @@ class TestFingerprintAppointment(unittest.TestCase):
         appointment.employee = "Test Employee"
         appointment.pro_user = "test_pro_user@example.com"
         appointment.date_and_time_confirmation = add_days(today(), 5)
-        appointment.workflow_state = "Done"
+        appointment.workflow_state = "Pending Confirmation"
 
         # Expect a validation error to be thrown
         with self.assertRaises(frappe.ValidationError) as cm:
