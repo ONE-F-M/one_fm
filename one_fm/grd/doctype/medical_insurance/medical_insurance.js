@@ -4,11 +4,11 @@
 frappe.ui.form.on('Medical Insurance', {
     refresh(frm){
         if(frm.doc.docstatus === 1 && frm.doc.insurance_status == "Local Transfer"){
-            		frm.add_custom_button(__('Go to MOI Residency Jawazat'),
+            		frm.add_custom_button(__('Go to Residency'),
             			  function () {
-            			frappe.db.get_value('MOI Residency Jawazat', {'category':'Transfer','one_fm_civil_id':frm.doc.civil_id}, 'name', (r) => {
+            			frappe.db.get_value('Residency', {'category':'Transfer','one_fm_civil_id':frm.doc.civil_id}, 'name', (r) => {
             			if (r && r.name) {
-            				frappe.set_route("Form", "MOI Residency Jawazat", r.name);
+            				frappe.set_route("Form", "Residency", r.name);
             			}
             		});
             	}

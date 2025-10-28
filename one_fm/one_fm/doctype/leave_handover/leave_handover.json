@@ -1,6 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "format:LH-{employee}-{###}",
  "creation": "2025-10-20 18:38:27.555256",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -98,10 +99,11 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-10-20 20:04:58.934733",
+ "modified": "2025-10-28 12:42:27.876029",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Leave Handover",
+ "naming_rule": "Expression",
  "owner": "Administrator",
  "permissions": [
   {

@@ -132,7 +132,7 @@ def create_checker(start_date, end_date, is_day_off_reliever=False, is_weekend_r
 		)
 		.where(conditions)
 		.groupby(Employee.name)
-		.having(Count(EmployeeSchedule.shift) > threshold)
+		.having(Count(EmployeeSchedule.shift) >= threshold)
 	)
 
 	# Create Default Shift Checker records

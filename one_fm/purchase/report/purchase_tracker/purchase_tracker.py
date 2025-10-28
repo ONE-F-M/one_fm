@@ -3,10 +3,9 @@
 
 import frappe
 
-
 def get_data(filters):
     filters = filters or {}
-    conditions = ["rfp.docstatus = 1"]  # only submitted RFP
+    conditions = ["rfp.docstatus = 1"] # only submitted RFP
     params = {}
 
     # Date range on creation
@@ -47,6 +46,7 @@ def get_data(filters):
             rfp.name AS rfp_no,
             DATE(rfp.creation) AS rfp_date,
             rfp.type AS type,
+            rfp.currency,
             rfp.employee AS employee_id,
             rfp.employee_name AS employee_name,
             rfp.department AS department,
@@ -57,7 +57,8 @@ def get_data(filters):
             item.qty AS qty,
             item.uom AS uom,
             item.supplier AS supplier,
-            (item.rate * item.qty) AS rfp_amount
+            (item.rate * item.qty) AS rfp_amount,
+            item.base_amount AS rfp_amount_company_currency
         FROM `tabRequest for Purchase` rfp
         INNER JOIN `tabRequest for Purchase Quotation Item` item ON item.parent = rfp.name
         LEFT JOIN `tabRequest for Material` rfm ON rfm.name = rfp.request_for_material
@@ -99,7 +100,6 @@ def get_data(filters):
         r["purchase_order"] = ", ".join(sorted(po_map.get(key, []))) if po_map.get(key) else ""
 
     return rows
-
 
 def get_columns(filters=None):
     filters = filters or {}
@@ -145,13 +145,15 @@ def get_columns(filters=None):
         {"label": "Quantity", "fieldname": "qty", "fieldtype": "Float", "width": 90},
         {"label": "UoM", "fieldname": "uom", "fieldtype": "Link", "options": "UOM", "width": 70},
         {"label": "Supplier", "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 140},
-        {"label": "RFP Amount", "fieldname": "rfp_amount", "fieldtype": "Currency", "width": 110},
+        {"label": "RFP Amount", "fieldname": "rfp_amount", "fieldtype": "Currency", "options": "currency", "width": 110},
+        {"label": "RFP Amount (Company Currency)", "fieldname": "rfp_amount_company_currency", "fieldtype": "Currency", "width": 110},
         {"label": "Purchase Order", "fieldname": "purchase_order", "fieldtype": "Data", "width": 160},
+        # NOTE: This hidden 'currency' column is required because the 'options' attribute of the 'RFP Amount' column depends on the presence of the 'currency' field.
+        {"label": "Currency", "fieldname": "currency", "fieldtype": "Data", "hidden": 1},
     ]
 
     columns.extend(tail_columns)
     return columns
-
 
 def execute(filters=None):
     columns = get_columns(filters or {})

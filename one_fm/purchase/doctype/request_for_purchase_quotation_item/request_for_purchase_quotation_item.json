@@ -18,6 +18,10 @@
   "qty",
   "uom",
   "rate",
+  "stock_uom",
+  "conversion_factor",
+  "stock_qty",
+  "stock_rate",
   "amount",
   "col_break2",
   "request_for_material",
@@ -226,12 +230,35 @@
    "options": "Company:company:default_currency",
    "precision": "0",
    "read_only": 1
+  },
+  {
+   "fieldname": "stock_uom",
+   "fieldtype": "Link",
+   "label": "Stock UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "conversion_factor",
+   "fieldtype": "Float",
+   "label": "UOM Conversion Factor",
+   "mandatory_depends_on": "eval: doc.uom != doc.stock_uom"
+  },
+  {
+   "fieldname": "stock_qty",
+   "fieldtype": "Float",
+   "label": "Qty in Stock UOM"
+  },
+  {
+   "fieldname": "stock_rate",
+   "fieldtype": "Currency",
+   "label": "Stock Rate",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "istable": 1,
  "links": [],
- "modified": "2025-10-26 12:24:15.697387",
+ "modified": "2025-10-26 21:18:51.269424",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase Quotation Item",

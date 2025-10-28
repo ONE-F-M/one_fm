@@ -59,6 +59,7 @@ def create_workflows():
 	create_workflow(get_workflow_json_file("leave_extension_request.json"))
 	create_workflow(get_workflow_json_file("loan_application.json"))
 	create_workflow(get_workflow_json_file("employee_uniform.json"))
+	create_workflow(get_workflow_json_file("medical_appointment.json"))
 
 def delete_workflows():
 	delete_workflow(get_workflow_json_file("erf.json"))

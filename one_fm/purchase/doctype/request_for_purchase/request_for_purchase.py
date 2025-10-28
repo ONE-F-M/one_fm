@@ -7,7 +7,7 @@ import frappe, json
 from frappe import _
 from frappe.model.document import Document
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import nowdate, getdate, get_url, get_fullname
+from frappe.utils import nowdate, getdate, get_url, get_fullname, today
 from one_fm.data import flt
 from one_fm.processor import sendemail
 from frappe.utils.user import get_users_with_role
@@ -24,7 +24,7 @@ class RequestforPurchase(Document):
 	def on_submit(self):
 		self._update_linked_rfm_quantities()
 		update_rfp_status(self.name)
-  
+
 	def on_update_after_submit(self):
 		self._update_linked_rfm_quantities()
 		update_rfp_status(self.name)
@@ -42,6 +42,9 @@ class RequestforPurchase(Document):
 		self._update_linked_rfm_quantities(delete_event=True)
 
 	def validate(self):
+		self.validate_conversion_factors()
+		self.calculate_stock_quantities()
+		self.calculate_stock_rates()
 		if self.currency:
 			self.set_exchange_rate()
 		self.calculate_item_values()
@@ -80,6 +83,10 @@ class RequestforPurchase(Document):
 					"rate": item.rate,
 					"delivery_date": item.delivery_date,
 					"uom": item.uom,
+					"stock_uom": item.stock_uom,
+					"conversion_factor": item.conversion_factor or 1,
+					"stock_qty": item.stock_qty,
+					"stock_rate": item.stock_rate,
 					"description": item.description,
 					"warehouse": item.t_warehouse if item.t_warehouse else wh,
 					"quotation": item.quotation,
@@ -92,7 +99,7 @@ class RequestforPurchase(Document):
 					request_for_purchase=self.name,
 					warehouse=wh,
 					items_list=items_list,
-					rfp_doc = self.as_dict(),
+					rfp_doc=self.as_dict(),
 					do_not_submit=True
 				)
 				
@@ -132,28 +139,75 @@ class RequestforPurchase(Document):
 		create_notification_log(subject, message, [rfm.requested_by], rfm)
 		self.db_set('notified_the_rfm_requester', True)
 		frappe.msgprint(_("Notification sent to RFM Requester"))
-  
+
 	def validate_rfm_quantity(self):
-		for one in self.items:
+		for one in self.items_to_order:
 			rfm_qty = None
 			total_qty = 0
-			if one.custom_request_for_material_item:
-				other_pr_rows = frappe.get_all(one.doctype,{'custom_request_for_material_item':one.custom_request_for_material_item,'parent': ['!=', self.name],'docstatus': ['!=', 2]},['parent','qty'])
-				if other_pr_rows:
-					total_qty = sum([row.qty for row in other_pr_rows])
-				total_qty += one.qty
-				if one.rfm_quantity>0:
-					rfm_qty = one.rfm_quantity
+			
+			if one.request_for_material_item:
+				other_rfp_quotation_items = frappe.get_all(
+					"Request for Purchase Quotation Item",
+					{
+						'request_for_material_item': one.request_for_material_item,
+						'parent': ['!=', self.name],
+						'docstatus': ['!=', 2]
+					},
+					['parent', 'qty', 'stock_qty', 'uom', 'stock_uom', 'conversion_factor']
+				)
+				
+				if other_rfp_quotation_items:
+					for row in other_rfp_quotation_items:
+						if row.stock_qty and row.stock_qty > 0:
+							total_qty += row.stock_qty
+						elif row.uom and row.stock_uom and row.uom != row.stock_uom and row.conversion_factor:
+							total_qty += row.qty * row.conversion_factor
+						else:
+							total_qty += row.qty
+				
+				if one.stock_qty and one.stock_qty > 0:
+					total_qty += one.stock_qty
+				elif one.uom and one.stock_uom and one.uom != one.stock_uom and one.conversion_factor:
+					total_qty += one.qty * one.conversion_factor
 				else:
-					rfm_item = frappe.db.get_value("Request for Material Item", one.custom_request_for_material_item, ["qty", "custom_pending_quantity"], as_dict=True)
-					rfm_qty = rfm_item.qty
-				if  total_qty > rfm_qty:
-					frappe.throw(_("Setting Row {0}: Quantity as <b>{1}</b> for item <b>{2}</b> will make the total quantity from across various Requests for Purchase as <b>{3}</b> and will the exceed quantity <b>{4}</b> in the linked Request for Material").format(one.idx, one.qty, one.item_name, total_qty,rfm_qty ), title=_("Quantity Exceeds Pending Quantity"))
-	
-	def _update_linked_rfm_quantities(self,delete_event = False):
+					total_qty += one.qty
+				
+				rfm_item = frappe.db.get_value(
+					"Request for Material Item",
+					one.request_for_material_item,
+					["qty", "custom_pending_quantity", "stock_qty"],
+					as_dict=True
+				)
+				
+				if rfm_item:
+					rfm_qty = rfm_item.stock_qty if rfm_item.stock_qty else rfm_item.qty
+				else:
+					continue
+				
+				if total_qty > rfm_qty:
+					current_item_qty = one.stock_qty if (one.stock_qty and one.stock_qty > 0) else one.qty
+					stock_uom_label = one.stock_uom if one.stock_uom else one.uom
+					
+					frappe.throw(
+						_("Row {0}: Setting quantity as <b>{1} {2}</b> (Stock Qty: <b>{3} {4}</b>) for item <b>{5}</b> will make the total quantity from across various Requests for Purchase as <b>{6} {4}</b> and will exceed the quantity <b>{7} {4}</b> in the linked Request for Material").format(
+							one.idx,
+							one.qty,
+							one.uom or '',
+							current_item_qty,
+							stock_uom_label,
+							one.item_name,
+							total_qty,
+							rfm_qty
+						),
+						title=_("Quantity Exceeds Pending Quantity")
+					)
+
+
+	def _update_linked_rfm_quantities(self, delete_event=False):
 		"""
 		Recalculates the custom_rfp_quantity and custom_pending_quantity
 		on the source Request for Material based on all linked RFPs.
+		Uses stock_qty from Request for Purchase Quotation Item.
 		This method is called from hooks to ensure data is always in sync.
 		"""
 		self.validate_rfm_quantity()
@@ -162,50 +216,51 @@ class RequestforPurchase(Document):
 
 		rfm_name = self.request_for_material
 
-		# Get the sum of quantities for all items from all non-cancelled RFPs
-		# linked to the specific Request for Material in a single query.
-		delete_condition =""
+		delete_condition = ""
 		if delete_event:
-			delete_condition = " AND rfpi.parent != %(current_rfp)s "
+			delete_condition = " AND rfp.name != %(current_rfp)s "
+		
 		rfp_item_totals = frappe.db.sql("""
 			SELECT
-				rfpi.custom_request_for_material_item,
-				SUM(rfpi.qty) as total_rfp_qty
+				rfpqi.request_for_material_item,
+				SUM(
+					CASE 
+						WHEN rfpqi.stock_qty IS NOT NULL AND rfpqi.stock_qty > 0 
+						THEN rfpqi.stock_qty
+						WHEN rfpqi.uom != rfpqi.stock_uom AND rfpqi.conversion_factor IS NOT NULL
+						THEN rfpqi.qty * rfpqi.conversion_factor
+						ELSE rfpqi.qty
+					END
+				) as total_rfp_qty
 			FROM
-				`tabRequest for Purchase Item` AS rfpi
+				`tabRequest for Purchase Quotation Item` AS rfpqi
 			JOIN
-				`tabRequest for Purchase` AS rfp ON rfpi.parent = rfp.name
+				`tabRequest for Purchase` AS rfp ON rfpqi.parent = rfp.name
 			WHERE
 				rfp.request_for_material = %(rfm_name)s
 				AND rfp.docstatus != 2 """ + delete_condition + """
+				AND rfpqi.request_for_material_item IS NOT NULL
 			GROUP BY
-				rfpi.custom_request_for_material_item
-		""", {"rfm_name": rfm_name,'current_rfp':self.name}, as_dict=1)
+				rfpqi.request_for_material_item
+		""", {"rfm_name": rfm_name, 'current_rfp': self.name}, as_dict=1)
 
 		rfp_totals_map = {
-			d.custom_request_for_material_item: d.total_rfp_qty
-			for d in rfp_item_totals if d.custom_request_for_material_item
+			d.request_for_material_item: d.total_rfp_qty
+			for d in rfp_item_totals if d.request_for_material_item
 		}
 
 		rfm_doc = frappe.get_doc("Request for Material", rfm_name)
 
-		# Build a map of item_name to total_rfp_qty from self.items
-		
-		
-
 		for rfm_item in rfm_doc.items:
 			total_ordered_qty = rfp_totals_map.get(rfm_item.name, 0)
-			pending_qty = rfm_item.qty - total_ordered_qty
+			pending_qty = rfm_item.stock_qty - total_ordered_qty
 
-			# Update RFM item fields directly to avoid triggering circular hooks
 			if (rfm_item.custom_rfp_quantity != total_ordered_qty or rfm_item.custom_pending_quantity != pending_qty):
 				frappe.db.set_value("Request for Material Item", rfm_item.name, {
 					"custom_rfp_quantity": total_ordered_qty,
 					"custom_pending_quantity": pending_qty
 				}, update_modified=False)
 
-		# After updating all items, update the modified timestamp on the parent RFM
-		# frappe.db.update("Request for Material", rfm_name)
 
 
 	def before_cancel(self):
@@ -372,7 +427,6 @@ class RequestforPurchase(Document):
 				item.base_amount = item.qty * item.base_rate
 
 
-
 	def calculate_totals(self):
 		self.total = 0
 		self.base_total = 0
@@ -381,6 +435,20 @@ class RequestforPurchase(Document):
 			self.total += flt(item.amount)
 			self.base_total += flt(item.base_amount)
 
+	def calculate_stock_quantities(self):
+		for item in self.items_to_order:
+			if item.uom and item.stock_uom:
+				conversion_factor = item.conversion_factor or 1
+				item.stock_qty = (item.qty or 0) * conversion_factor
+
+	def calculate_stock_rates(self):
+		for item in self.items_to_order:
+			if item.uom and item.stock_uom and item.uom != item.stock_uom:
+				conversion_factor = item.conversion_factor or 1
+				if conversion_factor > 0:
+					item.stock_rate = (item.rate or 0) / conversion_factor
+			else:
+				item.stock_rate = item.rate or 0
 
 	@frappe.whitelist()
 	def update_rfp_items(self, updated_items, reason):
@@ -444,6 +512,7 @@ class RequestforPurchase(Document):
 	def before_save(self):
 		# Ensure latest exchange rate before saving (only at before_save)
 		self.get_and_set_latest_exchange_rate()
+		self.update_all_stock_quantities()
 
 	def get_and_set_latest_exchange_rate(self):
 		"""Fetch latest (by date desc then creation desc) Currency Exchange and overwrite exchange_rate.
@@ -478,6 +547,92 @@ class RequestforPurchase(Document):
 					self.exchange_rate = rate
 		except Exception as e:
 			frappe.log_error(f"Exchange rate fetch failed for RFP {getattr(self, 'name', 'NEW')}: {e}", 'RFP Exchange Rate Fetch')
+
+	def validate_conversion_factors(self):
+		for item in self.items_to_order:
+			if item.uom and item.stock_uom and item.uom != item.stock_uom:
+				if not item.conversion_factor or item.conversion_factor == 0:
+					frappe.throw(
+						_("Row #{0}: Conversion factor is required when UOM ({1}) is different from Stock UOM ({2})").format(
+							item.idx, item.uom, item.stock_uom
+						)
+					)
+				
+				if item.conversion_factor < 0:
+					frappe.throw(
+						_("Row #{0}: Conversion factor cannot be negative").format(item.idx)
+					)
+			
+			self.update_stock_qty(item)
+
+
+	def update_all_stock_quantities(self):
+		for item in self.items_to_order:
+			self.update_stock_qty(item)
+
+	def update_stock_qty(self, item_row):
+		conversion_factor = item_row.conversion_factor or 1
+		qty = item_row.qty or 0
+		
+		item_row.stock_qty = qty * conversion_factor
+
+	def set_item_defaults(self, item_row):
+		if item_row.item_code and not item_row.stock_uom:
+			item_doc = frappe.get_cached_doc("Item", item_row.item_code)
+			item_row.stock_uom = item_doc.stock_uom
+			
+			if not item_row.uom:
+				item_row.uom = item_doc.stock_uom
+				item_row.conversion_factor = 1
+			else:
+				self.fetch_conversion_factor(item_row)
+
+	def fetch_conversion_factor(self, item_row):
+		if not item_row.uom or not item_row.stock_uom:
+			return
+		
+		if item_row.uom == item_row.stock_uom:
+			item_row.conversion_factor = 1
+			self.update_stock_qty(item_row)
+			return
+		
+		self.fetch_from_uom_conversion(item_row, item_row.stock_uom, item_row.uom)
+
+	def fetch_from_uom_conversion(self, item_row, from_uom, to_uom):
+		conversion = frappe.db.get_value(
+			"UOM Conversion Factor",
+			{
+				"from_uom": to_uom,
+				"to_uom": from_uom
+			},
+			"value"
+		)
+		
+		if conversion:
+			item_row.conversion_factor = conversion
+		else:
+			conversion = frappe.db.get_value(
+				"UOM Conversion Factor",
+				{
+					"from_uom": from_uom,
+					"to_uom": to_uom
+				},
+				"value"
+			)
+			
+			if conversion:
+				item_row.conversion_factor = 1 / conversion
+			else:
+				item_row.conversion_factor = 1
+				frappe.msgprint(
+					_("No conversion factor found between {0} and {1}. Please enter the conversion factor manually.").format(
+						from_uom, to_uom
+					),
+					title=_("Conversion Factor Not Found"),
+					indicator="orange"
+				)
+		
+		self.update_stock_qty(item_row)
 
 
 @frappe.whitelist()
@@ -666,85 +821,111 @@ def make_quotation_comparison_sheet(source_name, target_doc=None):
 	doclist.request_for_quotation = rfq if rfq else ''
 	return doclist
 
-
 def create_purchase_order(**args):
-    args = frappe._dict(args)
-    
-    items_to_process = args.get('items_list', [args])
-    valid_items = []
-    
-    for item_args in items_to_process:
-        item_args = frappe._dict(item_args)
-        
-        rfp_item = frappe.db.get_value(
-            "Request for Purchase Quotation Item",
-            {
-                "parent": args.request_for_purchase,
-                "item_code": item_args.item_code
-            },
-            ["qty", "ordered_qty", "pending_qty"],
-            as_dict=True
-        )
-        
-        if not rfp_item:
-            frappe.msgprint(f"Item {item_args.item_code} not found in Request for Purchase {args.request_for_purchase}")
-            continue
-        
-        available_qty = rfp_item.pending_qty or (rfp_item.qty - (rfp_item.ordered_qty or 0))
-        
-        if available_qty <= 0:
-            frappe.msgprint(f"No pending quantity available for item {item_args.item_code}. All quantities have been ordered.")
-            continue
-        
-        po_qty = min(item_args.qty, available_qty)
-        
-        if po_qty <= 0:
-            frappe.msgprint(f"Calculated quantity is zero for item {item_args.item_code}. Skipping.")
-            continue
-        
-        if po_qty != item_args.qty:
-            frappe.msgprint(f"Requested quantity {item_args.qty} reduced to available pending quantity {po_qty} for item {item_args.item_code}")
-        
-        valid_items.append({
-            "item_code": item_args.item_code,
-            "item_name": item_args.get("item_name") or frappe.db.get_value("Item", item_args.item_code, "item_name"),
-            "description": item_args.description,
-            "uom": item_args.uom,
-            "qty": po_qty,
-            "rate": item_args.rate,
-            "amount": po_qty * item_args.rate,
-            "schedule_date": getdate(item_args.delivery_date) if (item_args.delivery_date and getdate(nowdate()) < getdate(item_args.delivery_date)) else getdate(nowdate()),
-            "expected_delivery_date": item_args.delivery_date
-        })
-    
-    if not valid_items:
-        return None
-    
-    po = frappe.new_doc("Purchase Order")
-    po.transaction_date = nowdate()
-    po.buying_price_list = args.get('rfp_doc').price_list
-    po.currency = args.get('rfp_doc').currency
-    po.conversion_rate = args.get('rfp_doc').exchange_rate
-    po.set_warehouse = args.warehouse
-    po.quotation = args.quotation
-    po.supplier = args.supplier
-    po.is_subcontracted = args.is_subcontracted or "No"
-    po.conversion_factor = args.conversion_factor or 1
-    po.supplier_warehouse = args.supplier_warehouse or None
-    po.one_fm_request_for_purchase = args.request_for_purchase
-    po.request_for_material = frappe.db.get_value(
-        "Request for Purchase",
-        args.request_for_purchase,
-        "request_for_material"
-    )
-    po.is_subcontracted = False
+	args = frappe._dict(args)
+	
+	items_to_process = args.get('items_list', [args])
+	valid_items = []
+	
+	for item_args in items_to_process:
+		item_args = frappe._dict(item_args)
+		
+		rfp_item = frappe.db.get_value(
+			"Request for Purchase Quotation Item",
+			{
+				"parent": args.request_for_purchase,
+				"item_code": item_args.item_code
+			},
+			["qty", "ordered_qty", "pending_qty", "stock_qty", "stock_uom", "conversion_factor", "stock_rate"],
+			as_dict=True
+		)
+		
+		if not rfp_item:
+			frappe.msgprint(f"Item {item_args.item_code} not found in Request for Purchase {args.request_for_purchase}")
+			continue
+		
+		available_qty = rfp_item.pending_qty or (rfp_item.qty - (rfp_item.ordered_qty or 0))
+		
+		if available_qty <= 0:
+			frappe.msgprint(f"No pending quantity available for item {item_args.item_code}. All quantities have been ordered.")
+			continue
+		
+		po_qty = min(item_args.qty, available_qty)
+		
+		if po_qty <= 0:
+			frappe.msgprint(f"Calculated quantity is zero for item {item_args.item_code}. Skipping.")
+			continue
+		
+		if po_qty != item_args.qty:
+			frappe.msgprint(f"Requested quantity {item_args.qty} reduced to available pending quantity {po_qty} for item {item_args.item_code}")
+		
+		conversion_factor = item_args.get("conversion_factor") or rfp_item.conversion_factor or 1
+		stock_uom = item_args.get("stock_uom") or rfp_item.stock_uom
+		stock_qty = po_qty * conversion_factor
+		stock_rate = item_args.get("stock_rate") or rfp_item.stock_rate or (item_args.rate / conversion_factor if conversion_factor > 0 else item_args.rate)
+		
+		valid_items.append({
+			"item_code": item_args.item_code,
+			"item_name": item_args.get("item_name") or frappe.db.get_value("Item", item_args.item_code, "item_name"),
+			"description": item_args.description,
+			"uom": item_args.uom,
+			"stock_uom": stock_uom,
+			"conversion_factor": conversion_factor,
+			"qty": po_qty,
+			"stock_qty": stock_qty,
+			"rate": item_args.rate,
+			"stock_uom_rate": stock_rate,
+			"amount": po_qty * item_args.rate,
+			"schedule_date": getdate(item_args.delivery_date) if (item_args.delivery_date and getdate(nowdate()) < getdate(item_args.delivery_date)) else getdate(nowdate()),
+			"expected_delivery_date": item_args.delivery_date
+		})
+	
+	if not valid_items:
+		return None
+	
+	po = frappe.new_doc("Purchase Order")
+	po.transaction_date = nowdate()
+	po.buying_price_list = args.get('rfp_doc').price_list
+	po.currency = args.get('rfp_doc').currency
+	po.conversion_rate = args.get('rfp_doc').exchange_rate
+	po.set_warehouse = args.warehouse
+	po.quotation = args.quotation
+	po.supplier = args.supplier
+	po.is_subcontracted = args.is_subcontracted or "No"
+	po.supplier_warehouse = args.supplier_warehouse or None
+	po.one_fm_request_for_purchase = args.request_for_purchase
+	po.request_for_material = frappe.db.get_value(
+		"Request for Purchase",
+		args.request_for_purchase,
+		"request_for_material"
+	)
+	po.is_subcontracted = False
 
-    for item in valid_items:
-        po.append("items", item)
-    
-    if not args.do_not_save:
-        po.save(ignore_permissions=True)
-        if not args.do_not_submit:
-            po.submit()
-    
-    return po
+	for item in valid_items:
+		po.append("items", item)
+	
+	if not args.do_not_save:
+		po.save(ignore_permissions=True)
+		if not args.do_not_submit:
+			po.submit()
+	
+	return po
+
+@frappe.whitelist()
+def get_rfm_item_uom_data(rfm_item_names):
+	if isinstance(rfm_item_names, str):
+		rfm_item_names = json.loads(rfm_item_names)
+	
+	if not rfm_item_names:
+		return []
+	
+	rfm_items = frappe.get_all(
+		"Request for Material Item",
+		filters={
+			"name": ["in", rfm_item_names]
+		},
+		fields=["name", "uom", "stock_uom", "conversion_factor", "stock_qty"],
+		ignore_permissions=True
+	)
+	
+	return rfm_items

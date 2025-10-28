@@ -356,130 +356,136 @@ frappe.ui.form.on('Request for Material', {
 		}
 	},
 	make_request_for_purchase: async function(frm) {
-				await frm.events.validate_rfm_type(frm);
-				
-
-                if (frm.is_dirty()) {
-                        frappe.msgprint(__("Please save your changes before creating a Request for Purchase."));
-                        return;
+		await frm.events.validate_rfm_type(frm);
+		
+		if (frm.is_dirty()) {
+			frappe.msgprint(__("Please save your changes before creating a Request for Purchase."));
+			return;
 		}
 
-                const items_to_purchase = frm.doc.items.filter(d => d.pur_qty > 0 && !d.rejected_item);
-                if (items_to_purchase.length === 0) {
-                        frappe.msgprint(__("There are no items marked for purchasing."));
-                        return;
+		const items_to_purchase = frm.doc.items.filter(d => d.pur_qty > 0 && !d.rejected_item);
+		if (items_to_purchase.length === 0) {
+			frappe.msgprint(__("There are no items marked for purchasing."));
+			return;
 		}
 
-                let dialog = new frappe.ui.Dialog({
-                        title: __('Create Request for Purchase'),
-                        fields: [
-                                {
-                                        fieldtype: 'HTML',
-                                        options: __("Create a purchase request for all items, or select specific items?")
-                                }
-                        ],
-                        primary_action_label: __('Select Items'),
-                        primary_action: () => {
-                                dialog.hide();
-                                let selection_dialog = new frappe.ui.Dialog({
-                                        title: __('Select Items and Quantities for RFP'),
-                                        fields: [
-                                                {
-                                                        fieldname: 'items_html',
-                                                        fieldtype: 'HTML'
-                                                }
-                                        ],
-                                        primary_action_label: __('Create RFP'),
-                                        primary_action: () => {
-                                                let selected_items = [];
-                                                selection_dialog.get_field('items_html').$wrapper.find('tbody tr').each(function() {
-                                                        let row = $(this);
-                                                        if (row.find('.select-item').prop('checked')) {
-                                                                let qty_to_rfp = parseFloat(row.find('.qty-to-rfp').val() || 0);
-                                                                let pending_qty = parseFloat(row.find('.pending-qty').text());
-                                                                if (qty_to_rfp > pending_qty) {
-                                                                        frappe.throw(__("Quantity for item {0} cannot exceed pending quantity.", [row.data('item-code')]));
-                                                                }
-                                                                if (qty_to_rfp > 0) {
-                                                                        selected_items.push({
-                                                                                'item_code': row.data('item-code'),
-                                                                                'qty': qty_to_rfp,
-                                                                                'request_for_material_item': row.data('item-name')
-                                                                        });
-                                                                }
-                                                        }
-                                                });
+		let dialog = new frappe.ui.Dialog({
+			title: __('Create Request for Purchase'),
+			fields: [
+				{
+					fieldtype: 'HTML',
+					options: __("Create a purchase request for all items, or select specific items?")
+				}
+			],
+			primary_action_label: __('Select Items'),
+			primary_action: () => {
+				dialog.hide();
+				let selection_dialog = new frappe.ui.Dialog({
+					title: __('Select Items and Quantities for RFP'),
+					fields: [
+						{
+							fieldname: 'items_html',
+							fieldtype: 'HTML'
+						}
+					],
+					primary_action_label: __('Create RFP'),
+					primary_action: () => {
+						let selected_items = [];
+						selection_dialog.get_field('items_html').$wrapper.find('tbody tr').each(function() {
+							let row = $(this);
+							if (row.find('.select-item').prop('checked')) {
+								let qty_to_rfp = parseFloat(row.find('.qty-to-rfp').val() || 0);
+								let pending_qty = parseFloat(row.find('.pending-qty').text());
+								if (qty_to_rfp > pending_qty) {
+									frappe.throw(__("Quantity for item {0} cannot exceed pending quantity.", [row.data('item-code')]));
+								}
+								if (qty_to_rfp > 0) {
+									selected_items.push({
+										'item_code': row.data('item-code'),
+										'qty': qty_to_rfp,
+										'request_for_material_item': row.data('item-name'),
+										'uom': row.data('uom'),
+										'stock_uom': row.data('stock-uom'),
+										'conversion_factor': row.data('conversion-factor')
+									});
+								}
+							}
+						});
 
-                                                if (selected_items.length === 0) {
-                                                        frappe.msgprint(__('Please select at least one item with a quantity greater than 0.'));
-                                                        return;
-                                                }
+						if (selected_items.length === 0) {
+							frappe.msgprint(__('Please select at least one item with a quantity greater than 0.'));
+							return;
+						}
 
-                                                frappe.call({
-                                                        method: "one_fm.purchase.doctype.request_for_material.request_for_material.create_partial_request_for_purchase",
-                                                        args: {
-                                                                source_name: frm.doc.name,
-                                                                items: selected_items
-                                                        },
-                                                        callback: function(r) {
-                                                                if (r.message) {
-                                                                        selection_dialog.hide();
-                                                                        frappe.set_route('Form', r.message.doctype, r.message.name);
-                                                                }
-                                                        },
-                                                        freeze: true,
-                                                        freeze_message: __('Creating Request for Purchase...')
-                                                });
-                                        }
-                                });
+						frappe.call({
+							method: "one_fm.purchase.doctype.request_for_material.request_for_material.create_partial_request_for_purchase",
+							args: {
+								source_name: frm.doc.name,
+								items: selected_items
+							},
+							callback: function(r) {
+								if (r.message) {
+									selection_dialog.hide();
+									frappe.set_route('Form', r.message.doctype, r.message.name);
+								}
+							},
+							freeze: true,
+							freeze_message: __('Creating Request for Purchase...')
+						});
+					}
+				});
 
-                                let items_with_pending_qty = frm.doc.items.filter(d => (d.qty - (d.custom_rfp_quantity || 0)) > 0 && !d.rejected_item);
+				let items_with_pending_qty = frm.doc.items.filter(d => (d.qty - (d.custom_rfp_quantity || 0)) > 0 && !d.rejected_item);
 
-                                let table_html = `
-                                <table class="table table-bordered" style="width: 100%;">
-                                        <thead>
-                                                <tr>
-                                                        <th style="width: 5%;"><input type="checkbox" class="select-all-items"></th>
-                                                        <th style="width: 55%;">${__('Item')}</th>
-                                                        <th style="width: 20%;">${__('Pending Qty')}</th>
-                                                        <th style="width: 20%;">${__('Qty for RFP')}</th>
-                                                </tr>
-                                        </thead>
-                                        <tbody>
-                                        </tbody>
-                                </table>`;
-                                selection_dialog.get_field('items_html').$wrapper.html(table_html);
-                                let tbody = selection_dialog.get_field('items_html').$wrapper.find('tbody');
+				let table_html = `
+				<table class="table table-bordered" style="width: 100%;">
+					<thead>
+						<tr>
+							<th style="width: 5%;"><input type="checkbox" class="select-all-items"></th>
+							<th style="width: 55%;">${__('Item')}</th>
+							<th style="width: 20%;">${__('Pending Qty')}</th>
+							<th style="width: 20%;">${__('Qty for RFP')}</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>`;
+				selection_dialog.get_field('items_html').$wrapper.html(table_html);
+				let tbody = selection_dialog.get_field('items_html').$wrapper.find('tbody');
 
-                                items_with_pending_qty.forEach(item => {
-                                        let pending_qty = item.qty - (item.custom_rfp_quantity || 0);
-                                        let row_html = `
-                                                <tr data-item-name="${item.name}" data-item-code="${item.item_code}">
-                                                        <td><input type="checkbox" class="select-item" checked></td>
-                                                        <td>${item.item_code}: ${item.requested_item_name}</td>
-                                                        <td class="pending-qty">${pending_qty}</td>
-                                                        <td><input type="number" class="form-control qty-to-rfp" value="${pending_qty}" max="${pending_qty}" min="0"></td>
-                                                </tr>
-                                        `;
-                                        tbody.append(row_html);
-                                });
+				items_with_pending_qty.forEach(item => {
+					let pending_qty = item.qty - (item.custom_rfp_quantity || 0);
+					let row_html = `
+						<tr data-item-name="${item.name}" 
+							data-item-code="${item.item_code}"
+							data-uom="${item.uom || ''}"
+							data-stock-uom="${item.stock_uom || ''}"
+							data-conversion-factor="${item.conversion_factor || 1}">
+							<td><input type="checkbox" class="select-item" checked></td>
+							<td>${item.item_code}: ${item.requested_item_name}</td>
+							<td class="pending-qty">${pending_qty}</td>
+							<td><input type="number" class="form-control qty-to-rfp" value="${pending_qty}" max="${pending_qty}" min="0"></td>
+						</tr>
+					`;
+					tbody.append(row_html);
+				});
 
-                                selection_dialog.get_field('items_html').$wrapper.find('.select-all-items').on('change', function() {
-                                        selection_dialog.get_field('items_html').$wrapper.find('.select-item').prop('checked', $(this).prop('checked'));
-                                });
+				selection_dialog.get_field('items_html').$wrapper.find('.select-all-items').on('change', function() {
+					selection_dialog.get_field('items_html').$wrapper.find('.select-item').prop('checked', $(this).prop('checked'));
+				});
 
-                                selection_dialog.show();
-                        },
-                        secondary_action_label: __('All Items'),
-                        secondary_action: () => {
-                                dialog.hide();
-                                frappe.model.open_mapped_doc({
-                                        method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_request_for_purchase",
-                                        frm: frm
-                                });
-                        }
-                });
-                dialog.show();
+				selection_dialog.show();
+			},
+			secondary_action_label: __('All Items'),
+			secondary_action: () => {
+				dialog.hide();
+				frappe.model.open_mapped_doc({
+					method: "one_fm.purchase.doctype.request_for_material.request_for_material.make_request_for_purchase",
+					frm: frm
+				});
+			}
+		});
+		dialog.show();
 	},
 	make_stock_entry: function(frm) {
 		if(frm.is_dirty()){

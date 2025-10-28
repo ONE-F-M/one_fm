@@ -9,7 +9,7 @@ def get_data():
 		'transactions': [
 			{
 				'label': _('Government Relation Department'),
-				'items': ['Work Permit', 'Medical Insurance','Fingerprint Appointment','MOI Residency Jawazat','PACI']
+				'items': ['Work Permit', 'Medical Insurance','Fingerprint Appointment','Residency','PACI']
 			},
 		]
 	}

@@ -122,6 +122,9 @@ def on_update(doc, event):
     
 def validate_purchase_uom(doc, method):
     for item in doc.items:
+        if item.conversion_factor:
+            continue
+
         query = """
             select
                 uom
@@ -182,11 +185,11 @@ class PurchaseOrderOverride(PurchaseOrder):
         if self.one_fm_request_for_purchase:
             update_rfp_status(self.one_fm_request_for_purchase)
 
+
     def update_purchased_quantities(self):
         if not self.one_fm_request_for_purchase:
             return
-    
-        # Fetch all purchase orders linked to the same Request for Purchase
+
         purchase_orders = frappe.db.get_list(
             "Purchase Order", 
             filters={"one_fm_request_for_purchase": self.one_fm_request_for_purchase, "docstatus": 1},
@@ -194,71 +197,99 @@ class PurchaseOrderOverride(PurchaseOrder):
         )
 
         request_for_material = frappe.db.get_value(
-                "Request for Purchase", 
-                {"name": self.one_fm_request_for_purchase},
-                "request_for_material"
-            )
-    
+            "Request for Purchase", 
+            {"name": self.one_fm_request_for_purchase},
+            "request_for_material"
+        )
+
         for obj in self.items:
-
-            # Sum purchased quantities from all purchase orders
-            item_qty = frappe.db.get_all(
-                "Purchase Order Item", 
-                {"parent": ["IN", purchase_orders], "item_code": obj.item_code, 'parentfield': 'items'},
-                pluck="qty"
+            po_items = frappe.db.get_all(
+                "Purchase Order Item",
+                filters={
+                    "parent": ["in", purchase_orders], 
+                    "item_code": obj.item_code, 
+                    "parentfield": "items"
+                },
+                fields=["stock_qty", "qty", "uom", "stock_uom", "conversion_factor"]
             )
-            new_qty = sum(item_qty) if item_qty else 0
             
+            total_purchased_stock_qty = 0
+            for po_item in po_items:
+                if po_item.stock_qty and po_item.stock_qty > 0:
+                    total_purchased_stock_qty += po_item.stock_qty
+                elif po_item.uom and po_item.stock_uom and po_item.uom != po_item.stock_uom and po_item.conversion_factor:
+                    total_purchased_stock_qty += (po_item.qty or 0) * (po_item.conversion_factor or 1)
+                else:
+                    total_purchased_stock_qty += po_item.qty or 0
             
-            # Update purchased quantity in Request for Purchase Item
-            update_purchased_qty(new_qty, self.one_fm_request_for_purchase, obj.item_code, "Request for Purchase Item", "purchased_quantity")
+            update_purchased_qty(
+                total_purchased_stock_qty, 
+                self.one_fm_request_for_purchase, 
+                obj.item_code, 
+                "Request for Purchase Item", 
+                "purchased_quantity"
+            )
 
-
-            # If Request for Material exists, update the corresponding quantity
             if request_for_material:
-                update_purchased_qty(new_qty, request_for_material, obj.item_code, "Request for Material Item", "ordered_qty")
-
+                update_purchased_qty(
+                    total_purchased_stock_qty, 
+                    request_for_material, 
+                    obj.item_code, 
+                    "Request for Material Item", 
+                    "ordered_qty"
+                )
+            
 
     def update_ordered_and_pending_quantities(self):
         if not self.one_fm_request_for_purchase:
             return
-        
+
         purchase_orders = frappe.db.get_list(
             "Purchase Order", 
             filters={"one_fm_request_for_purchase": self.one_fm_request_for_purchase, "docstatus": 1},
             pluck='name'
         )
-        
+
         rfp_items = frappe.db.get_all(
             "Request for Purchase Quotation Item",
             filters={"parent": self.one_fm_request_for_purchase},
-            fields=["name", "item_code", "qty", "ordered_qty", "pending_qty"]
+            fields=["name", "item_code", "qty", "stock_qty", "uom", "stock_uom", "conversion_factor"]
         )
-        
+
         for rfp_item in rfp_items:
-            item_ordered_qty = frappe.db.get_all(
+            po_items = frappe.db.get_all(
                 "Purchase Order Item", 
                 filters={
-                    "parent": ["IN", purchase_orders], 
+                    "parent": ["in", purchase_orders], 
                     "item_code": rfp_item.item_code, 
                     "parentfield": "items"
                 },
-                pluck="qty"
+                fields=["stock_qty", "qty", "uom", "stock_uom", "conversion_factor"]
             )
             
-            total_ordered = sum(item_ordered_qty) if item_ordered_qty else 0
-            pending_qty = max(0, rfp_item.qty - total_ordered)
+            total_ordered_stock_qty = 0
+            for po_item in po_items:
+                if po_item.stock_qty:
+                    total_ordered_stock_qty += po_item.stock_qty
+                elif po_item.uom and po_item.stock_uom and po_item.uom != po_item.stock_uom:
+                    conversion_factor = po_item.conversion_factor or 1
+                    total_ordered_stock_qty += (po_item.qty or 0) * conversion_factor
+                else:
+                    total_ordered_stock_qty += po_item.qty or 0
+            
+            rfp_qty_in_stock_uom = rfp_item.stock_qty if rfp_item.stock_qty else rfp_item.qty
+            pending_qty = max(0, rfp_qty_in_stock_uom - total_ordered_stock_qty)
             
             frappe.db.set_value(
                 "Request for Purchase Quotation Item", 
                 rfp_item.name, 
                 {
-                    "ordered_qty": total_ordered,
+                    "ordered_qty": total_ordered_stock_qty,
                     "pending_qty": pending_qty
                 }
             )
-        
-        frappe.db.commit()
+
+        frappe.db.commit()  
 
 
 

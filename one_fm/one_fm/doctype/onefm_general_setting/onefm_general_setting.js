@@ -26,5 +26,18 @@ frappe.ui.form.on('ONEFM General Setting', {
                 frappe.msgprint(res.message.message)
             })
         }
-    }
+    },
+	validate: function(frm) {
+		const threshold_fields = [
+			"default_shift_checker_threshold",
+			"day_off_reliever_default_shift_checker_threshold",
+			"weekend_reliever_default_shift_checker_threshold",
+		];
+		threshold_fields.forEach(field => {
+			if (frm.doc[field] <= 0) {
+				frappe.msgprint(__("Value for {0} must be greater than 0", [frm.fields_dict[field].df.label]));
+				frappe.validated = false;
+			}
+		})
+	}
 });

@@ -13,7 +13,7 @@ from frappe.utils import get_datetime, add_to_date, getdate, get_link_to_form, n
 from one_fm.grd.doctype.paci import paci
 from one_fm.utils import is_scheduler_emails_enabled
 
-class MOIResidencyJawazat(Document):
+class Residency(Document):
     company = frappe.db.get_value("Company", frappe.defaults.get_global_default('company'), 
             ['phone_no', 'email', 'company_name_arabic'], as_dict=1)
     
@@ -109,7 +109,7 @@ class MOIResidencyJawazat(Document):
                     mandatory_fields.append(field)
 
         if len(mandatory_fields) > 0:
-            message= 'Mandatory fields required in MOI Residency Jawazat form<br><br><ul>'
+            message= 'Mandatory fields required in Residency form<br><br><ul>'
             for mandatory_field in mandatory_fields:
                 message += '<li>' + mandatory_field +'</li>'
             message += '</ul>'
@@ -193,7 +193,7 @@ def create_moi_record(employee,Renewal_or_Extend,preparation_name = None):
 
 
     # start_day_for_renewal = add_days(employee.residency_expiry_date, -14)# MIGHT CHANGE IN TRANSFER
-    new_moi = frappe.new_doc('MOI Residency Jawazat')
+    new_moi = frappe.new_doc('Residency')
     new_moi.employee = employee.name
     new_moi.preparation = preparation_name
     new_moi.renewal_or_extend = Renewal_or_Extend
@@ -206,7 +206,7 @@ def system_remind_renewal_operator_to_apply():# cron job at 4pm
     """This is a cron method runs every day at 4pm. It gets Draft renewal MOI list and reminds operator to apply on pam website"""
     supervisor = frappe.db.get_single_value("HR Settings", "default_grd_supervisor")
     renewal_operator = frappe.db.get_single_value("HR Settings", "default_grd_operator")
-    moi_list = frappe.db.get_list('MOI Residency Jawazat',
+    moi_list = frappe.db.get_list('Residency',
     {'date_of_application':['<=',date.today()],'workflow_state':['=',('Apply Online by PRO')],'category':['in',('Renewal','Extend')]},
     ['one_fm_civil_id','name','reminded_grd_operator','reminded_grd_operator_again'])
     

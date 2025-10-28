@@ -53,8 +53,17 @@ class LeaveHandover(Document):
 			}.get(item.reference_doctype)
 
 			if field_to_update:
-				frappe.db.set_value(item.reference_doctype, item.reference_docname, field_to_update, item.reliever)
-	
+				values_to_update = {field_to_update: item.reliever}
+				name_field_to_update = {
+					"Project": "manager_name",
+					"Operations Site": "account_supervisor_name",
+					"Process Task": "employee_name",
+				}.get(item.reference_doctype)
+
+				if name_field_to_update:
+					values_to_update[name_field_to_update] = item.reliever_name
+				frappe.db.set_value(item.reference_doctype, item.reference_docname, values_to_update)
+
 		self.db_set("status", "Transferred")
 
 	def assign_role_on_handover(self):
@@ -110,7 +119,17 @@ class LeaveHandover(Document):
 			}.get(item.reference_doctype)
 
 			if field_to_update:
-				frappe.db.set_value(item.reference_doctype, item.reference_docname, field_to_update, self.employee)
+				values_to_update = {field_to_update: self.employee}
+				name_field_to_update = {
+					"Project": "manager_name",
+					"Operations Site": "account_supervisor_name",
+					"Process Task": "employee_name",
+				}.get(item.reference_doctype)
+
+				if name_field_to_update:
+					values_to_update[name_field_to_update] = self.employee_name
+
+				frappe.db.set_value(item.reference_doctype, item.reference_docname, values_to_update)
 				frappe.db.set_value("Handover Item", item.name, "status", "Reverted")
 
 		self.revert_roles()
