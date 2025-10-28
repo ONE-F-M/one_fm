@@ -15,7 +15,7 @@ def execute():
     if not frappe.db.exists("Task Type", task_type):
         frappe.get_doc({
             "name": task_type,
-            "is_routine_task": 0,
+            "is_routine_task": 1,
             "doctype": "Task Type"
         }).insert(ignore_permissions=True)
 
@@ -29,24 +29,34 @@ def execute():
             "doctype": "Method"
         }).insert(ignore_permissions=True)
 
-    frappe.get_doc({
-    "naming_series": "P-TASK-.YYYY.-",
-    "process_name": "Others",
-    "is_erp_task": 1,
-    "is_automated": 1,
-    "is_active": 1,
-    "erp_document": document_type,
-    "task": "Scrape and Save Threat Feeds - Agent 2",
-    "task_type": task_type,
-    "method": method,
-    "frequency": "Cron",
-    "cron_format": "0 8,20 * * *",
-    "hours_per_frequency": 0.5,
-    "coordination_needed": "No",
-    "start_date": "2025-10-25",
-    "employee": "HR-EMP-02930",
-    "employee_name": "Kartik Sharma",
-    "employee_user": "k.sharma@one-fm.com",
-    "department": "IT - ONEFM",
-    "doctype": "Process Task",
-}).insert(ignore_permissions=True)
+    process_task_exists = frappe.db.exists(
+        "Process Task",
+        {
+            "process_name": "Others",
+            "method": method,
+            "employee": "HR-EMP-02930"
+        }
+    )
+
+    if not process_task_exists:
+        frappe.get_doc({
+        "naming_series": "P-TASK-.YYYY.-",
+        "process_name": "Others",
+        "is_erp_task": 1,
+        "is_automated": 1,
+        "is_active": 1,
+        "erp_document": document_type,
+        "task": "Scrape and Save Threat Feeds - Agent 2",
+        "task_type": task_type,
+        "method": method,
+        "frequency": "Cron",
+        "cron_format": "0 8,20 * * *",
+        "hours_per_frequency": 0.5,
+        "coordination_needed": "No",
+        "start_date": "2025-10-25",
+        "employee": "HR-EMP-02930",
+        "employee_name": "Kartik Sharma",
+        "employee_user": "k.sharma@one-fm.com",
+        "department": "IT - ONEFM",
+        "doctype": "Process Task",
+    }).insert(ignore_permissions=True)

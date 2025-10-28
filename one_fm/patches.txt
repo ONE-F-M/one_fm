@@ -180,7 +180,7 @@ one_fm.patches.v15_0.add_update_custom_field #2025-10-17
 one_fm.patches.v15_0.update_rfp_records
 one_fm.patches.v15_0.update_purchase_order_property_setter
 one_fm.patches.v15_0.add_assignment_rule_process_task_work_permit_completion_gr_operator
-one_fm.patches.v15_0.create_scheduled_job_agent_2_process
+one_fm.patches.v15_0.create_threat_collection_agent_process_task
 one_fm.patches.v15_0.add_assignment_rule_action_medical_appointment_pro
 one_fm.patches.v15_0.rename_moi_residency_jawazath
 
