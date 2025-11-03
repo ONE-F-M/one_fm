@@ -23,11 +23,7 @@ class RelieverAssignment(Document):
 		
 	def after_insert(self):
 		self.assign_roles()
-		self.assign_reportees()
 		self.assign_todos()
-		self.assign_projects()
-		self.assign_operations_site()
-		self.assign_process_tasks()
 		self.get_single_doctypes()
 		self.get_approval_doctypes()
 		
@@ -79,44 +75,6 @@ class RelieverAssignment(Document):
 			reliever_user.db_set("role_profile_name", None)
 
 		reliever_user.add_roles(roles_to_be_assigned)
-
-	def assign_process_tasks(self):
-		ProcessTask = DocType("Process Task")
-		process_tasks = (
-			frappe.qb.from_(ProcessTask)
-			.select(ProcessTask.name)
-			.where((ProcessTask.direct_report_reviewer == self.on_leave_employee))
-		).run(as_dict=True)
-
-
-		if len(process_tasks) > 0:
-			# Log data for reversal
-			self.add_assigned_documents("Process Task", "Docfield", process_tasks, fieldname="direct_report_reviewer")
-
-			frappe.qb.update(ProcessTask ).set(
-				ProcessTask.direct_report_reviewer, self.reliever).set(
-				ProcessTask.direct_report_reviewer_name, self.reliever_name).set(
-				ProcessTask.modified, now()).where(
-				ProcessTask.direct_report_reviewer == self.on_leave_employee
-			).run()
-
-	def assign_reportees(self):
-		Employee = DocType("Employee")
-		reportees = (
-			frappe.qb.from_(Employee)
-			.select(Employee.name)
-			.where(
-				(Employee.reports_to == self.on_leave_employee)
-				& (Employee.status == "Active"))
-		).run(as_dict=True)
-
-		if len(reportees) > 0:
-			# Log data for reversal
-			self.add_assigned_documents("Employee", "Docfield", reportees, fieldname="reports_to")
-
-			frappe.qb.update(Employee).set(Employee.reports_to, self.reliever).set(Employee.modified, now()).where(
-				Employee.reports_to == self.on_leave_employee).where(Employee.status == "Active").run()
-
 
 	def assign_todos(self):
 		ToDo = DocType("ToDo")
@@ -185,51 +143,6 @@ class RelieverAssignment(Document):
 						.where(ReferenceType[fieldname] == value_to_replace) \
 						.where(ReferenceType[status_field].isin(status_to_check)) \
 					.run()
-
-
-	def assign_projects(self):
-		Project = DocType("Project")
-		assigned_projects = (
-			frappe.qb.from_(Project)
-			.select(Project.name)
-			.where(
-				(Project.account_manager == self.on_leave_employee)
-				& (Project.status == "Open")
-			)
-		).run(as_dict=True)
-
-		if len(assigned_projects) > 0:
-			# Log data for reversal
-			self.add_assigned_documents("Project", "Docfield", assigned_projects, fieldname="account_manager")
-
-			frappe.qb.update(Project).set(
-				Project.account_manager, self.reliever).set(
-				Project.manager_name, self.reliever_name).set(
-				Project.modified, now()).where(
-				Project.account_manager == self.on_leave_employee).where(Project.status == "Open").run()
-
-
-	def assign_operations_site(self):
-		OperationsSite = DocType("Operations Site")
-		assigned_sites = (
-			frappe.qb.from_(OperationsSite)
-			.select(OperationsSite.name)
-			.where(
-				(OperationsSite.account_supervisor == self.on_leave_employee)
-				& (OperationsSite.status == "Active")
-			)
-		).run(as_dict=True)
-
-		if len(assigned_sites) > 0:
-			# Log data for reversal
-			self.add_assigned_documents("Operations Site", "Docfield", assigned_sites, fieldname="account_supervisor")
-
-			frappe.qb.update(OperationsSite).set(
-				OperationsSite.account_supervisor, self.reliever).set(
-				OperationsSite.account_supervisor_name, self.reliever_name).set(
-				OperationsSite.modified, now()).where(
-				OperationsSite.account_supervisor == self.on_leave_employee).where(OperationsSite.status == "Active").run()
-
 
 	def add_assigned_documents(self, reference_doctype, based_on, doclist, fieldname=None, reference_docname=None):
 		self.append("assigned_documents", {
