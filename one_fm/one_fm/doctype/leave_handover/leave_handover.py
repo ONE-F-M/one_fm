@@ -5,14 +5,12 @@ import frappe
 from frappe.model.document import Document
 from frappe import _
 from collections import Counter
+from frappe.utils import today
 
 class LeaveHandover(Document):
 	def validate(self):
 		if not self.handover_items:
 			frappe.throw(_("No responsibilities found for {0}").format(self.employee_name))
-
-	def before_save(self):
-		self.status = "Pending"
 
 	def on_submit(self):
 		no_reliever_rows = []
@@ -37,13 +35,23 @@ class LeaveHandover(Document):
 				title=_("Not Accepted")
 			)
 
-		self.handover()
-		self.assign_role_on_handover()
+		self.db_set("status", "Submitted")
 
-	def handover(self):
-		if self.employee_user_id != frappe.session.user:
-			frappe.throw(_("You are not authorized to submit this Leave Handover."))
+		if self.leave_start_date == today():
+			self.action_handover(revert=False)
 
+	def action_handover(self, revert=False):
+		if revert and self.employee_user_id != frappe.session.user:
+			frappe.throw(_("You are not authorized to revert this Leave Handover."))
+		self.update_doc_assignment(revert=revert)
+		if not revert:
+			self.assign_role_on_handover()
+		else:
+			self.revert_roles_assignment()
+		status = "Reverted" if revert else "Transferred"
+		self.db_set("status", status)
+
+	def update_doc_assignment(self, revert=False):
 		for item in self.handover_items:
 			field_to_update = {
 				"Project": "account_manager",
@@ -53,7 +61,8 @@ class LeaveHandover(Document):
 			}.get(item.reference_doctype)
 
 			if field_to_update:
-				values_to_update = {field_to_update: item.reliever}
+				employee = item.reliever if not revert else self.employee
+				values_to_update = {field_to_update: employee}
 				name_field_to_update = {
 					"Project": "manager_name",
 					"Operations Site": "account_supervisor_name",
@@ -61,10 +70,10 @@ class LeaveHandover(Document):
 				}.get(item.reference_doctype)
 
 				if name_field_to_update:
-					values_to_update[name_field_to_update] = item.reliever_name
+					values_to_update[name_field_to_update] = item.reliever_name if not revert else self.employee_name
 				frappe.db.set_value(item.reference_doctype, item.reference_docname, values_to_update)
-
-		self.db_set("status", "Transferred")
+				if revert:
+					frappe.db.set_value("Handover Item", item.name, "status", "Reverted")
 
 	def assign_role_on_handover(self):
 		for item in self.handover_items:
@@ -77,7 +86,7 @@ class LeaveHandover(Document):
 
 			# Define the roles based on the reference doctype
 			doctype_to_check = item.reference_doctype
-			if doctype_to_check not in ["Project","Operations Site","Process Task","Employee"]:
+			if doctype_to_check not in ["Project", "Operations Site", "Process Task", "Employee"]:
 				continue
 
 			roles_to_assign = get_user_roles_for_doctype(reliever_user_id, doctype_to_check)
@@ -105,37 +114,7 @@ class LeaveHandover(Document):
 					", ".join(newly_assigned_roles)
 				)
 
-	@frappe.whitelist()
-	def revert_handover(self):
-		if self.employee_user_id != frappe.session.user:
-			frappe.throw(_("You are not authorized to revert this Leave Handover."))
-
-		for item in self.handover_items:
-			field_to_update = {
-				"Project": "account_manager",
-				"Operations Site": "account_supervisor",
-				"Process Task": "employee",
-				"Employee": "reports_to",
-			}.get(item.reference_doctype)
-
-			if field_to_update:
-				values_to_update = {field_to_update: self.employee}
-				name_field_to_update = {
-					"Project": "manager_name",
-					"Operations Site": "account_supervisor_name",
-					"Process Task": "employee_name",
-				}.get(item.reference_doctype)
-
-				if name_field_to_update:
-					values_to_update[name_field_to_update] = self.employee_name
-
-				frappe.db.set_value(item.reference_doctype, item.reference_docname, values_to_update)
-				frappe.db.set_value("Handover Item", item.name, "status", "Reverted")
-
-		self.revert_roles()
-		self.db_set("status", "Reverted")
-
-	def revert_roles(self):
+	def revert_roles_assignment(self):
 		for item in self.handover_items:
 			if not item.reliever:
 				continue
@@ -250,3 +229,20 @@ def get_handover_data(leave_application):
 		"resumption_date": leave_application_doc.resumption_date,
 		"handover_items": handover_items,
 	}
+
+@frappe.whitelist()
+def reliever_assignment_on_leave_start(date=None):
+	if not date:
+		date = today()
+	leave_handovers = frappe.get_all(
+		"Leave Handover",
+		filters={
+			"leave_start_date": ["<=", date],
+			"resumption_date": [">", date],
+			"status": "Submitted"
+		},
+		fields=["name", "employee"]
+	)
+	for leave_handover in leave_handovers:
+		handover = frappe.get_doc("Leave Handover", leave_handover.name)
+		handover.action_handover()

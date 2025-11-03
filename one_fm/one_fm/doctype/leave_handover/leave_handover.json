@@ -48,22 +48,25 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "leave_application.from_date",
    "fieldname": "leave_start_date",
    "fieldtype": "Date",
    "label": "Leave Start Date",
    "read_only": 1
   },
   {
+   "fetch_from": "leave_application.resumption_date",
    "fieldname": "resumption_date",
    "fieldtype": "Date",
    "label": "Resumption Date",
    "read_only": 1
   },
   {
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Pending\nTransferred\nReverted",
+   "options": "Draft\nSubmitted\nTransferred\nReverted",
    "read_only": 1
   },
   {
@@ -99,7 +102,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-10-28 12:42:27.876029",
+ "modified": "2025-11-03 13:40:35.348488",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Leave Handover",

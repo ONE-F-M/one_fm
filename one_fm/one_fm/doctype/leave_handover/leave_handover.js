@@ -9,7 +9,10 @@ frappe.ui.form.on("Leave Handover", {
 					__("You are about to replace the reliever with the Leave Applicant in each of the documents referenced in the table. Do you want to proceed?"),
 					() => {
 						frappe.call({
-							method: "revert_handover",
+							method: "action_handover",
+							args: {
+								revert: true
+							},
 							doc: frm.doc,
 							callback: function(r) {
 								if (!r.exc) {
