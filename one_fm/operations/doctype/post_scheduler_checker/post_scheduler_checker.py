@@ -81,7 +81,7 @@ def get_post_scheduler_items(contract, project):
 				# Get two periods: current & next
 				periods = []
 
-				if item.rate_type_off == 'Days Off' and item.days_off_category == 'Weekly':
+				if item.off_type == 'Days Off' and item.days_off_category == 'Weekly':
 					# Weekly: current week and next week
 					curr_week = get_week_start_end(str(current_date))
 					next_week = get_week_start_end(str(add_days(current_date, 7)))
@@ -113,7 +113,7 @@ def get_post_scheduler_items(contract, project):
 
 					expected = date_diff(last_day, first_day) + 1
 
-					if item.rate_type_off == 'Days Off':
+					if item.off_type == 'Days Off':
 						expected -= item.no_of_days_off
 
 					post_schedules = get_post_schedules(
@@ -137,7 +137,7 @@ def get_post_scheduler_items(contract, project):
 							'from_date': first_day,
 							'to_date': last_day,
 							'rate_type': item.rate_type,
-							'rate_type_off': item.rate_type_off,
+							'off_type': item.off_type,
 							'no_of_days_off': item.no_of_days_off,
 							'days_off_category': item.days_off_category,
 							'comment': item_message + post_message

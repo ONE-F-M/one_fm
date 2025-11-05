@@ -6,17 +6,11 @@
   "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table cellpadding=\"0\" cellspacing=\"0\" border=\"1\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            </tbody></table><p></p>",
   "is_assignment_rule_with_workflow": 1,
   "assign_condition": "workflow_state == 'Pending Approval'",
-  "unassign_condition": "",
-  "close_condition": "workflow_state == 'Approved'",
+  "unassign_condition": "workflow_state in ('Approved', 'Draft')",
+  "close_condition": "",
   "rule": "Round Robin",
   "field": "requested_by",
   "doctype": "Assignment Rule",
-  "users": [
-    {
-      "doctype": "Assignment Rule User",
-      "user": "s.rafeeq@one-fm.com"
-    }
-  ],
   "assignment_days": [
     {
       "day": "Monday",
@@ -45,6 +39,12 @@
     {
       "day": "Sunday",
       "doctype": "Assignment Rule Day"
+    }
+  ],
+  "users": [
+    {
+      "user": "s.rafeeq@one-fm.com",
+      "doctype": "Assignment Rule User"
     }
   ]
 }

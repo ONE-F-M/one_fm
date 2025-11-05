@@ -12,11 +12,18 @@ class DefaultShiftChecker(Document):
 	def on_submit(self):
 		self.update_employee_shift_details()
 
+	def before_submit(self):
+		if self.status != "Completed":
+			frappe.throw(_("Please ensure that the status is set to Completed"))
+
 	def update_employee_shift_details(self):
 		"""
 			Updates the employee's shift or reliever status based on the action type.
 		"""
 		employee = frappe.get_doc("Employee", self.employee)
+
+		if self.action_type == "Update Employee's Roster":
+			return # No action needed for roster update
 
 		field_updates = {
 			"Shift Allocation Update": {
@@ -42,8 +49,6 @@ class DefaultShiftChecker(Document):
 		if self.action_type in field_updates:
 			employee.update(field_updates[self.action_type])
 			employee.save()
-
-		self.db_set("status", "Completed")
 
 
 def create_default_shift_checker():
@@ -153,8 +158,12 @@ def create_checker(start_date, end_date, is_day_off_reliever=False, is_weekend_r
 
 			if is_day_off_reliever:
 				doc.is_day_off_reliever = 1
-			if is_weekend_reliever:
+				doc.comment = f"Day Off Reliever has been assigned to the same shift for up to {threshold} time(s). Either allocate the Employee to the Shift and unmark as Day Off Reliever or reduce his/her schedule to the shift to less than {threshold} time(s)."
+			elif is_weekend_reliever:
 				doc.is_weekend_reliever = 1
+				doc.comment = f"Weekend Reliever has been assigned to the same shift for up to {threshold} time(s). Either allocate the Employee to the Shift and unmark as Weekend Reliever or reduce his/her schedule to the shift to less than {threshold} time(s)."
+			else:
+				doc.comment = f"Employee is not set as a Reliever and has been Rostered in other shifts for at least {threshold} time(s). Either reduce the allocation in each of the Shifts below the {threshold} or set the Employee as a reliever."
 
 			# Determine shift condition
 			shift_condition = (EmployeeSchedule.shift == employee.default_shift) if is_reliever else (EmployeeSchedule.shift != employee.default_shift)

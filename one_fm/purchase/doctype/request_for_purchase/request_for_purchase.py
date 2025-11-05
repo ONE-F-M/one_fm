@@ -12,7 +12,6 @@ from one_fm.processor import sendemail
 from frappe.utils.user import get_users_with_role
 from frappe.permissions import has_permission
 from one_fm.api.doc_events import get_employee_user_id
-from frappe.desk.form.assign_to import add as add_assignment, DuplicateToDoError
 from one_fm.utils import get_users_with_role_permitted_to_doctype
 
 class RequestforPurchase(Document):
@@ -22,7 +21,6 @@ class RequestforPurchase(Document):
 			self.set_onload('exists_qfs', True)
 
 	def on_submit(self):
-		self.assign_purchase_officer()
 		self._update_linked_rfm_quantities()
 		update_rfp_status(self.name)
   
@@ -41,24 +39,6 @@ class RequestforPurchase(Document):
   
 	def on_cancel(self):
 		self._update_linked_rfm_quantities(delete_event=True)
-
-	def assign_purchase_officer(self):
-		purchase_officers = get_users_with_role_permitted_to_doctype('Purchase Officer', self.doctype)
-		if purchase_officers:
-			requested_items = '<br>'.join([i.item_name for i in self.items])
-			add_assignment({
-				'doctype': self.doctype,
-				'name': self.name,
-				'assign_to': purchase_officers,
-				'description':
-				_(
-					f"""
-						Please Note that a Request for Purchase {self.name} has been submitted.<br>
-						Requested Items: {requested_items} <br>
-						Please review and take necessary actions
-					"""
-				)
-			})
 
 	def validate_items_to_order(self):
 		if not self.items_to_order:

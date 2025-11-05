@@ -13,13 +13,6 @@ import calendar
 from datetime import datetime, timedelta
 from copy import copy
 from pathlib import Path
-# from hrms.payroll.doctype.payroll_entry.payroll_entry import (
-# 	get_filter_condition, get_joining_relieving_condition, remove_payrolled_employees, get_salary_structure
-# )
-from one_fm.one_fm.doctype.hr_and_payroll_additional_settings.hr_and_payroll_additional_settings import (
-	get_projects_not_configured_in_payroll_cycle_but_linked_in_employee,
-	get_projects_configured_in_payroll_cycle
-)
 from itertools import groupby
 from operator import itemgetter
 from one_fm.processor import sendemail
@@ -58,12 +51,12 @@ def fill_employee_details(self):
 			projects = [{'project': ''}]
 
 		# Get projects not configured in payroll cycle but linked in employee
-		default_projects = get_projects_not_configured_in_payroll_cycle_but_linked_in_employee(', '.join(['"{}"'.format(project['project']) for project in projects]))
+		default_projects = []
 		if default_projects:
 			project_list = ', '.join(['"{}"'.format(project.project) for project in default_projects])
 
 		# Find projects configured in default payroll cycle
-		configured_projects = get_projects_configured_in_payroll_cycle(payroll_start_day)
+		configured_projects = []
 		if configured_projects:
 			if project_list:
 				project_list += ', '+configured_projects
@@ -71,7 +64,7 @@ def fill_employee_details(self):
 				project_list = configured_projects
 	else:
 		# Find projects configured in payroll start day
-		project_list = get_projects_configured_in_payroll_cycle(payroll_start_day)
+		project_list = []
 
 	employees = get_emp_list(self, project_list)
 

@@ -1,0 +1,151 @@
+{
+  "workflow_name": "Employee Uniform",
+  "document_type": "Employee Uniform",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "transitions": [
+    {
+      "state": "To be Issued",
+      "action": "Submit",
+      "next_state": "Issued",
+      "allowed": "Warehouse Supervisor",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "condition": "doc.type == \"Issue\"",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Issued",
+      "action": "Submit",
+      "next_state": "Submitted",
+      "allowed": "Warehouse Supervisor",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "condition": "doc.type == \"Issue\"",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Submitted",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Warehouse Supervisor",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "condition": "doc.type == \"Issue\"",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Submit",
+      "next_state": "Submitted",
+      "allowed": "Warehouse Supervisor",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "condition": "doc.type == \"Issue\"",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Draft",
+      "action": "Submit",
+      "next_state": "Returned",
+      "allowed": "Warehouse Supervisor",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "condition": "doc.type == \"Return\"",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Returned",
+      "action": "Cancel",
+      "next_state": "Cancelled",
+      "allowed": "Warehouse Supervisor",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "condition": "doc.type == \"Return\"",
+      "doctype": "Workflow Transition"
+    }
+  ],
+  "states": [
+    {
+      "state": "Draft",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Warehouse Supervisor",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "To be Issued",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Warehouse Supervisor",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Issued",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Warehouse Supervisor",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submitted",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Warehouse Supervisor",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Cancelled",
+      "doc_status": "2",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Warehouse Supervisor",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Returned",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Warehouse Supervisor",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    }
+  ]
+}

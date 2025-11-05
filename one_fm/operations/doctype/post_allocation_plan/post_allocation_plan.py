@@ -15,8 +15,64 @@ class PostAllocationPlan(Document):
 
 @frappe.whitelist()
 def filter_employees(doctype, txt, searchfield, start, page_len, filters):
-    employees = frappe.get_all("Employee Schedule", {'date': filters.get("date"), 'shift': filters.get("operations_shift"), 'employee_availability': 'Working'}, ["employee", "employee_name"])
-    return [[i.employee,i.employee_name] for i in employees]
+    """Link field query for employees working on a given date & shift.
+    Returns rows: [employee, employee_name, employee_id]
+    Applies search text across employee (name), employee_name, employee_id.
+    Ignores pagination args if not provided by caller (fallback to defaults).
+    """
+    date = (filters or {}).get("date")
+    shift = (filters or {}).get("operations_shift")
+    if not date or not shift:
+        return []
+
+    # Prepare search pattern
+    txt = txt or ""
+    like = f"%{txt}%"
+
+    # Allow dynamic searchfield prioritization (optional)
+    prioritized_clause = ""
+    allowed_sf = {"name", "employee_name", "employee_id"}
+    # Map allowed search fields to their corresponding column names
+    allowed_columns = {
+        "name": "e.name",
+        "employee_name": "e.employee_name",
+        "employee_id": "e.employee_id"
+    }
+    if searchfield in allowed_sf and txt:
+        # Use the mapped column name, not user input directly
+        column = allowed_columns[searchfield]
+        prioritized_clause = f"({column} LIKE %(like)s) OR "
+
+    # Build WHERE clause based on whether txt is empty
+    base_where = """
+        es.date = %(date)s
+        AND es.shift = %(shift)s
+        AND es.employee_availability = 'Working'
+    """
+    like_clause = ""
+    params = {
+        "date": date,
+        "shift": shift,
+        "page_len": page_len or 20,
+        "start": start or 0,
+    }
+    if txt:
+        like_clause = f"AND ( {prioritized_clause} e.employee_id LIKE %(like)s OR e.employee_name LIKE %(like)s OR es.employee LIKE %(like)s )"
+        params["like"] = like
+
+    query = f"""
+        SELECT es.employee, e.employee_name, e.employee_id
+        FROM `tabEmployee Schedule` es
+        INNER JOIN `tabEmployee` e ON e.name = es.employee
+        WHERE
+            {base_where}
+            {like_clause}
+        LIMIT %(page_len)s OFFSET %(start)s
+    """
+    return frappe.db.sql(
+        query,
+        params,
+    )
     
 
 @frappe.whitelist()

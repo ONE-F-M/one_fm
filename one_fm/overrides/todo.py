@@ -313,16 +313,19 @@ def sync_my_google_tasks_with_todos():
 
 
 @frappe.whitelist()
-def sync_google_tasks_for_users(user_emails=[]):
+def sync_google_tasks_for_users(user_emails=[], timedelta_kwargs=None):
     all_google_tasks = []
 
-      # Iterate through user emails having google account and fetch each user's tasks
+    # Iterate through user emails having google account and fetch each user's tasks
     for user_email in user_emails:
         try:
             service = get_google_task_service(user_email)
 
-            five_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=5)
-            updated_min = five_minutes_ago.isoformat()
+            if timedelta_kwargs is None:
+                timedelta_kwargs = {"minutes": 5}
+
+            time_ago = datetime.now(timezone.utc) - timedelta(**timedelta_kwargs)
+            updated_min = time_ago.isoformat()
 
             results = service.tasks().list(tasklist="@default", showHidden=True, showDeleted=True, updatedMin=updated_min).execute()
             user_tasks = results.get("items", [])

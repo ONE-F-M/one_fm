@@ -3,6 +3,7 @@
  "align_labels_right": 1,
  "creation": "2024-01-29 08:48:06.441673",
  "custom_format": 0,
+ "default": 1,
  "default_print_language": "en",
  "disabled": 0,
  "doc_type": "Purchase Order",

@@ -1,0 +1,180 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:LH-{employee}-{###}",
+ "creation": "2025-10-20 18:38:27.555256",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_user_id",
+  "employee_name",
+  "leave_application",
+  "column_break_duyc",
+  "leave_start_date",
+  "resumption_date",
+  "status",
+  "section_break_owqe",
+  "handover_items",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "leave_application",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Leave Application",
+   "options": "Leave Application",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_duyc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "leave_start_date",
+   "fieldtype": "Date",
+   "label": "Leave Start Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "resumption_date",
+   "fieldtype": "Date",
+   "label": "Resumption Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nTransferred\nReverted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_owqe",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "handover_items",
+   "fieldtype": "Table",
+   "label": "Handover Items",
+   "options": "Handover Item"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Leave Handover",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fieldname": "employee_user_id",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Employee User ID",
+   "options": "User"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-10-28 12:42:27.876029",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Leave Handover",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Head Office Employee",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Light Blue",
+   "title": "Pending"
+  },
+  {
+   "color": "Orange",
+   "title": "Transferred"
+  },
+  {
+   "color": "Green",
+   "title": "Reverted"
+  }
+ ]
+}

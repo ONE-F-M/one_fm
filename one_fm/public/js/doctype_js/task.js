@@ -21,6 +21,13 @@ function set_perms(frm){
         if(!res.exc){
             let roles = res[0];
             let is_project_manager = res[1];
+            
+            // Lock entire form.
+            if (!roles.includes("Projects Manager") && !roles.includes("Projects User") && !is_project_manager && frm.doc.owner !== frappe.session.user) {
+                Object.keys(frm.fields_dict || {}).forEach(f => frm.set_df_property(f, "read_only", 1));
+                return;
+            }
+
             // if project is linked and session user is project manager, then Projects Manager perms apply otherwise Projects User perms apply.
             // if there is no project, then only the doc.owner can change the task status and priority.
             if (roles.includes("Projects User") && !roles.includes("Projects Manager") && !is_project_manager && (project || (frm.doc.owner != frappe.session.user))){

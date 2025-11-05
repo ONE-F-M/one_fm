@@ -202,7 +202,7 @@ def check_roster_day_off():
 		today = getdate()
 
 		Employee = frappe.qb.DocType("Employee")
-		employees = frappe.db.sql(frappe.qb.from_(Employee).select("*").where((Employee.status=="Active") & (Employee.shift_working == 1) & ((Employee.relieving_date.isnull()) | (Employee.relieving_date > today))), as_dict=1)
+		employees = frappe.db.sql(frappe.qb.from_(Employee).select("*").where((Employee.status.isin(["Active", "Vacation"])) & (Employee.shift_working == 1) & ((Employee.relieving_date.isnull()) | (Employee.relieving_date > today))), as_dict=1)
 
 		leave_dates_by_employee = get_leave_dates_by_employee()
 

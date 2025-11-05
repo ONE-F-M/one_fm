@@ -2,8 +2,41 @@ frappe.ui.form.on("HD Ticket", {
   refresh: function (frm) {
     add_dev_ticket_button(frm);
     add_github_issue_button(frm);
+    add_pathfinder_log_button(frm);
   },
 });
+
+const add_pathfinder_log_button = (frm) => {
+  if (
+    frm.doc.ticket_type === "Feature Request" &&
+    frappe.user.has_role("Business Analyst")
+  ) {
+    frm.add_custom_button(
+      "Pathfinder Log",
+      () => {
+        frappe.call({
+          method: "one_fm.overrides.hd_ticket.create_pathfinder_log",
+          args: {
+            hd_ticket_name: frm.doc.name,
+          },
+          callback: function (r) {
+            if (r.message) {
+              frappe.msgprint({
+                message: __(
+                  "Pathfinder Log <a href='/app/pathfinder-log/{0}'>{0}</a> created"
+                , [r.message]),
+                title: __("Pathfinder Log Created"),
+                indicator: "green",
+              });
+              frm.reload_doc();
+            }
+          },
+        });
+      },
+      "Create"
+    );
+  }
+};
 
 const add_github_issue_button = (frm) => {
   if (frm.doc.ticket_type == "Bug") {

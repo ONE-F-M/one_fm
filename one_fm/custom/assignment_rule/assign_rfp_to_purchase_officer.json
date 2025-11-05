@@ -1,12 +1,13 @@
 {
   "name": "Assign RFP to Purchase Officer",
   "document_type": "Request for Purchase",
-  "priority": 1,
+  "priority": 0,
   "disabled": 0,
   "description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table cellpadding=\"0\" cellspacing=\"0\" border=\"1\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Company</td>\n                <td style=\"padding: 10px;\">{{company}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Status</td>\n                <td style=\"padding: 10px;\">{{status}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Date</td>\n                <td style=\"padding: 10px;\">{{transaction_date}}</td>\n            </tr>\n            \n            <tr>\n                <td style=\"padding: 10px;\">Employee</td>\n                <td style=\"padding: 10px;\">{{employee}}</td>\n            </tr>\n            </tbody></table><p></p>",
   "is_assignment_rule_with_workflow": 1,
   "assign_condition": "workflow_state == 'Submit to Purchase Officer'",
-  "close_condition": "workflow_state == 'Pending Approval'",
+  "unassign_condition": "workflow_state == 'Pending Approval'",
+  "close_condition": "",
   "rule": "Round Robin",
   "field": "requested_by",
   "doctype": "Assignment Rule",
@@ -17,12 +18,33 @@
     }
   ],
   "assignment_days": [
-    { "name": "oi4j3v8umq", "day": "Monday", "doctype": "Assignment Rule Day" },
-    { "name": "oi4fvtt5mr", "day": "Tuesday", "doctype": "Assignment Rule Day" },
-    { "name": "oi4fg8vomj", "day": "Wednesday", "doctype": "Assignment Rule Day" },
-    { "name": "oi477j2uab", "day": "Thursday", "doctype": "Assignment Rule Day" },
-    { "name": "oi4i48dvtu", "day": "Friday", "doctype": "Assignment Rule Day" },
-    { "name": "oi408aasdk", "day": "Saturday", "doctype": "Assignment Rule Day" },
-    { "name": "oi4jj0ii23", "day": "Sunday", "doctype": "Assignment Rule Day" }
+    {
+      "day": "Monday",
+      "doctype": "Assignment Rule Day"
+    },
+    {
+      "day": "Tuesday",
+      "doctype": "Assignment Rule Day"
+    },
+    {
+      "day": "Wednesday",
+      "doctype": "Assignment Rule Day"
+    },
+    {
+      "day": "Thursday",
+      "doctype": "Assignment Rule Day"
+    },
+    {
+      "day": "Friday",
+      "doctype": "Assignment Rule Day"
+    },
+    {
+      "day": "Saturday",
+      "doctype": "Assignment Rule Day"
+    },
+    {
+      "day": "Sunday",
+      "doctype": "Assignment Rule Day"
+    }
   ]
 }

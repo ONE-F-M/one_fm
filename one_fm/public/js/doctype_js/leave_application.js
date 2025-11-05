@@ -108,6 +108,39 @@ frappe.ui.form.on("Leave Application", {
         }
         updateCustomIsPaidVisibility(frm)
         manage_leave_extension(frm)
+        // Leave Handover Creation - Pused to after leave handover management process complition
+		// if (frm.doc.status == 'Approved') {
+		// 	frm.add_custom_button(__('Leave Handover'), function() {
+		// 		frappe.call({
+		// 			method: 'one_fm.one_fm.doctype.leave_handover.leave_handover.get_handover_data',
+		// 			args: {
+		// 				leave_application: frm.doc.name
+		// 			},
+		// 			callback: function(r) {
+		// 				if (r.message) {
+		// 					frappe.model.with_doctype('Leave Handover', function() {
+		// 						var doc = frappe.model.get_new_doc('Leave Handover');
+		// 						doc.employee = r.message.employee;
+		// 						doc.employee_name = r.message.employee_name;
+		// 						doc.leave_application = r.message.leave_application;
+		// 						doc.leave_start_date = r.message.leave_start_date;
+		// 						doc.resumption_date = r.message.resumption_date;
+		// 						if (r.message.handover_items) {
+		// 							r.message.handover_items.forEach(item => {
+		// 								var child = frappe.model.add_child(doc, 'Handover Item', 'handover_items');
+		// 								child.reference_doctype = item.reference_doctype;
+		// 								child.reference_docname = item.reference_docname;
+		// 							});
+		// 						}
+		// 						frappe.set_route('Form', 'Leave Handover', doc.name);
+		// 					});
+		// 				}
+		// 			},
+		// 			freeze: true,
+		// 			freeze_message: __("Creating Leave Handover...")
+		// 		});
+		// 	}, __('Create'));
+		// }
     },
     onload: function(frm) {
         $.each(frm.fields_dict, function(fieldname, field) {

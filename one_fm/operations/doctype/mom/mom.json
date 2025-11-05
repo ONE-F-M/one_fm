@@ -33,6 +33,7 @@
   "section_break_18",
   "last_attendees",
   "last_action",
+  "last_general_attendees",
   "pending_actions_section",
   "review_pending_actions",
   "pending_actions",
@@ -228,11 +229,19 @@
    "fieldtype": "Table",
    "label": "General Attendance",
    "options": "General Attendance"
+  },
+  {
+   "fieldname": "last_general_attendees",
+   "fieldtype": "Table",
+   "label": "Last General Attendees",
+   "options": "General Attendance",
+   "read_only": 1
   }
  ],
+ "grid_page_length": 50,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-14 08:43:03.908498",
+ "modified": "2025-10-14 23:22:21.563044",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "MOM",
@@ -256,6 +265,7 @@
   }
  ],
  "quick_entry": 1,
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

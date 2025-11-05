@@ -197,11 +197,11 @@ class RelieverAssignment(Document):
 				& (Project.status == "Open")
 			)
 		).run(as_dict=True)
-		
-		if len(assigned_projects) > 0:			
+
+		if len(assigned_projects) > 0:
 			# Log data for reversal
 			self.add_assigned_documents("Project", "Docfield", assigned_projects, fieldname="account_manager")
-		
+
 			frappe.qb.update(Project).set(
 				Project.account_manager, self.reliever).set(
 				Project.manager_name, self.reliever_name).set(
@@ -220,10 +220,10 @@ class RelieverAssignment(Document):
 			)
 		).run(as_dict=True)
 
-		if len(assigned_sites) > 0:	
+		if len(assigned_sites) > 0:
 			# Log data for reversal
 			self.add_assigned_documents("Operations Site", "Docfield", assigned_sites, fieldname="account_supervisor")
-			
+
 			frappe.qb.update(OperationsSite).set(
 				OperationsSite.account_supervisor, self.reliever).set(
 				OperationsSite.account_supervisor_name, self.reliever_name).set(

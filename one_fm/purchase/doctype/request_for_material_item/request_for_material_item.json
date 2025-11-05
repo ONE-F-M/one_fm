@@ -10,6 +10,7 @@
   "show_stock_level",
   "requested_item_name",
   "is_service_request",
+  "is_uniform_request",
   "item_name",
   "item_group",
   "brand",
@@ -19,6 +20,8 @@
   "reserve_qty",
   "from_date",
   "to_date",
+  "is_fixed_asset",
+  "maintain_stock",
   "section_break_4",
   "requested_description",
   "description",
@@ -32,6 +35,10 @@
   "conversion_factor",
   "stock_uom",
   "quantity_to_transfer",
+  "employee",
+  "employee_name",
+  "employee_id",
+  "civil_id",
   "col_break2",
   "t_warehouse",
   "schedule_date",
@@ -56,7 +63,8 @@
   "ordered_qty",
   "received_qty",
   "reject_item",
-  "linked_request_for_material"
+  "linked_request_for_material",
+  "linked_employee_uniform"
  ],
  "fields": [
   {
@@ -437,6 +445,24 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fetch_from": "item_code.is_fixed_asset",
+   "fieldname": "is_fixed_asset",
+   "fieldtype": "Check",
+   "label": "Is Fixed Asset",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fetch_from": "item_code.is_stock_item",
+   "fieldname": "maintain_stock",
+   "fieldtype": "Check",
+   "label": "Maintain Stock",
+   "read_only": 1
+  },
+  {
    "fieldname": "create_reservation",
    "fieldtype": "Button",
    "label": "Create Reservation",
@@ -495,12 +521,58 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Linked Request for Material",
-   "options": "Name"
+   "options": "Name",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "If checked, this item line is for a uniform request.",
+   "fieldname": "is_uniform_request",
+   "fieldtype": "Check",
+   "label": "Is Uniform Request"
+  },
+  {
+   "description": "This is auto-filled when Employee Uniform is generated. ",
+   "fieldname": "linked_employee_uniform",
+   "fieldtype": "Link",
+   "label": "Linked Employee Uniform",
+   "options": "Employee Uniform",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.is_uniform_request",
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Employee",
+   "mandatory_depends_on": "eval:doc.is_uniform_request",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.one_fm_civil_id",
+   "fieldname": "civil_id",
+   "fieldtype": "Data",
+   "label": "Civil ID",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2025-10-06 14:27:44.932306",
+ "modified": "2025-11-03 17:06:17.867342",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Material Item",

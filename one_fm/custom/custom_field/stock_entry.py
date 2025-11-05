@@ -26,6 +26,22 @@ def get_stock_entry_custom_fields():
                 "fieldtype": "Attach",
                 "label": "Inspection Form Attachment",
                 "insert_after": "delivery_note_attachment"
-            }
+            },
+            {
+                "fieldname": "linked_employee_uniform",
+                "fieldtype": "Link",
+                "label": "Linked Employee Uniform",
+                "insert_after": "posting_time",
+                "options": "Employee Uniform",
+                "read_only": 1
+            },
+            {
+                "fieldname": "linked_request_for_material",
+                "fieldtype": "Link",
+                "label": "Linked Request for Material",
+                "insert_after": "linked_employee_uniform",
+                "options": "Request for Material",
+                "read_only": 1
+            },
         ]
     }

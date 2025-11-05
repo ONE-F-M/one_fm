@@ -121,9 +121,23 @@ class MOM(Document):
 		if not is_attended:
 			frappe.throw(_("At least one POC or General Attendance must be marked present."))
    
+@frappe.whitelist()
+def review_last_internal_mom(mom,project):
+	last_mom = frappe.db.get_list('MOM', filters={ 
+		'name': ['!=', mom ],
+		'project': project
+	
+	},
+	order_by='date desc',
+	page_length=1
+
+	)
+	if len(last_mom)>0:
+		return frappe.get_doc('MOM',last_mom[0].name)
+
 
 @frappe.whitelist()
-def review_last_mom(mom,site):
+def review_last_external_mom(mom,site):
 	last_mom = frappe.db.get_list('MOM', filters={ 
 		'name': ['!=', mom ],
 		'site': site

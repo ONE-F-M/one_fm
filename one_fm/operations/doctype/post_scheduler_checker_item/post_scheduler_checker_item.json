@@ -8,7 +8,7 @@
  "field_order": [
   "item",
   "rate_type",
-  "rate_type_off",
+  "off_type",
   "days_off_category",
   "column_break_4",
   "from_date",
@@ -63,9 +63,9 @@
    "read_only": 1
   },
   {
-   "fieldname": "rate_type_off",
+   "fieldname": "off_type",
    "fieldtype": "Data",
-   "label": "Rate Type Off",
+   "label": "Off Type",
    "read_only": 1
   },
   {

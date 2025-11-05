@@ -12,6 +12,7 @@
   "project_manager_name",
   "project_manager_user",
   "column_break_svlo",
+  "repeat_count",
   "check_date",
   "status",
   "client",
@@ -97,12 +98,19 @@
    "label": "Client",
    "options": "Customer",
    "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "repeat_count",
+   "fieldtype": "Int",
+   "label": "Repeat Count",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-19 00:12:19.680725",
+ "modified": "2025-10-21 09:19:45.965769",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Compliance Checker",

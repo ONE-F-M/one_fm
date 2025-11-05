@@ -25,7 +25,8 @@ class LeaveExtensionRequest(Document):
 			if unpaid_leave_days > 0:
 				self.create_leave_application(from_date=self.unpaid_leave_start_date, to_date=self.unpaid_leave_end_date, is_paid=False)
 		except:
-			frappe.log_error(frappe.get_traceback(), "Error while creating leave application from leave extension request")
+			frappe.log_error(message=frappe.get_traceback(), title="Error while creating leave application from leave extension request")
+			raise
 
 	def validate_resumption_date(self):
 		if getdate(self.new_resumption_date) <= getdate(self.expected_resumption_date):

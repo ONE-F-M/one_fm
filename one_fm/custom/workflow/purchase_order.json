@@ -1,150 +1,184 @@
 {
-    "name": "Purchase Order",
-    "workflow_name": "Purchase Order",
-    "document_type": "Purchase Order",
-    "is_active": 1,
-    "override_status": 0,
-    "send_email_alert": 0,
-    "workflow_state_field": "workflow_state",
-    "doctype": "Workflow",
-    "transitions": [
-        {
-            "state": "Draft",
-            "action": "Submit for Approval",
-            "next_state": "Pending Purchase Manager",
-            "allowed": "Purchase Officer",
-            "allow_self_approval": 1,
-            "skip_multiple_action": 0,
-            "skip_creation_of_workflow_action": 0,
-            "custom_confirm_transition": 0,
-            "require_digital_signature": 0,
-            "doctype": "Workflow Transition"
-        },
-        {
-            "state": "Pending Purchase Manager",
-            "action": "Approve",
-            "next_state": "Pending Finance Approver",
-            "allowed": "Procurement Manager",
-            "allow_self_approval": 1,
-            "skip_multiple_action": 0,
-            "skip_creation_of_workflow_action": 0,
-            "custom_confirm_transition": 0,
-            "require_digital_signature": 0,
-            "doctype": "Workflow Transition"
-        },
-        {
-            "state": "Pending Purchase Manager",
-            "action": "Return",
-            "next_state": "Draft",
-            "allowed": "Procurement Manager",
-            "allow_self_approval": 1,
-            "skip_multiple_action": 0,
-            "skip_creation_of_workflow_action": 0,
-            "custom_confirm_transition": 0,
-            "require_digital_signature": 0,
-            "doctype": "Workflow Transition"
-        },
-        {
-            "state": "Pending Purchase Manager",
-            "action": "Reject",
-            "next_state": "Hold",
-            "allowed": "Procurement Manager",
-            "allow_self_approval": 1,
-            "skip_multiple_action": 0,
-            "skip_creation_of_workflow_action": 0,
-            "custom_confirm_transition": 0,
-            "require_digital_signature": 0,
-            "doctype": "Workflow Transition"
-        },
-        {
-            "state": "Pending Finance Approver",
-            "action": "Approve",
-            "next_state": "Approved",
-            "allowed": "Finance PO Approver",
-            "allow_self_approval": 1,
-            "skip_multiple_action": 0,
-            "skip_creation_of_workflow_action": 0,
-            "custom_confirm_transition": 0,
-            "require_digital_signature": 0,
-            "doctype": "Workflow Transition"
-        },
-        {
-            "state": "Pending Finance Approver",
-            "action": "Return",
-            "next_state": "Pending Purchase Manager",
-            "allowed": "Finance PO Approver",
-            "allow_self_approval": 1,
-            "skip_multiple_action": 0,
-            "skip_creation_of_workflow_action": 0,
-            "custom_confirm_transition": 0,
-            "require_digital_signature": 0,
-            "doctype": "Workflow Transition"
-        },
-        {
-            "state": "Pending Finance Approver",
-            "action": "Reject",
-            "next_state": "Hold",
-            "allowed": "Finance PO Approver",
-            "allow_self_approval": 1,
-            "skip_multiple_action": 0,
-            "skip_creation_of_workflow_action": 0,
-            "custom_confirm_transition": 0,
-            "require_digital_signature": 0,
-            "doctype": "Workflow Transition"
-        },
-        {
-            "state": "Hold",
-            "action": "Return To Draft",
-            "next_state": "Draft",
-            "allowed": "Procurement Manager",
-            "allow_self_approval": 1,
-            "skip_multiple_action": 0,
-            "skip_creation_of_workflow_action": 0,
-            "custom_confirm_transition": 0,
-            "require_digital_signature": 0,
-            "doctype": "Workflow Transition"
-        }
-    ],
-    "states": [
-        {
-            "state": "Draft",
-            "doc_status": "0",
-            "is_optional_state": 0,
-            "avoid_status_override": 0,
-            "allow_edit": "Purchase Officer",
-            "doctype": "Workflow Document State"
-        },
-        {
-            "state": "Pending Purchase Manager",
-            "doc_status": "0",
-            "is_optional_state": 0,
-            "avoid_status_override": 0,
-            "allow_edit": "Procurement Manager",
-            "doctype": "Workflow Document State"
-        },
-        {
-            "state": "Pending Finance Approver",
-            "doc_status": "0",
-            "is_optional_state": 0,
-            "avoid_status_override": 0,
-            "allow_edit": "Procurement Manager",
-            "doctype": "Workflow Document State"
-        },
-        {
-            "state": "Hold",
-            "doc_status": "0",
-            "is_optional_state": 0,
-            "avoid_status_override": 0,
-            "allow_edit": "Procurement Manager",
-            "doctype": "Workflow Document State"
-        },
-        {
-            "state": "Approved",
-            "doc_status": "1",
-            "is_optional_state": 0,
-            "avoid_status_override": 1,
-            "allow_edit": "Procurement Manager",
-            "doctype": "Workflow Document State"
-        }
-    ]
+  "workflow_name": "Purchase Order",
+  "document_type": "Purchase Order",
+  "is_active": 1,
+  "override_status": 0,
+  "send_email_alert": 0,
+  "workflow_state_field": "workflow_state",
+  "doctype": "Workflow",
+  "transitions": [
+    {
+      "state": "Draft",
+      "action": "Submit for Approval",
+      "next_state": "Pending Purchase Manager",
+      "allowed": "Purchase Officer",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Purchase Manager",
+      "action": "Approve",
+      "next_state": "Pending Finance Approver",
+      "allowed": "Purchase Manager",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Purchase Manager",
+      "action": "Return",
+      "next_state": "Draft",
+      "allowed": "Purchase Manager",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Purchase Manager",
+      "action": "Reject",
+      "next_state": "Hold",
+      "allowed": "Purchase Manager",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Finance Approver",
+      "action": "Return",
+      "next_state": "Pending Purchase Manager",
+      "allowed": "Purchase Manager",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Finance Approver",
+      "action": "Approve",
+      "next_state": "Approved",
+      "allowed": "Finance PO Approver",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Finance Approver",
+      "action": "Return",
+      "next_state": "Pending Purchase Manager",
+      "allowed": "Finance PO Approver",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Finance Approver",
+      "action": "Reject",
+      "next_state": "Hold",
+      "allowed": "Finance PO Approver",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Hold",
+      "action": "Return To Draft",
+      "next_state": "Draft",
+      "allowed": "Purchase Manager",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
+      "doctype": "Workflow Transition"
+    }
+  ],
+  "states": [
+    {
+      "state": "Draft",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Purchase Officer",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Pending Purchase Manager",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Purchase Manager",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Pending Finance Approver",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Purchase Manager",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Pending Finance Approver",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Finance PO Approver",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Hold",
+      "doc_status": "0",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Purchase Manager",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Approved",
+      "doc_status": "1",
+      "is_optional_state": 0,
+      "avoid_status_override": 1,
+      "allow_edit": "Purchase Manager",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    }
+  ]
 }

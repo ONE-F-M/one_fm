@@ -155,10 +155,8 @@ one_fm.patches.v15_0.update_expired_leave_policy_assignments
 one_fm.patches.v15_0.add_contract_compliance_checker_assignment_rule
 one_fm.patches.v15_0.create_loan_management_process
 one_fm.patches.v15_0.add_loan_disbursement_assignment_rule
-one_fm.patches.v15_0.add_update_custom_field #2025-09-23
 one_fm.patches.v15_0.approve_pending_attendance_check
 one_fm.patches.v15_0.create_loan_process_task
-one_fm.patches.v15_0.add_update_custom_field #2025-02-05
 one_fm.patches.v15_0.create_preparation_process_tasks
 one_fm.patches.v15_0.update_grd_role_name
 one_fm.patches.v15_0.delete_issue_log_custom_field_error_log
@@ -169,21 +167,24 @@ one_fm.patches.v15_0.create_residency_process_task
 one_fm.patches.v15_0.update_residency_assignment_rule
 one_fm.patches.v15_0.update_stock_entry_index
 one_fm.patches.v15_0.add_hd_agent_custom_field_github_api_token
-one_fm.patches.v15_0.add_update_custom_field #2025-10-07
 one_fm.patches.v15_0.update_rfm_from_pr
-one_fm.patches.v15_0.update_rfm_workflow
+one_fm.patches.v15_0.update_rfm_workflow #2025-10-15
 one_fm.patches.v15_0.add_update_workflow #2025-11-05
 one_fm.patches.v15_0.update_hd_ticket_bug_buster_assignment
-one_fm.patches.v15_0.add_update_custom_field #2025-10-14
 one_fm.patches.v15_0.update_timesheet_records
+one_fm.patches.v15_0.update_purchase_order_workflow
 one_fm.patches.v15_0.update_item_workflow_state
 one_fm.patches.v15_0.update_project_details
+one_fm.patches.v15_0.add_employee_uniform_workflow
+one_fm.patches.v15_0.add_update_custom_field #2025-10-17
 one_fm.patches.v15_0.update_rfp_records
+one_fm.patches.v15_0.update_purchase_order_property_setter
+one_fm.patches.v15_0.sync_old_google_tasks
 
 [post_model_sync]
-one_fm.patches.v15_0.add_assignment_rule_assign_rfp_to_purchase_officer
-one_fm.patches.v15_0.add_assignment_rule_assign_to_purchase_manager_for_approval
-one_fm.patches.v15_0.add_assignment_rule_assign_rfp_owner_on_rfp_return_to_draft
+one_fm.patches.v15_0.add_assignment_rule_assign_rfp_to_purchase_officer #re-run
+one_fm.patches.v15_0.add_assignment_rule_assign_to_purchase_manager_for_approval #re-run
+one_fm.patches.v15_0.add_assignment_rule_assign_rfp_owner_on_rfp_return_to_draft #re-run
 one_fm.patches.v15_0.create_attendance_check_process_task #re run again
 one_fm.patches.v15_0.add_task_assignment_rule
 one_fm.patches.v15_0.attendance_check_create

@@ -10,7 +10,7 @@ def get_purchase_order_properties():
         {
             "property": "default_print_format",
             "property_type": "Data",
-            "value": "Purchase Order Format",
+            "value": "Purchase Order",
             "doc_type": "Purchase Order",
             "doctype_or_field": "DocType"
         },

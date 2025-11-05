@@ -41,8 +41,9 @@ def get_purchase_order_custom_fields():
                 "label": "Place of Delivery",
                 "fieldtype": "Small Text",
                 "insert_after": "shipping_address",
-                "hidden": 1,
-                "translatable": 1
+                "translatable": 1,
+                "allow_on_submit": 1,
+                "hidden": 0
             },
             {
                 "fieldname": "custom_purchase_order_approver_name",
@@ -224,6 +225,21 @@ def get_purchase_order_custom_fields():
                 "insert_after": "company",
                 "options": "Item Request",
                 "hidden": 1
-            }
+            },
+            {
+                "fieldname": "custom_contact_person",
+                "label": "Contact Person",
+                "fieldtype": "Data",
+                "insert_after": "shipping_address_display",
+                "allow_on_submit": 1
+            },
+            {
+                "fieldname": "custom_contact_number",
+                "label": "Contact Number",
+                "fieldtype": "Data",
+                "insert_after": "custom_contact_person",
+                "allow_on_submit": 1,
+            },
+            
         ]
     }

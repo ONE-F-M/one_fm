@@ -863,7 +863,7 @@ career_history = Class.extend({
       const learningJourneyItem = `
         <div class="learning-journey-item mb-3" data-item-index="${currentItemCount + 1}">
           <div class="mb-3">
-            <label class="form-label">Activity type</label>
+            <label class="form-label">Select the Learning Activity you have been engaged in</label>
             <select class="form-control activity_type_select_${company_no}_${currentItemCount + 1}">
               <option value="" selected disabled>None</option>
               ${activityTypes.map(type => `<option value="${type.name}">${type.name}</option>`).join('')}

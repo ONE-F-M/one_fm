@@ -15,7 +15,30 @@ frappe.ui.form.on('Request for Purchase', {
 			if (frm.fields_dict["items_to_order"] && frm.fields_dict["items_to_order"].grid) {
 				frm.fields_dict["items_to_order"].grid.update_docfield_property("qty", "read_only", 1);
 			}
+
 		}
+
+		if (frm.doc.status && frm.doc.docstatus === 1) {
+				const status_colors = {
+					"Draft": "grey",
+					"Draft Request": "grey",
+					"Accepted": "blue",
+					"Approved": "blue",
+					"To Order": "orange",
+					"Partially Ordered": "yellow",
+					"Ordered": "green",
+					"Rejected": "red",
+					"Submitted": "blue",
+					"Cancelled": "red"
+				};
+				
+				const color = status_colors[frm.doc.status] || "grey";
+				
+				frm.page.clear_indicator();
+				
+				frm.page.set_indicator(frm.doc.status, color);
+			}
+
 	},
 	make_custom_buttons: function(frm) {
 		if (frm.doc.docstatus == 1 && frappe.user.has_role('Purchase Officer')){

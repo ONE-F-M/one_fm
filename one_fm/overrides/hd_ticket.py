@@ -529,3 +529,27 @@ def get_github_api_token(user=None):
         frappe.msgprint("No GitHub API token found for user, please set it in your HD Agent profile. Follow <a href='https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token'>this link</a> for more details")
         return None
     return token
+
+@frappe.whitelist()
+def create_pathfinder_log(hd_ticket_name):
+    if "Business Analyst" not in frappe.get_roles():
+        frappe.throw(_("You are not authorized to create a Pathfinder Log."), title=_("Permission Denied"))
+
+    existing_log = frappe.db.exists("Pathfinder Log", {"hd_ticket": hd_ticket_name})
+    if existing_log:
+        log_url = frappe.utils.get_url_to_form("Pathfinder Log", existing_log)
+        frappe.throw(
+            _("Pathfinder Log already exists for this HD Ticket: <a href='{0}'>{1}</a>").format(
+                log_url, existing_log
+            ),
+            title=_("Exists")
+        )
+
+    hd_ticket = frappe.get_doc("HD Ticket", hd_ticket_name)
+    pathfinder_log = frappe.new_doc("Pathfinder Log")
+    pathfinder_log.process_name = hd_ticket.custom_process
+    pathfinder_log.goal_description = hd_ticket.description
+    pathfinder_log.hd_ticket = hd_ticket.name
+    pathfinder_log.flags.ignore_mandatory = True
+    pathfinder_log.save(ignore_permissions=True)
+    return pathfinder_log.name

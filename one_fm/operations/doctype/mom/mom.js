@@ -43,7 +43,7 @@ frappe.ui.form.on('MOM', {
 		if(frm.doc.review_last_mom == 1){
 			if (frm.doc.project_type == "External"){
 				frappe.call({
-					method: 'one_fm.operations.doctype.mom.mom.review_last_mom',
+					method: 'one_fm.operations.doctype.mom.mom.review_last_external_mom',
 					args: {
 						"mom":frm.doc.name,
 						"site":frm.doc.site
@@ -56,10 +56,26 @@ frappe.ui.form.on('MOM', {
 					}
 				})
 			}
+			}
+			if (frm.doc.project_type == "Internal") {
+				frappe.call({
+					method: 'one_fm.operations.doctype.mom.mom.review_last_internal_mom',
+					args: {
+						"mom":frm.doc.name,
+						"project":frm.doc.project
+					},
+					callback: function(r) {
+						frm.set_value("last_mom_name", r.message.name);
+						set_last_general_attendees_table(frm, r.message.general_attendance);
+						set_last_action_table(frm, r.message.action);
 
-		}else {
-			frm.clear_table("last_action")
-		}
+					}
+				})
+				
+			}
+			else{
+				frm.clear_table("last_action")
+			}
 	},
 	review_pending_actions: function(frm) {
 		if(frm.doc.review_pending_actions == 1){
@@ -228,10 +244,24 @@ function set_last_attendees_table(frm, poc_list){
 	frm.refresh_fields("last_attendees");
 }
 
-function set_last_action_table(frm, action_list){
+function set_last_general_attendees_table(frm, poc_list){
+	frm.doc.last_general_attendees = []
+	poc_list.forEach((mom_poc) => {
+			let child_row = frappe.model.add_child(frm.doc, "last_general_attendees");
+			child_row.attended_meeting = mom_poc.attended_meeting;
+			child_row.attendee_name = mom_poc.attendee_name;
 
+		
+	});
+	frm.refresh_fields("last_general_attendees");
+}
+
+function set_last_action_table(frm, action_list){
+	frm.doc.last_action = []
 	action_list.forEach((mom_action) => {
 		let child_row = frappe.model.add_child(frm.doc, "last_action");
+		child_row.user = mom_action.user;
+		child_row.due_date = mom_action.due_date;
 		child_row.subject = mom_action.subject;
 		child_row.priority = mom_action.priority;
 		child_row.description = mom_action.description;

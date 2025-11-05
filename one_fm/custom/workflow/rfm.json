@@ -102,8 +102,8 @@
     {
       "state": "Approved",
       "doc_status": "1",
-      "update_field": "",
-      "update_value": "",
+      "update_field": "status",
+      "update_value": "Approved",
       "is_optional_state": 0,
       "avoid_status_override": 1,
       "allow_edit": "Employee",

@@ -52,7 +52,7 @@ from one_fm.permissions import get_custom_user_permissions
 import frappe.workflow.doctype.workflow_action.workflow_action as wa
 from one_fm.overrides.workflow import confirm_action as custom_confirm_action
 
-__version__ = '15.4.6'
+__version__ = '15.4.7'
 
 wa.confirm_action = custom_confirm_action
 user_permission.get_user_permissions = get_custom_user_permissions

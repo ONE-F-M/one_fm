@@ -27,6 +27,7 @@ class EmployeeUniform(Document):
 		if self.type == "Issue":
 			self.db_set('status', 'Issued')
 			self.db_set('issued_on', today())
+
 		elif self.type == "Return":
 			self.db_set('status', 'Returned')
 			self.db_set('returned_on', today())
@@ -36,6 +37,7 @@ class EmployeeUniform(Document):
 					frappe.db.set_value('Employee Uniform Item', item.issued_item_link, 'returned', returned+item.quantity)
 		self.onboard_employee_update()
 		make_stock_entry(self)
+        
 
 	def on_cancel(self):
 		# self.onboard_employee_update(True)
@@ -70,7 +72,7 @@ class EmployeeUniform(Document):
 				oe.save(ignore_permissions=True)
 
 	def validate_handover_form(self):
-		if not self.handover_form:
+		if not self.handover_form and not self.linked_rfm :
 			frappe.throw(_("Attach Signed copy of Uniform Handover Form to Submit.!"))
 
 	def validate(self):
@@ -184,45 +186,61 @@ class EmployeeUniform(Document):
 					uniform_issue_ret.issued_item_link = uniform.issued_item_link
 					uniform_issue_ret.issued_on = uniform.issued_on
 
+
 def make_stock_entry(employee_uniform):
-	source_name = employee_uniform.name
-	target_doc=None
-	def update_item(obj, target, source_parent):
-		if employee_uniform.type == "Issue":
-			target.s_warehouse = employee_uniform.warehouse
-		else:
-			target.t_warehouse = employee_uniform.warehouse
+    source_name = employee_uniform.name
+    target_doc = None
+    
+    def update_item(obj, target, source_parent):
+        if employee_uniform.type == "Issue":
+            target.s_warehouse = employee_uniform.warehouse
+        else:
+            target.t_warehouse = employee_uniform.warehouse
+        
+        if hasattr(obj, 'name'):
+            target.linked_employee_uniform_item = obj.name
+        
+        if hasattr(obj, 'linked_rfm_reference') and obj.linked_rfm_reference:
+            target.linked_rfm_reference = obj.linked_rfm_reference
 
-	def set_missing_values(source, target):
-		target.purpose = 'Material Receipt'
-		if employee_uniform.type == "Issue":
-			target.purpose = 'Material Issue'
-		target.run_method("calculate_rate_and_amount")
-		target.set_stock_entry_type()
-		target.set_job_card_data()
+    def set_missing_values(source, target):
+        target.purpose = 'Material Receipt'
+        if employee_uniform.type == "Issue":
+            target.purpose = 'Material Issue'
+        
+        target.linked_employee_uniform = employee_uniform.name
+        
+        if hasattr(employee_uniform, 'linked_rfm') and employee_uniform.linked_rfm:
+            target.linked_request_for_material = employee_uniform.linked_rfm
+        
+        target.run_method("calculate_rate_and_amount")
+        target.set_stock_entry_type()
+        target.set_job_card_data()
 
-	doclist = get_mapped_doc("Employee Uniform", source_name, {
-		"Employee Uniform": {
-			"doctype": "Stock Entry",
-			"validation": {
-				"docstatus": ["=", 1]
-			}
-		},
-		"Employee Uniform Item": {
-			"doctype": "Stock Entry Detail",
-			"field_map": {
-				"item": "item_code",
-				"quantity": "qty",
-				"allow_zero_valuation_rate": "allow_zero_valuation_rate"
-			},
-			"postprocess": update_item,
-			"condition": lambda doc: doc.item
-		}
-	}, target_doc, set_missing_values)
+    doclist = get_mapped_doc("Employee Uniform", source_name, {
+        "Employee Uniform": {
+            "doctype": "Stock Entry",
+            "validation": {
+                "docstatus": ["=", 1]
+            }
+        },
+        "Employee Uniform Item": {
+            "doctype": "Stock Entry Detail",
+            "field_map": {
+                "item": "item_code",
+                "quantity": "qty",
+                "allow_zero_valuation_rate": "allow_zero_valuation_rate"
+            },
+            "postprocess": update_item,
+            "condition": lambda doc: doc.item
+        }
+    }, target_doc, set_missing_values)
 
-	doclist.save(ignore_permissions=True)
-	doclist.submit()
-	frappe.db.set_value("Employee Uniform", employee_uniform.name, "stock_entry", doclist.name)
+    doclist.save(ignore_permissions=True)
+    doclist.submit()
+    frappe.db.set_value("Employee Uniform", employee_uniform.name, "stock_entry", doclist.name)
+    
+    return doclist.name
 
 def get_issued_item_quantity(item, employee):
 	issued_qty = 0

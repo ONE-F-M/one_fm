@@ -7,12 +7,13 @@
  "field_order": [
   "section_break_wx0s",
   "process_name",
-  "goal_description",
   "hd_ticket",
+  "status",
   "column_break_ojgt",
   "initiated_on",
   "type",
-  "status",
+  "section_break_pzty",
+  "goal_description",
   "stakeholders_section",
   "process_owner_user",
   "process_owner_name",
@@ -41,7 +42,7 @@
   {
    "description": "A brief description of what this update is meant to achieve.",
    "fieldname": "goal_description",
-   "fieldtype": "Small Text",
+   "fieldtype": "Text Editor",
    "in_list_view": 1,
    "label": "Goal Description",
    "reqd": 1
@@ -133,12 +134,16 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "section_break_pzty",
+   "fieldtype": "Section Break"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-14 10:26:35.486082",
+ "modified": "2025-10-21 08:45:01.190813",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Pathfinder Log",

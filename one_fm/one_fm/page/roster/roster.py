@@ -1903,9 +1903,9 @@ def get_leave_dates_by_employee_during_date_range(start_date, end_date):
         WHERE leave_type IN ('Annual Leave', 'Leave Without Pay')
 		AND status = 'Approved'
         AND (
-            (from_date BETWEEN %(start_date)s AND %(end_date)s)
-            OR
-            (to_date BETWEEN %(start_date)s AND %(end_date)s)
+            (from_date <= %(end_date)s)
+            AND
+            (to_date >= %(start_date)s)
         )
     """, { "start_date": start_date, "end_date": end_date }, as_dict=True)
 

@@ -462,7 +462,7 @@
   {
    "fieldname": "contract_termination_decision_period",
    "fieldtype": "Int",
-   "label": "Contract Termination Decision Period (Months)"
+   "label": "Contract Termination Decision Period (# of Months from Contract End Date)"
   },
   {
    "fieldname": "contract_termination_decision_period_date",
@@ -473,7 +473,7 @@
   {
    "fieldname": "contract_end_internal_notification",
    "fieldtype": "Int",
-   "label": "Contract End Internal Notification (Months)"
+   "label": "Contract End Internal Notification (# of Months from Contract Termination Decision Period Date)"
   },
   {
    "fieldname": "contract_end_internal_notification_date",
@@ -483,7 +483,7 @@
   }
  ],
  "links": [],
- "modified": "2023-05-28 09:50:41.365007",
+ "modified": "2025-10-20 22:49:46.777613",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",
@@ -504,6 +504,7 @@
   }
  ],
  "quick_entry": 1,
+ "row_format": "Dynamic",
  "show_name_in_global_search": 1,
  "sort_field": "modified",
  "sort_order": "DESC",

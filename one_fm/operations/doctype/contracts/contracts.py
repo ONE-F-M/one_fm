@@ -781,7 +781,7 @@ def get_item_monthly_amount(item, contract, first_day_of_month, last_day_of_mont
     days_in_month = int(last_day_of_month.split("-")[2])
 
     days_off = 0
-    if item.rate_type_off == 'Days Off' and item.no_of_days_off:
+    if item.off_type == 'Days Off' and item.no_of_days_off:
         days_off = 4 * item.no_of_days_off if item.days_off_category == 'Weekly' else item.no_of_days_off
 
     working_days_in_month = days_in_month - days_off

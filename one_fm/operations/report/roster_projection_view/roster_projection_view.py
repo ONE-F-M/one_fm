@@ -26,7 +26,7 @@ def get_data(filters):
 	contracts_detail = frappe.db.sql(
 		"""
 			SELECT
-				con.client, con.project, con_item.item_code, con_item.count, con_item.rate, con_item.rate_type, con_item.rate_type_off,
+				con.client, con.project, con_item.item_code, con_item.count, con_item.rate, con_item.rate_type, con_item.off_type,
 				con_item.days_off_category, con_item.no_of_days_off, con_item.count*con_item.rate as total_rate
 			FROM
 				`tabContracts` con
@@ -61,10 +61,10 @@ def get_data(filters):
 			row.ea_qty = 0 # employee attendance qty
 			working_days = 0 # total number of working days for each item
 			working_days_type = ''
-			if row.rate_type_off=='Full Month': # working days is number of days in the current month
+			if row.off_type=='Full Month': # working days is number of days in the current month
 				working_days = month_end.day
 				working_days_type = 'Monthly'
-			elif row.rate_type_off=='Days Off':
+			elif row.off_type=='Days Off':
 				if row.days_off_category=='Monthly':
 					working_days_type = 'Monthly'
 					working_days = month_end.day - row.no_of_days_off
