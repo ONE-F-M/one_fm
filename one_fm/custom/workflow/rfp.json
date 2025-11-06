@@ -79,6 +79,18 @@
       "doctype": "Workflow Document State"
     },
     {
+      "state": "Approved",
+      "doc_status": "1",
+      "update_field": "status",
+      "update_value": "Approved",
+      "is_optional_state": 0,
+      "avoid_status_override": 1,
+      "allow_edit": "Purchase User",
+      "send_email": 1,
+      "workflow_builder_id": "5",
+      "doctype": "Workflow Document State"
+    },
+    {
       "state": "Rejected",
       "doc_status": "0",
       "update_field": "status",

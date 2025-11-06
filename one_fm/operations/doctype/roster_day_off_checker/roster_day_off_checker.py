@@ -32,24 +32,35 @@ class RosterDayOffChecker(Document):
 	pass
 
 def get_leave_dates_by_employee():
+    """
+    Fetch and organize approved leave dates by employee for all leave applications
+    that overlap the period between the first day of the current month and
+    the last day of the next month.
+
+    The function includes any leave that:
+      - Starts before but ends within or after the period, or
+      - Starts within but ends after the period.
+    
+    Returns:
+        dict: A dictionary where each key is an employee ID and the value is
+        a sorted list of `date` objects representing all individual leave dates
+        that overlap with the defined two-month period.
+    """
     today = getdate(nowdate())
     
     # First of current month
     current_month_start = get_first_day(today)
 
-    # last day of next month
+    # Last day of next month
     next_month_end = get_last_day(add_months(today, 1))
 
     results = frappe.db.sql("""
         SELECT employee, from_date, to_date
         FROM `tabLeave Application`
         WHERE leave_type IN ('Annual Leave', 'Leave Without Pay')
-		AND status = 'Approved'
-        AND (
-            (from_date BETWEEN %(start_date)s AND %(end_date)s)
-            OR
-            (to_date BETWEEN %(start_date)s AND %(end_date)s)
-        )
+        AND status = 'Approved'
+        AND from_date <= %(end_date)s
+        AND to_date >= %(start_date)s
     """, { "start_date": current_month_start, "end_date": next_month_end }, as_dict=True)
 
     leave_days_by_employee = {}
@@ -60,7 +71,7 @@ def get_leave_dates_by_employee():
         to_date = getdate(row.to_date)
         
         days_count = date_diff(to_date, from_date) + 1  # inclusive
-        leave_days = [(add_days(from_date, i)) for i in range(days_count)]
+        leave_days = [add_days(from_date, i) for i in range(days_count)]
 
         if employee not in leave_days_by_employee:
             leave_days_by_employee[employee] = set()
@@ -72,6 +83,7 @@ def get_leave_dates_by_employee():
         leave_days_by_employee[emp] = sorted(list(leave_days_by_employee[emp]))
 
     return leave_days_by_employee
+
 
 def get_employee_absent_dates(employee, start_date, end_date):
     absent_dates = frappe.get_all(
