@@ -25,7 +25,7 @@ def execute():
         frappe.get_doc({
             "method": method,
             "document_type": document_type,
-            "description": "To  discover and suggest new threat monitoring keywords and sources.",
+            "description": "To discover and suggest new threat monitoring keywords and sources.",
             "doctype": "Method"
         }).insert(ignore_permissions=True)
 
