@@ -53,7 +53,7 @@ def execute():
             "cron_format": "0 9 * * *",
             "hours_per_frequency": 0.5,
             "coordination_needed": "No",
-            "start_date": "2025-10-25",
+            "start_date": "2025-11-6",
             "employee": "HR-EMP-02930",
             "employee_name": "Kartik Sharma",
             "employee_user": "k.sharma@one-fm.com",

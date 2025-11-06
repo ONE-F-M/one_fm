@@ -3,7 +3,7 @@ import os, io, base64, datetime, hashlib, frappe, json
 from frappe.utils import cstr
 import frappe.sessions
 
-# from mindee import ClientV2, InferenceParameters, PathInput
+from mindee import ClientV2, InferenceParameters, PathInput
 
 
 from dateutil.parser import parse
