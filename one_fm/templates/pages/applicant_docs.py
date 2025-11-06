@@ -5,6 +5,7 @@ import frappe.sessions
 
 from mindee import ClientV2, InferenceParameters, PathInput
 
+
 from dateutil.parser import parse
 from frappe import _
 from frappe.model.document import Document
