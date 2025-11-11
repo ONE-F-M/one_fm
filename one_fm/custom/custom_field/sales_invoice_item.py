@@ -128,7 +128,18 @@ def get_sales_invoice_item_custom_fields():
                 "fieldtype": "Check",
                 "insert_after": "rate_with_margin",
                 "label": "Refundable",
+            },
+            {
+                "fieldname": "custom_contract_item_category",
+                "fieldtype": "Link",
+                "options": "Item Group",
+                "insert_after": "customer_item_code",
+                "label": "Contract Item Category",
+                "allow_on_submit": 1,
+                "fetch_from": "item_code.subitem_group",
+                "fetch_if_empty": 1
             }
+
 
 
         ]

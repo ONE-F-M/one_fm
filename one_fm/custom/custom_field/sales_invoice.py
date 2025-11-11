@@ -122,6 +122,13 @@ def get_sales_invoice_custom_fields():
                 "read_only": 1,
                 "hidden": 1
             },
+            {
+                "fieldname": "custom_contract_item_categorywise_summary",
+                "fieldtype": "Table",
+                "insert_after": "section_break_40",
+                "label": "Contract Item Category-wise Summary",
+                "options": "Sales Invoice Contract Item Category Summary"
+            },
 
         ]
     }

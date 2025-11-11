@@ -225,6 +225,7 @@ def make_sales_invoice_from_purchase_invoice(source_names, target_doc=None):
                 si_item.custom_purchase_invoice_item = pi_item.name
                 si_item.custom_pi_currency = pi_doc.currency
                 si_item.custom_pi_exchange_rate = exchange_rate if currency_changed else 1.0
+                si_item.custom_contract_item_category = frappe.db.get_value("Item", pi_item.item_code, "subitem_group")
 
     
     target_doc.run_method("set_missing_values")

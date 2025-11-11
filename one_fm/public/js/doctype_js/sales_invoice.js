@@ -40,6 +40,7 @@ frappe.ui.form.on('Sales Invoice', {
         
     },
 	refresh(frm) {
+        toggle_items_add_row(frm);
         add_get_items_from_purchase_invoice(frm);
         show_currency_exchange_info(frm);
         if(frm.doc.customer){
@@ -55,6 +56,12 @@ frappe.ui.form.on('Sales Invoice', {
             
         }
 
+    },
+    onload: function(frm){
+        toggle_items_add_row(frm);
+    },
+    custom_contract_item_categorywise_summary_on_form_rendered: function(frm) {
+        toggle_items_add_row(frm);
     },
      customer: function(frm){
         if(frm.doc.project){
@@ -233,6 +240,21 @@ frappe.ui.form.on('Sales Invoice Item', {
         calculate_margin_for_item(frm, cdt, cdn);
     }
 });
+
+function toggle_items_add_row(frm) {
+    if (frm.doc.custom_contract_item_categorywise_summary && 
+        frm.doc.custom_contract_item_categorywise_summary.length > 0) {
+        frm.set_df_property('items', 'cannot_add_rows', 1);
+        frm.fields_dict['items'].grid.cannot_add_rows = true;
+        frm.fields_dict['items'].grid.read_only = true;
+        frm.refresh_field('items');
+    } else {
+        frm.set_df_property('items', 'cannot_add_rows', 0);
+        frm.fields_dict['items'].grid.cannot_add_rows = false;
+        frm.fields_dict['items'].grid.read_only = false;
+        frm.refresh_field('items');
+    }
+}
 
 var set_income_account_and_cost_center = function(frm){
     
