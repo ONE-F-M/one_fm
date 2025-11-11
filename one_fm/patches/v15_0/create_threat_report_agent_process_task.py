@@ -50,7 +50,7 @@ def execute():
             "task_type": task_type,
             "method": method,
             "frequency": "Cron",
-            "cron_format": "0 9 * * *",
+            "cron_format": "0 12 * * *",
             "hours_per_frequency": 0.5,
             "coordination_needed": "No",
             "start_date": "2025-11-11",
