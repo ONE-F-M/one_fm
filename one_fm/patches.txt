@@ -205,6 +205,7 @@ one_fm.patches.v15_0.add_assignment_rule_confirm_site_pickup_for_medical_appoint
 one_fm.patches.v15_0.add_assignment_rule_action_medical_appointment_pro # rerun
 one_fm.patches.v15_0.add_workflow_medical_appointment # rerun
 one_fm.patches.v15_0.create_medical_appointment_supervisor_notification
+one_fm.patches.v15_0.create_threat_report_agent_process_task
 
 [post_model_sync]
 one_fm.patches.v15_0.add_workflow_pathfinder_log #1
