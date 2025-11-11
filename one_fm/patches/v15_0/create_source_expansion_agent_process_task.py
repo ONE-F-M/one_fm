@@ -19,7 +19,7 @@ def execute():
             "doctype": "Task Type"
         }).insert(ignore_permissions=True)
 
-    method = "onefm_mcp.agents.agent_1_source_discovery.trigger_agent_1"
+    method = "onefm_mcp.agents.agent_1_source_discovery.run_agent_1"
     document_type = "Scheduled Job Log"
     if not frappe.db.exists("Method", method):
         frappe.get_doc({
