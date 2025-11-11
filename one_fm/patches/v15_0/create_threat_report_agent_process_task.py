@@ -53,7 +53,7 @@ def execute():
             "cron_format": "0 12 * * *",
             "hours_per_frequency": 0.5,
             "coordination_needed": "No",
-            "start_date": "2025-11-11",
+            "start_date": frappe.utils.today(),
             "employee": "HR-EMP-03122",
             "employee_name": "Mohammed Naser Alsubaie",
             "employee_user": "m.alsubaie@one-fm.com",
