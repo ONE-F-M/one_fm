@@ -303,7 +303,7 @@ def sync_my_google_tasks_with_todos():
         if not is_google_task_synchronization_enabled() or logged_in_user == "Administrator":
             return { "error": True, "message" : "You are not allowed to sync google tasks" }
 
-        frappe.enqueue(sync_google_tasks_for_users, user_emails=[logged_in_user], is_async=True)
+        frappe.enqueue(sync_google_tasks_for_users, user_emails=[logged_in_user], is_async=True, timeout=600)
 
         return { "error": False, "message" : "Your Google Tasks will be synced in the background." }
 
