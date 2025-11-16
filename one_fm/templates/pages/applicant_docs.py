@@ -3,7 +3,7 @@ import os, io, base64, datetime, hashlib, frappe, json
 from frappe.utils import cstr
 import frappe.sessions
 
-from mindee import ClientV2, InferenceParameters, PathInput
+# from mindee import ClientV2, InferenceParameters, PathInput
 
 
 from dateutil.parser import parse
@@ -267,42 +267,43 @@ def get_passport_text():
 def get_passport_data(image_path):
     try:
         # Init a new client
-        mindee_client = ClientV2(api_key=frappe.local.conf.mindee_passport_api)
-        passport_model_id = frappe.local.conf.passport_model_id
-        input_doc = PathInput(image_path)
-        passport_params = InferenceParameters(
-            # ID of the model, required.
-            model_id=passport_model_id,
-            # Options: set to `True` or `False` to override defaults
-            # Enhance extraction accuracy with Retrieval-Augmented Generation.
-            rag=None,
-            # Extract the full text content from the document as strings.
-            raw_text=None,
-            # Calculate bounding box polygons for all fields.
-            polygon=None,
-            # Boost the precision and accuracy of all extractions.
-            # Calculate confidence scores for all fields.
-            confidence=None,
-            )
-        passport_response = mindee_client.enqueue_and_get_inference(
-        input_doc,passport_params
-        )
-        passport_fields: dict = passport_response.inference.result.fields
-        # Print a brief summary of the parsed data
+        # mindee_client = ClientV2(api_key=frappe.local.conf.mindee_passport_api)
+        # passport_model_id = frappe.local.conf.passport_model_id
+        # input_doc = PathInput(image_path)
+        # passport_params = InferenceParameters(
+        #     # ID of the model, required.
+        #     model_id=passport_model_id,
+        #     # Options: set to `True` or `False` to override defaults
+        #     # Enhance extraction accuracy with Retrieval-Augmented Generation.
+        #     rag=None,
+        #     # Extract the full text content from the document as strings.
+        #     raw_text=None,
+        #     # Calculate bounding box polygons for all fields.
+        #     polygon=None,
+        #     # Boost the precision and accuracy of all extractions.
+        #     # Calculate confidence scores for all fields.
+        #     confidence=None,
+        #     )
+        # passport_response = mindee_client.enqueue_and_get_inference(
+        # input_doc,passport_params
+        # )
+        # passport_fields: dict = passport_response.inference.result.fields
+        # # Print a brief summary of the parsed data
         
-        result_dict = frappe._dict(dict(
-            birth_place=passport_fields.place_of_birth.value,
-            expiry_date=passport_fields.date_of_expiry.value,
-            given_names= passport_fields.given_names.value,
-            mrz1=passport_fields.mrz_line_1.value,
-            mrz2=passport_fields.mrz_line_2.value,
-            birth_date=passport_fields.date_of_birth.value,
-            country=passport_fields.issuing_country.value,
-            gender=passport_fields.gender.value,
-            id_number=passport_fields.passport_number.value,
-            issuance_date=passport_fields.date_of_issue.value,
-            surname=passport_fields.surnames.value
-        ))
+        # result_dict = frappe._dict(dict(
+        #     birth_place=passport_fields.place_of_birth.value,
+        #     expiry_date=passport_fields.date_of_expiry.value,
+        #     given_names= passport_fields.given_names.value,
+        #     mrz1=passport_fields.mrz_line_1.value,
+        #     mrz2=passport_fields.mrz_line_2.value,
+        #     birth_date=passport_fields.date_of_birth.value,
+        #     country=passport_fields.issuing_country.value,
+        #     gender=passport_fields.gender.value,
+        #     id_number=passport_fields.passport_number.value,
+        #     issuance_date=passport_fields.date_of_issue.value,
+        #     surname=passport_fields.surnames.value
+        # ))
+        pass
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Mindee")
         return frappe._dict({})
