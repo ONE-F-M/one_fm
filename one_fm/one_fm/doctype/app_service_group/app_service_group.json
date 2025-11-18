@@ -8,7 +8,8 @@
   "group_name",
   "icon",
   "column_break_vowc",
-  "status"
+  "status",
+  "jules_added"
  ],
  "fields": [
   {
@@ -34,6 +35,12 @@
    "fieldtype": "Select",
    "label": "Status",
    "options": "Active\nInactive"
+  },
+  {
+   "fieldname": "jules_added",
+   "fieldtype": "Select",
+   "label": "Jules Added",
+   "options": "Yes\nNo"
   }
  ],
  "links": [],
