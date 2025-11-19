@@ -38,9 +38,10 @@ def get_performance_profile_guid():
 def employee_validate_attendance_by_timesheet(doc, method):
 	if doc.attendance_by_timesheet:
 		doc.shift_working = False
-		doc.shift = ''
-		doc.default_shift = ''
-		doc.site = ''
+	if not doc.shift_working:
+		doc.shift = ""
+		doc.default_shift = ""
+		doc.site = ""
 
 @frappe.whitelist()
 def make_employee(source_name, target_doc=None):
