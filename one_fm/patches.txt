@@ -161,8 +161,6 @@ one_fm.patches.v15_0.create_preparation_process_tasks
 one_fm.patches.v15_0.update_grd_role_name
 one_fm.patches.v15_0.delete_issue_log_custom_field_error_log
 one_fm.patches.v15_0.create_hd_ticket_custom_field_error_log
-one_fm.patches.v15_0.create_rq_job_agent_process_task
-one_fm.patches.v15_0.create_scheduled_job_agent_process_task
 one_fm.patches.v15_0.create_residency_process_task
 one_fm.patches.v15_0.update_residency_assignment_rule
 one_fm.patches.v15_0.update_stock_entry_index
@@ -179,7 +177,6 @@ one_fm.patches.v15_0.add_employee_uniform_workflow
 one_fm.patches.v15_0.update_rfp_records
 one_fm.patches.v15_0.update_purchase_order_property_setter
 one_fm.patches.v15_0.add_assignment_rule_process_task_work_permit_completion_gr_operator
-one_fm.patches.v15_0.create_threat_collection_agent_process_task
 one_fm.patches.v15_0.rename_moi_residency_jawazath
 one_fm.patches.v15_0.sync_old_google_tasks
 one_fm.patches.v15_0.update_workflow_state_style
@@ -189,7 +186,6 @@ one_fm.patches.v15_0.update_attendance_status_options
 one_fm.patches.v15_0.set_po_item_margin_fields_readonly
 one_fm.patches.v15_0.update_fingerprint_appointment_workflow #rerun
 one_fm.patches.v15_0.add_leave_handover_process_task
-one_fm.patches.v15_0.create_source_expansion_agent_process_task
 one_fm.patches.v15_0.update_item_asset_naming_series
 one_fm.patches.v15_0.add_process_task_to_notify_supervisors_fingerprint_appointment
 one_fm.patches.v15_0.update_fingerprint_appointment_workflow #2025-11-06
@@ -199,7 +195,6 @@ one_fm.patches.v15_0.add_assignment_rule_confirm_site_pickup_for_medical_appoint
 one_fm.patches.v15_0.add_assignment_rule_action_medical_appointment_pro # rerun
 one_fm.patches.v15_0.add_workflow_medical_appointment # rerun
 one_fm.patches.v15_0.create_medical_appointment_supervisor_notification
-one_fm.patches.v15_0.create_threat_report_agent_process_task
 one_fm.patches.v15_0.add_update_custom_field #2025-11-10
 one_fm.patches.v15_0.update_asset_owner_options
 one_fm.patches.v15_0.update_fingerprint_appointment_workflow #2025-11-11
