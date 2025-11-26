@@ -1,0 +1,48 @@
+[project]
+name = "one_fm"
+authors = [
+    { name = "ONE FM", email = "develop@one-fm.com" }
+]
+description = "One Facility Management is a leader in the fields of commercial automation and integrated security management systems providing the latest in products and services in these fields"
+requires-python = ">=3.11"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    "bleach==6.0.0",
+    "bleach-allowlist==1.0.3",
+    "gspread",
+    "mindee==4.28.2",
+    "twilio==9.0.5",
+    "pandas==2.1.2",
+    "deep-translator==1.11.4",
+    "firebase-admin==6.5.0",
+    "google-cloud-core==2.3.3",
+    "google-cloud-firestore==2.13.0",
+    "google-auth==2.34.0",
+    "google-cloud-storage==2.11.0",
+    "google-cloud-vision==3.4.5",
+    "datefinder==0.7.3",
+    "html2text==2020.1.16",
+    "qrcode==7.4.2",
+    "paramiko==3.4.0",
+    "llama_index==0.10.45",
+    "openai==1.45.0"
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=15.50.4,<16.0.0"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+
+
+[project.urls]
+Homepage = "https://github.com/ONE-F-M/one-fm"
+Repository = "https://github.com/ONE-F-M/one-fm"
+"Bug Reports" = "https://github.com/ONE-F-M/one-fm/issues"
