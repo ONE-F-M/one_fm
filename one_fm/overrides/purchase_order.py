@@ -194,6 +194,11 @@ def filter_purchase_uoms(doctype, txt, searchfield, start, page_len, filters):
 
 class PurchaseOrderOverride(PurchaseOrder):  
 
+    def validate(self):
+        super(PurchaseOrderOverride, self).validate()
+        if self.request_for_material and not self.one_fm_request_for_purchase:
+            frappe.throw(_("Request for Purchase is required for this Purchase Order to be processed further"))
+
     def on_submit(self):
         self.update_purchased_quantities()
         self.update_ordered_and_pending_quantities()
