@@ -77,8 +77,9 @@ services:
           fi
         done;
         echo "sites/common_site_config.json found";
+        bench build;
         bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root --db-root-password=admin --install-app erpnext --install-app hrms --install-app telephony --install-app lending --install-app helpdesk --install-app one_fm --set-default frontend;
-        bench migrate
+        bench migrate;
   db:
     image: mariadb:10.6
     networks:
