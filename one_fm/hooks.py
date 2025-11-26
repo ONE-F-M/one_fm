@@ -897,6 +897,7 @@ after_migrate = [
 ]
 
 before_migrate = [
+    "one_fm.install.before_migrate.create_custom_fields",
     "one_fm.after_migrate.execute.before_migrate",
     "one_fm.after_migrate.execute.set_files_directories",
     "one_fm.after_migrate.execute.replace_job_opening"
@@ -911,3 +912,5 @@ app_startup = [
 ]
 # auth_hooks = "one_fm.session_hooks.auth_hooks"
 # on_login = "one_fm.session_hooks.on_login"
+
+required_apps = ["erpnext", "hrms", "lending", "helpdesk", "telephony"]
