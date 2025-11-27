@@ -95,31 +95,58 @@ class EventStaff(Document):
 	def create_employee_schedule(self):
 		start_date = getdate(self.start_date)
 		end_date = getdate(self.end_date)
-		number_of_days = date_diff(end_date, start_date) + 1  # Include end date
+		number_of_days = date_diff(end_date, start_date) + 1
+		
 		for i in range(number_of_days):
 			date = add_days(start_date, i)
 			start_end_datetime = self.get_event_start_end_date_time(date)
-			employee_schedule = frappe.get_doc(
+			
+			existing_schedule = frappe.db.exists(
+				"Employee Schedule",
 				{
-					"doctype": "Employee Schedule",
 					"employee": self.employee,
 					"date": date,
-					"shift": self.operations_shift,
-					"shift_type": self.shift_type,
-					"employee_availability": 'Working',
-					"roster_type": self.roster_type,
-					"site": self.site,
-					"project": self.project,
-					"reference_doctype": self.doctype,
-					"reference_docname": self.name,
-					"is_event_schedule": 1,
-					"event_staff": self.name,
-					"day_off_ot": self.day_off_ot,
-					"start_datetime": start_end_datetime.get("start_datetime"),
-					"end_datetime": start_end_datetime.get("end_datetime")
+					"roster_type": self.roster_type
 				}
 			)
-			employee_schedule.save(ignore_permissions=True)
+			
+			if existing_schedule:
+				employee_schedule = frappe.get_doc("Employee Schedule", existing_schedule)
+				employee_schedule.shift = self.operations_shift
+				employee_schedule.shift_type = self.shift_type
+				employee_schedule.employee_availability = 'Working'
+				employee_schedule.site = self.site
+				employee_schedule.project = self.project
+				employee_schedule.reference_doctype = self.doctype
+				employee_schedule.reference_docname = self.name
+				employee_schedule.is_event_schedule = 1
+				employee_schedule.event_staff = self.name
+				employee_schedule.day_off_ot = self.day_off_ot
+				employee_schedule.start_datetime = start_end_datetime.get("start_datetime")
+				employee_schedule.end_datetime = start_end_datetime.get("end_datetime")
+				employee_schedule.save(ignore_permissions=True)
+			else:
+				employee_schedule = frappe.get_doc(
+					{
+						"doctype": "Employee Schedule",
+						"employee": self.employee,
+						"date": date,
+						"shift": self.operations_shift,
+						"shift_type": self.shift_type,
+						"employee_availability": 'Working',
+						"roster_type": self.roster_type,
+						"site": self.site,
+						"project": self.project,
+						"reference_doctype": self.doctype,
+						"reference_docname": self.name,
+						"is_event_schedule": 1,
+						"event_staff": self.name,
+						"day_off_ot": self.day_off_ot,
+						"start_datetime": start_end_datetime.get("start_datetime"),
+						"end_datetime": start_end_datetime.get("end_datetime")
+					}
+				)
+				employee_schedule.insert(ignore_permissions=True)
 
 	def get_event_start_end_date_time(self, date=None):
 		start_time = frappe.utils.get_datetime(self.start_datetime).time()
