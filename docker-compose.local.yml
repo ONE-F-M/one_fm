@@ -10,10 +10,10 @@ services:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
     environment:
-      DB_HOST: ${REMOTE_DB_HOST}
-      DB_PORT: ${REMOTE_DB_PORT}
-      MYSQL_ROOT_PASSWORD: ${REMOTE_DB_ROOT_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${REMOTE_DB_ROOT_PASSWORD}
+      DB_HOST: db
+      DB_PORT: "3306"
+      MYSQL_ROOT_PASSWORD: admin
+      MARIADB_ROOT_PASSWORD: admin
 
   configurator:
     image: one-fm:latest
@@ -35,8 +35,8 @@ services:
         bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
         bench set-config -gp socketio_port $$SOCKETIO_PORT;
     environment:
-      DB_HOST: ${REMOTE_DB_HOST}
-      DB_PORT: "${REMOTE_DB_PORT}"
+      DB_HOST: db
+      DB_PORT: "3306"
       REDIS_CACHE: redis-cache:6379
       REDIS_QUEUE: redis-queue:6379
       SOCKETIO_PORT: "9000"
@@ -54,20 +54,12 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
-    environment:
-      DB_HOST: ${REMOTE_DB_HOST}
-      DB_PORT: ${REMOTE_DB_PORT}
-      ROOT_USERNAME: ${REMOTE_DB_ROOT_USERNAME}
-      MYSQL_ROOT_PASSWORD: ${REMOTE_DB_ROOT_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${REMOTE_DB_ROOT_PASSWORD}
-      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME}
     entrypoint:
       - bash
       - -c
     command:
       - >
-        echo $$DB_HOST;
-        wait-for-it -t 120 $$DB_HOST:$$DB_PORT;
+        wait-for-it -t 120 db:3306;
         wait-for-it -t 120 redis-cache:6379;
         wait-for-it -t 120 redis-queue:6379;
         export start=`date +%s`;
@@ -84,12 +76,31 @@ services:
         done;
         echo "sites/common_site_config.json found";
         bench build;
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$$MARIADB_ROOT_PASSWORD \
-          --db-root-username=$$ROOT_USERNAME --db-root-password=$$MARIADB_ROOT_PASSWORD --install-app erpnext \
-          --install-app hrms --install-app telephony --install-app lending --install-app helpdesk --install-app one_fm \
-          --set-default $$FRAPPE_SITE_NAME_HEADER;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root \
+          --db-root-password=admin --install-app erpnext --install-app hrms --install-app telephony \
+          --install-app lending --install-app helpdesk --install-app one_fm --set-default frontend;
         bench migrate;
-    
+  db:
+    image: mariadb:10.6
+    networks:
+      - frappe_network
+    healthcheck:
+      test: mysqladmin ping -h localhost --password=admin
+      interval: 1s
+      retries: 20
+    deploy:
+      restart_policy:
+        condition: on-failure
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed # Temporary fix for MariaDB 10.6
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MARIADB_ROOT_PASSWORD: admin
+    volumes:
+      - db-data:/var/lib/mysql
 
   frontend:
     image: one-fm:latest
@@ -104,7 +115,7 @@ services:
       - nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
-      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME}
+      FRAPPE_SITE_NAME_HEADER: frontend
       SOCKETIO: websocket:9000
       UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
       UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
@@ -205,6 +216,7 @@ services:
       - logs:/home/frappe/frappe-bench/logs
 
 volumes:
+  db-data:
   redis-queue-data:
   sites:
   logs:
