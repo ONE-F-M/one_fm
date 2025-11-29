@@ -93,7 +93,7 @@ This command will stop and remove containers but retain the remote database data
 | `docker-start.local.sh` | Build and start Docker Compose with a local database            |
 | `docker-destroy.sh`     | Stop and remove all local Docker containers and volumes         |
 | `docker-compose.yml`    | Docker Compose configuration for production and remote database |
-| `.env`                  | Environment variables for production Docker setup               |
+| `Environment`           | Environment variables for production Docker setup               |
 
 ---
 
