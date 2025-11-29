@@ -94,6 +94,7 @@ This command will stop and remove containers but retain the remote database data
 | `docker-destroy.sh`     | Stop and remove all local Docker containers and volumes         |
 | `docker-compose.yml`    | Docker Compose configuration for production and remote database |
 | `Environment`           | Environment variables for production Docker setup               |
+| `URL`                   | localhost:8080 or 0.0.0.0:8080            |
 
 ---
 

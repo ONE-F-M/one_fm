@@ -83,7 +83,6 @@ services:
           fi
         done;
         echo "sites/common_site_config.json found";
-        bench build;
 
         SITE_NAME="$${FRAPPE_SITE_NAME_HEADER}";
         echo "Checking if site '$${SITE_NAME}' exists...";
@@ -130,7 +129,7 @@ services:
       restart_policy:
         condition: on-failure
     command:
-      - nginx-entrypoint.sh
+      sh -c "bench build --production && nginx-entrypoint.sh"
     environment:
       BACKEND: backend:8000
       FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME}

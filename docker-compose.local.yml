@@ -15,6 +15,7 @@ services:
       MYSQL_ROOT_PASSWORD: admin
       MARIADB_ROOT_PASSWORD: admin
 
+
   configurator:
     image: one-fm:latest
     networks:
@@ -75,10 +76,39 @@ services:
           fi
         done;
         echo "sites/common_site_config.json found";
-        bench build;
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=admin --db-root-username=root \
-          --db-root-password=admin --install-app erpnext --install-app hrms --install-app telephony \
-          --install-app lending --install-app helpdesk --install-app one_fm --set-default frontend;
+
+        SITE_NAME=frontend;
+        echo "Checking if site '$${SITE_NAME}' exists...";
+
+        if bench --site "$${SITE_NAME}" ls >/dev/null 2>&1; then
+          echo "Site exists: $${SITE_NAME}";
+          echo "Installing apps on existing site...";
+
+          bench --site "$${SITE_NAME}" install-app erpnext;
+          bench --site "$${SITE_NAME}" install-app hrms;
+          bench --site "$${SITE_NAME}" install-app telephony;
+          bench --site "$${SITE_NAME}" install-app lending;
+          bench --site "$${SITE_NAME}" install-app helpdesk;
+          bench --site "$${SITE_NAME}" install-app one_fm;
+
+        else
+          echo "Site does NOT exist. Creating new site: $${SITE_NAME}";
+
+          bench new-site $${SITE_NAME} \
+            --mariadb-user-host-login-scope='%' \
+            --admin-password=admin \
+            --db-root-username=root \
+            --db-root-password=admin \
+            --db-name=$${SITE_NAME} \
+            --install-app erpnext \
+            --install-app hrms \
+            --install-app telephony \
+            --install-app lending \
+            --install-app helpdesk \
+            --install-app one_fm \
+            --set-default;
+        fi;
+
         bench migrate;
   db:
     image: mariadb:10.6
@@ -112,7 +142,7 @@ services:
       restart_policy:
         condition: on-failure
     command:
-      - nginx-entrypoint.sh
+      sh -c "bench build --production && nginx-entrypoint.sh"
     environment:
       BACKEND: backend:8000
       FRAPPE_SITE_NAME_HEADER: frontend
