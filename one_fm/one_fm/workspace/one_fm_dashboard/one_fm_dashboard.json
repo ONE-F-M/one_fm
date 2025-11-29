@@ -1,0 +1,109 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"kUpT1zfBjP\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">ONE FM Dashboard</span>\",\"col\":12}},{\"id\":\"B63qKLbmTS\",\"type\":\"card\",\"data\":{\"card_name\":\"Rostering\",\"col\":4}}]",
+ "creation": "2025-11-29 22:48:55.239176",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "today",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "ONE FM Dashboard",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Rostering",
+   "link_count": 7,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Shift Assignment",
+   "link_count": 0,
+   "link_to": "Shift Assignment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Shift Schedule",
+   "link_count": 0,
+   "link_to": "Shift Schedule",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Shift Request",
+   "link_count": 0,
+   "link_to": "Shift Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Operations Shift",
+   "link_count": 0,
+   "link_to": "Operations Shift",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Operations Role",
+   "link_count": 0,
+   "link_to": "Operations Role",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Operations Post",
+   "link_count": 0,
+   "link_to": "Operations Post",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Operations Site",
+   "link_count": 0,
+   "link_to": "Operations Site",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2025-11-29 22:54:43.153784",
+ "modified_by": "ea@mail.com",
+ "module": "one_fm",
+ "name": "ONE FM Dashboard",
+ "number_cards": [],
+ "owner": "ea@mail.com",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 0.0,
+ "shortcuts": [],
+ "title": "ONE FM Dashboard"
+}

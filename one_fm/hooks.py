@@ -15,16 +15,30 @@ app_icon = "octicon octicon-file-directory"
 app_color = "grey"
 app_email = "develop@one-fm.com"
 app_license = "MIT"
+app_home = "app/one-fm-dashboard"
 app_logo_url = "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png"
+source_link = "https://github.com/ONE-F-M/one_fm"
+app_logo_url = app_logo_url
+email_brand_image = app_logo_url
+
+add_to_apps_screen = [
+	{
+		"name": app_name,
+		"logo": app_logo_url,
+		"title": app_title,
+		"route": app_home,
+		"has_permission": "erpnext.check_app_permission",
+	}
+]
+
 # Includes in <head>
 # ------------------
 
 website_context = {
-	"favicon": "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png",
-	"splash_image": "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png",
+	"favicon": app_logo_url,
+	"splash_image": app_logo_url,
 }
 
-email_brand_image = "/assets/one_fm/assets/img/logo-img/ONEFM_Identity_Gray.png"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/one_fm/css/one_fm.css"
