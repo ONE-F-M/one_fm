@@ -12,7 +12,6 @@ services:
     environment:
       DB_HOST: ${REMOTE_DB_HOST}
       DB_PORT: ${REMOTE_DB_PORT}
-      MYSQL_ROOT_PASSWORD: ${REMOTE_DB_ROOT_PASSWORD}
       MARIADB_ROOT_PASSWORD: ${REMOTE_DB_ROOT_PASSWORD}
 
   configurator:
@@ -57,8 +56,9 @@ services:
     environment:
       DB_HOST: ${REMOTE_DB_HOST}
       DB_PORT: ${REMOTE_DB_PORT}
+      DB_NAME: ${REMOTE_DB_NAME}
       ROOT_USERNAME: ${REMOTE_DB_ROOT_USERNAME}
-      MYSQL_ROOT_PASSWORD: ${REMOTE_DB_ROOT_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       MARIADB_ROOT_PASSWORD: ${REMOTE_DB_ROOT_PASSWORD}
       FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME}
     entrypoint:
@@ -84,11 +84,40 @@ services:
         done;
         echo "sites/common_site_config.json found";
         bench build;
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=$$MARIADB_ROOT_PASSWORD \
-          --db-root-username=$$ROOT_USERNAME --db-root-password=$$MARIADB_ROOT_PASSWORD --install-app erpnext \
-          --install-app hrms --install-app telephony --install-app lending --install-app helpdesk --install-app one_fm \
-          --set-default $$FRAPPE_SITE_NAME_HEADER;
-        bench migrate;
+
+        SITE_NAME="$${FRAPPE_SITE_NAME_HEADER}";
+        echo "Checking if site '$${SITE_NAME}' exists...";
+
+        if bench --site "$${SITE_NAME}" ls >/dev/null 2>&1; then
+          echo "Site exists: $${SITE_NAME}";
+          echo "Installing apps on existing site...";
+
+          bench --site "$${SITE_NAME}" install-app erpnext;
+          bench --site "$${SITE_NAME}" install-app hrms;
+          bench --site "$${SITE_NAME}" install-app telephony;
+          bench --site "$${SITE_NAME}" install-app lending;
+          bench --site "$${SITE_NAME}" install-app helpdesk;
+          bench --site "$${SITE_NAME}" install-app one_fm;
+
+        else
+          echo "Site does NOT exist. Creating new site: $${SITE_NAME}";
+
+          bench new-site "$${SITE_NAME}" \
+            --mariadb-user-host-login-scope='%' \
+            --admin-password="$${ADMIN_PASSWORD}" \
+            --db-root-username="$${ROOT_USERNAME}" \
+            --db-root-password="$${MARIADB_ROOT_PASSWORD}" \
+            --db-name="$$DB_NAME" \
+            --install-app erpnext \
+            --install-app hrms \
+            --install-app telephony \
+            --install-app lending \
+            --install-app helpdesk \
+            --install-app one_fm \
+            --set-default;
+        fi;
+
+        bench --site "$${SITE_NAME}" migrate;
     
 
   frontend:
