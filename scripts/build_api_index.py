@@ -1,13 +1,15 @@
 import os
 import ast
 import json
+import yaml
 import argparse
 from pathlib import Path
 
 # --- Configuration ---
+CORE_APPS = ["frappe", "erpnext", "hrms"]
+
 # List of applications to scan for modules, DocTypes, and hooks.
 # 'custom_app' must be included for POC testing.
-#
 # NOTE: This script is intended to be run INSIDE the Frappe Bench environment (Producer).
 # After generation, you MUST copy/move the resulting frappe-api-index.json to the Open SWE agent environment (Consumer),
 # e.g., using a CI/CD step or manual copy:
@@ -35,8 +37,25 @@ APPS_TO_INDEX = [
 ] 
 
 class FrappeAPIIndexBuilder:
+    def get_signature(self, node: ast.FunctionDef) -> str:
+            params = []
+            for arg in node.args.args:
+                if getattr(arg, "annotation", None):
+                    try:
+                        param_type = ast.unparse(arg.annotation)
+                    except Exception:
+                        param_type = "any"
+                    params.append(f"{arg.arg}: {param_type}")
+                else:
+                    params.append(arg.arg)
+            return f"def {node.name}({', '.join(params)})"
     def __init__(self, bench_path: str):
         self.bench_path = Path(bench_path)
+        if not self.bench_path.exists() or not self.bench_path.is_dir():
+            raise ValueError(f"Bench path '{self.bench_path}' does not exist or is not a directory.")
+        apps_dir = self.bench_path / "apps"
+        if not apps_dir.exists() or not apps_dir.is_dir():
+            raise ValueError(f"Bench path '{self.bench_path}' does not contain an 'apps' directory.")
         self.index = {
             "version": self.get_version(),
             "modules": {},
@@ -45,8 +64,17 @@ class FrappeAPIIndexBuilder:
         }
 
     def get_version(self):
-        # In a real setup, this would read frappe/VERSION file or similar.
-        return "frappe-15-erpnext-15"
+        # Read VERSION file for each app in APPS_TO_INDEX
+        versions = []
+        for app in APPS_TO_INDEX:
+            version_file = self.bench_path / "apps" / app / "VERSION"
+            if version_file.exists():
+                with open(version_file, "r", encoding="utf-8") as f:
+                    version = f.read().strip()
+                versions.append(f"{app}-{version}")
+            else:
+                versions.append(f"{app}-unknown")
+        return "-".join(versions)
 
     def build(self):
         """Build complete API index by iterating over all configured apps."""
@@ -69,72 +97,96 @@ class FrappeAPIIndexBuilder:
             print(f"Warning: Module path not found for app '{app_name}'. Skipping.")
             return
 
+        import traceback
         for py_file in app_base_path.rglob("*.py"):
-            if "tests" in str(py_file):
+            if "tests" in py_file.parts:
                 continue
-                
-            # The module path should be relative to the bench apps folder 
-            # (e.g., 'frappe.utils.html_utils' or 'custom_app.api.my_methods')
-            module_path = str(py_file.relative_to(self.bench_path / "apps")).replace(os.sep, ".")[:-3]
 
-            functions = self.extract_functions(py_file)
-            classes = self.extract_classes(py_file)
-            
+            module_path = self.get_module_path(py_file, self.bench_path / "apps")
+
+            try:
+                with open(py_file, encoding='utf-8') as f:
+                    source = f.read()
+                tree = ast.parse(source)
+            except (SyntaxError, UnicodeDecodeError) as e:
+                print(f"[index_app_modules] {type(e).__name__} in {py_file}: {e}")
+                continue
+            except Exception as e:
+                print(f"[index_app_modules] Unexpected error in {py_file}: {e}")
+                traceback.print_exc()
+                continue
+
+            functions = self.extract_functions(tree)
+            classes = self.extract_classes(tree)
+
             self.index["modules"][module_path] = {
                 "functions": functions,
                 "classes": classes,
                 "whitelisted": any(f.get("whitelisted") for f in functions)
             }
 
-    def extract_functions(self, file_path: Path) -> list:
-        """Extract function signatures using AST with error handling"""
+    def extract_functions(self, tree) -> list:
+        """Extract function signatures from AST tree"""
         functions = []
-        try:
-            with open(file_path, encoding='utf-8') as f:
-                tree = ast.parse(f.read())
-            for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef):
-                    # We only extract parameters as basic names here for simplicity
-                    params = [arg.arg for arg in node.args.args]
-                    
-                    functions.append({
-                        "name": node.name,
-                        # Use ast.unparse for a clean signature string
-                        "signature": ast.unparse(node), 
-                        "docstring": ast.get_docstring(node) or "",
-                        "whitelisted": self.is_whitelisted(node),
-                        "parameters": [{"name": p, "type": "any"} for p in params], # Simplified Parameter structure
-                        "line_number": node.lineno
+        for node in ast.walk(tree):
+            if isinstance(node, ast.FunctionDef):
+                parameters = []
+                for arg in node.args.args:
+                    if getattr(arg, "annotation", None):
+                        try:
+                            param_type = ast.unparse(arg.annotation)
+                        except Exception:
+                            param_type = "any"
+                    else:
+                        param_type = "any"
+                    parameters.append({
+                        "name": arg.arg,
+                        "type": param_type
                     })
-        except Exception as e:
-            print(f"[extract_functions] Error in {file_path}: {e}")
+                functions.append({
+                    "name": node.name,
+                    "signature": self.get_signature(node),
+                    "docstring": ast.get_docstring(node) or "",
+                    "whitelisted": self.is_whitelisted(node),
+                    "parameters": parameters,
+                    "line_number": node.lineno
+                })
         return functions
 
-    def extract_classes(self, file_path: Path) -> list:
-        """Extract class definitions and their methods."""
+    def extract_classes(self, tree) -> list:
+        """Extract class definitions and their methods from AST tree."""
         classes = []
-        try:
-            with open(file_path, encoding='utf-8') as f:
-                tree = ast.parse(f.read())
-            
-            # Extract all functions first to reference them as methods later
-            all_functions = self.extract_functions(file_path)
-
-            for node in ast.walk(tree):
-                if isinstance(node, ast.ClassDef):
-                    # Find functions that belong to this class
-                    class_methods = [
-                        f for f in all_functions 
-                        if f["name"] in [n.name for n in node.body if isinstance(n, ast.FunctionDef)]
-                    ]
-                    
-                    classes.append({
-                        "name": node.name,
-                        "docstring": ast.get_docstring(node) or "",
-                        "methods": class_methods
-                    })
-        except Exception as e:
-            print(f"[extract_classes] Error in {file_path}: {e}")
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                class_methods = []
+                for n in node.body:
+                    if isinstance(n, ast.FunctionDef):
+                        parameters = []
+                        for arg in n.args.args:
+                            if getattr(arg, "annotation", None):
+                                try:
+                                    param_type = ast.unparse(arg.annotation)
+                                except Exception:
+                                    param_type = "any"
+                            else:
+                                param_type = "any"
+                            parameters.append({
+                                "name": arg.arg,
+                                "type": param_type
+                            })
+                        class_methods.append({
+                            "name": n.name,
+                            "signature": self.get_signature(n),
+                            "docstring": ast.get_docstring(n) or "",
+                            "whitelisted": self.is_whitelisted(n),
+                            "parameters": parameters,
+                            "line_number": n.lineno
+                        })
+                classes.append({
+                    "name": node.name,
+                    "docstring": ast.get_docstring(node) or "",
+                    "methods": class_methods
+                })
         return classes
 
     def is_whitelisted(self, node: ast.FunctionDef) -> bool:
@@ -160,32 +212,39 @@ class FrappeAPIIndexBuilder:
         return [arg.arg for arg in node.args.args]
 
     def get_module_path(self, py_file: Path, base_path: Path) -> str:
-        # NOTE: This method is no longer used due to the refactor in index_app_modules
         return str(py_file.relative_to(base_path)).replace(os.sep, ".")[:-3]
 
     def index_doctypes(self):
         """Index DocType schemas from all apps."""
         for app in APPS_TO_INDEX:
             # Only scan apps/app_name/app_name for doctypes, matching module scan logic
-            app_path = self.bench_path / "apps" / app / app / app
+            app_path = self.bench_path / "apps" / app / app
             if not app_path.exists():
                 continue
             for json_file in app_path.rglob("*.json"):
-                # Check for doctype structure (e.g., app/doctype/doctype_name/doctype_name.json)
-                if "doctype" not in str(json_file):
-                    continue
                 try:
                     with open(json_file, encoding='utf-8') as f:
-                        schema = json.load(f)
+                        try:
+                            schema = json.load(f)
+                        except Exception:
+                            f.seek(0)
+                            try:
+                                schema = yaml.safe_load(f)
+                            except Exception as e_yaml:
+                                print(f"[index_doctypes] Error parsing {json_file} as JSON or YAML: {e_yaml}")
+                                continue
+                    # Only index if the schema has a "doctype" or "istable" key (common in DocType schemas)
+                    if not (isinstance(schema, dict) and ("doctype" in schema or "istable" in schema)):
+                        continue
                     doctype_name = schema.get("name")
                     controller_path = Path(str(json_file).replace(".json", ".py"))
                     # Determine access level for the TypeScript schema
-                    access_level = 'core' if app in ["frappe", "hrms"] else 'application'
+                    access_level = 'core' if app in CORE_APPS else 'application'
                     self.index["doctypes"][doctype_name] = {
                         "app": app,
-                        "schema": {**schema, "accessLevel": access_level}, # Merging accessLevel into schema
+                        "schema": {**schema, "accessLevel": access_level}, # merging accessLevel into schema
                         "controller": str(controller_path),
-                        "hooks": []
+                        "hooks": []  # Intentionally left empty; reserved for future hook extraction logic.
                     }
                 except Exception as e:
                     print(f"[index_doctypes] Error in {json_file}: {e}")
@@ -226,7 +285,16 @@ def main():
     parser.add_argument('--output', type=str, default=str(Path(__file__).parent / "frappe-api-index.json"), help="Output JSON file path (default: same directory as this script)")
     args = parser.parse_args()
 
-    builder = FrappeAPIIndexBuilder(args.bench)
+    # Validate bench path
+    bench_path = Path(args.bench)
+    if not bench_path.is_dir():
+        print(f"Error: Provided bench path '{bench_path}' does not exist or is not a directory.")
+        exit(1)
+    # Optionally, check for a file that should exist in a bench, e.g., apps.txt
+    if not (bench_path / "sites" / "apps.txt").exists():
+        print(f"Warning: '{bench_path}/sites/apps.txt' not found. Are you sure this is a Frappe/ERPNext bench directory?")
+
+    builder = FrappeAPIIndexBuilder(str(bench_path))
     index = builder.build()
     
     print(f"Completed Scan: Found {len(index['modules'])} modules and {len(index['doctypes'])} DocTypes.")
