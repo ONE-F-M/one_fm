@@ -4,6 +4,7 @@
 import frappe
 from frappe.website.website_generator import WebsiteGenerator
 from frappe import _
+import re
 
 class Client(WebsiteGenerator):
     website = frappe._dict(
@@ -16,6 +17,13 @@ class Client(WebsiteGenerator):
         if not self.route:
             self.route_hash = self.hash
             self.route = f"client/{frappe.scrub(self.hash)}"
+        self.validate_gst_number()
+
+    def validate_gst_number(self):
+        if self.gst_number:
+            pattern = re.compile(r"^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[A-Z\d]{1}Z[A-Z\d]{1}$")
+            if not pattern.match(self.gst_number):
+                frappe.throw(_("Invalid GST Number"), frappe.ValidationError)
 
     def autoname(self):
         self.name = self.hash
