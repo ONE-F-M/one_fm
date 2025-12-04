@@ -8,6 +8,7 @@
  "field_order": [
   "customer",
   "customer_name",
+  "gst_number",
   "route_hash",
   "column_break_jhym",
   "published",
@@ -58,6 +59,16 @@
    "in_standard_filter": 1,
    "label": "Route Hash",
    "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "gst_number",
+   "fieldtype": "Data",
+   "label": "GST Number",
+   "length": 15,
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "unique": 1
   }
  ],
