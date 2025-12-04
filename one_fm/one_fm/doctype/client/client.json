@@ -8,6 +8,7 @@
  "field_order": [
   "customer",
   "customer_name",
+  "identification_number",
   "route_hash",
   "column_break_jhym",
   "published",
@@ -41,6 +42,11 @@
    "fieldtype": "Data",
    "label": "Customer Name",
    "unique": 1
+  },
+  {
+   "fieldname": "identification_number",
+   "fieldtype": "Data",
+   "label": "Identification Number"
   },
   {
    "default": "0",
