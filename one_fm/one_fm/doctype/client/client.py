@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+import re
 from frappe.website.website_generator import WebsiteGenerator
 from frappe import _
 
