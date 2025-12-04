@@ -1,6 +1,7 @@
 import frappe, base64, requests, firebase_admin, json
 from frappe import _
 import pandas as pd
+from frappe.utils import flt
 from frappe.utils import cstr, cint
 from frappe.model.rename_doc import rename_doc
 from firebase_admin import messaging, credentials
@@ -8,6 +9,39 @@ from frappe.desk.page.user_profile.user_profile import get_energy_points_heatmap
 from frappe.social.doctype.energy_point_log.energy_point_log import get_energy_points, get_user_energy_and_review_points
 import one_fm.api.v1 as v1_api
 
+
+@frappe.whitelist()
+def get_customer_sales_invoice_summary(customer: str) -> dict:
+    """
+    Get customer summary with orders and outstanding
+    Requires: Sales User role and read permission on customer
+    """
+    frappe.only_for("Sales User")
+
+    if not frappe.db.exists("Customer", customer):
+        frappe.throw(_("Customer {0} not found").format(customer))
+
+    customer_doc = frappe.get_doc("Customer", customer)
+    customer_doc.check_permission("read")
+
+    summary = frappe.db.sql(
+        """
+        SELECT
+            COUNT(*) as total_invoices,
+            SUM(grand_total) as total_invoiced_amount,
+            SUM(outstanding_amount) as total_outstanding_amount
+        FROM `tabSales Invoice`
+        WHERE customer = %s AND docstatus = 1
+    """,
+        (customer,),
+        as_dict=True,
+    )[0]
+
+    return {
+        "total_invoices": summary.total_invoices or 0,
+        "total_invoiced_amount": flt(summary.total_invoiced_amount),
+        "total_outstanding_amount": flt(summary.total_outstanding_amount),
+    }
 
 @frappe.whitelist()
 def initialize_firebase():
@@ -280,3 +314,4 @@ def push_notification_rest_api_for_lms(user_id, message):
     except Exception as e:
         frappe.log_error(title = "Error Sending  Push notification for LMS",message= frappe.get_traceback())
         return v1_api.utils.response("error", 500, {}, str(e))
+
