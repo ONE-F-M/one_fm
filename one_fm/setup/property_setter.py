@@ -95,6 +95,7 @@ def get_field_properties():
 	field_properties.extend(get_employee_advance_properties())
 	field_properties.extend(get_employee_incentive_properties())
 	field_properties.extend(get_employee_performance_feedback_properties())
+	field_properties.extend(get_employee_properties())
 	field_properties.extend(get_erf_salary_detail_properties())
 	field_properties.extend(get_expense_claim_properties())
 	field_properties.extend(get_gender_properties())
