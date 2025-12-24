@@ -429,7 +429,10 @@ def mark_for_active_employees(from_date=None, to_date=None):
     
     # Process employees without schedules/shifts
     mark_attendance_for_unscheduled_employees(active_employees, from_date)
-    
+
+    mark_absent_for_non_active_employees(from_date, "Absconding")
+    mark_absent_for_non_active_employees(from_date, "Not Returned from Leave")
+
     remark_for_active_employees(from_date)
 
 def mark_attendance_for_unscheduled_employees(employees, date):
@@ -474,56 +477,66 @@ def mark_attendance_for_unscheduled_employees(employees, date):
             return
             
         # Create attendance records for unscheduled employees
-        creation = now()
-        owner = frappe.session.user
-        naming_series = 'HR-ATT-.YYYY.-'
-        
-        query = """
-            INSERT INTO `tabAttendance` (
-                `name`, `naming_series`, `employee`, `employee_name`, 
-                `status`, `attendance_date`, `company`, `department`,
-                `roster_type`, `docstatus`, `modified_by`, `owner`,
-                `creation`, `modified`, `comment`, `is_unscheduled`
-            ) VALUES
-        """
-        
-        query_body = ""
-        for emp in unscheduled_employees:
-            # Check if it's a holiday
-            holiday_today = get_holiday_today(date)
-            status = "Absent"
-            comment = "No schedule or shift assignment found"
-            
-            if holiday_today.get(emp.holiday_list):
-                status = "Holiday"
-                comment = f"Holiday - {holiday_today.get(emp.holiday_list)}"
-            
-            name = f"HR-ATT_{date}_{emp.name}_Basic"
-            query_body += f"""
-                (
-                    "{name}", "{naming_series}", "{emp.name}", "{emp.employee_name}",
-                    "{status}", "{date}", "{emp.company}", "{emp.department}",
-                    "Basic", 1, "{owner}", "{owner}",
-                    "{creation}", "{creation}", "{comment}", 1
-                ),"""
-            
-        
-        if query_body:
-            query += query_body[:-1]  # Remove trailing comma
-            query += """
-                ON DUPLICATE KEY UPDATE
-                status = VALUES(status),
-                comment = VALUES(comment),
-                modified = VALUES(modified)
-            """
-            frappe.db.sql(query)
-            frappe.db.commit()
-            
+        comment = "No schedule or shift assignment found"
+        mark_absent_for_employees(unscheduled_employees, date, comment, True)
+
     except Exception as e:
         frappe.log_error(
             message=frappe.get_traceback(),
             title="Error in mark_attendance_for_unscheduled_employees"
         )
+
+def mark_absent_for_non_active_employees(date, non_active_status):
+    employees = frappe.get_all("Employee", {
+        'status': non_active_status,
+        'attendance_by_timesheet':0
+    }, ['name', 'employee_name', 'company', 'department', 'holiday_list'])
+
+    mark_absent_for_employees(employees, date, f"{non_active_status} employee")
+
+def mark_absent_for_employees(employees, date, comment, consider_holiday=False):
+    creation = now()
+    owner = frappe.session.user
+    naming_series = 'HR-ATT-.YYYY.-'
+
+    query = """
+        INSERT INTO `tabAttendance` (
+            `name`, `naming_series`, `employee`, `employee_name`,
+            `status`, `attendance_date`, `company`, `department`,
+            `roster_type`, `docstatus`, `modified_by`, `owner`,
+            `creation`, `modified`, `comment`, `is_unscheduled`
+        ) VALUES
+    """
+
+    query_body = ""
+    for employee in employees:
+        status = "Absent"
+        name = f"HR-ATT_{date}_{employee.name}_Basic"
+
+        if consider_holiday:
+            holiday_today = get_holiday_today(date)
+            if holiday_today.get(employee.holiday_list):
+                status = "Holiday"
+                comment = f"Holiday - {holiday_today.get(employee.holiday_list)}"
+
+        query_body += f"""
+            (
+                "{name}", "{naming_series}", "{employee.name}", "{employee.employee_name}",
+                "{status}", "{date}", "{employee.company}", "{employee.department}",
+                "Basic", 1, "{owner}", "{owner}",
+                "{creation}", "{creation}", "{comment}", 0
+            ),"""
+
+    if query_body:
+        query += query_body[:-1]  # Remove trailing comma
+        query += """
+            ON DUPLICATE KEY UPDATE
+            status = VALUES(status),
+            comment = VALUES(comment),
+            modified = VALUES(modified)
+        """
+        frappe.db.sql(query)
+        frappe.db.commit()
 
 def remark_for_active_employees(from_date=None):
     if not from_date:from_date=today()
