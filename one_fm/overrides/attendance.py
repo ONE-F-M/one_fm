@@ -495,48 +495,54 @@ def mark_absent_for_non_active_employees(date, non_active_status):
     mark_absent_for_employees(employees, date, f"{non_active_status} employee")
 
 def mark_absent_for_employees(employees, date, comment, consider_holiday=False):
-    creation = now()
-    owner = frappe.session.user
-    naming_series = 'HR-ATT-.YYYY.-'
+    try:
+        creation = now()
+        owner = frappe.session.user
+        naming_series = 'HR-ATT-.YYYY.-'
 
-    query = """
-        INSERT INTO `tabAttendance` (
-            `name`, `naming_series`, `employee`, `employee_name`,
-            `status`, `attendance_date`, `company`, `department`,
-            `roster_type`, `docstatus`, `modified_by`, `owner`,
-            `creation`, `modified`, `comment`, `is_unscheduled`
-        ) VALUES
-    """
-
-    query_body = ""
-    for employee in employees:
-        status = "Absent"
-        name = f"HR-ATT_{date}_{employee.name}_Basic"
-
-        if consider_holiday:
-            holiday_today = get_holiday_today(date)
-            if holiday_today.get(employee.holiday_list):
-                status = "Holiday"
-                comment = f"Holiday - {holiday_today.get(employee.holiday_list)}"
-
-        query_body += f"""
-            (
-                "{name}", "{naming_series}", "{employee.name}", "{employee.employee_name}",
-                "{status}", "{date}", "{employee.company}", "{employee.department}",
-                "Basic", 1, "{owner}", "{owner}",
-                "{creation}", "{creation}", "{comment}", 0
-            ),"""
-
-    if query_body:
-        query += query_body[:-1]  # Remove trailing comma
-        query += """
-            ON DUPLICATE KEY UPDATE
-            status = VALUES(status),
-            comment = VALUES(comment),
-            modified = VALUES(modified)
+        query = """
+            INSERT INTO `tabAttendance` (
+                `name`, `naming_series`, `employee`, `employee_name`,
+                `status`, `attendance_date`, `company`, `department`,
+                `roster_type`, `docstatus`, `modified_by`, `owner`,
+                `creation`, `modified`, `comment`, `is_unscheduled`
+            ) VALUES
         """
-        frappe.db.sql(query)
-        frappe.db.commit()
+
+        query_body = ""
+        for employee in employees:
+            status = "Absent"
+            name = f"HR-ATT_{date}_{employee.name}_Basic"
+
+            if consider_holiday:
+                holiday_today = get_holiday_today(date)
+                if holiday_today.get(employee.holiday_list):
+                    status = "Holiday"
+                    comment = f"Holiday - {holiday_today.get(employee.holiday_list)}"
+
+            query_body += f"""
+                (
+                    "{name}", "{naming_series}", "{employee.name}", "{employee.employee_name}",
+                    "{status}", "{date}", "{employee.company}", "{employee.department}",
+                    "Basic", 1, "{owner}", "{owner}",
+                    "{creation}", "{creation}", "{comment}", 0
+                ),"""
+
+        if query_body:
+            query += query_body[:-1]  # Remove trailing comma
+            query += """
+                ON DUPLICATE KEY UPDATE
+                status = VALUES(status),
+                comment = VALUES(comment),
+                modified = VALUES(modified)
+            """
+            frappe.db.sql(query)
+            frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(
+            message=frappe.get_traceback(),
+            title="Error in mark_absent_for_employees"
+        )
 
 def remark_for_active_employees(from_date=None):
     if not from_date:from_date=today()
