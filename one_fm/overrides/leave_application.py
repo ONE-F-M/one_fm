@@ -659,10 +659,18 @@ def update_attendance_recods(self):
 
 
 def remove_assignment(attendance_check):
-    open_todo = get_open_todos("Attendance Check",attendance_check)
-    if open_todo:
-        for each in open_todo:
-            remove("Attendance Check",attendance_check,each.allocated_to,ignore_permissions=1)
+    todos = frappe.get_all(
+        "ToDo",
+        filters={
+            "reference_type": "Attendance Check",
+            "reference_name": attendance_check,
+            "status": "Open",
+        },
+        pluck="name"
+    )
+
+    for todo in todos:
+        frappe.db.set_value("ToDo", todo, "status", "Cancelled")
 
 
 @frappe.whitelist()
