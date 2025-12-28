@@ -669,6 +669,8 @@ def remove_assignment(attendance_check):
         pluck="name"
     )
 
+    # Directly update ToDo status to "Cancelled" to avoid triggering email notifications
+    # or other side effects that would be sent by frappe.desk.form.assign_to.remove.
     for todo in todos:
         frappe.db.set_value("ToDo", todo, "status", "Cancelled")
 
