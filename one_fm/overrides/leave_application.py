@@ -12,7 +12,6 @@ from one_fm.processor import sendemail
 from frappe.desk.form.assign_to import remove
 from erpnext.crm.utils import get_open_todos
 from one_fm.api.api import push_notification_rest_api_for_leave_application
-from one_fm.api.tasks import remove_assignment
 from one_fm.overrides.employee import NotifyAttendanceManagerOnStatusChange
 from one_fm.utils import get_approver_user, leave_application_on_cancel, fetch_leave_types_update_employee_status, get_workflow_action_buttons_html, cancel_calendar_event, disable_out_of_office
 from hrms.hr.utils import get_holidays_for_employee
@@ -502,7 +501,7 @@ class LeaveApplicationOverride(LeaveApplication):
                         frappe.db.set_value("Attendance Check",each.name,'workflow_state','Approved')
                         frappe.db.set_value("Attendance Check",each.name,'attendance_status','On Leave')
                         frappe.db.set_value("Attendance Check",each.name,'docstatus',1)
-                        remove_assignment(each.name)
+                        cancel_attendance_check_assignments(each.name)
             frappe.db.commit()
         except:
             frappe.log_error(title = "Error Updating Attendance Check",message=frappe.get_traceback())
@@ -658,7 +657,7 @@ def update_attendance_recods(self):
     frappe.msgprint(_("Attendance are created for the leave Appication {0}!".format(self.name)), alert=True)
 
 
-def remove_assignment(attendance_check):
+def cancel_attendance_check_assignments(attendance_check):
     todos = frappe.get_all(
         "ToDo",
         filters={
