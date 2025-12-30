@@ -8,8 +8,8 @@ from one_fm.api.v1.utils import response
 class ShiftAssignmentOverride(ShiftAssignment):
 
     def validate(self):
-        self.set_datetime()
         super(ShiftAssignmentOverride, self).validate()
+        self.set_datetime()
 
     def validate_overlapping_shifts(self):
         overlapping_dates = self.get_overlapping_dates()
