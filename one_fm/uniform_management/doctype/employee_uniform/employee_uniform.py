@@ -505,5 +505,3 @@ def create_item_specific_quality_feedbacks(employee_uniform, selected_feedback_t
 			):
 				feedback_doc.custom_item = item_code
 			feedback_doc.insert(ignore_permissions=True)
-
-	frappe.db.commit()
