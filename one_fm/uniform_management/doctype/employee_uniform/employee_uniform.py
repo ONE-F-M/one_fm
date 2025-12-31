@@ -38,7 +38,7 @@ class EmployeeUniform(Document):
 					frappe.db.set_value('Employee Uniform Item', item.issued_item_link, 'returned', returned+item.quantity)
 		self.onboard_employee_update()
 		make_stock_entry(self)
-        
+
 
 	def on_cancel(self):
 		# self.onboard_employee_update(True)
@@ -438,24 +438,16 @@ def notify_gsd_and_employee_before_uniform_expiry(is_scheduled_event=True):
 			)
 
 @frappe.whitelist()
-def get_item_types(items):
-	if not items:
-		return []
-	
-	if isinstance(items, str):
-		items = json.loads(items)
-
-
-	item_types = frappe.get_all(
-		"Item",
-		filters={"name": ("in", items)},
-		fields=["item_type"]
+def get_quality_feedback_templates():
+	return frappe.get_all(
+		"Quality Feedback Template",
+		filters={"custom_is_enabled": 1},
+		fields=["name", "custom_version"],
 	)
 
-	return [item.get("item_type") for item in item_types if item.get("item_type")]
 
 @frappe.whitelist()
-def create_quality_feedbacks(employee_uniform, selected_feedback_templates):
+def create_item_specific_quality_feedbacks(employee_uniform, selected_feedback_templates):
 	employee_uniform_doc = frappe.get_doc("Employee Uniform", employee_uniform)
 	if not selected_feedback_templates:
 		return
@@ -463,13 +455,17 @@ def create_quality_feedbacks(employee_uniform, selected_feedback_templates):
 	if isinstance(selected_feedback_templates, str):
 		selected_feedback_templates = json.loads(selected_feedback_templates)
 
-	for template in selected_feedback_templates:
-		target_feedback_schedule = frappe.db.get_value("Quality Feedback Template", template, "custom_feedback_schedule")
+	for item in selected_feedback_templates:
+		template = item.get("quality_feedback_template")
+		item_code = item.get("item_code")
+		target_feedback_schedule = frappe.db.get_value(
+			"Quality Feedback Template", template, "custom_feedback_schedule"
+		)
 
 		feedback_schedules = frappe.get_all(
 			"Feedback Schedule Item",
 			filters={"parent": target_feedback_schedule},
-			pluck="name"
+			pluck="name",
 		)
 
 		for schedule_stage in feedback_schedules:
@@ -479,7 +475,8 @@ def create_quality_feedbacks(employee_uniform, selected_feedback_templates):
 					"template": template,
 					"custom_feedback_schedule_stage": schedule_stage,
 					"custom_employee": employee_uniform_doc.employee,
-				}
+					"custom_item": item_code,
+				},
 			)
 			if already_exists:
 				continue
@@ -491,6 +488,10 @@ def create_quality_feedbacks(employee_uniform, selected_feedback_templates):
 			feedback_doc.document_name = frappe.session.user
 			feedback_doc.custom_feedback_schedule_stage = schedule_stage
 			feedback_doc.custom_issued_on = employee_uniform_doc.issued_on
-			feedback_doc.custom_feedback_due_on = add_days(employee_uniform_doc.issued_on or today(), schedule_stage_doc.days_after_issuance or 0)
+			feedback_doc.custom_feedback_due_on = add_days(
+				employee_uniform_doc.issued_on or today(),
+				schedule_stage_doc.days_after_issuance or 0,
+			)
 			feedback_doc.custom_employee = employee_uniform_doc.employee
+			feedback_doc.custom_item = item_code
 			feedback_doc.insert(ignore_permissions=True)
