@@ -122,18 +122,6 @@ var update_employees_list = function(frm) {
 	});
 };
 
-var get_quality_feedback_templates = function (callback) {
-	frappe.call({
-		method:
-			"one_fm.uniform_management.doctype.employee_uniform.employee_uniform.get_quality_feedback_templates",
-		callback: function (r) {
-			if (!r.exc) {
-				callback(r.message);
-			}
-		},
-	});
-};
-
 var add_quality_feedback_schedule = function (frm) {
 	if (
 		frm.doc.docstatus == 1 &&
@@ -161,6 +149,7 @@ var add_quality_feedback_schedule = function (frm) {
 											item_name: row.item_name,
 											item_type: row.item_type,
 											quantity: row.quantity,
+											version_no: "",
 										};
 									}),
 									fields: [
