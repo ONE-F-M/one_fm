@@ -272,8 +272,8 @@ var add_quality_feedback_schedule = function (frm) {
 										let template = templates.find(
 											(t) => t.name === selected_template
 										);
-										if (template && template.custom_version) {
-											selected_row.version_no = template.custom_version;
+										if (template && template.custom_version_no) {
+											selected_row.version_no = template.custom_version_no;
 										} else {
 											selected_row.version_no = "";
 										}

@@ -442,9 +442,9 @@ def get_quality_feedback_templates():
 	fields = ["name"]
 	if frappe.db.exists(
 		"Custom Field",
-		{"dt": "Quality Feedback Template", "fieldname": "custom_version"},
+		{"dt": "Quality Feedback Template", "fieldname": "custom_version_no"},
 	):
-		fields.append("custom_version")
+		fields.append("custom_version_no")
 
 	return frappe.get_all(
 		"Quality Feedback Template",
