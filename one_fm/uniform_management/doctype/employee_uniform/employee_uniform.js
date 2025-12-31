@@ -204,6 +204,7 @@ var add_quality_feedback_schedule = function (frm) {
 											fieldtype: "Data",
 											read_only: 1,
 											in_list_view: 1,
+											hidden: 0,
 										},
 									],
 								},

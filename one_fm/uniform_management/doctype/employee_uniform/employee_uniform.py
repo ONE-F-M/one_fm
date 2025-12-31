@@ -500,5 +500,10 @@ def create_item_specific_quality_feedbacks(employee_uniform, selected_feedback_t
 				schedule_stage_doc.days_after_issuance or 0,
 			)
 			feedback_doc.custom_employee = employee_uniform_doc.employee
-			feedback_doc.custom_item = item_code
+			if frappe.db.exists(
+				"Custom Field", {"dt": "Quality Feedback", "fieldname": "custom_item"}
+			):
+				feedback_doc.custom_item = item_code
 			feedback_doc.insert(ignore_permissions=True)
+
+	frappe.db.commit()
