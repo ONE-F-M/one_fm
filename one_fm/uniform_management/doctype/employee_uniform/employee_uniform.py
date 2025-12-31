@@ -439,10 +439,17 @@ def notify_gsd_and_employee_before_uniform_expiry(is_scheduled_event=True):
 
 @frappe.whitelist()
 def get_quality_feedback_templates():
+	fields = ["name"]
+	if frappe.db.exists(
+		"Custom Field",
+		{"dt": "Quality Feedback Template", "fieldname": "custom_version"},
+	):
+		fields.append("custom_version")
+
 	return frappe.get_all(
 		"Quality Feedback Template",
 		filters={"custom_is_enabled": 1},
-		fields=["name", "custom_version"],
+		fields=fields,
 	)
 
 
