@@ -20,7 +20,7 @@ def get_recent_openings():
         list : recent job openings objects
     """
     recent_openings = []
-    recent_openings_raw_format = frappe.db.get_list("Job Opening",
+    recent_openings_raw_format = frappe.db.get_all("Job Opening",
                                 {
                                     'publish': 1,
                                     'status': 'Open'
