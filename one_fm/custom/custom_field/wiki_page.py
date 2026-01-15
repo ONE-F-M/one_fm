@@ -1,6 +1,6 @@
 def get_wiki_page_custom_fields():
     return {
-            "Wiki Page": [
+        "Wiki Page": [
             {
                 "fieldname": "last_indexed_on",
                 "fieldtype": "Datetime",
