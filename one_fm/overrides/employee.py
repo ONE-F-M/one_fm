@@ -33,6 +33,7 @@ class EmployeeOverride(EmployeeMaster):
         self.set_employee_name()
         set_employee_name(self, method=None)
         self.set_employee_id_based_on_residency()
+        self.validate_unique_employee_id()
         self.validate_reliever()
         self.validate_date()
         self.validate_email()
@@ -71,6 +72,22 @@ class EmployeeOverride(EmployeeMaster):
             residency_employee_id = get_employee_id_based_on_residency(self.employee_id, self.under_company_residency, self.name, self.employment_type)
             if self.employee_id != residency_employee_id:
                 self.employee_id = residency_employee_id
+
+    def validate_unique_employee_id(self):
+        """Validate that employee_id is unique"""
+        if self.employee_id:
+            existing = frappe.db.get_value(
+                "Employee",
+                {"employee_id": self.employee_id, "name": ["!=", self.name]},
+                "name"
+            )
+            if existing:
+                frappe.throw(
+                    _("Employee ID {0} is already assigned to Employee {1}").format(
+                        frappe.bold(self.employee_id),
+                        frappe.bold(existing)
+                    )
+                )
 
     def validate_face_recognition_enrollment(self):
         # Skip the validation while creating new employee

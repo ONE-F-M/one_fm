@@ -194,45 +194,87 @@ def create_employee_user(doc, email):
 
 def generate_employee_id(doc):
 	"""
-	Generate employee ID
+	Generate employee ID with database locking to prevent race conditions
 	"""
+	# Create a unique lock name based on joining year-month
+	joining_year_month = f"{doc.date_of_joining.year}{doc.date_of_joining.month:02d}"
+	lock_name = f"employee_id_gen_{joining_year_month}"
+	lock_timeout = 10  # seconds
+	
+	# Acquire lock
 	try:
-		if doc.one_fm_nationality=='No Nationality':
-			country = 'XX'
-		elif doc.one_fm_nationality == 'Non Kuwaiti':
-			country = 'NK'
-		elif doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
-			country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
-		else:
-			country_code = frappe.db.get_value("Country", doc.one_fm_nationality, "code") if doc.one_fm_nationality else None
-			country = 'XX' if not country_code else country_code.upper()
+		lock_result = frappe.db.sql(f"SELECT GET_LOCK('{lock_name}', {lock_timeout})")
+		lock_acquired = lock_result[0][0] if lock_result else 0
 	except Exception as e:
-		frappe.throw(_(str(e)))
+		frappe.log_error(
+			message=f"Error acquiring lock: {str(e)}",
+			title="Employee ID Generation Lock Error"
+		)
+		frappe.throw(_("Unable to generate Employee ID at this time. Please try again."))
+	
+	if not lock_acquired:
+		frappe.log_error(
+			message=f"Failed to acquire lock for employee ID generation: {lock_name}",
+			title="Employee ID Generation Lock Timeout"
+		)
+		frappe.throw(_("Unable to generate Employee ID at this time. Please try again."))
+	
+	try:
+		# Get country code
+		try:
+			if doc.one_fm_nationality=='No Nationality':
+				country = 'XX'
+			elif doc.one_fm_nationality == 'Non Kuwaiti':
+				country = 'NK'
+			elif doc.one_fm_nationality and get_denomyn(doc.one_fm_nationality):
+				country = pycountry.countries.search_fuzzy(get_denomyn(doc.one_fm_nationality))[0].alpha_2
+			else:
+				country_code = frappe.db.get_value("Country", doc.one_fm_nationality, "code") if doc.one_fm_nationality else None
+				country = 'XX' if not country_code else country_code.upper()
+		except Exception as e:
+			frappe.throw(_(str(e)))
 
-	count = len(frappe.db.sql(f"""
-		SELECT name FROM tabEmployee
-		WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
-		as_dict=1))
+		# Count existing employees in the same joining month
+		count = len(frappe.db.sql(f"""
+			SELECT name FROM tabEmployee
+			WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
+			as_dict=1))
 
-	if count == 0:
-		count = count + 1
+		if count == 0:
+			count = count + 1
 
-	doc.reload()
-	joining_year = str(doc.date_of_joining.year)[-2:].zfill(2)
-	joining_month = str(doc.date_of_joining.month).zfill(2)
-	serial_number = str(count).zfill(3)
-
-	while frappe.db.get_list("Employee", {"employee_id": ["LIKE", f"{joining_year}{joining_month}{serial_number}%"]}):
-		count = count + 1
+		doc.reload()
+		joining_year = str(doc.date_of_joining.year)[-2:].zfill(2)
+		joining_month = str(doc.date_of_joining.month).zfill(2)
 		serial_number = str(count).zfill(3)
 
-	residency_digit = 1 if doc.under_company_residency else 0
+		# Check for existing IDs with the same pattern and increment if needed
+		while frappe.db.get_list("Employee", {"employee_id": ["LIKE", f"{joining_year}{joining_month}{serial_number}%"]}):
+			count = count + 1
+			serial_number = str(count).zfill(3)
 
-	if is_subcontract_employee(doc.name, doc.employment_type):
-		residency_digit = 'S'
+		residency_digit = 1 if doc.under_company_residency else 0
 
-	doc.db_set("employee_id", f"{joining_year}{joining_month}{serial_number}{country}{residency_digit}{doc.date_of_birth.strftime('%y')}".upper())
-	doc.reload()
+		if is_subcontract_employee(doc.name, doc.employment_type):
+			residency_digit = 'S'
+
+		employee_id = f"{joining_year}{joining_month}{serial_number}{country}{residency_digit}{doc.date_of_birth.strftime('%y')}".upper()
+		
+		# Log the generated ID for debugging
+		frappe.logger().info(f"Generated Employee ID: {employee_id} for employee: {doc.name}")
+		
+		doc.db_set("employee_id", employee_id)
+		doc.reload()
+		
+	finally:
+		# Always release the lock
+		try:
+			frappe.db.sql(f"SELECT RELEASE_LOCK('{lock_name}')")
+		except Exception as e:
+			frappe.log_error(
+				message=f"Error releasing lock: {str(e)}",
+				title="Employee ID Generation Lock Release Error"
+			)
 
 def is_subcontract_employee(employee, employment_type=False):
 	if frappe.db.exists("Onboard Subcontract Employee", {"employee": employee}):
