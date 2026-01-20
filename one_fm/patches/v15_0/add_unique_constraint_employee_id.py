@@ -23,14 +23,14 @@ def execute():
 				ADD CONSTRAINT unique_employee_id UNIQUE (employee_id)
 			""")
 			frappe.db.commit()
-			print("Successfully added unique constraint on employee_id")
+			frappe.logger().info("Successfully added unique constraint on employee_id")
 		else:
-			print("Unique constraint already exists on employee_id")
+			frappe.logger().info("Unique constraint already exists on employee_id")
 			
 	except Exception as e:
 		frappe.log_error(
 			message=str(e),
 			title="Failed to add unique constraint on employee_id"
 		)
-		print(f"Error: {str(e)}")
+		frappe.logger().error(f"Error while adding unique constraint on employee_id: {str(e)}")
 		# Don't raise the error to allow migration to continue
