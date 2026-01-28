@@ -3153,16 +3153,17 @@ def get_approver(employee, date=False):
 
     if not line_manager:
         if employee_data.shift_working:
-            if employee_data.shift:
-                line_manager = get_shift_supervisor(employee_data.shift, date)
-                if line_manager:
-                    return line_manager
-            if not line_manager and employee_data.site:
+            if employee_data.site:
                 line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'site_supervisor')
                 if not line_manager:
                     project = frappe.db.get_value('Operations Site', employee_data.site, 'project')
                     if project:
                         line_manager = frappe.db.get_value('Project', project, 'account_manager')
+            if not line_manager and  employee_data.shift:  
+                line_manager = get_shift_supervisor(employee_data.shift, date)
+                if line_manager:
+                    return line_manager
+            
         else:
             if employee_data.site:
                 line_manager = frappe.db.get_value('Operations Site', employee_data.site, 'site_supervisor')
