@@ -79,9 +79,9 @@ jobs:
           4. Format the output as a JSON object with keys: "root_cause", "fix_explanation", "file_changes"
           """
           
-          # Call Copilot API or use gh copilot command
+          # Call Copilot CLI to analyze the issue body
           result = subprocess.run(
-              ['gh', 'copilot', 'explain', '--', issue_body],
+              ['github-copilot', 'explain', '--', issue_body],
               capture_output=True,
               text=True
           )
