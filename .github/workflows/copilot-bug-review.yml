@@ -109,7 +109,6 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "fix: Address issue #${{ github.event.issue.number }} - Copilot suggested fix"
           title: "fix: Copilot suggested fix for issue #${{ github.event.issue.number }}"
           body: |
             ## Automated Fix by GitHub Copilot
