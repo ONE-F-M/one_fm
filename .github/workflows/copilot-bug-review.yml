@@ -126,7 +126,7 @@ jobs:
             *This PR was automatically created by GitHub Copilot. Please review carefully before merging.*
           branch: copilot/fix-issue-${{ github.event.issue.number }}
           labels: copilot-generated
-          assignees: ${{ github.event.issue.assignees }}
+          assignees: ${{ join(github.event.issue.assignees.*.login, ',') }}
 
       - name: Comment on issue
         if: always()
