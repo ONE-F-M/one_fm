@@ -60,7 +60,6 @@ jobs:
           # Create a Python script that uses Copilot to suggest fixes
           cat > suggest_fix.py << 'EOF'
           import os
-          import json
           import subprocess
           
           issue_body = os.getenv('ISSUE_BODY', '')
