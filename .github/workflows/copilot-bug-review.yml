@@ -1,0 +1,145 @@
+# .github/workflows/copilot-bug-review.yml
+# This workflow runs when a "copilot-review" label is added to an issue
+# It uses GitHub Copilot to review the bug and create a PR with a suggested fix
+
+name: Copilot Bug Review and Fix
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+jobs:
+  copilot-review:
+    # Only run if the issue has the 'copilot-review' label
+    if: contains(github.event.issue.labels.*.name, 'copilot-review')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Copilot CLI
+        run: |
+          pip install --upgrade copilot-cli
+          # or if you're using GitHub's official Copilot extension
+          npm install -g @github/copilot-cli
+
+      - name: Review issue with Copilot
+        id: review
+        uses: github/copilot@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          issue_number: ${{ github.event.issue.number }}
+          
+      - name: Create branch for fix
+        id: create-branch
+        run: |
+          BRANCH_NAME="copilot/fix-issue-${{ github.event.issue.number }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b $BRANCH_NAME
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Generate fix with Copilot
+        id: fix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          # Create a Python script that uses Copilot to suggest fixes
+          cat > suggest_fix.py << 'EOF'
+          import os
+          import json
+          import subprocess
+          
+          issue_body = os.getenv('ISSUE_BODY', '')
+          issue_number = os.getenv('ISSUE_NUMBER', '')
+          
+          # Use Copilot to analyze the bug and suggest a fix
+          prompt = f"""
+          You are a bug fix assistant. Analyze this bug report and provide a fix:
+          
+          Issue #{issue_number}:
+          {issue_body}
+          
+          Please:
+          1. Identify the root cause
+          2. Provide the exact code changes needed
+          3. Explain the fix briefly
+          4. Format the output as a JSON object with keys: "root_cause", "fix_explanation", "file_changes"
+          """
+          
+          # Call Copilot API or use gh copilot command
+          result = subprocess.run(
+              ['gh', 'copilot', 'explain', '--', issue_body],
+              capture_output=True,
+              text=True
+          )
+          
+          print(result.stdout)
+          EOF
+          
+          python suggest_fix.py
+
+      - name: Commit changes
+        id: commit
+        run: |
+          # Add any generated fixes
+          git add -A
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: Copilot suggested fix for issue #${{ github.event.issue.number }}"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+
+      - name: Push branch and create PR
+        if: steps.commit.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "fix: Address issue #${{ github.event.issue.number }} - Copilot suggested fix"
+          title: "fix: Copilot suggested fix for issue #${{ github.event.issue.number }}"
+          body: |
+            ## Automated Fix by GitHub Copilot
+            
+            This PR contains a fix suggested by GitHub Copilot for issue #${{ github.event.issue.number }}.
+            
+            ### Original Issue
+            ${{ github.event.issue.body }}
+            
+            ### Suggested Changes
+            Please review the changes and merge if they resolve the issue.
+            
+            ---
+            *This PR was automatically created by GitHub Copilot. Please review carefully before merging.*
+          branch: copilot/fix-issue-${{ github.event.issue.number }}
+          labels: copilot-generated
+          assignees: ${{ github.event.issue.assignees }}
+
+      - name: Comment on issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = context.issue.number;
+            const workflowUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
+            
+            github.rest.issues.createComment({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ **Copilot Review Complete**\n\nCopilot has analyzed this issue and created a suggested fix. Please check the linked PR to review the changes.\n\n[View Workflow Run](${workflowUrl})`
+            });
