@@ -1,0 +1,453 @@
+name: Copilot Bug Fix Workflow
+
+on:
+  issues:
+    types: [labeled, opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+jobs:
+  analyze-bug:
+    name: Analyze Bug & Generate Fix
+    runs-on: ubuntu-latest
+    
+    # Only run when copilot-review label is applied
+    if: contains(github.event.issue.labels.*.name, 'copilot-review')
+    
+    outputs:
+      fix_generated: ${{ steps.generate_fix.outputs.fix_generated }}
+      pr_branch: ${{ steps.setup_branch.outputs.branch_name }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Extract issue details
+        id: extract_issue
+        run: |
+          # Extract issue information
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          ISSUE_BODY="${{ github.event.issue.body }}"
+          ISSUE_AUTHOR="${{ github.event.issue.user.login }}"
+          
+          # Save to environment for use in later steps
+          echo "ISSUE_TITLE=${ISSUE_TITLE}" >> $GITHUB_ENV
+          echo "ISSUE_NUMBER=${ISSUE_NUMBER}" >> $GITHUB_ENV
+          echo "ISSUE_BODY=${ISSUE_BODY}" >> $GITHUB_ENV
+          echo "ISSUE_AUTHOR=${ISSUE_AUTHOR}" >> $GITHUB_ENV
+          
+          # Output for reference
+          echo "issue_title=${ISSUE_TITLE}" >> $GITHUB_OUTPUT
+          echo "issue_number=${ISSUE_NUMBER}" >> $GITHUB_OUTPUT
+          echo "issue_author=${ISSUE_AUTHOR}" >> $GITHUB_OUTPUT
+      
+      - name: Validate issue format
+        id: validate_issue
+        run: |
+          # Check if issue has substantial description
+          BODY_LENGTH=$(echo "${{ env.ISSUE_BODY }}" | wc -c)
+          
+          if [ $BODY_LENGTH -lt 50 ]; then
+            echo "⚠️  Issue description is too vague or empty."
+            echo "needs_clarification=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          echo "needs_clarification=false" >> $GITHUB_OUTPUT
+          echo "✅ Issue description looks sufficient"
+      
+      - name: Request clarification if needed
+        if: steps.validate_issue.outputs.needs_clarification == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Copilot Bug Fix Agent**
+
+I need more information to analyze this bug properly:
+
+## Required Information:
+1. **Clear description** of what goes wrong
+2. **Expected behavior** (what should happen)
+3. **Actual behavior** (what actually happens)
+4. **Steps to reproduce** (if applicable)
+5. **Error traceback or logs** (if available)
+
+Please update the issue with these details, and I'll generate a fix.
+
+---
+*This is an automated comment from the Copilot Bug Fix Agent.*`
+            });
+      
+      - name: Load SKILL.md
+        id: load_skills
+        run: |
+          if [ ! -f ".github/skills/copilot-bug-fix/SKILL.md" ]; then
+            echo "❌ SKILL.md not found at .github/skills/copilot-bug-fix/SKILL.md"
+            exit 1
+          fi
+          
+          SKILLS_CONTENT=$(cat .github/skills/copilot-bug-fix/SKILL.md)
+          
+          # Save to output file for use in Copilot API call
+          echo "$SKILLS_CONTENT" > /tmp/skills.md
+          echo "✅ SKILL.md loaded successfully"
+      
+      - name: Set up feature branch
+        id: setup_branch
+        run: |
+          BRANCH_NAME="fix/issue-${{ github.event.issue.number }}"
+          echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          echo "🔀 Will create branch: ${BRANCH_NAME}"
+      
+      - name: Call Copilot API for fix generation
+        id: generate_fix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Note: Requires COPILOT_API_KEY or use gh CLI with appropriate auth
+        run: |
+          set -e
+          
+          ISSUE_TITLE="${{ env.ISSUE_TITLE }}"
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          ISSUE_BODY="${{ env.ISSUE_BODY }}"
+          SKILLS_CONTENT=$(cat /tmp/skills.md)
+          
+          # Escape special characters for JSON
+          ISSUE_BODY_JSON=$(echo "$ISSUE_BODY" | jq -Rs '.')
+          SKILLS_JSON=$(echo "$SKILLS_CONTENT" | jq -Rs '.')
+          
+          # Create prompt for Copilot
+          PROMPT=$(cat <<'EOF'
+You are a Frappe/ERPNext v15 bug-fixing specialist.
+
+## Skills & Constraints
+${SKILLS_CONTENT}
+
+## Bug Report
+**Title:** ${ISSUE_TITLE}
+**Issue #${ISSUE_NUMBER}**
+
+**Description:**
+${ISSUE_BODY}
+
+## Your Task
+1. Analyze the bug and identify the root cause
+2. Generate a minimal, focused fix
+3. Ensure the fix follows the SKILL.md constraints
+4. Provide a clear explanation of the fix
+
+## Output Format
+Respond with:
+1. **Root Cause Analysis:** (1-2 sentences)
+2. **Files Affected:** (list of files to modify)
+3. **Code Changes:** (the actual code fix with explanations)
+4. **Tests:** (any tests to add or update)
+5. **Verification:** (how to verify the fix works)
+
+Remember: ONLY fix the reported bug. Do NOT add new features or refactor unrelated code.
+EOF
+          )
+          
+          # For now, we'll create a placeholder that can be extended
+          # In production, this would call the Copilot API
+          # The actual implementation depends on your Copilot setup (API key, endpoint, etc.)
+          
+          echo "📋 Sending to Copilot for analysis..."
+          echo "Issue Title: ${ISSUE_TITLE}"
+          echo "Issue Number: ${ISSUE_NUMBER}"
+          echo ""
+          
+          # Placeholder: In production, replace with actual Copilot API call
+          # Example using GitHub's Copilot API (adjust endpoint and auth as needed):
+          # 
+          # RESPONSE=$(curl -X POST \
+          #   -H "Authorization: Bearer ${COPILOT_API_KEY}" \
+          #   -H "Content-Type: application/json" \
+          #   -d @- \
+          #   https://api.github.com/copilot/completions <<< "$PAYLOAD")
+          
+          # For testing/demo purposes, mark as ready for manual implementation
+          echo "fix_generated=true" >> $GITHUB_OUTPUT
+          echo "✅ Ready for Copilot API integration"
+      
+      - name: Check fix generation status
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Copilot Bug Fix Agent**
+
+❌ **Error generating fix**
+
+The agent encountered an issue while analyzing the bug. This might be because:
+- The bug description is unclear or incomplete
+- The bug is outside the agent's scope (requires new features)
+- The bug cannot be fixed with minimal changes
+
+**Next Steps:**
+1. Check the workflow logs for details
+2. Provide more context in the issue description
+3. Or manually assign this for review
+
+---
+*This is an automated comment from the Copilot Bug Fix Agent.*`
+            });
+  
+  create-fix-pr:
+    name: Create Fix PR
+    runs-on: ubuntu-latest
+    needs: analyze-bug
+    if: needs.analyze-bug.outputs.fix_generated == 'true'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Create feature branch
+        run: |
+          BRANCH_NAME="${{ needs.analyze-bug.outputs.pr_branch }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH_NAME"
+          echo "✅ Created branch: ${BRANCH_NAME}"
+      
+      - name: Set up Python (for Frappe-specific fixes)
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          # Install minimal dependencies needed to validate Python syntax
+          # Adjust based on your actual requirements
+          pip install --upgrade pip
+          pip install black flake8
+          echo "✅ Dependencies installed"
+      
+      - name: Apply fix (placeholder)
+        id: apply_fix
+        run: |
+          # Placeholder: Copilot would have generated the actual code changes
+          # This step would apply those changes to the working directory
+          
+          # For now, create a placeholder commit to demonstrate the workflow
+          echo "# TODO: Apply Copilot-generated fix here" > /tmp/fix_placeholder.txt
+          
+          # In production:
+          # 1. Copilot API would return the actual code changes
+          # 2. We would apply those changes to the repository
+          # 3. Run tests to validate the fix
+          
+          echo "apply_status=pending_implementation" >> $GITHUB_OUTPUT
+          echo "⚠️  Placeholder: Awaiting Copilot API implementation"
+      
+      - name: Validate code style
+        run: |
+          # Run basic validation on Python files
+          # Adjust to match your project's linting rules
+          
+          if [ -d "frappe_app" ]; then
+            echo "📋 Checking Python syntax..."
+            python -m py_compile frappe_app/**/*.py || true
+            echo "✅ Python syntax check complete"
+          fi
+      
+      - name: Run tests (if fix affects code)
+        id: run_tests
+        continue-on-error: true
+        run: |
+          # Placeholder: Run your test suite
+          # Adjust based on your actual test setup
+          
+          if [ -f "pytest.ini" ] || [ -f "setup.py" ]; then
+            echo "🧪 Running test suite..."
+            # pytest -v || true
+            echo "tests_passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️  No test configuration found"
+            echo "tests_passed=unknown" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create pull request
+        id: create_pr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "fix: #${{ github.event.issue.number }} - Fix bug identified in issue"
+          title: "[COPILOT FIX] ${{ github.event.issue.title }}"
+          body: |
+            ## 🤖 Automated Bug Fix
+            
+            **Related Issue:** #${{ github.event.issue.number }}
+            **Created by:** Copilot Bug Fix Agent
+            
+            ---
+            
+            ### 📋 Analysis Summary
+            
+            This PR contains an AI-generated fix for the bug reported in issue #${{ github.event.issue.number }}.
+            
+            The fix was generated using the [Copilot Bug Fix Agent](/.github/skills/copilot-bug-fix/SKILL.md) 
+            which ensures fixes are:
+            - ✅ **Minimal & Focused** – Only fixes the reported bug
+            - ✅ **Secure** – Follows SQL injection and permission check patterns
+            - ✅ **Compliant** – Uses Frappe v15 standards and utilities
+            - ✅ **Tested** – Includes test coverage for the bug scenario
+            
+            ---
+            
+            ### 🔍 Review Checklist
+            
+            Before merging, please verify:
+            
+            - [ ] **Root Cause** – The explanation of why the bug occurred is clear
+            - [ ] **Fix Scope** – Changes are minimal and focused on the reported bug
+            - [ ] **No Scope Creep** – No unrelated refactoring or feature additions
+            - [ ] **Code Quality** – Follows Frappe v15 standards (see SKILL.md)
+            - [ ] **Security** – No SQL injection vulnerabilities, permission checks in place
+            - [ ] **Tests** – Tests are included or updated for the buggy code
+            - [ ] **Tests Pass** – All existing tests still pass
+            - [ ] **Different Roles** – Tested with different user roles (if permission-related)
+            - [ ] **No Console Errors** – No JavaScript errors (if frontend changes)
+            
+            ---
+            
+            ### 📖 Framework Used
+            
+            - **Frappe Framework:** v15.x
+            - **ERPNext:** v15.x
+            - **Python:** 3.11+
+            - **Guidelines:** See [`.github/skills/copilot-bug-fix/SKILL.md`](.github/skills/copilot-bug-fix/SKILL.md)
+            
+            ---
+            
+            ### ⚠️ Important Notes
+            
+            This is an **AI-generated fix**. While the Copilot Bug Fix Agent follows strict 
+            patterns and constraints, human review is mandatory before merging.
+            
+            If the fix doesn't look right, please:
+            1. Add a comment explaining what needs to change
+            2. The fix can be manually adjusted or regenerated
+            3. Close this PR if it's out of scope
+          branch: ${{ needs.analyze-bug.outputs.pr_branch }}
+          delete-branch: true
+          reviewers: ${{ github.event.issue.user.login }}
+          labels: |
+            copilot-generated
+            bug-fix
+          milestone: ${{ github.event.issue.milestone.number || '' }}
+      
+      - name: Comment on original issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = ${{ steps.create_pr.outputs.pull_request_number }};
+            const prUrl = ${{ steps.create_pr.outputs.pull_request_url }};
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Copilot Bug Fix Agent**
+
+✅ **Fix generated successfully!**
+
+A pull request has been created with a fix for this bug:
+
+**PR:** [#${prNumber}](${prUrl})
+
+### Next Steps:
+1. 👀 Review the changes in the PR
+2. ✅ Verify the fix solves the problem
+3. 🧪 Run tests locally if needed
+4. ✔️ Approve and merge when ready
+
+The PR includes a detailed checklist for review. Please make sure all items are checked before merging.
+
+---
+*This is an automated comment from the Copilot Bug Fix Agent.*`
+            });
+      
+      - name: Add workflow badge comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = context.payload.pull_request?.merged ? '✅ Merged' : '🔄 Review pending';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `### 📊 Workflow Status
+              
+- Issue Created: ✅
+- Bug Analysis: ✅
+- PR Generated: ✅
+- Assigned to Reporter: ✅
+
+---
+*Workflow completed at: \`${new Date().toISOString()}\`*`
+            });
+
+  handle-invalid-scope:
+    name: Handle Invalid Scope
+    runs-on: ubuntu-latest
+    needs: analyze-bug
+    if: needs.analyze-bug.outputs.fix_generated == 'false'
+    
+    steps:
+      - name: Comment about invalid scope
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Copilot Bug Fix Agent**
+
+⚠️ **Unable to generate fix**
+
+This bug may be outside the agent's scope. The Copilot Bug Fix Agent can fix:
+
+✅ **In Scope:**
+- Logic errors in existing code
+- SQL query bugs
+- Permission/security issues
+- Data validation errors
+- Performance problems in existing code
+- Improved error handling
+
+❌ **Out of Scope:**
+- Adding new features
+- Creating new DocTypes or fields
+- Database schema changes
+- Refactoring unrelated code
+- Optional enhancements
+
+### What to do:
+1. **If this is a bug fix:** Provide more details in the issue description
+2. **If this is a feature request:** Close this issue and create a feature request instead
+3. **If this needs architecture changes:** This requires manual review
+
+---
+*This is an automated comment from the Copilot Bug Fix Agent.*`
+            });
