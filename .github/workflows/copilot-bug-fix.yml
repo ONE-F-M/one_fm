@@ -72,21 +72,20 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `🤖 **Copilot Bug Fix Agent**
+                  I need more information to analyze this bug properly:
 
-I need more information to analyze this bug properly:
+                  ## Required Information:
+                  1. **Clear description** of what goes wrong
+                  2. **Expected behavior** (what should happen)
+                  3. **Actual behavior** (what actually happens)
+                  4. **Steps to reproduce** (if applicable)
+                  5. **Error traceback or logs** (if available)
 
-## Required Information:
-1. **Clear description** of what goes wrong
-2. **Expected behavior** (what should happen)
-3. **Actual behavior** (what actually happens)
-4. **Steps to reproduce** (if applicable)
-5. **Error traceback or logs** (if available)
+                  Please update the issue with these details, and I'll generate a fix.
 
-Please update the issue with these details, and I'll generate a fix.
-
----
-*This is an automated comment from the Copilot Bug Fix Agent.*`
-            });
+                  ---
+                  *This is an automated comment from the Copilot Bug Fix Agent.*`
+              });
       
       - name: Load SKILL.md
         id: load_skills
@@ -128,34 +127,34 @@ Please update the issue with these details, and I'll generate a fix.
           
           # Create prompt for Copilot
           PROMPT=$(cat <<'EOF'
-You are a Frappe/ERPNext v15 bug-fixing specialist.
+          You are a Frappe/ERPNext v15 bug-fixing specialist.
 
-## Skills & Constraints
-${SKILLS_CONTENT}
+          ## Skills & Constraints
+          ${SKILLS_CONTENT}
 
-## Bug Report
-**Title:** ${ISSUE_TITLE}
-**Issue #${ISSUE_NUMBER}**
+          ## Bug Report
+          **Title:** ${ISSUE_TITLE}
+          **Issue #${ISSUE_NUMBER}**
 
-**Description:**
-${ISSUE_BODY}
+          **Description:**
+          ${ISSUE_BODY}
+            ## Your Task
+            1. Analyze the bug and identify the root cause
+            2. Generate a minimal, focused fix
+            3. Ensure the fix follows the SKILL.md constraints
+            4. Provide a clear explanation of the fix
 
-## Your Task
-1. Analyze the bug and identify the root cause
-2. Generate a minimal, focused fix
-3. Ensure the fix follows the SKILL.md constraints
-4. Provide a clear explanation of the fix
+            ## Output Format
+            Respond with:
+            1. **Root Cause Analysis:** (1-2 sentences)
+            2. **Files Affected:** (list of files to modify)
+            3. **Code Changes:** (the actual code fix with explanations)
+            4. **Tests:** (any tests to add or update)
+            5. **Verification:** (how to verify the fix works)
 
-## Output Format
-Respond with:
-1. **Root Cause Analysis:** (1-2 sentences)
-2. **Files Affected:** (list of files to modify)
-3. **Code Changes:** (the actual code fix with explanations)
-4. **Tests:** (any tests to add or update)
-5. **Verification:** (how to verify the fix works)
+            Remember: ONLY fix the reported bug. Do NOT add new features or refactor unrelated code.
 
-Remember: ONLY fix the reported bug. Do NOT add new features or refactor unrelated code.
-EOF
+          EOF
           )
           
           # For now, we'll create a placeholder that can be extended
@@ -190,22 +189,21 @@ EOF
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `🤖 **Copilot Bug Fix Agent**
+                  ❌ **Error generating fix**
 
-❌ **Error generating fix**
+                  The agent encountered an issue while analyzing the bug. This might be because:
+                  - The bug description is unclear or incomplete
+                  - The bug is outside the agent's scope (requires new features)
+                  - The bug cannot be fixed with minimal changes
 
-The agent encountered an issue while analyzing the bug. This might be because:
-- The bug description is unclear or incomplete
-- The bug is outside the agent's scope (requires new features)
-- The bug cannot be fixed with minimal changes
+                  **Next Steps:**
+                  1. Check the workflow logs for details
+                  2. Provide more context in the issue description
+                  3. Or manually assign this for review
 
-**Next Steps:**
-1. Check the workflow logs for details
-2. Provide more context in the issue description
-3. Or manually assign this for review
-
----
-*This is an automated comment from the Copilot Bug Fix Agent.*`
-            });
+                  ---
+                  *This is an automated comment from the Copilot Bug Fix Agent.*`
+              });
   
   create-fix-pr:
     name: Create Fix PR
@@ -366,24 +364,23 @@ The agent encountered an issue while analyzing the bug. This might be because:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `🤖 **Copilot Bug Fix Agent**
+                  ✅ **Fix generated successfully!**
 
-✅ **Fix generated successfully!**
+                  A pull request has been created with a fix for this bug:
 
-A pull request has been created with a fix for this bug:
+                  **PR:** [#${prNumber}](${prUrl})
 
-**PR:** [#${prNumber}](${prUrl})
+                  ### Next Steps:
+                  1. 👀 Review the changes in the PR
+                  2. ✅ Verify the fix solves the problem
+                  3. 🧪 Run tests locally if needed
+                  4. ✔️ Approve and merge when ready
 
-### Next Steps:
-1. 👀 Review the changes in the PR
-2. ✅ Verify the fix solves the problem
-3. 🧪 Run tests locally if needed
-4. ✔️ Approve and merge when ready
+                  The PR includes a detailed checklist for review. Please make sure all items are checked before merging.
 
-The PR includes a detailed checklist for review. Please make sure all items are checked before merging.
-
----
-*This is an automated comment from the Copilot Bug Fix Agent.*`
-            });
+                  ---
+                  *This is an automated comment from the Copilot Bug Fix Agent.*`
+              });
       
       - name: Add workflow badge comment
         if: always()
@@ -397,15 +394,14 @@ The PR includes a detailed checklist for review. Please make sure all items are 
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `### 📊 Workflow Status
-              
-- Issue Created: ✅
-- Bug Analysis: ✅
-- PR Generated: ✅
-- Assigned to Reporter: ✅
+              - Issue Created: ✅
+              - Bug Analysis: ✅
+              - PR Generated: ✅
+              - Assigned to Reporter: ✅
 
----
-*Workflow completed at: \`${new Date().toISOString()}\`*`
-            });
+              ---
+              *Workflow completed at: \`${new Date().toISOString()}\`*`
+              });
 
   handle-invalid-scope:
     name: Handle Invalid Scope
@@ -423,31 +419,30 @@ The PR includes a detailed checklist for review. Please make sure all items are 
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `🤖 **Copilot Bug Fix Agent**
+                  ⚠️ **Unable to generate fix**
 
-⚠️ **Unable to generate fix**
+                  This bug may be outside the agent's scope. The Copilot Bug Fix Agent can fix:
 
-This bug may be outside the agent's scope. The Copilot Bug Fix Agent can fix:
+                  ✅ **In Scope:**
+                  - Logic errors in existing code
+                  - SQL query bugs
+                  - Permission/security issues
+                  - Data validation errors
+                  - Performance problems in existing code
+                  - Improved error handling
 
-✅ **In Scope:**
-- Logic errors in existing code
-- SQL query bugs
-- Permission/security issues
-- Data validation errors
-- Performance problems in existing code
-- Improved error handling
+                  ❌ **Out of Scope:**
+                  - Adding new features
+                  - Creating new DocTypes or fields
+                  - Database schema changes
+                  - Refactoring unrelated code
+                  - Optional enhancements
 
-❌ **Out of Scope:**
-- Adding new features
-- Creating new DocTypes or fields
-- Database schema changes
-- Refactoring unrelated code
-- Optional enhancements
+                  ### What to do:
+                  1. **If this is a bug fix:** Provide more details in the issue description
+                  2. **If this is a feature request:** Close this issue and create a feature request instead
+                  3. **If this needs architecture changes:** This requires manual review
 
-### What to do:
-1. **If this is a bug fix:** Provide more details in the issue description
-2. **If this is a feature request:** Close this issue and create a feature request instead
-3. **If this needs architecture changes:** This requires manual review
-
----
-*This is an automated comment from the Copilot Bug Fix Agent.*`
-            });
+                  ---
+                  *This is an automated comment from the Copilot Bug Fix Agent.*`
+              });
