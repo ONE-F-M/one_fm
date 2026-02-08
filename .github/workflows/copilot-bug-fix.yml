@@ -263,7 +263,7 @@ jobs:
           
           if [ -d "frappe_app" ]; then
             echo "📋 Checking Python syntax..."
-            python -m py_compile frappe_app/**/*.py || true
+            find frappe_app -name '*.py' -print0 | xargs -0 python -m py_compile
             echo "✅ Python syntax check complete"
           fi
       
