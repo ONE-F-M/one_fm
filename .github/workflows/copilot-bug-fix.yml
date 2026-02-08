@@ -116,10 +116,6 @@ jobs:
           ISSUE_BODY="${{ github.event.issue.body }}"
           SKILLS_CONTENT=$(cat /tmp/skills.md)
 
-          # Escape inputs for JSON
-          ISSUE_BODY_JSON=$(echo "$ISSUE_BODY" | jq -Rs '.')
-          SKILLS_JSON=$(echo "$SKILLS_CONTENT" | jq -Rs '.')
-
           # Build payload
           PAYLOAD=$(jq -n \
             --arg title "$ISSUE_TITLE" \
