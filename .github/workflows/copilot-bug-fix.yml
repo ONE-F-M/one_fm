@@ -37,11 +37,21 @@ jobs:
         run: |
           # Extract issue information from environment (populated via GitHub context)
           
-          # Save to environment for use in later steps
-          echo "ISSUE_TITLE=${ISSUE_TITLE}" >> $GITHUB_ENV
-          echo "ISSUE_NUMBER=${ISSUE_NUMBER}" >> $GITHUB_ENV
-          echo "ISSUE_BODY=${ISSUE_BODY}" >> $GITHUB_ENV
-          echo "ISSUE_AUTHOR=${ISSUE_AUTHOR}" >> $GITHUB_ENV
+          # Save to environment for use in later steps (use multiline syntax to handle newlines safely)
+          {
+            echo "ISSUE_TITLE<<EOF"
+            echo "${ISSUE_TITLE}"
+            echo "EOF"
+            echo "ISSUE_NUMBER<<EOF"
+            echo "${ISSUE_NUMBER}"
+            echo "EOF"
+            echo "ISSUE_BODY<<EOF"
+            echo "${ISSUE_BODY}"
+            echo "EOF"
+            echo "ISSUE_AUTHOR<<EOF"
+            echo "${ISSUE_AUTHOR}"
+            echo "EOF"
+          } >> $GITHUB_ENV
           
           # Output for reference
           echo "issue_title=${ISSUE_TITLE}" >> $GITHUB_OUTPUT
