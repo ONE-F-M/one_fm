@@ -245,8 +245,8 @@ jobs:
           # Placeholder: Copilot would have generated the actual code changes
           # This step would apply those changes to the working directory
           
-          # For now, create a placeholder commit to demonstrate the workflow
-          echo "# TODO: Apply Copilot-generated fix here" > /tmp/fix_placeholder.txt
+          # For now, create a placeholder change in the repository to demonstrate the workflow
+          echo "# TODO: Apply Copilot-generated fix here" > fix_placeholder.txt
           
           # In production:
           # 1. Copilot API would return the actual code changes
