@@ -29,12 +29,13 @@ jobs:
       
       - name: Extract issue details
         id: extract_issue
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
         run: |
-          # Extract issue information
-          ISSUE_TITLE="${{ github.event.issue.title }}"
-          ISSUE_NUMBER="${{ github.event.issue.number }}"
-          ISSUE_BODY="${{ github.event.issue.body }}"
-          ISSUE_AUTHOR="${{ github.event.issue.user.login }}"
+          # Extract issue information from environment (populated via GitHub context)
           
           # Save to environment for use in later steps
           echo "ISSUE_TITLE=${ISSUE_TITLE}" >> $GITHUB_ENV
