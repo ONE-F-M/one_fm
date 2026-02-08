@@ -37,29 +37,14 @@ jobs:
         run: |
           # Extract issue information from environment (populated via GitHub context)
           
-          # Generate a unique suffix for here-doc delimiters to prevent injection via issue content
-          ENV_DELIM_SUFFIX="$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid)"
+          # (Note) We no longer write issue content into $GITHUB_ENV to avoid
+          # potential environment variable injection. Downstream steps should
+          # use step outputs or the GitHub context directly.
           
-          # Save to environment for use in later steps (use multiline syntax with unique delimiters)
-          {
-            echo "ISSUE_TITLE<<EOF${ENV_DELIM_SUFFIX}"
-            echo "${ISSUE_TITLE}"
-            echo "EOF${ENV_DELIM_SUFFIX}"
-            echo "ISSUE_NUMBER<<EOF${ENV_DELIM_SUFFIX}"
-            echo "${ISSUE_NUMBER}"
-            echo "EOF${ENV_DELIM_SUFFIX}"
-            echo "ISSUE_BODY<<EOF${ENV_DELIM_SUFFIX}"
-            echo "${ISSUE_BODY}"
-            echo "EOF${ENV_DELIM_SUFFIX}"
-            echo "ISSUE_AUTHOR<<EOF${ENV_DELIM_SUFFIX}"
-            echo "${ISSUE_AUTHOR}"
-            echo "EOF${ENV_DELIM_SUFFIX}"
-          } >> "$GITHUB_ENV"
-          
-          # Output for reference
-          echo "issue_title=${ISSUE_TITLE}" >> $GITHUB_OUTPUT
-          echo "issue_number=${ISSUE_NUMBER}" >> $GITHUB_OUTPUT
-          echo "issue_author=${ISSUE_AUTHOR}" >> $GITHUB_OUTPUT
+          # Output for reference and for use in later steps
+          echo "issue_title=${ISSUE_TITLE}" >> "$GITHUB_OUTPUT"
+          echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "issue_author=${ISSUE_AUTHOR}" >> "$GITHUB_OUTPUT"
       
       - name: Validate issue format
         id: validate_issue
