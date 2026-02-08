@@ -115,9 +115,9 @@ jobs:
         run: |
           set -e
           
-          ISSUE_TITLE="${{ env.ISSUE_TITLE }}"
+          ISSUE_TITLE="${{ github.event.issue.title }}"
           ISSUE_NUMBER="${{ github.event.issue.number }}"
-          ISSUE_BODY="${{ env.ISSUE_BODY }}"
+          ISSUE_BODY="${{ github.event.issue.body }}"
           SKILLS_CONTENT=$(cat /tmp/skills.md)
           
           # Escape special characters for JSON
