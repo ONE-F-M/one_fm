@@ -37,21 +37,24 @@ jobs:
         run: |
           # Extract issue information from environment (populated via GitHub context)
           
-          # Save to environment for use in later steps (use multiline syntax to handle newlines safely)
+          # Generate a unique suffix for here-doc delimiters to prevent injection via issue content
+          ENV_DELIM_SUFFIX="$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid)"
+          
+          # Save to environment for use in later steps (use multiline syntax with unique delimiters)
           {
-            echo "ISSUE_TITLE<<EOF"
+            echo "ISSUE_TITLE<<EOF${ENV_DELIM_SUFFIX}"
             echo "${ISSUE_TITLE}"
-            echo "EOF"
-            echo "ISSUE_NUMBER<<EOF"
+            echo "EOF${ENV_DELIM_SUFFIX}"
+            echo "ISSUE_NUMBER<<EOF${ENV_DELIM_SUFFIX}"
             echo "${ISSUE_NUMBER}"
-            echo "EOF"
-            echo "ISSUE_BODY<<EOF"
+            echo "EOF${ENV_DELIM_SUFFIX}"
+            echo "ISSUE_BODY<<EOF${ENV_DELIM_SUFFIX}"
             echo "${ISSUE_BODY}"
-            echo "EOF"
-            echo "ISSUE_AUTHOR<<EOF"
+            echo "EOF${ENV_DELIM_SUFFIX}"
+            echo "ISSUE_AUTHOR<<EOF${ENV_DELIM_SUFFIX}"
             echo "${ISSUE_AUTHOR}"
-            echo "EOF"
-          } >> $GITHUB_ENV
+            echo "EOF${ENV_DELIM_SUFFIX}"
+          } >> "$GITHUB_ENV"
           
           # Output for reference
           echo "issue_title=${ISSUE_TITLE}" >> $GITHUB_OUTPUT
