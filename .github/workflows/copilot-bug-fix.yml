@@ -42,9 +42,15 @@ jobs:
           # use step outputs or the GitHub context directly.
           
           # Output for reference and for use in later steps
-          echo "issue_title=${ISSUE_TITLE}" >> "$GITHUB_OUTPUT"
-          echo "issue_number=${ISSUE_NUMBER}" >> "$GITHUB_OUTPUT"
-          echo "issue_author=${ISSUE_AUTHOR}" >> "$GITHUB_OUTPUT"
+          cat << EOF >> "$GITHUB_OUTPUT"
+          issue_number=$ISSUE_NUMBER
+          issue_title<<ISSUE_TITLE
+          $ISSUE_TITLE
+          ISSUE_TITLE
+          issue_author<<ISSUE_AUTHOR
+          $ISSUE_AUTHOR
+          ISSUE_AUTHOR
+          EOF
       
       - name: Validate issue format
         id: validate_issue
