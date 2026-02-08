@@ -33,7 +33,7 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'copilot-review')
     
     outputs:
-      fix_generated: ${{ steps.generate_fix.outputs.fix_generated }}
+      fix_generated: ${{ steps.validate_issue.outputs.fix_generated == 'false' && 'false' || steps.generate_fix.outputs.fix_generated }}
       pr_branch: ${{ steps.setup_branch.outputs.branch_name }}
     
     steps:
@@ -85,6 +85,7 @@ jobs:
       
       - name: Load SKILL.md
         id: load_skills
+        if: steps.validate_issue.outputs.fix_generated == 'true'
         run: |
           if [ ! -f ".github/skills/copilot-bug-fix/SKILL.md" ]; then
             echo "❌ SKILL.md not found at .github/skills/copilot-bug-fix/SKILL.md"
@@ -99,6 +100,7 @@ jobs:
       
       - name: Set up feature branch
         id: setup_branch
+        if: steps.validate_issue.outputs.fix_generated == 'true'
         run: |
           BRANCH_NAME="fix/issue-${{ github.event.issue.number }}"
           echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
@@ -106,6 +108,7 @@ jobs:
       
       - name: Call Copilot API for fix generation
         id: generate_fix
+        if: steps.validate_issue.outputs.fix_generated == 'true'
         env:
           COPILOT_API_KEY: ${{ secrets.COPILOT_API_KEY }}
         run: |
