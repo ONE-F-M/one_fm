@@ -66,13 +66,16 @@ jobs:
           issue_author<<ISSUE_AUTHOR
           $ISSUE_AUTHOR
           ISSUE_AUTHOR
+          issue_body<<ISSUE_BODY
+          $ISSUE_BODY
+          ISSUE_BODY
           EOF
       
       - name: Validate issue format
         id: validate_issue
         run: |
           # Check if issue has substantial description
-          BODY_LENGTH=$(echo "${{ env.ISSUE_BODY }}" | wc -c)
+          BODY_LENGTH=$(echo "${{ steps.extract_issue.outputs.issue_body }}" | wc -c)
           
           if [ $BODY_LENGTH -lt 50 ]; then
             echo "⚠️  Issue description is too vague or empty."
