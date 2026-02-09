@@ -290,9 +290,9 @@ jobs:
           # Run basic validation on Python files
           # Adjust to match your project's linting rules
           
-          if [ -d "frappe_app" ]; then
+          if [ -d "one_fm" ]; then
             echo "📋 Checking Python syntax..."
-            find frappe_app -name '*.py' -print0 | xargs -0 python -m py_compile
+            find one_fm -name '*.py' -print0 | xargs -0 python -m py_compile
             echo "✅ Python syntax check complete"
           fi
       
