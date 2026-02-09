@@ -90,9 +90,11 @@ jobs:
       
       - name: Validate issue format
         id: validate_issue
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           # Check if issue has substantial description
-          BODY_LENGTH=$(echo "${{ github.event.issue.body }}" | wc -c)
+          BODY_LENGTH=$(printf '%s' "$ISSUE_BODY" | wc -c)
           
           if [ $BODY_LENGTH -lt 50 ]; then
             echo "⚠️  Issue description is too vague or empty."
