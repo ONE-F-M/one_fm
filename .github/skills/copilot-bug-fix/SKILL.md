@@ -376,7 +376,7 @@ If a fix requires changes outside these constraints, flag it in the PR and ask f
 
 - Frappe Framework: v15.x
 - ERPNext: v15.x
-- Python: 3.11 (required)
+- Python: >=3.10 (CI uses 3.10; 3.11 also supported)
 - Node.js: 20.x
 - MariaDB: 10.6
 - Redis: 6.x+ (required for caching and background jobs)
