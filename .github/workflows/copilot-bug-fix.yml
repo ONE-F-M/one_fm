@@ -11,43 +11,28 @@ permissions:
 
 jobs:
   notify-start:
-      name: Notify Issue Reporter
-      runs-on: ubuntu-latest
-      
-      # Only run when copilot-review label is applied
-      if: contains(github.event.issue.labels.*.name, 'copilot-review')
-      
-      steps:
-        - name: Post initial comment
-          uses: actions/github-script@v7
-          with:
-            script: |
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `🤖 **Copilot Bug Fix Agent**
-                    🚀 The bug fixing agent is on it!
+    name: Notify Issue Reporter
+    runs-on: ubuntu-latest
+    
+    # Only run when copilot-review label is applied
+    if: contains(github.event.issue.labels.*.name, 'copilot-review')
+    
+    steps:
+      - name: Post initial comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🤖 **Copilot Bug Fix Agent**
+                  🚀 The bug fixing agent is on it!
 
-                    I've started analyzing this issue and will generate a fix if possible. 
-                    You'll be notified once a pull request is ready.`
-              });
+                  I've started analyzing this issue and will generate a fix if possible. 
+                  You'll be notified once a pull request is ready.`
+            });
   analyze-bug:
-    name: Notify issue reporter that workflow started
-    uses: actions/github-script@v7
-    with:
-      script: |
-        github.rest.issues.createComment({
-          issue_number: context.issue.number,
-          owner: context.repo.owner,
-          repo: context.repo.repo,
-          body: `🤖 **Copilot Bug Fix Agent**
-              🚀 The bug fixing agent is on it!
-
-              I've started analyzing this issue and will generate a fix if possible. 
-              You'll be notified once a pull request is ready.`
-        });
-
     name: Analyze Bug & Generate Fix
     runs-on: ubuntu-latest
     
