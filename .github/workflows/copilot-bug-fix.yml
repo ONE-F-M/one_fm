@@ -42,6 +42,11 @@ jobs:
     outputs:
       fix_generated: ${{ steps.validate_issue.outputs.fix_generated == 'false' && 'false' || steps.generate_fix.outputs.fix_generated }}
       pr_branch: ${{ steps.setup_branch.outputs.branch_name }}
+      root_cause: ${{ steps.generate_fix.outputs.root_cause }}
+      files_affected: ${{ steps.generate_fix.outputs.files_affected }}
+      code_changes: ${{ steps.generate_fix.outputs.code_changes }}
+      tests: ${{ steps.generate_fix.outputs.tests }}
+      verification: ${{ steps.generate_fix.outputs.verification }}
     
     steps:
       - name: Checkout repository
