@@ -10,6 +10,28 @@ permissions:
   contents: write
 
 jobs:
+  notify-start:
+      name: Notify Issue Reporter
+      runs-on: ubuntu-latest
+      
+      # Only run when copilot-review label is applied
+      if: contains(github.event.issue.labels.*.name, 'copilot-review')
+      
+      steps:
+        - name: Post initial comment
+          uses: actions/github-script@v7
+          with:
+            script: |
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🤖 **Copilot Bug Fix Agent**
+                    🚀 The bug fixing agent is on it!
+
+                    I've started analyzing this issue and will generate a fix if possible. 
+                    You'll be notified once a pull request is ready.`
+              });
   analyze-bug:
     name: Notify issue reporter that workflow started
     uses: actions/github-script@v7
@@ -33,7 +55,7 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'copilot-review')
     
     outputs:
-      fix_generated: ${{ steps.generate_fix.outputs.fix_generated }}
+      fix_generated: ${{ steps.validate_issue.outputs.fix_generated == 'false' && 'false' || steps.generate_fix.outputs.fix_generated }}
       pr_branch: ${{ steps.setup_branch.outputs.branch_name }}
     
     steps:
@@ -66,13 +88,16 @@ jobs:
           issue_author<<ISSUE_AUTHOR
           $ISSUE_AUTHOR
           ISSUE_AUTHOR
+          issue_body<<ISSUE_BODY
+          $ISSUE_BODY
+          ISSUE_BODY
           EOF
       
       - name: Validate issue format
         id: validate_issue
         run: |
           # Check if issue has substantial description
-          BODY_LENGTH=$(echo "${{ env.ISSUE_BODY }}" | wc -c)
+          BODY_LENGTH=$(echo "${{ steps.extract_issue.outputs.issue_body }}" | wc -c)
           
           if [ $BODY_LENGTH -lt 50 ]; then
             echo "⚠️  Issue description is too vague or empty."
@@ -85,6 +110,7 @@ jobs:
       
       - name: Load SKILL.md
         id: load_skills
+        if: steps.validate_issue.outputs.fix_generated == 'true'
         run: |
           if [ ! -f ".github/skills/copilot-bug-fix/SKILL.md" ]; then
             echo "❌ SKILL.md not found at .github/skills/copilot-bug-fix/SKILL.md"
@@ -99,6 +125,7 @@ jobs:
       
       - name: Set up feature branch
         id: setup_branch
+        if: steps.validate_issue.outputs.fix_generated == 'true'
         run: |
           BRANCH_NAME="fix/issue-${{ github.event.issue.number }}"
           echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
@@ -106,6 +133,7 @@ jobs:
       
       - name: Call Copilot API for fix generation
         id: generate_fix
+        if: steps.validate_issue.outputs.fix_generated == 'true'
         env:
           COPILOT_API_KEY: ${{ secrets.COPILOT_API_KEY }}
         run: |
