@@ -189,6 +189,14 @@ jobs:
 
           echo "✅ Fix generated and structured outputs saved"
       
+      - name: Upload fix artifact
+        if: steps.generate_fix.outputs.fix_generated == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: copilot-fix
+          path: copilot_fix.txt
+          retention-days: 1
+      
       - name: Check fix generation status
         if: failure()
         uses: actions/github-script@v7
@@ -227,6 +235,11 @@ jobs:
         with:
           ref: staging
           fetch-depth: 0
+      
+      - name: Download fix artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: copilot-fix
       
       - name: Create feature branch
         run: |
