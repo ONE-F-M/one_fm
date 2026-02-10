@@ -15,12 +15,18 @@ jobs:
         id: auth
         env:
           AUTHORIZED_USERS: "pjamsheer,NoBoneZ,Talleyrand333,samdanikouser,ks093,yusuffGoodie,almarzouq10,zeinaremah"
+          USER_LOGIN: ${{ github.event.issue.user.login }}
         run: |
-          if [[ "$AUTHORIZED_USERS" == *"${{ github.event.issue.user.login }}"* ]]; then
-            echo "authorized=true" >> $GITHUB_OUTPUT
-          else
-            echo "authorized=false" >> $GITHUB_OUTPUT
-          fi
+          # Convert comma-separated string to array and check for exact match
+          IFS=',' read -ra USERS <<< "$AUTHORIZED_USERS"
+          authorized=false
+          for user in "${USERS[@]}"; do
+            if [[ "$user" == "$USER_LOGIN" ]]; then
+              authorized=true
+              break
+            fi
+          done
+          echo "authorized=$authorized" >> $GITHUB_OUTPUT
 
       - name: Close unauthorized issues
         if: steps.auth.outputs.authorized == 'false'
