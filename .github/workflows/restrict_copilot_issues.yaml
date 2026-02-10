@@ -6,6 +6,9 @@ on:
 
 jobs:
   check-authorization:
+    permissions:
+      contents: read
+      issues: write
     runs-on: ubuntu-latest
     steps:
       - name: Check if user is authorized
