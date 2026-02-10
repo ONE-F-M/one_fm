@@ -25,8 +25,22 @@ def run_error_log_agent_from_task(doc: dict):
     Background task to automatically create HD Ticket from Error Log.
     Called from background job when Error Log is created.
     
+    IMPORTANT: This method should be enqueued with the FULL module path:
+        frappe.enqueue(
+            method="one_fm.events.error_log.run_error_log_agent_from_task",
+            doc=error_log_dict
+        )
+    
+    If enqueued with just "run_error_log_agent_from_task" (without module path),
+    Frappe will fail with: "App run_error_log_agent_from_task is not installed"
+    
     Args:
         doc: Error Log document dict containing error details
+            Required fields: name, doctype, method, error
+            Optional fields: hd_ticket (to check for existing ticket)
+    
+    Returns:
+        str: Name of created HD Ticket, or None if ticket already exists or creation fails
     """
     try:
         # Convert dict to frappe._dict if needed
