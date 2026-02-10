@@ -57,29 +57,32 @@ def sendemail(recipients, subject, header=None, message=None,
 			sender = "Administrator"
 
 	if recipients and len(recipients) > 0:
-		frappe.sendmail(template = template,
-			recipients=recipients,
-			sender= sender,
-			cc=cc,
-			subject=subject,
-			args=dict(
-				header=head,
+		try:
+			frappe.sendmail(template = template,
+				recipients=recipients,
+				sender= sender,
+				cc=cc,
 				subject=subject,
-				message=message,
-				content=content,
-				reference_name= reference_name,
-				reference_doctype = reference_doctype,
-				logo=logo,
-				actions=actions,
-				pdf_link=pdf_link,
-				doc_link=doc_link,
-				workflow_state=workflow_state,
-				mandatory_field=mandatory_field,
-				field_labels=field_labels
-			),
-			attachments = attachments,
-			delayed=delayed
-		)
+				args=dict(
+					header=head,
+					subject=subject,
+					message=message,
+					content=content,
+					reference_name= reference_name,
+					reference_doctype = reference_doctype,
+					logo=logo,
+					actions=actions,
+					pdf_link=pdf_link,
+					doc_link=doc_link,
+					workflow_state=workflow_state,
+					mandatory_field=mandatory_field,
+					field_labels=field_labels
+				),
+				attachments = attachments,
+				delayed=delayed
+			)
+		except frappe.OutgoingEmailError:
+			frappe.log_error(title="Failed to send email", message=frappe.get_traceback())
 
 def is_email_notifications_allowed(user):
     """
