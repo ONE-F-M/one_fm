@@ -450,7 +450,6 @@ def create_github_issue(name, description):
         data = {
             "title": doc.subject,
             "body": f"**From HD Ticket:** [{doc.name}]({doc_link})\n\n**Description:**\n{description}",
-            "labels": ["open-swe-dev"]
         }
 
         url = f"https://api.github.com/repos/{github_repo_owner}/{github_repo_name}/issues"
