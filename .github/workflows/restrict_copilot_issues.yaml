@@ -1,0 +1,63 @@
+name: Restrict Issue Creation for Copilot
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  check-authorization:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if user is authorized
+        id: auth
+        env:
+          AUTHORIZED_USERS: "pjamsheer,NoBoneZ,Talleyrand333,samdanikouser,ks093,yusuffGoodie,almarzouq10,zeinaremah"
+        run: |
+          if [[ "$AUTHORIZED_USERS" == *"${{ github.event.issue.user.login }}"* ]]; then
+            echo "authorized=true" >> $GITHUB_OUTPUT
+          else
+            echo "authorized=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Close unauthorized issues
+        if: steps.auth.outputs.authorized == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.issue.number;
+            const username = context.payload.issue.user.login;
+            
+            // Comment explaining the restriction
+            await github.rest.issues.createComment({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `⚠️ **This repository uses Copilot for automated bug fixes.**
+
+              **Issue Creation Process:**
+              1. Report bugs via HD Ticket (internal system)
+              2. A team member will create a GitHub issue and assign Copilot
+              3. Copilot will create a PR with the fix
+
+              **Why?** This ensures all Copilot assignments are authorized and follow our security standards.
+
+              Please create an HD Ticket or contact our team to report this bug.`
+              });
+
+            // Close the issue
+            await github.rest.issues.update({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+              state_reason: 'not_planned'
+            });
+
+            // Add label
+            await github.rest.issues.addLabels({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['unauthorized-issue']
+            });
+```
