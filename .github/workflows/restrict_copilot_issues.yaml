@@ -35,18 +35,19 @@ jobs:
               issue_number: issueNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `⚠️ **This repository uses Copilot for automated bug fixes.**
-
-              **Issue Creation Process:**
-              1. Report bugs via HD Ticket (internal system)
-              2. A team member will create a GitHub issue and assign Copilot
-              3. Copilot will create a PR with the fix
-
-              **Why?** This ensures all Copilot assignments are authorized and follow our security standards.
-
-              Please create an HD Ticket or contact our team to report this bug.`
-              });
-
+              body: [
+                '⚠️ **This repository uses Copilot for automated bug fixes.**',
+                '',
+                '**Issue Creation Process:**',
+                '1. Report bugs via HD Ticket (internal system)',
+                '2. A team member will create a GitHub issue and assign Copilot',
+                '3. Copilot will create a PR with the fix',
+                '',
+                '**Why?** This ensures all Copilot assignments are authorized and follow our security standards.',
+                '',
+                'Please create an HD Ticket or contact our team to report this bug.'
+              ].join('\n')
+            });
             // Close the issue
             await github.rest.issues.update({
               issue_number: issueNumber,
