@@ -63,4 +63,3 @@ jobs:
               repo: context.repo.repo,
               labels: ['unauthorized-issue']
             });
-```
