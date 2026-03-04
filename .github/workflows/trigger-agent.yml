@@ -13,7 +13,7 @@ on:
 jobs:
   invoke-agent:
     # Only run if 'onefm_developer' label is present OR if manually triggered via workflow_dispatch
-    if: |
+    if: >-
       github.event_name == 'workflow_dispatch' || 
       (github.event_name == 'issues' && github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'onefm_developer')) ||
       (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'onefm_developer')
@@ -41,14 +41,13 @@ jobs:
         env:
           # This URL is found via 'gcloud run services describe onefm-frappe-agent'
           CLOUD_RUN_URL: ${{ secrets.CLOUD_RUN_URL }}
+          # Select issue number source based on event type to avoid concatenation
+          ISSUE_NUM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
         run: |
-          # Extract issue number from automated event OR workflow_dispatch input
-          ISSUE_NUM="${{ github.event.issue.number }}${{ github.event.inputs.issue_number }}"
-          
           echo "Connecting to: $CLOUD_RUN_URL"
           echo "Requesting fix for Issue #$ISSUE_NUM"
 
-          curl -X POST "${CLOUD_RUN_URL}/query" \
-            -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+          curl --fail-with-body -sS -X POST "${CLOUD_RUN_URL}/query" \
+            -H "Authorization: Bearer $(gcloud auth print-identity-token --audiences=\"${CLOUD_RUN_URL}\")" \
             -H "Content-Type: application/json" \
             -d "{\"input\": \"Solve GitHub issue #$ISSUE_NUM\", \"requester\": \"${{ github.actor }}\"}"
