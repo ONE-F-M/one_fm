@@ -1,0 +1,54 @@
+name: "🚀 Trigger AI Agent (Cloud Run)"
+
+on:
+  issues:
+    types: [opened, reopened, labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to solve (e.g. 94)'
+        required: true
+        type: string
+
+jobs:
+  invoke-agent:
+    # Only run if 'onefm_developer' label is present OR if manually triggered via workflow_dispatch
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'issues' && github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'onefm_developer')) ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'onefm_developer')
+    
+    # Run on standard GitHub-hosted runner for Cloud Run invocation
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write # Required for GCP OIDC Authentication
+
+    steps:
+      - name: 🔐 Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          # You will need to set up Workload Identity Pool for this to work secret-lessly
+          # Or you can use a Service Account Key (less secure, not recommended)
+          workload_identity_provider: ${{ secrets.GCP_WIDP }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: 🛠️ Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: 🤖 Invoke Agent on Cloud Run
+        env:
+          # This URL is found via 'gcloud run services describe onefm-frappe-agent'
+          CLOUD_RUN_URL: ${{ secrets.CLOUD_RUN_URL }}
+        run: |
+          # Extract issue number from automated event OR workflow_dispatch input
+          ISSUE_NUM="${{ github.event.issue.number }}${{ github.event.inputs.issue_number }}"
+          
+          echo "Connecting to: $CLOUD_RUN_URL"
+          echo "Requesting fix for Issue #$ISSUE_NUM"
+
+          curl -X POST "${CLOUD_RUN_URL}/query" \
+            -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+            -H "Content-Type: application/json" \
+            -d "{\"input\": \"Solve GitHub issue #$ISSUE_NUM\", \"requester\": \"${{ github.actor }}\"}"
