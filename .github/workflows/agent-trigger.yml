@@ -43,10 +43,12 @@ jobs:
           fi
 
       - name: 🔐 Authenticate with Google Cloud
+        id: auth
         uses: google-github-actions/auth@55bd3a7c6e2ae7cf1877fd1ccb9d54c0503c457c # v2.1.2
         with:
-          # You will need to set up Workload Identity Pool for this to work secret-lessly
-          # Or you can use a Service Account Key (less secure, not recommended)
+          token_format: 'id_token'
+          id_token_audience: ${{ secrets.CLOUD_RUN_URL }}
+          id_token_include_email: true
           workload_identity_provider: ${{ secrets.GCP_WIDP }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
@@ -55,12 +57,10 @@ jobs:
 
       - name: 🤖 Invoke Agent on Cloud Run
         env:
-          # This URL is found via 'gcloud run services describe onefm-frappe-agent'
           CLOUD_RUN_URL: ${{ secrets.CLOUD_RUN_URL }}
-          # Select issue number source based on event type to avoid concatenation
           ISSUE_NUM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
-          # Safely pass ACTOR to avoid command injection
           ACTOR: ${{ github.actor }}
+          GCP_ID_TOKEN: ${{ steps.auth.outputs.id_token }}
         run: |
           if ! [[ "$ISSUE_NUM" =~ ^[0-9]+$ ]]; then
             echo "Error: Issue number '$ISSUE_NUM' is not a valid number."
@@ -73,10 +73,7 @@ jobs:
           # Use jq to build JSON safely and avoid format issues
           PAYLOAD=$(jq -n --arg input "Solve GitHub issue #$ISSUE_NUM" --arg requester "$ACTOR" '{input: $input, requester: $requester}')
 
-          # Generate GCP Token cleanly to avoid quote escaping issues in curl
-          TOKEN=$(gcloud auth print-identity-token --audiences="${CLOUD_RUN_URL}")
-
           curl --fail-with-body -sS -X POST "${CLOUD_RUN_URL}/query" \
-            -H "Authorization: Bearer $TOKEN" \
+            -H "Authorization: Bearer $GCP_ID_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD"
