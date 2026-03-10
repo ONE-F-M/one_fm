@@ -43,6 +43,11 @@
    "unique": 1
   },
   {
+   "fieldname": "gst_number",
+   "fieldtype": "Data",
+   "label": "GST Number"
+  },
+  {
    "default": "0",
    "fieldname": "published",
    "fieldtype": "Check",
