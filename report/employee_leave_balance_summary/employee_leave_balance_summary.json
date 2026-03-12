@@ -1,0 +1,28 @@
+{
+  "creation": "2023-10-27 11:00:00",
+  "doctype": "Report",
+  "filters": [
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company",
+      "reqd": 1
+    }
+  ],
+  "idx": 0,
+  "is_standard": "Yes",
+  "modified": "2023-10-27 11:00:00",
+  "modified_by": "Administrator",
+  "module": "Human Resources",
+  "name": "Employee Leave Balance Summary",
+  "owner": "Administrator",
+  "prepared_report": 0,
+  "report_name": "Employee Leave Balance Summary",
+  "report_type": "Script Report",
+  "roles": [
+    {
+      "role": "HR User"
+    }
+  ]
+}
