@@ -280,3 +280,351 @@ def push_notification_rest_api_for_lms(user_id, message):
     except Exception as e:
         frappe.log_error(title="Error Sending  Push notification for LMS", message=frappe.get_traceback())
         return v1_api.utils.response("error", 500, {}, str(e))
+
+@frappe.whitelist()
+def optimize_transportation_routes():
+    """
+    Main function to trigger Google Route Optimization API
+    Steps:
+    1. Filter & Fetch All Active Shifts, Group by Accommodation
+    2. Determine Delivery Coordinates via Site Transport Stop Location
+    3. Build the Vehicle List
+    4. Assemble & Send the API Payload
+    """
+    # Permission check or Role check
+    # frappe.only_for("Operations Manager") # Optional: restricted to managers
+    
+    try:
+        config = frappe.get_single("Route Optimization API Configuration")
+        if not config.enabled:
+            frappe.msgprint(_("Route Optimization API is disabled in configuration."))
+            return
+            
+        # Step 1: Filter & Fetch All Active Shifts, Group by Accommodation
+        nested_map = get_grouped_employees_by_accommodation()
+        
+        if not nested_map:
+            frappe.log_error("No active shifts or employees found for route optimization", "Route Optimization")
+            return
+            
+        # Step 2: Determine Delivery Coordinates (Shipments)
+        shipments = build_shipments_from_nested_map(nested_map, config)
+        
+        # Step 3 & 4: Build Vehicle List and Send Payload
+        results = process_accommodations(shipments, config)
+        
+        return results
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Route Optimization API Error")
+        return {"status": "error", "message": str(e)}
+
+def get_grouped_employees_by_accommodation() -> dict:
+    # 1. Fetch all active Operations Shift entries
+    active_shifts = frappe.get_all("Operations Shift", filters={"status": "Active"}, fields=["name", "site"])
+    if not active_shifts:
+        return {}
+
+    shift_names = [s.name for s in active_shifts]
+
+    # 2. Find all employees with a shift allocation matching one of the active shifts
+    # Based on research, 'shift_allocation' is likely the 'shift' field on Employee
+    employees = frappe.get_all("Employee", 
+        filters={"status": "Active", "shift": ["in", shift_names]}, 
+        fields=["name", "shift"]
+    )
+
+    accommodation_map = {}
+    for emp in employees:
+        # 3. For each employee, look up their current accommodation via their latest "IN" accommodation checkin record
+        latest_checkin = frappe.db.get_value("Accommodation Checkin Checkout", 
+            {"employee": emp.name, "type": "IN"}, 
+            ["name", "accommodation"],
+            order_by="creation desc",
+            as_dict=True
+        )
+
+        if not latest_checkin or not latest_checkin.accommodation_name:
+            frappe.log_error(f"{emp.name} has no checkin record or accommodation excluded from route optimization", "Route Optimization")
+            continue
+
+        acc_name = latest_checkin.accommodation.accommodation
+        
+        # 4. Handle Mahboula buildings grouping (12, 13, 15)
+        if acc_name in ["Mahboula 12", "Mahboula 13", "Mahboula 15"]:
+            acc_name = "Mahboula Camp"
+            
+        if acc_name not in accommodation_map:
+            accommodation_map[acc_name] = []
+        
+        accommodation_map[acc_name].append(emp)
+
+    # Group by shift under accommodation
+    nested_map = {}
+    for acc_name, emp_list in accommodation_map.items():
+        # Only consider Accommodation entries that have the "Stop Location" field populated.
+        # Check if 'transport_stop_location' is populated in Accommodation DocType
+        acc_doc = frappe.db.get_value("Accommodation", acc_name, ["name", "transport_stop_location"], as_dict=True)
+        if not acc_doc or not acc_doc.transport_stop_location:
+            continue
+
+        nested_map[acc_name] = {}
+        for emp in emp_list:
+            shift = emp.shift
+            if shift not in nested_map[acc_name]:
+                nested_map[acc_name][shift] = []
+            nested_map[acc_name][shift].append(emp.name)
+
+    print("nested map: ")
+    print(nested_map)
+    # return nested_map
+
+
+def build_shipments_from_nested_map(nested_map: dict, config: object) -> dict:
+    shipments_by_accommodation = {}
+    buffer = config.service_duration_boarding_unboarding or 300
+    penalty_cost = config.penalty_cost or 1000000
+
+    for acc_name, shifts_dict in nested_map.items():
+        shipments = []
+        acc_coords = get_coords("Accommodation", acc_name)
+        if not acc_coords:
+            continue
+
+        # Grouping for "One Location Many Sites"
+        olm_groups = {} # {(stop_location, time_group): {"shifts": [], "headcount": 0}}
+
+        for shift_name, employee_list in shifts_dict.items():
+            shift_doc = frappe.get_doc("Operations Shift", shift_name)
+            operations_site = shift_doc.site
+            headcount = len(employee_list)
+
+            # Query 1: One Site Many Locations
+            one_site_many_locations = frappe.get_all("Site Transport Stop Location",
+                filters={"site_arrangement": "One Site Many Locations", "site": operations_site},
+                fields=["name"]
+            )
+
+            for osm in one_site_many_locations:
+                osm_doc = frappe.get_doc("Site Transport Stop Location", osm.name)
+                for row in osm_doc.transport_stop_locations:
+                    stop_coords = get_coords("Location", row.location)
+                    if stop_coords:
+                        shipments.extend(create_shipment_pair(
+                            acc_name, shift_doc, row.location, acc_coords, stop_coords, headcount, buffer, penalty_cost
+                        ))
+
+            # Query 2: One Location Many Sites
+            one_location_many_sites = frappe.db.sql("""
+                SELECT parent FROM `tabLocation To Site Mapping` WHERE sites = %s
+            """, (operations_site,), as_dict=True)
+
+            for olm in one_location_many_sites:
+                olm_doc = frappe.get_doc("Site Transport Stop Location", olm.parent)
+                if olm_doc.site_arrangement != "One Location Many Sites":
+                    continue
+                
+                stop_location = olm_doc.transport_stop_location
+                # Time grouping (within 1 hour)
+                start_dt = frappe.utils.get_datetime(f"2000-01-01 {shift_doc.start_time}")
+                time_key = start_dt.hour
+                
+                group_key = (stop_location, time_key)
+                if group_key not in olm_groups:
+                    olm_groups[group_key] = {"shifts": [], "headcount": 0}
+                
+                olm_groups[group_key]["shifts"].append(shift_doc)
+                olm_groups[group_key]["headcount"] += headcount
+
+        # Process OLM groups
+        for group_key, data in olm_groups.items():
+            stop_location, time_key = group_key
+            stop_coords = get_coords("Location", stop_location)
+            if not stop_coords:
+                continue
+            
+            shifts = data["shifts"]
+            earliest_start = min(s.start_time for s in shifts)
+            latest_end = max(s.end_time for s in shifts)
+            
+            pseudo_shift = frappe._dict({
+                "name": f"Grouped_{stop_location}_{time_key}",
+                "start_time": earliest_start,
+                "end_time": latest_end
+            })
+            
+            shipments.extend(create_shipment_pair(
+                acc_name, pseudo_shift, stop_location, acc_coords, stop_coords, data["headcount"], buffer, penalty_cost
+            ))
+
+        shipments_by_accommodation[acc_name] = shipments
+
+    return shipments_by_accommodation
+
+def create_shipment_pair(acc_name, shift, stop_location, acc_coords, stop_coords, headcount, buffer, penalty_cost):
+    from frappe.utils import get_datetime, add_minutes, get_utc_datetime
+    
+    def to_utc(dt_str):
+        dt = get_datetime(f"{frappe.utils.today()} {dt_str}")
+        return get_utc_datetime(dt)
+
+    start_time_utc = to_utc(shift.start_time)
+    end_time_utc = to_utc(shift.end_time)
+
+    shipment_base = {
+        "loadDemands": {"seats": {"amount": headcount}},
+        "penaltyCost": penalty_cost
+    }
+
+    shipments = []
+    
+    # OUTBOUND
+    outbound = shipment_base.copy()
+    outbound.update({
+        "label": f"{acc_name}_{shift.name}_{stop_location}_OUTBOUND",
+        "pickup": {"arrivalLocation": {"latitude": acc_coords[0], "longitude": acc_coords[1]}},
+        "delivery": {"arrivalLocation": {"latitude": stop_coords[0], "longitude": stop_coords[1]}},
+        "timeWindows": [{
+            "startTime": add_minutes(start_time_utc, -buffer).isoformat() + "Z",
+            "softEndTime": add_minutes(start_time_utc, -10).isoformat() + "Z",
+            "endTime": start_time_utc.isoformat() + "Z"
+        }]
+    })
+    shipments.append(outbound)
+
+    # RETURN
+    ret = shipment_base.copy()
+    ret.update({
+        "label": f"{acc_name}_{shift.name}_{stop_location}_RETURN",
+        "pickup": {"arrivalLocation": {"latitude": stop_coords[0], "longitude": stop_coords[1]}},
+        "delivery": {"arrivalLocation": {"latitude": acc_coords[0], "longitude": acc_coords[1]}},
+        "timeWindows": [{
+            "startTime": end_time_utc.isoformat() + "Z",
+            "endTime": add_minutes(end_time_utc, buffer).isoformat() + "Z"
+        }]
+    })
+    shipments.append(ret)
+    
+    return shipments
+
+def get_coords(doctype: str, name: str) -> tuple | None:
+    doc_fields = frappe.db.get_value(doctype, name, ["*"], as_dict=True)
+    if not doc_fields:
+        return None
+    
+    geo_field = None
+    if doctype == "Accommodation":
+        geo_field = doc_fields.get("accommodation_geolocation")
+    elif doctype == "Location":
+        geo_field = doc_fields.get("location")
+    
+    if geo_field:
+        try:
+            geo_data = json.loads(geo_field)
+            if "features" in geo_data and geo_data["features"]:
+                coords = geo_data["features"][0]["geometry"]["coordinates"]
+                return coords[1], coords[0] # latitude, longitude
+        except:
+            pass
+            
+    # Fallback to latitude/longitude fields if available
+    if doc_fields.get("latitude") and doc_fields.get("longitude"):
+        return doc_fields.get("latitude"), doc_fields.get("longitude")
+        
+    return None
+
+def process_accommodations(shipments_dict: dict, config: object) -> list:
+    results = []
+    
+    for acc_name, shipments in shipments_dict.items():
+        if not shipments:
+            continue
+            
+        vehicles = build_vehicle_list(acc_name)
+        if not vehicles:
+            continue
+            
+        payload = {
+            "model": {
+                "shipments": shipments,
+                "vehicles": vehicles,
+                "globalStartTime": frappe.utils.get_utc_datetime(frappe.utils.today() + " 00:00:00").isoformat() + "Z",
+                "globalEndTime": frappe.utils.get_utc_datetime(frappe.utils.today() + " 23:59:59").isoformat() + "Z"
+            }
+        }
+        
+        response = call_route_optimization_api(payload)
+        
+        if response and "skippedShipments" in response:
+            for skipped in response["skippedShipments"]:
+                frappe.log_error(f"Shipment skipped: {skipped.get('label')} with penalty cost", "Route Optimization")
+        
+        results.append({
+            "accommodation": acc_name,
+            "status": "success" if response else "error",
+            "response": response
+        })
+        
+    return results
+
+def build_vehicle_list(acc_name: str) -> list:
+    config = frappe.get_single("Route Optimization API Configuration")
+    acc_transport_stop = frappe.db.get_value("Accommodation", acc_name, "transport_stop_location")
+    if not acc_transport_stop:
+        return []
+        
+    transport_vehicles = frappe.get_all("Vehicle", 
+        filters={"transport_stop_vehicle": 1},
+        fields=["name", "vehicle_location", "seats"]
+    )
+    
+    vehicles = []
+    today_start = frappe.utils.get_utc_datetime(frappe.utils.today() + " 00:00:00").isoformat() + "Z"
+    today_end = frappe.utils.get_utc_datetime(frappe.utils.today() + " 23:59:59").isoformat() + "Z"
+    
+    for v in transport_vehicles:
+        if v.vehicle_location == acc_transport_stop:
+            coords = get_coords("Location", v.vehicle_location)
+            if not coords:
+                continue
+                
+            start_end_coords = {"latitude": coords[0], "longitude": coords[1]}
+            
+            vehicles.append({
+                "label": v.name,
+                "startLocation": start_end_coords,
+                "endLocation": start_end_coords,
+                "loadLimits": { "seats": { "maxLoad": v.seats or 1 } },
+                "startTimeWindows": [{ "startTime": today_start }],
+                "endTimeWindows":   [{ "endTime":   today_end }],
+                "fixedCost": config.fixed_cost or 0,
+                "costPerKilometer": config.cost_per_kilometer or 0,
+                "costPerHour": config.cost_per_hour or 0
+            })
+            
+    return vehicles
+
+def call_route_optimization_api(payload: dict) -> dict | None:
+    try:
+        # Get credentials from a secure place or site_config
+        api_key = frappe.conf.get("google_route_optimization_api_key")
+        project_id = frappe.conf.get("google_project_id")
+        
+        if not api_key or not project_id:
+            frappe.log_error("Google API Key or Project ID missing in site_config", "Route Optimization")
+            return {"status": "error", "message": "Credentials missing"}
+
+        url = f"https://routeoptimization.googleapis.com/v1/projects/{project_id}:optimizeTours"
+        
+        headers = {
+            "X-Goog-Api-Key": api_key,
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        
+        return response.json()
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Route Optimization API Call Failed")
+        return None
