@@ -24,6 +24,11 @@
    "unique": 1
   },
   {
+   "fieldname": "gst_number",
+   "fieldtype": "Data",
+   "label": "GST Number"
+  },
+  {
    "fieldname": "route",
    "fieldtype": "Data",
    "in_list_view": 1,
