@@ -364,8 +364,10 @@ doc_events = {
 		"on_submit":"one_fm.one_fm.sales_invoice_custom.submit_sales_invoice",
 		"before_cancel":'one_fm.one_fm.sales_invoice_custom.cancel_sales_invoice',
 		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
-		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
+		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state",
+		"before_submit": "one_fm.one_fm.validation.check_credit_limit"
 	},
+		"before_submit": "one_fm.one_fm.validation.check_credit_limit",
 	"Salary Slip": {
 		"before_submit": "one_fm.overrides.salary_slip.salary_slip_before_submit",
 		"validate": [
