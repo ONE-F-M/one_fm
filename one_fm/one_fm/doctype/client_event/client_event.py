@@ -12,7 +12,7 @@ class ClientEvent(Document):
 		self.validate_workflow_transition()
 
 	def validate_date_time(self):
-		if not self.is_new() and self.workflow_state not in ("Pending Approval", None):
+		if not self.is_new() and self.workflow_state not in ("Pending Operations Manager", None):
 			return
 		if self.workflow_state == "Approved":
 			return
@@ -44,8 +44,34 @@ class ClientEvent(Document):
 		if self.workflow_state == "Approved":
 			return
 
+<<<<<<< Updated upstream
 		event_staff_exists = self.has_submitted_event_staff()
 		if not event_staff_exists:
+=======
+		# Only act on transitions away from Pending Operations Manager
+		if self.workflow_state not in ("Draft", "Rejected", "Cancelled"):
+			return
+
+		# 1. Cancel all submitted Event Staff
+		cancelled_count = self.cancel_submitted_event_staff()
+
+		# 2. Delete all draft Event Staff
+		deleted_count = self.delete_draft_event_staff()
+
+		if cancelled_count or deleted_count:
+			parts = []
+			if cancelled_count:
+				parts.append(f"{cancelled_count} submitted Event Staff record(s) cancelled")
+			if deleted_count:
+				parts.append(f"{deleted_count} draft Event Staff record(s) deleted")
+			frappe.msgprint(
+				"Workflow transition: " + " and ".join(parts) + ".",
+				alert=True
+			)
+
+		# Preserve date-based guards for events already in progress or finished
+		if not self.start_date or not self.end_date:
+>>>>>>> Stashed changes
 			return
 
 		today_date = getdate(today())
