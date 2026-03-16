@@ -8,6 +8,7 @@
  "field_order": [
   "customer",
   "customer_name",
+  "gst_number",
   "route_hash",
   "column_break_jhym",
   "published",
@@ -43,6 +44,15 @@
    "unique": 1
   },
   {
+   "fieldname": "gst_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "GST Number",
+   "length": 15,
+   "search_index": 1
+  },
+  {
    "default": "0",
    "fieldname": "published",
    "fieldtype": "Check",
@@ -63,7 +73,7 @@
  ],
  "has_web_view": 1,
  "links": [],
- "modified": "2024-06-18 16:42:20.352550",
+ "modified": "2025-02-14 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Client",
