@@ -308,10 +308,21 @@ def optimize_transportation_routes():
             return
             
         # Step 2: Determine Delivery Coordinates (Shipments)
-        shipments = build_shipments_from_nested_map(nested_map, config)
+        # Define Global UTC boundaries for the day with +/- 6 hours padding to avoid edge case issues
+        import pytz
+        from datetime import timedelta
+        site_tz = pytz.timezone(frappe.db.get_single_value("System Settings", "time_zone") or "UTC")
+        local_today_start = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 00:00:00")) - timedelta(hours=6)
+        local_today_end = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 23:59:59")) + timedelta(hours=6)
         
+        global_start_utc = local_today_start.astimezone(pytz.utc).replace(tzinfo=None)
+        global_end_utc = local_today_end.astimezone(pytz.utc).replace(tzinfo=None)
+        global_bounds = (global_start_utc, global_end_utc)
+
+        shipments = build_shipments_from_nested_map(nested_map, config, global_bounds)
+
         # Step 3 & 4: Build Vehicle List and Send Payload
-        results = process_accommodations(shipments, config)
+        results = process_accommodations(shipments, config, global_bounds)
         
         return results
         
@@ -328,7 +339,6 @@ def get_grouped_employees_by_accommodation() -> dict:
     shift_names = [s.name for s in active_shifts]
 
     # 2. Find all employees with a shift allocation matching one of the active shifts
-    # Based on research, 'shift_allocation' is likely the 'shift' field on Employee
     employees = frappe.get_all("Employee", 
         filters={"status": "Active", "shift": ["in", shift_names]}, 
         fields=["name", "shift"]
@@ -336,7 +346,7 @@ def get_grouped_employees_by_accommodation() -> dict:
 
     accommodation_map = {}
     for emp in employees:
-        # 3. For each employee, look up their current accommodation via their latest "IN" accommodation checkin record
+        # 3. For each employee, look up their current accommodation record ID
         latest_checkin = frappe.db.get_value("Accommodation Checkin Checkout", 
             {"employee": emp.name, "type": "IN"}, 
             ["name", "accommodation"],
@@ -344,45 +354,53 @@ def get_grouped_employees_by_accommodation() -> dict:
             as_dict=True
         )
 
-        if not latest_checkin or not latest_checkin.accommodation_name:
-            frappe.log_error(f"{emp.name} has no checkin record or accommodation excluded from route optimization", "Route Optimization")
+        if not latest_checkin:
+            frappe.log_error(f"{emp.name} has no checkin record", "Route Optimization")
             continue
 
-        acc_name = latest_checkin.accommodation.accommodation
+        acc_id = latest_checkin.accommodation
+        acc_label = frappe.db.get_value("Accommodation", acc_id, "accommodation")
+        
+        if not acc_label:
+            continue
         
         # 4. Handle Mahboula buildings grouping (12, 13, 15)
-        if acc_name in ["Mahboula 12", "Mahboula 13", "Mahboula 15"]:
-            acc_name = "Mahboula Camp"
+        # We group them under "Mahboula Camp" but keep a valid acc_id for location lookups
+        acc_key = "Mahboula Camp" if acc_label in ["Mahboula 12", "Mahboula 13", "Mahboula 15"] else acc_id
             
-        if acc_name not in accommodation_map:
-            accommodation_map[acc_name] = []
+        if acc_key not in accommodation_map:
+            accommodation_map[acc_key] = {
+                "lookup_id": acc_id,
+                "employees": []
+            }
         
-        accommodation_map[acc_name].append(emp)
+        accommodation_map[acc_key]["employees"].append(emp)
 
     # Group by shift under accommodation
     nested_map = {}
-    for acc_name, emp_list in accommodation_map.items():
-        # Only consider Accommodation entries that have the "Stop Location" field populated.
-        # Check if 'transport_stop_location' is populated in Accommodation DocType
-        acc_doc = frappe.db.get_value("Accommodation", acc_name, ["name", "transport_stop_location"], as_dict=True)
+    for acc_key, data in accommodation_map.items():
+        lookup_id = data["lookup_id"]
+        emp_list = data["employees"]
+        
+        # 5. Only consider Accommodation entries that have the "Stop Location" field populated.
+        acc_doc = frappe.db.get_value("Accommodation", lookup_id, ["name", "transport_stop_location"], as_dict=True)
+        
         if not acc_doc or not acc_doc.transport_stop_location:
             continue
 
-        nested_map[acc_name] = {}
+        nested_map[acc_key] = {}
         for emp in emp_list:
             shift = emp.shift
-            if shift not in nested_map[acc_name]:
-                nested_map[acc_name][shift] = []
-            nested_map[acc_name][shift].append(emp.name)
+            if shift not in nested_map[acc_key]:
+                nested_map[acc_key][shift] = []
+            nested_map[acc_key][shift].append(emp.name)
 
-    print("nested map: ")
-    print(nested_map)
-    # return nested_map
+    return nested_map
 
 
-def build_shipments_from_nested_map(nested_map: dict, config: object) -> dict:
+def build_shipments_from_nested_map(nested_map: dict, config: object, global_bounds: tuple) -> dict:
     shipments_by_accommodation = {}
-    buffer = config.service_duration_boarding_unboarding or 300
+    pickup_window_buffer = 120  # minutes before shift start the vehicle can depart (hardcoded for now)
     penalty_cost = config.penalty_cost or 1000000
 
     for acc_name, shifts_dict in nested_map.items():
@@ -391,7 +409,7 @@ def build_shipments_from_nested_map(nested_map: dict, config: object) -> dict:
         if not acc_coords:
             continue
 
-        # Grouping for "One Location Many Sites"
+        # 1. Generate all shipments for this accommodation
         olm_groups = {} # {(stop_location, time_group): {"shifts": [], "headcount": 0}}
 
         for shift_name, employee_list in shifts_dict.items():
@@ -399,22 +417,35 @@ def build_shipments_from_nested_map(nested_map: dict, config: object) -> dict:
             operations_site = shift_doc.site
             headcount = len(employee_list)
 
-            # Query 1: One Site Many Locations
+            # --- Arrangement 1: One Site Many Locations ---
+            # Spread shift headcount across all available locations
             one_site_many_locations = frappe.get_all("Site Transport Stop Location",
                 filters={"site_arrangement": "One Site Many Locations", "site": operations_site},
                 fields=["name"]
             )
 
+            all_osm_locations = []
             for osm in one_site_many_locations:
                 osm_doc = frappe.get_doc("Site Transport Stop Location", osm.name)
                 for row in osm_doc.transport_stop_locations:
-                    stop_coords = get_coords("Location", row.location)
-                    if stop_coords:
+                    coords = get_coords("Location", row.location)
+                    if coords:
+                        all_osm_locations.append({"name": row.location, "coords": coords})
+
+            if all_osm_locations:
+                num_locs = len(all_osm_locations)
+                base_h = headcount // num_locs
+                extra_h = headcount % num_locs
+
+                for i, loc in enumerate(all_osm_locations):
+                    current_h = base_h + (1 if i < extra_h else 0)
+                    if current_h > 0:
                         shipments.extend(create_shipment_pair(
-                            acc_name, shift_doc, row.location, acc_coords, stop_coords, headcount, buffer, penalty_cost
+                            acc_name, shift_doc, loc["name"], acc_coords, loc["coords"], 
+                            current_h, pickup_window_buffer, penalty_cost, global_bounds
                         ))
 
-            # Query 2: One Location Many Sites
+            # --- Arrangement 2: One Location Many Sites ---
             one_location_many_sites = frappe.db.sql("""
                 SELECT parent FROM `tabLocation To Site Mapping` WHERE sites = %s
             """, (operations_site,), as_dict=True)
@@ -425,7 +456,6 @@ def build_shipments_from_nested_map(nested_map: dict, config: object) -> dict:
                     continue
                 
                 stop_location = olm_doc.transport_stop_location
-                # Time grouping (within 1 hour)
                 start_dt = frappe.utils.get_datetime(f"2000-01-01 {shift_doc.start_time}")
                 time_key = start_dt.hour
                 
@@ -436,7 +466,7 @@ def build_shipments_from_nested_map(nested_map: dict, config: object) -> dict:
                 olm_groups[group_key]["shifts"].append(shift_doc)
                 olm_groups[group_key]["headcount"] += headcount
 
-        # Process OLM groups
+        # Process OLM groups into shipments
         for group_key, data in olm_groups.items():
             stop_location, time_key = group_key
             stop_coords = get_coords("Location", stop_location)
@@ -446,7 +476,6 @@ def build_shipments_from_nested_map(nested_map: dict, config: object) -> dict:
             shifts = data["shifts"]
             earliest_start = min(s.start_time for s in shifts)
             latest_end = max(s.end_time for s in shifts)
-            
             pseudo_shift = frappe._dict({
                 "name": f"Grouped_{stop_location}_{time_key}",
                 "start_time": earliest_start,
@@ -454,137 +483,205 @@ def build_shipments_from_nested_map(nested_map: dict, config: object) -> dict:
             })
             
             shipments.extend(create_shipment_pair(
-                acc_name, pseudo_shift, stop_location, acc_coords, stop_coords, data["headcount"], buffer, penalty_cost
+                acc_name, pseudo_shift, stop_location, acc_coords, stop_coords, data["headcount"], pickup_window_buffer, penalty_cost, global_bounds
             ))
 
-        shipments_by_accommodation[acc_name] = shipments
+        # 2. Cluster generated shipments by time gaps (Handover Logic)
+        # Each tuple in shipments is (shipment_dict, time_obj)
+        all_tuples = sorted(shipments, key=lambda x: x[1])
+        
+        batches = []
+        if all_tuples:
+            current_batch = [all_tuples[0][0]]
+            for i in range(1, len(all_tuples)):
+                prev_time = all_tuples[i-1][1]
+                curr_time = all_tuples[i][1]
+                
+                # If gap is > 2 hours, start a new batch
+                from datetime import timedelta
+                if curr_time - prev_time > timedelta(hours=2):
+                    batches.append(current_batch)
+                    current_batch = [all_tuples[i][0]]
+                else:
+                    current_batch.append(all_tuples[i][0])
+            batches.append(current_batch)
+            
+        shipments_by_accommodation[acc_name] = batches
 
     return shipments_by_accommodation
 
-def create_shipment_pair(acc_name, shift, stop_location, acc_coords, stop_coords, headcount, buffer, penalty_cost):
-    from frappe.utils import get_datetime, add_minutes, get_utc_datetime
-    
+def create_shipment_pair(acc_name, shift, stop_location, acc_coords, stop_coords, headcount, pickup_window_buffer, penalty_cost, global_bounds):
+    from frappe.utils import get_datetime
+    from datetime import timedelta
+    import pytz
+
+    global_start, global_end = global_bounds
+
     def to_utc(dt_str):
+        # We assume shift times are for today
         dt = get_datetime(f"{frappe.utils.today()} {dt_str}")
-        return get_utc_datetime(dt)
+        site_tz = pytz.timezone(frappe.db.get_single_value("System Settings", "time_zone") or "UTC")
+        dt_local = site_tz.localize(dt)
+        return dt_local.astimezone(pytz.utc).replace(tzinfo=None)
 
     start_time_utc = to_utc(shift.start_time)
     end_time_utc = to_utc(shift.end_time)
+
+    def fmt(dt):
+        return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     shipment_base = {
         "loadDemands": {"seats": {"amount": headcount}},
         "penaltyCost": penalty_cost
     }
 
+    # Dynamic boarding/unboarding duration: scales with headcount
+    # 5 seconds per person, minimum 30 seconds
+    boarding_duration = f"{max(headcount * 5, 30)}s"
+
     shipments = []
     
-    # OUTBOUND
+    # OUTBOUND: employees must arrive at the site by shift start_time
+    # Time window: [start - pickup_window_buffer mins, start]
+    outbound_start = start_time_utc - timedelta(minutes=pickup_window_buffer)
+    outbound_end = start_time_utc
+    
+    # Clamp to global bounds
+    if outbound_start < global_start: outbound_start = global_start
+    if outbound_end > global_end: outbound_end = global_end
+
     outbound = shipment_base.copy()
     outbound.update({
         "label": f"{acc_name}_{shift.name}_{stop_location}_OUTBOUND",
-        "pickup": {"arrivalLocation": {"latitude": acc_coords[0], "longitude": acc_coords[1]}},
-        "delivery": {"arrivalLocation": {"latitude": stop_coords[0], "longitude": stop_coords[1]}},
-        "timeWindows": [{
-            "startTime": add_minutes(start_time_utc, -buffer).isoformat() + "Z",
-            "softEndTime": add_minutes(start_time_utc, -10).isoformat() + "Z",
-            "endTime": start_time_utc.isoformat() + "Z"
+        "pickups": [{
+            "arrivalLocation": {"latitude": acc_coords[0], "longitude": acc_coords[1]},
+            "duration": boarding_duration
+        }],
+        "deliveries": [{
+            "arrivalLocation": {"latitude": stop_coords[0], "longitude": stop_coords[1]},
+            "duration": boarding_duration,
+            "timeWindows": [{
+                "startTime": fmt(outbound_start),
+                "softEndTime": fmt(outbound_end - timedelta(minutes=10) if outbound_end - outbound_start > timedelta(minutes=10) else outbound_start),
+                "endTime": fmt(outbound_end),
+                "costPerHourAfterSoftEndTime": 500
+            }]
         }]
     })
-    shipments.append(outbound)
+    shipments.append((outbound, start_time_utc))
 
-    # RETURN
+    # RETURN: employees leave the site after shift end_time
+    # Time window: [end, end + pickup_window_buffer mins]
+    return_start = end_time_utc
+    return_end = end_time_utc + timedelta(minutes=pickup_window_buffer)
+
+    # Clamp to global bounds
+    if return_start < global_start: return_start = global_start
+    if return_end > global_end: return_end = global_end
+
     ret = shipment_base.copy()
     ret.update({
         "label": f"{acc_name}_{shift.name}_{stop_location}_RETURN",
-        "pickup": {"arrivalLocation": {"latitude": stop_coords[0], "longitude": stop_coords[1]}},
-        "delivery": {"arrivalLocation": {"latitude": acc_coords[0], "longitude": acc_coords[1]}},
-        "timeWindows": [{
-            "startTime": end_time_utc.isoformat() + "Z",
-            "endTime": add_minutes(end_time_utc, buffer).isoformat() + "Z"
+        "pickups": [{
+            "arrivalLocation": {"latitude": stop_coords[0], "longitude": stop_coords[1]},
+            "duration": boarding_duration
+        }],
+        "deliveries": [{
+            "arrivalLocation": {"latitude": acc_coords[0], "longitude": acc_coords[1]},
+            "duration": boarding_duration,
+            "timeWindows": [{
+                "startTime": fmt(return_start),
+                "endTime": fmt(return_end)
+            }]
         }]
     })
-    shipments.append(ret)
+    shipments.append((ret, end_time_utc))
     
     return shipments
 
 def get_coords(doctype: str, name: str) -> tuple | None:
-    doc_fields = frappe.db.get_value(doctype, name, ["*"], as_dict=True)
-    if not doc_fields:
-        return None
+    """
+    Returns (latitude, longitude) for a given record.
     
-    geo_field = None
+    - For "Accommodation": follows the transport_stop_location link to a Location
+      record and retrieves its latitude/longitude directly.
+    - For "Location": reads the latitude and longitude fields directly on the record.
+    """
+
     if doctype == "Accommodation":
-        geo_field = doc_fields.get("accommodation_geolocation")
+        # Follow the transport_stop_location link field to get the actual Location record
+        stop_location = frappe.db.get_value("Accommodation", name, "transport_stop_location")
+        if not stop_location:
+            return None
+        # Recursively resolve the Location record's coordinates
+        return get_coords("Location", stop_location)
+
     elif doctype == "Location":
-        geo_field = doc_fields.get("location")
-    
-    if geo_field:
-        try:
-            geo_data = json.loads(geo_field)
-            if "features" in geo_data and geo_data["features"]:
-                coords = geo_data["features"][0]["geometry"]["coordinates"]
-                return coords[1], coords[0] # latitude, longitude
-        except:
-            pass
-            
-    # Fallback to latitude/longitude fields if available
-    if doc_fields.get("latitude") and doc_fields.get("longitude"):
-        return doc_fields.get("latitude"), doc_fields.get("longitude")
-        
+        lat, lng = frappe.db.get_value("Location", name, ["latitude", "longitude"])
+        if lat and lng:
+            return float(lat), float(lng)
+
     return None
 
-def process_accommodations(shipments_dict: dict, config: object) -> list:
+def process_accommodations(shipments_dict: dict, config: object, global_bounds: tuple) -> list:
     results = []
+    global_start_utc, global_end_utc = global_bounds
     
-    for acc_name, shipments in shipments_dict.items():
-        if not shipments:
-            continue
-            
-        vehicles = build_vehicle_list(acc_name)
-        if not vehicles:
-            continue
-            
-        payload = {
-            "model": {
-                "shipments": shipments,
-                "vehicles": vehicles,
-                "globalStartTime": frappe.utils.get_utc_datetime(frappe.utils.today() + " 00:00:00").isoformat() + "Z",
-                "globalEndTime": frappe.utils.get_utc_datetime(frappe.utils.today() + " 23:59:59").isoformat() + "Z"
+    for acc_name, batches in shipments_dict.items():
+        for i, shipments in enumerate(batches):
+            if not shipments:
+                continue
+                
+            vehicles = build_vehicle_list(acc_name, global_bounds)
+            if not vehicles:
+                continue
+                
+            payload = {
+                "model": {
+                    "shipments": shipments,
+                    "vehicles": vehicles,
+                    "globalStartTime": global_start_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "globalEndTime": global_end_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                }
             }
-        }
-        
-        response = call_route_optimization_api(payload)
-        
-        if response and "skippedShipments" in response:
-            for skipped in response["skippedShipments"]:
-                frappe.log_error(f"Shipment skipped: {skipped.get('label')} with penalty cost", "Route Optimization")
-        
-        results.append({
-            "accommodation": acc_name,
-            "status": "success" if response else "error",
-            "response": response
-        })
-        
-    return results
 
-def build_vehicle_list(acc_name: str) -> list:
+            print("PAYLOAD PER ACCOMMODATION: ")
+            print(json.dumps(payload))
+
+    #         response = call_route_optimization_api(payload)
+            
+    #         if response and "skippedShipments" in response:
+    #             for skipped in response["skippedShipments"]:
+    #                 frappe.log_error(f"Shipment skipped: {skipped.get('label')} with penalty cost", "Route Optimization")
+            
+    #         results.append({
+    #             "accommodation": acc_name,
+    #             "run_number": i + 1,
+    #             "status": "success" if response else "error",
+    #             "response": response
+    #         })
+        
+    # return results
+
+def build_vehicle_list(acc_name: str, global_bounds: tuple) -> list:
     config = frappe.get_single("Route Optimization API Configuration")
+    global_start_utc, global_end_utc = global_bounds
     acc_transport_stop = frappe.db.get_value("Accommodation", acc_name, "transport_stop_location")
     if not acc_transport_stop:
         return []
         
     transport_vehicles = frappe.get_all("Vehicle", 
         filters={"transport_stop_vehicle": 1},
-        fields=["name", "vehicle_location", "seats"]
+        fields=["name", "location", "seats"]
     )
     
     vehicles = []
-    today_start = frappe.utils.get_utc_datetime(frappe.utils.today() + " 00:00:00").isoformat() + "Z"
-    today_end = frappe.utils.get_utc_datetime(frappe.utils.today() + " 23:59:59").isoformat() + "Z"
+    today_start = global_start_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    today_end = global_end_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
     
     for v in transport_vehicles:
-        if v.vehicle_location == acc_transport_stop:
-            coords = get_coords("Location", v.vehicle_location)
+        if v.location == acc_transport_stop:
+            coords = get_coords("Location", v.location)
             if not coords:
                 continue
                 
@@ -594,12 +691,13 @@ def build_vehicle_list(acc_name: str) -> list:
                 "label": v.name,
                 "startLocation": start_end_coords,
                 "endLocation": start_end_coords,
-                "loadLimits": { "seats": { "maxLoad": v.seats or 1 } },
+                "loadLimits": { "seats": { "maxLoad": max((v.seats or 1) - 1, 1) } },
                 "startTimeWindows": [{ "startTime": today_start }],
                 "endTimeWindows":   [{ "endTime":   today_end }],
                 "fixedCost": config.fixed_cost or 0,
                 "costPerKilometer": config.cost_per_kilometer or 0,
-                "costPerHour": config.cost_per_hour or 0
+                "costPerHour": config.cost_per_hour or 0,
+                "travelMode": "DRIVING"
             })
             
     return vehicles
