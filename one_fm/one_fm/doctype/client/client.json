@@ -8,6 +8,7 @@
  "field_order": [
   "customer",
   "customer_name",
+  "identification_number",
   "route_hash",
   "column_break_jhym",
   "published",
@@ -43,6 +44,11 @@
    "unique": 1
   },
   {
+   "fieldname": "identification_number",
+   "fieldtype": "Data",
+   "label": "Identification Number"
+  },
+  {
    "default": "0",
    "fieldname": "published",
    "fieldtype": "Check",
@@ -63,7 +69,7 @@
  ],
  "has_web_view": 1,
  "links": [],
- "modified": "2024-06-18 16:42:20.352550",
+ "modified": "2026-03-17 07:31:59.063186",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Client",
