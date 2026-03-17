@@ -57,7 +57,7 @@ def execute():
 		"rule": "Based on Process Task",
 		"custom_routine_task": process_task.name,
 		"field": "supervisor",
-		"last_user": "abdullah@one-fm.com",
+		"last_user": "Administrator",
 		"assignment_days": [
 			{"day": "Monday"},
 			{"day": "Tuesday"},
@@ -68,7 +68,7 @@ def execute():
 			{"day": "Sunday"}
 		]
 	}
-	frappe.get_doc(assignment_rule_data).insert(ignore_permissions=True)
+	frappe.get_doc(assignment_rule_data).insert(ignore_permissions=True, ignore_links=True)
 
 def create_process_task():
 	process_name = "Resignation"
@@ -78,7 +78,8 @@ def create_process_task():
 			"description": process_name,
 			"doctype": "Process",
 			"process_owner_name": "Administrator",
-			"process_owner": "Administrator"
+			"process_owner": "Administrator",
+			"business_analyst": "Administrator"
 		}).insert(ignore_permissions=True)
 
 	task_type = "Repetitive"
@@ -107,7 +108,6 @@ def create_process_task():
 		"erp_document": "Employee Resignation Withdrawal",
 		"task": "Review Resignation Withdrawal Action - Operations Manager",
 		"task_type": task_type,
-		"is_routine_task": 0,
 		"coordination_needed": "No",
 		"start_date": "2026-03-02",
 		"employee": "HR-EMP-00001",
@@ -117,6 +117,6 @@ def create_process_task():
 		"doctype": "Process Task",
 		"coordination_method": [],
 		"repeat_on_days": []
-	}).insert(ignore_permissions=True)
+	}).insert(ignore_permissions=True, ignore_links=True)
 	
 	return process_task

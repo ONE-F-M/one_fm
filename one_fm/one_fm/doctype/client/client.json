@@ -8,6 +8,7 @@
  "field_order": [
   "customer",
   "customer_name",
+  "identification_number",
   "route_hash",
   "column_break_jhym",
   "published",
@@ -41,6 +42,12 @@
    "fieldtype": "Data",
    "label": "Customer Name",
    "unique": 1
+  },
+  {
+   "fieldname": "identification_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Identification Number"
   },
   {
    "default": "0",
@@ -82,7 +89,7 @@
    "write": 1
   }
  ],
- "search_fields": "customer,route_hash",
+ "search_fields": "customer,route_hash,identification_number",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
