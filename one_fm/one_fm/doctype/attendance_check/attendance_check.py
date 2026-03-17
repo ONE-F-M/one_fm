@@ -542,19 +542,28 @@ def get_attendance_not_marked_shift_employees(attendance_date):
     # Fetch all the employees who is shift working but no attendance marked
     return frappe.db.sql("""
         SELECT
-            sa.employee
+            sa.employee, sa.roster_type, sa.name as shift_assignment
         FROM
             `tabShift Assignment` sa
         LEFT JOIN
             `tabAttendance` att
         ON
             sa.employee = att.employee AND att.attendance_date = %(attendance_date)s
+            AND sa.roster_type = att.roster_type
         WHERE
             sa.start_date <= %(attendance_date)s
             AND sa.end_date >= %(attendance_date)s
             AND sa.docstatus = 1
             AND sa.status = 'Active'
             AND att.name IS NULL
+            AND sa.name NOT IN (
+                SELECT ec.shift_assignment
+                FROM `tabEmployee Checkin` ec
+                WHERE ec.log_type IN ('IN', 'OUT')
+                AND ec.shift_assignment IS NOT NULL
+                GROUP BY ec.shift_assignment
+                HAVING COUNT(DISTINCT ec.log_type) = 2
+            )
     """, {"attendance_date": attendance_date}, as_dict=1)
 
 def insert_attendance_check_records(details, attendance_date):
