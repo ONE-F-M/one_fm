@@ -69,7 +69,8 @@ class AttendanceCheck(Document):
             "Shift Assignment",
             {
                 "employee":self.employee,
-                "start_date":self.date,
+                "start_date": ["<=", self.date],
+                "end_date": [">=", self.date],
                 "roster_type":self.roster_type,
                 "status":"Active",
                 "docstatus":1
@@ -481,7 +482,11 @@ class AttendanceCheck(Document):
                 attendance.shift_assignment = self.shift_assignment
             else:
                 shift_assignment = frappe.db.exists("Shift Assignment", {
-                        'employee':self.employee, 'start_date':self.date, 'roster_type':self.roster_type
+                        'employee':self.employee,
+                        'start_date': ['<=', self.date],
+                        'end_date': [">=", self.date],
+                        'roster_type':self.roster_type,
+                        'docstatus': 1
                     })
                 if shift_assignment:
                     attendance.shift_assignment = shift_assignment

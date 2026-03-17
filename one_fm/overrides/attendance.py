@@ -90,7 +90,8 @@ class AttendanceOverride(Attendance):
         if not self.shift_assignment and self.status=='Present':
             shift_assignment = frappe.db.get_value("Shift Assignment", {
                 'employee':self.employee,
-                'start_date':self.attendance_date,
+                'start_date': ['<=', self.attendance_date],
+                'end_date': ['>=', self.attendance_date],
                 'status':'Active',
                 'roster_type':'Basic',
                 'docstatus':1
@@ -239,7 +240,8 @@ def mark_single_attendance(emp, att_date, roster_type="Basic"):
                     "Shift Assignment",
                     {
                         "employee": employee.name,
-                        "start_date": att_date,
+                        "start_date": ["<=", att_date],
+                        "end_date": [">=", att_date],
                         "status": "Active",
                         "docstatus": 1,
                         "shift_type": att_req.shift,
@@ -288,7 +290,8 @@ def mark_single_attendance(emp, att_date, roster_type="Basic"):
 def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
     shift_assignment = frappe.db.get_value("Shift Assignment", {
         'employee':employee,
-        'start_date':att_date.date(),
+        'start_date': ['<=', att_date.date()],
+        'end_date': ['>=', att_date.date()],
         'roster_type':roster_type,
         'docstatus':1
         }, ["*"], as_dict=1
@@ -496,7 +499,8 @@ def mark_attendance_for_unscheduled_employees(employees, date):
         
         # Get employees with shift assignments
         shift_assigned_employees = frappe.get_all("Shift Assignment", {
-            'start_date': date,
+            'start_date': ['<=', date],
+            'end_date': ['>=', date],
             'employee': ['IN', [e.name for e in employees]],
             'docstatus': 1
         }, pluck="employee")
@@ -665,8 +669,8 @@ def remark_absent_for_employees(employees, date):
 
 def mark_overtime_attendance(from_date, to_date):
     shift_assignments = frappe.db.get_list("Shift Assignment", filters={
-        'start_date':from_date,
-        'end_date':to_date,
+        'start_date': ['<=', from_date],
+        'end_date': ['>=', to_date],
         'roster_type': 'Over-Time',
         'docstatus':1
     }, fields=["employee"])
@@ -816,7 +820,8 @@ def mark_daily_attendance(start_date, end_date):
         for i in attendance_request:
             shift_assignment = frappe.db.get_value("Shift Assignment", {
                 'employee':i.name,
-                'start_date': start_date,
+                'start_date': ['<=', start_date],
+                'end_date': ['>=', start_date],
                 "status": "Active",
                 "docstatus":1}) or ""
             
@@ -1163,7 +1168,8 @@ class AttendanceMarking():
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
                 WHERE sa.is_replaced = 0
-                AND sa.start_date='{self.start.date()}'
+                AND sa.start_date <= '{self.start.date()}'
+                AND sa.end_date >= '{self.start.date()}'
                 AND op.attendance_by_client=1 AND op.docstatus=1
                 ;
             """, as_dict=1)
@@ -1175,7 +1181,8 @@ class AttendanceMarking():
                 SELECT sa.* FROM `tabShift Assignment` sa
                 JOIN `tabOperations Role` op ON sa.operations_role=op.name
                 WHERE sa.is_replaced = 0
-                AND sa.start_date='{self.start.date()}'
+                AND sa.start_date <= '{self.start.date()}'
+                AND sa.end_date >= '{self.start.date()}'
                 AND op.attendance_by_client=0 AND op.status='Active'
             """, as_dict=1)
             non_shifts = frappe.db.sql(f"""

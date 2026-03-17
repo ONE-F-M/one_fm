@@ -52,7 +52,7 @@ def get_scheduled_employees(date):
     
 
 def get_assigned_shift(date):
-    value = frappe.db.sql(f"""SELECT DISTINCT employee from `tabShift Assignment` where start_date = '{date}'  """,as_dict=1)
+    value = frappe.db.sql(f"""SELECT DISTINCT employee from `tabShift Assignment` where start_date <= '{date}' and end_date >= '{date}'  """,as_dict=1)
     return [each.employee for each in value] if value else list() 
 
 
