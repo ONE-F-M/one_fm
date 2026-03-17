@@ -17,6 +17,9 @@ class Client(WebsiteGenerator):
             self.route_hash = self.hash
             self.route = f"client/{frappe.scrub(self.hash)}"
 
+        if self.gst_number and len(self.gst_number) != 15:
+            frappe.throw("GST number must be 15 characters.")
+
     def autoname(self):
         self.name = self.hash
 
