@@ -43,9 +43,10 @@ def check_duplicates(self):
                 conditions += " and ({0} is null or {0} = '')".format(field)
 
     price_list_rate = frappe.db.sql("""
-        SELECT price_list_rate
+        SELECT name
         FROM `tabItem Price`
-            {conditions} """.format(conditions=conditions), self.as_dict())
+            {conditions}
+        LIMIT 1""".format(conditions=conditions), self.as_dict())
 
     if price_list_rate:
         frappe.throw(_(error_description), ItemPriceDuplicateItem)
