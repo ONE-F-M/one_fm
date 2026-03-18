@@ -366,6 +366,10 @@ doc_events = {
 		"validate": "one_fm.one_fm.sales_invoice_custom.set_print_settings_from_contracts",
 		"on_update_after_submit": "one_fm.one_fm.sales_invoice_custom.assign_collection_officer_to_sales_invoice_on_workflow_state"
 	},
+
+	"Sales Order": {
+		"before_submit": "one_fm.validation.check_credit_limit"
+	},
 	"Salary Slip": {
 		"before_submit": "one_fm.overrides.salary_slip.salary_slip_before_submit",
 		"validate": [
