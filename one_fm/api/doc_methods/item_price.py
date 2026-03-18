@@ -37,6 +37,8 @@ def check_duplicates(self):
         else:
             if field in ["packing_unit", "shift_hours"]:
                 conditions += " and ({0} is null or {0} = 0)".format(field)
+            elif field in ["valid_from", "valid_upto"]:
+                conditions += " and {0} is null".format(field)
             else:
                 conditions += " and ({0} is null or {0} = '')".format(field)
 
