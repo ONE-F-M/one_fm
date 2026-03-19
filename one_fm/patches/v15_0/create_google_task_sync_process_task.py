@@ -1,4 +1,5 @@
 import frappe
+from one_fm.utils import create_process_if_not_exists
 
 def execute():
     method = "one_fm.overrides.todo.sync_google_tasks_with_todos"
@@ -12,14 +13,7 @@ def execute():
         }).insert(ignore_permissions=True)
 
     process_name = "Google Task Sync"
-    if not frappe.db.exists("Process", process_name):
-        frappe.get_doc({
-            "process_name":process_name,
-            "description":process_name,
-            "doctype":"Process",
-            "process_owner_name":"Administrator",
-            "process_owner":"Administrator"
-        }).insert(ignore_permissions=True)
+    create_process_if_not_exists(process_name)
 
     task_type = "Routine"
     if not frappe.db.exists("Task Type", task_type):
