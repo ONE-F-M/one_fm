@@ -76,13 +76,22 @@ class EventStaff(Document):
 			frappe.throw(msg)
 
 	def on_submit(self):
-		self.process_employee_schedules()
+		client_event_state = frappe.db.get_value("Client Event", self.client_event, "workflow_state")
+		if client_event_state == "Approved":
+			self.process_employee_schedules()
 
 	def process_employee_schedules(self, start_date=None):
 		start_date = getdate(start_date) if start_date else getdate(self.start_date)
 		end_date = getdate(self.end_date)
 		existing_schedules = get_existing_schedules(self.employee, start_date, end_date)
-		existing_schedules_map = { frappe.utils.getdate(d.date): d.name for d in existing_schedules }
+		
+		# Group by date
+		schedules_by_date = {}
+		for d in existing_schedules:
+			date_key = frappe.utils.getdate(d.date)
+			if date_key not in schedules_by_date:
+				schedules_by_date[date_key] = []
+			schedules_by_date[date_key].append(d)
 
 		number_of_days = date_diff(end_date, start_date) + 1
 
@@ -91,8 +100,37 @@ class EventStaff(Document):
 			start_end_datetime = self.get_event_start_end_date_time(current_date)
 			employee_schedule_data = self.get_schedule_data(start_end_datetime, current_date)
 
-			if current_date in existing_schedules_map:
-				schedule_doc = frappe.get_doc("Employee Schedule", existing_schedules_map[current_date])
+			new_start_dt = frappe.utils.get_datetime(start_end_datetime.get("start_datetime"))
+			new_end_dt = frappe.utils.get_datetime(start_end_datetime.get("end_datetime"))
+
+			day_schedules = schedules_by_date.get(current_date, [])
+
+			overlap_found = False
+			schedule_to_update = None
+
+			for existing in day_schedules:
+				existing_start_dt = frappe.utils.get_datetime(existing.start_datetime) if existing.start_datetime else None
+				existing_end_dt = frappe.utils.get_datetime(existing.end_datetime) if existing.end_datetime else None
+				
+				is_overlapping = False
+				if existing_start_dt and existing_end_dt:
+					if existing_start_dt < new_end_dt and existing_end_dt > new_start_dt:
+						is_overlapping = True
+				else:
+					is_overlapping = True
+
+				if existing.roster_type == self.roster_type:
+					overlap_found = True
+					schedule_to_update = existing.name
+					break
+				elif is_overlapping:
+					if existing.roster_type == "Basic" and self.roster_type == "Over-Time":
+						frappe.throw(f"Validation Error: The designated Overtime Event Staff schedule overlaps with an existing Basic Employee Schedule ({existing.name}) for {self.employee}.")
+					else:
+						frappe.throw(f"Validation Error: The Event Staff schedule overlaps with an existing Employee Schedule ({existing.name}) for {self.employee}.")
+
+			if overlap_found and schedule_to_update:
+				schedule_doc = frappe.get_doc("Employee Schedule", schedule_to_update)
 				schedule_doc.update(employee_schedule_data)
 				schedule_doc.save(ignore_permissions=True)
 			else:
@@ -139,7 +177,25 @@ class EventStaff(Document):
 			"post_abbrv": None,
 		}
 
+	def before_update_after_submit(self):
+		if self.has_value_changed("end_date"):
+			if getdate(self.end_date) < getdate(today()):
+				frappe.throw("Past dates cannot be provided in End Date field.")
+
+			if getdate(self.end_date) < getdate(self.start_date):
+				frappe.throw("End Date cannot be before Start Date.")
+
+			# Sync the date portion of end_datetime to the new end_date,
+			# keeping the original time component intact.
+			if self.end_datetime:
+				original_time = frappe.utils.get_datetime(self.end_datetime).time()
+				new_end_datetime = datetime.datetime.combine(getdate(self.end_date), original_time)
+				self.end_datetime = new_end_datetime
+
 	def on_update_after_submit(self):
+		client_event_state = frappe.db.get_value("Client Event", self.client_event, "workflow_state")
+		if client_event_state != "Approved":
+			return
 		old_doc = self.get_doc_before_save()
 		if getdate(self.end_date) < getdate(old_doc.end_date):
 			self.delete_employee_schedules(self.end_date)
@@ -234,5 +290,5 @@ def get_existing_schedules(employee=None, start_date=None, end_date=None, event_
 	return frappe.get_all(
 		"Employee Schedule",
 		filters=filters,
-		fields=["name", "date"]
+		fields=["name", "date", "start_datetime", "end_datetime", "roster_type"]
 	)

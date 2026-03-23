@@ -3659,10 +3659,10 @@ def get_sender_email() -> str | None:
 
 @frappe.whitelist()
 def send_birthday_reminders():
-    """Send Employee birthday reminders if no 'Stop Birthday Reminders' is not set."""
+    """Send employee birthday reminders when birthday reminders are enabled."""
     from hrms.controllers.employee_reminders import send_birthday_reminder, get_employees_who_are_born_today, get_birthday_reminder_text_and_message
 
-    to_send = int(frappe.db.get_single_value("HR Settings", "send_birthday_reminders")) or is_scheduler_emails_enabled()
+    to_send = cint(frappe.db.get_single_value("HR Settings", "send_birthday_reminders")) or is_scheduler_emails_enabled()
     if not to_send:
         return
 
@@ -3720,9 +3720,9 @@ def get_users_for_reminders(birthday=False, anniversary=False, user_id=False):
 
 @frappe.whitelist()
 def send_work_anniversary_reminders():
-    from hrms.controllers.employee_reminders import send_work_anniversary_reminder, get_employees_having_an_event_today,get_work_anniversary_reminder_text
     """Send Employee Work Anniversary Reminders if 'Send Work Anniversary Reminders' is checked"""
-    to_send = int(frappe.db.get_single_value("HR Settings", "send_work_anniversary_reminders")) or is_scheduler_emails_enabled()
+    from hrms.controllers.employee_reminders import send_work_anniversary_reminder, get_employees_having_an_event_today,get_work_anniversary_reminder_text
+    to_send = cint(frappe.db.get_single_value("HR Settings", "send_work_anniversary_reminders")) or is_scheduler_emails_enabled()
     if not to_send:
         return
 

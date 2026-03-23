@@ -1,0 +1,408 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "naming_series:naming_series",
+    "creation": "2026-02-18 08:35:12.413498",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "section_break_xfjj",
+        "employee",
+        "full_name_in_english",
+        "full_name_in_arabic",
+        "nationality",
+        "under_company_residency",
+        "column_break_twru",
+        "relieving_date",
+        "date_of_joining",
+        "department",
+        "employment_type",
+        "designation",
+        "column_break_pdtv",
+        "resignation_letter",
+        "project_allocation",
+        "site_allocation",
+        "shift_allocation",
+        "operations_role_allocation",
+        "operational_impact_section",
+        "supervisor",
+        "replacement_required",
+        "ojt_days",
+        "column_break_qfvv",
+        "replacement_nationality",
+        "replacement_gender",
+        "column_break_visn",
+        "replacement_salary",
+        "replacement_priority",
+        "section_break_tdav",
+        "language_requirements",
+        "skill_requirements",
+        "certification_requirements",
+        "more_information_section",
+        "status",
+        "column_break_jkbg",
+        "naming_series",
+        "column_break_bqiy",
+        "amended_from"
+    ],
+    "fields": [
+        {
+            "fieldname": "section_break_xfjj",
+            "fieldtype": "Section Break",
+            "label": "Employee Details"
+        },
+        {
+            "fieldname": "employee",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Employee",
+            "options": "Employee",
+            "reqd": 1
+        },
+        {
+            "fetch_from": "employee.employee_name",
+            "fieldname": "full_name_in_english",
+            "fieldtype": "Data",
+            "label": "Full Name in English",
+            "read_only": 1,
+            "reqd": 1
+        },
+        {
+            "fetch_from": "employee.employee_name_in_arabic",
+            "fieldname": "full_name_in_arabic",
+            "fieldtype": "Data",
+            "label": "Full Name in Arabic",
+            "read_only": 1
+        },
+        {
+            "fieldname": "nationality",
+            "fieldtype": "Link",
+            "label": "Nationality",
+            "options": "Nationality",
+            "read_only": 1
+        },
+        {
+            "default": "0",
+            "depends_on": "eval: doc.employee",
+            "fetch_from": "employee.under_company_residency",
+            "fieldname": "under_company_residency",
+            "fieldtype": "Check",
+            "label": "Under Company Residency",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_twru",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "relieving_date",
+            "fieldtype": "Date",
+            "label": "Relieving Date",
+            "reqd": 1
+        },
+        {
+            "fetch_from": "employee.date_of_joining",
+            "fieldname": "date_of_joining",
+            "fieldtype": "Date",
+            "label": "Date of Joining",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "employee.department",
+            "fieldname": "department",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Department",
+            "options": "Department",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "employee.employment_type",
+            "fieldname": "employment_type",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Employment Type",
+            "options": "Employment Type",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "employee.designation",
+            "fieldname": "designation",
+            "fieldtype": "Link",
+            "label": "Designation",
+            "options": "Designation",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_pdtv",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "resignation_letter",
+            "fieldtype": "Attach",
+            "label": "Resignation Letter",
+            "reqd": 1
+        },
+        {
+            "fetch_from": "employee.project",
+            "fieldname": "project_allocation",
+            "fieldtype": "Link",
+            "label": "Project Allocation",
+            "options": "Project",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "employee.site",
+            "fieldname": "site_allocation",
+            "fieldtype": "Link",
+            "label": "Site Allocation",
+            "options": "Operations Site",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "employee.shift",
+            "fieldname": "shift_allocation",
+            "fieldtype": "Link",
+            "label": "Shift Allocation",
+            "options": "Operations Shift",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "employee.custom_operations_role_allocation",
+            "fieldname": "operations_role_allocation",
+            "fieldtype": "Link",
+            "label": "Operations Role Allocation",
+            "options": "Operations Role",
+            "read_only": 1
+        },
+        {
+            "depends_on": "eval: !doc.__islocal",
+            "fieldname": "operational_impact_section",
+            "fieldtype": "Section Break",
+            "label": "Operational Impact"
+        },
+        {
+            "fieldname": "supervisor",
+            "fieldtype": "Link",
+            "label": "Supervisor",
+            "options": "User",
+            "read_only": 1
+        },
+        {
+            "fieldname": "replacement_required",
+            "fieldtype": "Select",
+            "label": "Is a Replacement Required?",
+            "mandatory_depends_on": "eval:!doc.__islocal && doc.workflow_state === \"Pending Supervisor\"",
+            "options": "\nYes\nNo"
+        },
+        {
+            "depends_on": "eval: doc.replacement_required == \"Yes\"",
+            "description": "The number of on-the-job-training days as agreed with the client.",
+            "fieldname": "ojt_days",
+            "fieldtype": "Int",
+            "label": "OJT Days",
+            "non_negative": 1
+        },
+        {
+            "fieldname": "column_break_qfvv",
+            "fieldtype": "Column Break"
+        },
+        {
+            "depends_on": "eval: doc.replacement_required == \"Yes\"",
+            "fieldname": "replacement_nationality",
+            "fieldtype": "Link",
+            "label": "Replacement Nationality",
+            "options": "Nationality"
+        },
+        {
+            "depends_on": "eval: doc.replacement_required == \"Yes\"",
+            "fieldname": "replacement_gender",
+            "fieldtype": "Link",
+            "label": "Replacement Gender",
+            "options": "Gender"
+        },
+        {
+            "fieldname": "column_break_visn",
+            "fieldtype": "Column Break"
+        },
+        {
+            "depends_on": "eval: doc.replacement_required == \"Yes\"",
+            "fieldname": "replacement_salary",
+            "fieldtype": "Currency",
+            "label": "Replacement Salary"
+        },
+        {
+            "depends_on": "eval: doc.replacement_required == \"Yes\"",
+            "fieldname": "replacement_priority",
+            "fieldtype": "Select",
+            "label": "Replacement Priority",
+            "options": "\nHigh\nMedium\nLow"
+        },
+        {
+            "depends_on": "eval: doc.replacement_required == \"Yes\"",
+            "fieldname": "section_break_tdav",
+            "fieldtype": "Section Break",
+            "label": "Language and Skill Requirement"
+        },
+        {
+            "fieldname": "language_requirements",
+            "fieldtype": "Table",
+            "label": "Language Requirements",
+            "options": "Employee Language Requirement"
+        },
+        {
+            "fieldname": "skill_requirements",
+            "fieldtype": "Table",
+            "label": "Skill Requirements",
+            "options": "Designation Skill"
+        },
+        {
+            "fieldname": "certification_requirements",
+            "fieldtype": "Table",
+            "label": "Certification Requirements",
+            "options": "Candidate Certification List"
+        },
+        {
+            "fieldname": "more_information_section",
+            "fieldtype": "Section Break",
+            "label": "More Information"
+        },
+        {
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "label": "Status",
+            "options": "Pending\nApproved\nWithdrawn",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_jkbg",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "naming_series",
+            "fieldtype": "Select",
+            "label": "Naming Series",
+            "options": "HR-RSGN-.YYYY.-.MM.-",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_bqiy",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "amended_from",
+            "fieldtype": "Link",
+            "label": "Amended From",
+            "no_copy": 1,
+            "options": "Employee Resignation",
+            "print_hide": 1,
+            "read_only": 1,
+            "search_index": 1
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "is_submittable": 1,
+    "links": [
+        {
+            "hidden": 0,
+            "is_child_table": 0,
+            "link_doctype": "Project Manpower Request",
+            "link_fieldname": "employee_resignation"
+        },
+        {
+            "hidden": 0,
+            "is_child_table": 0,
+            "link_doctype": "Employee Resignation Withdrawal",
+            "link_fieldname": "employee_resignation"
+        }
+    ],
+    "modified": "2026-03-10 17:13:24.921113",
+    "modified_by": "Administrator",
+    "module": "One Fm",
+    "name": "Employee Resignation",
+    "naming_rule": "By \"Naming Series\" field",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "amend": 1,
+            "cancel": 0,
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "submit": 1,
+            "write": 1
+        },
+        {
+            "amend": 0,
+            "cancel": 0,
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Offboarding Officer",
+            "share": 1,
+            "submit": 0,
+            "write": 1
+        },
+        {
+            "amend": 0,
+            "cancel": 1,
+            "create": 0,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Employee",
+            "share": 1,
+            "submit": 1,
+            "write": 1
+        },
+        {
+            "amend": 0,
+            "cancel": 0,
+            "create": 0,
+            "delete": 0,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Operations Manager",
+            "share": 1,
+            "submit": 0,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [
+        {
+            "color": "Orange",
+            "title": "Pending"
+        },
+        {
+            "color": "Green",
+            "title": "Approved"
+        },
+        {
+            "color": "Red",
+            "title": "Withdrawn"
+        }
+    ]
+}

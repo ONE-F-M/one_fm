@@ -121,8 +121,14 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [],
- "modified": "2026-03-03 05:36:37.071782",
+ "links": [
+  {
+   "group": "Connections",
+   "link_doctype": "Temporary Post",
+   "link_fieldname": "temporary_deployment"
+  }
+ ],
+ "modified": "2026-03-15 09:46:45.276417",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Temporary Deployment",

@@ -1,0 +1,331 @@
+{
+    "name": "Project Manpower Request",
+    "creation": "2026-02-24 00:36:29.689801",
+    "modified": "2026-03-10 17:24:32.645732",
+    "modified_by": "Administrator",
+    "owner": "Administrator",
+    "docstatus": 0,
+    "idx": 0,
+    "issingle": 0,
+    "is_tree": 0,
+    "istable": 0,
+    "editable_grid": 0,
+    "track_changes": 0,
+    "module": "One Fm",
+    "autoname": "naming_series: naming_series",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "description": "",
+    "read_only": 0,
+    "in_create": 0,
+    "allow_copy": 0,
+    "allow_rename": 1,
+    "allow_import": 0,
+    "hide_toolbar": 0,
+    "track_seen": 0,
+    "max_attachments": 0,
+    "document_type": "",
+    "engine": "InnoDB",
+    "is_submittable": 1,
+    "show_name_in_global_search": 0,
+    "custom": 0,
+    "beta": 0,
+    "has_web_view": 0,
+    "allow_guest_to_view": 0,
+    "email_append_to": 0,
+    "quick_entry": 0,
+    "track_views": 0,
+    "is_virtual": 0,
+    "allow_events_in_timeline": 0,
+    "allow_auto_repeat": 0,
+    "show_preview_popup": 0,
+    "index_web_pages_for_search": 1,
+    "is_calendar_and_gantt": 0,
+    "naming_rule": "By \"Naming Series\" field",
+    "make_attachments_public": 0,
+    "show_title_field_in_link": 0,
+    "translated_doctype": 0,
+    "force_re_route_to_default_view": 0,
+    "queue_in_background": 0,
+    "grid_page_length": 50,
+    "protect_attached_files": 0,
+    "row_format": "Dynamic",
+    "rows_threshold_for_grid_search": 0,
+    "doctype": "DocType",
+    "fields": [
+        {
+            "fieldname": "section_break_xfjj",
+            "label": "Details",
+            "fieldtype": "Section Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "reason",
+            "label": "Reason",
+            "fieldtype": "Select",
+            "options": "\nExit\nNew Project\nHigh Salary\nSubcontractor Replacement\nOvertime\nReliever",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "employee_resignation",
+            "label": "Employee Resignation",
+            "fieldtype": "Link",
+            "options": "Employee Resignation",
+            "depends_on": "eval: doc.reason == \"Exit\"",
+            "read_only": 1,
+            "search_index": 1,
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "priority",
+            "label": "Priority",
+            "fieldtype": "Select",
+            "options": "\nHigh\nMedium\nLow",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "count",
+            "label": "Count",
+            "fieldtype": "Int",
+            "reqd": 1,
+            "non_negative": 1,
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "employment_type",
+            "label": "Employment Type",
+            "fieldtype": "Link",
+            "options": "Employment Type",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "fetch_from": "employee_resignation.employment_type",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "column_break_twru",
+            "label": "",
+            "fieldtype": "Column Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "designation",
+            "label": "Designation",
+            "fieldtype": "Link",
+            "options": "Designation",
+            "reqd": 1,
+            "fetch_from": "employee_resignation.designation",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "department",
+            "label": "Department",
+            "fieldtype": "Link",
+            "options": "Department",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "fetch_from": "employee_resignation.department",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "ojt_days",
+            "label": "OJT Days",
+            "fieldtype": "Int",
+            "description": "The number of on-the-job-training days as agreed with the client.",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "column_break_pdtv",
+            "label": "",
+            "fieldtype": "Column Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "project_allocation",
+            "label": "Project Allocation",
+            "fieldtype": "Link",
+            "options": "Project",
+            "fetch_from": "employee_resignation.project_allocation",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "site_allocation",
+            "label": "Site Allocation",
+            "fieldtype": "Link",
+            "options": "Operations Site",
+            "fetch_from": "employee_resignation.site_allocation",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "shift_allocation",
+            "label": "Shift Allocation",
+            "fieldtype": "Link",
+            "options": "Operations Shift",
+            "fetch_from": "employee_resignation.shift_allocation",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "operations_role_allocation",
+            "label": "Operations Role Allocation",
+            "fieldtype": "Link",
+            "options": "Operations Role",
+            "fetch_from": "employee_resignation.operations_role_allocation",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "profile_section",
+            "label": "Profile",
+            "fieldtype": "Section Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "column_break_bdfm",
+            "label": "",
+            "fieldtype": "Column Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "gender",
+            "label": "Gender",
+            "fieldtype": "Link",
+            "options": "Gender",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "column_break_qfvv",
+            "label": "",
+            "fieldtype": "Column Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "nationality",
+            "label": "Nationality",
+            "fieldtype": "Link",
+            "options": "Nationality",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "column_break_visn",
+            "label": "",
+            "fieldtype": "Column Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "salary",
+            "label": "Salary",
+            "fieldtype": "Currency",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "section_break_tdav",
+            "label": "Language and Skill Requirement",
+            "fieldtype": "Section Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "language_requirements",
+            "label": "Language Requirements",
+            "fieldtype": "Table",
+            "options": "Employee Language Requirement",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "skill_requirements",
+            "label": "Skill Requirements",
+            "fieldtype": "Table",
+            "options": "Designation Skill",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "certification_requirements",
+            "label": "Certification Requirements",
+            "fieldtype": "Table",
+            "options": "Candidate Certification List",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "more_information_section",
+            "label": "More Information",
+            "fieldtype": "Section Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "status",
+            "label": "Status",
+            "fieldtype": "Select",
+            "options": "Open\nWithdrawn\nClosed",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "column_break_txvy",
+            "label": "",
+            "fieldtype": "Column Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "naming_series",
+            "label": "Naming Series",
+            "fieldtype": "Select",
+            "options": "HR-PMR-.YYYY.-.MM.-",
+            "read_only": 1,
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "column_break_qast",
+            "label": "",
+            "fieldtype": "Column Break",
+            "doctype": "DocField"
+        },
+        {
+            "fieldname": "amended_from",
+            "label": "Amended From",
+            "fieldtype": "Link",
+            "options": "Project Manpower Request",
+            "read_only": 1,
+            "print_hide": 1,
+            "no_copy": 1,
+            "search_index": 1,
+            "doctype": "DocField"
+        }
+    ],
+    "permissions": [
+        {
+            "role": "System Manager",
+            "read": 1,
+            "write": 1,
+            "create": 1,
+            "submit": 1,
+            "delete": 1,
+            "amend": 1,
+            "report": 1,
+            "export": 1,
+            "share": 1,
+            "print": 1,
+            "email": 1
+        },
+        {
+            "role": "Offboarding Officer",
+            "read": 1,
+            "write": 1,
+            "create": 1,
+            "delete": 1,
+            "report": 1,
+            "export": 1,
+            "share": 1,
+            "print": 1,
+            "email": 1
+        },
+        {
+            "role": "Recruiter",
+            "read": 1,
+            "write": 1,
+            "create": 1,
+            "submit": 1,
+            "delete": 1,
+            "report": 1,
+            "export": 1,
+            "share": 1,
+            "print": 1,
+            "email": 1
+        }
+    ]
+}

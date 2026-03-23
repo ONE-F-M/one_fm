@@ -6,22 +6,15 @@ frappe.ui.form.on("Client Event", {
         frm.events.add_event_staff(frm);
     },
     add_event_staff(frm) {
-        if (["Approved", "Pending Approval"].includes(frm.doc.workflow_state)) {
+        if (["Approved", "Pending Operations Manager"].includes(frm.doc.workflow_state)) {
             frm.add_custom_button(__("Add Staff to Event"), function() {
                 let d = new frappe.ui.Dialog({
                     title: __("Add Staff to Event"),
                     fields: get_add_staff_event_dialog_fields(frm),
                     primary_action_label: __("Submit"),
                     primary_action: (values) => {
-                        let employees = values.staff.map(s => s.employee);
-                        return new Promise((resolve, reject) => {
-                            confirm_conflict_schedules(frm, employees, resolve, reject);
-                        }).then((result) => {
-                            if (result) {
-                                frm.events.submit_event_staff(frm, values);
-                            }
-                            d.hide();
-                        });
+                        frm.events.submit_event_staff(frm, values);
+                        d.hide();
                     },
                 });
                 d.show();
@@ -111,40 +104,4 @@ function get_add_staff_event_dialog_fields(frm) {
     ]
 }
 
-function confirm_conflict_schedules(frm, employees, resolve, reject) {
-    frappe.call({
-        method: "one_fm.one_fm.doctype.event_staff.event_staff.get_conflicting_dates",
-        args: {
-            employee: employees,
-            start_date: frm.doc.start_date,
-            end_date: frm.doc.end_date,
-        },
-        callback: function (r) {
-            if (r.message && r.message.length > 0) {
-                let conflicting_dates = r.message;
-                let total_days = frappe.datetime.get_day_diff(frm.doc.end_date, frm.doc.start_date) + 1;
-                let message = "";
 
-                if (conflicting_dates.length === total_days) {
-                    message = __("Do you want to Replace the Existing Employee Schedule?");
-                } else {
-                    message = __("Employee Schedule exists for {0} out of {1} days. <br>Details: {2}. <br>Do you want to Replace the Existing Employee Schedules for conflicting days?", [conflicting_dates.length, total_days, conflicting_dates.join(", ")]);
-                }
-
-                frappe.confirm(
-                    message,
-                    () => {
-                        resolve(true);
-                    },
-                    () => {
-                        resolve(false);
-                    }
-                );
-            } else {
-                resolve(true);
-            }
-        },
-        freeze: true,
-        freeze_message: __("Checking for schedule conflicts...")
-    });
-}

@@ -1,0 +1,31 @@
+{
+    "allow_rename": 1,
+    "creation": "2026-02-18 13:52:34.774851",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "candidate_certification"
+    ],
+    "fields": [
+        {
+            "fieldname": "candidate_certification",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Candidate Certification",
+            "options": "Candidate Certification",
+            "reqd": 1
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "modified": "2026-02-18 14:10:49.755442",
+    "modified_by": "Administrator",
+    "module": "One Fm",
+    "name": "Candidate Certification List",
+    "owner": "Administrator",
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC"
+}

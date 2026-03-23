@@ -1,4 +1,5 @@
 import frappe
+from one_fm.utils import create_process_if_not_exists
 
 def execute():
     method = "one_fm.one_fm.doctype.employee_daily_action.employee_daily_action.run_employee_daily_action_check_notifications"
@@ -12,14 +13,7 @@ def execute():
         }).insert(ignore_permissions=True)
 
     process_name = "Employee Daily Action Check"
-    if not frappe.db.exists("Process", process_name):
-        frappe.get_doc({
-            "process_name": process_name,
-            "description": process_name,
-            "doctype": "Process",
-            "process_owner_name": "Administrator",
-            "process_owner": "Administrator"
-        }).insert(ignore_permissions=True)
+    create_process_if_not_exists(process_name)
 
     task_type = "Routine"
     if not frappe.db.exists("Task Type", task_type):
