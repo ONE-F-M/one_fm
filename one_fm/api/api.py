@@ -281,6 +281,10 @@ def push_notification_rest_api_for_lms(user_id, message):
         frappe.log_error(title="Error Sending  Push notification for LMS", message=frappe.get_traceback())
         return v1_api.utils.response("error", 500, {}, str(e))
 
+PICKUP_BUFFER = 10             # minutes
+MAX_TRANSIT = 90               # minutes
+SWAP_CAPACITY_MULTIPLIER = 2   # Loosen vehicle capacity so the optimizer doesn't reject swaps as "over-full"
+
 @frappe.whitelist()
 def optimize_transportation_routes():
     """
@@ -319,10 +323,10 @@ def optimize_transportation_routes():
         global_end_utc = local_today_end.astimezone(pytz.utc).replace(tzinfo=None)
         global_bounds = (global_start_utc, global_end_utc)
 
-        shipments = build_shipments_from_nested_map(nested_map, config, global_bounds)
+        shipments, swap_keys = build_shipments_from_nested_map(nested_map, config, global_bounds)
 
         # Step 3 & 4: Build Vehicle List and Send Payload
-        results = process_accommodations(shipments, config, global_bounds)
+        results = process_accommodations(shipments, swap_keys, config, global_bounds)
         
         return results
         
@@ -364,9 +368,9 @@ def get_grouped_employees_by_accommodation() -> dict:
         if not acc_label:
             continue
         
-        # 4. Handle Mahboula buildings grouping (12, 13, 15)
+        # 4. Handle Mahboula buildings grouping (3, 12, 13, 15)
         # We group them under "Mahboula Camp" but keep a valid acc_id for location lookups
-        acc_key = "Mahboula Camp" if acc_label in ["Mahboula 12", "Mahboula 13", "Mahboula 15"] else acc_id
+        acc_key = "Mahboula Camp" if acc_label in ["Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"] else acc_id
             
         if acc_key not in accommodation_map:
             accommodation_map[acc_key] = {
@@ -388,24 +392,31 @@ def get_grouped_employees_by_accommodation() -> dict:
         if not acc_doc or not acc_doc.transport_stop_location:
             continue
 
-        nested_map[acc_key] = {}
+        nested_map[acc_key] = {
+            "lookup_id": lookup_id,
+            "shifts": {}
+        }
         for emp in emp_list:
             shift = emp.shift
-            if shift not in nested_map[acc_key]:
-                nested_map[acc_key][shift] = []
-            nested_map[acc_key][shift].append(emp.name)
+            if shift not in nested_map[acc_key]["shifts"]:
+                nested_map[acc_key]["shifts"][shift] = []
+            nested_map[acc_key]["shifts"][shift].append(emp.name)
 
     return nested_map
 
 
-def build_shipments_from_nested_map(nested_map: dict, config: object, global_bounds: tuple) -> dict:
+def build_shipments_from_nested_map(nested_map: dict, config: object, global_bounds: tuple) -> tuple:
     shipments_by_accommodation = {}
-    pickup_window_buffer = 120  # minutes before shift start the vehicle can depart (hardcoded for now)
+    all_swap_keys = []  # List of (out_key, ret_key) pairs collected from every create_shipment_pair call
+    pickup_window_buffer = 10  # minutes before shift start the vehicle can depart
     penalty_cost = config.penalty_cost or 1000000
 
-    for acc_name, shifts_dict in nested_map.items():
+    for acc_name, data in nested_map.items():
         shipments = []
-        acc_coords = get_coords("Accommodation", acc_name)
+        lookup_id = data["lookup_id"]
+        shifts_dict = data["shifts"]
+        
+        acc_coords = get_coords("Accommodation", lookup_id)
         if not acc_coords:
             continue
 
@@ -442,7 +453,8 @@ def build_shipments_from_nested_map(nested_map: dict, config: object, global_bou
                     if current_h > 0:
                         shipments.extend(create_shipment_pair(
                             acc_name, shift_doc, loc["name"], acc_coords, loc["coords"], 
-                            current_h, pickup_window_buffer, penalty_cost, global_bounds
+                            current_h, pickup_window_buffer, penalty_cost, global_bounds,
+                            swap_keys_out=all_swap_keys
                         ))
 
             # --- Arrangement 2: One Location Many Sites ---
@@ -483,7 +495,8 @@ def build_shipments_from_nested_map(nested_map: dict, config: object, global_bou
             })
             
             shipments.extend(create_shipment_pair(
-                acc_name, pseudo_shift, stop_location, acc_coords, stop_coords, data["headcount"], pickup_window_buffer, penalty_cost, global_bounds
+                acc_name, pseudo_shift, stop_location, acc_coords, stop_coords, data["headcount"], pickup_window_buffer, penalty_cost, global_bounds,
+                swap_keys_out=all_swap_keys
             ))
 
         # 2. Cluster generated shipments by time gaps (Handover Logic)
@@ -508,9 +521,9 @@ def build_shipments_from_nested_map(nested_map: dict, config: object, global_bou
             
         shipments_by_accommodation[acc_name] = batches
 
-    return shipments_by_accommodation
+    return shipments_by_accommodation, all_swap_keys
 
-def create_shipment_pair(acc_name, shift, stop_location, acc_coords, stop_coords, headcount, pickup_window_buffer, penalty_cost, global_bounds):
+def create_shipment_pair(acc_name, shift, stop_location, acc_coords, stop_coords, headcount, pickup_window_buffer, penalty_cost, global_bounds, swap_keys_out=None):
     from frappe.utils import get_datetime
     from datetime import timedelta
     import pytz
@@ -543,58 +556,89 @@ def create_shipment_pair(acc_name, shift, stop_location, acc_coords, stop_coords
     
     # OUTBOUND: employees must arrive at the site by shift start_time
     # Time window: [start - pickup_window_buffer mins, start]
-    outbound_start = start_time_utc - timedelta(minutes=pickup_window_buffer)
+    outbound_start = start_time_utc - timedelta(minutes=PICKUP_BUFFER)
     outbound_end = start_time_utc
+
+    # Constraint: Must leave accommodation no earlier than 1.5h before arrival
+    outbound_pickup_hard_start = outbound_start - timedelta(minutes=MAX_TRANSIT)
     
     # Clamp to global bounds
     if outbound_start < global_start: outbound_start = global_start
     if outbound_end > global_end: outbound_end = global_end
 
+    # Swap keys use complementary suffixes (_OUT / _RET) so the two sides can cross-reference
+    # each other without the self-dependency the API forbids.
+    # e.g. Day Outbound → "SiteA_0700_OUT" requires "SiteA_0700_RET" (Night Return) on the same vehicle.
+    outbound_swap_key = f"{stop_location}_{outbound_end.strftime('%H')}00_OUT"
+    return_swap_key_pair = f"{stop_location}_{outbound_end.strftime('%H')}00_RET"
+
     outbound = shipment_base.copy()
     outbound.update({
         "label": f"{acc_name}_{shift.name}_{stop_location}_OUTBOUND",
+        "shipmentType": outbound_swap_key,
         "pickups": [{
             "arrivalLocation": {"latitude": acc_coords[0], "longitude": acc_coords[1]},
+            "timeWindows": [{
+                "startTime": fmt(outbound_pickup_hard_start) # Limits how early they are picked up
+            }], 
             "duration": boarding_duration
         }],
         "deliveries": [{
             "arrivalLocation": {"latitude": stop_coords[0], "longitude": stop_coords[1]},
             "duration": boarding_duration,
             "timeWindows": [{
+                "softStartTime": fmt(outbound_start),
                 "startTime": fmt(outbound_start),
-                "softEndTime": fmt(outbound_end - timedelta(minutes=10) if outbound_end - outbound_start > timedelta(minutes=10) else outbound_start),
-                "endTime": fmt(outbound_end),
-                "costPerHourAfterSoftEndTime": 500
+                "softEndTime": fmt(outbound_end),
+                "costPerHourBeforeSoftStartTime": 1300,       # Penalize early waiting
+                "costPerHourAfterSoftEndTime": 1500
             }]
         }]
     })
+    if swap_keys_out is not None:
+        swap_keys_out.append((outbound_swap_key, return_swap_key_pair))
     shipments.append((outbound, start_time_utc))
 
     # RETURN: employees leave the site after shift end_time
     # Time window: [end, end + pickup_window_buffer mins]
     return_start = end_time_utc
-    return_end = end_time_utc + timedelta(minutes=pickup_window_buffer)
+    return_end = end_time_utc + timedelta(minutes=PICKUP_BUFFER)
+
+    # Constraint: Must arrive at accommodation within 1.5h of pickup
+    return_delivery_hard_end = return_start + timedelta(minutes=MAX_TRANSIT)
 
     # Clamp to global bounds
     if return_start < global_start: return_start = global_start
     if return_end > global_end: return_end = global_end
 
+    # The return side gets the complementary _RET key for the same hour.
+    # The Day Return that starts at 19:00 gets "SiteA_1900_RET", which requires "SiteA_1900_OUT" (Night Outbound).
+    return_swap_key = f"{stop_location}_{return_start.strftime('%H')}00_RET"
+    outbound_swap_key_pair = f"{stop_location}_{return_start.strftime('%H')}00_OUT"
+
     ret = shipment_base.copy()
     ret.update({
         "label": f"{acc_name}_{shift.name}_{stop_location}_RETURN",
+        "shipmentType": return_swap_key,
         "pickups": [{
             "arrivalLocation": {"latitude": stop_coords[0], "longitude": stop_coords[1]},
+            "timeWindows": [{
+                "startTime": fmt(return_start),        # No picking up before shift ends
+                "softEndTime": fmt(return_end),        # Target: Within 15m of end
+                "costPerHourAfterSoftEndTime": 1500
+            }],
             "duration": boarding_duration
         }],
         "deliveries": [{
             "arrivalLocation": {"latitude": acc_coords[0], "longitude": acc_coords[1]},
             "duration": boarding_duration,
             "timeWindows": [{
-                "startTime": fmt(return_start),
-                "endTime": fmt(return_end)
+                "endTime": fmt(return_delivery_hard_end)          # HARD: Arrive within 90 mins
             }]
         }]
     })
+    if swap_keys_out is not None:
+        swap_keys_out.append((outbound_swap_key_pair, return_swap_key))
     shipments.append((ret, end_time_utc))
     
     return shipments
@@ -623,56 +667,89 @@ def get_coords(doctype: str, name: str) -> tuple | None:
 
     return None
 
-def process_accommodations(shipments_dict: dict, config: object, global_bounds: tuple) -> list:
+def process_accommodations(shipments_dict: dict, swap_keys: set, config: object, global_bounds: tuple) -> list:
     results = []
     global_start_utc, global_end_utc = global_bounds
     
+    all_shipments = []
+    all_vehicles = build_vehicle_list(global_bounds)
+
     for acc_name, batches in shipments_dict.items():
-        for i, shipments in enumerate(batches):
-            if not shipments:
-                continue
-                
-            vehicles = build_vehicle_list(acc_name, global_bounds)
-            if not vehicles:
-                continue
-                
-            payload = {
-                "model": {
-                    "shipments": shipments,
-                    "vehicles": vehicles,
-                    "globalStartTime": global_start_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "globalEndTime": global_end_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-                }
-            }
+        # 1. Aggregate all shipments from all clustered "Runs" for this accommodation
+        for shipments in batches:
+            all_shipments.extend(shipments)
 
-            print("PAYLOAD PER ACCOMMODATION: ")
-            print(json.dumps(payload))
+    if not all_shipments or not all_vehicles:
+        return results
 
-    #         response = call_route_optimization_api(payload)
-            
-    #         if response and "skippedShipments" in response:
-    #             for skipped in response["skippedShipments"]:
-    #                 frappe.log_error(f"Shipment skipped: {skipped.get('label')} with penalty cost", "Route Optimization")
-            
-    #         results.append({
-    #             "accommodation": acc_name,
-    #             "run_number": i + 1,
-    #             "status": "success" if response else "error",
-    #             "response": response
-    #         })
+    # Only emit a swap requirement if BOTH sides of the pair exist in the payload.
+    # If there is no Night Shift, there are no _RET shipments at 07:00, so referencing
+    # that type in a requirement would cause an INVALID_REQUEST error.
+    present_types = {s["shipmentType"] for s in all_shipments if "shipmentType" in s}
+
+    seen_pairs = set()
+    swap_requirements = []
+    for out_key, ret_key in swap_keys:
+        pair = (out_key, ret_key)
+        if pair in seen_pairs:
+            continue
+        seen_pairs.add(pair)
+
+        # Only emit the rule if both counterparts actually appear in the payload
+        if out_key not in present_types or ret_key not in present_types:
+            continue
+
+        swap_requirements.append({
+            "requiredShipmentTypeAlternatives": [ret_key],   # _OUT requires a _RET on the same vehicle
+            "dependentShipmentTypes": [out_key],
+            "requirementMode": "IN_SAME_VEHICLE_AT_PICKUP_TIME"
+        })
+        # Note: Only one direction is needed. A→B and B→A would create a cycle the API rejects.
+
+
+
+    payload = {
+        "model": {
+            "shipments": all_shipments,
+            "vehicles": all_vehicles,
+            "shipmentTypeRequirements": swap_requirements,
+            "globalStartTime": global_start_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "globalEndTime": global_end_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+        }
+    }
+
+    print("GLOBAL CONSOLIDATED PAYLOAD: ")
+    print(json.dumps(payload))
+    
+    # Write payload to a file for easier inspection
+    try:
+        with open("/tmp/payload.json", "w") as f:
+            json.dump(payload, f, indent=4)
+    except Exception as e:
+        frappe.log_error(f"Failed to write payload to /tmp/payload.json: {str(e)}", "Route Optimization")
+
+    response = None
+    # response = call_route_optimization_api(payload)
+    
+    # if response and "skippedShipments" in response:
+    #     for skipped in response["skippedShipments"]:
+    #         frappe.log_error(f"Global Shipment skipped: {skipped.get('label')}", "Route Optimization")
+    
+    # results.append({
+    #     "status": "success" if response else "error",
+    #     "response": response
+    # })
         
-    # return results
+    return results
 
-def build_vehicle_list(acc_name: str, global_bounds: tuple) -> list:
+def build_vehicle_list(global_bounds: tuple) -> list:
     config = frappe.get_single("Route Optimization API Configuration")
     global_start_utc, global_end_utc = global_bounds
-    acc_transport_stop = frappe.db.get_value("Accommodation", acc_name, "transport_stop_location")
-    if not acc_transport_stop:
-        return []
-        
+
     transport_vehicles = frappe.get_all("Vehicle", 
         filters={"transport_stop_vehicle": 1},
-        fields=["name", "location", "seats"]
+        fields=["name", "location", "seats"],
+        order_by= "name asc"
     )
     
     vehicles = []
@@ -680,25 +757,24 @@ def build_vehicle_list(acc_name: str, global_bounds: tuple) -> list:
     today_end = global_end_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
     
     for v in transport_vehicles:
-        if v.location == acc_transport_stop:
-            coords = get_coords("Location", v.location)
-            if not coords:
-                continue
-                
-            start_end_coords = {"latitude": coords[0], "longitude": coords[1]}
+        coords = get_coords("Location", v.location)
+        if not coords:
+            continue
             
-            vehicles.append({
-                "label": v.name,
-                "startLocation": start_end_coords,
-                "endLocation": start_end_coords,
-                "loadLimits": { "seats": { "maxLoad": max((v.seats or 1) - 1, 1) } },
-                "startTimeWindows": [{ "startTime": today_start }],
-                "endTimeWindows":   [{ "endTime":   today_end }],
-                "fixedCost": config.fixed_cost or 0,
-                "costPerKilometer": config.cost_per_kilometer or 0,
-                "costPerHour": config.cost_per_hour or 0,
-                "travelMode": "DRIVING"
-            })
+        start_end_coords = {"latitude": coords[0], "longitude": coords[1]}
+        
+        vehicles.append({
+            "label": v.name,
+            "startLocation": start_end_coords,
+            "endLocation": start_end_coords,
+            "loadLimits": { "seats": { "maxLoad": max(((v.seats or 1) - 1) * SWAP_CAPACITY_MULTIPLIER, 1) } },
+            "startTimeWindows": [{ "startTime": today_start }],
+            "endTimeWindows":   [{ "endTime":   today_end }],
+            "fixedCost": config.fixed_cost or 0,
+            "costPerKilometer": config.cost_per_kilometer or 0,
+            "costPerHour": config.cost_per_hour or 0,
+            "travelMode": "DRIVING"
+        })
             
     return vehicles
 
