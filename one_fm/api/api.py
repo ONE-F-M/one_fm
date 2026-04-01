@@ -1,6 +1,6 @@
 import frappe, base64, requests, firebase_admin, json
 from frappe import _
-import pandas as pd
+import pandas as panday
 from frappe.utils import cstr, cint
 from frappe.model.rename_doc import rename_doc
 from firebase_admin import messaging, credentials
