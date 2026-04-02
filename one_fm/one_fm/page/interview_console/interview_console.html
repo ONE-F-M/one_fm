@@ -1,0 +1,72 @@
+<div id="ic-root">
+    <div class="ic-sidebar">
+        <div class="ic-search-wrap">
+            <input type="text" id="ic-search" class="ic-search-input" placeholder="Search candidates...">
+        </div>
+        <div class="ic-sidebar-header">
+            <span>CANDIDATES</span>
+            <span id="ic-candidate-count">0</span>
+        </div>
+        <div id="ic-list" class="ic-list"></div>
+    </div>
+
+    <div class="ic-main">
+        <div class="ic-header">
+            <div class="ic-header-field">
+                <div class="ic-header-label">AGE</div>
+                <div id="ic-age" class="ic-header-value-box">-</div>
+            </div>
+            <div class="ic-header-field">
+                <div class="ic-header-label">HEIGHT (cm)</div>
+                <input type="number" id="ic-height" class="ic-header-value-box" style="width:70px;text-align:center;border:1px solid #e2e8f0;outline:none;" placeholder="-" min="100" max="250" step="1">
+            </div>
+            <div class="ic-header-field" style="margin-left: 10px;">
+                <div class="ic-header-label">TOTAL SCORE</div>
+                <div id="ic-score-pill" class="ic-score-pill">0/100</div>
+            </div>
+            <div class="ic-header-field">
+                <div class="ic-header-label">RESET</div>
+                <div id="ic-reset-btn" class="ic-clear-btn">↻</div>
+            </div>
+            
+            <div class="ic-actions-right">
+                <button id="ic-reject-btn" class="ic-btn-circular btn-reject" title="Reject Candidate">
+                    <i class="fa fa-user-times"></i>
+                    <span class="btn-text">Reject</span>
+                </button>
+                <button id="ic-hold-btn" class="ic-btn-circular btn-hold" title="Hold Candidate">
+                    <i class="fa fa-clock-o"></i>
+                    <span class="btn-text">Hold</span>
+                </button>
+                <button id="ic-save-btn" class="ic-btn-circular btn-accept" title="Accept Candidate">
+                    <i class="fa fa-check"></i>
+                    <span class="btn-text">Accept</span>
+                </button>
+                <div id="ic-job-offers-pill" class="ic-dashboard-link" title="View Job Offers">
+                    <span class="link-text">Job Offers</span>
+                    <span class="count-circle" id="ic-job-offers-count">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="ic-matrix-container" id="ic-matrix-wrapper">
+            <!-- Dynamic Matrix populated by JS -->
+            <table class="ic-table">
+                <thead id="ic-thead"></thead>
+                <tbody id="ic-tbody"></tbody>
+            </table>
+            
+            <div id="ic-no-matrix-msg" style="display:none; padding: 40px; text-align: center; color: #64748b; font-style: italic;">
+                No Interview Round setup found for this nationality and designation.
+            </div>
+            
+
+            <div class="ic-remarks-area">
+                <div class="ic-remarks-row">
+                    <textarea id="ic-remarks" class="ic-remarks-input" placeholder="Type your interview observations and final remarks here..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

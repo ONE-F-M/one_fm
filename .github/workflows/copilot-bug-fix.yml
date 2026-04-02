@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     # Only run when copilot-bugfix label is applied
-    if: contains(github.event.issue.labels.*.name, 'copilot-bugfix')
+    if: |
+      (github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'copilot-bugfix')) ||
+      (github.event.action == 'labeled' && github.event.label.name == 'copilot-bugfix')
 
     steps:
       - name: Post initial comment
@@ -37,7 +39,9 @@ jobs:
     runs-on: ubuntu-latest
     
     # Only run when copilot-bugfix label is applied
-    if: contains(github.event.issue.labels.*.name, 'copilot-bugfix')
+    if: |
+      (github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'copilot-bugfix')) ||
+      (github.event.action == 'labeled' && github.event.label.name == 'copilot-bugfix')
     
     outputs:
       fix_generated: ${{ steps.validate_issue.outputs.fix_generated == 'false' && 'false' || steps.generate_fix.outputs.fix_generated }}

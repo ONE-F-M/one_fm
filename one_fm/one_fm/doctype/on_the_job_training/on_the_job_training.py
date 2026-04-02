@@ -65,11 +65,12 @@ class OntheJobTraining(Document):
     def validate_dates(self):
         today = getdate(frappe.utils.nowdate())
 
-        if self.start_date and getdate(self.start_date) < today:
-            frappe.throw(_("The scheduled event Start date cannot be a past date."))
+        if self.workflow_state in ["Draft"]:
+            if self.start_date and getdate(self.start_date) < today:
+                frappe.throw(_("The scheduled event Start date cannot be a past date."))
 
-        if self.end_date and getdate(self.end_date) < today:
-            frappe.throw(_("The scheduled event End date cannot be a past date."))
+            if self.end_date and getdate(self.end_date) < today:
+                frappe.throw(_("The scheduled event End date cannot be a past date."))
 
         if self.start_date and self.end_date:
             if getdate(self.end_date) < getdate(self.start_date):

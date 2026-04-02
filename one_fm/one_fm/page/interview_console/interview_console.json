@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "creation": "2026-03-16 23:44:12.898580",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "fa fa-id-card",
+ "idx": 0,
+ "modified": "2026-03-19 00:23:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "interview_console",
+ "owner": "Administrator",
+ "page_name": "interview_console",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "HR Manager"
+  },
+  {
+   "role": "Interviewer"
+  },
+  {
+   "role": "HR User"
+  },
+  {
+   "role": "Recruiter"
+  },
+  {
+   "role": "Senior Recruiter"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Interview Console"
+}

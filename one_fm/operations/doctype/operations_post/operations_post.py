@@ -48,7 +48,7 @@ class OperationsPost(Document):
     def update_post_activation_date(self):
         if not self.is_new() and self.has_value_changed("status"):
             old_status = self.get_doc_before_save().status
-            if old_status == "Inactive" and self.status == "Active":
+            if old_status == "Active" and self.status == "Inactive":
                 if self.start_date or self.end_date:
                     self.append("operations_post_activation", {
                         "operations_post_start_date": self.start_date,

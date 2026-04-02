@@ -1,0 +1,147 @@
+{
+    "workflow_name": "Employee Resignation Withdrawal",
+    "document_type": "Employee Resignation Withdrawal",
+    "is_active": 1,
+    "override_status": 0,
+    "send_email_alert": 0,
+    "workflow_state_field": "workflow_state",
+    "doctype": "Workflow",
+    "states": [
+        {
+            "state": "Pending Supervisor",
+            "doc_status": "0",
+            "update_field": "",
+            "update_value": "",
+            "style": "Warning",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Employee",
+            "send_email": 1,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Accepted by Supervisor",
+            "doc_status": "0",
+            "style": "Warning",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Operations Manager",
+            "send_email": 1,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Rejected By Supervisor",
+            "doc_status": "0",
+            "style": "",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Operations Manager",
+            "send_email": 1,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Rejected",
+            "doc_status": "1",
+            "style": "Inverse",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "System Manager",
+            "send_email": 1,
+            "doctype": "Workflow Document State"
+        },
+        {
+            "state": "Approved",
+            "doc_status": "1",
+            "update_field": "",
+            "update_value": "",
+            "style": "Success",
+            "is_optional_state": 0,
+            "avoid_status_override": 0,
+            "allow_edit": "Offboarding Officer",
+            "send_email": 1,
+            "doctype": "Workflow Document State"
+        }
+    ],
+    "transitions": [
+        {
+            "state": "Pending Supervisor",
+            "action": "Accept",
+            "next_state": "Accepted by Supervisor",
+            "allowed": "Employee",
+            "allow_self_approval": 1,
+            "send_email_to_creator": 0,
+            "allowed_user_field": "supervisor",
+            "skip_multiple_action": 0,
+            "skip_creation_of_workflow_action": 0,
+            "custom_confirm_transition": 0,
+            "require_digital_signature": 0,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Pending Supervisor",
+            "action": "Reject",
+            "next_state": "Rejected By Supervisor",
+            "allowed": "Employee",
+            "allow_self_approval": 1,
+            "send_email_to_creator": 0,
+            "allowed_user_field": "supervisor",
+            "skip_multiple_action": 0,
+            "skip_creation_of_workflow_action": 0,
+            "custom_confirm_transition": 0,
+            "require_digital_signature": 0,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Accepted by Supervisor",
+            "action": "Approve",
+            "next_state": "Approved",
+            "allowed": "Operations Manager",
+            "allow_self_approval": 1,
+            "send_email_to_creator": 0,
+            "skip_multiple_action": 0,
+            "skip_creation_of_workflow_action": 0,
+            "custom_confirm_transition": 0,
+            "require_digital_signature": 0,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Accepted by Supervisor",
+            "action": "Reject",
+            "next_state": "Rejected",
+            "allowed": "Operations Manager",
+            "allow_self_approval": 1,
+            "send_email_to_creator": 0,
+            "skip_multiple_action": 0,
+            "skip_creation_of_workflow_action": 0,
+            "custom_confirm_transition": 0,
+            "require_digital_signature": 0,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Rejected By Supervisor",
+            "action": "Approve",
+            "next_state": "Approved",
+            "allowed": "Operations Manager",
+            "allow_self_approval": 1,
+            "send_email_to_creator": 0,
+            "skip_multiple_action": 0,
+            "skip_creation_of_workflow_action": 0,
+            "custom_confirm_transition": 0,
+            "require_digital_signature": 0,
+            "doctype": "Workflow Transition"
+        },
+        {
+            "state": "Rejected By Supervisor",
+            "action": "Reject",
+            "next_state": "Approved",
+            "allowed": "Operations Manager",
+            "allow_self_approval": 1,
+            "send_email_to_creator": 0,
+            "skip_multiple_action": 0,
+            "skip_creation_of_workflow_action": 0,
+            "custom_confirm_transition": 0,
+            "require_digital_signature": 0,
+            "doctype": "Workflow Transition"
+        }
+    ]
+}

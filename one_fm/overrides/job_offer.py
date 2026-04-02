@@ -205,6 +205,15 @@ class JobOfferOverride(JobOffer):
         if auto_email_settings.auto_email_hiring_method not in [hiring_method, 'All Recruitment']:
             return
 
+        # Guard: skip if a sent Communication already exists for this specific Job Offer
+        # to prevent duplicate emails when on_update fires multiple times for the same document.
+        if frappe.db.exists('Communication', {
+            'reference_doctype': 'Job Offer',
+            'reference_name': self.name,
+            'sent_or_received': 'Sent'
+        }):
+            return
+
         message = self.get_message_for_job_offer_email(auto_email_settings.job_offer_email_template)
         attachment = frappe.attach_print(
             'Job Offer', self.name, file_name=self.name, print_format=auto_email_settings.job_offer_print_format

@@ -48,7 +48,8 @@ class GenerateContractComplianceChecker:
 			INNER JOIN `tabContracts` c ON ci.parent = c.name
 			WHERE c.workflow_state = %s
 				AND ci.item_code IS NOT NULL
-		""", ("Active"), as_dict=1)
+				AND ci.item_type != %s
+		""", ("Active", "Items"), as_dict=1)
 	
 	def count_selected_days_in_range(self, contract_data, start_date, end_date):
 		weekday_fields = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']

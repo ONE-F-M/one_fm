@@ -204,8 +204,14 @@ def upload_image():
                 if(k=="expiry_date" and v):
                     frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_passport_expire', v)
                 if(k=="given_names" and v):
-                    #given_names is a space separated string, split by space and allocate each name to first second third and fourth names
-                    given_names = v.split()
+                    # Mindee V2 may return given_names as a list (e.g. ['JOHN', 'DOE'])
+                    # or as a space-separated string — handle both to avoid AttributeError
+                    # that would abort passport processing and prevent later fields
+                    # (gender, passport_holder_of) from being saved.
+                    if isinstance(v, list):
+                        given_names = [str(n) for n in v if n]
+                    else:
+                        given_names = str(v).split()
                     if len(given_names) >= 1:
                         frappe.db.set_value(reference_doctype, reference_docname, 'one_fm_first_name', given_names[0].title())
                     if len(given_names) >= 2:

@@ -364,7 +364,7 @@ function set_change_request_btn(frm) {
 };
 
 function set_field_access_for_unauthorized_users(frm) {
-	if(frm.doc.workflow_state == 'Approved' && !(frappe.user.has_role('Finance Manager') || frappe.user.has_role('Purchase Manager'))){
+	if(frm.doc.workflow_state == 'Approved' && !(frappe.user.has_role('Finance Manager') || frappe.user.has_role('Purchase Manager') || frappe.user.has_role('Warehouse Supervisor'))){
 		// Set all fields (other than UOM) as read only
 		Object.keys(frm.fields_dict || {}).filter(f => f != "uoms").forEach(f => frm.set_df_property(f, "read_only", 1));
 

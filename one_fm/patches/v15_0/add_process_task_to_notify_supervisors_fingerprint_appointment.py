@@ -1,4 +1,5 @@
 import frappe
+from one_fm.utils import create_process_if_not_exists
 
 def execute():
     method = "one_fm.grd.doctype.fingerprint_appointment.fingerprint_appointment.notify_supervisor_of_pending_fingerprint_appointment"
@@ -13,14 +14,7 @@ def execute():
         }).insert(ignore_permissions=True)
 
     process_name = "Residency"
-    if not frappe.db.exists("Process", process_name):
-        frappe.get_doc({
-            "process_name": process_name,
-            "description": process_name,
-            "doctype": "Process",
-            "process_owner_name": "Administrator",
-            "process_owner": "Administrator"
-        }).insert(ignore_permissions=True)
+    create_process_if_not_exists(process_name)
 
     task_type = "Routine"
     if not frappe.db.exists("Task Type", task_type):

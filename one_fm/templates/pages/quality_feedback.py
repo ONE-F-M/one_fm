@@ -11,6 +11,7 @@ def get_context(context):
     """
     Get the context for the quality feedback page.
     """
+    context.no_cache = 1
     context.title = _("Quality Feedback")
 
     provided_magic_link = frappe.form_dict.get('magic_link')

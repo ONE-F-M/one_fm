@@ -870,6 +870,26 @@ def get_shift_type(time):
 		shift_type = frappe.get_list("Shift Type", {"start_time": [">=", "13:00"]},['name'], pluck='name')
 	return shift_type
 
+def resolve_shift_type(shift_type_name, shift_types_dict, default_shift, date):
+	"""Resolve a shift type with computed start_datetime/end_datetime.
+	First checks the pre-filtered dict, then looks up from DB (and caches), then falls back to default.
+	"""
+	matched_shift = shift_types_dict.get(shift_type_name)
+	if not matched_shift:
+		fetched_shift = frappe.db.get_value("Shift Type", shift_type_name, ["name", "shift_type", "start_time", "end_time"], as_dict=True)
+		if fetched_shift:
+			fetched_shift.start_datetime = f"{date} {(datetime.min + fetched_shift.start_time).time()}"
+			if fetched_shift.end_time.total_seconds() < fetched_shift.start_time.total_seconds():
+				fetched_shift.end_datetime = f"{add_days(date, 1)} {(datetime.min + fetched_shift.end_time).time()}"
+			else:
+				fetched_shift.end_datetime = f"{date} {(datetime.min + fetched_shift.end_time).time()}"
+			matched_shift = fetched_shift
+		else:
+			matched_shift = default_shift
+		# Cache so the same shift type is not looked up again
+		shift_types_dict[shift_type_name] = matched_shift
+	return matched_shift
+
 def create_shift_assignment(roster, date, time):
 	try:
 		owner = frappe.session.user
@@ -944,7 +964,7 @@ def create_shift_assignment(roster, date, time):
 				if not r.employee in existing_shift_list:
 					if shift_request_dict.get(r.employee):
 						_shift_request = shift_request_dict.get(r.employee)
-						_shift_type = shift_types_dict.get(_shift_request.shift_type) or default_shift
+						_shift_type = resolve_shift_type(_shift_request.shift_type, shift_types_dict, default_shift, date)
 						_project_r = frappe.db.get_value("Operations Shift", {'name':_shift_request.operations_shift}, ['project'])
 						shift_r_start_time = date+ " " + str(_shift_type.start_time)
 						_day_off_ot = 1 if  shift_request_dict.get(r.employee).get('purpose') == 'Day Off Overtime' else 0
@@ -962,7 +982,7 @@ def create_shift_assignment(roster, date, time):
 							"{_shift_request.operations_shift or ''}", "{_shift_request.operations_role or ''}", "{r.post_abbrv or ''}", "{_shift_request.roster_type}",
 							"{owner}", "{owner}", "{creation}", "{creation}", "{_shift_request.name}", "{_shift_request.check_in_site}", "{_shift_request.check_out_site}","{_day_off_ot}", "{r.name}", "{r.on_the_job_training if r.employee_availability == 'On-the-job Training' else ''}"),"""
 					else:
-						_shift_type = shift_types_dict.get(r.shift_type) or default_shift
+						_shift_type = resolve_shift_type(r.shift_type, shift_types_dict, default_shift, date)
 						query_body += f"""
 						(
 							"HR-SHA-{date}-{r.employee}", "{frappe.defaults.get_user_default('company')}", 1, "{r.employee}", "{r.employee_name}", '{r.shift_type}',

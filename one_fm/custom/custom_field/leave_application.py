@@ -211,6 +211,15 @@ def get_leave_application_custom_fields():
                 "fetch_from": "custom_reliever_.employee_id",
                 "read_only": 1,
                 "translatable": 1
+            },
+            {
+                "fieldname": "reliever_user_id",
+                "fieldtype": "Link",
+                "insert_after": "reliever_employee_id",
+                "label": "Reliever User ID",
+                "options": "User",
+                "fetch_from": "custom_reliever_.user_id",
+                "read_only": 1
             }
         ]
     }

@@ -102,7 +102,8 @@
    "fieldtype": "Link",
    "label": "Operations Role",
    "options": "Operations Role",
-   "reqd": 1
+   "reqd": 1,
+   "search_index": 1
   },
   {
    "depends_on": "site_shift",
@@ -152,7 +153,8 @@
    "default": "Today",
    "fieldname": "start_date",
    "fieldtype": "Date",
-   "label": "Start Date"
+   "label": "Start Date",
+   "mandatory_depends_on": "eval:doc.status==\"Active\""
   },
   {
    "fetch_from": "project.expected_end_date",
@@ -171,7 +173,7 @@
  ],
  "grid_page_length": 50,
  "links": [],
- "modified": "2026-03-05 15:16:18.479522",
+ "modified": "2026-03-10 15:50:39.869781",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Post",

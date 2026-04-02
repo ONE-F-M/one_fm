@@ -4,7 +4,6 @@ import pandas as pd
 from datetime import date
 
 from frappe import _
-from frappe.desk.form.assign_to import add as add_assignment
 from frappe.utils import (
     get_fullname, nowdate, getdate, date_diff, add_days,
     get_url_to_form, get_date_str, today, cint, flt
@@ -12,7 +11,6 @@ from frappe.utils import (
 
 from hrms.hr.doctype.leave_application.leave_application import *
 from one_fm.processor import sendemail
-from frappe.desk.form.assign_to import remove
 from erpnext.crm.utils import get_open_todos
 from one_fm.api.api import push_notification_rest_api_for_leave_application
 from one_fm.overrides.employee import NotifyAttendanceManagerOnStatusChange
@@ -21,7 +19,6 @@ from hrms.hr.utils import get_holidays_for_employee
 from one_fm.one_fm.doctype.reliever_assignment.reliever_assignment import ReassignRelieverAssignment, reassign_responsibilities
 from frappe.workflow.doctype.workflow_action.workflow_action import apply_workflow
 from frappe.query_builder import DocType
-
 
 def validate_active_staff(doc,event):
     emp_details = frappe.get_value("Employee",doc.employee,['status','relieving_date'],as_dict =1 )
@@ -85,9 +82,20 @@ def is_app_user(emp):
 
 class LeaveApplicationOverride(LeaveApplication):
     def onload(self):
-        leave_attendances = frappe.db.get_all("Attendance", {"leave_application": self.name}, "name")
+        super(LeaveApplicationOverride, self).onload()
+        leave_attendances_count = 0
+        if self.from_date and self.to_date and self.employee:
+            leave_attendances_count = frappe.db.count(
+                "Attendance",
+                {
+                    "employee": self.employee,
+                    "attendance_date": ["between", (self.from_date, self.to_date)],
+                    "leave_application": self.name,
+                    "docstatus": ["<", 2]
+                }
+            )
         attendance_not_created = False
-        if self.total_leave_days > len(leave_attendances):
+        if flt(self.total_leave_days) > leave_attendances_count:
             attendance_not_created = True
         self.set_onload("attendance_not_created", attendance_not_created)
 
@@ -116,34 +124,6 @@ class LeaveApplicationOverride(LeaveApplication):
 
         self.create_leave_ledger_entry()
         self.reload()
-
-
-    def assign_unassign_reliever(self):
-        last_doc = self.get_doc_before_save()
-        
-        if last_doc and last_doc.workflow_state != self.workflow_state:
-            user = frappe.db.get_value("Employee", self.custom_reliever_, "user_id")
-            
-            if not user:
-                return
-                
-            if self.workflow_state == "Pending Reliever":
-                add_assignment({
-                    'doctype': self.doctype,
-                    'name': self.name,
-                    'assign_to': [user],
-                    'description': (_("The Following Leave Application {0} Needs your immediate attention.").format(self.name))
-                })
-            
-            elif last_doc.workflow_state == "Pending Reliever" and self.workflow_state != "Pending Reliever":
-                frappe.db.set_value("ToDo", {
-                    "reference_type": self.doctype,
-                    "reference_name": self.name,
-                    "allocated_to": user,
-                }, "status", "Closed")
-
-
-
 
     def close_leave_acknowledgement_if_below_threshold(self):
         if self.leave_type == "Annual Leave":
@@ -577,8 +557,6 @@ class LeaveApplicationOverride(LeaveApplication):
             send_leave_details_email_to_employee(self)
             self.notify_leave_approver()
 
-        self.assign_unassign_reliever()
-
     def approve_attendance_check(self):
         """
             Approve attendance checks if there are any draft attendance checks for the period of leave
@@ -798,8 +776,8 @@ def send_leave_cancellation_email_to_leave_approver(self):
     employee_info = frappe.db.get_value("Employee", self.employee, ["employee_name_in_arabic"], as_dict=1)
     approver_info = frappe.db.get_value("Employee", {"user_id": self.leave_approver}, ["employee_name_in_arabic", "prefered_email"], as_dict=1)
 
-    employee_arabic_name = employee_info.get('employee_name_in_arabic') or ""
-    approver_arabic_name = approver_info.get('employee_name_in_arabic') or ""
+    employee_arabic_name = employee_info.get('employee_name_in_arabic') if employee_info else ""
+    approver_arabic_name = approver_info.get('employee_name_in_arabic') if approver_info else ""
 
     header_eng = f"Leave Cancellation Notification – {self.employee_name}"
     header_arabic = f"إشعار إلغاء الإجازة - {employee_arabic_name}"
@@ -828,7 +806,8 @@ def send_leave_cancellation_email_to_leave_approver(self):
     message = frappe.render_template('one_fm/templates/emails/leave_cancellation_email.html', args)
     subject = f"{header_arabic} | {header_eng}"
 
-    sendemail(sender=sender, recipients = list(set(filter(None, [approver_info.get("prefered_email"),]))),
+    approver_email = approver_info.get("prefered_email") if approver_info else None
+    sendemail(sender=sender, recipients = list(set(filter(None, [approver_email,]))),
             message=message, subject=subject, delayed=False, is_scheduler_email=False,is_external_mail=True)
 
 

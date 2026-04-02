@@ -1,0 +1,102 @@
+name: "🚀 Trigger AI Agent (Cloud Run)"
+
+on:
+  issues:
+    types: [opened, reopened, labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to solve (e.g. 94)'
+        required: true
+        type: string
+      base_branch:
+        description: 'Base branch (default: staging)'
+        required: false
+        default: 'staging'
+        type: string
+
+jobs:
+  invoke-agent:
+    # Ensure one agent run per issue to avoid race conditions
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
+      cancel-in-progress: true
+
+    # Run if onefm_developer_staging or onefm_developer_hotfix label is present, or if manually triggered
+    if: >-
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'issues' && github.event.action != 'labeled' && (contains(github.event.issue.labels.*.name, 'onefm_developer_staging') || contains(github.event.issue.labels.*.name, 'onefm_developer_hotfix'))) ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' && (github.event.label.name == 'onefm_developer_staging' || github.event.label.name == 'onefm_developer_hotfix'))
+    
+    # Run on standard GitHub-hosted runner for Cloud Run invocation
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write # Required for GCP OIDC Authentication
+
+    steps:
+      - name: 🔐 Check User Permission
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          PERMISSION=$(gh api "repos/${{ github.repository }}/collaborators/$ACTOR/permission" --jq '.permission')
+          if [[ "$PERMISSION" != "admin" && "$PERMISSION" != "write" ]]; then
+            echo "Error: User $ACTOR does not have write access."
+            exit 1
+          fi
+
+      - name: 🔐 Authenticate with Google Cloud
+        id: auth
+        uses: google-github-actions/auth@55bd3a7c6e2ae7cf1877fd1ccb9d54c0503c457c # v2.1.2
+        with:
+          token_format: 'id_token'
+          id_token_audience: ${{ secrets.CLOUD_RUN_URL }}
+          id_token_include_email: true
+          workload_identity_provider: ${{ secrets.GCP_WIDP }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: 🛠️ Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@98ddc00a17442e89a24bbf282954a3b65ce6d200 # v2.1.0
+
+      - name: 🤖 Invoke Agent on Cloud Run
+        env:
+          CLOUD_RUN_URL: ${{ secrets.CLOUD_RUN_URL }}
+          ISSUE_NUM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
+          ACTOR: ${{ github.actor }}
+          GCP_ID_TOKEN: ${{ steps.auth.outputs.id_token }}
+        run: |
+          if ! [[ "$ISSUE_NUM" =~ ^[0-9]+$ ]]; then
+            echo "Error: Issue number '$ISSUE_NUM' is not a valid number."
+            exit 1
+          fi
+
+          # Determine base branch from label or workflow_dispatch input
+          BASE_BRANCH="staging"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            BASE_BRANCH="${{ github.event.inputs.base_branch }}"
+          elif [[ "${{ github.event.label.name }}" == "onefm_developer_hotfix" ]] || \
+               echo '${{ toJSON(github.event.issue.labels.*.name) }}' | jq -e '. | index("onefm_developer_hotfix")' > /dev/null 2>&1; then
+            BASE_BRANCH="version-15"
+          fi
+
+          echo "Connecting to: $CLOUD_RUN_URL"
+          echo "Requesting fix for Issue #$ISSUE_NUM (base: $BASE_BRANCH)"
+          echo ""
+          echo "💡 NOTE: The AI agent can take 2-15 minutes to complete its reasoning loop."
+          echo "📖 VIEW REAL-TIME LOGS HERE:"
+          echo "https://console.cloud.google.com/run/detail/${{ secrets.GCP_LOCATION || 'us-central1' }}/onefm-frappe-agent/observability/logs?project=${{ secrets.GCP_PROJECT_ID || 'ai-agents-10' }}"
+          echo ""
+          echo "Waiting for agent to finish..."
+
+          PAYLOAD=$(jq -n \
+            --arg input "Solve GitHub issue #$ISSUE_NUM" \
+            --arg requester "$ACTOR" \
+            --arg base_branch "$BASE_BRANCH" \
+            '{input: $input, requester: $requester, base_branch: $base_branch}')
+
+          curl --fail-with-body -sS -X POST "${CLOUD_RUN_URL}/query" \
+            -H "Authorization: Bearer $GCP_ID_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"

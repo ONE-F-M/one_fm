@@ -601,10 +601,10 @@ def assign_day_off(shift_request):
             schedule.reference_doctype = "Shift Request"
             schedule.reference_docname = shift_request.name
             schedule.employee_availability = 'Day Off'
-            schedule.save()
+            schedule.save(ignore_permissions=True)
     else:
-        start_date = datetime.datetime.strptime(shift_request.from_date, '%Y-%m-%d')
-        end_date = datetime.datetime.strptime(shift_request.to_date, '%Y-%m-%d')
+        start_date = getdate(shift_request.from_date)
+        end_date = getdate(shift_request.to_date)
         delta = datetime.timedelta(days=1)
         while start_date <= end_date:
             schedule = frappe.new_doc("Employee Schedule")
@@ -613,7 +613,7 @@ def assign_day_off(shift_request):
             schedule.reference_doctype = "Shift Request"
             schedule.reference_docname = shift_request.name
             schedule.employee_availability = 'Day Off'
-            schedule.save()
+            schedule.save(ignore_permissions=True)
             start_date += delta
     frappe.set_user(current_user)
     frappe.db.commit()
@@ -632,19 +632,19 @@ def assign_client_day_off(shift_request):
             if es.roster_type == "Basic":
                 schedule = frappe.get_doc("Employee Schedule", es.name)
                 schedule.employee_availability = 'Client Day Off'
-                schedule.save()
+                schedule.save(ignore_permissions=True)
             else:
                 frappe.delete_doc("Employee Schedule", es.name)
     else:
-        start_date = datetime.datetime.strptime(shift_request.from_date, '%Y-%m-%d')
-        end_date = datetime.datetime.strptime(shift_request.to_date, '%Y-%m-%d')
+        start_date = getdate(shift_request.from_date)
+        end_date = getdate(shift_request.to_date)
         delta = datetime.timedelta(days=1)
         while start_date <= end_date:
             schedule = frappe.new_doc("Employee Schedule")
             schedule.employee = shift_request.employee
             schedule.date = start_date
             schedule.employee_availability = 'Client Day Off'
-            schedule.save()
+            schedule.save(ignore_permissions=True)
             start_date += delta
     frappe.db.commit()
 

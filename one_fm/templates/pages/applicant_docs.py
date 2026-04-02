@@ -13,6 +13,7 @@ from one_fm.one_fm.doctype.magic_link.magic_link import authorize_magic_link, se
 from one_fm.utils import set_expire_magic_link
 
 def get_context(context):
+    context.no_cache = 1
     context.title = _("Job Applicant")
     magic_link = authorize_magic_link(frappe.form_dict.magic_link, 'Job Applicant', 'Job Applicant')
     if magic_link:

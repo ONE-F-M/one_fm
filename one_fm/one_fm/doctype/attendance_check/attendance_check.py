@@ -519,12 +519,16 @@ def create_attendance_check(attendance_date=None):
             insert_attendance_check_records(attendance_not_marked_shift_employees, attendance_date)
 
 def get_absentees_on_date(attendance_date):
+    shift_permission_employees = frappe.db.get_list('Shift Permission', filters={'date': attendance_date}, pluck='employee')
+    day_off_employees = frappe.db.get_list('Employee Schedule', filters={'date': attendance_date, 'employee_availability': ['in', ['Client Day Off', 'Day Off']]}, pluck='employee')
+    excluded_employees = shift_permission_employees + day_off_employees
+
     return frappe.get_all("Attendance",
         filters={
             'docstatus': 1,
             'status': 'Absent',
             'attendance_date': attendance_date,
-            "employee": ["not in", frappe.db.get_list('Shift Permission', filters={'date': attendance_date}, pluck='employee')]
+            "employee": ["not in", excluded_employees]
         },
         fields=[
             "employee",
@@ -555,6 +559,12 @@ def get_attendance_not_marked_shift_employees(attendance_date):
             AND sa.docstatus = 1
             AND sa.status = 'Active'
             AND att.name IS NULL
+            AND sa.employee NOT IN (
+                SELECT employee 
+                FROM `tabEmployee Schedule` 
+                WHERE date = %(attendance_date)s 
+                AND employee_availability IN ('Client Day Off', 'Day Off')
+            )
     """, {"attendance_date": attendance_date}, as_dict=1)
 
 def insert_attendance_check_records(details, attendance_date):

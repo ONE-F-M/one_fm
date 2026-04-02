@@ -136,15 +136,15 @@ class TestOperationsPost(FrappeTestCase):
 
     def test_validation_empty_fields(self):
         """Test that validation fails when mandatory fields are missing"""
-        post = frappe.get_doc({"doctype": "Operations Post", "gender": "Male", "site_shift": self.shift.name})
+        post = frappe.get_doc({"doctype": "Operations Post", "gender": "Male", "site_shift": self.shift.name, "status": "Inactive"})
         with self.assertRaises(frappe.exceptions.ValidationError) as cm:
             post.insert(ignore_permissions=True)
         self.assertIn("Post Name cannot be empty", str(cm.exception))
 
-        post_no_gender = frappe.get_doc({"doctype": "Operations Post", "post_name": "Test Post", "site_shift": self.shift.name})
+        post_no_gender = frappe.get_doc({"doctype": "Operations Post", "post_name": "Test Post", "site_shift": self.shift.name, "status": "Inactive"})
         self.assertRaises(frappe.ValidationError, post_no_gender.insert)
 
-        post_no_shift = frappe.get_doc({"doctype": "Operations Post", "post_name": "Test Post", "gender": "Male"})
+        post_no_shift = frappe.get_doc({"doctype": "Operations Post", "post_name": "Test Post", "gender": "Male", "status": "Inactive"})
         with self.assertRaises(frappe.exceptions.ValidationError) as cm:
             post_no_shift.insert(ignore_permissions=True)
         self.assertIn("Shift cannot be empty", str(cm.exception))
@@ -156,6 +156,7 @@ class TestOperationsPost(FrappeTestCase):
 
         post = self._create_test_operations_post(status="Inactive")
         post.status = "Active"
+        post.start_date = nowdate()
 
         with self.assertRaises(frappe.exceptions.ValidationError) as cm:
             post.save(ignore_permissions=True)
@@ -163,10 +164,10 @@ class TestOperationsPost(FrappeTestCase):
         self.assertIn("is Inactive", str(cm.exception))
 
     def test_post_activation_date_appended(self):
-        """Test that making an Inactive post Active appends to operations_post_activation child table"""
-        post = self._create_test_operations_post(status="Inactive", start_date=nowdate(), end_date=add_days(nowdate(), 5))
+        """Test that making an Active post Inactive appends to operations_post_activation child table"""
+        post = self._create_test_operations_post(status="Active", start_date=nowdate(), end_date=add_days(nowdate(), 5))
         
-        post.status = "Active"
+        post.status = "Inactive"
         post.save(ignore_permissions=True)
 
         self.assertEqual(len(post.operations_post_activation), 1)

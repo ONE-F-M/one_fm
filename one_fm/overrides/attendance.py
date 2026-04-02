@@ -203,7 +203,7 @@ def mark_single_attendance(emp, att_date, roster_type="Basic"):
         'attendance_date':att_date,
         'status': ['!=', 'Absent'],
         'roster_type': roster_type,
-        'docstatus':1
+        'docstatus': ['!=', 2]
         }):
         open_leaves = frappe.db.sql(f"""
             SELECT name, employee FROM `tabLeave Application`
@@ -373,10 +373,11 @@ def mark_for_shift_assignment(employee, att_date, roster_type='Basic'):
 
 def create_single_attendance_record(record):
     if not frappe.db.exists("Attendance", {
-        'employee':record.employee.name,
-        'attendance_date':record.attendance_date,
-        'roster_type':record.roster_type,
-        'status': ["IN", ["Present", "On Leave", "Holiday", "Day Off"]]
+    'employee': record.employee.name,
+    'attendance_date': record.attendance_date,
+    'roster_type': record.roster_type,
+    'status': ["IN", ["Present", "On Leave", "Holiday", "Day Off"]],
+    'docstatus': ['!=', 2]
         }):
         # clear absent
         frappe.db.sql(f"""
@@ -485,7 +486,8 @@ def mark_attendance_for_unscheduled_employees(employees, date):
         existing_attendance = frappe.get_all("Attendance", {
             'attendance_date': date,
             'roster_type': 'Basic',
-            'status': ['IN', ['Present', 'Holiday', 'On Leave', 'Work From Home', 'On Hold', 'Day Off', 'Client Day Off', 'Medical Appointment', 'Fingerprint Appointment', 'Client Interview']]
+            'status': ['IN', ['Present', 'Holiday', 'On Leave', 'Work From Home', 'On Hold', 'Day Off', 'Client Day Off', 'Medical Appointment', 'Fingerprint Appointment', 'Client Interview']],
+            'docstatus': ['!=', 2]
         }, pluck="employee")
         
         # Get employees with schedules
@@ -696,10 +698,11 @@ def mark_daily_attendance(start_date, end_date):
         owner = frappe.session.user
         naming_series = 'HR-ATT-.YYYY.-'
         existing_attendance = frappe.get_list("Attendance", {
-            'attendance_date':start_date,
-            'roster_type':'Basic',
-            'status':['IN', ['Present', 'Holiday', 'On Leave','Work From Home', 'On Hold', 'Day Off', "Client Day Off"]]
-            },
+            'attendance_date': start_date,
+            'roster_type': 'Basic',
+            'status': ['IN', ['Present', 'Holiday', 'On Leave', 'Work From Home', 'On Hold', 'Day Off', "Client Day Off"]],
+            'docstatus': ['!=', 2]
+        },
             pluck="employee"
         )
 

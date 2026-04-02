@@ -371,15 +371,21 @@ frappe.ui.form.on('Contracts', {
 			console.log(`[Contracts] Role enforcement applied to ${processed} fields. Section: ${current_section}`);
 			frm.refresh_fields();
 
-			// Lock add/delete on operations table for non-Operation Admin
-			if (!user_roles.includes('Operation Admin')) {
+			
 				const ops_grid = frm.get_field('contract_items_operation');
 				if (ops_grid && ops_grid.grid) {
 					ops_grid.grid.cannot_add_rows = true;
 					ops_grid.grid.cannot_delete_rows = true;
+					
+					if (user_roles.includes('Operation Admin')) {
+						['item_code', 'count', 'rate_type', 'uom'].forEach(fieldname => {
+							ops_grid.grid.update_docfield_property(fieldname, 'read_only', 1);
+						});
+					}
+
 					ops_grid.grid.refresh();
 				}
-			}
+			
 		}, 300);
 
 	},

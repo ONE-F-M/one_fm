@@ -20,26 +20,34 @@ def validate(self):
         self.update_price_list_details()
     self.check_duplicates()
 
+
 def check_duplicates(self):
     error_description = "Item Price appears multiple times based on Price List, Supplier/Customer, Currency, Item, UOM, Qty, Dates"
-    field_list = ['uom', 'valid_from',
-        'valid_upto', 'packing_unit', 'customer', 'supplier']
-    is_service_item, item_group = frappe.get_value('Item',{'item_code': self.item_code},['is_stock_item', 'subitem_group'])
-    if is_service_item == 0 and item_group == 'Service':
-        field_list.remove('valid_from')
-        field_list.remove('valid_upto')
-        field_list += ['gender', 'shift_hours', 'days_off']
+    field_list = ["uom", "valid_from", "valid_upto", "packing_unit", "customer", "supplier", "currency"]
+    is_service_item, item_group = frappe.get_value("Item", {"item_code": self.item_code}, ["is_stock_item", "subitem_group"])
+    if is_service_item == 0 and item_group == "Service":
+        field_list.remove("valid_from")
+        field_list.remove("valid_upto")
+        field_list += ["gender", "shift_hours", "days_off"]
         error_description += ", Gender, Shift Hour, Day off"
     conditions = "where item_code=%(item_code)s and price_list=%(price_list)s and name != %(name)s"
 
     for field in field_list:
         if self.get(field):
             conditions += " and {0} = %({1})s".format(field, field)
+        else:
+            if field in ["packing_unit", "shift_hours"]:
+                conditions += " and ({0} is null or {0} = 0)".format(field)
+            elif field in ["valid_from", "valid_upto"]:
+                conditions += " and {0} is null".format(field)
+            else:
+                conditions += " and ({0} is null or {0} = '')".format(field)
 
-    price_list_rate = frappe.db.sql("""
-        SELECT price_list_rate
+    duplicate_item_price = frappe.db.sql("""
+        SELECT name
         FROM `tabItem Price`
-            {conditions} """.format(conditions=conditions), self.as_dict())
+            {conditions}
+        LIMIT 1""".format(conditions=conditions), self.as_dict())
 
-    if price_list_rate :
+    if duplicate_item_price:
         frappe.throw(_(error_description), ItemPriceDuplicateItem)

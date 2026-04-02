@@ -165,7 +165,10 @@ def create_google_task_on_todo_creation_in_erp(doc, method):
         doc.save()
         return result
     except Exception as e:
-        frappe.log_error(message=str(e), title=f"Error while creating Google Task from ToDo for {employee_email}")
+        title = f"Error while creating Google Task from ToDo for {employee_email}"
+        error = str(e)
+        if not frappe.db.exists("Error Log", {"error": error, "method": title, "seen": 0}):
+            frappe.log_error(message=error, title=title)
     return
 
 def check_google_task_exists(task_id,pev_emp_service=None):

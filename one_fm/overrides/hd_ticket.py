@@ -270,6 +270,7 @@ class HDTicketOverride(HDTicket):
         # Fetch description from communication if not set already. This might not be needed
         # anymore as a communication is created when a ticket is created.
         self.description = self.description or c.content
+        self.flags.ignore_mandatory = True
         # Save the ticket, allowing for hooks to run.
         self.save()
 
@@ -401,6 +402,7 @@ def update_ticket(name: str, updates: str):
 
     doc.status = "Open"
 
+    doc.flags.ignore_mandatory = True
     doc.save(ignore_permissions=True)
     frappe.db.commit()
     doc.notify_ticket_raiser_of_receipt()
@@ -520,6 +522,7 @@ def update_ticket_with_feedback(ticket_id, feedback, action):
                 "message": "Invalid action specified"
             }
         
+        ticket.flags.ignore_mandatory = True
         ticket.save(ignore_permissions=True)
         frappe.db.commit()
         

@@ -2,11 +2,19 @@ frappe.ui.form.on('Interview', {
 	refresh: function (frm) {
 		frappe.model.get_value("Job Applicant", {"name": frm.doc.job_applicant}, "one_fm_hiring_method", 
 		function(res) {
-			// If hiring method != Bulk Recruitment, show "Submit Interview Feedback" button.
-			// If hiring method == Bulk Recruitment, show standard "Submit Feeback" button. 
-			if(res.one_fm_hiring_method != "Bulk Recruitment"){
+			if(res.one_fm_hiring_method == "Bulk Recruitment"){
+				// Bulk Recruitment: feedback is auto-created from Interview Console
 				frm.remove_custom_button('Submit Feedback');
-				remove_custom_button_from_mobile_view(frm, "Submit Feedback");	
+				remove_custom_button_from_mobile_view(frm, "Submit Feedback");
+				
+				// Show editable text box for Interview Summary
+				frm.toggle_display('interview_summary', true);
+				frm.toggle_display('interview_summary_render', false);
+				frm.set_df_property('interview_summary', 'label', 'Interview Summary');
+			} else {
+				// Non-Bulk: remove standard Submit Feedback and conditionally add custom Submit Interview Feedback
+				frm.remove_custom_button('Submit Feedback');
+				remove_custom_button_from_mobile_view(frm, "Submit Feedback");
 
 				let allowed_interviewers = [];
 				frm.doc.interview_details.forEach(values => {
@@ -41,6 +49,41 @@ frappe.ui.form.on('Interview', {
 				}				
 			}	
 		})
+	},
+
+	// Override: show actual score % for Bulk Recruitment only
+	calculate_reviews_per_rating(frm) {
+		const reviews_per_rating = [0, 0, 0, 0, 0];
+		if (!frm.feedback || !frm.feedback.length) {
+			frm.reviews_per_rating = reviews_per_rating;
+			return;
+		}
+
+		// Check if this is a Bulk Recruitment interview
+		frappe.model.get_value("Job Applicant", {"name": frm.doc.job_applicant}, "one_fm_hiring_method",
+		function(res) {
+			if (res && res.one_fm_hiring_method === "Bulk Recruitment") {
+				// Bulk: show actual console score percentage
+				frm.feedback.forEach((x) => {
+					let score_pct = flt(x.total_score * 20, 1); // 4.95 * 20 = 99%
+					let star_idx = Math.min(Math.floor(x.total_score - 1), 4);
+					if (star_idx < 0) star_idx = 0;
+					reviews_per_rating[star_idx] = score_pct;
+				});
+			} else {
+				// Non-Bulk: use Frappe's default star distribution
+				frm.feedback.forEach((x) => {
+					reviews_per_rating[Math.floor(x.total_score - 1)] += 1;
+				});
+				let total = frm.feedback.length;
+				for (let i = 0; i < reviews_per_rating.length; i++) {
+					reviews_per_rating[i] = flt((reviews_per_rating[i] * 100) / total, 1);
+				}
+			}
+			frm.reviews_per_rating = reviews_per_rating;
+			// Re-render feedback with updated percentages
+			frm.events.render_feedback(frm);
+		});
 	},
 	show_custom_feedback_dialog: function (frm, data, question_data, feedback_exists) {
 		let fields = frm.events.get_fields_for_feedback();

@@ -62,6 +62,10 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("erf_bulk_recruitment.json"))
 	create_assignment_rule(get_assignment_rule_json_file("assigning_operations_manager_for_approval_temporary_deployment.json"))
 	create_assignment_rule(get_assignment_rule_json_file("returning_to_operations_supervisor_of_temporary_deployment.json"))
+	create_assignment_rule(get_assignment_rule_json_file("submit_timesheet_employee.json"))
+	create_assignment_rule(get_assignment_rule_json_file("approve_timesheet_approver.json"))
+	create_assignment_rule(get_assignment_rule_json_file("leave_acknowledgement_form_pending_confirmation.json"))
+	create_assignment_rule(get_assignment_rule_json_file("leave_application_pending_reliever.json"))
 
 def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("roster_post_action_site_supervisor.json"))

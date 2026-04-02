@@ -3659,10 +3659,10 @@ def get_sender_email() -> str | None:
 
 @frappe.whitelist()
 def send_birthday_reminders():
-    """Send Employee birthday reminders if no 'Stop Birthday Reminders' is not set."""
+    """Send employee birthday reminders when birthday reminders are enabled."""
     from hrms.controllers.employee_reminders import send_birthday_reminder, get_employees_who_are_born_today, get_birthday_reminder_text_and_message
 
-    to_send = int(frappe.db.get_single_value("HR Settings", "send_birthday_reminders")) or is_scheduler_emails_enabled()
+    to_send = cint(frappe.db.get_single_value("HR Settings", "send_birthday_reminders")) or is_scheduler_emails_enabled()
     if not to_send:
         return
 
@@ -3720,9 +3720,9 @@ def get_users_for_reminders(birthday=False, anniversary=False, user_id=False):
 
 @frappe.whitelist()
 def send_work_anniversary_reminders():
-    from hrms.controllers.employee_reminders import send_work_anniversary_reminder, get_employees_having_an_event_today,get_work_anniversary_reminder_text
     """Send Employee Work Anniversary Reminders if 'Send Work Anniversary Reminders' is checked"""
-    to_send = int(frappe.db.get_single_value("HR Settings", "send_work_anniversary_reminders")) or is_scheduler_emails_enabled()
+    from hrms.controllers.employee_reminders import send_work_anniversary_reminder, get_employees_having_an_event_today,get_work_anniversary_reminder_text
+    to_send = cint(frappe.db.get_single_value("HR Settings", "send_work_anniversary_reminders")) or is_scheduler_emails_enabled()
     if not to_send:
         return
 
@@ -4549,13 +4549,22 @@ def get_field_with_label(doctype, field_name, value):
         "value": value
     }
 
-def create_process_task(process_name, erp_document, task_description, employee=None, process_owner=None, business_analyst=None, task_type="Repetitive", is_routine_task=0, frequency="", cron_format="", is_automated=0, method=""):
-    create_process_if_not_exists(process_name, process_owner, business_analyst)
-    create_method_if_not_exists(method, erp_document)
+def create_process_task(process_name, erp_document, task_description, process_description=None, employee=None, process_owner=None, business_analyst=None, task_type="Repetitive", is_routine_task=0, frequency="", cron_format="", is_automated=0, method=""):
+    create_process_if_not_exists(process_name, description=process_description, process_owner=process_owner, business_analyst=business_analyst)
+    create_method_if_not_exists(method, erp_document, description=process_description)
     task_type = get_task_type(task_type, is_routine_task)
 
     if frequency == "Cron" and not cron_format:
         frappe.throw("Please provide a valid cron format for the task frequency.")
+
+    employee_data = frappe.db.get_value("Employee", employee, ["employee_name", "user_id", "department"], as_dict=True)
+    employee_name = ""
+    employee_user = ""
+    department = ""
+    if employee_data:
+        employee_name = employee_data.employee_name
+        employee_user = employee_data.user_id
+        department = employee_data.department
 
     return frappe.get_doc({
         "naming_series": "P-TASK-.YYYY.-",
@@ -4573,6 +4582,9 @@ def create_process_task(process_name, erp_document, task_description, employee=N
         "hours_per_frequency": 0.0,
         "coordination_needed": "No",
         "employee": employee,
+        "employee_name": employee_name,
+        "employee_user": employee_user,
+        "department": department,
         "start_date": today(),
         "report_frequency": "",
         "doctype": "Process Task",
@@ -4581,7 +4593,7 @@ def create_process_task(process_name, erp_document, task_description, employee=N
         "method": method
     }).insert(ignore_permissions=True)
 
-def create_process_if_not_exists(process_name, process_owner="Administrator", business_analyst="Administrator"):
+def create_process_if_not_exists(process_name, description=None, process_owner="Administrator", business_analyst="Administrator"):
     if not frappe.db.exists("Process", process_name):
         process_owner = process_owner or "Administrator"
         business_analyst = business_analyst or "Administrator"
@@ -4591,7 +4603,7 @@ def create_process_if_not_exists(process_name, process_owner="Administrator", bu
 
         frappe.get_doc({
             "process_name": process_name,
-            "description": process_name,
+            "description": description or process_name,
             "doctype": "Process",
             "process_owner": process_owner,
             "process_owner_name": process_owner_name,
@@ -4599,11 +4611,11 @@ def create_process_if_not_exists(process_name, process_owner="Administrator", bu
             "business_analyst_name": business_analyst_name
         }).insert(ignore_permissions=True)
 
-def create_method_if_not_exists(method, document_type):
+def create_method_if_not_exists(method, document_type, description=None):
     if method and not frappe.db.exists("Method", method):
         frappe.get_doc({
             "method": method,
-            "description": method,
+            "description": description or method,
             "document_type": document_type,
             "doctype": "Method"
         }).insert(ignore_permissions=True)
@@ -4619,67 +4631,65 @@ def get_task_type(task_type="Repetitive", is_routine_task=0):
     return task_type
 
 
+COMPARABLE_FIELDTYPES = {"Date", "Datetime", "Int", "Float", "Currency", "Percent", "Duration"}
+ALWAYS_COMPARABLE = {"name", "modified", "creation"}
+
+def is_comparable_field(doctype, sort_field):
+    if sort_field in ALWAYS_COMPARABLE:
+        return True
+    field_meta = frappe.get_meta(doctype).get_field(sort_field)
+    return field_meta and field_meta.fieldtype in COMPARABLE_FIELDTYPES
+
+
 @frappe.whitelist()
 def get_next(doctype, value, prev, filters=None, sort_order="desc", sort_field="modified"):
-	prev = int(prev)
-	if not filters:
-		filters = []
-	if isinstance(filters, str):
-		filters = json.loads(filters)
-	condition = ">" if sort_order.lower() == "asc" else "<"
+    prev = int(prev)
+    if not filters:
+        filters = []
+    if isinstance(filters, str):
+        filters = json.loads(filters)
 
-	if prev:
-		sort_order = "asc" if sort_order.lower() == "desc" else "desc"
-		condition = "<" if condition == ">" else ">"
+    condition = ">" if sort_order.lower() == "asc" else "<"
+    if prev:
+        sort_order = "asc" if sort_order.lower() == "desc" else "desc"
+        condition = "<" if condition == ">" else ">"
 
+    if not is_comparable_field(doctype, sort_field):
+        current_value = frappe.db.get_value(doctype, value, sort_field)
+        current_modified = frappe.db.get_value(doctype, value, "modified")
 
-	if sort_field == "status":
-		current_status = frappe.db.get_value(doctype, value, "status")
-		current_modified = frappe.db.get_value(doctype, value, "modified")
-		
-		same_status_filters = filters + [
-			[doctype, "status", "=", current_status],
-			[doctype, "modified", condition, current_modified]
-		]
-		
-		res = frappe.get_list(
-			doctype,
-			fields=["name"],
-			filters=same_status_filters,
-			order_by=f"`tab{doctype}`.modified {sort_order}",
-			limit_page_length=1,
-			as_list=True,
-		)
-		
-		if not res:
-			different_status_filters = filters + [
-				[doctype, "status", condition, current_status]
-			]
-			
-			res = frappe.get_list(
-				doctype,
-				fields=["name"],
-				filters=different_status_filters,
-				order_by=f"`tab{doctype}`.status {sort_order}, `tab{doctype}`.modified {sort_order}",
-				limit_page_length=1,
-				as_list=True,
-			)
-	
-	else:
-		filters.append([doctype, sort_field, condition, frappe.get_value(doctype, value, sort_field)])
-		
-		res = frappe.get_list(
-			doctype,
-			fields=["name"],
-			filters=filters,
-			order_by=f"`tab{doctype}`.{sort_field} {sort_order}",
-			limit_start=0,
-			limit_page_length=1,
-			as_list=True,
-		)
+        res = frappe.get_list(
+            doctype,
+            fields=["name"],
+            filters=filters + [
+                [doctype, sort_field, "=", current_value],
+                [doctype, "modified", condition, current_modified]
+            ],
+            order_by=f"`tab{doctype}`.modified {sort_order}",
+            limit_page_length=1,
+            as_list=True,
+        )
 
-	if not res:
-		frappe.msgprint(_("No further records"))
-		return None
-	else:
-		return res[0][0]
+        if not res:
+            res = frappe.get_list(
+                doctype,
+                fields=["name"],
+                filters=filters + [[doctype, sort_field, condition, current_value]],
+                order_by=f"`tab{doctype}`.{sort_field} {sort_order}, `tab{doctype}`.modified {sort_order}",
+                limit_page_length=1,
+                as_list=True,
+            )
+    else:
+        res = frappe.get_list(
+            doctype,
+            fields=["name"],
+            filters=filters + [[doctype, sort_field, condition, frappe.db.get_value(doctype, value, sort_field)]],
+            order_by=f"`tab{doctype}`.{sort_field} {sort_order}",
+            limit_page_length=1,
+            as_list=True,
+        )
+
+    if not res:
+        frappe.msgprint(_("No further records"))
+        return None
+    return res[0][0]

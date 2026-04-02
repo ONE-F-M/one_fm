@@ -10,7 +10,7 @@ frappe.listview_settings['Shift Request'] = {
                 });
             }
         }
-        if (!frappe.user_roles.includes('System Manager')) {
+        if (!frappe.user_roles.includes('System Manager') && !frappe.user_roles.includes('Attendance Manager')) {
             setTimeout(() => {
                 const actions_menu = listview.page.actions_btn_group;
                 removeWorkflowButtons(actions_menu);
