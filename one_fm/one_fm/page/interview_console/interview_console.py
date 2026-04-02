@@ -28,7 +28,7 @@ def _ensure_skill_exists(skill_name):
             pass
     return skill_name
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_applicant_data(applicant):
     """
     Returns age, remarks, score, status, and dynamic interview matrix.
@@ -136,7 +136,7 @@ def get_applicant_data(applicant):
         
     return res
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def save_interview_data(applicant, score, remarks, status, scores_detail=None, interview_round=None, height=None):
     """
     Saves interview results by creating/updating an Interview document.
@@ -373,7 +373,7 @@ def save_interview_data(applicant, score, remarks, status, scores_detail=None, i
     frappe.db.commit()
     return "Success"
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def clear_interview_data(applicant):
     """
     Cancels and deletes Interview Feedback and Interview documents for the applicant.
@@ -406,7 +406,7 @@ def clear_interview_data(applicant):
     frappe.db.commit()
     return "Success"
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_applicant_list(hiring_method=None, start=0, page_length=200):
     """
     Returns the list of applicants with discovered score fields.

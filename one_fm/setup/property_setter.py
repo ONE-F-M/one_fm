@@ -39,6 +39,7 @@ from one_fm.custom.property_setter.health_insurance_provider_detail import get_h
 from one_fm.custom.property_setter.help_article import get_help_article_properties
 from one_fm.custom.property_setter.help_category import get_help_category_properties
 from one_fm.custom.property_setter.interview import get_interview_properties
+from one_fm.custom.property_setter.interview_round import get_interview_round_properties
 from one_fm.custom.property_setter.issue import get_issue_properties
 from one_fm.custom.property_setter.item_barcode import get_item_barcode_properties
 from one_fm.custom.property_setter.item_group import get_item_group_properties
@@ -106,6 +107,7 @@ def get_field_properties():
 	field_properties.extend(get_help_category_properties())
 	field_properties.extend(get_interview_properties())
 	field_properties.extend(get_interview_feedback_properties())
+	field_properties.extend(get_interview_round_properties())
 	field_properties.extend(get_issue_properties())
 	field_properties.extend(get_item_properties())
 	field_properties.extend(get_item_barcode_properties())

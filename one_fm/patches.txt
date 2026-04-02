@@ -343,3 +343,4 @@ one_fm.patches.v15_0.sync_contract_item_type_to_operations
 one_fm.patches.v15_0.delete_pending_off_day_attendance_checks
 one_fm.patches.v15_0.add_stock_entry_custom_fields
 one_fm.patches.v15_0.setup_interview_console #2026-04-02
+one_fm.patches.v15_0.add_interview_round_property_setter #2026-04-02
