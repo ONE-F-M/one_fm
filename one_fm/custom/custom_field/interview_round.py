@@ -8,7 +8,7 @@ def get_interview_round_custom_fields():
                 "options": "Nationality",
                 "insert_after": "designation",
                 "description": "Used by Interview Console to match applicant nationality to the correct round.",
-                "reqd": 1
+                "reqd": 1,
                 "module": "one_fm",
             },
             {
