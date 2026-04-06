@@ -1,7 +1,7 @@
 from ast import literal_eval
 import frappe,json
 import pandas as pd
-from datetime import date
+from datetime import date, timedelta
 
 from frappe import _
 from frappe.desk.form.assign_to import add as add_assignment
@@ -661,6 +661,12 @@ class LeaveApplicationOverride(LeaveApplication):
         leave_extension_request.save()
 
         return leave_extension_request
+
+
+
+def daterange(start_date, end_date):
+	for n in range(int((end_date - start_date).days) + 1):
+		yield start_date + timedelta(n)
 
 
 def update_attendance_recods(self):
