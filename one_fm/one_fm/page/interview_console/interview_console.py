@@ -59,12 +59,18 @@ def get_applicant_data(applicant, interview_round_name=None):
     if found_remarks:
         res["remarks"] = applicant_doc.get(found_remarks) or ""
         
-    # Fetch score as AVERAGE of all Interview Feedback scores for this applicant
-    all_feedbacks = frappe.get_all("Interview Feedback",
-        filters={"job_applicant": applicant, "docstatus": 1},
-        fields=["name", "interviewer", "average_rating", "result", "custom_remarks", "creation"],
-        order_by="creation desc"
-    )
+    # Fetch latest Interview to restrict score aggregation
+    latest_iv = frappe.get_all("Interview", filters={"job_applicant": applicant, "docstatus": ["<", 2]}, order_by="creation desc", limit=1)
+    
+    if latest_iv:
+        all_feedbacks = frappe.get_all("Interview Feedback",
+            filters={"job_applicant": applicant, "docstatus": 1, "interview": latest_iv[0].name},
+            fields=["name", "interviewer", "average_rating", "result", "custom_remarks", "creation"],
+            order_by="creation desc"
+        )
+    else:
+        all_feedbacks = []
+        
     all_interviews = frappe.db.count("Interview", {"job_applicant": applicant, "docstatus": ["<", 2]})
     res["interview_count"] = all_interviews
     
@@ -72,13 +78,8 @@ def get_applicant_data(applicant, interview_round_name=None):
     res["feedbacks"] = all_feedbacks
 
     if all_feedbacks:
-        # Compute score as average of all non-null Interview Feedback ratings
         ratings = [fb.get("average_rating") for fb in all_feedbacks if fb.get("average_rating") is not None]
-        if ratings:
-            avg_rating = sum(ratings) / len(ratings)
-            res["score"] = round(avg_rating * 100)
-        else:
-            res["score"] = 0
+        res["score"] = round((sum(ratings) / len(ratings)) * 100) if ratings else 0
     else:
         res["score"] = 0
         
@@ -152,7 +153,8 @@ def get_applicant_data(applicant, interview_round_name=None):
     except Exception:
         res["job_offers"] = 0
     try:
-        res["photo_count"] = frappe.db.count("File", {"attached_to_doctype": "Job Applicant", "attached_to_name": applicant})
+        # Strictly count ONLY the dynamically generated interview console webcam shots!
+        res["photo_count"] = frappe.db.count("File", {"attached_to_doctype": "Job Applicant", "attached_to_name": applicant, "file_name": ["like", f"{applicant}_photo_%"]})
     except Exception:
         res["photo_count"] = 0
         
@@ -255,14 +257,13 @@ def save_interview_data(applicant, score, remarks, status, scores_detail=None, i
     
     # --- 4. Find or Create Interview (interview_summary left blank) ---
     # --- 4. Find Draft or Create Interview ---
-    filters = {
-        "job_applicant": applicant,
-        "docstatus": 0
-    }
-    if interview_round:
-        filters["interview_round"] = interview_round
-        
-    existing_interview = frappe.db.get_value("Interview", filters, "name")
+    latest_interviews = frappe.get_all("Interview", filters={"job_applicant": applicant, "interview_round": interview_round or ""}, fields=["name", "status", "docstatus"], order_by="creation desc", limit=1)
+    existing_interview = None
+    if latest_interviews:
+        latest = latest_interviews[0]
+        # Reuse if it's still a draft, or if we are merely updating scores for the exact same status!
+        if latest.docstatus == 0 or latest.status == interview_status:
+            existing_interview = latest.name
     
     if existing_interview:
         interview_doc = frappe.get_doc("Interview", existing_interview)
@@ -304,19 +305,11 @@ def save_interview_data(applicant, score, remarks, status, scores_detail=None, i
         interview_doc.insert(ignore_permissions=True)
         if interview_doc.status in ["Cleared", "Rejected"]:
             interview_doc.submit()
-    # --- 6. Auto-create/update Interview Feedback ---
+
+    # --- 5. Prepare Feedback Data ---
     interview_name = existing_interview or interview_doc.name
-    feedback_result = ""
-    if status in ["Accepted", "Shortlisted"]:
-        feedback_result = "Cleared"
-    elif status == "Rejected":
-        feedback_result = "Rejected"
-    else:
-        feedback_result = ""
+    feedback_result = "Cleared" if status in ["Accepted", "Shortlisted"] else ("Rejected" if status == "Rejected" else "")
     
-    # avg_rating will be calculated from category averages after building skill_rows
-    
-    # Build per-category average scores for skill circles
     category_scores = {}
     for d in parsed_details:
         cat = d.get("category", "General")
@@ -326,29 +319,30 @@ def save_interview_data(applicant, score, remarks, status, scores_detail=None, i
         category_scores[cat]["total"] += q_score
         category_scores[cat]["count"] += 1
     
-    # Convert to list of {skill, rating} for skill_assessment
     skill_rows = []
     for cat, data in category_scores.items():
         cat_avg = data["total"] / data["count"] if data["count"] > 0 else 0
-        cat_rating = cat_avg / 5.0  # Convert 0-5 score to 0-1 rating
+        cat_rating = cat_avg / 5.0
         skill_name = _ensure_skill_exists(cat)
         skill_rows.append({"skill": skill_name, "rating": min(max(cat_rating, 0), 1)})
     
-    # Calculate avg_rating from category averages (matches Feedback Summary circles)
     if skill_rows:
         avg_rating = sum(r["rating"] for r in skill_rows) / len(skill_rows)
     else:
         avg_rating = float(score or 0) / 100.0
     avg_rating = min(max(avg_rating, 0), 1)
     
-    # --- 6. Clean up drafts, then create a NEW Interview Feedback ---
-    # Delete any draft (docstatus=0) feedbacks from this user for this interview
-    draft_feedbacks = frappe.get_all("Interview Feedback", filters={
+    # --- 6. Clean up old configs, formulate clean active feedback ---
+    # Delete ALL feedbacks for this round+user to prevent duplication accumulation
+    existing_feedbacks = frappe.get_all("Interview Feedback", filters={
         "interview": interview_name,
-        "interviewer": frappe.session.user,
-        "docstatus": 0
+        "interviewer": frappe.session.user
     }, pluck="name")
-    for dfb in draft_feedbacks:
+    
+    for dfb in existing_feedbacks:
+        fb_doc = frappe.get_doc("Interview Feedback", dfb)
+        if fb_doc.docstatus == 1:
+            fb_doc.cancel()
         frappe.delete_doc("Interview Feedback", dfb, force=True, ignore_permissions=True)
 
     fb = frappe.new_doc("Interview Feedback")
@@ -367,27 +361,29 @@ def save_interview_data(applicant, score, remarks, status, scores_detail=None, i
             "weight": float(d.get("weight", 0)),
             "score": int(d.get("score", 0))
         })
-    # Skip HRMS duplicate validation — we intentionally accumulate feedbacks
     fb.flags.ignore_validate = True
     fb.insert(ignore_permissions=True, ignore_mandatory=True)
     if status != "Pending":
         fb.submit()
     fb.db_set("average_rating", avg_rating)
 
-    # --- 7. Recalculate total score as AVERAGE of all feedbacks for this applicant ---
-    all_fb_scores = frappe.get_all("Interview Feedback",
-        filters={"job_applicant": applicant, "docstatus": 1},
-        fields=["average_rating"]
-    )
-    if all_fb_scores:
-        avg_all = sum(f.average_rating or 0 for f in all_fb_scores) / len(all_fb_scores)
-        total_score = round(avg_all * 100, 0)
+    # --- 7. Isolate the aggregated score to the LATEST active Interview ---
+    latest_iv = frappe.get_all("Interview", filters={"job_applicant": applicant}, order_by="creation desc", limit=1)
+    if latest_iv:
+        all_fb_scores = frappe.get_all("Interview Feedback",
+            filters={"interview": latest_iv[0].name, "docstatus": 1},
+            fields=["average_rating"]
+        )
+        if all_fb_scores:
+            avg_all = sum(f.average_rating or 0 for f in all_fb_scores) / len(all_fb_scores)
+            total_score = round(avg_all * 100, 0)
+        else:
+            total_score = round(avg_rating * 100, 0)
     else:
-        avg_all = avg_rating
-        total_score = float(score or 0)
+        total_score = round(avg_rating * 100, 0)
 
     frappe.db.set_value("Interview", interview_name, {
-        "average_rating": avg_all,
+        "average_rating": avg_rating,
         "total_interview_score": total_score,
     }, update_modified=False)
     
@@ -422,6 +418,11 @@ def clear_interview_data(applicant):
     # Reset Job Applicant status to Open
     doc = frappe.get_doc("Job Applicant", applicant)
     doc.status = "Open"
+    if doc.meta.has_field("one_fm_applicant_status"):
+        doc.one_fm_applicant_status = ""
+    if doc.meta.has_field("workflow_state"):
+        if doc.workflow_state in ["Accepted", "Job Offer Issued", "Shortlisted", "Hired", "Hold", "Rejected", "Cleared"]:
+            doc.workflow_state = ""
     doc.save(ignore_permissions=True)
 
     frappe.db.commit()
