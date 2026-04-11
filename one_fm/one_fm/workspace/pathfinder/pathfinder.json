@@ -1,0 +1,79 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"pf_header\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Pathfinder</span>\",\"col\":12}},{\"id\":\"pf_card_main\",\"type\":\"card\",\"data\":{\"card_name\":\"Pathfinder\",\"col\":4}}]",
+ "creation": "2026-04-09 19:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 1,
+ "icon": "file",
+ "idx": 0,
+ "indicator_color": "blue",
+ "is_hidden": 0,
+ "label": "Pathfinder",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Pathfinder",
+   "link_count": 4,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Process",
+   "link_count": 0,
+   "link_to": "Process",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Process Change Request",
+   "link_count": 0,
+   "link_to": "Process Change Request",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Pathfinder Log",
+   "link_count": 0,
+   "link_to": "Pathfinder Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Adhoc Development",
+   "link_count": 0,
+   "link_to": "Adhoc Development",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-04-09 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Pathfinder",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 25.0,
+ "shortcuts": [],
+ "title": "Pathfinder"
+}
