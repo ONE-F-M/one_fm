@@ -1,5 +1,5 @@
 import frappe
-from frappe.email.doctype.email_queue.email_queue import send_now
+
 def after_insert(doc, event):
 	"""
 	Force push the email if the recipients is not more than 19 records
@@ -12,11 +12,13 @@ def after_insert(doc, event):
 		found = False
 	if found:
 		# Enqueue it safely in the background rather than blocking the main transaction
+		# Enqueue as Administrator to bypass permission errors in background job
 		frappe.enqueue(
-			send_now,
+			"frappe.email.doctype.email_queue.email_queue.send_now",
 			name=doc.name,
 			now=frappe.flags.in_test,
-			enqueue_after_commit=True
+			enqueue_after_commit=True,
+			user="Administrator"
 		)
 
 def flush_emails():
@@ -25,10 +27,15 @@ def flush_emails():
     :return:
     """
     delete_eid_emails()
-    emails_in_queue = frappe.get_list('Email Queue', filters={'status': 'Not Sent'})
+    # Use get_all to bypass permissions
+    emails_in_queue = frappe.get_all('Email Queue', filters={'status': 'Not Sent'})
     for row in emails_in_queue:
-        try:send_now(name=row.name)
-        except:pass
+        try:
+            # Call method directly on doc to bypass whitelisted function's permission check
+            doc = frappe.get_doc('Email Queue', row.name)
+            doc.send_now()
+        except:
+            pass
     frappe.db.commit()
 
 def delete_eid_emails():
