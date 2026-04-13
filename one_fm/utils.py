@@ -1478,14 +1478,14 @@ def get_item_id_series(subitem_group, item_group):
             item_id_list = []
             for abbr_item_group in abbr_item_group_list:
                 # IMPORTANT: We must filter by subitem_group to prevent pulling item_id's from other subitem sequences (e.g. SER-CIV)
-                item_id = frappe.db.sql("select item_id from `tabItem` where subitem_group='{0}' and item_group='{1}' order by item_id desc".format(subitem_group, abbr_item_group['name']))
+                item_id = frappe.db.sql("select item_id from `tabItem` where subitem_group='{0}' and item_group='{1}' order by item_id desc limit 1".format(subitem_group, abbr_item_group['name']))
                 if item_id:
                     item_id_list.append(item_id[0][0])
             if item_id_list:
                 return get_sorted_item_id(item_id_list)
 
     # Fallback to the current subitem_group & item_group if it doesn't have an abbreviation but has items
-    previous_item_id = frappe.db.sql("select item_id from `tabItem` where subitem_group='{0}' and item_group='{1}' order by item_id desc".format(subitem_group, item_group))
+    previous_item_id = frappe.db.sql("select item_id from `tabItem` where subitem_group='{0}' and item_group='{1}' order by item_id desc limit 1".format(subitem_group, item_group))
     if previous_item_id:
         return previous_item_id[0][0]
     
