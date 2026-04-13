@@ -20,6 +20,7 @@ from one_fm.utils import get_field_with_label
 class Contracts(Document):
     def validate(self):
         self.calculate_contract_duration()
+        self.sync_contract_item_operations()
         self.validate_no_of_days_off()
         self.validate_off_type_with_daily_operations()
         self.update_contract_dates()
@@ -327,38 +328,49 @@ class Contracts(Document):
             frappe.throw(f"No contracts site for {self.project} between {posting_date.replace(day=1)} AND {posting_date.replace(day=last_day)}")
 
 
-    def submit_to_operations_admin(self):
+    def sync_contract_item_operations(self):
         """
         Auto-populate the Contract Items Operation table from the Contract Item table.
         Each row in the items table is mapped to a corresponding row in contract_items_operation
         by item_code. Existing rows in contract_items_operation are preserved/updated; new ones
-        are appended. This method is called when Finance clicks "Submit to Operations Admin".
+        are appended, while obsolete ones are removed.
         """
         if not self.items:
-            frappe.throw(_("No Contract Items found. Please add items before submitting to Operations Admin."))
+            self.set('contract_items_operation', [])
+            return
 
-        # Build a map of existing operation rows by item_code for fast lookup
+        current_item_codes = {item.item_code for item in self.items if item.item_code}
+
+        if self.contract_items_operation:
+            valid_ops = [row for row in self.contract_items_operation if row.item_code in current_item_codes]
+            self.set('contract_items_operation', valid_ops)
+
         existing_ops_map = {row.item_code: row for row in (self.contract_items_operation or [])}
 
         for item in self.items:
             if not item.item_code:
                 continue
             if item.item_code in existing_ops_map:
-                # Update count and rate_type on the matching row if they changed
                 ops_row = existing_ops_map[item.item_code]
                 ops_row.count = item.count
                 ops_row.rate_type = item.rate_type
                 ops_row.item_type = item.item_type
             else:
-                # Append a new row to contract_items_operation
                 self.append('contract_items_operation', {
                     'item_code': item.item_code,
                     'count': item.count,
                     'rate_type': item.rate_type,
                     'item_type': item.item_type,
                 })
+                existing_ops_map[item.item_code] = self.contract_items_operation[-1]
 
-        self.save(ignore_permissions=True)
+    def submit_to_operations_admin(self):
+        """
+        This method is called when Finance clicks "Submit to Operations Admin".
+        """
+        if not self.items:
+            frappe.throw(_("No Contract Items found. Please add items before submitting to Operations Admin."))
+
         frappe.msgprint(
             _("Contract Items have been submitted to Operations Admin. The 'Contract Item Operations' table has been updated."),
             alert=True,
