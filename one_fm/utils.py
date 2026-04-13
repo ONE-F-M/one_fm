@@ -1470,21 +1470,26 @@ def validate_get_item_group_parent(doc, method):
 
 @frappe.whitelist(allow_guest=True)
 def get_item_id_series(subitem_group, item_group):
+    # Check all item groups that share the same abbreviation within the same subitem_group
+    item_group_abbr = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
+    if item_group_abbr:
+        abbr_item_group_list = frappe.db.get_list('Item Group', {'one_fm_item_group_abbr': item_group_abbr})
+        if abbr_item_group_list:
+            item_id_list = []
+            for abbr_item_group in abbr_item_group_list:
+                # IMPORTANT: We must filter by subitem_group to prevent pulling item_id's from other subitem sequences (e.g. SER-CIV)
+                item_id = frappe.db.sql("select item_id from `tabItem` where subitem_group='{0}' and item_group='{1}' order by item_id desc".format(subitem_group, abbr_item_group['name']))
+                if item_id:
+                    item_id_list.append(item_id[0][0])
+            if item_id_list:
+                return get_sorted_item_id(item_id_list)
+
+    # Fallback to the current subitem_group & item_group if it doesn't have an abbreviation but has items
     previous_item_id = frappe.db.sql("select item_id from `tabItem` where subitem_group='{0}' and item_group='{1}' order by item_id desc".format(subitem_group, item_group))
     if previous_item_id:
-        item_group_abbr = frappe.db.get_value('Item Group', item_group, 'one_fm_item_group_abbr')
-        if item_group_abbr:
-            abbr_item_group_list = frappe.db.get_list('Item Group', {'one_fm_item_group_abbr': item_group_abbr})
-            if abbr_item_group_list and len(abbr_item_group_list) > 1:
-                item_id_list = []
-                for abbr_item_group in abbr_item_group_list:
-                    item_id = frappe.db.sql("select item_id from `tabItem` where item_group='{0}' order by item_id desc".format(abbr_item_group['name']))
-                    if item_id:
-                        item_id_list.append(item_id[0][0])
-                return get_sorted_item_id(item_id_list)
         return previous_item_id[0][0]
-    else:
-        return '0000'
+    
+    return '0000'
 
 def get_sorted_item_id(item_id_list):
     max = item_id_list[0]

@@ -328,3 +328,4 @@ one_fm.patches.v15_0.delete_attendance_checks_mar18_2026 #3
 one_fm.patches.v15_0.sync_contract_item_type_to_operations
 one_fm.patches.v15_0.delete_pending_off_day_attendance_checks
 one_fm.patches.v15_0.remove_pathfinder_log_workflow #2026-04-09
+one_fm.patches.v15_0.rename_item_int_civ_000033
