@@ -7,17 +7,10 @@ def after_insert(doc, event):
 	:param event:
 	:return:
 	"""
-	found = True
-	if len(doc.recipients) >= 20:
-		found = False
-	if found:
-		# Enqueue it safely in the background rather than blocking the main transaction
-		frappe.enqueue(
-			send_now,
-			name=doc.name,
-			now=frappe.flags.in_test,
-			enqueue_after_commit=True
-		)
+	if len(doc.recipients) < 20:
+		# It will send the email immediately as Administrator to avoid permission issues
+		with frappe.as_admin():
+			doc.send()
 
 def flush_emails():
     """
@@ -26,9 +19,16 @@ def flush_emails():
     """
     delete_eid_emails()
     emails_in_queue = frappe.get_list('Email Queue', filters={'status': 'Not Sent'})
-    for row in emails_in_queue:
-        try:send_now(name=row.name)
-        except:pass
+    
+    # Wrap the entire loop in as_admin to reduce overhead and ensure permissions
+    with frappe.as_admin():
+        for row in emails_in_queue:
+            try:
+                send_now(name=row.name)
+            except Exception:
+                # Log error if needed, but keep the loop running
+                pass
+    
     frappe.db.commit()
 
 def delete_eid_emails():
