@@ -1,5 +1,5 @@
 import frappe
-
+from frappe.email.doctype.email_queue.email_queue import send_now
 def after_insert(doc, event):
 	"""
 	Force push the email if the recipients is not more than 19 records
@@ -12,17 +12,12 @@ def after_insert(doc, event):
 		found = False
 	if found:
 		# Enqueue it safely in the background rather than blocking the main transaction
-		# Enqueue as Administrator to bypass permission errors in background job
 		frappe.enqueue(
-			"one_fm.events.email_queue.send_email_as_admin",
+			send_now,
 			name=doc.name,
 			now=frappe.flags.in_test,
 			enqueue_after_commit=True
 		)
-
-def send_email_as_admin(name):
-	with frappe.as_admin():
-		frappe.get_doc("Email Queue", name).send()
 
 def flush_emails():
     """
@@ -30,15 +25,10 @@ def flush_emails():
     :return:
     """
     delete_eid_emails()
-    # Use get_all to bypass permissions
-    emails_in_queue = frappe.get_all('Email Queue', filters={'status': 'Not Sent'}, fields=['name'])
+    emails_in_queue = frappe.get_list('Email Queue', filters={'status': 'Not Sent'})
     for row in emails_in_queue:
-        try:
-            # Run as admin to ensure read/write access to Email Queue
-            with frappe.as_admin():
-                frappe.get_doc("Email Queue", row.name).send()
-        except Exception:
-            frappe.log_error(title="Email Queue Flush Failure", message=frappe.get_traceback())
+        try:send_now(name=row.name)
+        except:pass
     frappe.db.commit()
 
 def delete_eid_emails():
