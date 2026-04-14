@@ -1,8 +1,8 @@
 /**
  * Interview Console - Bulk Recruitment Evaluation Interface
  *
- * CSS is injected via frappe.dom.set_style to ensure proper loading
- * within the Frappe Page lifecycle.
+ * CSS is auto-loaded from interview_console.css in this page directory
+ * and scoped via body[data-route="interview_console"] to prevent leakage.
  */
 
 	// HTML escape helper to prevent XSS
@@ -18,9 +18,7 @@ frappe.pages['interview_console'].on_page_load = function (wrapper) {
 		if (!$('link[href*="Roboto"]').length) {
 			$('head').append('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap">');
 		}
-		if (!$('link[href*="interview_console.css"]').length) {
-			$('head').append('<link rel="stylesheet" href="/assets/one_fm/css/interview_console.css?v=' + new Date().getTime() + '">');
-		}
+
 
 
 		// 2. Initialize Page Structure
@@ -37,15 +35,8 @@ frappe.pages['interview_console'].on_page_load = function (wrapper) {
         // The template should have #ic-root at its top level, ensuring it can receive classes
 		$(page.main).empty().append(content);
 
-		// 4. Page Visibility Handlers to prevent CSS leakage
-		$(wrapper).on('show', function () {
-			$('body').addClass('ic-active');
-		});
-		$(wrapper).on('hide', function () {
-			$('body').removeClass('ic-active');
-		});
-		// Trigger initial show if already visible
-		if ($(wrapper).is(':visible')) $('body').addClass('ic-active');
+
+
 
 		setTimeout(function () {
 			try {
