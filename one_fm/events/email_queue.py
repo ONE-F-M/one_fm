@@ -14,12 +14,15 @@ def after_insert(doc, event):
 		# Enqueue it safely in the background rather than blocking the main transaction
 		# Enqueue as Administrator to bypass permission errors in background job
 		frappe.enqueue(
-			"frappe.email.doctype.email_queue.email_queue.send_now",
+			"one_fm.events.email_queue.send_email_as_admin",
 			name=doc.name,
 			now=frappe.flags.in_test,
-			enqueue_after_commit=True,
-			user="Administrator"
+			enqueue_after_commit=True
 		)
+
+def send_email_as_admin(name):
+	with frappe.as_admin():
+		frappe.get_doc("Email Queue", name).send()
 
 def flush_emails():
     """
@@ -28,14 +31,14 @@ def flush_emails():
     """
     delete_eid_emails()
     # Use get_all to bypass permissions
-    emails_in_queue = frappe.get_all('Email Queue', filters={'status': 'Not Sent'})
+    emails_in_queue = frappe.get_all('Email Queue', filters={'status': 'Not Sent'}, fields=['name'])
     for row in emails_in_queue:
         try:
-            # Call method directly on doc to bypass whitelisted function's permission check
-            doc = frappe.get_doc('Email Queue', row.name)
-            doc.send_now()
-        except:
-            pass
+            # Run as admin to ensure read/write access to Email Queue
+            with frappe.as_admin():
+                frappe.get_doc("Email Queue", row.name).send()
+        except Exception:
+            frappe.log_error(title="Email Queue Flush Failure", message=frappe.get_traceback())
     frappe.db.commit()
 
 def delete_eid_emails():
