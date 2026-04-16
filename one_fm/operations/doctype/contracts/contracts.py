@@ -8,6 +8,7 @@ import frappe, json
 from datetime import datetime
 import calendar
 from frappe.model.document import Document
+from collections import deque
 
 from frappe.utils import (
     cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
@@ -333,36 +334,43 @@ class Contracts(Document):
         Auto-populate the Contract Items Operation table from the Contract Item table.
         Each row in the items table is mapped to a corresponding row in contract_items_operation
         by item_code. Existing rows in contract_items_operation are preserved/updated; new ones
-        are appended, while obsolete ones are removed.
+        are appended, while obsolete ones are removed. Duplicate item_codes are also supported.
         """
         if not self.items:
             self.set('contract_items_operation', [])
             return
 
-        current_item_codes = {item.item_code for item in self.items if item.item_code}
+        # Create a pool of existing operations grouped by item_code
+        existing_ops_pool = {}
+        for row in (self.contract_items_operation or []):
+            if row.item_code not in existing_ops_pool:
+                existing_ops_pool[row.item_code] = deque()
+            existing_ops_pool[row.item_code].append(row)
 
-        if self.contract_items_operation:
-            valid_ops = [row for row in self.contract_items_operation if row.item_code in current_item_codes]
-            self.set('contract_items_operation', valid_ops)
-
-        existing_ops_map = {row.item_code: row for row in (self.contract_items_operation or [])}
+        new_ops = []
 
         for item in self.items:
             if not item.item_code:
                 continue
-            if item.item_code in existing_ops_map:
-                ops_row = existing_ops_map[item.item_code]
+
+            ops_row = None
+            if item.item_code in existing_ops_pool and existing_ops_pool[item.item_code]:
+                ops_row = existing_ops_pool[item.item_code].popleft()
+
+            if ops_row:
                 ops_row.count = item.count
                 ops_row.rate_type = item.rate_type
                 ops_row.item_type = item.item_type
+                new_ops.append(ops_row)
             else:
-                self.append('contract_items_operation', {
+                new_ops.append({
                     'item_code': item.item_code,
                     'count': item.count,
                     'rate_type': item.rate_type,
                     'item_type': item.item_type,
                 })
-                existing_ops_map[item.item_code] = self.contract_items_operation[-1]
+
+        self.set('contract_items_operation', new_ops)
 
     def submit_to_operations_admin(self):
         """
