@@ -8,6 +8,7 @@ import frappe, json
 from datetime import datetime
 import calendar
 from frappe.model.document import Document
+from collections import deque
 
 from frappe.utils import (
     cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
@@ -343,7 +344,7 @@ class Contracts(Document):
         existing_ops_pool = {}
         for row in (self.contract_items_operation or []):
             if row.item_code not in existing_ops_pool:
-                existing_ops_pool[row.item_code] = []
+                existing_ops_pool[row.item_code] = deque()
             existing_ops_pool[row.item_code].append(row)
 
         new_ops = []
@@ -354,7 +355,7 @@ class Contracts(Document):
 
             ops_row = None
             if item.item_code in existing_ops_pool and existing_ops_pool[item.item_code]:
-                ops_row = existing_ops_pool[item.item_code].pop(0)
+                ops_row = existing_ops_pool[item.item_code].popleft()
 
             if ops_row:
                 ops_row.count = item.count
