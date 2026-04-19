@@ -68,6 +68,15 @@ body[data-route="interview_console"] .ic-search-wrap {
 body[data-route="interview_console"] .ic-search-input { border: none; background: transparent; width: 100%; font-size: 13px; font-weight: 400; outline: none; font-family: 'Roboto', sans-serif; }
 body[data-route="interview_console"] .ic-sidebar-header { margin-right: 12px; display: flex; justify-content: space-between; padding: 0 5px 8px 5px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
 
+body[data-route="interview_console"] .ic-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px; /* Scrollbar padding */
+}
+body[data-route="interview_console"] .ic-list::-webkit-scrollbar { width: 3px; }
+body[data-route="interview_console"] .ic-list::-webkit-scrollbar-track { background: transparent; }
+body[data-route="interview_console"] .ic-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
 /* ── Sidebar Items – M3 Standard Navigation Drawer Item ──────────────── */
 body[data-route="interview_console"] .ic-item {
     padding: 8px 12px; margin-bottom: 2px; border-radius: 50px; margin-right: 12px;

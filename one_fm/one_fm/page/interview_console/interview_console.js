@@ -325,10 +325,15 @@ function init_interview_console(wrapper, page) {
 		
 		// Auto-scroll the sidebar to ensure the candidate is physically visible on the screen
 		if ($selected_item.length) {
-			var container = $w('.ic-left');
+			var container = $w('.ic-list'); // Changed from .ic-left to correctly target the candidate list
 			if (container.length) {
-				var offset = $selected_item.position().top + container.scrollTop() - (container.height() / 2) + ($selected_item.height() / 2);
-				container.animate({ scrollTop: offset }, 300);
+				var container_offset = container.offset();
+				var item_offset = $selected_item.offset();
+				if (container_offset && item_offset) {
+					var item_top_in_container = item_offset.top - container_offset.top + container.scrollTop();
+					var offset = item_top_in_container - (container.height() / 2) + ($selected_item.height() / 2);
+					container.animate({ scrollTop: offset }, 300);
+				}
 			}
 		}
 
