@@ -1164,10 +1164,10 @@ class AttendanceMarking():
         if self.attendance_type:
             client_shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
-                JOIN `tabOperations Role` op ON sa.operations_role=op.name
+                LEFT JOIN `tabOperations Role` op ON sa.operations_role=op.name
                 WHERE sa.is_replaced = 0
                 AND sa.start_date='{self.start.date()}'
-                AND op.attendance_by_client=1 AND op.docstatus=1
+                AND (op.attendance_by_client=1 AND op.docstatus=1 OR sa.operations_role IS NULL OR sa.operations_role = '')
                 ;
             """, as_dict=1)
             for i in client_shifts:
@@ -1195,10 +1195,10 @@ class AttendanceMarking():
         else:
             client_shifts =  frappe.db.sql(f"""
                 SELECT sa.* FROM `tabShift Assignment` sa
-                JOIN `tabOperations Role` op ON sa.operations_role=op.name
+                LEFT JOIN `tabOperations Role` op ON sa.operations_role=op.name
                 WHERE sa.is_replaced = 0
                 AND sa.end_datetime BETWEEN '{self.start}' AND  '{self.end}'
-                AND op.attendance_by_client=1 AND op.status='Active'
+                AND (op.attendance_by_client=1 AND op.status='Active' OR sa.operations_role IS NULL OR sa.operations_role = '')
                 ;
                 """, as_dict=1)
             for i in client_shifts:
