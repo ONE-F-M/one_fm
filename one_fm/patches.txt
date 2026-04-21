@@ -270,6 +270,7 @@ one_fm.patches.v15_0.add_day_off_preference #2
 one_fm.patches.v15_0.update_job_offer_for_ERF_2026_00004
 one_fm.patches.v15_0.add_index_to_leave_application_in_attendance
 one_fm.patches.v15_0.update_attendance_request_assignment_rule
+one_fm.patches.v15_0.remove_hd_property_setter_from_non_existing_doc #2
 
 
 [post_model_sync]
