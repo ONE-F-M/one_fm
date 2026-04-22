@@ -1,0 +1,54 @@
+<style>
+    table {
+        font-family: Arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th,
+    .absent_employees td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    th {
+        background-color: #f2f2f2;
+        color: #333;
+        text-align: left;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    tr:hover {
+        background-color: #ddd;
+    }
+</style>
+
+<p>Dear {{ full_name }},</p>
+
+<p>
+    <strong>
+        This is an automated notification from the One FM App regarding employee
+        attendance compliance. The following employees have been flagged for
+        reaching the threshold of 21 non-consecutive absent days.
+    </strong>
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Employee Name</th>
+            <th>Employee ID</th>
+        </tr>
+    </thead>
+    <tbody class="absent_employees">
+        {% for employee in employees %}
+        <tr>
+            <td>{{ employee.employee_name }}</td>
+            <td>{{ employee.employee_id }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

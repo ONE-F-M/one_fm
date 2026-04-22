@@ -317,6 +317,23 @@ frappe.ui.form.on('Contracts', {
 		setTimeout(() => {
 			const user_roles = frappe.user_roles;
 			const is_system_manager = user_roles.includes('System Manager');
+			const is_legal = user_roles.includes('Legal Manager') || user_roles.includes('Legal User');
+			// Fires when Legal Manager is NOT in their designated editing state.
+			// In 'Submit to Legal Manager' they edit the full section normally.
+			// In all other states they should only see the 2 notification fields.
+			const is_active_legal = is_legal && !frm.is_new() && frm.doc.workflow_state !== 'Submit to Legal Manager';
+
+			// Frappe locks the entire form at the perm level when the workflow
+			// state's allow_edit role doesn't match the current user. We override
+			// that lock for Legal Manager / Legal User on Active contracts so they
+			// can edit the two notification fields. Everything else is locked via
+			// the section_role_map below.
+			if (is_active_legal) {
+				frm.perm[0] = Object.assign({}, frm.perm[0], { write: 1 });
+				frm.enable_save();
+				// Hide the "not editable due to Workflow" banner
+				frm.$wrapper.find('.form-message.yellow').hide();
+			}
 
 			// Optional: log roles to browser console for debugging
 			console.log('[Contracts] user_roles:', user_roles);
@@ -340,7 +357,12 @@ frappe.ui.form.on('Contracts', {
 
 			// Fieldtypes that must never be set read_only (they control layout)
 			const layout_types = new Set(['Section Break', 'Column Break', 'Tab Break', 'HTML', 'Heading']);
-			const skip_fields  = new Set(['amended_from', 'password_management', 'workflow_state']);
+			const skip_fields  = new Set([
+				'amended_from', 'password_management', 'workflow_state',
+				// These dates are always auto-calculated — never allow manual edits
+				'contract_end_internal_notification_date',
+				'contract_termination_decision_period_date',
+			]);
 
 			let current_section = '__header__';
 			let processed = 0;
@@ -370,6 +392,25 @@ frappe.ui.form.on('Contracts', {
 
 			console.log(`[Contracts] Role enforcement applied to ${processed} fields. Section: ${current_section}`);
 			frm.refresh_fields();
+
+			// --- Legal Manager / Legal User special override ---
+			// Outside of 'Submit to Legal Manager' state: lock the rest of the
+			// Legal & Compliance section and only unlock the 2 notification fields.
+			if (is_active_legal) {
+				// Extra fields in section_break_20 that should stay read-only
+				['contract', 'is_auto_renewal', 'contract_date'].forEach(
+					fn => frm.set_df_property(fn, 'read_only', 1)
+				);
+				// These two are always editable for Legal Manager
+				const legal_editable = [
+					'contract_end_internal_notification',
+					'contract_termination_decision_period'
+				];
+				legal_editable.forEach(fn => frm.set_df_property(fn, 'read_only', 0));
+				frm.refresh_fields();
+				console.log('[Contracts] Legal Manager override: only notification fields unlocked.');
+			}
+			// --- end Legal Manager override ---
 
 			
 				const ops_grid = frm.get_field('contract_items_operation');
@@ -508,6 +549,31 @@ frappe.ui.form.on('Contract Item', {
 			frappe.model.set_value(d.doctype, d.name, "item_price", null);
 			frappe.model.set_value(d.doctype, d.name, "price_list_rate", 0);
 			frappe.model.set_value(d.doctype, d.name, "rate", 0);
+			frappe.model.set_value(d.doctype, d.name, "gender", null);
+			frappe.model.set_value(d.doctype, d.name, "working_days", null);
+			frappe.model.set_value(d.doctype, d.name, "working_hours", null);
+
+			// Fetch variant attributes (Gender, Working Days, Working Hours)
+			frappe.call({
+				method: "one_fm.operations.doctype.contracts.contracts.get_item_variant_attributes",
+				args: { item_code: d.item_code },
+				callback: function(r) {
+					if (!r.exc && r.message) {
+						frappe.model.set_value(d.doctype, d.name, "gender", r.message.gender);
+						frappe.model.set_value(d.doctype, d.name, "working_days", r.message.working_days);
+						frappe.model.set_value(d.doctype, d.name, "working_hours", r.message.working_hours);
+					} else {
+						frappe.model.set_value(d.doctype, d.name, "gender", null);
+						frappe.model.set_value(d.doctype, d.name, "working_days", null);
+						frappe.model.set_value(d.doctype, d.name, "working_hours", null);
+					}
+				}
+			});
+		} else {
+			// Clear fields if item_code is cleared
+			frappe.model.set_value(d.doctype, d.name, "gender", null);
+			frappe.model.set_value(d.doctype, d.name, "working_days", null);
+			frappe.model.set_value(d.doctype, d.name, "working_hours", null);
 		}
 		set_item_price(frm, d);
 	},

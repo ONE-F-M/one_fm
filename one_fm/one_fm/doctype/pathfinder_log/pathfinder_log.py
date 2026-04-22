@@ -9,7 +9,68 @@ from frappe.utils import now_datetime
 
 class PathfinderLog(Document):
 	def validate(self):
+		self._validate_active_status_conditions()
+		self.validate_process_classification()
 		self.validate_single_active_log()
+
+	def _validate_active_status_conditions(self):
+		"""Block saving with status 'Active' when any classification prerequisite is unmet.
+
+		Blocking conditions:
+		  1. The selected process has 'Is Generic' checked.
+		  2. The Process Folder Link is not set.
+		  3. The Epic is not set.
+		"""
+		if self.status != "Active":
+			return
+
+		errors = []
+
+		if self.process_is_generic:
+			errors.append(
+				_('The selected process "{0}" is marked as <b>Generic</b>. '
+				  "Please ensure the actual (non-generic) process has been selected."
+				  ).format(self.process_name)
+			)
+
+		if not self.epic:
+			errors.append(_(
+				"The <b>Epic</b> must be set before marking this log as Active."
+			))
+
+		if not self.process_folder_link:
+			errors.append(_(
+				"The <b>Process Folder Link</b> must be set before marking this log as Active."
+			))
+
+		if errors:
+			frappe.throw(
+				"<br>".join(errors),
+				title=_("Cannot Set Status to Active"),
+			)
+
+	def validate_process_classification(self):
+		"""Block transition from 'Pending Process Classification' when a generic process is selected."""
+		if self.is_new():
+			return
+
+		old_doc = self.get_doc_before_save()
+		if not old_doc or old_doc.status != "Pending Process Classification":
+			return
+
+		# Only check when the status is actually changing away from
+		# "Pending Process Classification".
+		if self.status == old_doc.status:
+			return
+
+		is_generic = frappe.db.get_value("Process", self.process_name, "is_generic")
+		if is_generic:
+			frappe.throw(
+				_('The selected process "{0}" is marked as generic. '
+				  "Please ensure that the actual process has been created "
+				  "and selected before moving out of Pending Process Classification."
+				  ).format(self.process_name)
+			)
 
 	def validate_single_active_log(self):
 		existing = frappe.db.exists(
@@ -42,7 +103,10 @@ class PathfinderLog(Document):
 			if self.time_log:
 				last_log = self.time_log[-1]
 
-			if last_log and last_log.state == old_doc.status and not last_log.end_time:
+			# Close the last open row regardless of state label match.
+			# Legacy rows may contain old workflow_state values (e.g.
+			# "In Development") that won't match the migrated status.
+			if last_log and not last_log.end_time:
 				last_log.end_time = now_datetime()
 				last_log.duration = frappe.utils.time_diff_in_seconds(
 					last_log.end_time, last_log.start_time

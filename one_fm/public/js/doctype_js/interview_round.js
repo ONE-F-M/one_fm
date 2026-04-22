@@ -39,19 +39,25 @@ function sync_matrix(frm) {
     let next_matrix = source_objects.map(function(s_row) {
         let existing_row = matrix_map[s_row.questions];
         if (existing_row) {
-            existing_row.category = s_row.category;
-            existing_row.weight = s_row.weight;
+            if (existing_row.category !== s_row.category) {
+                frappe.model.set_value(existing_row.doctype, existing_row.name, 'category', s_row.category);
+            }
+            if (existing_row.weight !== s_row.weight) {
+                frappe.model.set_value(existing_row.doctype, existing_row.name, 'weight', s_row.weight);
+            }
             return existing_row;
         }
+        
         let new_row = frm.add_child("interview_matrix");
-        new_row.question = s_row.questions;
-        new_row.category = s_row.category;
-        new_row.weight = s_row.weight;
+        frappe.model.set_value(new_row.doctype, new_row.name, 'question', s_row.questions);
+        frappe.model.set_value(new_row.doctype, new_row.name, 'category', s_row.category);
+        frappe.model.set_value(new_row.doctype, new_row.name, 'weight', s_row.weight);
         return new_row;
     });
+    
     frm.doc.interview_matrix = next_matrix;
     frm.doc.interview_matrix.forEach(function(row, index) {
-        row.idx = index + 1;
+        frappe.model.set_value(row.doctype, row.name, 'idx', index + 1);
     });
     
     frm.refresh_field("interview_matrix");

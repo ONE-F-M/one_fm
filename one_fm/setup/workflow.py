@@ -26,6 +26,7 @@ def create_workflows():
 	create_workflow(get_workflow_json_file("employee_id.json"))
 	create_workflow(get_workflow_json_file("work_contract.json"))
 	create_workflow(get_workflow_json_file("job_offer.json"))
+	create_workflow(get_workflow_json_file("visa_request.json"))
 	create_workflow(get_workflow_json_file("candidate_orientation.json"))
 	create_workflow(get_workflow_json_file("bank_account.json"))
 	create_workflow(get_workflow_json_file("missed_mom_follow_up_action_workflow.json"))
@@ -65,6 +66,7 @@ def create_workflows():
 	create_workflow(get_workflow_json_file("client_event.json"))
 	create_workflow(get_workflow_json_file("on_the_job_training.json"))
 	create_workflow(get_workflow_json_file("temporary_deployment.json"))
+	create_workflow(get_workflow_json_file("formal_hearing.json"))
 
 def delete_workflows():
 	delete_workflow(get_workflow_json_file("erf.json"))
@@ -90,6 +92,7 @@ def delete_workflows():
 	delete_workflow(get_workflow_json_file("employee_id.json"))
 	delete_workflow(get_workflow_json_file("work_contract.json"))
 	delete_workflow(get_workflow_json_file("job_offer.json"))
+	delete_workflow(get_workflow_json_file("visa_request.json"))
 	delete_workflow(get_workflow_json_file("candidate_orientation.json"))
 	delete_workflow(get_workflow_json_file("bank_account.json"))
 	delete_workflow(get_workflow_json_file("missed_mom_follow_up_action_workflow.json"))
@@ -122,3 +125,4 @@ def delete_workflows():
 	delete_workflow(get_workflow_json_file("onboard_subcontract_employee.json"))
 	delete_workflow(get_workflow_json_file("leave_extension_request.json"))
 	delete_workflow(get_workflow_json_file("loan_application.json"))
+	delete_workflow(get_workflow_json_file("formal_hearing.json"))

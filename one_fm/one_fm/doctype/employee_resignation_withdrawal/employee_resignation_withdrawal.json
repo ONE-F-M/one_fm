@@ -2,39 +2,25 @@
  "actions": [],
  "allow_rename": 1,
  "autoname": "naming_series: naming_series",
- "creation": "2026-03-13 16:44:02.495686",
+ "creation": "2026-04-12 22:09:16.043432",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "section_break_xfjj",
   "employee_resignation",
-  "employee",
-  "full_name_in_english",
-  "full_name_in_arabic",
-  "nationality",
   "column_break_twru",
   "relieving_date",
   "date_of_joining",
-  "department",
-  "employment_type",
   "under_company_residency",
-  "column_break_pdtv",
-  "project_allocation",
-  "site_allocation",
-  "shift_allocation",
-  "operations_role_allocation",
-  "designation",
-  "section_break_nzwb",
-  "reason",
-  "resignation_withdrawal_letter",
-  "column_break_wetd",
-  "reason_for_rejection",
+  "table_section",
+  "employees",
   "more_information_section",
-  "supervisor",
-  "column_break_szbe",
   "naming_series",
   "column_break_fhar",
-  "amended_from"
+  "amended_from",
+  "column_break_wetd",
+  "column_break_pdtv",
+  "column_break_szbe"
  ],
  "fields": [
   {
@@ -45,43 +31,11 @@
   {
    "fieldname": "employee_resignation",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Employee Resignation",
    "options": "Employee Resignation",
    "read_only": 1,
    "reqd": 1
-  },
-  {
-   "fetch_from": "employee_resignation.employee",
-   "fieldname": "employee",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Employee",
-   "options": "Employee",
-   "read_only": 1,
-   "reqd": 1
-  },
-  {
-   "fetch_from": "employee.employee_name",
-   "fieldname": "full_name_in_english",
-   "fieldtype": "Data",
-   "label": "Full Name in English",
-   "read_only": 1,
-   "reqd": 1
-  },
-  {
-   "fetch_from": "employee.employee_name_in_arabic",
-   "fieldname": "full_name_in_arabic",
-   "fieldtype": "Data",
-   "label": "Full Name in Arabic",
-   "read_only": 1
-  },
-  {
-   "fieldname": "nationality",
-   "fieldtype": "Link",
-   "label": "Nationality",
-   "options": "Nationality",
-   "read_only": 1
   },
   {
    "fieldname": "column_break_twru",
@@ -91,6 +45,7 @@
    "fetch_from": "employee_resignation.relieving_date",
    "fieldname": "relieving_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Relieving Date",
    "read_only": 1,
    "reqd": 1
@@ -100,26 +55,6 @@
    "fieldname": "date_of_joining",
    "fieldtype": "Date",
    "label": "Date of Joining",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.department",
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Department",
-   "options": "Department",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.employment_type",
-   "fieldname": "employment_type",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Employment Type",
-   "options": "Employment Type",
    "read_only": 1
   },
   {
@@ -133,85 +68,17 @@
   },
   {
    "fieldname": "column_break_pdtv",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fetch_from": "employee.project",
-   "fieldname": "project_allocation",
-   "fieldtype": "Link",
-   "label": "Project Allocation",
-   "options": "Project",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.site",
-   "fieldname": "site_allocation",
-   "fieldtype": "Link",
-   "label": "Site Allocation",
-   "options": "Operations Site",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.shift",
-   "fieldname": "shift_allocation",
-   "fieldtype": "Link",
-   "label": "Shift Allocation",
-   "options": "Operations Shift",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.custom_operations_role_allocation",
-   "fieldname": "operations_role_allocation",
-   "fieldtype": "Link",
-   "label": "Operations Role Allocation",
-   "options": "Operations Role",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "employee.designation",
-   "fieldname": "designation",
-   "fieldtype": "Link",
-   "label": "Designation",
-   "options": "Designation",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_nzwb",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "reason",
-   "fieldtype": "Small Text",
-   "label": "Reason",
-   "reqd": 1
-  },
-  {
-   "fieldname": "resignation_withdrawal_letter",
-   "fieldtype": "Attach",
-   "label": "Resignation Withdrawal Letter",
-   "reqd": 1
+   "fieldtype": "Column Break",
+   "hidden": 1
   },
   {
    "fieldname": "column_break_wetd",
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval: !doc.__islocal",
-   "fieldname": "reason_for_rejection",
-   "fieldtype": "Small Text",
-   "label": "Reason for Rejection"
-  },
-  {
    "fieldname": "more_information_section",
    "fieldtype": "Section Break",
    "label": "More Information"
-  },
-  {
-   "fieldname": "supervisor",
-   "fieldtype": "Link",
-   "label": "Supervisor",
-   "options": "User",
-   "read_only": 1
   },
   {
    "fieldname": "column_break_szbe",
@@ -237,13 +104,25 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "employees",
+   "fieldtype": "Table",
+   "label": "Withdrawing Employees",
+   "options": "Employee Resignation Withdrawal Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "table_section",
+   "fieldtype": "Section Break",
+   "label": "Candidates"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-15 12:43:16.117103",
+ "modified": "2026-04-13 10:27:37.450565",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Employee Resignation Withdrawal",

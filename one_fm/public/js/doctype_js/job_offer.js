@@ -86,6 +86,20 @@ frappe.ui.form.on('Job Offer', {
   			);
       }
     }
+    
+    if (frm.doc.workflow_state === 'Accepted' && frm.doc.job_applicant) {
+      frappe.db.get_value('Job Applicant', frm.doc.job_applicant, 'one_fm_applicant_is_overseas_or_local', (r) => {
+        if (r && r.one_fm_applicant_is_overseas_or_local === 'Overseas') {
+          frm.add_custom_button(__('Create Visa Request'), () => {
+            frappe.new_doc('Visa Request', {
+              job_offer: frm.doc.name,
+              job_applicant: frm.doc.job_applicant
+            });
+          }).addClass('btn-primary');
+        }
+      });
+    }
+
     set_filters(frm);
   },
   attendance_by_timesheet: function(frm) {

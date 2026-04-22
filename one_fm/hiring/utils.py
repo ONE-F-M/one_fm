@@ -209,10 +209,9 @@ def generate_employee_id(doc):
 	except Exception as e:
 		frappe.throw(_(str(e)))
 
-	count = len(frappe.db.sql(f"""
-		SELECT name FROM tabEmployee
-		WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
-		as_dict=1))
+	count = frappe.db.count("Employee", {
+		"date_of_joining": ["between", [get_first_day(doc.date_of_joining), get_last_day(doc.date_of_joining)]]
+	})
 
 	if count == 0:
 		count = count + 1
@@ -778,46 +777,7 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 		frappe.msgprint(_('{1} Interview Feedback {0} successfully!').format(
 		get_link_to_form('Interview Feedback', interview_feedback.name), method.title()))
 
-def calculate_interview_feedback_average_rating(doc, method):
-	if doc.interview and doc.interviewer:
-		existing = frappe.db.exists("Interview Feedback", {
-			"interview": doc.interview,
-			"interviewer": doc.interviewer,
-			"name": ("!=", doc.name)
-		})
-		if existing:
-			frappe.throw("An Interview Feedback already exists for this Interview and Interviewer.")
 
-	total_rating = 0
-	for d in doc.skill_assessment:
-		if d.rating:
-			total_rating += d.rating
-
-	total_skill_rating = flt(
-		total_rating / len(doc.skill_assessment) if len(doc.skill_assessment) else 0
-	)
-
-	total_question_rating = 0
-	if doc.interview_question_assessment and len(doc.interview_question_assessment) > 0:
-		total_weight = sum(flt(d.weight) for d in doc.interview_question_assessment)
-		if total_weight > 0:
-			# Each score is 1-5. Multiply its fraction (score/5) by its weight.
-			weighted_score_sum = sum((flt(d.score) / 5.0) * flt(d.weight) for d in doc.interview_question_assessment)
-			total_score_out_of_100 = (weighted_score_sum / total_weight) * 100.0
-			total_question_rating = flt(total_score_out_of_100 / 100.0)
-		else:
-			# Fallback if weights are not configured
-			active_cols = sum(1 for d in doc.interview_question_assessment if flt(d.score) > 0)
-			if active_cols > 0:
-				total_question_rating = (sum(flt(d.score) for d in doc.interview_question_assessment if flt(d.score) > 0) / active_cols) / 5.0
-
-	if total_question_rating > 0:
-		if len(doc.skill_assessment) > 0:
-			doc.average_rating = (total_skill_rating + total_question_rating) / 2
-		else:
-			doc.average_rating = total_question_rating
-	else:
-		doc.average_rating = total_skill_rating
 
 def get_rating_from_the_score(score, weight):
 	score_per = score / weight

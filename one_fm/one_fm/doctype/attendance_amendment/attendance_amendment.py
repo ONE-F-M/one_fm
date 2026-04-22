@@ -59,6 +59,7 @@ class AttendanceAmendment(Document):
 				"employee": record.get("employee"),
 				"employee_id": record.get("employee_id"),
 				"employee_name": record.get("employee_name"),
+				"sale_item": record.get("sale_item"),
 				"shift": record.get("shift"),
 				"working_days": record.get("working_days"),
 				"off_days": record.get("off_days"),
@@ -67,12 +68,16 @@ class AttendanceAmendment(Document):
 
 def get_employee_details():
 	Employee = frappe.qb.DocType("Employee")
+	OperationsRole = frappe.qb.DocType("Operations Role")
 	query = (
 		frappe.qb.from_(Employee)
+		.left_join(OperationsRole)
+		.on(Employee.custom_operations_role_allocation == OperationsRole.name)
 		.select(
 			Employee.name,
 			Employee.employee_id,
 			Employee.employee_name,
+			OperationsRole.sale_item
 		)
 		.where(Employee.shift_working == 1)
 	)
@@ -182,7 +187,12 @@ def get_rows(employee_details, filters, attendance_map, attendance_based_on):
 
 		# set employee details in the first row
 		for record in attendance_for_employee:
-			record.update({"employee": details.name, "employee_id": details.employee_id, "employee_name": details.employee_name})
+			record.update({
+				"employee": details.name,
+				"employee_id": details.employee_id,
+				"employee_name": details.employee_name,
+				"sale_item": details.sale_item
+			})
 
 		records.extend(attendance_for_employee)
 
@@ -332,7 +342,12 @@ def get_ot_rows(employee_details, filters, attendance_map):
 
 		# set employee details in the first row
 		for record in attendance_for_employee:
-			record.update({"employee": details.name, "employee_id": details.employee_id, "employee_name": details.employee_name})
+			record.update({
+				"employee": details.name,
+				"employee_id": details.employee_id,
+				"employee_name": details.employee_name,
+				"sale_item": details.sale_item
+			})
 
 		records.extend(attendance_for_employee)
 

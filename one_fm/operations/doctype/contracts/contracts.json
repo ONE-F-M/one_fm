@@ -38,6 +38,7 @@
   "column_break_obib",
   "price_list",
   "section_break_35",
+  "currency_",
   "items",
   "create_sales_invoice_as",
   "invoice_frequency",
@@ -111,7 +112,8 @@
   {
    "fieldname": "ownership_proof",
    "fieldtype": "Attach",
-   "label": "Ownership Proof"
+   "label": "Ownership Proof",
+   "mandatory_depends_on": "eval:doc.__islocal"
   },
   {
    "fieldname": "column_break_pzrn",
@@ -200,8 +202,7 @@
    "fieldname": "contract_date",
    "fieldtype": "Table",
    "label": "Contract Date",
-   "options": "Contracts Date",
-   "read_only": 1
+   "options": "Contracts Date"
   },
   {
    "fieldname": "section_break_26",
@@ -319,10 +320,17 @@
    "label": "Password Management",
    "options": "Password Management",
    "read_only": 1
+  },
+  {
+   "default": "KWD",
+   "fieldname": "currency_",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency"
   }
  ],
  "links": [],
- "modified": "2026-03-03 16:49:06.754014",
+ "modified": "2026-04-21 14:23:04.023731",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

@@ -1,22 +1,23 @@
 {
  "actions": [],
- "autoname": "format:PAT-LOG-{initiated_on}-{##}",
+ "autoname": "naming_series:",
  "creation": "2025-10-06 12:34:11.847152",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "process_map_and_guideline_section",
-  "process_map",
-  "column_break_teht",
   "checklist",
-  "section_break_wx0s",
+  "section_break_esrh",
   "process_name",
+  "process_is_generic",
+  "column_break_iarv",
+  "epic",
+  "column_break_cccw",
+  "process_folder_link",
+  "section_break_wx0s",
   "goal_description",
   "column_break_ojgt",
   "initiated_on",
-  "type",
   "status",
-  "hd_ticket",
   "stakeholders_section",
   "process_owner_user",
   "process_owner_name",
@@ -24,6 +25,7 @@
   "business_analyst_user",
   "business_analyst_name",
   "section_break_qrox",
+  "naming_series",
   "amended_from",
   "change_requests_tab",
   "section_break_gamf",
@@ -34,23 +36,6 @@
  ],
  "fields": [
   {
-   "fieldname": "process_map_and_guideline_section",
-   "fieldtype": "Section Break",
-   "label": "Process Map and Guideline"
-  },
-  {
-   "fetch_from": "process_name.process_map",
-   "fieldname": "process_map",
-   "fieldtype": "Small Text",
-   "label": "Process Map",
-   "options": "URL",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_teht",
-   "fieldtype": "Column Break"
-  },
-  {
    "bold": 1,
    "description": "Click to navigate to the checklist that must be followed for the current task.",
    "fieldname": "checklist",
@@ -60,9 +45,9 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_break_wx0s",
+   "fieldname": "section_break_esrh",
    "fieldtype": "Section Break",
-   "label": "Increment Details"
+   "label": "Process Classification"
   },
   {
    "description": "Only the processes that have gone through Pathfinder are listed. If your process is not listed in the options, select \"Others\".",
@@ -74,6 +59,41 @@
    "options": "Process",
    "remember_last_selected_value": 1,
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fetch_from": "process_name.is_generic",
+   "fieldname": "process_is_generic",
+   "fieldtype": "Check",
+   "label": "Process is Generic",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_iarv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "All user stories under this process need to be added under this epic.",
+   "fieldname": "epic",
+   "fieldtype": "Link",
+   "label": "Epic",
+   "options": "Work Item"
+  },
+  {
+   "fieldname": "column_break_cccw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Add the link to the process folder in the shared Google Drive.",
+   "fieldname": "process_folder_link",
+   "fieldtype": "Data",
+   "label": "Process Folder Link",
+   "options": "URL"
+  },
+  {
+   "fieldname": "section_break_wx0s",
+   "fieldtype": "Section Break",
+   "label": "Increment Details"
   },
   {
    "description": "A brief description of what this update is meant to achieve.",
@@ -96,12 +116,30 @@
    "read_only": 1
   },
   {
-   "description": "(1) Initial Process Implementation: The process is being taken through Pathfinder for the first time. (2) Major Update: May include the addition or deletion of tasks and/or activities. (3) Incremental Changes: Involves small changes, usually within a task.",
-   "fieldname": "type",
+   "default": "Backlog",
+   "fieldname": "status",
    "fieldtype": "Select",
-   "label": "Type",
-   "options": "\nInitial Process Implementation\nMajor Update\nIncremental Changes",
-   "reqd": 1
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Backlog\nPending Process Classification\nUpcoming\nActive\nOn Hold\nDeployed",
+   "read_only_depends_on": "eval: doc.process_is_generic || !doc.epic || !doc.process_folder_link"
+  },
+  {
+   "default": "Backlog",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Backlog\nUpcoming\nActive\nOn Hold\nDeployed"
+  },
+  {
+   "fieldname": "hd_ticket",
+   "fieldtype": "Link",
+   "label": "HD Ticket",
+   "options": "HD Ticket",
+   "read_only": 1
   },
   {
    "default": "Backlog",
@@ -167,6 +205,14 @@
    "fieldtype": "Section Break"
   },
   {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "no_copy": 1,
+   "options": "PAT-LOG-.YYYY.-.MM.-.####",
+   "set_only_once": 1
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -211,11 +257,11 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-05 13:02:00.000000",
+ "modified": "2026-04-19 09:58:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Pathfinder Log",
- "naming_rule": "Expression (old style)",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
@@ -261,6 +307,10 @@
   {
    "color": "Red",
    "title": "Backlog"
+  },
+  {
+   "color": "Purple",
+   "title": "Pending Process Classification"
   },
   {
    "color": "Orange",

@@ -166,7 +166,7 @@ home_page = "index"
 # }
 
 # Website user home page (by function)
-# get_website_user_home_page = "one_fm.utils.get_home_page"
+get_website_user_home_page = "one_fm.api.doc_methods.user.get_website_user_home_page"
 
 # Generators
 # ----------
@@ -399,9 +399,7 @@ doc_events = {
 	"Expense Claim": {
 		"on_submit": "one_fm.api.doc_methods.expense_claim.on_submit",
 	},
-	"Interview Feedback": {
-		"validate": "one_fm.hiring.utils.calculate_interview_feedback_average_rating",
-	},
+
 	"Interview": {
 		"validate": "one_fm.overrides.interview.update_interview_rounds_in_job_applicant",
         "after_insert": "one_fm.overrides.interview.update_from_to_date_null",
@@ -468,7 +466,8 @@ doc_events = {
 standard_portal_menu_items = [
 	{"title": "Job Applications", "route": "/job-applications", "reference_doctype": "Job Applicant", "role": "Job Applicant"},
 	{"title": _("Request for Supplier Quotations"), "route": "/rfq1", "reference_doctype": "Request for Supplier Quotation", "role": "Supplier"},
-	{"title": _("Job Openings"), "route": "/agency_job_opening", "reference_doctype": "Job Opening", "role": "Agency"}
+	{"title": _("Job Openings"), "route": "/agency_job_opening", "reference_doctype": "Job Opening", "role": "Agency"},
+	{"title": _("Subcontractor Attendance Records"), "route": "/subcontractor-attendance", "reference_doctype": "Subcontract Staff Attendance", "role": "Subcontractor"}
 ]
 
 has_website_permission = {
@@ -848,6 +847,7 @@ fixtures = [
 override_whitelisted_methods = {
     "frappe.model.workflow.get_transitions":"one_fm.overrides.workflow.get_transitions",
 	"frappe.model.workflow.apply_workflow":"one_fm.overrides.workflow.apply_workflow",
+	"frappe.core.doctype.user.user.update_password": "one_fm.api.doc_methods.user.update_password",
     "hrms.hr.doctype.leave_application.leave_application.get_number_of_leave_days": "one_fm.api.doc_methods.leave_application_calculation.custom_get_number_of_leave_days",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_approver" : "one_fm.overrides.leave_application.get_leave_approver",
 	"hrms.hr.doctype.leave_application.leave_application.get_leave_details" : "one_fm.overrides.leave_application.get_leave_details",
@@ -918,6 +918,9 @@ before_migrate = [
 # add more info to session on boot
 on_session_creation = [
     # "one_fm.api.api.initialize_firebase"
+]
+update_website_context = [
+	"one_fm.api.doc_methods.user.filter_subcontractor_sidebar"
 ]
 app_startup = [
     "one_fm.api.api.initialize_firebase"

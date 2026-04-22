@@ -69,6 +69,13 @@ def create_assignment_rules():
 	create_assignment_rule(get_assignment_rule_json_file("action_process_change_request_business_analyst.json"))
 	create_assignment_rule(get_assignment_rule_json_file("leave_application_new_dates_proposed.json"))
 	create_assignment_rule(get_assignment_rule_json_file("leave_application_pending_confirmation.json"))
+	create_assignment_rule(get_assignment_rule_json_file("formal_hearing_operations_manager.json"))
+	create_assignment_rule(get_assignment_rule_json_file("formal_hearing_hr_manager.json"))
+	create_assignment_rule(get_assignment_rule_json_file("formal_hearing_general_manager.json"))
+	create_assignment_rule(get_assignment_rule_json_file("absence_case_hr_officer.json"))
+	create_assignment_rule(get_assignment_rule_json_file("groperator_visa_request.json"))
+	create_assignment_rule(get_assignment_rule_json_file("recruiter_visa_request.json"))
+	create_assignment_rule(get_assignment_rule_json_file("grd_manager_visa_request.json"))
 
 def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("roster_post_action_site_supervisor.json"))
@@ -102,3 +109,7 @@ def delete_assignment_rules():
 	delete_assignment_rule(get_assignment_rule_json_file("review_and_approve_loan_application_senior_accountant.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("erf.json"))
 	delete_assignment_rule(get_assignment_rule_json_file("action_process_change_request_business_analyst.json"))
+	delete_assignment_rule(get_assignment_rule_json_file("formal_hearing_operations_manager.json"))
+	delete_assignment_rule(get_assignment_rule_json_file("formal_hearing_hr_manager.json"))
+	delete_assignment_rule(get_assignment_rule_json_file("formal_hearing_general_manager.json"))
+	delete_assignment_rule(get_assignment_rule_json_file("absence_case_hr_officer.json"))

@@ -8,32 +8,26 @@ from one_fm.templates.pages.applicant_docs import send_applicant_doc_magic_link
 def validate_interview_overlap(self):
     interviewers = [entry.interviewer for entry in self.interview_details] or [""]
 
-    query = """
-        SELECT interview.name
-        FROM `tabInterview` as interview
-        INNER JOIN `tabInterview Detail` as detail
-        WHERE
-        interview.scheduled_on = %s and interview.name != %s and interview.docstatus != 2
-        and (interview.job_applicant = %s and detail.interviewer IN %s) and
-        ((from_time < %s and to_time > %s) or
-        (from_time > %s and to_time < %s) or
-        (from_time = %s))
-    """
+    Interview = frappe.qb.DocType("Interview")
+    Detail = frappe.qb.DocType("Interview Detail")
 
-    overlaps = frappe.db.sql(
-        query,
-        (
-        self.scheduled_on,
-        self.name,
-        self.job_applicant,
-        interviewers,
-        self.from_time,
-        self.to_time,
-        self.from_time,
-        self.to_time,
-        self.from_time,
-        ),
+    query = (
+        frappe.qb.from_(Interview)
+        .join(Detail).on(Detail.parent == Interview.name)
+        .select(Interview.name)
+        .where(Interview.scheduled_on == self.scheduled_on)
+        .where(Interview.name != self.name)
+        .where(Interview.docstatus != 2)
+        .where(Interview.job_applicant == self.job_applicant)
+        .where(Detail.interviewer.isin(interviewers))
+        .where(
+            ((Interview.from_time < self.from_time) & (Interview.to_time > self.to_time))
+            | ((Interview.from_time > self.from_time) & (Interview.to_time < self.to_time))
+            | (Interview.from_time == self.from_time)
+        )
     )
+
+    overlaps = query.run()
 
     if overlaps:
         overlapping_details = _("Interview overlaps with {0}").format(
@@ -82,6 +76,7 @@ class InterviewOverride(Interview):
 
 @frappe.whitelist()
 def update_job_applicant_status(args):
+    frappe.only_for(["HR Manager", "HR User", "Recruiter", "Senior Recruiter"])
     try:
         if isinstance(args, str):
             args = json.loads(args)

@@ -7,7 +7,7 @@ from frappe.model.document import Document
 from frappe import _
 import frappe
 from datetime import date
-from frappe.utils import getdate, nowdate
+from frappe.utils import getdate, nowdate, flt, create_batch
 from frappe.model.document import Document
 from dateutil.relativedelta import relativedelta
 
@@ -77,39 +77,95 @@ def get_total_indemnity(date_of_joining, to_date):
         #calculation takes 15 days salary for 5 years and 30 days salary after 5 years         
         return (15 / 365 * five_year_in_days) + (30 / 365 * (total_working_days-five_year_in_days))
 
-def get_per_day_indemnity_amount(date_of_joining, to_date, indemnity_amount = 0):
-    """To Calculate indemnity of the employee per day distributed across one year. 
-    This allows to get the per day calculation to be allocated every day.
-    Args:
-        date_of_joining ([date]): Employee's Joining Date
-        to_date ([data]): up until date
-        indemnity_amount ([currency]): Indemnity Amount from Salary Structure Assignment
-    Returns:
-        amount: Per day indemnity amount
-    """
-    if not indemnity_amount:
-        return 0
+def get_per_day_indemnity_amount(date_of_joining, to_date, indemnity_amount=0):
+	"""To Calculate indemnity of the employee per day distributed across one year.
+	This allows to get the per day calculation to be allocated every day.
+	Args:
+		date_of_joining ([date]): Employee's Joining Date
+		to_date ([data]): up until date
+		indemnity_amount ([currency]): Indemnity Amount from Salary Structure Assignment
+	Returns:
+		amount: Per day indemnity amount
+	"""
+	if not indemnity_amount:
+		return 0.0
 
-    total_working_year = relativedelta(to_date, date_of_joining).years
-    total_working_days = (to_date - date_of_joining).days
-    per_day_amount = indemnity_amount/26
+	total_working_days = (getdate(to_date) - getdate(date_of_joining)).days
+	per_day_amount = flt(indemnity_amount) / 26
 
-    #calculate indemnity per day.
-    if total_working_year < 5:
-        return 15 * per_day_amount / 365
-    elif total_working_year >= 5 and total_working_days > (5*365):
-        return 30 * per_day_amount / 365  
+	# calculate indemnity per day.
+	# If total_working_days <= 5 years (1825 days), use 15 days; otherwise use 30 days.
+	if total_working_days <= 5 * 365:
+		return 15 * per_day_amount / 365
+	else:
+		return 30 * per_day_amount / 365
 
 def allocate_daily_indemnity():
-    # Get List of Indemnity Allocation for today
-    allocation_list = frappe.get_all("Indemnity Allocation", filters={"expired": ["!=", 1]}, fields=["name"])
-    for alloc in allocation_list:
-        allow_allocation = True
-        allocation = frappe.get_doc('Indemnity Allocation', alloc.name)
-        date_of_joining = frappe.get_value("Employee",{"name":allocation.employee},["date_of_joining"])
-        indemnity_amount = frappe.get_value("Salary Structure Assignment",{"employee":allocation.employee},["indemnity_amount"])
+	# Get List of Indemnity Allocation for today
+	allocation_names = frappe.get_all(
+		"Indemnity Allocation",
+		filters={"expired": ["!=", 1], "docstatus": 1},
+		pluck="name"
+	)
 
-        # Set Daily Allocation
-        allocation.new_indemnity_allocated = get_per_day_indemnity_amount(date_of_joining, getdate(nowdate()) , indemnity_amount)
-        allocation.total_indemnity_allocated = allocation.total_indemnity_allocated+allocation.new_indemnity_allocated
-        allocation.save()
+	for batch in create_batch(allocation_names, 200):
+		frappe.enqueue(
+			"one_fm.one_fm.doctype.indemnity_allocation.indemnity_allocation.process_allocation_batch",
+			allocation_names=batch,
+			timeout=600
+		)
+
+def process_allocation_batch(allocation_names):
+	allocations = frappe.get_all(
+		"Indemnity Allocation",
+		filters={"name": ["in", allocation_names]},
+		fields=["name", "employee", "total_indemnity_allocated"]
+	)
+
+	employee_names = [a.employee for a in allocations]
+
+	# Fetch date_of_joining for all employees
+	employees = frappe.get_all(
+		"Employee",
+		filters={"name": ["in", employee_names]},
+		fields=["name", "date_of_joining"]
+	)
+	doj_map = {e.name: e.date_of_joining for e in employees}
+
+	# Fetch latest submitted indemnity_amount from Salary Structure Assignment
+	ssa_list = frappe.get_all(
+		"Salary Structure Assignment",
+		filters={"employee": ["in", employee_names], "docstatus": 1},
+		fields=["employee", "indemnity_amount", "from_date"],
+		order_by="from_date desc"
+	)
+
+	# Map employee to their latest indemnity_amount
+	ssa_map = {}
+	for ssa in ssa_list:
+		if ssa.employee not in ssa_map:
+			ssa_map[ssa.employee] = ssa.indemnity_amount
+
+	today_date = getdate(nowdate())
+
+	for alloc in allocations:
+		doj = doj_map.get(alloc.employee)
+		indemnity_amount = ssa_map.get(alloc.employee, 0)
+
+		if not doj:
+			continue
+
+		new_indemnity = get_per_day_indemnity_amount(doj, today_date, indemnity_amount)
+		total_indemnity = flt(alloc.total_indemnity_allocated) + new_indemnity
+
+		frappe.db.set_value(
+			"Indemnity Allocation",
+			alloc.name,
+			{
+				"new_indemnity_allocated": new_indemnity,
+				"total_indemnity_allocated": total_indemnity
+			},
+			update_modified=True
+		)
+
+	frappe.db.commit()
