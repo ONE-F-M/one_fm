@@ -121,6 +121,26 @@ class GenerateContractComplianceChecker:
 		return frappe.db.count("Post Schedule", filters=filters)
 	
 
+	def get_client_post_off_count(self, project, operation_posts, start_date, end_date):
+		"""Count post schedules with 'Client Post Off' status for given operation posts and date range.
+		
+		Client Post Off days are treated as off days regardless of service type.
+		This count should be deducted from expected schedule counts for compliance calculations.
+		"""
+		if not operation_posts:
+			return 0
+		
+		post_names = [post['name'] for post in operation_posts]
+		filters = {
+			"date": ['BETWEEN', [start_date, end_date]],
+			"project": project,
+			"post": ['in', post_names],
+			"post_status": "Client Post Off"
+		}
+		
+		return frappe.db.count("Post Schedule", filters=filters)
+	
+
 	def get_total_employee_schedule_count(self, operations_roles, start_date, end_date):
 		if not operations_roles:
 			return 0
@@ -310,6 +330,9 @@ class GenerateContractComplianceChecker:
 		if not operations_roles:
 			comment += f"No operations roles created with sale item {contract_data.item_code} in project {contract_data.project}, for contract {contract_data.parent} in items row {contract_data.idx}\n\n"
 
+		# Get operation posts for Client Post Off count
+		operation_posts = self.get_operation_posts(operations_roles, contract_data.project)
+
 		if self._is_checked(getattr(contract_data, "select_specific_days", 0)):
 			total_days = self.count_selected_weekdays_in_period(contract_data, start_date, end_date)
 		else:
@@ -317,6 +340,11 @@ class GenerateContractComplianceChecker:
 
 		working_days_in_period = total_days - contract_data.no_of_days_off
 		expected_schedule_count = working_days_in_period * contract_data.count
+		
+		# Client Post Off must be treated as off days regardless of service type
+		# Deduct Client Post Off count from expected schedules
+		client_post_off_count = self.get_client_post_off_count(contract_data.project, operation_posts, start_date, end_date)
+		expected_schedule_count = max(0, expected_schedule_count - client_post_off_count)
 				
 		actual_schedule_count = self.get_total_employee_schedule_count(operations_roles, start_date, end_date)
 
