@@ -381,15 +381,22 @@ def create_dev_ticket(name, description):
 
 
         url = f"{jira_url}/rest/api/3/issue"
-        response = requests.post(url, headers=headers, json=data, timeout=5)
+        response = requests.post(url, headers=headers, json=data, timeout=10)
+
+
+        # Safe JSON parsing
+        try:
+            resp_json = response.json()
+        except Exception:
+            resp_json = {}
 
         if response.status_code == 201:
-            issue_key = response.json().get("key")
+            issue_key = resp_json.get("key")
             issue_url = f"{jira_url}/browse/{issue_key}"
             doc.db_set('custom_dev_ticket', issue_url)
             return {'status': 'success', 'jira_issue': issue_key}
         else:
-            error_msg = response.json().get("errors") or response.text
+            error_msg = resp_json.get("errors") or response.text
             return {'error': 'Dev Ticket Error', 'message': f"Dev ticket could not be created:\n{error_msg}"}
 
     except Exception as e:
