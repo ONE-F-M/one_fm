@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One-FM Route Manifest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Barlow:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-surface: #161b22;
+            --bg-card: #1c2330;
+            --bg-raised: #21293a;
+            --border: #2d3748;
+            --border-light: #3a4a5c;
+            --accent: #f97316;
+            --accent-dim: rgba(249, 115, 22, 0.15);
+            --accent-glow: rgba(249, 115, 22, 0.08);
+            --green: #22c55e;
+            --green-dim: rgba(34, 197, 94, 0.12);
+            --red: #ef4444;
+            --red-dim: rgba(239, 68, 68, 0.12);
+            --blue: #38bdf8;
+            --blue-dim: rgba(56, 189, 248, 0.12);
+            --purple: #a78bfa;
+            --purple-dim: rgba(167, 139, 250, 0.12);
+            --text: #e2e8f0;
+            --text-muted: #8b99a8;
+            --text-dim: #4a5568;
+            --font-head: 'Barlow Condensed', sans-serif;
+            --font-body: 'Barlow', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 14px;
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            font-family: var(--font-head);
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--accent);
+        }
+
+        .logo span {
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .run-meta {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .summary-pills {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-head);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid;
+        }
+
+        .pill.vehicles {
+            background: var(--blue-dim);
+            border-color: var(--blue);
+            color: var(--blue);
+        }
+
+        .pill.routes {
+            background: var(--green-dim);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .pill.skipped {
+            background: var(--red-dim);
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .pill.cost {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .pill-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* ── LAYOUT ── */
+        .layout {
+            display: flex;
+            height: calc(100vh - 65px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 220px;
+            min-width: 220px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 16px 0;
+        }
+
+        .sidebar-label {
+            font-family: var(--font-head);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            padding: 0 16px 8px;
+            text-transform: uppercase;
+        }
+
+        .vehicle-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px 16px;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+        }
+
+        .vehicle-btn:hover {
+            background: var(--bg-card);
+        }
+
+        .vehicle-btn.active {
+            background: var(--accent-dim);
+            border-left-color: var(--accent);
+        }
+
+        .vehicle-btn-label {
+            font-family: var(--font-head);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: 0.02em;
+            display: block;
+        }
+
+        .vehicle-btn.active .vehicle-btn-label {
+            color: var(--accent);
+        }
+
+        .vehicle-btn-meta {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .vehicle-btn-stops {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        .sidebar-sep {
+            height: 1px;
+            background: var(--border);
+            margin: 10px 16px;
+        }
+
+        .skipped-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 10px 16px;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+            color: var(--text-muted);
+            font-family: var(--font-head);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .skipped-btn:hover {
+            background: var(--bg-card);
+        }
+
+        .skipped-btn.active {
+            background: var(--red-dim);
+            border-left-color: var(--red);
+            color: var(--red);
+        }
+
+        .badge {
+            background: var(--red);
+            color: white;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 32px;
+        }
+
+        /* ── VEHICLE HEADER ── */
+        .vehicle-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .vehicle-title {
+            font-family: var(--font-head);
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .vehicle-subtitle {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .vehicle-stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .stat-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 16px;
+            min-width: 100px;
+        }
+
+        .stat-val {
+            font-family: var(--font-head);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .stat-lbl {
+            font-family: var(--font-body);
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* ── TIMELINE ── */
+        .timeline {
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 22px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--border);
+        }
+
+        .stop {
+            position: relative;
+            padding: 0 0 0 56px;
+            margin-bottom: 6px;
+        }
+
+        .stop-dot {
+            position: absolute;
+            left: 14px;
+            top: 14px;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            background: var(--bg);
+        }
+
+        .stop-dot svg {
+            width: 8px;
+            height: 8px;
+            fill: currentColor;
+        }
+
+        .stop-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px 16px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 12px;
+            transition: border-color 0.15s;
+        }
+
+        .stop-card:hover {
+            border-color: var(--border-light);
+        }
+
+        /* Type colours */
+        .stop.depot .stop-dot {
+            border-color: var(--text-dim);
+            color: var(--text-dim);
+        }
+
+        .stop.pickup .stop-dot {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .stop.pickup .stop-card {
+            border-left: 3px solid var(--green);
+        }
+
+        .stop.dropoff .stop-dot {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .stop.dropoff .stop-card {
+            border-left: 3px solid var(--accent);
+        }
+
+        .stop.end .stop-dot {
+            border-color: var(--text-dim);
+            color: var(--text-dim);
+        }
+
+        .stop-type-tag {
+            font-family: var(--font-head);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 3px;
+            margin-right: 8px;
+            display: inline-block;
+        }
+
+        .tag-pickup {
+            background: var(--green-dim);
+            color: var(--green);
+        }
+
+        .tag-dropoff {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .tag-depot {
+            background: var(--bg-raised);
+            color: var(--text-dim);
+        }
+
+        .tag-return-leg {
+            background: var(--purple-dim);
+            color: var(--purple);
+        }
+
+        .tag-out-leg {
+            background: var(--blue-dim);
+            color: var(--blue);
+        }
+
+        .stop-main {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .stop-title {
+            font-family: var(--font-head);
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--text);
+        }
+
+        .stop-label-raw {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .stop-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .stop-site-location {
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: 8px;
+            letter-spacing: 0;
+        }
+
+        .stop-time {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .stop-load {
+            font-family: var(--font-head);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .load-up {
+            color: var(--green);
+        }
+
+        .load-down {
+            color: var(--accent);
+        }
+
+        .load-zero {
+            color: var(--text-dim);
+        }
+
+        .transit-row {
+            padding: 0 0 0 56px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .transit-line {
+            flex: 1;
+            height: 1px;
+            background: repeating-linear-gradient(90deg,
+                    var(--border) 0, var(--border) 6px,
+                    transparent 6px, transparent 12px);
+        }
+
+        .transit-info {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        /* ── SKIPPED PANEL ── */
+        .skipped-panel {}
+
+        .skipped-title {
+            font-family: var(--font-head);
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--red);
+            margin-bottom: 20px;
+        }
+
+        .skipped-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--red);
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .skipped-label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .skipped-reason {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .skipped-direction {
+            font-family: var(--font-head);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            padding: 3px 8px;
+            border-radius: 3px;
+            white-space: nowrap;
+            align-self: flex-start;
+        }
+
+        /* ── EMPTY ── */
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            color: var(--text-muted);
+        }
+
+        .empty-state h2 {
+            font-family: var(--font-head);
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* ── PRINT ── */
+        @media print {
+
+            .sidebar,
+            .header {
+                display: none;
+            }
+
+            .main {
+                padding: 20px;
+                overflow: visible;
+            }
+
+            .layout {
+                height: auto;
+            }
+
+            body {
+                background: white;
+                color: black;
+            }
+
+            .stop-card,
+            .stat-box {
+                border-color: #ccc;
+                background: white;
+            }
+        }
+
+        .stop-employees {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 5px;
+        }
+
+        .emp-chip {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-muted);
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 2px 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script>
+
+        function fmtTime(isoStr) {
+            if (!isoStr) return "—";
+            const d = new Date(isoStr);
+            return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kuwait" });
+        }
+
+        function fmtDuration(secStr) {
+            if (!secStr) return "";
+            const s = parseInt(secStr.replace("s", ""), 10);
+            if (isNaN(s) || s === 0) return "";
+            if (s < 60) return `${s}s`;
+            if (s < 3600) return `${Math.round(s / 60)}m`;
+            const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+            return m ? `${h}h ${m}m` : `${h}h`;
+        }
+
+        function fmtKm(m) {
+            return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
+        }
+
+        function parseLabel(label) {
+            // Pattern: {acc}_{shift}_{location}_{OUTBOUND|RETURN}
+            const parts = label.split("_");
+            const direction = parts[parts.length - 1]; // OUTBOUND or RETURN
+            const location = parts.slice(0, -1).join("_").split("_").slice(2).join(" ");
+            const acc = parts[0];
+            return { acc, location, direction, raw: label };
+        }
+
+        function seatsLoad(demands) {
+            if (!demands) return 0;
+            const raw = demands.seats?.amount ?? "0";
+            return parseInt(raw, 10) || 0;
+        }
+
+        function buildRoute(route, shipments, vehicles) {
+            const vidx = route.vehicleIndex ?? 0;
+            const vehicle = vehicles[vidx] ?? {};
+            const label = route.vehicleLabel ?? vehicle.label ?? `Vehicle ${vidx}`;
+            const startLoc = vehicle.startLocation;
+            const vehicleMeta = (ROUTE_DATA.vehicleMeta ?? {})[label] ?? {};  // ← add this
+
+            let currentLoad = 0;
+            const visits = route.visits ?? [];
+            const trans = route.transitions ?? [];
+            const stops = [];
+
+            // ── Depot START ──
+            stops.push({
+                type: "depot",
+                time: route.vehicleStartTime,
+                title: vehicleMeta.accommodation || vehicleMeta.location || "Depot / Garage",
+                depotNote: "Vehicle start location - Employee pick-up starts here",
+                subtitle: startLoc
+                    ? `${startLoc.latitude.toFixed(4)}, ${startLoc.longitude.toFixed(4)}`
+                    : "Start location",
+                load: 0,
+                transition: trans[0]
+            });
+
+            visits.forEach((v, i) => {
+                const shipment = shipments[v.shipmentIndex] ?? {};
+                const isRest = (shipment.label ?? "").endsWith("_REST");
+                const isPickup = v.isPickup !== false;
+                const delta = seatsLoad(v.loadDemands);
+                currentLoad += delta;
+
+                const parsed = parseLabel(shipment.label ?? "Unknown");
+                const visitReq = isPickup
+                    ? (shipment.pickups?.[0] ?? {})
+                    : (shipment.deliveries?.[0] ?? {});
+                const coords = visitReq.arrivalLocation;
+
+                stops.push({
+                    type: isPickup ? "pickup" : "dropoff",
+                    isRest: isRest,
+                    time: v.startTime,
+                    title: isRest ? `Rest at ${vehicleMeta.accommodation || vehicleMeta.location || "Depot"}` : (shipmentSiteLocations[parsed.raw] || parsed.location || shipment.label), subtitle: coords ? `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}` : "",
+                    direction: parsed.direction,
+                    acc: parsed.acc,
+                    raw: parsed.raw,
+                    load: currentLoad,
+                    delta: delta,
+                    transition: trans[i + 1]
+                });
+            });
+
+            // ── Depot END ──
+            stops.push({
+                type: "end",
+                time: route.vehicleEndTime,
+                title: `Return to ${vehicleMeta.accommodation || vehicleMeta.location || "Depot"}`,
+                load: 0
+            });
+
+            return { label, stops, route, vehicle };
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  RENDER
+        // ════════════════════════════════════════════════════════════════════
+
+        let activeView = null;
+        let shipmentEmployees = {};
+        let shipmentSiteLocations = {};  // ← new
+        let shipmentShiftNames = {};
+
+        function init() {
+            const req = ROUTE_DATA.request;
+            const res = ROUTE_DATA.response;
+            const shipments = req.model.shipments ?? [];
+            const vehicles = req.model.vehicles ?? [];
+            const routes = res.routes ?? [];
+            const skipped = res.skippedShipments ?? [];
+            const metrics = res.metrics ?? {};
+
+            shipmentEmployees = ROUTE_DATA.shipmentEmployees ?? {};
+            shipmentSiteLocations = ROUTE_DATA.shipmentSiteLocations ?? {};  // ← new
+            shipmentShiftNames = ROUTE_DATA.shipmentShiftNames ?? {};
+
+            // Build parsed routes
+            const parsed = routes.map(r => buildRoute(r, shipments, vehicles));
+
+            // Header summary
+            document.getElementById("pill-vehicles").textContent = vehicles.length + " Vehicles";
+            document.getElementById("pill-routes").textContent = parsed.length + " Active";
+            document.getElementById("pill-skipped").textContent = skipped.length + " Skipped";
+            const cost = metrics.totalCost ?? metrics.aggregatedRouteMetrics?.totalCost ?? 0;
+            document.getElementById("pill-cost").textContent = cost
+                ? "KD " + Number(cost).toLocaleString("en-KW", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : "—";
+
+            // Detect run date from first visit
+            const firstTime = routes[0]?.vehicleStartTime ?? req.model.globalStartTime;
+            if (firstTime) {
+                const d = new Date(firstTime);
+                document.getElementById("run-meta").textContent =
+                    d.toLocaleDateString("en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kuwait" })
+                    + " · Kuwait Time";
+            }
+
+            // Sidebar
+            const sidebar = document.getElementById("sidebar-routes");
+            sidebar.innerHTML = "";
+
+            parsed.forEach((pr, idx) => {
+                const m = pr.route.metrics ?? {};
+                const meta = (ROUTE_DATA.vehicleMeta ?? {})[pr.label] ?? {};
+                const btn = document.createElement("button");
+                btn.className = "vehicle-btn";
+                const stopCount = (pr.route.visits ?? []).length;
+                const dist = m.travelDistanceMeters ? fmtKm(m.travelDistanceMeters) : "";
+                const dur = m.totalDuration ? fmtDuration(m.totalDuration) : "";
+                btn.innerHTML = `
+      <span class="vehicle-btn-label">${pr.label}</span>
+      <span class="vehicle-btn-meta">${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)}</span>
+      <span class="vehicle-btn-stops">
+        <span>${stopCount} stops</span>
+        ${dist ? `<span>·</span><span>${dist}</span>` : ""}
+        ${dur ? `<span>·</span><span>${dur}</span>` : ""}
+      </span>
+      ${meta.driver ? `<span class="vehicle-btn-meta" style="margin-top:5px;color:var(--text-muted)">👤 ${meta.driver}</span>` : ""}
+      ${meta.make || meta.type ? `<span class="vehicle-btn-meta">${[meta.make, meta.type].filter(Boolean).join(' · ')}</span>` : ""}
+      ${meta.seats ? `<span class="vehicle-btn-meta">🪑 ${meta.seats} seats</span>` : ""}
+    `;
+                btn.addEventListener("click", () => {
+                    document.querySelectorAll(".vehicle-btn").forEach(b => b.classList.remove("active"));
+                    document.querySelectorAll(".skipped-btn").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    renderRoute(pr);
+                });
+                sidebar.appendChild(btn);
+                if (idx === 0) {
+                    btn.classList.add("active");
+                    activeView = pr;
+                }
+            });
+
+            // Skipped button
+            if (skipped.length > 0) {
+                const sep = document.createElement("div");
+                sep.className = "sidebar-sep";
+                sidebar.appendChild(sep);
+
+                const sk = document.createElement("button");
+                sk.className = "skipped-btn";
+                sk.innerHTML = `⚠ Skipped <span class="badge">${skipped.length}</span>`;
+                sk.addEventListener("click", () => {
+                    document.querySelectorAll(".vehicle-btn").forEach(b => b.classList.remove("active"));
+                    document.querySelectorAll(".skipped-btn").forEach(b => b.classList.remove("active"));
+                    sk.classList.add("active");
+                    renderSkipped(skipped);
+                });
+                sidebar.appendChild(sk);
+            }
+
+            // Render first vehicle
+            if (parsed.length > 0) {
+                renderRoute(parsed[0]);
+            } else {
+                document.getElementById("main").innerHTML = `
+      <div class="empty-state">
+        <h2>No routes found</h2>
+        <p>The API returned no routes. Check the solvingMode and constraints,<br>or examine the skippedShipments section.</p>
+      </div>`;
+            }
+        }
+
+        function stopDotSVG(type) {
+            if (type === "pickup") return `<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>`;
+            if (type === "dropoff") return `<svg viewBox="0 0 10 10"><path d="M5 1l4 8H1z"/></svg>`;
+            return `<svg viewBox="0 0 10 10"><rect x="2" y="2" width="6" height="6"/></svg>`;
+        }
+
+        function renderRoute(pr) {
+            const m = pr.route.metrics ?? {};
+            const totalShipments = Math.ceil((pr.route.visits ?? []).length / 2);
+            const dist = m.travelDistanceMeters ? fmtKm(m.travelDistanceMeters) : "—";
+            const dur = m.totalDuration ? fmtDuration(m.totalDuration) : "—";
+            const trav = m.travelDuration ? fmtDuration(m.travelDuration) : "—";
+            const meta = (ROUTE_DATA.vehicleMeta ?? {})[pr.label] ?? {};
+            const metaStats = `
+    ${meta.driver ? `<div class="stat-box"><div class="stat-val" style="font-size:15px">${meta.driver}</div><div class="stat-lbl">Driver</div></div>` : ""}
+    ${meta.make ? `<div class="stat-box"><div class="stat-val" style="font-size:15px">${meta.make}</div><div class="stat-lbl">Make</div></div>` : ""}
+    ${meta.type ? `<div class="stat-box"><div class="stat-val" style="font-size:15px">${meta.type}</div><div class="stat-lbl">Type</div></div>` : ""}
+    ${meta.seats ? `<div class="stat-box"><div class="stat-val">${meta.seats}</div><div class="stat-lbl">Seats</div></div>` : ""}
+  `;
+
+            let html = `
+  <div class="vehicle-header">
+    <div>
+      <div class="vehicle-title">${pr.label}</div>
+      <div class="vehicle-subtitle">${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)}</div>
+    </div>
+      <div class="vehicle-stats">
+        <div class="stat-box">
+          <div class="stat-val">${totalShipments}</div>
+          <div class="stat-lbl">Shipments</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${dist}</div>
+          <div class="stat-lbl">Distance</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${dur}</div>
+          <div class="stat-lbl">Total Time</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${trav}</div>
+          <div class="stat-lbl">Drive Time</div>
+        </div>
+        ${metaStats}
+      </div>
+  </div>
+  <div class="timeline">`;
+
+            pr.stops.forEach((stop, idx) => {
+                const isFirst = idx === 0;
+                const isLast = idx === pr.stops.length - 1;
+                const siteLocation = shipmentSiteLocations[stop.raw] ?? "";
+
+                // Stop dot
+                const dot = stop.type === "depot" || stop.type === "end" ? "depot" : stop.type;
+
+                // Tags
+                let tags = "";
+                if (stop.isRest) {
+                    tags += `<span class="stop-type-tag tag-depot">REST</span>`;
+                }
+                if (stop.type === "pickup") {
+                    tags += `<span class="stop-type-tag tag-pickup">PICK UP</span>`;
+                } else if (stop.type === "dropoff") {
+                    tags += `<span class="stop-type-tag tag-dropoff">DROP OFF</span>`;
+                } else if (isFirst) {
+                    tags += `<span class="stop-type-tag tag-depot">DEPART</span>`;
+                } else if (isLast) {
+                    tags += `<span class="stop-type-tag tag-depot">RETURN</span>`;
+                }
+                if (stop.direction === "OUTBOUND") {
+                    tags += `<span class="stop-type-tag tag-out-leg">TO SITE</span>`;
+                } else if (stop.direction === "RETURN") {
+                    tags += `<span class="stop-type-tag tag-return-leg">FROM SITE</span>`;
+                }
+
+                // Load display
+                let loadHtml = "";
+                if (stop.type === "pickup" && stop.delta) {
+                    loadHtml = `<div class="stop-load load-up">+${stop.delta} picked up → ${stop.load} total</div>`;
+                } else if (stop.type === "dropoff" && stop.delta) {
+                    loadHtml = `<div class="stop-load load-down">${stop.delta} dropped off → ${stop.load} onboard</div>`;
+                } else if (stop.load === 0 && (stop.type === "depot" || stop.type === "end")) {
+                    loadHtml = `<div class="stop-load load-zero">0 onboard</div>`;
+                }
+
+                html += `
+    <div class="stop ${stop.type}">
+      <div class="stop-dot">${stopDotSVG(dot)}</div>
+      <div class="stop-card">
+        <div class="stop-main">
+          <div>${tags}</div>
+          <div class="stop-title">
+            ${stop.title}
+          </div>
+          ${stop.depotNote ? `<div class="stop-label-raw" style="color:var(--green)">${stop.depotNote}</div>` : ""}
+          ${shipmentShiftNames[stop.raw] && !stop.isRest && stop.type !== "depot" && stop.type !== "end"
+                        ? `<div class="stop-label-raw" style="color:var(--text-muted)">${shipmentShiftNames[stop.raw]}</div>`
+                        : ""}
+          ${stop.acc && stop.type !== "depot" && stop.type !== "end"
+                        ? `<div class="stop-label-raw">
+       ${stop.direction === "RETURN" && stop.type === "dropoff"
+                            ? `⬇ Dropping off at ${stop.acc}`
+                            : stop.acc}
+             </div>`
+                        : (stop.subtitle ? `<div class="stop-label-raw">${stop.subtitle}</div>` : "")}
+          ${(shipmentEmployees[stop.raw] ?? []).length
+                        ? `<div class="stop-employees">
+                ${shipmentEmployees[stop.raw].map(n => `<span class="emp-chip">${n}</span>`).join("")}
+              </div>`
+                        : ""}
+        </div>
+        <div class="stop-right">
+          <div class="stop-time">${fmtTime(stop.time)}</div>
+          ${loadHtml}
+        </div>
+      </div>
+    </div>`;
+
+                // Transit row between stops
+                if (stop.transition && idx < pr.stops.length - 1) {
+                    const t = stop.transition;
+                    const d = fmtDuration(t.travelDuration);
+                    const w = fmtDuration(t.waitDuration);
+                    const km = t.travelDistanceMeters ? fmtKm(t.travelDistanceMeters) : "";
+                    const parts = [];
+                    if (d) parts.push(`🚌 ${d}`);
+                    if (km) parts.push(km);
+                    if (w && w !== "0s") parts.push(`⏳ wait ${w}`);
+                    html += `
+        <div class="transit-row">
+          <div class="transit-line"></div>
+          <div class="transit-info">${parts.join(" · ") || "—"}</div>
+          <div class="transit-line"></div>
+        </div>`;
+                }
+            });
+
+            html += `</div>`;
+            document.getElementById("main").innerHTML = html;
+        }
+
+        function renderSkipped(skipped) {
+            let html = `<div class="skipped-panel"><div class="skipped-title">⚠ Skipped Shipments (${skipped.length})</div>`;
+            skipped.forEach(s => {
+                const parsed = s.label ? parseLabel(s.label) : null;
+                const reasons = (s.reasons ?? []).map(r => r.code ?? r.exampleVehicleIndex ?? JSON.stringify(r)).join(", ");
+                const dirTag = parsed
+                    ? `<span class="skipped-direction ${parsed.direction === "OUTBOUND" ? "tag-out-leg" : "tag-return-leg"}">${parsed.direction}</span>`
+                    : "";
+                html += `
+      <div class="skipped-item">
+        <div>
+          <div class="skipped-label">${s.label ?? "Unlabelled shipment"}</div>
+          <div class="skipped-reason">${reasons || "No reason provided"}</div>
+        </div>
+        ${dirTag}
+      </div>`;
+            });
+            html += `</div>`;
+            document.getElementById("main").innerHTML = html;
+        }
+
+        window.addEventListener("DOMContentLoaded", init);
+    </script>
+
+    <!-- ──────────────────────────── HTML ──────────────────────────── -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">ONE-FM <span>/ Route Manifest</span></div>
+            <div class="run-meta" id="run-meta">—</div>
+        </div>
+        <div class="summary-pills">
+            <div class="pill vehicles"><span class="pill-dot"></span><span id="pill-vehicles">—</span></div>
+            <div class="pill routes"><span class="pill-dot"></span><span id="pill-routes">—</span></div>
+            <div class="pill skipped"><span class="pill-dot"></span><span id="pill-skipped">0 Skipped</span></div>
+            <div class="pill cost"><span class="pill-dot"></span><span id="pill-cost">—</span></div>
+        </div>
+    </div>
+
+    <div class="layout">
+        <nav class="sidebar">
+            <div class="sidebar-label">Vehicles</div>
+            <div id="sidebar-routes"></div>
+        </nav>
+        <main class="main" id="main"></main>
+    </div>
+
+</body>
+
+</html>

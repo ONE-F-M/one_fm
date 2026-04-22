@@ -1,0 +1,168 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-03-31 15:18:08.301394",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "process_name",
+  "column_break_qnqv",
+  "process_owner_user",
+  "business_analyst_user",
+  "column_break_weop",
+  "request_date",
+  "status",
+  "section_break_hrhg",
+  "requirement_summary",
+  "column_break_nurt",
+  "hd_ticket",
+  "column_break_nqzg",
+  "section_break_svqa",
+  "requirement_details"
+ ],
+ "fields": [
+  {
+   "default": "PBR-PCR-.YYYY.-.MM.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "PBR-PCR-.YYYY.-.MM.-",
+   "read_only": 1
+  },
+  {
+   "description": "Only the processes that have gone through Pathfinder are listed. If your process is not listed in the options, select \"Others\".",
+   "fieldname": "process_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Process Name",
+   "options": "Process"
+  },
+  {
+   "fieldname": "column_break_qnqv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "process_name.process_owner",
+   "fieldname": "process_owner_user",
+   "fieldtype": "Link",
+   "label": "Process Owner User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "process_name.business_analyst",
+   "fieldname": "business_analyst_user",
+   "fieldtype": "Link",
+   "label": "Business Analyst User",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_weop",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "request_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Request Date"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Open\nClosed"
+  },
+  {
+   "fieldname": "section_break_hrhg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Describe what is required to be done in one short sentence.",
+   "fieldname": "requirement_summary",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Requirement Summary"
+  },
+  {
+   "fieldname": "column_break_nurt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "hd_ticket",
+   "fieldtype": "Link",
+   "label": "HD Ticket",
+   "options": "HD Ticket",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_nqzg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_svqa",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "requirement_details",
+   "fieldtype": "Text Editor",
+   "label": "Requirement Details"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-03-31 18:10:11.638261",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Process Change Request",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Process Owner",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Business Analyst",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

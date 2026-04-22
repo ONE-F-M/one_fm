@@ -18,6 +18,8 @@
   "column_break_tusm",
   "day_off_reliever_default_shift_checker_threshold",
   "weekend_reliever_default_shift_checker_threshold",
+  "contracts_notification_section",
+  "notify_contract_expiry_users",
   "section_break_2",
   "zenquote_keyword_category",
   "zenquotes_api_key",
@@ -235,12 +237,24 @@
    "fieldtype": "Int",
    "label": "Day Off Reliever Default Shift Checker Threshold ",
    "reqd": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "contracts_notification_section",
+   "fieldtype": "Section Break",
+   "label": "Contracts Notification"
+  },
+  {
+   "fieldname": "notify_contract_expiry_users",
+   "fieldtype": "Table MultiSelect",
+   "label": "Notify Contract Expiry Users",
+   "options": "Action User"
   }
  ],
  "grid_page_length": 50,
  "issingle": 1,
  "links": [],
- "modified": "2026-02-19 16:57:43.493790",
+ "modified": "2026-03-16 12:54:32.000729",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

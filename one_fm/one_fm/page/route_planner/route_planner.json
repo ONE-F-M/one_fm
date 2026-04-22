@@ -1,0 +1,13 @@
+{
+    "doctype": "Page",
+    "module": "One FM",
+    "name": "route-planner",
+    "page_name": "route-planner",
+    "standard": "Yes",
+    "title": "Route Planner",
+    "roles": [
+        {
+            "role": "System Manager"
+        }
+    ]
+}

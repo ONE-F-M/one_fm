@@ -50,6 +50,11 @@ class EmployeeSchedule(Document):
 			if employee_schedule:
 				frappe.db.set_value("Employee Schedule", employee_schedule.name, "day_off_ot", 0)
 
+		if self.employee_availability == "Suspended":
+			ot_schedules = frappe.get_all("Employee Schedule", filters={"employee": self.employee, "date": self.date, "roster_type": "Over-Time"})
+			for ot in ot_schedules:
+				frappe.delete_doc("Employee Schedule", ot.name, ignore_permissions=True)
+
 	def validate(self):
 		self.validate_ojt_change()
 		self.validate_leave_application()
@@ -62,9 +67,9 @@ class EmployeeSchedule(Document):
 			self.start_datetime = f"{self.date} {start_time}"
 			self.end_datetime = f"{end_date} {end_time}"
 
-		# clear record if Day Off
-		if self.employee_availability=='Day Off':
-			self.operations_role==''
+		# clear record if Day Off or Suspended
+		if self.employee_availability in ['Day Off', 'Suspended']:
+			self.operations_role = ''
 			self.post_abbrv = ''
 			self.site = ''
 			self.shift = ''

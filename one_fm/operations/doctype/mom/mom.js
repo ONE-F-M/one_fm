@@ -96,6 +96,7 @@ frappe.ui.form.on('MOM', {
 		if (!check_roles()){
 			set_project_query_for_non_project_manager(frm);
 		}
+		lock_poc_attendance_table(frm);
 	},
 	validate: function (frm){
 		if (frm.is_new()){
@@ -125,6 +126,41 @@ var check_roles = () => {
 	const rolesToCheck = ["Projects Manager", "Site Supervisor"];
 	const hasRole = rolesToCheck.some(role => frappe.user_roles.includes(role));
 	return hasRole
+}
+
+/**
+ * Locks the "POC Attendance" (attendees) child table so that:
+ *   - The "Add Row" / "Add Multiple Rows" buttons are hidden.
+ *   - Existing rows cannot be deleted (no delete button per row).
+ *   - Header "select-all" checkbox and bulk Delete button are hidden.
+ * The "General Attendance" table is intentionally left untouched.
+ */
+var lock_poc_attendance_table = (frm) => {
+	const grid = frm.fields_dict["attendees"] && frm.fields_dict["attendees"].grid;
+	if (!grid) return;
+
+	// Prevent adding new rows programmatically
+	grid.cannot_add_rows = true;
+
+	// Prevent deleting existing rows programmatically
+	grid.cannot_delete_rows = true;
+
+	// Refresh so Frappe redraws the grid with the flags applied, then hide UI remnants
+	grid.refresh();
+
+	const $wrapper = grid.wrapper;
+
+	// Hide "Add Row" / "Add Multiple Rows" buttons
+	$wrapper.find(".grid-add-row, .grid-add-multiple-rows").addClass("hidden");
+
+	// Hide header-level "select all" checkbox (first col in heading row)
+	$wrapper.find(".grid-heading-row .col-xs-1").addClass("hidden");
+
+	// Hide the bulk Delete button shown at the grid footer
+	$wrapper.find(".grid-footer .btn-bulk-delete, .grid-footer .btn.btn-danger").addClass("hidden");
+
+	// Hide per-row checkboxes and move handles (belt-and-suspenders)
+	$wrapper.find(".col-move, .row-check").addClass("hidden");
 }
 
 

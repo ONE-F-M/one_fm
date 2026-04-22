@@ -67,7 +67,24 @@ var transfer_accommodation_dialoge = function(frm) {
 	var dialog = new frappe.ui.Dialog({
 		title: 'Transfer Accommodation',
 		fields: [
-			{fieldtype: "Link", label: "Accommodation", fieldname: "accommodation", read_only: 1, options: "Accommodation"},
+			{
+				fieldtype: "Check",
+				label: __("Transfer Out of Current Accommodation"),
+				fieldname: "transfer_out_of_current",
+				onchange: function() {
+					var transfer_out = dialog.get_value("transfer_out_of_current");
+					// Toggle accommodation field read-only state based on checkbox
+					dialog.set_df_property("accommodation", "read_only", transfer_out ? 0 : 1);
+					// When switching off, reset accommodation and clear dependent fields to keep state consistent
+					if (!transfer_out) {
+						dialog.set_value("accommodation", frm.doc.accommodation || "");
+						["floor", "unit", "space", "bed"].forEach(function(fieldname) {
+							dialog.set_value(fieldname, "");
+						});
+					}
+				}
+			},
+			{fieldtype: "Link", label: __("Accommodation"), fieldname: "accommodation", read_only: 1, options: "Accommodation"},
 			{fieldtype: "Link", label: "Floor", fieldname: "floor", reqd: 1, options: "Floor",
 				get_query: function(){
 					return {

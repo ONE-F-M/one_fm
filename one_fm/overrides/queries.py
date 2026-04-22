@@ -14,12 +14,8 @@ def warehouse_query(doctype, txt, searchfield, start, page_len, filters, as_dict
     searchfields = frappe.get_meta(doctype).get_search_fields()
     searchfields = " or ".join(field + " like %(txt)s" for field in searchfields)
 
-    '''
-        Converting user_roles to a set will make the membership checks faster because
-        sets have constant time lookup complexity, whereas lists have linear time lookup complexity.
-        This means that checking for membership in a set is much faster than checking for membership in a list,
-        especially for larger lists.
-    '''
+    # Using a set for user_roles makes membership checks O(1) instead of O(n),
+    # which is significantly faster when checking many roles.
     user_roles = set(frappe.get_roles(frappe.session.user))
     role_list = [item['role'] for item in frappe.get_all("Warehouse Full Access Role", fields = ['role'], filters = {'parenttype': 'Additional Stock Settings'})]
 
@@ -36,12 +32,12 @@ def warehouse_query(doctype, txt, searchfield, start, page_len, filters, as_dict
         from
             `tabWarehouse`
         where
-            docstatus < 2 and is_group=0
+            docstatus < 2
             {store_keeper_condition}
             and ({scond}) and disabled=0
             {fcond} {mcond}
         order by
-            idx desc, name, warehouse_name
+            is_group asc, idx desc, name, warehouse_name
         limit %(page_len)s offset %(start)s
     '''
 

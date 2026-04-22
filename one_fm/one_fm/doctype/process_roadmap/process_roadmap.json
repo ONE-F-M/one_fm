@@ -1,0 +1,126 @@
+{
+	"actions": [],
+	"allow_copy": 0,
+	"allow_import": 0,
+	"allow_rename": 1,
+	"autoname": "naming_series:",
+	"creation": "2026-04-14 10:30:59.524626",
+	"doctype": "DocType",
+	"editable_grid": 0,
+	"engine": "InnoDB",
+	"field_order": [
+		"date",
+		"column_break_wgby",
+		"column_break_aawr",
+		"attendance_section",
+		"meeting_attendee",
+		"section_break_khgr",
+		"summary",
+		"section_break_mmjt",
+		"naming_series",
+		"column_break_txpe",
+		"amended_from",
+		"column_break_drfj"
+	],
+	"fields": [
+		{
+			"default": "Today",
+			"fieldname": "date",
+			"fieldtype": "Date",
+			"label": "Date"
+		},
+		{
+			"fieldname": "column_break_wgby",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "column_break_aawr",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "attendance_section",
+			"fieldtype": "Section Break",
+			"label": "Attendance"
+		},
+		{
+			"fieldname": "meeting_attendee",
+			"fieldtype": "Table",
+			"label": "Meeting Attendee",
+			"options": "Meeting Attendee",
+			"reqd": 1
+		},
+		{
+			"fieldname": "section_break_khgr",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fieldname": "summary",
+			"fieldtype": "Text Editor",
+			"label": "Summary"
+		},
+		{
+			"fieldname": "section_break_mmjt",
+			"fieldtype": "Section Break",
+			"label": "More Information"
+		},
+		{
+			"default": "PBR-PR-.YYYY.-.MM.-",
+			"fieldname": "naming_series",
+			"fieldtype": "Select",
+			"label": "Naming Series",
+			"options": "PBR-PR-.YYYY.-.MM.-",
+			"read_only": 1
+		},
+		{
+			"fieldname": "column_break_txpe",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "amended_from",
+			"fieldtype": "Link",
+			"label": "Amended From",
+			"no_copy": 1,
+			"options": "Process Roadmap",
+			"print_hide": 1,
+			"read_only": 1,
+			"search_index": 1
+		},
+		{
+			"fieldname": "column_break_drfj",
+			"fieldtype": "Column Break"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"is_submittable": 1,
+	"istable": 0,
+	"links": [],
+	"modified": "2026-04-14 10:59:43.439309",
+	"modified_by": "Administrator",
+	"module": "One Fm",
+	"name": "Process Roadmap",
+	"naming_rule": "By \"Naming Series\" field",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"cancel": 0,
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"if_owner": 0,
+			"import": 0,
+			"permlevel": 0,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"submit": 1,
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_changes": 0
+}

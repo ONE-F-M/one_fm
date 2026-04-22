@@ -591,29 +591,45 @@ def get_github_api_token(user=None):
     return token
 
 @frappe.whitelist()
-def create_pathfinder_log(hd_ticket_name):
+def create_process_change_request(hd_ticket_name):
+    """Create a Process Change Request from an HD Ticket."""
     user_roles = frappe.get_roles()
     if "Business Analyst" not in user_roles and "Process Owner" not in user_roles:
-        frappe.throw(_("You are not authorized to create a Pathfinder Log."), title=_("Permission Denied"))
-
-    existing_log = frappe.db.exists("Pathfinder Log", {"hd_ticket": hd_ticket_name})
-    if existing_log:
-        log_url = frappe.utils.get_url_to_form("Pathfinder Log", existing_log)
         frappe.throw(
-            _("Pathfinder Log already exists for this HD Ticket: <a href='{0}'>{1}</a>").format(
-                log_url, existing_log
+            _("You are not authorized to create a Process Change Request."),
+            title=_("Permission Denied"),
+        )
+
+    # Duplication check — block if a PCR already exists for this ticket
+    existing_pcr = frappe.db.exists("Process Change Request", {"hd_ticket": hd_ticket_name})
+    if existing_pcr:
+        pcr_url = frappe.utils.get_url_to_form("Process Change Request", existing_pcr)
+        frappe.throw(
+            _("Process Change Request already exists for this HD Ticket: <a href='{0}'>{1}</a>").format(
+                pcr_url, existing_pcr
             ),
-            title=_("Exists")
+            title=_("Exists"),
         )
 
     hd_ticket = frappe.get_doc("HD Ticket", hd_ticket_name)
-    pathfinder_log = frappe.new_doc("Pathfinder Log")
-    pathfinder_log.process_name = hd_ticket.custom_process
-    pathfinder_log.goal_description = hd_ticket.description
-    pathfinder_log.hd_ticket = hd_ticket.name
-    pathfinder_log.flags.ignore_mandatory = True
-    pathfinder_log.save(ignore_permissions=True)
-    return pathfinder_log.name
+
+    # Validate ticket type allows PCR creation
+    initiate_pcr = frappe.db.get_value(
+        "HD Ticket Type", hd_ticket.ticket_type, "initiate_process_change_request"
+    )
+    if not initiate_pcr:
+        frappe.throw(_("This ticket type does not allow Process Change Request creation."))
+
+    pcr = frappe.new_doc("Process Change Request")
+    pcr.process_name = hd_ticket.custom_process
+    pcr.requirement_summary = hd_ticket.subject
+    pcr.requirement_details = hd_ticket.description
+    pcr.hd_ticket = hd_ticket.name
+    pcr.request_date = frappe.utils.today()
+    pcr.status = "Open"
+    pcr.flags.ignore_mandatory = True
+    pcr.save(ignore_permissions=True)
+    return pcr.name
 
 @frappe.whitelist()
 def get_filtered_processes(doctype_name=None, is_doctype_related="No"):

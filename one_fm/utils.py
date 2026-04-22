@@ -3664,10 +3664,10 @@ def get_sender_email() -> str | None:
 
 @frappe.whitelist()
 def send_birthday_reminders():
-    """Send Employee birthday reminders if no 'Stop Birthday Reminders' is not set."""
+    """Send employee birthday reminders when birthday reminders are enabled."""
     from hrms.controllers.employee_reminders import send_birthday_reminder, get_employees_who_are_born_today, get_birthday_reminder_text_and_message
 
-    to_send = int(frappe.db.get_single_value("HR Settings", "send_birthday_reminders")) or is_scheduler_emails_enabled()
+    to_send = cint(frappe.db.get_single_value("HR Settings", "send_birthday_reminders")) or is_scheduler_emails_enabled()
     if not to_send:
         return
 
@@ -3725,9 +3725,9 @@ def get_users_for_reminders(birthday=False, anniversary=False, user_id=False):
 
 @frappe.whitelist()
 def send_work_anniversary_reminders():
-    from hrms.controllers.employee_reminders import send_work_anniversary_reminder, get_employees_having_an_event_today,get_work_anniversary_reminder_text
     """Send Employee Work Anniversary Reminders if 'Send Work Anniversary Reminders' is checked"""
-    to_send = int(frappe.db.get_single_value("HR Settings", "send_work_anniversary_reminders")) or is_scheduler_emails_enabled()
+    from hrms.controllers.employee_reminders import send_work_anniversary_reminder, get_employees_having_an_event_today,get_work_anniversary_reminder_text
+    to_send = cint(frappe.db.get_single_value("HR Settings", "send_work_anniversary_reminders")) or is_scheduler_emails_enabled()
     if not to_send:
         return
 
@@ -4562,6 +4562,15 @@ def create_process_task(process_name, erp_document, task_description, process_de
     if frequency == "Cron" and not cron_format:
         frappe.throw("Please provide a valid cron format for the task frequency.")
 
+    employee_data = frappe.db.get_value("Employee", employee, ["employee_name", "user_id", "department"], as_dict=True)
+    employee_name = ""
+    employee_user = ""
+    department = ""
+    if employee_data:
+        employee_name = employee_data.employee_name
+        employee_user = employee_data.user_id
+        department = employee_data.department
+
     return frappe.get_doc({
         "naming_series": "P-TASK-.YYYY.-",
         "process_name": process_name,
@@ -4578,6 +4587,9 @@ def create_process_task(process_name, erp_document, task_description, process_de
         "hours_per_frequency": 0.0,
         "coordination_needed": "No",
         "employee": employee,
+        "employee_name": employee_name,
+        "employee_user": employee_user,
+        "department": department,
         "start_date": today(),
         "report_frequency": "",
         "doctype": "Process Task",

@@ -1,0 +1,615 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-04-14 08:49:08.155854",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_mbv7",
+  "naming_series",
+  "job_offer",
+  "job_applicant",
+  "column_break_vujs",
+  "request_date",
+  "job_applicant_full_name",
+  "agency",
+  "applicant_details_section",
+  "first_name",
+  "second_name",
+  "third_name",
+  "last_name",
+  "first_name_in_arabic",
+  "second_name_in_arabic",
+  "third_name_in_arabic",
+  "last_name_in_arabic",
+  "column_break_kupi",
+  "nationality",
+  "gender",
+  "religion",
+  "place_of_birth",
+  "marital_status",
+  "designation",
+  "pam_designation",
+  "salary_details_section",
+  "salary_type",
+  "column_break_lzkz",
+  "work_permit_salary",
+  "educational_qualification_details_section",
+  "educational_qualification",
+  "education_specialization",
+  "column_break_rlpq",
+  "university",
+  "place_of_study",
+  "passport_details_section",
+  "passport_number",
+  "passport_holder_of",
+  "place_of_issue",
+  "column_break_wims",
+  "passport_issued_on",
+  "passport_expires_on",
+  "attachments",
+  "passport_copy",
+  "column_break_sqvj",
+  "driver_license",
+  "column_break_byjf",
+  "payment_receipt",
+  "column_break_wjxj",
+  "visa_document",
+  "rejection_remarks_section",
+  "column_break_cpvu",
+  "operator_rejection_remark",
+  "grd_manager_remark",
+  "column_break_jdrk",
+  "pam_rejection_remark",
+  "moi_rejection_remark",
+  "pam_details_section",
+  "pam_reference_number",
+  "column_break_gvey",
+  "pam_remarks",
+  "column_break_gcih",
+  "pam_decision_date",
+  "moi_details_section",
+  "moi_reference_number",
+  "column_break_jvjp",
+  "moi_remarks",
+  "column_break_hyho",
+  "moi_decision_date",
+  "visa_details_section",
+  "visa_reference_number",
+  "section_break_jrbe",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fetch_from": "job_applicant.one_fm_nationality",
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Nationality",
+   "options": "Nationality",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_marital_status",
+   "fieldname": "marital_status",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "Married\nSingle\nDivorced\nWidow"
+  },
+  {
+   "default": "Monthly",
+   "fieldname": "salary_type",
+   "fieldtype": "Select",
+   "label": "Salary Type",
+   "options": "\nDaily\nWeekly\nMonthly"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_kupi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_gender",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_religion",
+   "fieldname": "religion",
+   "fieldtype": "Link",
+   "label": "Religion",
+   "options": "Religion"
+  },
+  {
+   "default": "Today",
+   "fieldname": "request_date",
+   "fieldtype": "Date",
+   "label": "Request Date ",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_place_of_birth",
+   "fieldname": "place_of_birth",
+   "fieldtype": "Link",
+   "label": "Place of Birth",
+   "options": "Country"
+  },
+  {
+   "default": "0",
+   "fieldname": "attachments",
+   "fieldtype": "Section Break",
+   "label": "Attachments "
+  },
+  {
+   "fieldname": "passport_copy",
+   "fieldtype": "Attach",
+   "label": "Passport Copy",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_sqvj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "driver_license",
+   "fieldtype": "Attach",
+   "label": "Driver's License",
+   "mandatory_depends_on": "eval:doc.designation==\"Driver\""
+  },
+  {
+   "fieldname": "column_break_byjf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_receipt",
+   "fieldtype": "Attach",
+   "label": "Payment Receipt"
+  },
+  {
+   "fieldname": "column_break_wjxj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "visa_document",
+   "fieldtype": "Attach",
+   "label": "Visa Document"
+  },
+  {
+   "fieldname": "column_break_jdrk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pam_reference_number",
+   "fieldtype": "Data",
+   "label": "PAM Reference Number"
+  },
+  {
+   "fieldname": "column_break_gvey",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pam_remarks",
+   "fieldtype": "Data",
+   "label": "PAM Remarks"
+  },
+  {
+   "fieldname": "column_break_gcih",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pam_decision_date",
+   "fieldtype": "Date",
+   "label": "PAM Decision Date"
+  },
+  {
+   "fieldname": "moi_reference_number",
+   "fieldtype": "Data",
+   "label": "MOI Reference Number"
+  },
+  {
+   "fieldname": "column_break_jvjp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "moi_remarks",
+   "fieldtype": "Data",
+   "label": "MOI Remarks"
+  },
+  {
+   "fieldname": "column_break_hyho",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "moi_decision_date",
+   "fieldtype": "Date",
+   "label": "MOI Decision Date"
+  },
+  {
+   "fieldname": "visa_reference_number",
+   "fieldtype": "Data",
+   "label": "Visa Reference Number"
+  },
+  {
+   "fieldname": "section_break_jrbe",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Visa Request",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "section_break_mbv7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "VR-.MM.-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "column_break_vujs",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "job_offer.job_applicant",
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "fieldname": "job_offer",
+   "fieldtype": "Link",
+   "label": "Job Offer",
+   "options": "Job Offer",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.applicant_name",
+   "fieldname": "job_applicant_full_name",
+   "fieldtype": "Data",
+   "label": "Job Applicant Full Name"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_first_name",
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First Name"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_second_name",
+   "fieldname": "second_name",
+   "fieldtype": "Data",
+   "label": "Second Name"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_third_name",
+   "fieldname": "third_name",
+   "fieldtype": "Data",
+   "label": "Third Name"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_last_name",
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_first_name_in_arabic",
+   "fieldname": "first_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "First Name in Arabic"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_second_name_in_arabic",
+   "fieldname": "second_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Second Name in Arabic"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_third_name_in_arabic",
+   "fieldname": "third_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Third Name in Arabic"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_last_name_in_arabic",
+   "fieldname": "last_name_in_arabic",
+   "fieldtype": "Data",
+   "label": "Last Name in Arabic"
+  },
+  {
+   "fieldname": "passport_details_section",
+   "fieldtype": "Section Break",
+   "label": "Passport Details"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_passport_issued",
+   "fieldname": "passport_issued_on",
+   "fieldtype": "Date",
+   "label": "Passport Issued on",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_passport_expire",
+   "fieldname": "passport_expires_on",
+   "fieldtype": "Date",
+   "label": "Passport Expires on",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_wims",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "salary_details_section",
+   "fieldtype": "Section Break",
+   "label": "Salary Details"
+  },
+  {
+   "fieldname": "column_break_lzkz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_educational_qualification",
+   "fieldname": "educational_qualification",
+   "fieldtype": "Select",
+   "label": " Educational Qualification",
+   "options": "\nN/A\nPrimary\nMiddle School\nHigh School\nUnder Graduate\nDiploma\nBachelor\nMasters\nPhD\nOthers"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_university",
+   "fieldname": "university",
+   "fieldtype": "Data",
+   "label": "University / School"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_education_specialization",
+   "fieldname": "education_specialization",
+   "fieldtype": "Data",
+   "label": "Specialization"
+  },
+  {
+   "fieldname": "column_break_rlpq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "educational_qualification_details_section",
+   "fieldtype": "Section Break",
+   "label": " Educational Qualification Details"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_place_of_study",
+   "fieldname": "place_of_study",
+   "fieldtype": "Select",
+   "label": "Place of Study",
+   "options": "\nInside Kuwait\nOutside Kuwait"
+  },
+  {
+   "fetch_from": "job_applicant.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "pam_designation",
+   "fieldtype": "Data",
+   "label": "PAM Designation"
+  },
+  {
+   "default": "0",
+   "fieldname": "applicant_details_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "agency",
+   "fieldtype": "Link",
+   "label": "Agency",
+   "options": "Agency"
+  },
+  {
+   "fieldname": "work_permit_salary",
+   "fieldtype": "Currency",
+   "label": "Work Permit Salary"
+  },
+  {
+   "fieldname": "place_of_issue",
+   "fieldtype": "Data",
+   "label": "Place of Issue"
+  },
+  {
+   "fieldname": "pam_details_section",
+   "fieldtype": "Section Break",
+   "label": "PAM Details"
+  },
+  {
+   "fieldname": "moi_details_section",
+   "fieldtype": "Section Break",
+   "label": "MOI Details"
+  },
+  {
+   "default": "0",
+   "fieldname": "visa_details_section",
+   "fieldtype": "Section Break",
+   "label": "Visa Details"
+  },
+  {
+   "fieldname": "rejection_remarks_section",
+   "fieldtype": "Section Break",
+   "label": "Rejection Remarks"
+  },
+  {
+   "fieldname": "grd_manager_remark",
+   "fieldtype": "Small Text",
+   "label": "GRD Manager Remark",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pam_rejection_remark",
+   "fieldtype": "Small Text",
+   "label": "PAM Rejection Remark",
+   "read_only": 1
+  },
+  {
+   "fieldname": "moi_rejection_remark",
+   "fieldtype": "Small Text",
+   "label": "MOI Rejection Remark",
+   "read_only": 1
+  },
+  {
+   "fieldname": "operator_rejection_remark",
+   "fieldtype": "Small Text",
+   "label": "Operator Rejection Remark",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_cpvu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "job_applicant.one_fm_passport_holder_of",
+   "fieldname": "passport_holder_of",
+   "fieldtype": "Link",
+   "label": "Passport Holder of",
+   "options": "Country",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-15 07:27:21.125399",
+ "modified_by": "Administrator",
+ "module": "Visa Management",
+ "name": "Visa Request",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Government Relations Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "GRD Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruiter",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Blue",
+   "title": "Draft"
+  },
+  {
+   "color": "Blue",
+   "title": "Pending Initial Review"
+  },
+  {
+   "color": "Blue",
+   "title": "Pending GRD Manager Approval"
+  },
+  {
+   "color": "Blue",
+   "title": "Pending PAM"
+  },
+  {
+   "color": "Blue",
+   "title": "Pending MOI"
+  },
+  {
+   "color": "Blue",
+   "title": "Amend Required "
+  },
+  {
+   "color": "Blue",
+   "title": "GRD Finalization "
+  },
+  {
+   "color": "Blue",
+   "title": "Pending Recruiter Confirmation "
+  },
+  {
+   "color": "Blue",
+   "title": "Approved "
+  },
+  {
+   "color": "Blue",
+   "title": "Rejected"
+  },
+  {
+   "color": "Blue",
+   "title": "Cancelled"
+  },
+  {
+   "color": "Blue",
+   "title": "Awaiting Quota Availability "
+  }
+ ],
+ "track_changes": 1
+}

@@ -278,6 +278,18 @@ def mark_single_attendance(emp, att_date, roster_type="Basic"):
                 if employee_schedule.employee_availability in ['Working','Client Event', 'On-the-job Training']:
                     # continue to mark attendance if checkin exists
                     mark_for_shift_assignment(employee.name, att_date)
+                elif employee_schedule.employee_availability == 'Suspended':
+                    status = "Absent"
+                    comment = "Employee Schedule - Suspended"
+                    create_single_attendance_record(
+                        frappe._dict({
+                            'employee':employee,
+                            'attendance_date':att_date,
+                            'status':status,
+                            'comment':comment
+                        })
+                    )
+                    return
                 
 
             # # check for shift assignment
@@ -804,6 +816,37 @@ def mark_daily_attendance(start_date, end_date):
                     NULL, "", "", "", "", "{start_date}", "{i.company}",
                     "{i.department}", 0, 0, "", "", "Basic", 1, "{owner}",
                     "{owner}", "{creation}", "{creation}", "Employee Schedule - {i.es_name}"
+                ),"""
+
+        suspended_employee_list = frappe.db.sql(f"""
+            SELECT e.name, e.employee_name, e.company, e.department, es.name as es_name from `tabEmployee` e
+            INNER JOIN `tabEmployee Schedule` es ON es.employee =e.name
+            WHERE date='{start_date}'
+            AND es.employee_availability = 'Suspended'
+            AND e.attendance_by_timesheet = 0
+            AND e.status='Active'
+            """, as_dict=1
+        )
+
+        for i in suspended_employee_list:
+            if not i.name in existing_attendance:
+                try:
+                    frappe.db.sql(f"""
+                        DELETE FROM `tabAttendance` WHERE employee="{i.name}" AND
+                        attendance_date="{start_date}"
+                        AND roster_type="Basic"
+                        AND status="Absent"
+                    """)
+                except:
+                    frappe.log_error(message = frappe.get_traceback(),title=f"Error in Attendance Marking for {i.employee_name}")
+                    continue
+
+                query_body+= f"""
+                (
+                    "HR-ATT_{start_date}_{i.name}_Basic", "{naming_series}" , "{i.name}", "{i.employee_name}", 0, "Absent", '', NULL,
+                    NULL, "", "", "", "", "{start_date}", "{i.company}",
+                    "{i.department}", 0, 0, "", "", "Basic", 1, "{owner}",
+                    "{owner}", "{creation}", "{creation}", "Employee Schedule - Suspended"
                 ),"""
 
         attendance_request = frappe.db.sql(f"""

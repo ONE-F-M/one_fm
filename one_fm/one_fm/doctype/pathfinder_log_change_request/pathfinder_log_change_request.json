@@ -1,0 +1,62 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-03-31 20:17:22.618252",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "process_change_request",
+  "request_date",
+  "hd_ticket",
+  "column_break_tzfx",
+  "requirement_summary"
+ ],
+ "fields": [
+  {
+   "fieldname": "process_change_request",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Process Change Request",
+   "options": "Process Change Request"
+  },
+  {
+   "fieldname": "request_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Request Date"
+  },
+  {
+   "fieldname": "hd_ticket",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "HD Ticket",
+   "options": "HD Ticket"
+  },
+  {
+   "fieldname": "column_break_tzfx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "requirement_summary",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Requirement Summary"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-03-31 20:22:33.560244",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Pathfinder Log Change Request",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

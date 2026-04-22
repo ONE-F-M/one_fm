@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-04-08 17:31:03.095697",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "category",
+  "question",
+  "weight",
+  "score_5",
+  "score_4",
+  "score_3",
+  "score_2",
+  "score_1"
+ ],
+ "fields": [
+  {
+   "fieldname": "category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Category"
+  },
+  {
+   "fieldname": "question",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Question",
+   "reqd": 1
+  },
+  {
+   "fieldname": "weight",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Weight"
+  },
+  {
+   "fieldname": "score_5",
+   "fieldtype": "Text",
+   "label": "Score 5 (Excellent)"
+  },
+  {
+   "fieldname": "score_4",
+   "fieldtype": "Text",
+   "label": "Score 4 (Good)"
+  },
+  {
+   "fieldname": "score_3",
+   "fieldtype": "Text",
+   "label": "Score 3 (Average)"
+  },
+  {
+   "fieldname": "score_2",
+   "fieldtype": "Text",
+   "label": "Score 2 (Poor)"
+  },
+  {
+   "fieldname": "score_1",
+   "fieldtype": "Text",
+   "label": "Score 1 (Very Poor)"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-04-08 17:31:03.095697",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Interview Matrix Question",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

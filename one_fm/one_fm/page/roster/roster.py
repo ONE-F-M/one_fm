@@ -550,20 +550,42 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 			# Execute new overwrite condition check explicitly
 			if overwritten_rdo_count > 0 and not cint(keep_days_off):
 				if rdo_count <= 1 and is_violating_rdo_policy:
-					validation_logs.append(f"{obj} total scheduled day off for this full calender month will be less than 1. Please assign a day off before overwriting.")
+					validation_logs.append(f"<li><b>{obj}</b>'s total scheduled day off for this full calendar month will be less than 1. Please assign a day off before overwriting.</li>")
 
 			pref = frappe.db.get_value("Employee", obj, "custom_day_off_preference")			
 			if cint(day_off_ot) and pref == "Day Off":
-				validation_logs.append(f"{obj} Day Off Preference has been set as 'Day Off'. Please assign other employee or create Shift Request for Day Off OT.")
+				emp_name = frappe.db.get_value("Employee", obj, "employee_name") or obj
+				obj_dates = [getdate(e.get("date")) for e in employees if e.get("employee") == obj]
+				if obj_dates:
+					from_date = min(obj_dates).strftime("%Y-%m-%d")
+					to_date = max(obj_dates).strftime("%Y-%m-%d")
+				else:
+					from_date = getdate(start_date).strftime("%Y-%m-%d")
+					to_date = getdate(end_date).strftime("%Y-%m-%d") if end_date else from_date
+				
+				import urllib.parse
+				query_params = {
+					"employee": obj,
+					"employee_name": emp_name,
+					"purpose": "Day Off Overtime",
+					"from_date": from_date,
+					"to_date": to_date,
+					"status": "Draft"
+				}
+				link = "/app/shift-request/new?" + urllib.parse.urlencode(query_params)
+				shift_req_link = f"<a href='{link}' target='_blank' style='text-decoration: underline; font-weight: bold;'>Shift Request</a>"
+				
+				validation_logs.append(f"<li><b>{obj}</b>'s Day Off Preference has been set as 'Day Off'. Please assign other employee or create {shift_req_link} for Day Off OT.</li>")
 
 			if cint(day_off_ot) and pref == "Day Off OT":
 				if rdo_count == 0 and is_violating_rdo_policy:
-					validation_logs.append(f"{obj} total scheduled day off for this full calender month is 0. Please assign a day off.")
+					validation_logs.append(f"<li><b>{obj}</b>'s total scheduled day off for this full calendar month is 0. Please assign a day off.</li>")
 
 
 		if len(validation_logs) > 0:
-			frappe.log_error(message=str(validation_logs), title="Roster Schedule")
-			frappe.throw(str(validation_logs))
+			msg = "<ul style='padding-left: 20px;'>" + "".join([log if log.startswith("<li>") else f"<li>{log}</li>" for log in validation_logs]) + "</ul>"
+			frappe.log_error(message=msg, title="Roster Schedule Validation")
+			frappe.throw(msg, title="Roster Schedule")
 		else:
 			# extreme schedule
 			extreme_schedule(employees=employees, start_date=start_date, end_date=end_date, shift=shift,
@@ -571,7 +593,6 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 				employee_list=employee_list, day_off_ot_warning=day_off_ot_warning
 			)
 			update_roster(key="roster_view")
-
 
 			response("success", 200, {"message":"Successfully rostered employees"})
 	except Exception as e:
@@ -1690,7 +1711,7 @@ def check_day_off_preference_validation(employees, date_list, attempt_type="Day 
 	preferences = frappe.get_all(
 		"Employee", 
 		filters={"name": ["in", employee_names]}, 
-		fields=["name", "custom_day_off_preference", "date_of_joining", "relieving_date"]
+		fields=["name", "employee_name", "custom_day_off_preference", "date_of_joining", "relieving_date"]
 	)
 	pref_map = {p.name: p for p in preferences}
 
@@ -1703,6 +1724,7 @@ def check_day_off_preference_validation(employees, date_list, attempt_type="Day 
 			month_ranges[month_key] = {"start": get_first_day(dt), "end": get_last_day(dt)}
 
 	# Gather RDO count per employee per month
+	errors = []
 	for emp in employee_names:
 		emp_data = pref_map.get(emp)
 		if not emp_data:
@@ -1764,7 +1786,32 @@ def check_day_off_preference_validation(employees, date_list, attempt_type="Day 
 						condition_met = exceeds_majority and (leave_count == 0) and (rdo_count == 0)
 						
 						if not condition_met:
-							frappe.throw(f"{emp} Day Off Preference has been set as 'Day Off OT'. Please create Shift Request for Day Off.")
+							emp_name = emp_data.get("employee_name") or emp
+							emp_dates = [getdate(e) for e in date_list if e]
+							if emp_dates:
+								from_date = min(emp_dates).strftime("%Y-%m-%d")
+								to_date = max(emp_dates).strftime("%Y-%m-%d")
+							else:
+								from_date = getdate().strftime("%Y-%m-%d")
+								to_date = getdate().strftime("%Y-%m-%d")
+							
+							import urllib.parse
+							query_params = {
+								"employee": emp,
+								"employee_name": emp_name,
+								"purpose": "Assign Day Off",
+								"from_date": from_date,
+								"to_date": to_date,
+								"status": "Draft"
+							}
+							link = "/app/shift-request/new?" + urllib.parse.urlencode(query_params)
+							shift_req_link = f"<a href='{link}' target='_blank' style='text-decoration: underline; font-weight: bold;'>Shift Request</a>"
+							
+							errors.append(f"<li><b>{emp}</b>'s Day Off Preference has been set as 'Day Off OT'. Please create {shift_req_link} for Day Off.</li>")
+
+	if errors:
+		msg = "<ul style='padding-left: 20px;'>" + "".join(errors) + "</ul>"
+		frappe.throw(msg, title="Day Off Preference Validation Mismatch")
 							
 				
 def check_client_day_off_eligibility(employee, date_str):
@@ -2624,3 +2671,68 @@ def get_all_projects():
         fields=["name"],
         limit_page_length=1000
     )
+
+@frappe.whitelist()
+def suspend_employee_action(employees, selected_dates=0, repeat=0, repeat_freq=None, repeat_till=None, project_end_date=0, week_days=None):
+	from dateutil.relativedelta import relativedelta
+	try:
+		employees = json.loads(employees)
+		if week_days:
+			week_days = json.loads(week_days)
+		
+		for employee_item in employees:
+			emp_name = employee_item["employee"]
+			base_date = getdate(employee_item["date"])
+			
+			if cint(selected_dates):
+				target_dates = [base_date]
+			else:
+				# Find end date
+				if cint(project_end_date):
+					proj = frappe.db.get_value("Employee", emp_name, "project")
+					if proj:
+						end_date = frappe.db.get_value("Project", proj, "expected_end_date")
+					if not proj or not end_date:
+						end_date = get_last_day(base_date) # Fallback to end of month
+				elif repeat_till:
+					end_date = getdate(repeat_till)
+				else:
+					end_date = base_date
+				
+				target_dates = []
+				if repeat_freq == "Weekly" and week_days:
+					for date_item in pd.date_range(start=base_date, end=end_date):
+						if date_item.strftime("%A") in week_days:
+							target_dates.append(date_item.date())
+				elif repeat_freq == "Monthly":
+					current_date = base_date
+					while current_date <= getdate(end_date):
+						target_dates.append(current_date)
+						current_date = current_date + relativedelta(months=1)
+				else:
+					target_dates = [base_date]
+
+			for target_date in target_dates:
+				date_str = str(target_date)
+				sch = frappe.db.get_value("Employee Schedule", {"employee": emp_name, "date": date_str, "roster_type": "Basic"}, "name")
+				if sch:
+					doc = frappe.get_doc("Employee Schedule", sch)
+					doc.employee_availability = "Suspended"
+					doc.save(ignore_permissions=True)
+				else:
+					emp_doc = frappe.get_doc("Employee", emp_name)
+					doc = frappe.new_doc("Employee Schedule")
+					doc.employee = emp_name
+					doc.employee_name = emp_doc.employee_name
+					doc.department = emp_doc.department
+					doc.date = date_str
+					doc.employee_availability = "Suspended"
+					doc.roster_type = "Basic"
+					doc.start_datetime = f"{date_str} 00:00:00"
+					doc.end_datetime = f"{date_str} 23:59:59"
+					doc.insert(ignore_permissions=True)
+		frappe.db.commit()
+		response("Success", 200, {"message": "Suspension logic scheduled successfully."})
+	except Exception as e:
+		frappe.log_error(message=frappe.get_traceback(), title="Suspend Employee Error")
+		response("Error", 200, None, str(e))

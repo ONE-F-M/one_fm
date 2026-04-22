@@ -62,61 +62,76 @@
     .container p {
       margin-bottom: 10px;
     }
-    
+
+    .contract-block {
+      margin-bottom: 32px;
+    }
+
+    .contract-divider {
+      border: none;
+      border-top: 2px solid #cccccc;
+      margin: 24px 0;
+    }
     </style>
     
     <div class="container">
       <p>Please note that, today is the Contract internal notification Period for the following expiring contracts.</p>
     </div>
-    
+
+  {% for contract in contracts_list %}
+  {% if not loop.first %}
+  <hr class="contract-divider">
+  {% endif %}
+  <div class="contract-block">
   <table>
     <tbody class="contract_reminder">
       <tr>
         <th>Project</th>
-        <td>{{ project }}</td>
+        <td>{{ contract.project }}</td>
       </tr>
       <tr>
-        <th>{{ contract_end_internal_notif_period.name }}</th>
-        <td>{{ contract_end_internal_notif_period.value }}</td>
+        <th>{{ contract.contract_end_internal_notif_period.name }}</th>
+        <td>{{ contract.contract_end_internal_notif_period.value }}</td>
       </tr>
       <tr>
         <th>Start Date</th>
-        <td>{{ start_date }}</td>
+        <td>{{ contract.start_date }}</td>
       </tr>
       <tr>
-        <th>{{ contract_end_internal_notif_date.name }}</th>
-        <td>{{ contract_end_internal_notif_date.value }}</td>
+        <th>{{ contract.contract_end_internal_notif_date.name }}</th>
+        <td>{{ contract.contract_end_internal_notif_date.value }}</td>
       </tr>
       <tr>
-        <th>{{ contract_termination_decision_period.name }}</th>
-        <td>{{ contract_termination_decision_period.value }}</td>
+        <th>{{ contract.contract_termination_decision_period.name }}</th>
+        <td>{{ contract.contract_termination_decision_period.value }}</td>
       </tr>
       <tr>
-        <th>{{ contract_termination_decision_date.name }}</th>
-        <td>{{ contract_termination_decision_date.value }}</td>
+        <th>{{ contract.contract_termination_decision_date.name }}</th>
+        <td>{{ contract.contract_termination_decision_date.value }}</td>
       </tr>
       <tr>
         <th>End Date</th>
-        <td>{{ end_date }}</td>
+        <td>{{ contract.end_date }}</td>
       </tr>
       <tr>
         <th>Duration</th>
-        <td>{{ duration }}</td>
+        <td>{{ contract.duration }}</td>
       </tr>
       <tr>
         <th>Document ID</th>
-        <td>{{ document_id }}</td>
+        <td>{{ contract.document_id }}</td>
       </tr>
       <tr>
         <th>Link</th>
-        <td><a href="{{ link }}">Contract Form</a></td>
+        <td><a href="{{ contract.link }}">Contract Form</a></td>
       </tr>
-      {% if attachment is not none %}
+      {% if contract.attachment is not none %}
       <tr>
         <th>Attachment</th>
-        <td><a href={{ attachment }}>Contract Attachment</a></td>
+        <td><a href="{{ contract.attachment }}">Contract Attachment</a></td>
       </tr>
       {% endif %}
     </tbody>
   </table>
-    
+  </div>
+  {% endfor %}

@@ -209,10 +209,9 @@ def generate_employee_id(doc):
 	except Exception as e:
 		frappe.throw(_(str(e)))
 
-	count = len(frappe.db.sql(f"""
-		SELECT name FROM tabEmployee
-		WHERE date_of_joining BETWEEN '{get_first_day(doc.date_of_joining)}' AND '{get_last_day(doc.date_of_joining)}'""",
-		as_dict=1))
+	count = frappe.db.count("Employee", {
+		"date_of_joining": ["between", [get_first_day(doc.date_of_joining), get_last_day(doc.date_of_joining)]]
+	})
 
 	if count == 0:
 		count = count + 1
@@ -694,16 +693,24 @@ def get_interview_skill_and_question_set(interview_round, interviewer=False, int
 
 @frappe.whitelist()
 def create_interview_and_feedback(data, interview_round, interviewer, job_applicant, method='save', feedback_exists=False, interview_name=False, child_name=False):
-	if not feedback_exists:
-		interview = frappe.new_doc('Interview')
-		interview.interview_round = interview_round
-		interview.job_applicant = job_applicant
-		interview.scheduled_on = today()
-		interview.from_time = now()
-		interview.to_time = now()
-		interview.append('interview_details', {'interviewer': interviewer})
-		interview.save(ignore_permissions=True)
-		interview_name = interview.name
+	if not interview_name:
+		existing_interview = frappe.db.exists("Interview", {"interview_round": interview_round, "job_applicant": job_applicant})
+		if existing_interview:
+			interview_name = existing_interview
+		else:
+			interview = frappe.new_doc('Interview')
+			interview.interview_round = interview_round
+			interview.job_applicant = job_applicant
+			interview.scheduled_on = today()
+			interview.from_time = now()
+			interview.to_time = now()
+			interview.append('interview_details', {'interviewer': interviewer})
+			interview.save(ignore_permissions=True)
+			interview_name = interview.name
+
+	if interview_name and not feedback_exists:
+		feedback_exists = frappe.db.exists("Interview Feedback", {"interview": interview_name, "interviewer": interviewer, "docstatus": ["!=", 2]})
+
 	if interview_name:
 		create_interview_feedback(data, interview_name, interviewer, job_applicant, method, feedback_exists)
 		if method == 'submit':
@@ -711,7 +718,8 @@ def create_interview_and_feedback(data, interview_round, interviewer, job_applic
 				data = frappe._dict(json.loads(data))
 			interview = frappe.get_doc('Interview', interview_name)
 			interview.status = data.result
-			interview.submit()
+			if interview.docstatus == 0:
+				interview.submit()
 		if child_name:
 			frappe.db.set_value('Job Applicant Interview Round', child_name, 'interview', interview_name)
 
@@ -722,6 +730,9 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 
 	if frappe.session.user != interviewer:
 		frappe.throw(_('Only Interviewer Are allowed to submit Interview Feedback'))
+
+	if not feedback_exists:
+		feedback_exists = frappe.db.exists("Interview Feedback", {"interview": interview_name, "interviewer": interviewer, "docstatus": ["!=", 2]})
 
 	interview_feedback = False
 
@@ -766,30 +777,7 @@ def create_interview_feedback(data, interview_name, interviewer, job_applicant, 
 		frappe.msgprint(_('{1} Interview Feedback {0} successfully!').format(
 		get_link_to_form('Interview Feedback', interview_feedback.name), method.title()))
 
-def calculate_interview_feedback_average_rating(doc, method):
-	total_rating = 0
-	for d in doc.skill_assessment:
-		if d.rating:
-			total_rating += d.rating
 
-	total_skill_rating = flt(
-		total_rating / len(doc.skill_assessment) if len(doc.skill_assessment) else 0
-	)
-
-	total_question_rating = 0
-	if doc.interview_question_assessment and len(doc.interview_question_assessment) > 0:
-		total_rating = 0
-		for d in doc.interview_question_assessment:
-			d.weight = d.weight if d.weight else 0
-			if d.weight > 0 and d.score:
-				total_rating += get_rating_from_the_score(d.score, d.weight)
-
-		total_question_rating = flt(total_rating / len(doc.interview_question_assessment))
-
-	if total_question_rating > 0:
-		doc.average_rating = (total_skill_rating + total_question_rating) / 2
-	else:
-		doc.average_rating = total_skill_rating
 
 def get_rating_from_the_score(score, weight):
 	score_per = score / weight

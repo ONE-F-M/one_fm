@@ -13,18 +13,18 @@
   "column_break_xoqq",
   "employee",
   "employee_name",
-  "civil_id_assurance_level",
+  "employee_user_id",
   "column_break_mjwc",
   "designation",
   "department",
+  "civil_id_assurance_level",
   "column_break_lmsd",
   "date",
   "is_active",
   "section_break_tjep",
   "naming_series",
-  "amended_from",
   "column_break_duej",
-  "column_break_uuhx"
+  "amended_from"
  ],
  "fields": [
   {
@@ -44,21 +44,7 @@
    "set_only_once": 1
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Leave Acknowledgement Form",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
    "fieldname": "column_break_duej",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "column_break_uuhx",
    "fieldtype": "Column Break"
   },
   {
@@ -164,13 +150,22 @@
    "label": "Department",
    "options": "Department",
    "read_only": 1
+  },
+  {
+   "fetch_from": "employee.user_id",
+   "fieldname": "employee_user_id",
+   "fieldtype": "Link",
+   "label": "Employee User ID",
+   "options": "User",
+   "read_only": 1
   }
  ],
+ "grid_page_length": 50,
  "in_create": 1,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-05-10 01:53:21.075385",
+ "modified": "2026-03-15 09:17:18.953809",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Leave Acknowledgement Form",
@@ -205,6 +200,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []

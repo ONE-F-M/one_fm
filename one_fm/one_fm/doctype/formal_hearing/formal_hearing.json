@@ -1,0 +1,304 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:FH-{employee_name}-{MM}-{YYYY}-{###}",
+ "creation": "2026-04-15 13:54:12.294344",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_0qwt",
+  "amended_from",
+  "posting_date",
+  "employee",
+  "employee_name",
+  "column_break_wjbh",
+  "employee_id",
+  "under_company_accommodation",
+  "absence_type",
+  "absence_case",
+  "formal_hearing_details_section",
+  "location_status",
+  "did_not_attend_first_hearing",
+  "did_not_attend_rescheduled_hearing",
+  "column_break_xqxq",
+  "reason_for_absence",
+  "absence_reason_details",
+  "evidence_attachment",
+  "decisions_based_on_formal_hearing_section",
+  "operation_managers_decision",
+  "hr_managers_decision",
+  "general_managers_decision",
+  "column_break_aulk",
+  "received_leave_extension_request",
+  "leave_application"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_0qwt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Formal Hearing",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date"
+  },
+  {
+   "fetch_from": "absence_case.employee",
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "label": "Employee",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_wjbh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee.employee_id",
+   "fieldname": "employee_id",
+   "fieldtype": "Data",
+   "label": "Employee ID"
+  },
+  {
+   "default": "0",
+   "fetch_from": "employee.under_company_residency",
+   "fieldname": "under_company_accommodation",
+   "fieldtype": "Check",
+   "label": "Under Company Accommodation"
+  },
+  {
+   "fetch_from": "absence_case.absence_type",
+   "fieldname": "absence_type",
+   "fieldtype": "Select",
+   "label": "Absence Type",
+   "options": "\n7 Days Consecutive Absence\n21 Days Absence in a Year"
+  },
+  {
+   "fieldname": "formal_hearing_details_section",
+   "fieldtype": "Section Break",
+   "label": "Formal Hearing Details"
+  },
+  {
+   "fieldname": "location_status",
+   "fieldtype": "Select",
+   "label": "Location Status",
+   "options": "\nInside Kuwait\nOutside Kuwait"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.under_company_accommodation == 1",
+   "fieldname": "did_not_attend_first_hearing",
+   "fieldtype": "Check",
+   "label": "Did not Attend First Hearing?"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.did_not_attend_first_hearing == 1 && doc.location_status == \"Inside Kuwait\"",
+   "fieldname": "did_not_attend_rescheduled_hearing",
+   "fieldtype": "Check",
+   "label": "Did not Attend Rescheduled Hearing?"
+  },
+  {
+   "fieldname": "column_break_xqxq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.under_company_accommodation == 1",
+   "fieldname": "reason_for_absence",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Reason for Absence",
+   "options": "\nTo Pressurize the Company\nWork Issue",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.location_status == \"Inside Kuwait\"",
+   "fieldname": "absence_reason_details",
+   "fieldtype": "Small Text",
+   "label": "Absence Reason Details"
+  },
+  {
+   "depends_on": "eval:doc.location_status == \"Inside Kuwait\"",
+   "fieldname": "evidence_attachment",
+   "fieldtype": "Attach",
+   "label": "Evidence Attachment"
+  },
+  {
+   "fieldname": "decisions_based_on_formal_hearing_section",
+   "fieldtype": "Section Break",
+   "label": "Decisions Based on Formal Hearing"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state != \"Draft\"",
+   "fieldname": "operation_managers_decision",
+   "fieldtype": "Select",
+   "label": "Operation Manager's Decision",
+   "mandatory_depends_on": "eval:doc.workflow_state == \"Pending Operation Manager\"",
+   "options": "\nTerminate\nDo not Terminate"
+  },
+  {
+   "fieldname": "hr_managers_decision",
+   "fieldtype": "Select",
+   "label": "HR Manager's Decision",
+   "options": "\nTerminate\nDo not Terminate"
+  },
+  {
+   "depends_on": "eval:doc.workflow_state != \"Draft\"",
+   "fieldname": "general_managers_decision",
+   "fieldtype": "Select",
+   "label": "General Manager's Decision",
+   "mandatory_depends_on": "eval:doc.hr_managers_decision == \"Terminate\" && doc.workflow_state == \"Pending General Manager\"",
+   "options": "\nTerminate\nDo not Terminate"
+  },
+  {
+   "fieldname": "absence_case",
+   "fieldtype": "Link",
+   "label": "Absence Case",
+   "options": "Absence Case"
+  },
+  {
+   "fieldname": "column_break_aulk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "received_leave_extension_request",
+   "fieldtype": "Check",
+   "label": "Received Leave Extension Request"
+  },
+  {
+   "depends_on": "eval:doc.received_leave_extension_request == 1",
+   "fieldname": "leave_application",
+   "fieldtype": "Link",
+   "label": "Leave Application",
+   "options": "Leave Application"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-19 12:18:21.187354",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Formal Hearing",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Attendance Manager",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "select": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Legal Manager",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Payroll Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

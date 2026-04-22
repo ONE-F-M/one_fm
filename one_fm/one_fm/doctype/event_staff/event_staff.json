@@ -111,12 +111,9 @@
   },
   {
    "allow_on_submit": 1,
-   "fetch_from": "client_event.end_date",
-   "fetch_if_empty": 1,
    "fieldname": "end_date",
    "fieldtype": "Date",
-   "label": "End Date",
-   "read_only": 1
+   "label": "End Date"
   },
   {
    "fetch_from": "client_event.event_start_datetime",
@@ -126,11 +123,10 @@
    "read_only": 1
   },
   {
-   "fetch_from": "client_event.event_end_datetime",
+   "allow_on_submit": 1,
    "fieldname": "end_datetime",
    "fieldtype": "Datetime",
-   "label": "End Datetime",
-   "read_only": 1
+   "label": "End Datetime"
   },
   {
    "fieldname": "attendance_status_section",
@@ -190,7 +186,7 @@
    "link_fieldname": "event_staff"
   }
  ],
- "modified": "2026-01-05 15:43:14.265778",
+ "modified": "2026-03-16 10:01:08.807734",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Event Staff",

@@ -175,9 +175,17 @@ def get_leave_application_custom_fields():
                 "allow_on_submit": 1
             },
             {
-                "fieldname": "return_ticket_submitted",
+                "fieldname": "outcome",
                 "fieldtype": "Select",
                 "insert_after": "resumption_confirmation_details",
+                "label": "Outcome",
+                "options": "\nConfirmed\nTry again\nResignation\nExtension Request",
+                "allow_on_submit": 1
+            },
+            {
+                "fieldname": "return_ticket_submitted",
+                "fieldtype": "Select",
+                "insert_after": "outcome",
                 "label": "Return Ticket Submitted",
                 "options": "\nYes\nNo",
                 "allow_on_submit": 1,
@@ -211,6 +219,15 @@ def get_leave_application_custom_fields():
                 "fetch_from": "custom_reliever_.employee_id",
                 "read_only": 1,
                 "translatable": 1
+            },
+            {
+                "fieldname": "reliever_user_id",
+                "fieldtype": "Link",
+                "insert_after": "reliever_employee_id",
+                "label": "Reliever User ID",
+                "options": "User",
+                "fetch_from": "custom_reliever_.user_id",
+                "read_only": 1
             }
         ]
     }

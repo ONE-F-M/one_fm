@@ -1,0 +1,24 @@
+{
+	"name": "Action Process Change Request - Business Analyst",
+	"document_type": "Process Change Request",
+	"due_date_based_on": "request_date",
+	"priority": 0,
+	"disabled": 0,
+	"description": "<p>Here is to inform you that the following {{ doctype }}({{ name }}) requires your attention/action.\n        <br>\n        The details of the request are as follows:\n        <br>\n        </p><table cellpadding=\"0\" cellspacing=\"0\" border=\"1\" style=\"border-collapse: collapse;\">\n            <thead>\n                <tr>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Label</th>\n                    <th style=\"padding: 10px; text-align: left; background-color: #f2f2f2;\">Value</th>\n                </tr>\n            </thead>\n        <tbody>\n        \n            <tr>\n                <td style=\"padding: 10px;\">Document Name</td>\n                <td style=\"padding: 10px;\">{{name}}</td>\n            </tr>\n            </tbody></table><p></p>",
+	"is_assignment_rule_with_workflow": 0,
+	"assign_condition": "status == \"Open\"",
+	"unassign_condition": "status == \"Closed\"",
+	"rule": "Based on Field",
+	"field": "business_analyst_user",
+	"doctype": "Assignment Rule",
+	"users": [],
+	"assignment_days": [
+		{"day": "Monday"},
+		{"day": "Tuesday"},
+		{"day": "Wednesday"},
+		{"day": "Thursday"},
+		{"day": "Friday"},
+		{"day": "Saturday"},
+		{"day": "Sunday"}
+	]
+}

@@ -18,7 +18,7 @@
       "doctype": "Workflow Document State"
     },
     {
-      "state": "Pending Approval",
+      "state": "Pending Operations Manager",
       "doc_status": "0",
       "style": "Warning",
       "is_optional_state": 0,
@@ -59,7 +59,7 @@
     },
     {
       "state": "Cancelled",
-      "doc_status": "1",
+      "doc_status": "2",
       "style": "Danger",
       "is_optional_state": 0,
       "avoid_status_override": 0,
@@ -72,7 +72,7 @@
     {
       "state": "Draft",
       "action": "Submit for Review",
-      "next_state": "Pending Approval",
+      "next_state": "Pending Operations Manager",
       "allowed": "Operations Supervisor",
       "allow_self_approval": 1,
       "send_email_to_creator": 0,
@@ -83,7 +83,7 @@
       "doctype": "Workflow Transition"
     },
     {
-      "state": "Pending Approval",
+      "state": "Pending Operations Manager",
       "action": "Approve",
       "next_state": "Approved",
       "allowed": "Operations Manager",
@@ -96,7 +96,7 @@
       "doctype": "Workflow Transition"
     },
     {
-      "state": "Pending Approval",
+      "state": "Pending Operations Manager",
       "action": "Return To Draft",
       "next_state": "Draft",
       "allowed": "Operations Manager",
@@ -109,7 +109,7 @@
       "doctype": "Workflow Transition"
     },
     {
-      "state": "Pending Approval",
+      "state": "Pending Operations Manager",
       "action": "Return To Draft",
       "next_state": "Draft",
       "allowed": "Operations Supervisor",
@@ -122,7 +122,7 @@
       "doctype": "Workflow Transition"
     },
     {
-      "state": "Pending Approval",
+      "state": "Pending Operations Manager",
       "action": "Reject",
       "next_state": "Rejected",
       "allowed": "Operations Manager",

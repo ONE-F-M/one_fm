@@ -2,6 +2,12 @@
 <!-- Main section start -->
 <!-- ============================================================== -->
 <div class="layoutSidenav_content" data-view="roster">
+	<style>
+		.suspendedcolor {
+			background-color: #f55f02 !important;
+			color: #fff !important;
+		}
+	</style>
 	<div id="cover-spin"></div>
 
 	<!-- Roster Nav bar section -->
@@ -33,96 +39,99 @@
 			<div class="d-flex justify-content-between align-items-start flex-wrap">
 				<!-- Left section: View switch and dropdown -->
 				<div class="d-flex flex-wrap">
-				  <nav class="nav nav-pills flex-column flex-sm-row mt-2">
-					<a class="flex-sm-fill text-sm-center nav-link active bg-primary rosterviewclick">Staff View</a>
-					<a class="flex-sm-fill text-sm-center nav-link postviewclick">Post View</a>
-				  </nav>
-			  
-				  <div class="dropdown flex-column flex-sm-row mt-2 ml-2 view-actions">
-					<button class="btn btn-warning dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
-					  View
-					</button>
-					<div class="dropdown-menu">
-					  <a id="rosterEmployeeActions" class="dropdown-item">Employees with Missing Schedules</a>
-					  <a id="rosterDayOffIssues" class="dropdown-item">Employees with Day Off Issues</a>
-					  <a id="rosterPostActions" class="dropdown-item">Posts with Count Issues</a>
+					<nav class="nav nav-pills flex-column flex-sm-row mt-2">
+						<a class="flex-sm-fill text-sm-center nav-link active bg-primary rosterviewclick">Staff View</a>
+						<a class="flex-sm-fill text-sm-center nav-link postviewclick">Post View</a>
+					</nav>
+
+					<div class="dropdown flex-column flex-sm-row mt-2 ml-2 view-actions">
+						<button class="btn btn-warning dropdown-toggle" type="button" data-toggle="dropdown"
+							aria-expanded="false">
+							View
+						</button>
+						<div class="dropdown-menu">
+							<a id="rosterEmployeeActions" class="dropdown-item">Employees with Missing Schedules</a>
+							<a id="rosterDayOffIssues" class="dropdown-item">Employees with Day Off Issues</a>
+							<a id="rosterPostActions" class="dropdown-item">Posts with Count Issues</a>
+						</div>
 					</div>
-				  </div>
 				</div>
-			  
+
 				<!-- Middle section: Search bar -->
 				<div class="d-flex flex-fill px-4 input-search mt-2" style="position:relative;">
-				  <div id="search-bar-container"
-					   class="form-control p-2 d-flex flex-wrap align-items-center"
-					   style="cursor:text; background:#f3f3f3; position:relative;">
-					<!-- Tags (inserted dynamically) -->
-					<input id="search-bar"
-						   type="text"
-						   placeholder="Search"
-						   aria-label="Search"
-						   style="border:none;outline:none;flex:1;min-width:80px;background:transparent;">
-					<button id="clear-filters" title="Reset Roster" style="background:transparent;border:none;cursor:pointer;">
-					  <i class="fa fa-refresh" aria-hidden="true"></i>
-					</button>
-				  </div>
-			  
-				  <div class="dropdown-content d-none" id="dropdownContent">
-					<div class="section project-section">
-					  <div class="section-title p-2">Project</div>
-					  <div class="section-list px-2" id="rosteringprojectselect"></div>
+					<div id="search-bar-container" class="form-control p-2 d-flex flex-wrap align-items-center"
+						style="cursor:text; background:#f3f3f3; position:relative;">
+						<!-- Tags (inserted dynamically) -->
+						<input id="search-bar" type="text" placeholder="Search" aria-label="Search"
+							style="border:none;outline:none;flex:1;min-width:80px;background:transparent;">
+						<button id="clear-filters" title="Reset Roster"
+							style="background:transparent;border:none;cursor:pointer;">
+							<i class="fa fa-refresh" aria-hidden="true"></i>
+						</button>
 					</div>
-					<div class="section site-section">
-					  <div class="section-title p-2">Site</div>
-					  <div class="section-list px-2" id="rosteringsiteselect"></div>
+
+					<div class="dropdown-content d-none" id="dropdownContent">
+						<div class="section project-section">
+							<div class="section-title p-2">Project</div>
+							<div class="section-list px-2" id="rosteringprojectselect"></div>
+						</div>
+						<div class="section site-section">
+							<div class="section-title p-2">Site</div>
+							<div class="section-list px-2" id="rosteringsiteselect"></div>
+						</div>
+						<div class="section shift-section">
+							<div class="section-title p-2">Shift</div>
+							<div class="section-list px-2" id="rosteringshiftselect"></div>
+						</div>
+						<div class="section role-section">
+							<div class="section-title p-2">Role</div>
+							<div class="section-list px-2" id="rosteringroleselect"></div>
+						</div>
+						<div class="section employee-section">
+							<div class="section-title p-2">Employees</div>
+							<div class="section-list px-2" id="rosteringemployeeselect"></div>
+						</div>
+						<div class="section reliever-section">
+							<div class="section-title p-2">Relievers</div>
+							<div class="section-list px-2" id="rosteringrelieverselect"></div>
+						</div>
 					</div>
-					<div class="section shift-section">
-					  <div class="section-title p-2">Shift</div>
-					  <div class="section-list px-2" id="rosteringshiftselect"></div>
-					</div>
-					<div class="section role-section">
-					  <div class="section-title p-2">Role</div>
-					  <div class="section-list px-2" id="rosteringroleselect"></div>
-					</div>
-					<div class="section employee-section">
-					  <div class="section-title p-2">Employees</div>
-					  <div class="section-list px-2" id="rosteringemployeeselect"></div>
-					</div>
-					<div class="section reliever-section">
-					  <div class="section-title p-2">Relievers</div>
-					  <div class="section-list px-2" id="rosteringrelieverselect"></div>
-					</div>
-				  </div>
 				</div>
-			  
+
 				<!-- Right section: Calendar navigation -->
 				<div class="mt-2 ml-2">
-				  <ul class="nav nav-justified d-flex align-items-center rostercustomstafftab customrosteringtab">
-					<li class="p-2">
-					  <a href="#" onclick="decrementMonth();" class="residenavli customarrowtab">
-						<i class="fas fa-chevron-left"></i>
-					  </a>
-					</li>
-					<li class="p-2" style="border-left: 1px solid #63799b !important;border-right: 1px solid #63799b !important;">
-					  <div class="calendarmonth" style="font-weight: 600;">June 2025</div>
-					</li>
-					<li class="p-2">
-					  <a href="#" onclick="incrementMonth();" class="residenavli customarrowtab">
-						<i class="fas fa-chevron-right"></i>
-					  </a>
-					</li>
-				  </ul>
+					<ul class="nav nav-justified d-flex align-items-center rostercustomstafftab customrosteringtab">
+						<li class="p-2">
+							<a href="#" onclick="decrementMonth();" class="residenavli customarrowtab">
+								<i class="fas fa-chevron-left"></i>
+							</a>
+						</li>
+						<li class="p-2"
+							style="border-left: 1px solid #63799b !important;border-right: 1px solid #63799b !important;">
+							<div class="calendarmonth" style="font-weight: 600;">June 2025</div>
+						</li>
+						<li class="p-2">
+							<a href="#" onclick="incrementMonth();" class="residenavli customarrowtab">
+								<i class="fas fa-chevron-right"></i>
+							</a>
+						</li>
+					</ul>
 				</div>
-			  </div>
-		</div> 
+			</div>
+		</div>
 
 		<div class="container-fluid pl30 pr30 d-none filterhideshow lightbluedtbg mt30">
 			<div class="row py-4 py-md-4 py-lg-0">
-				<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0 d-flex justify-content-between align-items-center">
+				<div
+					class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0 d-flex justify-content-between align-items-center">
 					<div>
 						<a href="#" class="responsivebluebtn ml-0 dayoff">Day Off</a>
 						<a href="#" class="responsivebluebtn changepost">Change Employee Schedule (Basic)</a>
 						<a href="#" class="responsivebluebtn assignchangemodal">Unschedule/Post Staff</a>
 						<a href="#" class="responsivebluebtn change_ot">Change Employee Schedule (OT)</a>
+						<a href="#"
+							class="responsivebluebtn suspend_employee btn-danger border-danger filterhideshow d-none">Suspend
+							Employee</a>
 					</div>
 					<div>
 						<a href="#" class="clear_selection"><i class="fas fa-close mr-2"></i>Clear Selection</a>
@@ -132,10 +141,11 @@
 		</div>
 		<div class="container-fluid pl30 pr30 d-none Postfilterhideshow lightbluedtbg mt30">
 			<div class="row py-4 py-md-0">
-				<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0 d-flex justify-content-between align-items-center">
+				<div
+					class="col-xs-12 col-sm-12 col-md-12 col-lg-12 pr-md-0 d-flex justify-content-between align-items-center">
 					<div>
 						<a href="#" class="responsivebluebtn ml-0 editpostclassclick" data-target="#addpostmodal"
-						data-toggle="modal">Edit Post</a>
+							data-toggle="modal">Edit Post</a>
 					</div>
 					<div>
 						<a href="#" class="clear_selection"><i class="fas fa-close mr-2"></i>Clear Selection</a>
@@ -151,7 +161,8 @@
 						<div class="cardheadercolor rosterMonth shadow rounded">
 							<div class="card-body p-0" id="tableviewchange">
 								<div class="table-responsive table-bordered table-parent">
-									<table id="calenderviewtable" class="mb-0 table table-striped customcarddetailtable structuredetaildatatable">
+									<table id="calenderviewtable"
+										class="mb-0 table table-striped customcarddetailtable structuredetaildatatable">
 										<thead>
 											<tr class="rosterViewTH">
 											</tr>
@@ -161,7 +172,8 @@
 										</tbody>
 									</table>
 								</div>
-								<div class="custom-pagination-controls-container justify-content-center d-flex mt-2 pb-2" id="myPager"></div>
+								<div class="custom-pagination-controls-container justify-content-center d-flex mt-2 pb-2"
+									id="myPager"></div>
 							</div>
 						</div>
 						<div class="cardheadercolor postMonth shadow rounded d-none">
@@ -179,7 +191,8 @@
 										</tbody>
 									</table>
 								</div>
-								<div class="custom-pagination-controls-container justify-content-center d-flex mt-2 pb-2" id="myPager"></div>
+								<div class="custom-pagination-controls-container justify-content-center d-flex mt-2 pb-2"
+									id="myPager"></div>
 							</div>
 						</div>
 					</div>
@@ -198,8 +211,8 @@
 									<div class="legendboxview presentbasic"></div>
 									<div class="pl10 font16 cardtitlecolor">Present (Basic)</div>
 								</div>
-							</div>                            
-							                          
+							</div>
+
 							<div class="col-sm-12 col-md-3 custompageselecttype mb10">
 								<div class="d-flex">
 									<div class="legendboxview samedayoffot"></div>
@@ -273,13 +286,13 @@
 								</div>
 							</div>
 
-							
+
 							<div class="col-sm-12 col-md-3 custompageselecttype mb10">
 								<div class="d-flex">
 									<div class="legendboxview presentdifferent"></div>
 									<div class="pl10 font16 cardtitlecolor">Present (Different)</div>
 								</div>
-							</div>  
+							</div>
 
 							<div class="col-sm-12 col-md-3 custompageselecttype mb10">
 								<div class="d-flex">
@@ -337,6 +350,13 @@
 								</div>
 							</div>
 
+							<div class="col-sm-12 col-md-3 custompageselecttype mb10">
+								<div class="d-flex">
+									<div class="legendboxview suspendedcolor"></div>
+									<div class="pl10 font16 cardtitlecolor">Suspended</div>
+								</div>
+							</div>
+
 						</div>
 					</div>
 				</div>
@@ -385,10 +405,10 @@
 				</div>
 			</div>
 		</div>
-	
+
 	</div>
 	<!-- End Rostering Body-->
-	
+
 </div>
 <div id="sidenav-backdrop"></div>
 <div class="drawer-backdrop" id="drawershow"></div>

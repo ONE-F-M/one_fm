@@ -444,6 +444,13 @@ const starEffects = () =>{
 
 // Submit
 const submitForm = () => {
+    // Validate height
+    var heightVal = parseFloat($('#height').val());
+    if (!heightVal || heightVal < 100 || heightVal > 250) {
+        Swal.fire({ icon: 'warning', title: 'Height Required', text: 'Please enter a valid height between 100 and 250 cm.' });
+        return;
+    }
+
     var file_data = {};
     $("[type='file']").each(function(i){
       file_data[$(this).attr("id")] = $('#'+$(this).attr("id")).prop('filedata');
@@ -464,6 +471,7 @@ const submitForm = () => {
           one_fm_gender: $("#gender option:selected").text(),
           one_fm_religion: $("#religion option:selected").text(),
           one_fm_date_of_birth: $('#dob').val(),
+          one_fm_height: $('#height').val(),
           one_fm_place_of_birth: $('#placeOfBirth').val(),
           one_fm_marital_status: $('#MaritalStatus option:selected').text(),
           one_fm_email_id: $('#email').val(),

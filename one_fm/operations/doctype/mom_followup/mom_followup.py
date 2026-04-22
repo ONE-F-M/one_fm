@@ -60,28 +60,34 @@ def mom_sites_followup():
 			followup.site = site.name 
 			followup.site_supervisor = site.site_supervisor
 			followup.insert()
-			add_assignment({
-					'doctype': 'MOM Followup',
-					'name': followup.name,
-					'assign_to': [frappe.db.get_value('Employee',site.site_supervisor, 'user_id')],
-					'description': _('Please explain your reason of missing the MOM for this site/POC within 48 hours')
-				})
+			user_id = frappe.db.get_value('Employee', site.site_supervisor, 'user_id')
+			if user_id:
+				add_assignment({
+						'doctype': 'MOM Followup',
+						'name': followup.name,
+						'assign_to': [user_id],
+						'description': _('Please explain your reason of missing the MOM for this site/POC within 48 hours')
+					})
 def mom_followup_reminder():
 	
 	reminder = frappe.db.sql("""
-	SELECT * 
+	SELECT name 
 	FROM `tabMOM Followup` 
 	WHERE (creation < DATE_SUB(NOW(), INTERVAL 48 HOUR)) AND (workflow_state = 'Assign to Site Supervisor')
 	""", as_dict=1)
 	for re in reminder:
-		re.workflow_state = 'Review by Projects Manager'
-		re.save()
-		add_assignment({
-					'doctype': 'MOM Followup',
-					'name': re.name,
-					'assign_to': [frappe.db.get_value('Employee',re.project_manager, 'user_id')],
-					'description': _('Please take Action')
-		})
+		doc = frappe.get_doc('MOM Followup', re.name)
+		doc.workflow_state = 'Review by Projects Manager'
+		doc.save()
+		
+		user_id = frappe.db.get_value('Employee', doc.project_manager, 'user_id')
+		if user_id:
+			add_assignment({
+						'doctype': 'MOM Followup',
+						'name': doc.name,
+						'assign_to': [user_id],
+						'description': _('Please take Action')
+			})
 
 @frappe.whitelist()
 def mom_followup_penalty():

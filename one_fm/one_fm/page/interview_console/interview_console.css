@@ -1,0 +1,466 @@
+/**
+ * Interview Console – Page-scoped Styles
+ *
+ * Every selector is prefixed with body[data-route="interview_console"]
+ * so that these rules never leak into other Frappe pages.
+ *
+ * Frappe auto-loads <page_name>.css when the file lives inside
+ * the page directory, so no manual <link> injection is needed.
+ */
+
+/* ── Page-Level Overrides (hide title bar, force full-width) ─────────── */
+body[data-route="interview_console"] .page-head,
+body[data-route="interview_console"] .page-head-content,
+body[data-route="interview_console"] .page-title { display: none !important; }
+
+body[data-route="interview_console"] .layout-main-section,
+body[data-route="interview_console"] .page-content,
+body[data-route="interview_console"] .container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+body[data-route="interview_console"] .navbar .container,
+body[data-route="interview_console"] .navbar {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    width: 100% !important;
+}
+
+/* ── Root Container ──────────────────────────────────────────────────── */
+body[data-route="interview_console"] #ic-root {
+    display: flex; flex-direction: row; align-items: stretch;
+    height: calc(100vh - 105px);
+    width: 100% !important;
+    background: #fdfcff; font-family: 'Roboto', 'Segoe UI', Helvetica, Arial, sans-serif;
+    overflow: hidden; color: #1e293b;
+    margin: 0 !important;
+    padding: 12px 16px !important; box-sizing: border-box;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-sidebar {
+    width: 280px; min-width: 280px; max-width: 280px;
+    flex: 0 0 280px;
+    background: #f6f8fc;
+    display: flex; flex-direction: column; padding: 12px 0 12px 12px;
+    border: none;
+    border-radius: 16px 0 0 16px;
+    margin: 0;
+    overflow: hidden; box-sizing: border-box;
+    box-shadow: none;
+    transition: width 0.4s cubic-bezier(0.2, 0, 0, 1), min-width 0.4s cubic-bezier(0.2, 0, 0, 1), flex 0.4s cubic-bezier(0.2, 0, 0, 1), background 0.4s ease;
+}
+/* When a selection is made, sidebar shrinks slightly */
+body[data-route="interview_console"] #ic-root.has-selection .ic-sidebar {
+    width: 260px; min-width: 260px; max-width: 260px; flex: 0 0 260px;
+    background: #f6f8fc;
+}
+body[data-route="interview_console"] .ic-search-wrap {
+    margin-bottom: 12px; margin-right: 12px; background: #ffffff; border: 1px solid #c4c6d0;
+    border-radius: 50px; padding: 8px 16px; display: flex;
+    align-items: center; flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+body[data-route="interview_console"] .ic-search-input { border: none; background: transparent; width: 100%; font-size: 13px; font-weight: 400; outline: none; font-family: 'Roboto', sans-serif; }
+body[data-route="interview_console"] .ic-sidebar-header { margin-right: 12px; display: flex; justify-content: space-between; padding: 0 5px 8px 5px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
+
+body[data-route="interview_console"] .ic-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px; /* Scrollbar padding */
+}
+body[data-route="interview_console"] .ic-list::-webkit-scrollbar { width: 3px; }
+body[data-route="interview_console"] .ic-list::-webkit-scrollbar-track { background: transparent; }
+body[data-route="interview_console"] .ic-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* ── Sidebar Items – M3 Standard Navigation Drawer Item ──────────────── */
+body[data-route="interview_console"] .ic-item {
+    padding: 8px 12px; margin-bottom: 2px; border-radius: 50px; margin-right: 12px;
+    cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent; border: none; position: relative;
+    display: flex; flex-direction: column; gap: 2px;
+}
+body[data-route="interview_console"] .ic-item:hover { background: rgba(0, 0, 0, 0.04); }
+
+/* Active Indicator - Pill Shaped */
+body[data-route="interview_console"] .ic-item.selected {
+    background: #c2e7ff !important; /* M3 Active Indicator Color */
+    border: none !important;
+    margin-right: 12px;
+    box-shadow: none;
+    transform: none;
+}
+body[data-route="interview_console"] .ic-item.selected .ic-item-name { color: #001d35 !important; font-weight: 700; }
+body[data-route="interview_console"] .ic-item.selected .ic-item-sub { color: #004a77 !important; }
+
+body[data-route="interview_console"] .ic-item-name { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.3s ease; cursor: pointer; flex: 1; }
+body[data-route="interview_console"] .ic-item-name:hover { text-decoration: underline; }
+body[data-route="interview_console"] .ic-item-sub { font-size: 10px; font-weight: 400; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.3s ease; line-height: 1.4; }
+body[data-route="interview_console"] .ic-item-link { color: #1a73e8; cursor: pointer; font-size: inherit; }
+body[data-route="interview_console"] .ic-item-link:hover { text-decoration: underline; }
+body[data-route="interview_console"] .ic-item-right { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+
+/* ── Status Pills ────────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-status-pill {
+    font-size: 9px; font-weight: 600; padding: 2px 6px;
+    border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid transparent; text-transform: none;
+}
+body[data-route="interview_console"] .status-accepted { background: #dcfce7; color: #14532d; border-color: #bbf7d0; }
+body[data-route="interview_console"] .status-rejected { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+body[data-route="interview_console"] .status-hold { background: #fef9c3; color: #854d0e; border-color: #fef08a; }
+body[data-route="interview_console"] .status-scored { background: #e0f2fe; color: #075985; border-color: #bae6fd; }
+body[data-route="interview_console"] .status-not-scored { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+
+body[data-route="interview_console"] .ic-item.selected .status-scored { background: transparent; border-color: rgba(0, 74, 119, 0.3); color: #004a77; }
+body[data-route="interview_console"] .ic-item.selected .status-not-scored { background: transparent; border-color: rgba(0, 74, 119, 0.3); color: #004a77; }
+
+/* ── Main Content Area ───────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-main {
+    flex: 1 1 0%;
+    min-width: 0;
+    display: flex; flex-direction: column;
+    overflow: hidden; background: #fdfcff;
+    border-radius: 0 16px 16px 0;
+    transition: padding 0.4s ease;
+}
+body[data-route="interview_console"] #ic-root.has-selection .ic-main {
+    padding-left: 8px;
+}
+
+/* ── Header Bar ──────────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-header { display: flex; align-items: center; padding: 10px 20px; gap: 15px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
+body[data-route="interview_console"] .ic-header-field { text-align: center; }
+body[data-route="interview_console"] .ic-header-label {
+    font-size: 11px; font-weight: 500; color: #44474e;
+    text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.1em;
+}
+body[data-route="interview_console"] .ic-header-value-box {
+    background: white; border: 1px solid #c4c6d0; border-radius: 50px;
+    padding: 0 16px; font-size: 16px; font-weight: 500; min-width: 60px;
+    color: #1c1b1f; display: flex; align-items: center; justify-content: center;
+    height: 38px !important; min-height: 38px !important; max-height: 38px !important;
+    box-sizing: border-box !important; line-height: 1;
+}
+body[data-route="interview_console"] #ic-age.ic-header-value-box { width: 60px !important; min-width: 60px !important; max-width: 60px !important; }
+body[data-route="interview_console"] #ic-height.ic-header-value-box { width: 115px !important; min-width: 115px !important; max-width: 115px !important; }
+
+/* ── Score Pill ───────────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-score-pill {
+    background: #d3e3fd; color: #041e49; border-radius: 50px;
+    padding: 0; font-size: 16px; font-weight: 600; border: 1px solid transparent !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    height: 38px !important; min-height: 38px !important; max-height: 38px !important;
+    width: 115px !important; min-width: 115px !important; max-width: 115px !important;
+    box-sizing: border-box !important; line-height: 1;
+    display: flex !important; align-items: center !important; justify-content: center !important; text-align: center;
+}
+
+/* ── Clear / Reset Button ────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-clear-btn {
+    background: white; border: 1px solid #e2e8f0; border-radius: 50px;
+    width: 38px !important; height: 38px !important; min-height: 38px !important; max-height: 38px !important;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: #94a3b8;
+    font-size: 16px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); box-sizing: border-box !important; line-height: 1;
+}
+body[data-route="interview_console"] .ic-clear-btn:hover {
+    color: #ef4444; border-color: #fecaca; background: #fef2f2;
+    transform: scale(1.15) rotate(90deg);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+body[data-route="interview_console"] .ic-clear-btn:active,
+body[data-route="interview_console"] .ic-clear-btn.expanded { transform: scale(0.9); transition-duration: 0.1s; }
+
+/* ── Action Buttons (Reject / Hold / Accept) ─────────────────────────── */
+body[data-route="interview_console"] .ic-actions-right { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+body[data-route="interview_console"] .ic-btn-circular {
+    width: 38px; min-width: 38px; max-width: 38px;
+    height: 38px !important; min-height: 38px !important; max-height: 38px !important;
+    border-radius: 50px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent; position: relative; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); box-sizing: border-box;
+    background: #f1f5f9; color: #475569; font-size: 14px;
+}
+body[data-route="interview_console"] .ic-btn-circular:hover {
+    transform: scale(1.08) translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+body[data-route="interview_console"] .ic-btn-circular:active,
+body[data-route="interview_console"] .ic-btn-circular.expanded {
+    min-width: 120px; border-radius: 12px; transform: scale(0.98);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+body[data-route="interview_console"] .ic-btn-circular .btn-text {
+    max-width: 0; opacity: 0; margin-left: 0; font-size: 13px;
+    transition: all 0.3s ease; text-transform: capitalize;
+    font-weight: 600; white-space: nowrap; display: none;
+}
+body[data-route="interview_console"] .ic-btn-circular.expanded .btn-text {
+    max-width: 80px; opacity: 1; margin-left: 10px; display: inline;
+}
+body[data-route="interview_console"] .btn-reject { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+body[data-route="interview_console"] .btn-hold   { background: #fffcf0; color: #d97706; border: 1px solid #fef3c7; }
+body[data-route="interview_console"] .btn-accept { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+body[data-route="interview_console"] .ic-btn-circular.active-state { box-shadow: 0 0 0 3px currentColor; font-weight: 700; }
+body[data-route="interview_console"] .btn-reject.active-state { background: #dc2626; color: #ffffff; border-color: #dc2626; }
+body[data-route="interview_console"] .btn-hold.active-state   { background: #d97706; color: #ffffff; border-color: #d97706; }
+body[data-route="interview_console"] .btn-accept.active-state { background: #16a34a; color: #ffffff; border-color: #16a34a; }
+body[data-route="interview_console"] .ic-btn-circular.active-state .btn-text { max-width: 80px; opacity: 1; margin-left: 8px; display: inline; }
+body[data-route="interview_console"] .ic-btn-circular.disabled { opacity: 0.25; cursor: not-allowed; pointer-events: none; box-shadow: none; }
+body[data-route="interview_console"] .ic-btn-circular.active-state.disabled {
+    opacity: 1; cursor: not-allowed; pointer-events: none;
+    min-width: 120px; max-width: none; width: auto; border-radius: 12px;
+    padding: 0 16px; transform: scale(1.05);
+}
+
+/* ── Dashboard Link Pills ────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-dashboard-link {
+    background: #f0f9ff; color: #0369a1; border: 1px solid #e0f2fe;
+    padding: 0 16px; border-radius: 50px; font-size: 13px;
+    font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-left: 8px; cursor: pointer;
+    height: 38px !important; min-height: 38px !important; max-height: 38px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); box-sizing: border-box !important; line-height: 1;
+}
+body[data-route="interview_console"] .ic-dashboard-link:hover {
+    background: #e0f2fe; transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(3, 105, 161, 0.1);
+}
+body[data-route="interview_console"] .ic-dashboard-link:active,
+body[data-route="interview_console"] .ic-dashboard-link.expanded {
+    transform: scale(0.96); background: #bae6fd;
+}
+body[data-route="interview_console"] .ic-dashboard-link .count-circle {
+    background: #0369a1; color: #ffffff; width: 22px; height: 22px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.2s ease;
+}
+body[data-route="interview_console"] .ic-dashboard-link:hover .count-circle {
+    transform: scale(1.15);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+body[data-route="interview_console"] .ic-dashboard-link:active .count-circle {
+    transform: scale(0.95);
+}
+body[data-route="interview_console"] .ic-dashboard-link .link-text { margin-left: 0; }
+
+/* ── Add Interview Button ────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-add-interview-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin-left: 6px;
+    color: #ffffff;
+    background: #0369a1;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    vertical-align: middle;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, box-shadow 0.2s ease;
+}
+body[data-route="interview_console"] .ic-add-interview-btn:hover {
+    background: #075985;
+    transform: scale(1.1);
+    box-shadow: 0 4px 6px rgba(3, 105, 161, 0.3);
+}
+body[data-route="interview_console"] .ic-add-interview-btn:active {
+    transform: scale(0.95);
+}
+
+/* Feedbacks pill - professional warm neutral */
+body[data-route="interview_console"] .ic-feedbacks-link {
+    background: #f5f0ff !important; color: #5b21b6 !important; border: 1px solid #ede9fe !important;
+}
+body[data-route="interview_console"] .ic-feedbacks-link:hover {
+    background: #ede9fe !important; transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(91, 33, 182, 0.1) !important;
+}
+body[data-route="interview_console"] .ic-feedbacks-link:active,
+body[data-route="interview_console"] .ic-feedbacks-link.expanded {
+    transform: scale(0.96); background: #ddd6fe !important;
+}
+body[data-route="interview_console"] .ic-feedbacks-link .count-circle {
+    background: #7c3aed !important; color: #ffffff !important;
+}
+
+/* ── Matrix Container ────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-matrix-container {
+    flex: 1 1 0%; min-width: 0;
+    padding: 16px 20px; margin: 12px 20px 20px 20px;
+    background: #ffffff; border: none; border-radius: 20px;
+    overflow: hidden; display: flex; flex-direction: column;
+    /* Default State - Locked & Faded (Sharp) */
+    transform: translateY(10px);
+    opacity: 0.75;
+    filter: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: transform 0.6s cubic-bezier(0.2, 0, 0, 1), opacity 0.6s cubic-bezier(0.2, 0, 0, 1), filter 0.6s ease, box-shadow 0.6s cubic-bezier(0.2, 0, 0, 1);
+}
+/* Active State - Fully Opaque & Interactive */
+body[data-route="interview_console"] #ic-root.has-selection .ic-matrix-container {
+    transform: translateY(0);
+    opacity: 1;
+    filter: none;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.06), 0 4px 8px rgba(0,0,0,0.04);
+}
+
+/* ── Table ────────────────────────────────────────────────────────────── */
+body[data-route="interview_console"] table.ic-table {
+    width: 100%; height: 100%; border-collapse: separate;
+    border-spacing: 6px 6px; table-layout: fixed;
+}
+body[data-route="interview_console"] table.ic-table td {
+    height: 20%; /* Distribute 5 rows evenly */
+    padding: 0;
+    vertical-align: stretch;
+}
+body[data-route="interview_console"] table.ic-table td .ic-cell {
+    height: 100%;
+    box-sizing: border-box;
+}
+body[data-route="interview_console"] .ic-table th {
+    padding: 6px 4px; font-size: 10px; font-weight: 600; color: #44474e;
+    text-align: center; border: 1px solid #c4c6d0; border-radius: 4px;
+    height: auto; min-height: unset; vertical-align: middle; background: #ffffff;
+    line-height: 1.25; text-transform: none; letter-spacing: normal;
+    white-space: normal; word-break: break-word; overflow: visible;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* Style for Category Headers (Top Row) - Pill Shape Wrapper */
+body[data-route="interview_console"] .ic-category-pill {
+    display: flex;
+    align-items: center; justify-content: center;
+    border-radius: 8px;
+    padding: 5px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    text-transform: capitalize;
+    letter-spacing: 0.02em;
+}
+body[data-route="interview_console"] .ic-table th[colspan] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* Style for Question Headers (Bottom Row) - Individual MD3 Cards */
+body[data-route="interview_console"] tr:nth-child(2) th {
+    height: 80px; /* Uniform height for all question headers */
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    padding: 10px 4px !important;
+    box-shadow: none !important;
+    vertical-align: middle !important;
+    font-size: 8.5px !important; /* Slightly smaller for better fitting */
+    line-height: 1.1 !important;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow: hidden;
+}
+
+/* ── Row Numbers & Cells ─────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-row-num { width: 24px; font-size: 10px; font-weight: 800; color: #94a3b8; text-align: center; font-family: monospace; }
+body[data-route="interview_console"] .ic-cell {
+    padding: 6px 5px; border: 1px solid #e1e2ec; border-radius: 4px;
+    min-height: unset; height: 100%; font-size: 9px; font-weight: 500; color: #1c1b1f;
+    text-align: center; cursor: pointer; transition: all 0.2s ease-out;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    overflow-y: auto; overflow-x: hidden;
+    line-height: 1.3; background: #ffffff; position: relative;
+    word-break: break-word; max-height: 100%;
+}
+/* Thin custom scrollbar for cell text */
+body[data-route="interview_console"] .ic-cell::-webkit-scrollbar { width: 3px; }
+body[data-route="interview_console"] .ic-cell::-webkit-scrollbar-track { background: transparent; }
+body[data-route="interview_console"] .ic-cell::-webkit-scrollbar-thumb { background: #c4c6d0; border-radius: 3px; }
+body[data-route="interview_console"] .ic-cell::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+/* Firefox scrollbar */
+body[data-route="interview_console"] .ic-cell { scrollbar-width: thin; scrollbar-color: #c4c6d0 transparent; }
+body[data-route="interview_console"] .ic-cell:hover::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: #0369a1; opacity: 0.04; pointer-events: none;
+}
+body[data-route="interview_console"] .ic-cell.selected {
+    border: 2px solid #22c55e !important;
+    color: #14532d !important;
+    font-weight: 700;
+}
+body[data-route="interview_console"] .ic-cell.selected::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: #22c55e; opacity: 0.12; pointer-events: none;
+}
+
+/* ── Remarks ─────────────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-remarks-area { padding: 0; margin-top: 0; background: #ffffff; }
+body[data-route="interview_console"] .ic-remarks-row { padding: 6px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin: 0 4px 10px 48px; }
+body[data-route="interview_console"] .ic-remarks-input { width: 100%; height: 24px; border: none; font-size: 12px; font-weight: 400; color: #1e293b; outline: none; resize: none; background: transparent; font-family: 'Roboto', sans-serif; line-height: 24px; }
+
+/* ── Category Color Classes ──────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-category-physical { background-color: #dcfce7; color: #166534; }
+body[data-route="interview_console"] .ic-category-culture { background-color: #fff9c4; color: #854d0e; }
+body[data-route="interview_console"] .ic-category-motivation { background-color: #f3e8ff; color: #6b21a8; }
+body[data-route="interview_console"] .ic-category-knowledge { background-color: #fee2e2; color: #991b1b; }
+body[data-route="interview_console"] .ic-category-communication { background-color: #e0f2fe; color: #0369a1; }
+body[data-route="interview_console"] .ic-category-default { background-color: #f1f5f9; color: #475569; }
+
+/* ── Question Header ─────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-question-header {
+    background-color: #f0f1f5 !important;
+    border-top: 1.5px solid !important;
+    color: #0f172a !important;
+    font-weight: 800; font-size: 10px; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.02em;
+}
+
+/* ── Dropdown ────────────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-dropdown-item {
+    padding: 10px 12px; border-bottom: 1px solid #f1f5f9; cursor: pointer; font-size: 12px; color: #334155; transition: background 0.2s;
+}
+body[data-route="interview_console"] .ic-dropdown-item:hover { background: #f8fafc; }
+
+body[data-route="interview_console"] .ic-header-left { position: relative; display: flex; align-items: center; }
+
+body[data-route="interview_console"] .ic-dropdown-menu {
+    display: none; position: absolute; top: 44px; left: 0; background: #fff;
+    border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    width: 240px; z-index: 100; flex-direction: column; overflow: hidden;
+}
+
+/* ── Empty State ─────────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-empty-state {
+    position: relative; overflow: hidden; display: none; flex-direction: row;
+    align-items: center; justify-content: flex-start; padding: 40px;
+    min-height: 480px; background: #fafafa; border-radius: 12px;
+    border: 2px dashed #f1f5f9; gap: 10px;
+}
+
+/* ── Camera Modal ────────────────────────────────────────────────────── */
+body[data-route="interview_console"] .ic-camera-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
+}
+
+body[data-route="interview_console"] .ic-camera-card {
+    background: #fff; padding: 20px 24px; border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); width: 450px; text-align: center;
+}

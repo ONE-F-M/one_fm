@@ -32,7 +32,10 @@
   "is_yearly_month",
   "overtime_rate",
   "is_public_holiday_rate",
-  "public_holiday_rate_multiplier"
+  "public_holiday_rate_multiplier",
+  "gender",
+  "working_hours",
+  "working_days"
  ],
  "fields": [
   {
@@ -119,8 +122,7 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Rate",
-   "options": "currency",
-   "read_only": 1
+   "options": "currency"
   },
   {
    "fetch_from": "item_code.item_group",
@@ -246,11 +248,29 @@
    "fieldname": "public_holiday_rate_multiplier",
    "fieldtype": "Float",
    "label": "Public Holiday Rate Multiplier"
+  },
+  {
+   "depends_on": "eval:doc.item_type == \"Service\"",
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "read_only": 1
+  },
+  {
+   "fieldname": "working_hours",
+   "fieldtype": "Float",
+   "label": "Working Hours"
+  },
+  {
+   "fieldname": "working_days",
+   "fieldtype": "Int",
+   "label": "Working Days"
   }
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-03-02 10:52:25.436943",
+ "modified": "2026-04-21 13:59:24.663007",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contract Item",

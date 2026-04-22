@@ -2,6 +2,13 @@ def get_stock_entry_custom_fields():
     return {
         "Stock Entry": [
             {
+                "label": "Site Supervisor Name",
+                "fieldname": "custom_site_supervisor_name",
+                "insert_after": "custom_site_supervisor",
+                "fieldtype": "Data",
+                "read_only": 1,
+            },
+            {
                 "fieldname": "one_fm_request_for_material",
                 "fieldtype": "Link",
                 "label": "Request for Material",

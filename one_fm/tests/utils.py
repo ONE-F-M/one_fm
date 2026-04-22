@@ -67,7 +67,8 @@ def get_test_leave_type(**kwargs):
     defaults = {
         "is_lwp": False,
         "include_holiday": False,
-        "max_leaves_allowed": 30,
+        "max_leaves_allowed": 1000,
+        "allow_negative": True,
         "is_carry_forward": False,
         "one_fm_is_paid_sick_leave": False,
         "one_fm_is_hajj_leave": False,
@@ -126,6 +127,27 @@ def create_test_company():
             "default_language": "en"
         })
         company.insert(ignore_permissions=True)
+    
+    # Create and assign a default Holiday List for the company
+    if not frappe.db.exists("Holiday List", "Test Holiday List"):
+        # Use dates that span from last year to next year to cover any holiday dates
+        from_date = add_days(nowdate(), -365)
+        to_date = add_days(nowdate(), 365)
+        
+        holiday_list = frappe.get_doc({
+            "doctype": "Holiday List",
+            "holiday_list_name": "Test Holiday List",
+            "company": "_Test Company",
+            "from_date": from_date,
+            "to_date": to_date,
+            "holidays": [
+                {"description": "Test Holiday", "holiday_date": nowdate()}
+            ]
+        })
+        holiday_list.insert(ignore_permissions=True)
+    
+    # Set the Holiday List as default for the company
+    frappe.db.set_value("Company", "_Test Company", "default_holiday_list", "Test Holiday List")
 
 def make_leave_application(employee, from_date, to_date, leave_type, company=None, half_day=False, half_day_date=None, submit=False):
     create_user("test@example.com")
@@ -150,3 +172,182 @@ def make_leave_application(employee, from_date, to_date, leave_type, company=Non
         leave_application.submit()
 
     return leave_application
+
+def create_test_bed_space_type(bed_space_type_name="Test Bed Space Type", **kwargs):
+    """Create or get test bed space type"""
+    if frappe.db.exists("Bed Space Type", bed_space_type_name):
+        return frappe.get_doc("Bed Space Type", bed_space_type_name)
+    
+    defaults = {
+        "bed_space_type": bed_space_type_name,
+        "single_bed_capacity": 1,
+        "double_bed_capacity": 2,
+        "extra_single_bed_capacity": 0,
+        "extra_double_bed_capacity": 0,
+    }
+    
+    defaults.update(kwargs)
+    
+    bed_space_type = frappe.get_doc({
+        "doctype": "Bed Space Type",
+        **defaults
+    })
+    bed_space_type.insert(ignore_permissions=True)
+    return bed_space_type
+
+def create_test_accommodation_space_type(space_type_name="Test Space Type", **kwargs):
+    """Create or get test accommodation space type"""
+    if frappe.db.exists("Accommodation Space Type", space_type_name):
+        return frappe.get_doc("Accommodation Space Type", space_type_name)
+    
+    defaults = {
+        "space_type": space_type_name,
+        "abbreviation": "TST",
+        "bed_space_available": 1,
+    }
+    
+    defaults.update(kwargs)
+    
+    space_type = frappe.get_doc({
+        "doctype": "Accommodation Space Type",
+        **defaults
+    })
+    space_type.insert(ignore_permissions=True)
+    return space_type
+
+def create_test_accommodation_unit(accommodation, floor_name="Test Floor", **kwargs):
+    """Create or create test accommodation unit"""
+    unit_name = kwargs.get("unit_name", "Test Unit")
+    
+    if frappe.db.exists("Accommodation Unit", unit_name):
+        return frappe.get_doc("Accommodation Unit", unit_name)
+    
+    # Create Accommodation Type if it doesn't exist
+    accommodation_type_name = "Test Type"
+    if not frappe.db.exists("Accommodation Type", accommodation_type_name):
+        acc_type = frappe.get_doc({
+            "doctype": "Accommodation Type",
+            "accommodation_type": accommodation_type_name,
+        })
+        acc_type.insert(ignore_permissions=True)
+    
+    # Create test space type if it doesn't exist
+    space_type_name = "Test Space Type"
+    if not frappe.db.exists("Accommodation Space Type", space_type_name):
+        space_type = frappe.get_doc({
+            "doctype": "Accommodation Space Type",
+            "space_type": space_type_name,
+            "abbreviation": "TST",
+            "bed_space_available": 1,
+        })
+        space_type.insert(ignore_permissions=True)
+    
+    # Create or get Floor - using floor_name as the unique identifier
+    # The Floor doctype uses floor_name as its primary key (autoname field)
+    if not frappe.db.exists("Floor", floor_name):
+        try:
+            floor = frappe.get_doc({
+                "doctype": "Floor",
+                "floor_name": floor_name,
+                "floor": 99,  # Floor number
+            })
+            floor.flags.ignore_validate = True
+            floor.flags.ignore_links = True
+            floor.insert(ignore_permissions=True)
+            frappe.db.commit()  # Ensure floor is committed to DB
+        except (frappe.exceptions.DuplicateEntryError, Exception) as e:
+            # Floor already exists or other error, just continue
+            frappe.clear_messages()
+            frappe.db.commit()
+    
+    # Get the floor number from the created Floor
+    floor_record = frappe.db.get_value("Floor", floor_name, ["floor"], as_dict=True)
+    floor_num = floor_record.get("floor") if floor_record else 99
+    
+    defaults = {
+        "accommodation": accommodation,
+        "accommodation_unit": unit_name,
+        "floor_name": floor_name,
+        "floor": floor_num,
+        "type": accommodation_type_name,
+        "space_details": [
+            {
+                "doctype": "Accommodation Unit Space Type",
+                "space_type": space_type_name,
+                "total_number": 10,
+            }
+        ]
+    }
+    
+    defaults.update(kwargs)
+    
+    unit = frappe.get_doc({
+        "doctype": "Accommodation Unit",
+        **defaults
+    })
+    unit.flags.ignore_validate = True
+    unit.flags.ignore_links = True
+    unit.insert(ignore_permissions=True)
+    return unit
+
+def create_test_accommodation_space(accommodation, accommodation_unit, space_type, bed_space_type, **kwargs):
+    """Create test accommodation space with beds"""
+    space_name = kwargs.get("space_name", "Test Space")
+    
+    if frappe.db.exists("Accommodation Space", space_name):
+        return frappe.get_doc("Accommodation Space", space_name)
+    
+    # Get accommodation unit to fetch floor_name
+    acc_unit = frappe.get_doc("Accommodation Unit", accommodation_unit)
+    
+    defaults = {
+        "accommodation": accommodation,
+        "accommodation_unit": accommodation_unit,
+        "accommodation_space_type": space_type,
+        "bed_space_type": bed_space_type,
+        "floor_name": acc_unit.floor_name,  # Set floor_name from accommodation unit
+        "bed_space_available": 1,
+        "gender": "Male",
+        "bed_type": "Single",
+    }
+    
+    defaults.update(kwargs)
+    
+    space = frappe.get_doc({
+        "doctype": "Accommodation Space",
+        **defaults
+    })
+    space.flags.ignore_validate = True
+    space.flags.ignore_links = True
+    space.insert(ignore_permissions=True)
+    return space
+
+def create_test_bed(accommodation_space, bed_id="TEST-BED-001", **kwargs):
+    """Create test bed"""
+    if frappe.db.exists("Bed", bed_id):
+        return frappe.get_doc("Bed", bed_id)
+    
+    # Get accommodation space to fetch related data
+    acc_space = frappe.get_doc("Accommodation Space", accommodation_space)
+    
+    defaults = {
+        "accommodation_space": accommodation_space,
+        "accommodation": acc_space.accommodation,
+        "accommodation_unit": acc_space.accommodation_unit,
+        "accommodation_space_type": acc_space.accommodation_space_type,
+        "bed_space_type": acc_space.bed_space_type,
+        "status": "Vacant",
+        "bed_type": "Single",
+        "gender": "Male",
+    }
+    
+    defaults.update(kwargs)
+    
+    bed = frappe.get_doc({
+        "doctype": "Bed",
+        **defaults
+    })
+    bed.flags.ignore_validate = True
+    bed.flags.ignore_links = True
+    bed.insert(ignore_permissions=True)
+    return bed

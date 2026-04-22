@@ -718,20 +718,6 @@ var set_filters = function(frm) {
 			]
 		};
 	});
-	frm.set_query("project", function() {
-		return {
-			filters: [
-				['customer', '=', frm.doc.customer]
-			]
-		};
-	});
-	frm.set_query("site", function() {
-		return {
-			filters: [
-				['project', '=', frm.doc.project]
-			]
-		};
-	});
 };
 
 

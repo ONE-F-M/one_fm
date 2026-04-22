@@ -26,18 +26,25 @@ def check_duplicates(self):
     field_list = ["uom", "valid_from", "valid_upto", "packing_unit", "customer", "supplier", "currency"]
     is_service_item, item_group = frappe.get_value("Item", {"item_code": self.item_code}, ["is_stock_item", "subitem_group"])
     if is_service_item == 0 and item_group == "Service":
-        field_list.remove("valid_from")
-        field_list.remove("valid_upto")
-        field_list += ["gender", "shift_hours", "days_off"]
-        error_description += ", Gender, Shift Hour, Day off"
+        if "valid_from" in field_list: field_list.remove("valid_from")
+        if "valid_upto" in field_list: field_list.remove("valid_upto")
+    
+    # Always include custom attributes if they are set, to avoid collisions between different variants
+    custom_attrs = ["gender", "shift_hours", "days_off"]
+    for attr in custom_attrs:
+        if self.get(attr) and attr not in field_list:
+            field_list.append(attr)
+            if attr not in error_description:
+                error_description += f", {attr.replace('_', ' ').title()}"
+
     conditions = "where item_code=%(item_code)s and price_list=%(price_list)s and name != %(name)s"
 
     for field in field_list:
-        if self.get(field):
+        if self.get(field) and cstr(self.get(field)) != "0":
             conditions += " and {0} = %({1})s".format(field, field)
         else:
-            if field in ["packing_unit", "shift_hours"]:
-                conditions += " and ({0} is null or {0} = 0)".format(field)
+            if field in ["packing_unit", "shift_hours", "days_off"]:
+                conditions += " and ({0} is null or {0} = 0 or {0} = '0')".format(field)
             elif field in ["valid_from", "valid_upto"]:
                 conditions += " and {0} is null".format(field)
             else:

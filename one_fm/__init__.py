@@ -54,7 +54,7 @@ from one_fm.overrides.workflow import confirm_action as custom_confirm_action
 from one_fm.overrides.purchase_order import calculate_margin
 
 
-__version__ = '15.4.15'
+__version__ = '15.5.0'
 
 wa.confirm_action = custom_confirm_action
 user_permission.get_user_permissions = get_custom_user_permissions
@@ -97,3 +97,5 @@ AssignmentRule.do_assignment = do_assignment
 AssignmentRule.get_user_based_on_process_task = get_user_based_on_process_task
 AssignmentRule.get_user = get_user
 
+from one_fm.overrides.reports.stock_balance_override import override_stock_balance
+override_stock_balance()

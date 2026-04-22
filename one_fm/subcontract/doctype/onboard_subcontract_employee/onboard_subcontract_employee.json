@@ -54,6 +54,7 @@
   "section_break_5o2vz",
   "subcontract_staff_shortlist",
   "staff_shortlist_detail",
+  "subcontractor_name",
   "column_break_t4c4j",
   "employee",
   "employee_user",
@@ -335,6 +336,14 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "subcontract_staff_shortlist.subcontractor",
+   "fieldname": "subcontractor_name",
+   "fieldtype": "Link",
+   "label": "Subcontractor Name",
+   "options": "Supplier",
+   "read_only": 1
+  },
+  {
    "fieldname": "employee",
    "fieldtype": "Link",
    "label": "Employee",
@@ -402,7 +411,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-01-26 19:58:54.149573",
+ "modified": "2026-04-10 09:46:00.421080",
  "modified_by": "Administrator",
  "module": "Subcontract",
  "name": "Onboard Subcontract Employee",
@@ -422,6 +431,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "search_fields": "full_name, contact_number",
  "show_title_field_in_link": 1,
  "sort_field": "modified",

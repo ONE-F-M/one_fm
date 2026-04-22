@@ -7,7 +7,7 @@ from collections import OrderedDict
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import  add_to_date, cstr, getdate, add_days, add_months, get_first_day, get_last_day, nowdate
+from frappe.utils import  add_to_date, cstr, getdate, add_days, add_months, get_first_day, get_last_day, nowdate, date_diff
 from frappe.permissions import get_doctype_roles
 
 from one_fm.one_fm.page.roster.roster import get_current_user_details
@@ -148,6 +148,12 @@ def get_employees_not_rostered(start_date, end_date):
 		employees_not_rostered = employees_not_rostered - set(employees_on_leave_in_period)
 		# Eg: {('HR-EMP-00001', '2024-04-09'), ('HR-EMP-00001', '2024-04-10'), ('HR-EMP-00002', '2024-04-10')}
 
+	# Exclude dates covered by Event Staff records (drafted or submitted, i.e. docstatus < 2)
+	# This ensures employees are not flagged even when the Client Event is still pending approval
+	employees_on_event_staff = get_employees_on_event_staff_in_period(start_date, end_date)
+	if employees_on_event_staff:
+		employees_not_rostered = employees_not_rostered - set(employees_on_event_staff)
+
 	employees_not_rostered_dict = False
 	try:
 		employees_not_rostered_dict = OrderedDict()
@@ -264,6 +270,43 @@ def get_employees_on_leave_in_period(start_date, end_date):
 		for x in range((leave.to_date - leave.from_date).days + 1)
 	]
 
+
+def get_employees_on_event_staff_in_period(start_date, end_date):
+	"""
+		Method to return (employee, date_str) tuples for every date in [start_date, end_date]
+		covered by a non-cancelled Event Staff record (docstatus < 2).
+
+		Using docstatus < 2 intentionally includes both Draft and Submitted records so that
+		employees are excluded from missing-dates even when the linked Client Event has not
+		been approved yet (per the Roster Employee Action acceptance criteria).
+
+		args:
+			start_date: Date obj, Start of the date range
+			end_date: Date obj, End of the date range
+		return: list of (employee, date_str) tuples
+		Eg: [('HR-EMP-00001', '2025-04-10'), ('HR-EMP-00001', '2025-04-11')]
+	"""
+	from frappe.query_builder import DocType
+
+	EventStaff = DocType("Event Staff")
+	results = (
+		frappe.qb.from_(EventStaff)
+		.select(EventStaff.employee, EventStaff.start_date, EventStaff.end_date)
+		.where(EventStaff.docstatus < 2)
+		.where(EventStaff.start_date <= end_date)
+		.where(EventStaff.end_date >= start_date)
+	).run(as_dict=True)
+
+	tuples = []
+	for row in results:
+		es_start = max(getdate(row.start_date), getdate(start_date))
+		es_end   = min(getdate(row.end_date),   getdate(end_date))
+		num_days = date_diff(es_end, es_start) + 1
+		for i in range(num_days):
+			d = add_days(es_start, i)
+			tuples.append((row.employee, d.strftime("%Y-%m-%d")))
+	return tuples
+
 ## Roster Employee Actions code for Roster view below
 @frappe.whitelist()
 def get_employees_with_missing_schedules():
@@ -295,8 +338,9 @@ def get_employees_with_missing_schedules():
 
 	rostered = get_rostered_employees(start_date, end_date)
 	on_leave = get_employees_on_leave_in_period(start_date, end_date)
-	
-	missing_schedules = set(employees) - set(rostered) - set(on_leave)
+	on_event_staff = get_employees_on_event_staff_in_period(start_date, end_date)
+
+	missing_schedules = set(employees) - set(rostered) - set(on_leave) - set(on_event_staff)
 	result = OrderedDict()
 
 	

@@ -9,7 +9,7 @@ from frappe.desk.form.assign_to import remove
 from frappe import _
 from frappe.model.workflow import apply_workflow
 from frappe.utils import (
-	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, today, add_days, now, get_url_to_form
+	now_datetime,nowtime, cstr, getdate, get_datetime, cint, add_to_date, today, add_days, now, get_url_to_form, date_diff
 )
 from one_fm.api.doc_events import get_employee_user_id
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_end_date
@@ -17,10 +17,11 @@ from one_fm.utils import (
 	mark_attendance, get_holiday_today, production_domain, get_today_leaves, get_salary_amount,
 	get_leave_payment_breakdown
 )
-from one_fm.utils import get_current_shift
+from one_fm.utils import get_current_shift, fetch_attendance_manager_user
 from one_fm.processor import sendemail
 from one_fm.api.api import push_notification_for_checkin, push_notification_rest_api_for_checkin
 from hrms.hr.utils import get_holidays_for_employee
+from hrms.hr.doctype.leave_application.leave_application import get_leave_balance_on
 
 class DeltaTemplate(Template):
 	delimiter = "%"
@@ -2233,3 +2234,147 @@ def notify_approver_about_pending_shift_request(is_scheduled_event=True):
 			title = "Pending Shift Request for upcoming shift"
 			msg = frappe.render_template('one_fm/templates/emails/notify_shift_request_approver.html', context={"data": value})
 			sendemail(recipients=key, subject=title, content=msg, is_scheduler_email=is_scheduled_event)
+
+
+def attendance_query_script():
+	"""
+	Run a background check daily to identify active employees who meet:
+	- >= 7 consecutive absent days.
+	- >= 21 non-consecutive absent days in a calendar year.
+	"""
+	try:
+
+		today_date = getdate()
+		start_of_year = today_date.replace(month=1, day=1)
+		query_start_date = min(start_of_year, add_days(today_date, -14))
+
+		active_employees = frappe.get_all(
+			"Employee",
+			filters={"status": ["in", ["Active", "Not Returned from Leave"]]},
+			pluck="name"
+		)
+
+		if not active_employees:
+			return
+
+		absent_records = frappe.db.sql("""
+			SELECT employee, attendance_date
+			FROM `tabAttendance`
+			WHERE docstatus = 1
+			AND status = 'Absent'
+			AND attendance_date BETWEEN %s AND %s
+			AND employee IN %s
+			ORDER BY employee, attendance_date DESC
+		""", (query_start_date, today_date, tuple(active_employees)), as_dict=True)
+
+		employee_absences = {}
+		for record in absent_records:
+			employee_absences.setdefault(record.employee, []).append(record.attendance_date)
+
+		flagged_7_days = []
+		flagged_21_days = []
+
+		for emp, adates in employee_absences.items():
+			emp_name = frappe.db.get_value("Employee", emp, "employee_name")
+
+			year_absences = [d for d in adates if d >= start_of_year]
+			if len(year_absences) >= 21:
+				flagged_21_days.append({
+					"employee_name": emp_name,
+					"employee_id": emp
+				})
+
+			sorted_dates = sorted(adates, reverse=True)
+			consecutive_count = 1
+			max_consecutive = 1
+
+			for i in range(len(sorted_dates) - 1):
+				if date_diff(sorted_dates[i], sorted_dates[i + 1]) == 1:
+					consecutive_count += 1
+				else:
+					max_consecutive = max(max_consecutive, consecutive_count)
+					consecutive_count = 1
+
+			max_consecutive = max(max_consecutive, consecutive_count)
+
+			if max_consecutive >= 7:
+				flagged_7_days.append({
+					"employee_name": emp_name,
+					"employee_id": emp
+				})
+
+
+		manager_email = fetch_attendance_manager_user()
+
+		if not manager_email:
+			frappe.log_error(title="Attendance Query Script", message="No Attendance Manager found, unable to send email notifications")
+			return
+
+		manager_full_name = frappe.db.get_value("User", manager_email, "full_name") or "Attendance Officer"
+
+		# Generate Absence Cases for flagged employees
+		for emp in flagged_7_days:
+			create_absence_case(emp["employee_id"], "7 Days Consecutive Absence")
+
+		for emp in flagged_21_days:
+			create_absence_case(emp["employee_id"], "21 Days Absence in a Year")
+
+		if flagged_7_days:
+			message_7 = frappe.render_template(
+				'one_fm/templates/emails/seven_day_absence_notification.html',
+				{"full_name": manager_full_name, "employees": flagged_7_days}
+			)
+			sendemail(
+				recipients=manager_email,
+				subject="Action Required: 7 Consecutive Days Absence",
+				message=message_7
+			)
+
+		if flagged_21_days:
+			message_21 = frappe.render_template(
+				'one_fm/templates/emails/twenty_one_day_absence_notification.html',
+				{"full_name": manager_full_name, "employees": flagged_21_days}
+			)
+			sendemail(
+				recipients=manager_email,
+				subject="Action Required: 21 Days Annual Absence",
+				message=message_21
+			)
+
+	except Exception as e:
+		frappe.log_error(title="Attendance Query Script Failed", message=frappe.get_traceback())
+
+
+
+def create_absence_case(employee, absence_type):
+	"""
+	Generate a new Absence Case for flagged employees if an active one doesn't exist.
+	"""
+	# Check if an active Absence Case already exists for this employee and type within the last 15 days
+	# to avoid duplicate generation during the same absence streak.
+	existing_case = frappe.db.exists("Absence Case", {
+		"employee": employee,
+		"absence_type": absence_type,
+		"docstatus": ["<", 2], # Not cancelled
+		"creation": [">", add_days(today(), -15)]
+	})
+
+	if existing_case:
+		return
+
+	# Get Paid Annual Leave balance
+	leave_type = frappe.db.get_value("Leave Type", {"one_fm_is_paid_annual_leave": 1}, "name")
+	
+	balance = 0
+	if leave_type:
+		balance = get_leave_balance_on(employee, leave_type, today())
+
+	doc = frappe.get_doc({
+		"doctype": "Absence Case",
+		"employee": employee,
+		"posting_date": today(),
+		"absence_type": absence_type,
+		"annual_leave_balance": balance,
+		"status": "Draft"
+	})
+	doc.insert(ignore_permissions=True)

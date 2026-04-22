@@ -1151,6 +1151,10 @@ body[data-route="roster"] .absentdayoffot-presentot {
   );
 }
 
+body[data-route="roster"] .suspendedcolor {
+  background-color: #f55f02 !important;
+}
+
 body[data-route="roster"] .absentbasic-absentot {
   background: linear-gradient(
     to bottom,

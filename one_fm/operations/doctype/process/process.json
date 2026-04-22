@@ -9,17 +9,22 @@
   "process_name",
   "description",
   "is_generic",
-  "column_break_grtk",
-  "process_map",
-  "section_break_fxrs",
+  "section_break_xvap",
+  "is_group",
+  "parent_process",
+  "old_parent",
+  "column_break_apuj",
+  "lft",
+  "rgt",
+  "section_break_eezn",
   "process_owner",
   "process_owner_name",
-  "column_break_pycp",
+  "column_break_wigk",
   "business_analyst",
   "business_analyst_name",
   "section_break_xkrb",
   "process_doctypes",
-  "column_break_dpas",
+  "column_break_ptuq",
   "roles"
  ],
  "fields": [
@@ -30,6 +35,68 @@
    "label": "Process Name",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "description": "Mark as true if this is not a specific business process but a generalized one, e.g. \"Others\"",
+   "fieldname": "is_generic",
+   "fieldtype": "Check",
+   "label": "Is Generic"
+  },
+  {
+   "fieldname": "section_break_xvap",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_group",
+   "fieldtype": "Check",
+   "label": "Is Group"
+  },
+  {
+   "fieldname": "parent_process",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Parent Process",
+   "options": "Process"
+  },
+  {
+   "fieldname": "old_parent",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Old Parent",
+   "options": "Process",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_apuj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lft",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Left",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "rgt",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Right",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_eezn",
+   "fieldtype": "Section Break"
   },
   {
    "fieldname": "process_owner",
@@ -47,31 +114,7 @@
    "read_only": 1
   },
   {
-   "fieldname": "section_break_xkrb",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "Description",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_grtk",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "roles",
-   "fieldtype": "Table",
-   "label": "Roles",
-   "options": "Process Role"
-  },
-  {
-   "fieldname": "section_break_fxrs",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "column_break_pycp",
+   "fieldname": "column_break_wigk",
    "fieldtype": "Column Break"
   },
   {
@@ -90,8 +133,8 @@
    "read_only": 1
   },
   {
-   "fieldname": "column_break_dpas",
-   "fieldtype": "Column Break"
+   "fieldname": "section_break_xkrb",
+   "fieldtype": "Section Break"
   },
   {
    "fieldname": "process_doctypes",
@@ -100,27 +143,31 @@
    "options": "Process Doctype"
   },
   {
-   "fieldname": "process_map",
-   "fieldtype": "Small Text",
-   "label": "Process Map",
-   "options": "URL"
+   "fieldname": "column_break_ptuq",
+   "fieldtype": "Column Break"
   },
   {
-   "default": "0",
-   "description": "Mark as true if this is not a specific business process but a generalized one, e.g. \"Others\"",
-   "fieldname": "is_generic",
-   "fieldtype": "Check",
-   "label": "Is Generic"
+   "fieldname": "roles",
+   "fieldtype": "Table",
+   "label": "Roles",
+   "options": "Process Role"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2026-02-17 16:37:26.281276",
+ "is_tree": 1,
+ "links": [
+  {
+   "link_doctype": "Pathfinder Log",
+   "link_fieldname": "process_name"
+  }
+ ],
+ "modified": "2026-04-19 09:58:00.000000",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Process",
  "naming_rule": "By fieldname",
+ "nsm_parent_field": "parent_process",
  "owner": "Administrator",
  "permissions": [
   {
@@ -132,6 +179,18 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Business Analyst",
    "share": 1,
    "write": 1
   }

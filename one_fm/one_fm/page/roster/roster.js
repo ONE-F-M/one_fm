@@ -769,6 +769,10 @@ function setup_topbar_events(page) {
 		change_ot_schedule(page);
 	});
 
+	$(".suspend_employee").on("click", function () {
+		suspend_employee_dialog(page);
+	});
+
 	$(".assignchangemodal").on("click", function () {
 		unschedule_staff(page);
 	});
@@ -1181,6 +1185,7 @@ let classmap = {
 	"Client Event": "cyanboxcolor",
 	"Medical Appointment": "cyanboxcolor",
 	"On-the-job Training": "tealboxcolor",
+	"Suspended": "suspendedcolor"
 };
 
 let abbr_map = {
@@ -1202,7 +1207,8 @@ let abbr_map = {
 	"Fingerprint Appointment": "FA",
 	"Medical Appointment": "MA",
 	"On-the-job Training": "OJT",
-	"Client Event": "CE"
+	"Client Event": "CE",
+	"Suspended": "S"
 };
 
 
@@ -3084,6 +3090,85 @@ function dayoff(page) {
 
 			frappe.call({
 				method: "one_fm.one_fm.page.roster.roster.dayoff",
+				type: "POST",
+				args: args,
+				callback: function (res) {
+					d.hide();
+					error_handler(res);
+					let element_name = get_wrapper_element().slice(1);
+					page[element_name](page);
+					$(".filterhideshow").addClass("d-none");
+				}
+			});
+		}
+	});
+	d.show();
+}
+
+function suspend_employee_dialog(page) {
+	let employees = [];
+	let selected = [... new Set(classgrt)];
+	selected.forEach(function (i) {
+		let [employee, date] = i.split("|");
+		employees.push({ employee, date });
+	});
+
+	let d = new frappe.ui.Dialog({
+		"title": "Suspend Employee",
+		"fields": [
+			{ "label": "Selected days only", "fieldname": "selected_dates", "fieldtype": "Check", "default": 0 },
+			{ "label": "Repeat", "fieldname": "repeat", "fieldtype": "Select", "depends_on": "eval:doc.selected_dates==0", "options": "Does not repeat\nWeekly\nMonthly" },
+			{ "fieldtype": "Section Break", "fieldname": "sb1", "depends_on": "eval:doc.repeat=='Weekly' && doc.selected_dates==0" },
+			{ "label": "Sunday", "fieldname": "sunday", "fieldtype": "Check" },
+			{ "label": "Wednesday", "fieldname": "wednesday", "fieldtype": "Check" },
+			{ "label": "Saturday", "fieldname": "saturday", "fieldtype": "Check" },
+			{ "fieldtype": "Column Break", "fieldname": "cb1" },
+			{ "label": "Monday", "fieldname": "monday", "fieldtype": "Check" },
+			{ "label": "Thursday", "fieldname": "thursday", "fieldtype": "Check" },
+			{ "fieldtype": "Column Break", "fieldname": "cb2" },
+			{ "label": "Tuesday", "fieldname": "tuesday", "fieldtype": "Check" },
+			{ "label": "Friday", "fieldname": "friday", "fieldtype": "Check" },
+			{ "fieldtype": "Section Break", "fieldname": "sb2", "depends_on": "eval:doc.selected_dates==0" },
+			{ "label": "Repeat Till", "fieldtype": "Date", "fieldname": "repeat_till", "depends_on": "eval:doc.repeat!= 'Does not repeat' && doc.project_end_date==0" },
+			{ "label": "Project End Date", "fieldname": "project_end_date", "fieldtype": "Check" },
+		],
+		primary_action: function () {
+			$("#cover-spin").show(0);
+			let week_days = [];
+			let args = {};
+			let values = d.get_values();
+
+			args["selected_dates"] = values.selected_dates;
+			args["employees"] = employees;
+
+			if (values.selected_dates == 1) {
+				args["repeat"] = 0;
+				args["repeat_freq"] = null;
+				args["week_days"] = [];
+				args["repeat_till"] = null;
+				args["project_end_date"] = 0;
+			} else {
+				args["repeat"] = values.repeat === "Does not repeat" ? 0 : 1;
+				args["repeat_till"] = values.repeat_till;
+				args["project_end_date"] = values.project_end_date;
+				args["repeat_freq"] = values.repeat;
+
+				if (values.repeat == "Weekly") {
+					if (values.sunday) week_days.push("Sunday");
+					if (values.monday) week_days.push("Monday");
+					if (values.tuesday) week_days.push("Tuesday");
+					if (values.wednesday) week_days.push("Wednesday");
+					if (values.thursday) week_days.push("Thursday");
+					if (values.friday) week_days.push("Friday");
+					if (values.saturday) week_days.push("Saturday");
+					args["week_days"] = week_days;
+				} else {
+					args["week_days"] = [];
+				}
+			}
+
+			frappe.call({
+				method: "one_fm.one_fm.page.roster.roster.suspend_employee_action",
 				type: "POST",
 				args: args,
 				callback: function (res) {

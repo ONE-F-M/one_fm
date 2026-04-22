@@ -1,0 +1,183 @@
+<div id="ic-root">
+<style>
+    /* Keep interview console sizing scoped to this page root. */
+    #ic-root .ic-header * {
+        box-sizing: border-box;
+    }
+    #ic-root #ic-age,
+    #ic-root #ic-height,
+    #ic-root #ic-score-pill,
+    #ic-root .ic-header .ic-dashboard-link,
+    #ic-root .ic-header .ic-btn-circular,
+    #ic-root .ic-header .ic-clear-btn {
+        height: 38px;
+        min-height: 38px;
+        max-height: 38px;
+        box-sizing: border-box;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+        overflow: hidden;
+    }
+    #ic-root #ic-height,
+    #ic-root #ic-score-pill {
+        width: 115px;
+        min-width: 115px;
+        max-width: 115px;
+    }
+    #ic-root #ic-age {
+        width: 60px;
+        min-width: 60px;
+        max-width: 60px;
+    }
+    #ic-root #ic-score-pill {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding-left: 0;
+        padding-right: 0;
+        border: 1px solid transparent;
+    }
+</style>
+    <div class="ic-sidebar">
+        <div class="ic-search-wrap">
+            <input type="text" id="ic-search" class="ic-search-input" placeholder="Search candidates...">
+        </div>
+        <div class="ic-sidebar-header">
+            <span>CANDIDATES</span>
+            <span id="ic-candidate-count">0</span>
+        </div>
+        <div id="ic-list" class="ic-list"></div>
+    </div>
+
+    <div class="ic-main">
+        <div class="ic-header">
+            <div class="ic-header-left">
+                <div id="ic-feedbacks-pill" class="ic-dashboard-link" title="View Interviews" style="margin-left: 0; padding-right: 6px; cursor: default;">
+                    <span class="link-text" style="cursor: pointer;">Interviews</span>
+                    <span class="count-circle" id="ic-feedback-count" style="cursor: pointer;">0</span>
+                    <button id="ic-add-interview-btn" class="ic-add-interview-btn" style="margin-left: 8px; width: 22px; height: 22px; min-height: 22px; max-height: 22px;" title="Create New Interview Round">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="3" x2="12" y2="21"></line>
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Dropdown Menu -->
+                <div id="ic-interview-dropdown" class="ic-dropdown-menu">
+                    <div style="padding:10px 12px; background:#f8fafc; border-bottom:1px solid #e2e8f0; font-size:11px; font-weight:700; color:#64748b; letter-spacing:0.5px;">AVAILABLE ROUNDS</div>
+                    <div id="ic-interview-dropdown-list" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column;">
+                        <!-- JS Populated -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ic-header-field" style="display: flex; align-items: center; gap: 6px; margin-left: 12px;" title="Age">
+                <i class="fa fa-calendar" style="color: #334155; font-size: 16px;"></i>
+                <div id="ic-age" class="ic-header-value-box">-</div>
+            </div>
+            <div class="ic-header-field" style="display: flex; align-items: center; gap: 6px; margin-left: 4px;" title="Height (cm)">
+                <i class="fa fa-male" style="color: #334155; font-size: 19px;"></i>
+                <input type="number" id="ic-height" class="ic-header-value-box" style="width:70px;text-align:center;border:1px solid #e2e8f0;outline:none;" placeholder="cm" min="100" max="250" step="1">
+            </div>
+            <div class="ic-header-field" style="display: flex; align-items: center; gap: 6px; margin-left: 8px;" title="Total Score">
+                <i class="fa fa-star" style="color: #f59e0b; font-size: 16px; text-shadow: 0 1px 2px rgba(0,0,0,0.1)"></i>
+                <div id="ic-score-pill" class="ic-score-pill">0/100</div>
+            </div>
+            
+            <div class="ic-dashboard-link" style="margin-left: 8px; padding-left: 14px; padding-right: 8px; gap: 10px; background: #f8fafc; border-color: #e2e8f0; cursor: default;">
+                <div id="ic-camera-btn" style="cursor: pointer; display: flex; align-items: center; justify-content: center; height: 100%;" title="Take Candidate Photo">
+                    <i class="fa fa-camera" style="font-size: 16px; color: #475569;"></i>
+                </div>
+                <div id="ic-photo-count-btn" style="cursor: pointer; display: flex; align-items: center; height: 100%;" title="View Photos">
+                    <span class="count-circle" id="ic-photo-count">0</span>
+                </div>
+            </div>
+
+            <div class="ic-header-field" style="display: flex; align-items: center; margin-left: 8px;" title="Reset Console">
+                <div id="ic-reset-btn" class="ic-clear-btn" title="Reset">↻</div>
+            </div>
+            
+            <div class="ic-actions-right">
+                <button id="ic-reject-btn" class="ic-btn-circular btn-reject" title="Reject Candidate">
+                    <i class="fa fa-user-times"></i>
+                    <span class="btn-text">Reject</span>
+                </button>
+                <button id="ic-hold-btn" class="ic-btn-circular btn-hold" title="Hold Candidate">
+                    <i class="fa fa-clock-o"></i>
+                    <span class="btn-text">Hold</span>
+                </button>
+                <button id="ic-save-btn" class="ic-btn-circular btn-accept" title="Accept Candidate">
+                    <i class="fa fa-check"></i>
+                    <span class="btn-text">Accept</span>
+                </button>
+                <div id="ic-job-offers-pill" class="ic-dashboard-link" title="View Job Offers">
+                    <span class="link-text">Job Offers</span>
+                    <span class="count-circle" id="ic-job-offers-count">0</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="ic-matrix-container" id="ic-matrix-wrapper">
+            <!-- Dynamic Matrix populated by JS -->
+            <table class="ic-table">
+                <thead id="ic-thead"></thead>
+                <tbody id="ic-tbody"></tbody>
+            </table>
+            
+            <div id="ic-no-matrix-msg" class="ic-empty-state">
+                
+                <!-- Background Boundary SVG overlay mapping mathematically to Header X origins -->
+                <svg width="100%" height="100%" style="position:absolute; top:0; left:0; pointer-events:none; z-index: 1;" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 340 180 Q 110 180, 110 15" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <path d="M 99 30 L 110 15 L 121 30" stroke="#0ea5e9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+
+                <!-- Left Text & Arc Arrow -->
+                <div style="flex: 1; text-align:left; max-width: 380px; margin-left: 310px; position:relative; z-index:2;">
+                    <h3 id="ic-begin-title" style="color:#0f172a; font-weight:800; font-size:32px; margin:0 0 16px 0; letter-spacing: -0.5px;">Begin Assessment</h3>
+                    <p id="ic-no-matrix-msg-text" style="color:#475569; font-size:20px; margin:0; line-height:1.5;">
+                        Click on the <span style="display:inline-flex; align-items:center; justify-content:center; padding:4px; margin:0 2px; color:#64748b; background:transparent; vertical-align:middle;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="21"></line><line x1="3" y1="12" x2="21" y2="12"></line></svg></span> button above and <strong style="color:#0f172a; font-weight:800;">select a round</strong> to launch the evaluation matrix.
+                    </p>
+                </div>
+                
+                <!-- Right Illustration -->
+                <div style="flex: 1; display:flex; justify-content:flex-start;">
+                    <img src="/assets/one_fm/assets/img/person_magnifying_glass.png" alt="Start Evaluation" style="max-width: 380px; height: auto; object-fit: contain; transform: scaleX(-1); mix-blend-mode: multiply;">
+                </div>
+            </div>
+            
+
+            <div class="ic-remarks-area">
+                <div class="ic-remarks-row" style="display:flex; gap:12px; align-items:center; position:relative;">
+                    <div id="ic-photo-thumbnail-container" style="display:none; position:relative; width:38px; height:38px; border-radius:6px; border:2px solid #e2e8f0; overflow:hidden; flex-shrink:0;">
+                        <img id="ic-photo-thumbnail" style="width:100%; height:100%; object-fit:cover; display:block;" />
+                        <button id="ic-remove-photo" style="position:absolute; top:-2px; right:-2px; background:#ef4444; color:#fff; border-radius:50%; width:16px; height:16px; font-size:11px; line-height:1; border:none; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;" title="Remove Photo">&times;</button>
+                    </div>
+                    <textarea id="ic-remarks" class="ic-remarks-input" placeholder="Type your interview observations and final remarks here..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Camera Modal -->
+<div id="ic-camera-modal" class="ic-camera-overlay">
+    <div class="ic-camera-card">
+        <h3 style="margin-top:0; color:#1e293b; font-weight:700;">Capture Photo</h3>
+        <p style="color:#64748b; font-size:13px; margin-bottom:16px; margin-top:-5px;">Line up the candidate to securely attach their photo.</p>
+        <video id="ic-video-stream" autoplay playsinline style="width:100%; border-radius:8px; background:#0f172a; height:300px; object-fit:cover; margin-bottom:15px;"></video>
+        <canvas id="ic-video-canvas" style="display:none;"></canvas>
+        <img id="ic-photo-preview-large" style="display:none; width:100%; border-radius:8px; height:300px; object-fit:cover; margin-bottom:15px; border:1px solid #e2e8f0;" />
+        <div style="display:flex; justify-content:space-between; gap:12px;">
+            <button id="ic-camera-close-btn" class="btn btn-default" style="flex:1; border-radius:8px; font-weight:600;">Cancel</button>
+            <button id="ic-camera-capture-btn" class="btn btn-primary" style="flex:2; background:#0ea5e9; border-color:#0ea5e9; color:#fff; border-radius:8px; font-weight:600;"><i class="fa fa-camera" style="margin-right:6px;"></i>Capture</button>
+            <button id="ic-camera-retake-btn" class="btn btn-default" style="display:none; flex:1; border-radius:8px; font-weight:600;">Retake</button>
+            <button id="ic-camera-save-btn" class="btn btn-success" style="display:none; flex:2; border-radius:8px; font-weight:600;"><i class="fa fa-check" style="margin-right:6px;"></i>Use Photo</button>
+        </div>
+    </div>
+</div>

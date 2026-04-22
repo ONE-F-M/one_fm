@@ -1,0 +1,535 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-04-12 18:29:41.891162",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_xfjj",
+  "project_request_code",
+  "workflow_state",
+  "reason",
+  "employee_resignation",
+  "priority",
+  "count",
+  "employment_type",
+  "column_break_twru",
+  "designation",
+  "department",
+  "erf",
+  "ojt_days",
+  "deployment_date",
+  "column_break_status",
+  "cancelled_qty",
+  "managed_by_ot_qty",
+  "managed_by_subcontractor_qty",
+  "internal_transfer_qty",
+  "resignation_withdrawal_qty",
+  "historically_joined_qty",
+  "remaining_qty",
+  "number_to_hire",
+  "project_allocation",
+  "site_allocation",
+  "shift_allocation",
+  "operations_role_allocation",
+  "profile_section",
+  "column_break_bdfm",
+  "gender",
+  "column_break_qfvv",
+  "nationality",
+  "column_break_visn",
+  "salary",
+  "section_break_tdav",
+  "language_requirements",
+  "skill_requirements",
+  "certification_requirements",
+  "more_information_section",
+  "column_break_txvy",
+  "naming_series",
+  "column_break_qast",
+  "amended_from",
+  "qty_added_to_erf",
+  "section_fulfillment_actions",
+  "fulfillment_actions",
+  "section_linked_candidates",
+  "linked_candidates",
+  "section_closure",
+  "fulfilled_by_employees",
+  "resignation_links"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_xfjj",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "project_request_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Project Request Code",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Link",
+   "label": "Workflow State",
+   "options": "Workflow State",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Select",
+   "label": "Reason",
+   "options": "\nExit\nNew Project\nHigh Salary\nSubcontractor Replacement\nOvertime\nReliever\nShortage\nSub Contractor\nDay OFF Reliever\nAnnual Leave Reliever\nReplacement",
+   "search_index": 1
+  },
+  {
+   "depends_on": "eval: doc.reason == \"Exit\"",
+   "fieldname": "employee_resignation",
+   "fieldtype": "Link",
+   "label": "Employee Resignation",
+   "options": "Employee Resignation",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "label": "Priority",
+   "options": "\nHigh\nMedium\nLow",
+   "search_index": 1
+  },
+  {
+   "fetch_from": "employee_resignation.employment_type",
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employment Type",
+   "options": "Employment Type"
+  },
+  {
+   "fieldname": "column_break_twru",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee_resignation.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "employee_resignation.department",
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "description": "Employee Requisition Form for this designation",
+   "fieldname": "erf",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "ERF",
+   "mandatory_depends_on": "eval:in_list(['Awaiting Recruiter Approval', 'In Process', 'Completed'], doc.workflow_state)",
+   "options": "ERF",
+   "search_index": 1
+  },
+  {
+   "description": "The number of on-the-job-training days as agreed with the client.",
+   "fieldname": "ojt_days",
+   "fieldtype": "Int",
+   "label": "OJT Days"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "deployment_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Deployment Date"
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "cancelled_qty",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Cancelled Qty",
+   "non_negative": 1,
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "managed_by_ot_qty",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Managed by OT",
+   "non_negative": 1,
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "managed_by_subcontractor_qty",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Managed by SubContractor",
+   "non_negative": 1,
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "internal_transfer_qty",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Internal Transfer",
+   "non_negative": 1,
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "resignation_withdrawal_qty",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Resignation Withdrawal",
+   "non_negative": 1,
+   "print_hide": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Legacy field strictly for importing joined quantities where physical employee links are missing.",
+   "fieldname": "historically_joined_qty",
+   "fieldtype": "Int",
+   "label": "Historically Joined Qty"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "count",
+   "fieldtype": "Int",
+   "label": "Count",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "remaining_qty",
+   "fieldtype": "Int",
+   "label": "Remaining Qty",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "number_to_hire",
+   "fieldtype": "Int",
+   "label": "Number to Hire",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "project_allocation",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.reason == 'Exit'",
+   "fetch_from": "employee_resignation.site_allocation",
+   "fieldname": "site_allocation",
+   "fieldtype": "Link",
+   "label": "Site Allocation",
+   "options": "Operations Site"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.reason == 'Exit'",
+   "fetch_from": "employee_resignation.shift_allocation",
+   "fieldname": "shift_allocation",
+   "fieldtype": "Link",
+   "label": "Shift Allocation",
+   "options": "Operations Shift"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.reason == 'Exit'",
+   "fetch_from": "employee_resignation.operations_role_allocation",
+   "fieldname": "operations_role_allocation",
+   "fieldtype": "Link",
+   "label": "Operations Role Allocation",
+   "options": "Operations Role"
+  },
+  {
+   "fieldname": "profile_section",
+   "fieldtype": "Section Break",
+   "label": "Profile"
+  },
+  {
+   "fieldname": "column_break_bdfm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Link",
+   "label": "Gender",
+   "options": "Gender",
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_qfvv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "nationality",
+   "fieldtype": "Link",
+   "label": "Nationality",
+   "options": "Nationality",
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_visn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "salary",
+   "fieldtype": "Currency",
+   "label": "Salary"
+  },
+  {
+   "fieldname": "section_break_tdav",
+   "fieldtype": "Section Break",
+   "label": "Language and Skill Requirement"
+  },
+  {
+   "fieldname": "language_requirements",
+   "fieldtype": "Table",
+   "label": "Language Requirements",
+   "options": "Employee Language Requirement"
+  },
+  {
+   "fieldname": "skill_requirements",
+   "fieldtype": "Table",
+   "label": "Skill Requirements",
+   "options": "Designation Skill"
+  },
+  {
+   "fieldname": "certification_requirements",
+   "fieldtype": "Table",
+   "label": "Certification Requirements",
+   "options": "Candidate Certification List"
+  },
+  {
+   "fieldname": "more_information_section",
+   "fieldtype": "Section Break",
+   "label": "More Information"
+  },
+  {
+   "fieldname": "column_break_txvy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "HR-PMR-.YYYY.-.MM.-",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_qast",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Project Manpower Request",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "qty_added_to_erf",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Qty Added to ERF"
+  },
+  {
+   "fieldname": "section_fulfillment_actions",
+   "fieldtype": "Section Break",
+   "label": "Fulfillment Actions"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "fulfillment_actions",
+   "fieldtype": "Table",
+   "label": "Fulfillment Actions",
+   "options": "PMR Fulfillment Action"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "section_linked_candidates",
+   "fieldtype": "Section Break",
+   "label": "Linked Candidates"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "linked_candidates",
+   "fieldtype": "Table",
+   "label": "Candidates linked to this PR",
+   "options": "PMR Linked Candidate"
+  },
+  {
+   "fieldname": "section_closure",
+   "fieldtype": "Section Break",
+   "label": "Closure & Fulfillment Details"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "fulfilled_by_employees",
+   "fieldtype": "Table",
+   "label": "Closed By Employees",
+   "options": "PMR Fulfilled Employee"
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval: doc.reason == 'Exit'",
+   "fieldname": "resignation_links",
+   "fieldtype": "Table",
+   "hidden": 1,
+   "label": "Resignations Log",
+   "options": "PMR Resignation Link"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-12 19:11:57.496495",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Project Manpower Request",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Administrator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offboarding Officer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruiter",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Senior Recruiter",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruitment Coordinator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruitment Team Leader",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "project_request_code"
+}
