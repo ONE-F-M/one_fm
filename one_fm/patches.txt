@@ -381,3 +381,4 @@ one_fm.patches.v15_0.add_assignment_rule_recruiter_visa_request
 one_fm.patches.v15_0.add_assignment_rule_groperator_visa_request
 one_fm.patches.v15_0.add_assignment_rule_grdmanager_visa_request
 one_fm.patches.v15_0.remove_pathfinder_log_workflow #2026-04-09
+one_fm.patches.v15_0.rename_item_int_civ_000033 #1

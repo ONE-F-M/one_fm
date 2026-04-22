@@ -468,6 +468,7 @@ class TestLeaveApplicationOverride(FrappeTestCase):
         # Verify no new comment created
         self.assertEqual(comments_before, comments_after,
                         "No comment should be created if status unchanged")
+        
     @patch("frappe.sendmail")
     def test_reliever_assignment_created(self, mock_sendmail):
         """Test 10: Reliever assignment ToDo is created on Pending Reliever state"""
@@ -503,6 +504,7 @@ class TestLeaveApplicationOverride(FrappeTestCase):
 
         self.assertTrue(todo, "ToDo should be created for the reliever")
 
+        
     @patch("frappe.sendmail")
     def test_reliever_assignment_closed(self, mock_sendmail):
         """Test 11: Reliever assignment ToDo is closed when state changes from Pending Reliever"""
@@ -670,3 +672,29 @@ class TestLeaveApplicationOverride(FrappeTestCase):
             "status": "Open"
         }, "name")
         self.assertTrue(todo, "ToDo should be created for HR operator on Pending HR state")
+
+
+    def test_leave_application_on_cancel_comparison(self):
+        """Test for issue #5942: TypeError: '<' not supported between instances of 'datetime.date' and 'str'"""
+        from one_fm.utils import leave_application_on_cancel
+        from frappe.utils import getdate, add_days
+
+        # Create a mock doc where from_date is a datetime.date object
+        doc = frappe._dict({
+            "from_date": getdate(add_days(nowdate(), -1)),
+            "employee": self.employee.name,
+            "doctype": "Leave Application"
+        })
+
+        # Mock frappe.db.set_value and update_employee_hajj_status to isolate date comparison
+        with patch("frappe.db.set_value") as mock_set_value, \
+             patch("one_fm.utils.update_employee_hajj_status") as mock_hajj_status:
+            
+            try:
+                leave_application_on_cancel(doc, "on_cancel")
+            except TypeError:
+                self.fail("leave_application_on_cancel raised TypeError during date comparison")
+            
+            # Verify that set_value was called since from_date < today
+            mock_set_value.assert_called_with("Employee", self.employee.name, "status", "Active")
+            mock_hajj_status.assert_called_once()
