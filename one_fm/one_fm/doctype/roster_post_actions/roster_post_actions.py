@@ -86,7 +86,7 @@ def create_roster_post_actions():
 
         # Fetch post schedules in the date range that are active
         post_schedules = frappe.db.sql(f"""
-            SELECT ps.name, ps.date, ps.shift, ps.operations_role, ps.post
+            SELECT DISTINCT ps.name, ps.date, ps.shift, ps.operations_role, ps.post
             FROM `tabPost Schedule` ps
             JOIN `tabOperations Shift` osh ON ps.shift = osh.name
             JOIN `tabOperations Site` os ON ps.site = os.name
@@ -109,7 +109,7 @@ def create_roster_post_actions():
 
         # Fetch employee schedules in the date range that are working
         employee_schedules = frappe.db.sql(f"""
-            SELECT es.date, es.shift, es.operations_role, es.employee
+            SELECT DISTINCT es.name, es.date, es.shift, es.operations_role, es.employee
             FROM `tabEmployee Schedule` es
             JOIN `tabOperations Role` opr ON es.operations_role = opr.name
             JOIN `tabProject` pr ON opr.project = pr.name
@@ -131,7 +131,6 @@ def create_roster_post_actions():
             WHERE attendance_date BETWEEN %s AND %s 
             AND status = 'On Leave' 
         """, (start_date, end_date), as_dict=1)
-
 
         attendance_dict = {}
         for record in attendance_list:
