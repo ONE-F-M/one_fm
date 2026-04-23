@@ -1210,7 +1210,7 @@ class AttendanceMarking():
                 LEFT JOIN `tabOperations Role` op ON sa.operations_role=op.name
                 WHERE sa.is_replaced = 0
                 AND sa.start_date='{self.start.date()}'
-                AND op.attendance_by_client=1 AND op.docstatus=1
+                AND op.attendance_by_client=1 AND op.status='Active'
                 ;
             """, as_dict=1)
             for i in client_shifts:
