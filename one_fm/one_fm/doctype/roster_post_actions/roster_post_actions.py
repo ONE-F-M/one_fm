@@ -85,6 +85,7 @@ def create_roster_post_actions():
         })
 
         # Fetch post schedules in the date range that are active
+        # Uses EXISTS to avoid join fan-out from multiple contracts/contract items
         post_schedules = frappe.db.sql(f"""
             SELECT DISTINCT ps.name, ps.date, ps.shift, ps.operations_role, ps.post
             FROM `tabPost Schedule` ps
@@ -93,35 +94,44 @@ def create_roster_post_actions():
             JOIN `tabOperations Post` op ON ps.post = op.name
             JOIN `tabOperations Role` opr ON ps.operations_role = opr.name
             JOIN `tabProject` pr ON opr.project = pr.name
-            JOIN `tabContracts` c ON c.project = pr.name
-            JOIN `tabContract Items Operation` ci ON ci.parent = c.name
             WHERE ps.post_status = 'Planned'
             AND osh.status = 'Active'
             AND os.status = 'Active'
             AND op.status = 'Active'
             AND opr.status = 'Active'
             AND pr.is_active = 'Yes'
-            AND ci.item_code = opr.sale_item
-            AND (ci.service_type = 'Post Schedule' OR (ci.is_daily_operation_handled_by_us = 'Yes' AND ci.service_type = 'Manpower'))
             AND ps.date BETWEEN '{start_date}' AND '{end_date}'
+            AND EXISTS (
+                SELECT 1
+                FROM `tabContracts` c
+                JOIN `tabContract Items Operation` ci ON ci.parent = c.name
+                WHERE c.project = pr.name
+                AND ci.item_code = opr.sale_item
+                AND (ci.service_type = 'Post Schedule' OR (ci.is_daily_operation_handled_by_us = 'Yes' AND ci.service_type = 'Manpower'))
+            )
             ORDER BY ps.date ASC
         """, as_dict=1)
 
         # Fetch employee schedules in the date range that are working
+        # Uses EXISTS to avoid join fan-out from multiple contracts/contract items
         employee_schedules = frappe.db.sql(f"""
             SELECT DISTINCT es.name, es.date, es.shift, es.operations_role, es.employee
             FROM `tabEmployee Schedule` es
             JOIN `tabOperations Role` opr ON es.operations_role = opr.name
             JOIN `tabProject` pr ON opr.project = pr.name
-            JOIN `tabContracts` c ON c.project = pr.name
-            JOIN `tabContract Items Operation` ci ON ci.parent = c.name
             JOIN `tabEmployee` e ON es.employee = e.name
             WHERE es.employee_availability = 'Working'
             AND e.status != 'Not Returned from Leave'
-            AND ci.item_code = opr.sale_item
-            AND (ci.service_type = 'Post Schedule' OR (ci.is_daily_operation_handled_by_us = 'Yes' AND ci.service_type = 'Manpower'))
             AND es.date BETWEEN '{start_date}' AND '{end_date}'
             AND (es.on_the_job_training IS NULL OR es.on_the_job_training = '')
+            AND EXISTS (
+                SELECT 1
+                FROM `tabContracts` c
+                JOIN `tabContract Items Operation` ci ON ci.parent = c.name
+                WHERE c.project = pr.name
+                AND ci.item_code = opr.sale_item
+                AND (ci.service_type = 'Post Schedule' OR (ci.is_daily_operation_handled_by_us = 'Yes' AND ci.service_type = 'Manpower'))
+            )
             ORDER BY es.date ASC
         """, as_dict=1)
 
@@ -274,6 +284,7 @@ def get_overfilled_underfilled_posts():
     shift_tuple = tuple(shifts)
     shifts_sub_query = f" AND ps.shift in {shift_tuple}" if len(shift_tuple) > 1 else f" AND ps.shift = '{shift_tuple[0]}'"
     # Fetch post schedules in the date range that are active
+    # Uses EXISTS to avoid join fan-out from multiple contracts/contract items
     post_schedules = frappe.db.sql(f"""
     SELECT ps.name, ps.date, ps.shift, ps.operations_role, ps.post
     FROM `tabPost Schedule` ps
@@ -281,17 +292,21 @@ def get_overfilled_underfilled_posts():
     JOIN `tabOperations Post` op ON ps.post = op.name
     JOIN `tabOperations Role` opr ON ps.operations_role = opr.name
     JOIN `tabProject` pr ON opr.project = pr.name
-    JOIN `tabContracts` c ON c.project = pr.name
-    JOIN `tabContract Items Operation` ci ON ci.parent = c.name
     WHERE ps.post_status = 'Planned' 
     AND os.status = 'Active'
     AND op.status = 'Active' 
     AND opr.status = 'Active'
     AND pr.is_active = 'Yes'
-    AND ci.item_code = opr.sale_item
-    AND ci.service_type = 'Post Schedule'
     {shifts_sub_query}
     AND ps.date BETWEEN '{start_date}' AND '{end_date}'
+    AND EXISTS (
+        SELECT 1
+        FROM `tabContracts` c
+        JOIN `tabContract Items Operation` ci ON ci.parent = c.name
+        WHERE c.project = pr.name
+        AND ci.item_code = opr.sale_item
+        AND ci.service_type = 'Post Schedule'
+    )
     ORDER BY ps.date ASC
     """, as_dict=1)
 
