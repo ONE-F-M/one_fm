@@ -133,7 +133,7 @@
         {
             "state": "Rejected By Supervisor",
             "action": "Reject",
-            "next_state": "Approved",
+            "next_state": "Rejected",
             "allowed": "Operations Manager",
             "allow_self_approval": 1,
             "send_email_to_creator": 0,

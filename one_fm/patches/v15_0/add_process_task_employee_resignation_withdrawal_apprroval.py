@@ -52,8 +52,8 @@ def execute():
             </tr>
             </tbody></table><p></p>""",
 		"is_assignment_rule_with_workflow": 0,
-		"assign_condition": "workflow_state == \"Pending Operations Manager\"",
-		"unassign_condition": "workflow_state != \"Pending Operations Manager\"",
+		"assign_condition": "workflow_state in [\"Accepted by Supervisor\",\"Rejected By Supervisor\"]",
+		"unassign_condition": "workflow_state not in [\"Rejected By Supervisor\",\"Accepted by Supervisor\"]",
 		"rule": "Based on Process Task",
 		"custom_routine_task": process_task.name,
 		"field": "supervisor",
