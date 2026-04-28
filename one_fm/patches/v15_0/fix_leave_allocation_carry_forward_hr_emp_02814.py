@@ -51,8 +51,11 @@ def execute():
 	corrected_total_2024 = flt(alloc_2024.new_leaves_allocated) + flt(corrected_carry_forward_2024)
 	
 	# Update 2024-2025 allocation via DB (bypasses submit restrictions)
+	# IMPORTANT: Update unused_leaves alongside total_leaves_allocated to maintain consistency
+	# with one_fm/utils.py which recalculates: total_leaves_allocated = new_leaves_allocated + unused_leaves
 	frappe.db.set_value("Leave Allocation", allocation_2024, {
 		"carry_forwarded_leaves_count": corrected_carry_forward_2024,
+		"unused_leaves": corrected_carry_forward_2024,  # Update the field used by recalculation logic
 		"total_leaves_allocated": corrected_total_2024,
 		"modified": now()
 	})
@@ -60,6 +63,7 @@ def execute():
 	frappe.logger().info(
 		f"[Fix Leave Allocation Carry-Forward] Updated {allocation_2024}: "
 		f"carry_forwarded_leaves_count: {alloc_2024.carry_forwarded_leaves_count} → {corrected_carry_forward_2024}, "
+		f"unused_leaves: {alloc_2024.unused_leaves} → {corrected_carry_forward_2024}, "
 		f"total_leaves_allocated: {alloc_2024.total_leaves_allocated} → {corrected_total_2024}"
 	)
 	
@@ -75,8 +79,11 @@ def execute():
 	corrected_total_2025 = flt(alloc_2025.new_leaves_allocated) + flt(corrected_carry_forward_2025)
 	
 	# Update 2025-2026 allocation via DB (bypasses submit restrictions)
+	# IMPORTANT: Update unused_leaves alongside total_leaves_allocated to maintain consistency
+	# with one_fm/utils.py which recalculates: total_leaves_allocated = new_leaves_allocated + unused_leaves
 	frappe.db.set_value("Leave Allocation", allocation_2025, {
 		"carry_forwarded_leaves_count": corrected_carry_forward_2025,
+		"unused_leaves": corrected_carry_forward_2025,  # Update the field used by recalculation logic
 		"total_leaves_allocated": corrected_total_2025,
 		"modified": now()
 	})
@@ -84,5 +91,6 @@ def execute():
 	frappe.logger().info(
 		f"[Fix Leave Allocation Carry-Forward] Updated {allocation_2025}: "
 		f"carry_forwarded_leaves_count: {alloc_2025.carry_forwarded_leaves_count} → {corrected_carry_forward_2025}, "
+		f"unused_leaves: {alloc_2025.unused_leaves} → {corrected_carry_forward_2025}, "
 		f"total_leaves_allocated: {alloc_2025.total_leaves_allocated} → {corrected_total_2025}"
 	)
