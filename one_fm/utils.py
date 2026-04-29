@@ -864,6 +864,7 @@ def create_leave_allocation(employee, policy_detail, leave_type_details, from_da
 	leave_type = policy_detail.leave_type
 	new_leaves_allocated = policy_detail.annual_allocation
 	carry_forward = 0
+	unused_leaves = 0
 	if leave_type_details.get(leave_type).is_carry_forward:
 		carry_forward = 1
 
@@ -875,6 +876,18 @@ def create_leave_allocation(employee, policy_detail, leave_type_details, from_da
 	if leave_type_details.get(leave_type).one_fm_is_paid_annual_leave == 1:
 		default_annual_leave_balance = frappe.db.get_value('Company', {"name": frappe.defaults.get_user_default("company")}, 'default_annual_leave_balance')
 		new_leaves_allocated = default_annual_leave_balance/365
+
+		# Fetch previous allocation balance
+		previous_allocation = frappe.db.get_value("Leave Allocation",
+			{"employee": employee.name, "leave_type": leave_type, "to_date": add_days(from_date, -1), "docstatus": 1},
+			["name", "total_leaves_allocated", "from_date", "to_date"], as_dict=1)
+
+		if previous_allocation:
+			leaves_taken = get_approved_leaves_for_period(employee.name, leave_type,
+				previous_allocation.from_date, previous_allocation.to_date)
+			unused_leaves = flt(previous_allocation.total_leaves_allocated) - flt(leaves_taken)
+			unused_leaves = max(unused_leaves, 0)
+			carry_forward = 1
 
 	allocate_leave = True
 	# Hajj Leave is allocated for employees who do not perform hajj before
@@ -889,6 +902,7 @@ def create_leave_allocation(employee, policy_detail, leave_type_details, from_da
 			from_date=from_date,
 			to_date=to_date,
 			new_leaves_allocated=new_leaves_allocated,
+			unused_leaves=unused_leaves,
 			carry_forward=carry_forward
 		))
 		try:

@@ -40,68 +40,67 @@ def execute():
 	)
 	
 	# ===== STEP 2: Recalculate 2024-2025 allocation's carry-forward with clean ledger =====
-	alloc_2024 = frappe.get_doc("Leave Allocation", allocation_2024)
-	
-	# Recalculate using HRMS function with clean ledger
-	corrected_carry_forward_2024 = get_carry_forwarded_leaves(
-		employee, leave_type, alloc_2024.from_date, carry_forward=alloc_2024.carry_forward
-	)
-	
-	# Recalculate total leaves
-	corrected_total_2024 = flt(alloc_2024.new_leaves_allocated) + flt(corrected_carry_forward_2024)
-	
-	# Update 2024-2025 allocation via DB (bypasses submit restrictions)
-	# IMPORTANT: Update unused_leaves alongside total_leaves_allocated to maintain consistency
-	# with one_fm/utils.py which recalculates: total_leaves_allocated = new_leaves_allocated + unused_leaves
-	frappe.db.set_value("Leave Allocation", allocation_2024, {
-		"carry_forwarded_leaves_count": corrected_carry_forward_2024,
-		"unused_leaves": corrected_carry_forward_2024,  # Update the field used by recalculation logic
-		"total_leaves_allocated": corrected_total_2024,
-		"modified": now()
-	})
-	
-	frappe.logger().info(
-		f"[Fix Leave Allocation Carry-Forward] Updated {allocation_2024}: "
-		f"carry_forwarded_leaves_count: {alloc_2024.carry_forwarded_leaves_count} → {corrected_carry_forward_2024}, "
-		f"unused_leaves: {alloc_2024.unused_leaves} → {corrected_carry_forward_2024}, "
-		f"total_leaves_allocated: {alloc_2024.total_leaves_allocated} → {corrected_total_2024}"
-	)
+	if frappe.db.exists("Leave Allocation", allocation_2024):
+		alloc_2024 = frappe.get_doc("Leave Allocation", allocation_2024)
+		
+		# Recalculate using HRMS function with clean ledger
+		corrected_carry_forward_2024 = get_carry_forwarded_leaves(
+			employee, leave_type, alloc_2024.from_date, carry_forward=alloc_2024.carry_forward
+		)
+		
+		# Recalculate total leaves
+		corrected_total_2024 = flt(alloc_2024.new_leaves_allocated) + flt(corrected_carry_forward_2024)
+		
+		# Update 2024-2025 allocation via DB (bypasses submit restrictions)
+		# IMPORTANT: Update unused_leaves alongside total_leaves_allocated to maintain consistency
+		# with one_fm/utils.py which recalculates: total_leaves_allocated = new_leaves_allocated + unused_leaves
+		frappe.db.set_value("Leave Allocation", allocation_2024, {
+			"carry_forwarded_leaves_count": corrected_carry_forward_2024,
+			"unused_leaves": corrected_carry_forward_2024,  # Update the field used by recalculation logic
+			"total_leaves_allocated": corrected_total_2024,
+			"modified": now()
+		})
+		
+		frappe.logger().info(
+			f"[Fix Leave Allocation Carry-Forward] Updated {allocation_2024}: "
+			f"carry_forwarded_leaves_count: {alloc_2024.carry_forwarded_leaves_count} → {corrected_carry_forward_2024}, "
+			f"unused_leaves: {alloc_2024.unused_leaves} → {corrected_carry_forward_2024}, "
+			f"total_leaves_allocated: {alloc_2024.total_leaves_allocated} → {corrected_total_2024}"
+		)
 
-	# Re-fetch the allocation to pick up the DB-updated values (db.set_value doesn't update the doc in memory)
-	alloc_2024 = frappe.get_doc("Leave Allocation", allocation_2024)
-	
 	# ===== STEP 3: Recalculate 2025-2026 allocation's carry-forward from corrected 2024-2025 =====
-	alloc_2025 = frappe.get_doc("Leave Allocation", allocation_2025)
-	
-	# Target: total allocation should be 43 days
-	target_total_2025 = 43.0
-	
-	# Calculate required carry-forward to reach target total
-	# carry_forward + new_leaves_allocated = target_total
-	# carry_forward = target_total - new_leaves_allocated
-	earned_2025 = flt(alloc_2025.new_leaves_allocated)
-	corrected_carry_forward_2025 = target_total_2025 - earned_2025
-	
-	# Ensure carry-forward is not negative
-	if corrected_carry_forward_2025 < 0:
-		corrected_carry_forward_2025 = 0.0
-	
-	corrected_total_2025 = earned_2025 + corrected_carry_forward_2025
-	
-	# Update 2025-2026 allocation via DB (bypasses submit restrictions)
-	# IMPORTANT: Update unused_leaves alongside total_leaves_allocated to maintain consistency
-	# with one_fm/utils.py which recalculates: total_leaves_allocated = new_leaves_allocated + unused_leaves
-	frappe.db.set_value("Leave Allocation", allocation_2025, {
-		"carry_forwarded_leaves_count": corrected_carry_forward_2025,
-		"unused_leaves": corrected_carry_forward_2025,  # Update the field used by recalculation logic
-		"carry_forward": 1,
-		"total_leaves_allocated": corrected_total_2025,
-		"modified": now()
-	})
-	
-	frappe.logger().info(
-		f"[Fix Leave Allocation Carry-Forward] Updated {allocation_2025}: "
-		f"earned_leaves: {earned_2025:.2f}, "
-		f"carry_forwarded_leaves: {alloc_2025.unused_leaves} → {corrected_carry_forward_2025:.2f}, "
-		f"total_leaves_allocated: {alloc_2025.total_leaves_allocated} → {corrected_total_2025:.2f} (target: {target_total_2025})"
-	)
+	if frappe.db.exists("Leave Allocation", allocation_2025):
+		alloc_2025 = frappe.get_doc("Leave Allocation", allocation_2025)
+		
+		# Target: total allocation should be 43 days
+		target_total_2025 = 43.0
+		
+		# Calculate required carry-forward to reach target total
+		# carry_forward + new_leaves_allocated = target_total
+		# carry_forward = target_total - new_leaves_allocated
+		earned_2025 = flt(alloc_2025.new_leaves_allocated)
+		corrected_carry_forward_2025 = target_total_2025 - earned_2025
+		
+		# Ensure carry-forward is not negative
+		if corrected_carry_forward_2025 < 0:
+			corrected_carry_forward_2025 = 0.0
+		
+		corrected_total_2025 = earned_2025 + corrected_carry_forward_2025
+		
+		# Update 2025-2026 allocation via DB (bypasses submit restrictions)
+		# IMPORTANT: Update unused_leaves alongside total_leaves_allocated to maintain consistency
+		# with one_fm/utils.py which recalculates: total_leaves_allocated = new_leaves_allocated + unused_leaves
+		frappe.db.set_value("Leave Allocation", allocation_2025, {
+			"carry_forwarded_leaves_count": corrected_carry_forward_2025,
+			"unused_leaves": corrected_carry_forward_2025,  # Update the field used by recalculation logic
+			"carry_forward": 1,
+			"total_leaves_allocated": corrected_total_2025,
+			"modified": now()
+		})
+		
+		frappe.logger().info(
+			f"[Fix Leave Allocation Carry-Forward] Updated {allocation_2025}: "
+			f"earned_leaves: {earned_2025:.2f}, "
+			f"carry_forwarded_leaves: {alloc_2025.unused_leaves} → {corrected_carry_forward_2025:.2f}, "
+			f"total_leaves_allocated: {alloc_2025.total_leaves_allocated} → {corrected_total_2025:.2f} (target: {target_total_2025})"
+		)
