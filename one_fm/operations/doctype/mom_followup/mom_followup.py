@@ -11,6 +11,7 @@ from frappe import _
 from one_fm.api.tasks import issue_penalty
 from frappe.utils.data import nowdate
 from datetime import datetime
+from one_fm.overrides.workflow import apply_workflow_ignore_permissions
 
 class MOMFollowup(Document):
 	def on_update(self):
@@ -78,20 +79,14 @@ def mom_followup_reminder():
 	for re in reminder:
 		try:
 			doc = frappe.get_doc('MOM Followup', re.name)
-			original_user = frappe.session.user
 			
 			# Auto-populate reason if not already filled
 			if not doc.reason_for_missed_mom:
 				automated_reason_for_missed_mom = 'Automated Reminder - Auto-escalated after 48 hours'
 				frappe.db.set_value('MOM Followup', doc.name, 'reason_for_missed_mom', automated_reason_for_missed_mom, update_modified=False)
 			
-			# Apply proper workflow transition with role bypass, guaranteed user context restoration
-			try:
-				frappe.set_user("Administrator")
-				from frappe.model.workflow import apply_workflow
-				apply_workflow(doc, "Submit for Review")
-			finally:
-				frappe.set_user(original_user)
+			# Apply proper workflow transition, bypassing role validation using shared utility
+			apply_workflow_ignore_permissions(doc, "Submit for Review")
 			
 			# Assign to project manager
 			user_id = frappe.db.get_value('Employee', doc.project_manager, 'user_id')
