@@ -13,11 +13,19 @@ def after_insert(doc, event):
 	if found:
 		# Enqueue it safely in the background rather than blocking the main transaction
 		frappe.enqueue(
-			send_now,
+			"one_fm.events.email_queue.send_email_as_admin",
 			name=doc.name,
 			now=frappe.flags.in_test,
 			enqueue_after_commit=True
 		)
+
+def send_email_as_admin(name):
+	"""
+	Wrapper to run send_now as Administrator to avoid PermissionError
+	for non-admin users who trigger email creation.
+	"""
+	frappe.set_user("Administrator")
+	send_now(name=name)
 
 def flush_emails():
     """
@@ -27,8 +35,10 @@ def flush_emails():
     delete_eid_emails()
     emails_in_queue = frappe.get_list('Email Queue', filters={'status': 'Not Sent'})
     for row in emails_in_queue:
-        try:send_now(name=row.name)
-        except:pass
+        try:
+            send_email_as_admin(name=row.name)
+        except:
+            pass
     frappe.db.commit()
 
 def delete_eid_emails():
