@@ -85,15 +85,13 @@ def mom_followup_reminder():
 				automated_reason_for_missed_mom = 'Automated Reminder - Auto-escalated after 48 hours'
 				frappe.db.set_value('MOM Followup', doc.name, 'reason_for_missed_mom', automated_reason_for_missed_mom, update_modified=False)
 			
-			# Temporarily elevate to Administrator to bypass role validation
-			frappe.set_user("Administrator")
-			
-			# Apply proper workflow transition instead of direct state assignment
-			from frappe.model.workflow import apply_workflow
-			apply_workflow(doc, "Submit for Review")
-			
-			# Restore original user context
-			frappe.set_user(original_user)
+			# Apply proper workflow transition with role bypass, guaranteed user context restoration
+			try:
+				frappe.set_user("Administrator")
+				from frappe.model.workflow import apply_workflow
+				apply_workflow(doc, "Submit for Review")
+			finally:
+				frappe.set_user(original_user)
 			
 			# Assign to project manager
 			user_id = frappe.db.get_value('Employee', doc.project_manager, 'user_id')
