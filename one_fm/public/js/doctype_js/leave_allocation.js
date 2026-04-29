@@ -8,7 +8,8 @@ frappe.ui.form.on("Leave Allocation", {
             frappe.db.get_list("Leave Allocation", {
                 filters: {
                     "employee": employee, 
-                    "leave_type": "Annual Leave"
+                    "leave_type": "Annual Leave",
+                    "docstatus": 1
                 }, 
                 fields: ["name"], 
                 order_by: "to_date desc", 
