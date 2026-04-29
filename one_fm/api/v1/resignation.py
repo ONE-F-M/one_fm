@@ -139,7 +139,7 @@ def create_resignation(
             "resignation_letter_date": init_date,
         })
 
-        doc.insert()
+        doc.insert(ignore_permissions=True)
 
         # Step 2: Attach the letter (must happen after insert so the row has a name)
         if attachment:
@@ -156,7 +156,7 @@ def create_resignation(
         # Step 3: Advance using the configured workflow transition now that the letter is saved
         from frappe.model.workflow import apply_workflow
         apply_workflow(doc, "Submit to Offboarding Officer")
-                return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
+        return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
 
     except (frappe.PermissionError, frappe.ValidationError):
         raise
@@ -230,7 +230,7 @@ def extend_resignation(
                 "reason": reason or "Extension requested by employee",
             })
 
-        ext.insert()
+        ext.insert(ignore_permissions=True)
 
         # Attach letter after insert so the row has a name
         if attachment:
@@ -313,7 +313,7 @@ def withdraw_resignation(
                 "reason": reason or "Employee-initiated withdrawal",
             })
 
-        withdrawal.insert()
+        withdrawal.insert(ignore_permissions=True)
 
         if attachment:
             att_str = attachment if isinstance(attachment, str) else json.dumps(attachment)

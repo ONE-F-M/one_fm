@@ -567,7 +567,7 @@ def delete_linked_schedules(field,value):
 def notify_offboarding_officer(doc, subject, message):
     recipients = set()
     from frappe.utils.user import get_users_with_role
-    from one_fm.one_fm.utils import resolve_active_user
+
     offboarding_officers = get_users_with_role("Offboarding Officer")
     for user in offboarding_officers:
         recipients.add(resolve_active_user(user))
@@ -589,7 +589,7 @@ def clear_supervisor_assignment(doc):
             if getattr(doc, "supervisor", None):
                 from frappe.desk.form.assign_to import remove
                 try:
-                    remove(doc.doctype, doc.name, doc.supervisor)
+                    remove(doc.doctype, doc.name, doc.supervisor, ignore_permissions=True)
                 except Exception as e:
                     frappe.log_error(str(e), "Clear Supervisor Assignment Error")
 
