@@ -12,7 +12,7 @@ from frappe.desk.doctype.notification_settings.notification_settings import(
 @frappe.whitelist()
 def sendemail(recipients, subject, header=None, message=None,
 	content=None, reference_name=None, reference_doctype=None,
-	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None, is_external_mail=False,is_scheduler_email=False):
+	sender=None, cc=None , attachments=None, delayed=False, args=None, template=None, is_external_mail=False,is_scheduler_email=False, expose_recipients=None):
 	logo = "https://one-fm.com/files/ONEFM_Identity.png"
 	template = "default_email"
 	actions=pdf_link=workflow_state=""
@@ -57,29 +57,41 @@ def sendemail(recipients, subject, header=None, message=None,
 			sender = "Administrator"
 
 	if recipients and len(recipients) > 0:
-		frappe.sendmail(template = template,
-			recipients=recipients,
-			sender= sender,
-			cc=cc,
-			subject=subject,
-			args=dict(
-				header=head,
+		# Fix for PermissionError on Email Queue for non-admin users
+		current_user = frappe.session.user
+		is_admin = current_user == "Administrator"
+
+		try:
+			if not is_admin:
+				frappe.set_user("Administrator")
+
+			frappe.sendmail(template = template,
+				recipients=recipients,
+				sender= sender,
+				cc=cc,
 				subject=subject,
-				message=message,
-				content=content,
-				reference_name= reference_name,
-				reference_doctype = reference_doctype,
-				logo=logo,
-				actions=actions,
-				pdf_link=pdf_link,
-				doc_link=doc_link,
-				workflow_state=workflow_state,
-				mandatory_field=mandatory_field,
-				field_labels=field_labels
-			),
-			attachments = attachments,
-			delayed=delayed
-		)
+				args=dict(
+					header=head,
+					subject=subject,
+					message=message,
+					content=content,
+					reference_name= reference_name,
+					reference_doctype = reference_doctype,
+					logo=logo,
+					actions=actions,
+					pdf_link=pdf_link,
+					doc_link=doc_link,
+					workflow_state=workflow_state,
+					mandatory_field=mandatory_field,
+					field_labels=field_labels
+				),
+				attachments = attachments,
+				delayed=delayed,
+				expose_recipients=expose_recipients
+			)
+		finally:
+			if not is_admin:
+				frappe.set_user(current_user)
 
 def is_email_notifications_allowed(user):
     """
