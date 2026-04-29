@@ -1430,7 +1430,8 @@ def send_contract_reminders(is_scheduled_event=True):
                 recipients=[users[0]],
                 cc=users[1:] if len(users) > 1 else None,
                 subject="Contract Internal Notification Period for Expiring Contracts",
-                content=msg, is_scheduler_email=is_scheduled_event
+                content=msg, is_scheduler_email=is_scheduled_event,
+                expose_recipients="header"
             )
     except Exception as e:
         frappe.log_error(message=str(e), title="Contract Reminder Error")
