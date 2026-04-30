@@ -106,7 +106,8 @@ var set_employee_supervisor = function(frm){
         frappe.call({
             method: 'one_fm.utils.get_approver_user',
             args: {
-                employee: frm.doc.employee
+                employee: frm.doc.employee,
+                skip_shift_supervisor: true
             },
             callback: function(r) {
                 console.log(r.message);
