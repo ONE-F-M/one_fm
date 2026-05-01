@@ -12,6 +12,7 @@ class SalesInvoiceOverride(SalesInvoice):
         self.update_purchase_invoice_link()
         if self.custom_refundable:
             self.validate_contract_item_categories()
+        self.validate_contract_item_rates()
 
     def on_submit(self):
         super(SalesInvoiceOverride, self).on_submit()
@@ -171,6 +172,26 @@ class SalesInvoiceOverride(SalesInvoice):
                             _("Row #{0}: '{1}' is not a valid category for this Contract")
                             .format(item.idx, item.custom_contract_item_category)
                         )
+
+    def validate_contract_item_rates(self):
+        """Story 3: Prevent manual rate adjustments on Sales Invoices generated from Contracts"""
+        for item in self.items:
+            if item.get("custom_contract") and item.get("custom_contract_item"):
+                contract_rate = frappe.db.get_value("Contract Item", item.custom_contract_item, "rate")
+                
+                # Check if it's an Item (instead of Service) which might use amount/rate depending on is_fixed_fee
+                if contract_rate is None:
+                    # Could be a non-service item, fetch full row to check
+                    contract_item = frappe.db.get_value("Contract Item", item.custom_contract_item, ["rate", "amount", "is_fixed_fee"], as_dict=True)
+                    if contract_item:
+                        contract_rate = flt(contract_item.amount) if contract_item.is_fixed_fee else flt(contract_item.rate)
+                
+                if contract_rate is not None and flt(item.rate) != flt(contract_rate):
+                    frappe.throw(
+                        _("Row #{0}: The Rate for Item '{1}' ({2}) does not match the Contract Rate ({3}). Manual rate adjustment is not permitted for Contract items.")
+                        .format(item.idx, item.item_code, flt(item.rate), flt(contract_rate))
+                    )
+
 
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs

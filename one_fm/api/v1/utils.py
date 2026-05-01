@@ -151,8 +151,8 @@ def enrollment_status(employee_id: str = None) -> dict:
         if get_employee.status:
             employee = frappe.get_doc("Employee", get_employee.message.name)
             if employee.enrolled:
-                return response(message=f"Employee <b>{employee.employee_name}</b> is enrolled on the mobile app.", status_code=200, data={'enrolled':True}, error=None)
-            return response(message=f"Employee <b>{employee.employee_name}</b> is not enrolled.", status_code=200, data={'enrolled':False}, error=None)
+                return response(message="Employee is enrolled on the mobile app.", status_code=200, data={'enrolled':True}, error=None)
+            return response(message="Employee is not enrolled.", status_code=200, data={'enrolled':False}, error=None)
         else:
             return response(message=get_employee.message, status_code=get_employee.http_status_code, data={'status':False}, error=None)
     except Exception as e:
@@ -186,6 +186,7 @@ def update_employee(employee_id, field, value):
     except Exception as e:
         return response(message=str(e), status_code=200, data={'status':False}, error=str(e))
 
+
 @frappe.whitelist()
 def get_employee_by_id(employee_id):
     """
@@ -199,7 +200,7 @@ def get_employee_by_id(employee_id):
             return frappe._dict({'status': True, 'message': employee})
         return frappe._dict({'status': False, 'message': f'Employee with ID {employee_id} does not exist', 'http_status_code':404})
     except Exception as e:
-        frappe._dict({'status': False, 'message': str(e), 'http_status_code':500})
+        return frappe._dict({'status': False, 'message': str(e), 'http_status_code':500})
 
 
 
@@ -230,3 +231,46 @@ def verify_via_face_recogniton_service(url: str, data: dict, files: dict) -> tup
             return False, message
         return True, ""
     return False, "Facial Recogniton Service is currently available"
+
+def resolve_active_user(user_id, max_depth=5):
+    """
+    Resolves the target user. If the user is on leave today, transparently routes
+    to their designated Leave Application 'reliever'. Recursively handles chained leaves.
+    """
+    if not user_id:
+        return user_id
+
+    current_user = user_id
+    seen_users = {current_user}
+
+    for _ in range(max_depth):
+        employee = frappe.db.get_value("Employee", {"user_id": current_user, "status": "Active"}, "name")
+        if not employee:
+            break
+
+        today = frappe.utils.today()
+        active_leave = frappe.get_all(
+            "Leave Application",
+            filters={
+                "docstatus": 1,
+                "status": "Approved",
+                "employee": employee,
+                "from_date": ("<=", today),
+                "to_date": (">=", today)
+            },
+            fields=["custom_reliever_"],
+            limit=1
+        )
+
+        if not active_leave or not active_leave[0].custom_reliever_:
+            break
+
+        reliever_user = frappe.db.get_value("Employee", active_leave[0].custom_reliever_, "user_id")
+
+        if not reliever_user or reliever_user in seen_users:
+            break
+        
+        current_user = reliever_user
+        seen_users.add(current_user)
+
+    return current_user

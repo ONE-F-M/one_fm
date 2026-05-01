@@ -122,33 +122,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Backlog\nPending Process Classification\nUpcoming\nActive\nOn Hold\nDeployed",
-   "read_only_depends_on": "eval: doc.process_is_generic || !doc.epic || !doc.process_folder_link"
-  },
-  {
-   "default": "Backlog",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Backlog\nUpcoming\nActive\nOn Hold\nDeployed"
-  },
-  {
-   "fieldname": "hd_ticket",
-   "fieldtype": "Link",
-   "label": "HD Ticket",
-   "options": "HD Ticket",
-   "read_only": 1
-  },
-  {
-   "default": "Backlog",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Backlog\nUpcoming\nActive\nOn Hold\nDeployed"
+   "options": "Backlog\nPending Process Classification\nUpcoming\nActive\nOn Hold\nDeployed"
   },
   {
    "fieldname": "hd_ticket",
@@ -256,8 +230,13 @@
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
- "links": [],
- "modified": "2026-04-19 09:58:00.000000",
+ "links": [
+  {
+   "link_doctype": "BPMN Process Model",
+   "link_fieldname": "pathfinder_log"
+  }
+ ],
+ "modified": "2026-04-28 11:05:58.501850",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Pathfinder Log",

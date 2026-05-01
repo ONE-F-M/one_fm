@@ -552,6 +552,19 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 				if rdo_count <= 1 and is_violating_rdo_policy:
 					validation_logs.append(f"<li><b>{obj}</b>'s total scheduled day off for this full calendar month will be less than 1. Please assign a day off before overwriting.</li>")
 
+				existing_rdos = frappe.get_all("Employee Schedule", filters={
+					"employee": obj,
+					"employee_availability": "Day Off",
+					"date": ["in", obj_dates]
+				}, pluck="name")
+				if existing_rdos:
+					has_reliever = frappe.db.exists("Employee Schedule", {
+						"relieving_employee_schedule": ["in", existing_rdos],
+						"docstatus": ["!=", 2]
+					})
+					if has_reliever:
+						validation_logs.append("<li>A Reliever is currently set for this day. Please adjust the shift of the reliever before re-assigning the original staff to Working to the selected Operations Shift.</li>")
+
 			pref = frappe.db.get_value("Employee", obj, "custom_day_off_preference")			
 			if cint(day_off_ot) and pref == "Day Off":
 				emp_name = frappe.db.get_value("Employee", obj, "employee_name") or obj
@@ -743,7 +756,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 
 	query = """
 		INSERT INTO `tabEmployee Schedule` (`name`, `employee`, `employee_name`, `department`, `date`, `shift`, `site`, `project`, `shift_type`, `employee_availability`,
-		`operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `start_datetime`, `end_datetime`, `owner`, `modified_by`, `creation`, `modified`)
+		`operations_role`, `post_abbrv`, `roster_type`, `day_off_ot`, `start_datetime`, `end_datetime`, `owner`, `modified_by`, `creation`, `modified`,
+		`is_relieving_schedule`, `relieving_employee_schedule`)
 		VALUES
 	"""
 	can_create = False
@@ -812,7 +826,8 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 					'{name}', '{employee_name_iter}', '{employee_doc.employee_name}', '{employee_doc.department}', '{datevalue['date']}', '{operations_shift_doc.name}',
 					'{operations_shift_doc.site}', '{operations_shift_doc.project}', '{operations_shift_doc.shift_type}', 'Working',
 					'{operations_role_doc.name}', '{operations_role_doc.post_abbrv}', '{roster_type}',
-					{day_off_ot_val}, '{datevalue.get('start_datetime')}', '{datevalue.get('end_datetime')}', '{owner}', '{owner}', '{creation}', '{creation}'
+					{day_off_ot_val}, '{datevalue.get('start_datetime')}', '{datevalue.get('end_datetime')}', '{owner}', '{owner}', '{creation}', '{creation}',
+					0, NULL
 				)""")
 			can_create = True
 
@@ -829,11 +844,19 @@ def extreme_schedule(employees, shift, operations_role, otRoster, start_date, en
 			shift = VALUES(shift),
 			project = VALUES(project),
 			site = VALUES(site),
+			reference_doctype = IF(employee_availability = 'Client Event', NULL, reference_doctype),
+			reference_docname = IF(employee_availability = 'Client Event', NULL, reference_docname),
+			client_event = IF(employee_availability = 'Client Event', NULL, client_event),
+			event_staff = IF(employee_availability = 'Client Event', NULL, event_staff),
+			event_location = IF(employee_availability = 'Client Event', NULL, event_location),
+			is_event_schedule = IF(employee_availability = 'Client Event', 0, is_event_schedule),
 			shift_type = VALUES(shift_type),
 			day_off_ot = VALUES(day_off_ot),
 			employee_availability = "Working",
 			start_datetime= VALUES(start_datetime),
-			end_datetime= VALUES(end_datetime)
+			end_datetime= VALUES(end_datetime),
+			is_relieving_schedule = 0,
+			relieving_employee_schedule = NULL
 		"""
 		if can_create:
 			frappe.db.sql(query, values=[])
@@ -1897,6 +1920,13 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 		emp_date_map = frappe._dict()
 		employees_list = json.loads(employees)
 
+		is_weekend_reliever = False
+		if selected_reliever:
+			if selected_reliever in [e["employee"] for e in employees_list]:
+				frappe.throw(_("An employee cannot be assigned as their own reliever."))
+			reliever_is_wknd, reliever_is_glbl = frappe.db.get_value("Employee", selected_reliever, ["custom_is_weekend_reliever", "custom_is_reliever"])
+			is_weekend_reliever = cint(reliever_is_wknd) and not cint(reliever_is_glbl)
+
 		if cint(selected_dates):
 			for emp in employees_list:
 				emp_date_map.setdefault(emp["employee"], []).append(emp["date"])
@@ -1927,6 +1957,11 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 
 		# Now validate all collected dates per employee
 		for emp_mapped, dates_mapped in emp_date_map.items():
+			if selected_reliever and is_weekend_reliever:
+				for expected_date in dates_mapped:
+					if getdate(expected_date).strftime("%A") not in ["Friday", "Saturday"]:
+						frappe.throw("Validation Error: Weekend Relievers can only be assigned on Fridays and Saturdays.")
+
 			check_day_off_preference_validation([emp_mapped], dates_mapped, attempt_type=employee_availability, is_update=False)
 
 		if cint(selected_dates):
@@ -2194,6 +2229,14 @@ def reliever_roster_assignment(reliver_emp_name, roster_list_arg):
 				employee_list=employee_list_for_extreme,
 				selected_reliever=reliver_emp_name,
 			)
+			# Find the newly created schedule for the reliever and update relieving flags
+			reliever_sch_name = f"{date_val_str}_{reliver_emp_name}_{'Basic' if otRoster == 'false' else 'Over-Time'}"
+			original_rdo_name = roster_data_item.get("name")
+			if original_rdo_name:
+				frappe.db.set_value("Employee Schedule", reliever_sch_name, {
+					"is_relieving_schedule": 1,
+					"relieving_employee_schedule": original_rdo_name
+				})
 		else:
 			frappe.log_error(message=f"Skipping reliever assignment due to incomplete roster_data: {roster_data_item}", title="Reliever Assignment")
 
@@ -2736,3 +2779,45 @@ def suspend_employee_action(employees, selected_dates=0, repeat=0, repeat_freq=N
 	except Exception as e:
 		frappe.log_error(message=frappe.get_traceback(), title="Suspend Employee Error")
 		response("Error", 200, None, str(e))
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_relievers_query(doctype, txt, searchfield, start, page_len, filters):
+	import json
+	
+	Employee = frappe.qb.DocType("Employee")
+	
+	query = (
+		frappe.qb.from_(Employee)
+		.select(Employee.name, Employee.employee_name, Employee.custom_is_weekend_reliever, Employee.custom_is_reliever)
+		.where(
+			(Employee.status == "Active") & 
+			((Employee.custom_is_reliever == 1) | (Employee.custom_is_weekend_reliever == 1))
+		)
+	)
+	
+	if txt:
+		query = query.where(
+			(Employee.name.like(f"%{txt}%")) | (Employee.employee_name.like(f"%{txt}%"))
+		)
+		
+	if filters and filters.get("excluded_employees"):
+		excluded = filters.get("excluded_employees")
+		if isinstance(excluded, str):
+			excluded = json.loads(excluded)
+		if excluded:
+			query = query.where(Employee.name.notin(excluded))
+			
+	results = query.run(as_dict=True)
+	
+	final_results = []
+	for res in results:
+		is_weekend = cint(res.get("custom_is_weekend_reliever"))
+		is_reliever = cint(res.get("custom_is_reliever"))
+		if is_weekend and not is_reliever:
+			tag = "Weekend Reliever"
+		else:
+			tag = "Day Off Reliever"
+		final_results.append((res.name, res.employee_name, tag))
+		
+	return final_results

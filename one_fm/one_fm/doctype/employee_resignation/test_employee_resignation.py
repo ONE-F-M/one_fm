@@ -142,3 +142,33 @@ class TestEmployeeResignation(FrappeTestCase):
 		doc.supervisor = None
 		doc.set_supervisor()
 		self.assertIsNone(doc.supervisor)
+
+	def test_validate_dates_invalid(self):
+		"""Test validate_dates() with an invalid date range."""
+		employee_emp = self._make_employee("EMP-VAL-DATES")
+		doc = self._make_resignation(employee_emp)
+		
+		# Relieving date set BEFORE initiation date
+		doc.resignation_initiation_date = "2026-10-15"
+		doc.relieving_date = "2026-10-10"
+		
+		with self.assertRaises(frappe.ValidationError) as context:
+			doc.validate_dates()
+		
+		self.assertTrue("Relieving Date cannot be before Resignation Initiation Date" in str(context.exception))
+
+	def test_api_create_resignation_missing_attachment(self):
+		"""Test that create_resignation API rejects submissions missing attachments."""
+		from one_fm.api.v1.resignation import create_resignation
+		
+		employee_emp = self._make_employee("API-TEST-NO-ATT")
+		
+		with self.assertRaises(frappe.ValidationError) as context:
+			create_resignation(
+				employee_id=employee_emp,
+				resignation_initiation_date="2026-04-01",
+				relieving_date="2026-05-01",
+				attachment=None
+			)
+		
+		self.assertTrue("A resignation letter attachment is mandatory." in str(context.exception))

@@ -17,10 +17,12 @@ frappe.ui.form.on("Pathfinder Log", {
 		});
 
 		set_deployed_read_only(frm);
+		setup_process_map_action(frm);
 	},
 
 	status(frm) {
 		set_deployed_read_only(frm);
+		setup_process_map_action(frm);
 	},
 });
 
@@ -76,5 +78,27 @@ function set_deployed_read_only(frm) {
 		);
 	} else {
 		frm.set_intro("");
+	}
+}
+
+/**
+ * Configure the "Process Map" option under the "Create" menu.
+ * Visible only when status is "Active" and user has create permissions
+ * for the target DocType. Opens in a new tab with prefilled process name.
+ */
+function setup_process_map_action(frm) {
+	frm.page.remove_inner_button(__("Process Map"), __("Create"));
+
+	if (frm.doc.status === "Active") {
+		frm.page.add_inner_button(
+			__("Process Map"),
+			function () {
+				const url = frappe.urllib.get_full_url(
+					`/app/bpmn-process-model/new?process_name=${encodeURIComponent(frm.doc.process_name)}&pathfinder_log=${encodeURIComponent(frm.doc.name)}`
+				);
+				window.open(url, "_blank");
+			},
+			__("Create")
+		);
 	}
 }

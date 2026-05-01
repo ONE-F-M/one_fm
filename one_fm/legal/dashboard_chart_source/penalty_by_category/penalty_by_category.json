@@ -1,0 +1,13 @@
+{
+ "creation": "2026-04-26 10:39:47.507982",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart Source",
+ "idx": 0,
+ "modified": "2026-04-26 11:10:34.097928",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Penalty by Category",
+ "owner": "Administrator",
+ "source_name": "Penalty by Category",
+ "timeseries": 0
+}

@@ -1,0 +1,103 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 1,
+ "autoname": "field:naming_series",
+ "creation": "2026-04-21 05:54:12.659709",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "penalty_name",
+  "violation_type",
+  "description",
+  "column_break_hrnr",
+  "severity_level",
+  "is_active",
+  "section_break_vwry",
+  "penalty_level"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Penalty Code",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "penalty_name",
+   "fieldtype": "Data",
+   "label": "Penalty Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "violation_type",
+   "fieldtype": "Select",
+   "label": "Violation Type",
+   "options": "\nWork\nWork System\nConduct",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "column_break_hrnr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "severity_level",
+   "fieldtype": "Select",
+   "label": "Severity Level",
+   "options": "Minor\nMajor\nCritical"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_active",
+   "fieldtype": "Check",
+   "label": "Is Active"
+  },
+  {
+   "fieldname": "section_break_vwry",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "penalty_level",
+   "fieldtype": "Table",
+   "label": "Penalty Level",
+   "options": "Penalty Level"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-27 22:15:21.928612",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Penalty Code",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "penalty_name",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

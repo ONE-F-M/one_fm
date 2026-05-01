@@ -326,11 +326,12 @@
    "fieldname": "currency_",
    "fieldtype": "Link",
    "label": "Currency",
+   "mandatory_depends_on": "eval:doc.__islocal",
    "options": "Currency"
   }
  ],
  "links": [],
- "modified": "2026-04-21 14:23:04.023731",
+ "modified": "2026-04-25 10:03:35.969070",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Contracts",

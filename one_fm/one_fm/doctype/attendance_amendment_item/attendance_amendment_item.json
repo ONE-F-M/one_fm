@@ -1,574 +1,576 @@
 {
- "actions": [],
- "allow_rename": 1,
- "creation": "2025-11-03 16:00:59.740568",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "employee",
-  "employee_id",
-  "employee_name",
-  "operations_role",
-  "sale_item",
-  "site",
-  "project",
-  "column_break_umcf",
-  "shift",
-  "working_days",
-  "off_days",
-  "duration",
-  "status",
-  "attendance_status_section",
-  "day_1",
-  "day_5",
-  "day_9",
-  "day_13",
-  "day_17",
-  "day_21",
-  "day_25",
-  "day_29",
-  "column_break_maby",
-  "day_2",
-  "day_6",
-  "day_10",
-  "day_14",
-  "day_18",
-  "day_22",
-  "day_26",
-  "day_30",
-  "column_break_ymzy",
-  "day_3",
-  "day_7",
-  "day_11",
-  "day_15",
-  "day_19",
-  "day_23",
-  "day_27",
-  "day_31",
-  "column_break_riqu",
-  "day_4",
-  "day_8",
-  "day_12",
-  "day_16",
-  "day_20",
-  "day_24",
-  "day_28",
-  "attendance_hours_section",
-  "day_1_hour",
-  "day_5_hour",
-  "day_9_hour",
-  "day_13_hour",
-  "day_17_hour",
-  "day_21_hour",
-  "day_25_hour",
-  "day_29_hour",
-  "column_break_abcd",
-  "day_2_hour",
-  "day_6_hour",
-  "day_10_hour",
-  "day_14_hour",
-  "day_18_hour",
-  "day_22_hour",
-  "day_26_hour",
-  "day_30_hour",
-  "column_break_efgh",
-  "day_3_hour",
-  "day_7_hour",
-  "day_11_hour",
-  "day_15_hour",
-  "day_19_hour",
-  "day_23_hour",
-  "day_27_hour",
-  "day_31_hour",
-  "column_break_ijhk",
-  "day_4_hour",
-  "day_8_hour",
-  "day_12_hour",
-  "day_16_hour",
-  "day_20_hour",
-  "day_24_hour",
-  "day_28_hour"
- ],
- "fields": [
-  {
-   "fieldname": "employee",
-   "fieldtype": "Link",
-   "label": "Employee",
-   "options": "Employee"
-  },
-  {
-   "fieldname": "employee_id",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee ID"
-  },
-  {
-   "fetch_from": "employee.employee_name",
-   "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Employee Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_umcf",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "shift",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Shift"
-  },
-  {
-   "fieldname": "working_days",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Working Days"
-  },
-  {
-   "fieldname": "off_days",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Off Days"
-  },
-  {
-   "fieldname": "attendance_status_section",
-   "fieldtype": "Section Break",
-   "label": "Attendance Status"
-  },
-  {
-   "fieldname": "day_1",
-   "fieldtype": "Select",
-   "label": "Day 1",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_5",
-   "fieldtype": "Select",
-   "label": "Day 5",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_9",
-   "fieldtype": "Select",
-   "label": "Day 9",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_13",
-   "fieldtype": "Select",
-   "label": "Day 13",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_17",
-   "fieldtype": "Select",
-   "label": "Day 17",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_21",
-   "fieldtype": "Select",
-   "label": "Day 21",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_25",
-   "fieldtype": "Select",
-   "label": "Day 25",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "depends_on": "day_29",
-   "fieldname": "day_29",
-   "fieldtype": "Select",
-   "label": "Day 29",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "column_break_maby",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "day_2",
-   "fieldtype": "Select",
-   "label": "Day 2",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_6",
-   "fieldtype": "Select",
-   "label": "Day 6",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_10",
-   "fieldtype": "Select",
-   "label": "Day 10",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_14",
-   "fieldtype": "Select",
-   "label": "Day 14",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_18",
-   "fieldtype": "Select",
-   "label": "Day 18",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_22",
-   "fieldtype": "Select",
-   "label": "Day 22",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_26",
-   "fieldtype": "Select",
-   "label": "Day 26",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "depends_on": "day_30",
-   "fieldname": "day_30",
-   "fieldtype": "Select",
-   "label": "Day 30",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "column_break_ymzy",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "day_3",
-   "fieldtype": "Select",
-   "label": "Day 3",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_7",
-   "fieldtype": "Select",
-   "label": "Day 7",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_11",
-   "fieldtype": "Select",
-   "label": "Day 11",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_15",
-   "fieldtype": "Select",
-   "label": "Day 15",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_19",
-   "fieldtype": "Select",
-   "label": "Day 19",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_23",
-   "fieldtype": "Select",
-   "label": "Day 23",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_27",
-   "fieldtype": "Select",
-   "label": "Day 27",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "depends_on": "day_31",
-   "fieldname": "day_31",
-   "fieldtype": "Select",
-   "label": "Day 31",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "column_break_riqu",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "day_4",
-   "fieldtype": "Select",
-   "label": "Day 4",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_8",
-   "fieldtype": "Select",
-   "label": "Day 8",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_12",
-   "fieldtype": "Select",
-   "label": "Day 12",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_16",
-   "fieldtype": "Select",
-   "label": "Day 16",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_20",
-   "fieldtype": "Select",
-   "label": "Day 20",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_24",
-   "fieldtype": "Select",
-   "label": "Day 24",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "day_28",
-   "fieldtype": "Select",
-   "label": "Day 28",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
-  },
-  {
-   "fieldname": "attendance_hours_section",
-   "fieldtype": "Section Break",
-   "label": "Attendance Hours"
-  },
-  {
-   "fieldname": "day_1_hour",
-   "fieldtype": "Data",
-   "label": "Day 1"
-  },
-  {
-   "fieldname": "day_5_hour",
-   "fieldtype": "Data",
-   "label": "Day 5"
-  },
-  {
-   "fieldname": "day_9_hour",
-   "fieldtype": "Data",
-   "label": "Day 9"
-  },
-  {
-   "fieldname": "day_13_hour",
-   "fieldtype": "Data",
-   "label": "Day 13"
-  },
-  {
-   "fieldname": "day_17_hour",
-   "fieldtype": "Data",
-   "label": "Day 17"
-  },
-  {
-   "fieldname": "day_21_hour",
-   "fieldtype": "Data",
-   "label": "Day 21"
-  },
-  {
-   "fieldname": "day_25_hour",
-   "fieldtype": "Data",
-   "label": "Day 25"
-  },
-  {
-   "depends_on": "day_29_hour",
-   "fieldname": "day_29_hour",
-   "fieldtype": "Data",
-   "label": "Day 29"
-  },
-  {
-   "fieldname": "column_break_abcd",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "day_2_hour",
-   "fieldtype": "Data",
-   "label": "Day 2"
-  },
-  {
-   "fieldname": "day_6_hour",
-   "fieldtype": "Data",
-   "label": "Day 6"
-  },
-  {
-   "fieldname": "day_10_hour",
-   "fieldtype": "Data",
-   "label": "Day 10"
-  },
-  {
-   "fieldname": "day_14_hour",
-   "fieldtype": "Data",
-   "label": "Day 14"
-  },
-  {
-   "fieldname": "day_18_hour",
-   "fieldtype": "Data",
-   "label": "Day 18"
-  },
-  {
-   "fieldname": "day_22_hour",
-   "fieldtype": "Data",
-   "label": "Day 22"
-  },
-  {
-   "fieldname": "day_26_hour",
-   "fieldtype": "Data",
-   "label": "Day 26"
-  },
-  {
-   "depends_on": "day_30_hour",
-   "fieldname": "day_30_hour",
-   "fieldtype": "Data",
-   "label": "Day 30"
-  },
-  {
-   "fieldname": "column_break_efgh",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "day_3_hour",
-   "fieldtype": "Data",
-   "label": "Day 3"
-  },
-  {
-   "fieldname": "day_7_hour",
-   "fieldtype": "Data",
-   "label": "Day 7"
-  },
-  {
-   "fieldname": "day_11_hour",
-   "fieldtype": "Data",
-   "label": "Day 11"
-  },
-  {
-   "fieldname": "day_15_hour",
-   "fieldtype": "Data",
-   "label": "Day 15"
-  },
-  {
-   "fieldname": "day_19_hour",
-   "fieldtype": "Data",
-   "label": "Day 19"
-  },
-  {
-   "fieldname": "day_23_hour",
-   "fieldtype": "Data",
-   "label": "Day 23"
-  },
-  {
-   "fieldname": "day_27_hour",
-   "fieldtype": "Data",
-   "label": "Day 27"
-  },
-  {
-   "depends_on": "day_31_hour",
-   "fieldname": "day_31_hour",
-   "fieldtype": "Data",
-   "label": "Day 31"
-  },
-  {
-   "fieldname": "column_break_ijhk",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "day_4_hour",
-   "fieldtype": "Data",
-   "label": "Day 4"
-  },
-  {
-   "fieldname": "day_8_hour",
-   "fieldtype": "Data",
-   "label": "Day 8"
-  },
-  {
-   "fieldname": "day_12_hour",
-   "fieldtype": "Data",
-   "label": "Day 12"
-  },
-  {
-   "fieldname": "day_16_hour",
-   "fieldtype": "Data",
-   "label": "Day 16"
-  },
-  {
-   "fieldname": "day_20_hour",
-   "fieldtype": "Data",
-   "label": "Day 20"
-  },
-  {
-   "fieldname": "day_24_hour",
-   "fieldtype": "Data",
-   "label": "Day 24"
-  },
-  {
-   "fieldname": "day_28_hour",
-   "fieldtype": "Data",
-   "label": "Day 28"
-  },
-  {
-   "fetch_from": "employee.custom_operations_role_allocation",
-   "fieldname": "operations_role",
-   "fieldtype": "Link",
-   "label": "Operations Role",
-   "options": "Operations Role",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "operations_role.sale_item",
-   "fieldname": "sale_item",
-   "fieldtype": "Link",
-   "label": "Sale Item",
-   "options": "Item"
-  },
-  {
-   "fetch_from": "operations_role.site",
-   "fieldname": "site",
-   "fieldtype": "Link",
-   "label": "Site",
-   "options": "Operations Site",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "operations_role.project",
-   "fieldname": "project",
-   "fieldtype": "Link",
-   "label": "Project",
-   "options": "Project",
-   "read_only": 1
-  },
-  {
-   "fieldname": "duration",
-   "fieldtype": "Float",
-   "label": "Duration"
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "label": "Status",
-   "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nHoliday\nOn Hold"
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "istable": 1,
- "links": [],
- "modified": "2025-12-17 13:50:41.339287",
- "modified_by": "Administrator",
- "module": "One Fm",
- "name": "Attendance Amendment Item",
- "owner": "Administrator",
- "permissions": [],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": []
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2025-11-03 16:00:59.740568",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "employee",
+        "employee_id",
+        "employee_name",
+        "operations_role",
+        "sale_item",
+        "site",
+        "project",
+        "column_break_umcf",
+        "shift",
+        "working_days",
+        "off_days",
+        "duration",
+        "status",
+        "attendance_status_section",
+        "day_1",
+        "day_5",
+        "day_9",
+        "day_13",
+        "day_17",
+        "day_21",
+        "day_25",
+        "day_29",
+        "column_break_maby",
+        "day_2",
+        "day_6",
+        "day_10",
+        "day_14",
+        "day_18",
+        "day_22",
+        "day_26",
+        "day_30",
+        "column_break_ymzy",
+        "day_3",
+        "day_7",
+        "day_11",
+        "day_15",
+        "day_19",
+        "day_23",
+        "day_27",
+        "day_31",
+        "column_break_riqu",
+        "day_4",
+        "day_8",
+        "day_12",
+        "day_16",
+        "day_20",
+        "day_24",
+        "day_28",
+        "attendance_hours_section",
+        "day_1_hour",
+        "day_5_hour",
+        "day_9_hour",
+        "day_13_hour",
+        "day_17_hour",
+        "day_21_hour",
+        "day_25_hour",
+        "day_29_hour",
+        "column_break_abcd",
+        "day_2_hour",
+        "day_6_hour",
+        "day_10_hour",
+        "day_14_hour",
+        "day_18_hour",
+        "day_22_hour",
+        "day_26_hour",
+        "day_30_hour",
+        "column_break_efgh",
+        "day_3_hour",
+        "day_7_hour",
+        "day_11_hour",
+        "day_15_hour",
+        "day_19_hour",
+        "day_23_hour",
+        "day_27_hour",
+        "day_31_hour",
+        "column_break_ijhk",
+        "day_4_hour",
+        "day_8_hour",
+        "day_12_hour",
+        "day_16_hour",
+        "day_20_hour",
+        "day_24_hour",
+        "day_28_hour"
+    ],
+    "fields": [
+        {
+            "fieldname": "employee",
+            "fieldtype": "Link",
+            "label": "Employee",
+            "options": "Employee"
+        },
+        {
+            "fieldname": "employee_id",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Employee ID"
+        },
+        {
+            "fetch_from": "employee.employee_name",
+            "fieldname": "employee_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Employee Name",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_umcf",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "shift",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Shift"
+        },
+        {
+            "fieldname": "working_days",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Working Days"
+        },
+        {
+            "fieldname": "off_days",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Off Days"
+        },
+        {
+            "depends_on": "eval:parent.attendance_based_on != 'Shift Hours'",
+            "fieldname": "attendance_status_section",
+            "fieldtype": "Section Break",
+            "label": "Attendance Status"
+        },
+        {
+            "fieldname": "day_1",
+            "fieldtype": "Select",
+            "label": "Day 1",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_5",
+            "fieldtype": "Select",
+            "label": "Day 5",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_9",
+            "fieldtype": "Select",
+            "label": "Day 9",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_13",
+            "fieldtype": "Select",
+            "label": "Day 13",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_17",
+            "fieldtype": "Select",
+            "label": "Day 17",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_21",
+            "fieldtype": "Select",
+            "label": "Day 21",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_25",
+            "fieldtype": "Select",
+            "label": "Day 25",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "depends_on": "day_29",
+            "fieldname": "day_29",
+            "fieldtype": "Select",
+            "label": "Day 29",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "column_break_maby",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "day_2",
+            "fieldtype": "Select",
+            "label": "Day 2",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_6",
+            "fieldtype": "Select",
+            "label": "Day 6",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_10",
+            "fieldtype": "Select",
+            "label": "Day 10",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_14",
+            "fieldtype": "Select",
+            "label": "Day 14",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_18",
+            "fieldtype": "Select",
+            "label": "Day 18",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_22",
+            "fieldtype": "Select",
+            "label": "Day 22",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_26",
+            "fieldtype": "Select",
+            "label": "Day 26",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "depends_on": "day_30",
+            "fieldname": "day_30",
+            "fieldtype": "Select",
+            "label": "Day 30",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "column_break_ymzy",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "day_3",
+            "fieldtype": "Select",
+            "label": "Day 3",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_7",
+            "fieldtype": "Select",
+            "label": "Day 7",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_11",
+            "fieldtype": "Select",
+            "label": "Day 11",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_15",
+            "fieldtype": "Select",
+            "label": "Day 15",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_19",
+            "fieldtype": "Select",
+            "label": "Day 19",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_23",
+            "fieldtype": "Select",
+            "label": "Day 23",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_27",
+            "fieldtype": "Select",
+            "label": "Day 27",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "depends_on": "day_31",
+            "fieldname": "day_31",
+            "fieldtype": "Select",
+            "label": "Day 31",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "column_break_riqu",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "day_4",
+            "fieldtype": "Select",
+            "label": "Day 4",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_8",
+            "fieldtype": "Select",
+            "label": "Day 8",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_12",
+            "fieldtype": "Select",
+            "label": "Day 12",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_16",
+            "fieldtype": "Select",
+            "label": "Day 16",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_20",
+            "fieldtype": "Select",
+            "label": "Day 20",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_24",
+            "fieldtype": "Select",
+            "label": "Day 24",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "fieldname": "day_28",
+            "fieldtype": "Select",
+            "label": "Day 28",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nFingerprint Appointment\nMedical Appointment\nHoliday\nOn Hold"
+        },
+        {
+            "depends_on": "eval:parent.attendance_based_on == 'Shift Hours'",
+            "fieldname": "attendance_hours_section",
+            "fieldtype": "Section Break",
+            "label": "Attendance Hours"
+        },
+        {
+            "fieldname": "day_1_hour",
+            "fieldtype": "Data",
+            "label": "Day 1"
+        },
+        {
+            "fieldname": "day_5_hour",
+            "fieldtype": "Data",
+            "label": "Day 5"
+        },
+        {
+            "fieldname": "day_9_hour",
+            "fieldtype": "Data",
+            "label": "Day 9"
+        },
+        {
+            "fieldname": "day_13_hour",
+            "fieldtype": "Data",
+            "label": "Day 13"
+        },
+        {
+            "fieldname": "day_17_hour",
+            "fieldtype": "Data",
+            "label": "Day 17"
+        },
+        {
+            "fieldname": "day_21_hour",
+            "fieldtype": "Data",
+            "label": "Day 21"
+        },
+        {
+            "fieldname": "day_25_hour",
+            "fieldtype": "Data",
+            "label": "Day 25"
+        },
+        {
+            "depends_on": "day_29_hour",
+            "fieldname": "day_29_hour",
+            "fieldtype": "Data",
+            "label": "Day 29"
+        },
+        {
+            "fieldname": "column_break_abcd",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "day_2_hour",
+            "fieldtype": "Data",
+            "label": "Day 2"
+        },
+        {
+            "fieldname": "day_6_hour",
+            "fieldtype": "Data",
+            "label": "Day 6"
+        },
+        {
+            "fieldname": "day_10_hour",
+            "fieldtype": "Data",
+            "label": "Day 10"
+        },
+        {
+            "fieldname": "day_14_hour",
+            "fieldtype": "Data",
+            "label": "Day 14"
+        },
+        {
+            "fieldname": "day_18_hour",
+            "fieldtype": "Data",
+            "label": "Day 18"
+        },
+        {
+            "fieldname": "day_22_hour",
+            "fieldtype": "Data",
+            "label": "Day 22"
+        },
+        {
+            "fieldname": "day_26_hour",
+            "fieldtype": "Data",
+            "label": "Day 26"
+        },
+        {
+            "depends_on": "day_30_hour",
+            "fieldname": "day_30_hour",
+            "fieldtype": "Data",
+            "label": "Day 30"
+        },
+        {
+            "fieldname": "column_break_efgh",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "day_3_hour",
+            "fieldtype": "Data",
+            "label": "Day 3"
+        },
+        {
+            "fieldname": "day_7_hour",
+            "fieldtype": "Data",
+            "label": "Day 7"
+        },
+        {
+            "fieldname": "day_11_hour",
+            "fieldtype": "Data",
+            "label": "Day 11"
+        },
+        {
+            "fieldname": "day_15_hour",
+            "fieldtype": "Data",
+            "label": "Day 15"
+        },
+        {
+            "fieldname": "day_19_hour",
+            "fieldtype": "Data",
+            "label": "Day 19"
+        },
+        {
+            "fieldname": "day_23_hour",
+            "fieldtype": "Data",
+            "label": "Day 23"
+        },
+        {
+            "fieldname": "day_27_hour",
+            "fieldtype": "Data",
+            "label": "Day 27"
+        },
+        {
+            "depends_on": "day_31_hour",
+            "fieldname": "day_31_hour",
+            "fieldtype": "Data",
+            "label": "Day 31"
+        },
+        {
+            "fieldname": "column_break_ijhk",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "day_4_hour",
+            "fieldtype": "Data",
+            "label": "Day 4"
+        },
+        {
+            "fieldname": "day_8_hour",
+            "fieldtype": "Data",
+            "label": "Day 8"
+        },
+        {
+            "fieldname": "day_12_hour",
+            "fieldtype": "Data",
+            "label": "Day 12"
+        },
+        {
+            "fieldname": "day_16_hour",
+            "fieldtype": "Data",
+            "label": "Day 16"
+        },
+        {
+            "fieldname": "day_20_hour",
+            "fieldtype": "Data",
+            "label": "Day 20"
+        },
+        {
+            "fieldname": "day_24_hour",
+            "fieldtype": "Data",
+            "label": "Day 24"
+        },
+        {
+            "fieldname": "day_28_hour",
+            "fieldtype": "Data",
+            "label": "Day 28"
+        },
+        {
+            "fetch_from": "employee.custom_operations_role_allocation",
+            "fieldname": "operations_role",
+            "fieldtype": "Link",
+            "label": "Operations Role",
+            "options": "Operations Role",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "operations_role.sale_item",
+            "fieldname": "sale_item",
+            "fieldtype": "Link",
+            "label": "Sale Item",
+            "options": "Item"
+        },
+        {
+            "fetch_from": "operations_role.site",
+            "fieldname": "site",
+            "fieldtype": "Link",
+            "label": "Site",
+            "options": "Operations Site",
+            "read_only": 1
+        },
+        {
+            "fetch_from": "operations_role.project",
+            "fieldname": "project",
+            "fieldtype": "Link",
+            "label": "Project",
+            "options": "Project",
+            "read_only": 1
+        },
+        {
+            "fieldname": "duration",
+            "fieldtype": "Float",
+            "label": "Duration"
+        },
+        {
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "label": "Status",
+            "options": "Present\nAbsent\nOn Leave\nHalf Day\nWork From Home\nDay Off\nClient Day Off\nHoliday\nOn Hold"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "links": [],
+    "modified": "2025-12-17 13:50:41.339287",
+    "modified_by": "Administrator",
+    "module": "One Fm",
+    "name": "Attendance Amendment Item",
+    "owner": "Administrator",
+    "permissions": [],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
 }

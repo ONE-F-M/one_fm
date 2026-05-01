@@ -1,0 +1,13 @@
+{
+ "creation": "2026-04-23 23:37:50.474571",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart Source",
+ "idx": 0,
+ "modified": "2026-04-23 23:37:50.474571",
+ "modified_by": "Administrator",
+ "module": "Legal",
+ "name": "Severity Count",
+ "owner": "Administrator",
+ "source_name": "Severity Count",
+ "timeseries": 0
+}

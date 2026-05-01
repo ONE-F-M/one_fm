@@ -103,6 +103,30 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 			if frappe.db.has_column("Project Manpower Request", "workflow_state"):
 				self.assertEqual(pmr.workflow_state, "Withdrawn")
 
+	def test_withdrawal_blocked_when_pmr_completed(self):
+		if frappe.db.exists("DocType", "Project Manpower Request"):
+			pmr = frappe.get_doc({
+				"doctype": "Project Manpower Request",
+				"employee_resignation": self.resignation.name,
+				"project": _get_or_create_project(),
+				"title": "Test PMR",
+				"workflow_state": "Completed"
+			})
+			pmr.flags.ignore_mandatory = True
+			pmr.insert(ignore_permissions=True)
+			
+			erw = frappe.get_doc({
+				"doctype": "Employee Resignation Withdrawal",
+				"employee_resignation": self.resignation.name,
+				"reason": "Changed my mind",
+				"resignation_withdrawal_letter": "/files/test.txt",
+			})
+			
+			with self.assertRaises(frappe.ValidationError) as context:
+				erw.validate()
+			
+			self.assertTrue("Cannot withdraw resignation because the replacement Project Manpower Request" in str(context.exception))
+
 def _get_or_create_project():
 	project_name = "Test Project"
 	if not frappe.db.exists("Project", project_name):

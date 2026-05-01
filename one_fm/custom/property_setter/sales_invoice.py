@@ -142,5 +142,14 @@ def get_sales_invoice_properties():
             "property": "fetch_if_empty",
             "property_type": "Check",
             "value": "1"
+        },
+        {
+            "doctype": "Property Setter",
+            "doc_type": "Sales Invoice",
+            "doctype_or_field": "DocField",
+            "field_name": "taxes_section",
+            "property": "collapsible",
+            "property_type": "Check",
+            "value": "1"
         }
     ]

@@ -1,153 +1,199 @@
 {
-    "actions": [],
-    "allow_rename": 1,
-    "autoname": "format:SSA-{subcontractor_name}-{from_date}-{to_date}",
-    "creation": "2026-04-09 00:22:56.245014",
-    "doctype": "DocType",
-    "editable_grid": 1,
-    "engine": "InnoDB",
-    "field_order": [
-        "section_break_bmk6",
-        "amended_from",
-        "section_break_utae",
-        "subcontractor_name",
-        "posting_date",
-        "column_break_qgbk",
-        "from_date",
-        "to_date",
-        "attendance_record_based_on",
-        "fetch_attendance_record",
-        "section_break_wham",
-        "subcontractor_staff_attendance_item"
-    ],
-    "fields": [
-        {
-            "fieldname": "section_break_bmk6",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "amended_from",
-            "fieldtype": "Link",
-            "label": "Amended From",
-            "no_copy": 1,
-            "options": "Subcontract Staff Attendance",
-            "print_hide": 1,
-            "read_only": 1
-        },
-        {
-            "fieldname": "section_break_utae",
-            "fieldtype": "Section Break",
-            "label": "Basic Information"
-        },
-        {
-            "fieldname": "subcontractor_name",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "label": "Subcontractor Name",
-            "options": "Supplier",
-            "reqd": 1
-        },
-        {
-            "fieldname": "posting_date",
-            "fieldtype": "Date",
-            "label": "Posting Date",
-            "read_only": 1
-        },
-        {
-            "fieldname": "column_break_qgbk",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "from_date",
-            "fieldtype": "Date",
-            "in_list_view": 1,
-            "label": "From Date",
-            "reqd": 1
-        },
-        {
-            "fieldname": "to_date",
-            "fieldtype": "Date",
-            "in_list_view": 1,
-            "label": "To Date",
-            "reqd": 1
-        },
-        {
-            "fieldname": "attendance_record_based_on",
-            "fieldtype": "Select",
-            "label": "Attendance Record Based On",
-            "options": "Attendance Status\nShift Hours",
-            "reqd": 1
-        },
-        {
-            "fieldname": "fetch_attendance_record",
-            "fieldtype": "Button",
-            "label": "Fetch Attendance Record"
-        },
-        {
-            "fieldname": "section_break_wham",
-            "fieldtype": "Section Break",
-            "label": "Monthly Attendance Data"
-        },
-        {
-            "fieldname": "subcontractor_staff_attendance_item",
-            "fieldtype": "Table",
-            "label": "Subcontract Staff Attendance Details",
-            "options": "Subcontractor Staff Attendance Item"
-        }
-    ],
-    "grid_page_length": 50,
-    "index_web_pages_for_search": 1,
-    "is_submittable": 1,
-    "links": [],
-    "modified": "2026-04-09 00:22:56.245014",
-    "modified_by": "Administrator",
-    "module": "One Fm",
-    "name": "Subcontract Staff Attendance",
-    "naming_rule": "Expression",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "submit": 1,
-            "write": 1
-        },
-        {
-            "create": 1,
-            "delete": 0,
-            "email": 0,
-            "export": 0,
-            "print": 0,
-            "read": 1,
-            "report": 0,
-            "role": "Subcontractor",
-            "share": 0,
-            "submit": 0,
-            "write": 1
-        },
-        {
-            "create": 0,
-            "delete": 0,
-            "email": 1,
-            "export": 0,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "Operations Supervisor",
-            "share": 0,
-            "submit": 1,
-            "write": 1
-        }
-    ],
-    "row_format": "Dynamic",
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": []
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:SSA-{subcontractor_name}-{from_date}-{to_date}",
+ "creation": "2026-04-09 00:22:56.245014",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_bmk6",
+  "amended_from",
+  "section_break_utae",
+  "subcontractor_name",
+  "posting_date",
+  "column_break_qgbk",
+  "from_date",
+  "to_date",
+  "attendance_record_based_on",
+  "fetch_attendance_record",
+  "project_and_site_details_section",
+  "project",
+  "project_manager",
+  "project_manager_user",
+  "column_break_cfij",
+  "site",
+  "operations_supervisor",
+  "operations_supervisor_user",
+  "section_break_wham",
+  "subcontractor_staff_attendance_item"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_bmk6",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Subcontract Staff Attendance",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_utae",
+   "fieldtype": "Section Break",
+   "label": "Basic Information"
+  },
+  {
+   "fieldname": "subcontractor_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Subcontractor Name",
+   "options": "Supplier",
+   "reqd": 1
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_qgbk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "From Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "To Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "attendance_record_based_on",
+   "fieldtype": "Select",
+   "label": "Attendance Record Based On",
+   "options": "Attendance Status\nShift Hours",
+   "reqd": 1
+  },
+  {
+   "fieldname": "fetch_attendance_record",
+   "fieldtype": "Button",
+   "label": "Fetch Attendance Record"
+  },
+  {
+   "fieldname": "section_break_wham",
+   "fieldtype": "Section Break",
+   "label": "Monthly Attendance Data"
+  },
+  {
+   "fieldname": "subcontractor_staff_attendance_item",
+   "fieldtype": "Table",
+   "label": "Subcontract Staff Attendance Details",
+   "options": "Subcontractor Staff Attendance Item"
+  },
+  {
+   "fieldname": "project_and_site_details_section",
+   "fieldtype": "Section Break",
+   "label": "Project and Site Details"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fetch_from": "project.project_manager",
+   "fieldname": "project_manager",
+   "fieldtype": "Link",
+   "label": "Project Manager",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "project_manager.user_id",
+   "fieldname": "project_manager_user",
+   "fieldtype": "Link",
+   "label": "Project Manager User",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_cfij",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site"
+  },
+  {
+   "fetch_from": "site.site_supervisor",
+   "fieldname": "operations_supervisor",
+   "fieldtype": "Link",
+   "label": "Operations Supervisor",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "operations_supervisor.user_id",
+   "fieldname": "operations_supervisor_user",
+   "fieldtype": "Link",
+   "label": "Operations Supervisor User",
+   "options": "User"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-26 23:21:57.315480",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Subcontract Staff Attendance",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Subcontractor",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Supervisor",
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
 }

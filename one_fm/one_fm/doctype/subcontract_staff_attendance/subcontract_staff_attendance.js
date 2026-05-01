@@ -4,7 +4,7 @@
 frappe.ui.form.on("Subcontract Staff Attendance", {
 	refresh(frm) {
 		if (frm.doc.workflow_state === "Approved" && !frm.doc.__islocal) {
-			frm.add_custom_button(__("Generate Invoice"), function() {
+			frm.add_custom_button(__("Generate Purchase Invoice"), function() {
 				frappe.confirm(__("Are you sure you want to generate a Purchase Invoice?"), function() {
 					frappe.call({
 						method: "generate_invoice",
@@ -81,28 +81,63 @@ function show_attendance_preview(frm) {
 		"On Hold": "OH"
 	};
 
-	let headers = `<th>${__("Employee ID")}</th><th>${__("Employee Name")}</th>`;
+	let top_headers = `<th rowspan="2" style="vertical-align: middle;">${__("Employee ID")}</th><th rowspan="2" style="vertical-align: middle;">${__("Employee Name")}</th>`;
+	let bottom_headers = ``;
 	let dates = [];
 	for (let i = 0; i < days_in_range; i++) {
 		let current_date = moment(from_date).add(i, 'days');
 		let is_friday = current_date.day() === 5;
-		let display_date = current_date.format("D.M");
+		let day_name = current_date.format("ddd");
+		let display_date = current_date.format("D/M");
 		dates.push({date: current_date, is_friday: is_friday, day_num: current_date.date()});
-		headers += `<th class="${is_friday ? 'bg-secondary text-white' : ''}" style="min-width: 40px; text-align: center;">${display_date}</th>`;
+		
+		top_headers += `<th class="${is_friday ? 'bg-light' : ''}" style="min-width: 40px; text-align: center;">${day_name}</th>`;
+		bottom_headers += `<th class="${is_friday ? 'bg-light' : ''}" style="min-width: 40px; text-align: center;">${display_date}</th>`;
 	}
+	top_headers += `<th rowspan="2" style="text-align: center; vertical-align: middle;">${__("Working Days")}</th><th rowspan="2" style="text-align: center; vertical-align: middle;">${__("Days Off")}</th>`;
 
 	let rows = "";
 	(frm.doc.subcontractor_staff_attendance_item || []).forEach(row => {
 		let cells = `<td>${row.employee_id || ""}</td><td>${row.employee_name || ""}</td>`;
+		let working_total = 0;
+		let days_off_total = 0;
+
 		dates.forEach(d => {
 			let val = row[`day_${d.day_num}`] || "";
 			if (frm.doc.attendance_record_based_on === "Attendance Status") {
 				val = status_map[val] || val;
+				
+				if (val === "P" || val === "WFH") {
+					working_total += 1;
+				} else if (val === "HD") {
+					working_total += 0.5;
+				} else if (val === "DO" || val === "CDO" || val === "H") {
+					// NOTE: Included "H" (Holiday) as working day usually but user said "Total DO statuses"
+					// We'll increment DO for "DO" and "CDO", for actual working total we stick to P/WFH/HD
+				}
+				
+				if (val === "DO" || val === "CDO") {
+					days_off_total += 1;
+				}
 			} else if (frm.doc.attendance_record_based_on === "Shift Hours") {
-				val = row[`day_${d.day_num}_hour`] || "";
+				let hr_val = row[`day_${d.day_num}_hour`];
+				val = hr_val || "";
+				if (val && parseFloat(val) > 0) {
+					working_total += 1;
+				}
+				
+				let status_for_do = row[`day_${d.day_num}`] || "";
+				let status_val_mapped = status_map[status_for_do] || status_for_do;
+				if (status_val_mapped === "DO" || status_val_mapped === "CDO") {
+					days_off_total += 1;
+				}
 			}
 			cells += `<td class="${d.is_friday ? 'bg-light' : ''}" style="text-align: center;">${val}</td>`;
 		});
+		
+		// Append calculations
+		cells += `<td style="text-align: center; font-weight: bold;">${working_total}</td>`;
+		cells += `<td style="text-align: center; font-weight: bold;">${days_off_total}</td>`;
 		rows += `<tr>${cells}</tr>`;
 	});
 
@@ -110,7 +145,8 @@ function show_attendance_preview(frm) {
 		<div style="overflow-x: auto; max-height: 60vh;">
 			<table class="table table-bordered table-sm" style="font-size: 11px; white-space: nowrap;">
 				<thead class="bg-light">
-					<tr>${headers}</tr>
+					<tr>${top_headers}</tr>
+					<tr>${bottom_headers}</tr>
 				</thead>
 				<tbody>
 					${rows}
@@ -120,7 +156,7 @@ function show_attendance_preview(frm) {
 	`;
 
 	const dialog = new frappe.ui.Dialog({
-		title: __("Attendance Preview Matrix"),
+		title: __("Attendance Preview"),
 		fields: [
 			{
 				fieldtype: "HTML",

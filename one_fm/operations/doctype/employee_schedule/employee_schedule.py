@@ -56,6 +56,20 @@ class EmployeeSchedule(Document):
 				frappe.delete_doc("Employee Schedule", ot.name, ignore_permissions=True)
 
 	def validate(self):
+		# Clear Client Event-specific fields when transitioning AWAY from Client Event.
+		# This handles saves done from the Desk form (roster uses direct SQL).
+		if not self.is_new():
+			previous_availability = frappe.db.get_value(
+				"Employee Schedule", self.name, "employee_availability"
+			)
+			if previous_availability == "Client Event" and self.employee_availability != "Client Event":
+				self.reference_doctype = ""
+				self.reference_docname = ""
+				self.is_event_schedule = 0
+				self.client_event = ""
+				self.event_staff = ""
+				self.event_location = ""
+
 		self.validate_ojt_change()
 		self.validate_leave_application()
 		self.validate_relieving_date()

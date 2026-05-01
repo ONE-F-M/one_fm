@@ -1,0 +1,38 @@
+{
+ "based_on": "incident_date",
+ "chart_name": "Pending Investigations",
+ "chart_type": "Count",
+ "creation": "2026-04-25 11:16:57.087625",
+ "currency": "",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "document_type": "Penalty And Investigation",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[[\"Penalty And Investigation\",\"docstatus\",\"!=\",\"2\",false],[\"Penalty And Investigation\",\"workflow_state\",\"!=\",\"Mark as Completed\",false]]",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 0,
+ "is_standard": 1,
+ "last_synced_on": "2026-04-26 11:15:54.390566",
+ "modified": "2026-04-26 11:20:59.474598",
+ "modified_by": "c.akeru@one-fm.com",
+ "module": "Legal",
+ "name": "Pending Investigations",
+ "number_of_groups": 0,
+ "owner": "c.akeru@one-fm.com",
+ "parent_document_type": "",
+ "roles": [
+  {
+   "role": "HR User"
+  }
+ ],
+ "show_values_over_chart": 0,
+ "source": "",
+ "time_interval": "Yearly",
+ "timeseries": 1,
+ "timespan": "Last Year",
+ "type": "Bar",
+ "use_report_chart": 0,
+ "value_based_on": "",
+ "y_axis": []
+}

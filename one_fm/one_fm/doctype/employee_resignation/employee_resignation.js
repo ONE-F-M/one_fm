@@ -4,7 +4,7 @@
 frappe.ui.form.on("Employee Resignation", {
 	onload: function(frm) {
 		let show_header = !frm.doc.__islocal && frm.doc.workflow_state && (!["Draft", ""].includes(frm.doc.workflow_state));
-		frm.toggle_display("relieving_date", show_header);
+		// frm.toggle_display("relieving_date", show_header);
 		
 		// Hide Operational Impact until Operations Manager stage
 		let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state);
@@ -13,11 +13,54 @@ frappe.ui.form.on("Employee Resignation", {
 
 	refresh: function (frm) {
 		let show_header = !frm.doc.__islocal && frm.doc.workflow_state && (!["Draft", ""].includes(frm.doc.workflow_state));
-		frm.toggle_display("relieving_date", show_header);
+		// frm.toggle_display("relieving_date", show_header);
 		
 		let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state);
 		frm.toggle_display("operational_impact_section", show_ops_impact);
+
+		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
 		
+		let is_editable = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
+		frm.set_df_property('resignation_initiation_date', 'read_only', is_editable ? 0 : 1);
+		frm.set_df_property('relieving_date', 'read_only', is_editable ? 0 : 1);
+
+		// Hide Operational Impact for Employee Draft and Correction stages
+		let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
+		
+		if (is_restricted_stage) {
+			frm.set_df_property('operations_manager', 'hidden', 1);
+			frm.set_df_property('offboarding_officer', 'hidden', 1);
+			frm.set_df_property('operations_manager', 'reqd', 0);
+			frm.set_df_property('offboarding_officer', 'reqd', 0);
+		} else {
+			frm.set_df_property('operations_manager', 'hidden', 0);
+			frm.set_df_property('offboarding_officer', 'hidden', 0);
+			// Mandatory for Operations Manager and onwards
+			let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state);
+			frm.set_df_property('operations_manager', 'reqd', is_mandatory ? 1 : 0);
+			frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
+		}
+
+		// Filter Offboarding Officer to only show users with the 'Offboarding Officer' role
+		frm.set_query('offboarding_officer', () => {
+			return {
+				query: 'frappe.core.doctype.user.user.user_query',
+				filters: {
+					'role': 'Offboarding Officer'
+				}
+			};
+		});
+
+		// Filter Operations Manager to only show users with the 'Operations Manager' role
+		frm.set_query('operations_manager', () => {
+			return {
+				query: 'frappe.core.doctype.user.user.user_query',
+				filters: {
+					'role': 'Operations Manager'
+				}
+			};
+		});
+
 		// Hide Withdrawal Status column strictly for initial entry
 		if (frm.fields_dict.employees && frm.fields_dict.employees.grid) {
 			frm.fields_dict.employees.grid.set_column_disp("withdrawal_status", show_header);
@@ -50,10 +93,69 @@ frappe.ui.form.on("Employee Resignation", {
 				}
 			});
 		}
+
+		if (!frm.doc.__islocal && frm.doc.employees && frm.doc.employees.length > 0) {
+			let view_exit_tab = function(employee_id) {
+				frappe.route_options = {"scroll_to": "exit"};
+				frappe.set_route('Form', 'Employee', employee_id).then(() => {
+					let ticks = 0;
+					let focus_tab = setInterval(() => {
+						ticks++;
+						if (frappe.get_route()[0] === "Form" && frappe.get_route()[1] === "Employee" && cur_frm && cur_frm.docname === employee_id && cur_frm.layout) {
+							
+							// Trigger standard scroll mechanism which natively maps and activates Tab Breaks
+							try {
+								cur_frm.scroll_to_field("exit");
+							} catch(e) {}
+							
+							// Directly target the framework's internal tab link reference for Bulletproof v14/v15 Bootstrap triggering
+							if (cur_frm.fields_dict.exit && cur_frm.fields_dict.exit.$tab) {
+								let $tab = cur_frm.fields_dict.exit.$tab;
+								if (!$tab.hasClass("active") || !$tab.parent().hasClass("active")) {
+									if (typeof $tab.tab === "function") {
+										$tab.tab("show");
+									}
+									$tab[0].click();
+								}
+							}
+						}
+						// Secure the transition against Frappe's post-render jitter over 1.5 seconds
+						if (ticks > 15) {
+							clearInterval(focus_tab);
+						}
+					}, 100);
+				});
+			};
+
+			if (frm.doc.employees.length === 1) {
+				frm.remove_custom_button(__('Employee Exit Tab'), __('Employee Profiles'));
+				frm.add_custom_button(__('Employee Exit Tab'), function() {
+					view_exit_tab(frm.doc.employees[0].employee);
+				}, __('Employee Profiles'));
+			} else {
+				frm.doc.employees.forEach(row => {
+					let btn_label = row.employee_name || row.employee;
+					frm.remove_custom_button(btn_label, __('Employee Profiles'));
+					frm.add_custom_button(btn_label, function() {
+						view_exit_tab(row.employee);
+					}, __('Employee Profiles'));
+				});
+			}
+		}
 	},
 	
 	validate: function(frm) {
-	    // Robust UI validator catch for minimal requirements
+	    // Robust UI validator catch: Managers are NOT mandatory for employees during initial entry/correction
+		if (["Draft", "Pending Relieving Date Correction"].includes(frm.doc.workflow_state) || frm.doc.__islocal) {
+			frm.set_df_property('operations_manager', 'reqd', 0);
+			frm.set_df_property('offboarding_officer', 'reqd', 0);
+		} else {
+			// Enforce mandatory strictly during OM assessment and beyond
+			let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state);
+			frm.set_df_property('operations_manager', 'reqd', is_mandatory ? 1 : 0);
+			frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
+		}
+
 	    if (!frm.doc.employees || frm.doc.employees.length === 0) {
 	        frappe.msgprint({
 	            title: __('Missing Information'),
@@ -160,6 +262,10 @@ frappe.ui.form.on("Employee Resignation", {
 
 	employee: function (frm) {
 		// Legacy field triggers inside JS, safely disabled
+	},
+
+	replacement_required: function(frm) {
+		// Field trigger handled in server-side logic
 	}
 });
 
@@ -168,8 +274,8 @@ frappe.ui.form.on('Employee Resignation Item', {
         let row = locals[cdt][cdn];
         
         if (row.employee) {
-            frappe.db.get_value('Employee', row.employee, ['project', 'department', 'designation', 'site', 'employment_type', 'shift', 'custom_operations_role_allocation', 'employee_name'])
-                .then(r => {
+            frappe.db.get_value('Employee', row.employee, ['project', 'department', 'designation', 'site', 'employment_type', 'shift', 'custom_operations_role_allocation', 'employee_name', 'reports_to'])
+                .then(async r => {
                     let d = r.message;
                     if (d) {
                     	// Validation: Profile completeness check
@@ -200,6 +306,36 @@ frappe.ui.form.on('Employee Resignation Item', {
                         if (!frm.doc.employment_type) frm.set_value('employment_type', d.employment_type);
                         if (!frm.doc.shift_allocation) frm.set_value('shift_allocation', d.shift);
                         if (!frm.doc.operations_role_allocation) frm.set_value('operations_role_allocation', d.custom_operations_role_allocation);
+                        
+                        // Automatically fetch Supervisor (Priority: Line Manager -> Site Supervisor)
+                        let supervisor_found = false;
+                        if (d.reports_to) {
+                            let user_data = await frappe.db.get_value('Employee', d.reports_to, 'user_id');
+                            if (user_data && user_data.message && user_data.message.user_id) {
+                                frm.set_value('supervisor', user_data.message.user_id);
+                                supervisor_found = true;
+                            }
+                        }
+
+                        if (d.site) {
+                            let site_data = await frappe.db.get_value('Operations Site', d.site, ['site_supervisor', 'operations_manager']);
+                            if (site_data && site_data.message) {
+                                let ops_mgr = site_data.message.operations_manager;
+                                let site_sup_emp = site_data.message.site_supervisor;
+                                
+                                if (ops_mgr) {
+                                    frm.set_value('operations_manager', ops_mgr);
+                                }
+                                
+                                // Only set site supervisor if line manager (reports_to) was not found
+                                if (site_sup_emp && !supervisor_found) {
+                                    let user_data = await frappe.db.get_value('Employee', site_sup_emp, 'user_id');
+                                    if (user_data && user_data.message && user_data.message.user_id) {
+                                        frm.set_value('supervisor', user_data.message.user_id);
+                                    }
+                                }
+                            }
+                        }
                         
                         // Validate live Project AND Designation mismatch
                         let errors = [];

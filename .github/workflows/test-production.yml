@@ -1,4 +1,4 @@
-name: Deploy CI/CD to Test_Production
+name: Deploy CI/CD to Test Production
 
 on:
   push: # tells github to run this on any push to the repository
@@ -15,22 +15,19 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - name: Deploy to Staging
-      uses: appleboy/ssh-action@master
+    - name: Deploy to Test Production
+      uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
       with:
         host: ${{ secrets.STAGING_HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.STAGING_KEY }}
         port: 22
         script: |
-          cd /home/frappe/test-production/apps/one_fm # we move into our app's folder
-          # git pull upstream staging # we pull any changes from git
-          git pull
-          cd /home/frappe          
-          pip3 install --upgrade frappe-bench
-          cd /home/frappe/test-production
-          # bench setup requirements
-          bench migrate # sync database
-          bench restart #${{secrets.PASSKEY}}
-          # we remove any unused dependencies
-          bench doctor
+          cd /home/frappe/test-production/apps/one_fm
+          git pull upstream test-production
+          cd /home/frappe/test-production   
+          bench setup requirements one_fm
+          bench migrate
+          bench build --app one_fm
+          bench clear-cache
+          bench restart

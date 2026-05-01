@@ -1,305 +1,325 @@
 {
-    "actions": [],
-    "autoname": "format:{date}_{employee}_{roster_type}",
-    "creation": "2020-05-12 15:44:18.133872",
-    "doctype": "DocType",
-    "editable_grid": 1,
-    "engine": "InnoDB",
-    "field_order": [
-        "employee",
-        "employee_name",
-        "employment_type",
-        "designation",
-        "department",
-        "column_break_3",
-        "date",
-        "employee_availability",
-        "operations_role",
-        "post_abbrv",
-        "section_break_2",
-        "shift",
-        "shift_type",
-        "start_datetime",
-        "end_datetime",
-        "is_replaced",
-        "replaced_employee_schedule",
-        "column_break_6",
-        "site",
-        "project",
-        "is_event_schedule",
-        "client_event",
-        "event_staff",
-        "event_location",
-        "on_the_job_training",
-        "attendance_status_section",
-        "attended_status",
-        "roster_type",
-        "day_off_ot",
-        "section_break_kt56n",
-        "reference_doctype",
-        "column_break_d2pic",
-        "reference_docname"
-    ],
-    "fields": [
-        {
-            "fieldname": "employee",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "in_standard_filter": 1,
-            "label": "Employee",
-            "options": "Employee",
-            "reqd": 1,
-            "search_index": 1
-        },
-        {
-            "fieldname": "shift",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "in_standard_filter": 1,
-            "label": "Operations Shift",
-            "options": "Operations Shift"
-        },
-        {
-            "fieldname": "column_break_3",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "employee_availability",
-            "fieldtype": "Select",
-            "in_list_view": 1,
-            "label": "Employee Availability",
-            "options": "Working\nDay Off\nClient Day Off\nSick Leave\nAnnual Leave\nEmergency Leave\nFingerprint Appointment\nMedical Appointment\nClient Event\nOn-the-job Training\nClient Interview\nSuspended",
-            "reqd": 1
-        },
-        {
-            "depends_on": "eval:['Working', 'On-the-job Training', 'Client Event'].includes(doc.employee_availability)",
-            "fieldname": "section_break_2",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "column_break_6",
-            "fieldtype": "Column Break"
-        },
-        {
-            "fieldname": "date",
-            "fieldtype": "Date",
-            "in_list_view": 1,
-            "in_standard_filter": 1,
-            "label": "Date",
-            "reqd": 1,
-            "search_index": 1
-        },
-        {
-            "fetch_from": "employee.employee_name",
-            "fieldname": "employee_name",
-            "fieldtype": "Data",
-            "label": "Employee Name",
-            "read_only": 1
-        },
-        {
-            "fieldname": "attended_status",
-            "fieldtype": "Select",
-            "label": "Attended Status",
-            "options": "\nPlanned and worked actual hours\nDeviation in schedule with acceptable excuse\nDeviation in schedule without excuse",
-            "read_only": 1
-        },
-        {
-            "fetch_from": "shift.shift_type",
-            "fieldname": "shift_type",
-            "fieldtype": "Link",
-            "label": "Shift Type",
-            "options": "Shift Type",
-            "read_only": 1
-        },
-        {
-            "depends_on": "eval:doc.employee_availability != 'Day Off'",
-            "fieldname": "operations_role",
-            "fieldtype": "Link",
-            "in_list_view": 1,
-            "label": "Operations Role",
-            "options": "Operations Role"
-        },
-        {
-            "fieldname": "attendance_status_section",
-            "fieldtype": "Section Break",
-            "label": "Attendance Status"
-        },
-        {
-            "fetch_from": "employee.department",
-            "fieldname": "department",
-            "fieldtype": "Data",
-            "label": "Department"
-        },
-        {
-            "fetch_from": "shift.site",
-            "fieldname": "site",
-            "fieldtype": "Link",
-            "label": "Site",
-            "options": "Operations Site",
-            "read_only": 1
-        },
-        {
-            "fetch_from": "shift.project",
-            "fieldname": "project",
-            "fieldtype": "Link",
-            "label": "Project",
-            "options": "Project",
-            "read_only": 1
-        },
-        {
-            "depends_on": "eval:doc.operations_role",
-            "fetch_from": "operations_role.post_abbrv",
-            "fieldname": "post_abbrv",
-            "fieldtype": "Data",
-            "label": "Post Abbreviation",
-            "read_only": 1
-        },
-        {
-            "default": "Basic",
-            "fieldname": "roster_type",
-            "fieldtype": "Select",
-            "label": "Roster Type",
-            "options": "Basic\nOver-Time"
-        },
-        {
-            "default": "0",
-            "fieldname": "day_off_ot",
-            "fieldtype": "Check",
-            "in_standard_filter": 1,
-            "label": "Day Off OT"
-        },
-        {
-            "fieldname": "start_datetime",
-            "fieldtype": "Datetime",
-            "label": "Start Datetime",
-            "read_only": 1
-        },
-        {
-            "fieldname": "end_datetime",
-            "fieldtype": "Datetime",
-            "label": "End Datetime",
-            "read_only": 1
-        },
-        {
-            "fieldname": "section_break_kt56n",
-            "fieldtype": "Section Break"
-        },
-        {
-            "fieldname": "reference_doctype",
-            "fieldtype": "Link",
-            "label": "Reference Doctype",
-            "options": "DocType",
-            "read_only": 1
-        },
-        {
-            "fieldname": "reference_docname",
-            "fieldtype": "Dynamic Link",
-            "label": "Reference Docname",
-            "options": "reference_doctype",
-            "read_only": 1
-        },
-        {
-            "fieldname": "column_break_d2pic",
-            "fieldtype": "Column Break"
-        },
-        {
-            "default": "0",
-            "fieldname": "is_replaced",
-            "fieldtype": "Check",
-            "label": "Is Replaced"
-        },
-        {
-            "depends_on": "eval:doc.is_replaced;",
-            "fieldname": "replaced_employee_schedule",
-            "fieldtype": "Link",
-            "label": "Replaced Employee Schedule",
-            "options": "Employee Schedule"
-        },
-        {
-            "fetch_from": "employee.employment_type",
-            "fieldname": "employment_type",
-            "fieldtype": "Link",
-            "label": "Employment Type",
-            "options": "Employment Type",
-            "read_only": 1
-        },
-        {
-            "default": "0",
-            "description": "It indicates that this Employee Schedule was automatically created from the Client Event process",
-            "fieldname": "is_event_schedule",
-            "fieldtype": "Check",
-            "label": "Is Event Schedule",
-            "read_only": 1
-        },
-        {
-            "fetch_from": "event_staff.client_event",
-            "fieldname": "client_event",
-            "fieldtype": "Link",
-            "label": "Client Event",
-            "options": "Client Event",
-            "read_only": 1,
-            "search_index": 1
-        },
-        {
-            "fieldname": "event_staff",
-            "fieldtype": "Link",
-            "label": "Event Staff",
-            "options": "Event Staff",
-            "read_only": 1,
-            "search_index": 1
-        },
-        {
-            "fetch_from": "event_staff.event_location",
-            "fieldname": "event_location",
-            "fieldtype": "Link",
-            "label": "Event Location",
-            "options": "Location",
-            "read_only": 1
-        },
-        {
-            "depends_on": "eval:doc.is_event_schedule == 1",
-            "fetch_from": "employee.designation",
-            "fieldname": "designation",
-            "fieldtype": "Link",
-            "label": "Designation",
-            "options": "Designation",
-            "read_only": 1
-        },
-        {
-            "fieldname": "on_the_job_training",
-            "fieldtype": "Link",
-            "label": "On the Job Training",
-            "options": "On the Job Training",
-            "read_only": 1,
-            "search_index": 1
-        }
-    ],
-    "grid_page_length": 50,
-    "links": [],
-    "modified": "2025-12-07 19:59:15.076824",
-    "modified_by": "Administrator",
-    "module": "Operations",
-    "name": "Employee Schedule",
-    "naming_rule": "Expression",
-    "owner": "Administrator",
-    "permissions": [
-        {
-            "create": 1,
-            "delete": 1,
-            "email": 1,
-            "export": 1,
-            "print": 1,
-            "read": 1,
-            "report": 1,
-            "role": "System Manager",
-            "share": 1,
-            "write": 1
-        }
-    ],
-    "quick_entry": 1,
-    "row_format": "Dynamic",
-    "sort_field": "modified",
-    "sort_order": "DESC",
-    "states": [],
-    "track_changes": 1
+ "actions": [],
+ "autoname": "format:{date}_{employee}_{roster_type}",
+ "creation": "2020-05-12 15:44:18.133872",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "employee",
+  "employee_name",
+  "employment_type",
+  "designation",
+  "department",
+  "column_break_3",
+  "date",
+  "employee_availability",
+  "operations_role",
+  "post_abbrv",
+  "section_break_2",
+  "shift",
+  "shift_type",
+  "start_datetime",
+  "end_datetime",
+  "is_relieving_schedule",
+  "relieving_employee_schedule",
+  "is_replaced",
+  "replaced_employee_schedule",
+  "column_break_6",
+  "site",
+  "project",
+  "is_event_schedule",
+  "client_event",
+  "event_staff",
+  "event_location",
+  "on_the_job_training",
+  "attendance_status_section",
+  "attended_status",
+  "roster_type",
+  "day_off_ot",
+  "section_break_kt56n",
+  "reference_doctype",
+  "column_break_d2pic",
+  "reference_docname"
+ ],
+ "fields": [
+  {
+   "fieldname": "employee",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee",
+   "options": "Employee",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Operations Shift",
+   "options": "Operations Shift"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_availability",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Employee Availability",
+   "options": "Working\nDay Off\nClient Day Off\nSick Leave\nAnnual Leave\nEmergency Leave\nFingerprint Appointment\nMedical Appointment\nClient Event\nOn-the-job Training\nClient Interview\nSuspended",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:['Working', 'On-the-job Training', 'Client Event'].includes(doc.employee_availability)",
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Date",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fetch_from": "employee.employee_name",
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Employee Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attended_status",
+   "fieldtype": "Select",
+   "label": "Attended Status",
+   "options": "\nPlanned and worked actual hours\nDeviation in schedule with acceptable excuse\nDeviation in schedule without excuse",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift.shift_type",
+   "fieldname": "shift_type",
+   "fieldtype": "Link",
+   "label": "Shift Type",
+   "options": "Shift Type",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.employee_availability != 'Day Off'",
+   "fieldname": "operations_role",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Operations Role",
+   "options": "Operations Role"
+  },
+  {
+   "fieldname": "attendance_status_section",
+   "fieldtype": "Section Break",
+   "label": "Attendance Status"
+  },
+  {
+   "fetch_from": "employee.department",
+   "fieldname": "department",
+   "fieldtype": "Data",
+   "label": "Department"
+  },
+  {
+   "fetch_from": "shift.site",
+   "fieldname": "site",
+   "fieldtype": "Link",
+   "label": "Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "shift.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.operations_role",
+   "fetch_from": "operations_role.post_abbrv",
+   "fieldname": "post_abbrv",
+   "fieldtype": "Data",
+   "label": "Post Abbreviation",
+   "read_only": 1
+  },
+  {
+   "default": "Basic",
+   "fieldname": "roster_type",
+   "fieldtype": "Select",
+   "label": "Roster Type",
+   "options": "Basic\nOver-Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "day_off_ot",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Day Off OT"
+  },
+  {
+   "fieldname": "start_datetime",
+   "fieldtype": "Datetime",
+   "label": "Start Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "end_datetime",
+   "fieldtype": "Datetime",
+   "label": "End Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_kt56n",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Doctype",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reference_docname",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Docname",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_d2pic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_replaced",
+   "fieldtype": "Check",
+   "label": "Is Replaced"
+  },
+  {
+   "depends_on": "eval:doc.is_replaced;",
+   "fieldname": "replaced_employee_schedule",
+   "fieldtype": "Link",
+   "label": "Replaced Employee Schedule",
+   "options": "Employee Schedule"
+  },
+  {
+   "fetch_from": "employee.employment_type",
+   "fieldname": "employment_type",
+   "fieldtype": "Link",
+   "label": "Employment Type",
+   "options": "Employment Type",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.employee_availability == \"Client Event\"",
+   "description": "It indicates that this Employee Schedule was automatically created from the Client Event process",
+   "fieldname": "is_event_schedule",
+   "fieldtype": "Check",
+   "label": "Is Event Schedule",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.employee_availability == \"Client Event\"",
+   "fetch_from": "event_staff.client_event",
+   "fieldname": "client_event",
+   "fieldtype": "Link",
+   "label": "Client Event",
+   "options": "Client Event",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "depends_on": "eval:doc.employee_availability == \"Client Event\"",
+   "fieldname": "event_staff",
+   "fieldtype": "Link",
+   "label": "Event Staff",
+   "options": "Event Staff",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "depends_on": "eval:doc.employee_availability == \"Client Event\"",
+   "fetch_from": "event_staff.event_location",
+   "fieldname": "event_location",
+   "fieldtype": "Link",
+   "label": "Event Location",
+   "options": "Location",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.is_event_schedule == 1",
+   "fetch_from": "employee.designation",
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "on_the_job_training",
+   "fieldtype": "Link",
+   "label": "On the Job Training",
+   "options": "On the Job Training",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_relieving_schedule",
+   "fieldtype": "Check",
+   "label": "Is Relieving Schedule",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.is_relieving_schedule",
+   "fieldname": "relieving_employee_schedule",
+   "fieldtype": "Link",
+   "label": "Relieving Employee Schedule",
+   "options": "Employee Schedule"
+  }
+ ],
+ "grid_page_length": 50,
+ "links": [],
+ "modified": "2026-04-26 10:14:17.807054",
+ "modified_by": "Administrator",
+ "module": "Operations",
+ "name": "Employee Schedule",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
 }

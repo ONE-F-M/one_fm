@@ -1,0 +1,38 @@
+{
+ "based_on": "incident_date",
+ "chart_name": "All Penalties",
+ "chart_type": "Count",
+ "creation": "2026-04-25 11:11:34.664752",
+ "currency": "",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "document_type": "Penalty And Investigation",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[[\"Penalty And Investigation\",\"docstatus\",\"!=\",\"2\",false]]",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "last_synced_on": "2026-04-26 11:15:54.269667",
+ "modified": "2026-04-26 11:20:47.565105",
+ "modified_by": "c.akeru@one-fm.com",
+ "module": "Legal",
+ "name": "All Penalties",
+ "number_of_groups": 0,
+ "owner": "c.akeru@one-fm.com",
+ "parent_document_type": "",
+ "roles": [
+  {
+   "role": "HR User"
+  }
+ ],
+ "show_values_over_chart": 0,
+ "source": "",
+ "time_interval": "Yearly",
+ "timeseries": 1,
+ "timespan": "Last Year",
+ "type": "Bar",
+ "use_report_chart": 0,
+ "value_based_on": "",
+ "y_axis": []
+}

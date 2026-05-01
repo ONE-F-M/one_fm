@@ -1,0 +1,207 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series: naming_series",
+ "creation": "2026-04-20 16:05:20.709716",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_xfjj",
+  "employee_resignation",
+  "column_break_twru",
+  "relieving_date",
+  "current_relieving_date",
+  "table_section",
+  "employees",
+  "more_information_section",
+  "naming_series",
+  "column_break_fhar",
+  "amended_from",
+  "column_break_wetd",
+  "column_break_pdtv",
+  "column_break_szbe",
+  "extended_relieving_date",
+  "supervisor",
+  "operations_manager",
+  "offboarding_officer"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_xfjj",
+   "fieldtype": "Section Break",
+   "label": "Employee Details"
+  },
+  {
+   "fieldname": "employee_resignation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Employee Resignation",
+   "options": "Employee Resignation",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_twru",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "employee_resignation.relieving_date",
+   "fieldname": "relieving_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Relieving Date",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fetch_from": "employee_resignation.relieving_date",
+   "fieldname": "current_relieving_date",
+   "fieldtype": "Date",
+   "label": "Current Relieving Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "table_section",
+   "fieldtype": "Section Break",
+   "label": "Extension Request Details"
+  },
+  {
+   "fieldname": "employees",
+   "fieldtype": "Table",
+   "label": "Employees",
+   "options": "Employee Resignation Extension Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "more_information_section",
+   "fieldtype": "Section Break",
+   "label": "More Information"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "HR-ERE-.YYYY.-.MM.-",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_fhar",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Employee Resignation Extension",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_wetd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_pdtv",
+   "fieldtype": "Column Break",
+   "hidden": 1
+  },
+  {
+   "fieldname": "column_break_szbe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "extended_relieving_date",
+   "fieldtype": "Date",
+   "label": "Extended Relieving Date",
+   "reqd": 1
+  },
+
+  {
+   "fieldname": "supervisor",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Supervisor",
+   "options": "User"
+  },
+  {
+   "fieldname": "operations_manager",
+   "fieldtype": "Link",
+   "label": "Operations Manager",
+   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Accepted by Supervisor', 'Approved'].includes(doc.workflow_state)",
+   "options": "User"
+  },
+  {
+   "fieldname": "offboarding_officer",
+   "fieldtype": "Link",
+   "label": "Offboarding Officer",
+   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Accepted by Supervisor', 'Approved'].includes(doc.workflow_state)",
+   "options": "User"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-04-21 16:30:35.050528",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Employee Resignation Extension",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Offboarding Officer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Employee",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Operations Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

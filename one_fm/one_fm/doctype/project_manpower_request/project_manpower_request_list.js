@@ -18,7 +18,8 @@ frappe.listview_settings['Project Manpower Request'] = {
 			"Fulfilled by OT": "blue",
 			"Fulfilled by Sub-con": "purple",
 			"Fulfilled by OT & Sub": "darkgray",
-			"Withdrawal Resignation": "yellow"
+			"Withdrawal Resignation": "yellow",
+			"Withdrawn": "yellow"
 		};
 
 		const indicator_color = workflow_state_colors[workflow_state]

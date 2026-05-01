@@ -1343,6 +1343,26 @@ function render_roster(res, page) {
 		let is_fingerprint_appointment = false;
 		let is_client_event = false;
 		let is_medical_appointment = false;
+		let is_not_relieving_day = false;
+
+		// Pre-scan: determine if employee has any relieving days this period (by site or shift).
+		let employee_actual_shift = null;
+		let employee_has_relieving_days = false;
+		for (let date_key_scan in employees_data[employee_key]) {
+			let scan_records = employees_data[employee_key][date_key_scan];
+			if (scan_records && scan_records[0]) {
+				let rec = scan_records[0];
+				if (!employee_actual_shift && rec.actual_shift) {
+					employee_actual_shift = rec.actual_shift;
+				}
+				// Flag as relieving if either site or shift differs from home
+				if ((rec.actual_site && rec.site && rec.actual_site !== rec.site) ||
+					(rec.actual_shift && rec.shift && rec.actual_shift !== rec.shift)) {
+					employee_has_relieving_days = true;
+				}
+			}
+			if (employee_has_relieving_days) break;
+		}
 
 		while (current_day_iter <= end_moment_iter) {
 			let sch = ``;
@@ -1354,11 +1374,31 @@ function render_roster(res, page) {
 			let bgclass = ``;
 
 			let is_relieved_this_day = employee_relieving_date && current_day_iter.isAfter(employee_relieving_date);
+			is_not_relieving_day = false;
 
 			if (employees_data[employee_key][date_key] && employees_data[employee_key][date_key].length > 0) {
 				for (let k = 0; k < employees_data[employee_key][date_key].length; k++) {
 					let record = employees_data[employee_key][date_key][k];
-					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location } = record;
+					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event } = record;
+					// NR Logic: Determine if we are on a foreign grid, and if today's schedule is outside this grid.
+					if (employee_has_relieving_days && page.filters) {
+						let is_foreign_grid = false;
+						let is_out_of_grid_schedule = false;
+
+						if (page.filters.shift) {
+							is_foreign_grid = (employee_actual_shift && page.filters.shift !== employee_actual_shift);
+							is_out_of_grid_schedule = (record.shift !== page.filters.shift);
+						} else if (page.filters.site) {
+							is_foreign_grid = (actual_site && page.filters.site !== actual_site);
+							is_out_of_grid_schedule = (record.site !== page.filters.site);
+						}
+
+						// If we are viewing a foreign grid, any scheduled day that isn't on THIS grid becomes NR
+						// This perfectly shields home-site days and third-site days, while leaving home-grid view untouched.
+						if (is_foreign_grid && is_out_of_grid_schedule) {
+							is_not_relieving_day = true;
+						}
+					}
 					let shift_start = start_time ? moment(start_time, "HH:mm").format("LT") : moment(start_datetime, "YYYY-MM-DD HH:mm:ss").format("LT");
 					let shift_end = end_time ? moment(end_time, "HH:mm").format("LT") : moment(end_datetime, "YYYY-MM-DD HH:mm:ss").format("LT");
 
@@ -1466,7 +1506,11 @@ function render_roster(res, page) {
 							tooltiptext += `${leave_application}<br>${leave_type}`;
 							abbrv += `${abbr_map[attendance]}<br>`;
 						} else if (attendance && !employee_availability) {
-							tooltiptext += `${roster_type}:<br>${shift}<br>Start: ${shift_start}<br>End: ${shift_end}`;
+							if (!shift && client_event) {
+								tooltiptext += `${roster_type}:<br>${client_event}<br>Start: ${shift_start}<br>End: ${shift_end}`;
+							} else {
+								tooltiptext += `${roster_type}:<br>${shift}<br>Start: ${shift_start}<br>End: ${shift_end}`;
+							}
 							abbrv += `${abbr_map[attendance]}<br>`;
 						} else if (employee_availability && !post_abbrv) {
 							tooltiptext = ``;
@@ -1475,7 +1519,11 @@ function render_roster(res, page) {
 								tooltiptext += `Client Event<br>Event Location: ${event_location}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
 							}
 						} else {
-							tooltiptext += `${roster_type}:<br>${shift}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
+							if (!shift && client_event) {
+								tooltiptext += `${roster_type}:<br>${client_event}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
+							} else {
+								tooltiptext += `${roster_type}:<br>${shift}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
+							}
 							abbrv += `${post_abbrv}<br>`;
 						}
 					} else {
@@ -1486,7 +1534,11 @@ function render_roster(res, page) {
 						} else {
 							abbrv += `${post_abbrv}<br>`;
 						}
-						tooltiptext += `${roster_type}:<br>${shift}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
+						if (!shift && client_event) {
+							tooltiptext += `${roster_type}:<br>${client_event}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
+						} else {
+							tooltiptext += `${roster_type}:<br>${shift}<br>Start: ${shift_start}<br>End: ${shift_end}<br>`;
+						}
 					}
 				}
 			}
@@ -1501,12 +1553,20 @@ function render_roster(res, page) {
 						<div class="${moment().isBefore(current_day_iter) ? "hoverselectclass" : "forbidden"} tablebox darkblackox d-flex justify-content-center align-items-center text-white so customtooltip"
 							data-selectid="${data_selectid}">EX<span class="customtooltiptext">Exited</span></div>
 					</td>`;
-			} else if (!data_selectid && !data_ot) {
+			} else if (is_not_relieving_day) {
+				// Employee is a reliever but on this day is scheduled at their own (home) site → NR
 				sch = `
 					<td class="${todayClass}">
-						<div class="${moment().isBefore(current_day_iter) ? "hoverselectclass" : "forbidden"} tablebox borderbox d-flex justify-content-center align-items-center so"
-							data-selectid="${employee}|${date_key}"></div>
+						<div class="tablebox d-flex justify-content-center align-items-center so"
+							style="background-color: #EAEAEA;"
+							data-selectid="${employee}|${date_key}">NR</div>
 					</td>`;
+			} else if (!data_selectid && !data_ot) {
+				sch = `
+						<td class="${todayClass}">
+							<div class="${moment().isBefore(current_day_iter) ? "hoverselectclass" : "forbidden"} tablebox borderbox d-flex justify-content-center align-items-center so"
+								data-selectid="${employee}|${date_key}"></div>
+						</td>`;
 			} else if (is_medical_appointment) {
 				let tooltip_html = tooltiptext ? `<span class="customtooltiptext ${bgclass}">${tooltiptext}</span>` : "";
 				let hoverClass = is_medical_appointment ? "forbidden" : (moment().isBefore(current_day_iter) ? "hoverselectclass" : "forbidden");
@@ -1538,6 +1598,7 @@ function render_roster(res, page) {
 			is_fingerprint_appointment = false;
 			is_client_event = false;
 			is_medical_appointment = false;
+			is_not_relieving_day = false;
 			current_day_iter.add(1, "days");
 		}
 		$employeeRow.append(employeeCellsHTML);
@@ -2995,12 +3056,12 @@ function dayoff(page) {
 			{
 				"label": "Reliever", "fieldname": "reliever", "fieldtype": "Link", "options": "Employee",
 				get_query: function () {
+					let excluded = employees.map(e => e.employee);
 					return {
+						"query": "one_fm.one_fm.page.roster.roster.get_relievers_query",
 						"filters": {
-							"custom_is_reliever": 1,
-							"status": ["in", ["Active"]]
-						},
-						"page_length": 9999
+							"excluded_employees": JSON.stringify(excluded)
+						}
 					};
 				},
 				onchange: function () {

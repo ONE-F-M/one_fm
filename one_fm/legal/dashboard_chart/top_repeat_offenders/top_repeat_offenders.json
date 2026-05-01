@@ -1,0 +1,39 @@
+{
+ "based_on": "",
+ "chart_name": "Top Repeat Offenders",
+ "chart_type": "Group By",
+ "creation": "2026-04-25 11:24:13.250225",
+ "currency": "",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "document_type": "Penalty And Investigation",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[]",
+ "group_by_based_on": "employee",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 0,
+ "is_standard": 1,
+ "last_synced_on": "2026-04-26 11:15:54.519182",
+ "modified": "2026-04-26 11:21:37.332430",
+ "modified_by": "c.akeru@one-fm.com",
+ "module": "Legal",
+ "name": "Top Repeat Offenders",
+ "number_of_groups": 3,
+ "owner": "c.akeru@one-fm.com",
+ "parent_document_type": "",
+ "roles": [
+  {
+   "role": "HR User"
+  }
+ ],
+ "show_values_over_chart": 1,
+ "source": "",
+ "time_interval": "Yearly",
+ "timeseries": 0,
+ "timespan": "Last Year",
+ "type": "Bar",
+ "use_report_chart": 0,
+ "value_based_on": "",
+ "y_axis": []
+}
