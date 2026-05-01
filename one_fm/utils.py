@@ -3128,14 +3128,14 @@ def get_employee_site_supervisor(employee):
     return None
 
 @frappe.whitelist()
-def get_approver_user(employee):
-    approver = get_approver(employee)
+def get_approver_user(employee, skip_shift_supervisor=False, date=False):
+    approver = get_approver(employee, skip_shift_supervisor=skip_shift_supervisor, date=date)
     if approver:
         return frappe.db.get_value("Employee", approver, "user_id")
     return None
 
 @frappe.whitelist()
-def get_approver(employee, date=False):
+def get_approver(employee, skip_shift_supervisor=False, date=False):
     '''
         Method to get the line manager employee of an employee with the priority
         args:
@@ -3157,7 +3157,7 @@ def get_approver(employee, date=False):
             line_manager = employee
 
     if not line_manager:
-        if employee_data.shift_working:
+        if not skip_shift_supervisor and employee_data.shift_working:
             if employee_data.shift:
                 line_manager = get_shift_supervisor(employee_data.shift, date)
                 if line_manager:
