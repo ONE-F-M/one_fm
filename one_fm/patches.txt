@@ -352,7 +352,6 @@ one_fm.patches.v15_0.add_workflow_resignation_withdrawal
 one_fm.patches.v15_0.update_client_event_workflow_state
 one_fm.patches.v15_0.add_contract_notification_recipients #1
 one_fm.patches.v15_0.populate_expected_arrival_time_at_site
-one_fm.patches.v15_0.delete_attendance_checks_mar18_2026 #3
 one_fm.patches.v15_0.sync_contract_item_type_to_operations
 one_fm.patches.v15_0.delete_pending_off_day_attendance_checks
 one_fm.patches.v15_0.add_stock_entry_custom_fields
@@ -389,3 +388,4 @@ one_fm.patches.v15_0.setup_dmarc_process_task #2026-04-26
 one_fm.patches.v15_0.add_resignation_buttons
 one_fm.patches.v15_0.update_purchase_invoice_property_setter #3
 one_fm.patches.v15_0.fix_dmarc_report_name_column #2026-04-27
+one_fm.patches.v15_0.rename_item_int_civ_000033 #1
