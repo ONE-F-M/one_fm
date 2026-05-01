@@ -86,7 +86,7 @@ jobs:
           echo ""
           echo "💡 NOTE: The AI agent can take 2-15 minutes to complete its reasoning loop."
           echo "📖 VIEW REAL-TIME LOGS HERE:"
-          echo "https://console.cloud.google.com/run/detail/${{ secrets.GCP_LOCATION || 'us-central1' }}/onefm-frappe-agent/observability/logs?project=${{ secrets.GCP_PROJECT_ID || 'ai-agents-10' }}"
+          echo "https://console.cloud.google.com/run/detail/${{ secrets.GCP_LOCATION || 'us-central1' }}/onefm-agent/observability/logs?project=${{ secrets.GCP_PROJECT_ID || 'ai-agents-10' }}"
           echo ""
           echo "Waiting for agent to finish..."
 
