@@ -1,0 +1,319 @@
+{% extends "templates/web.html" %}
+
+{% block head_include %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+<style>
+    .cell-input {
+        width: 100%;
+        min-width: 50px;
+        font-size: 11px;
+        padding: 4px;
+        border: 1px solid transparent;
+        text-align: center;
+        background: transparent;
+        border-radius: 4px;
+    }
+
+    .cell-input:focus {
+        border-color: #0055cc;
+        background: #fff;
+        outline: none;
+    }
+
+    .cell-input:disabled {
+        color: #777;
+    }
+
+    .cell-locked {
+        background-color: #f1f5f9;
+        cursor: not-allowed;
+    }
+
+    .cell-draft {
+        background-color: #fee2e2;
+        border-color: #fecaca;
+    }
+
+    .row-draft>td {
+        background-color: #fff1f2 !important;
+        /* Soft red for the entire row */
+    }
+
+    .cell-container {
+        position: relative;
+        padding: 2px;
+    }
+
+    table.attendance-matrix th,
+    table.attendance-matrix td {
+        padding: 4px;
+        vertical-align: middle;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+    }
+
+    table.attendance-matrix th {
+        font-size: 11px;
+        font-weight: 600;
+        background: #f8fafc;
+    }
+
+    .name-col {
+        text-align: left !important;
+        min-width: 150px;
+        max-width: 250px;
+        position: sticky;
+        left: 0;
+        background: #fff !important;
+        z-index: 10;
+        border-right: 2px solid #cbd5e1 !important;
+    }
+
+    .name-col-header {
+        position: sticky;
+        left: 0;
+        z-index: 11;
+        border-right: 2px solid #cbd5e1 !important;
+        background: #f8fafc !important;
+    }
+
+    .remark-row td {
+        background: #fff5f5;
+        font-size: 11.5px;
+        color: #b91c1c;
+        text-align: left !important;
+        padding: 8px 16px !important;
+    }
+
+    .site-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #334155;
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        white-space: nowrap;
+        display: none;
+        z-index: 100;
+        pointer-events: none;
+    }
+
+    .cell-container:hover .site-tooltip.has-site {
+        display: block;
+    }
+
+    .status-Present {
+        color: #166534;
+        font-weight: 600;
+    }
+
+    .status-Absent {
+        color: #b91c1c;
+        font-weight: 600;
+    }
+
+    .status-Leave {
+        color: #854d0e;
+    }
+
+    .calc-col {
+        background: #f8fafc;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="mt-4">
+    <div id="alert-banner-container"></div>
+
+    <div class="row align-items-center mb-3">
+        <div class="col">
+            <h3 class="mb-0">
+                {% if from_date %} Edit Attendance {% else %} New Attendance Submission {% endif %}
+            </h3>
+            <p class="text-muted">{{ supplier }}</p>
+        </div>
+        <div class="col-auto">
+            {% if not from_date %}
+            <button id="btn-save" class="btn btn-primary btn-sm mx-1">Save as Draft</button>
+            <button id="btn-submit" class="btn btn-success btn-sm mx-1">Submit</button>
+            {% elif compound_state == "Draft" %}
+            <button id="btn-preview" class="btn btn-dark btn-sm mx-1">Preview Attendance</button>
+            <button id="btn-save" class="btn btn-primary btn-sm mx-1">Save as Draft</button>
+            <button id="btn-submit" class="btn btn-success btn-sm mx-1">Submit</button>
+            {% else %}
+            <button id="btn-preview" class="btn btn-dark btn-sm mx-1">Preview Attendance</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="card p-3 mb-4 shadow-sm border-0 bg-white">
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="form-group mb-0">
+                    <label>From Date</label>
+                    <input type="date" class="form-control form-control-sm" id="input-from-date"
+                        value="{{ from_date }}">
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group mb-0">
+                    <label>To Date</label>
+                    <input type="date" class="form-control form-control-sm" id="input-to-date" value="{{ to_date }}">
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="form-group mb-0">
+                    <label>Record Based On</label>
+                    <select class="form-control form-control-sm" id="input-based-on">
+                        <option value="Attendance Status" {% if based_on=="Attendance Status" %}selected{% endif %}>
+                            Attendance Status</option>
+                        <option value="Shift Hours" {% if based_on=="Shift Hours" %}selected{% endif %}>Shift Hours
+                        </option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-sm-3 d-flex align-items-end">
+                <div class="form-group mb-0 w-100">
+                    <button id="btn-fetch" class="btn btn-dark btn-sm w-100">
+                        Fetch Attendance Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Container -->
+    <div class="card shadow-sm border bg-white mb-5" style="overflow-x: auto; max-width: 100%;">
+        <table class="table attendance-matrix mb-0" id="matrix-table" style="display: none;">
+            <thead>
+                <tr id="matrix-header-days"></tr>
+                <tr id="matrix-header-dates"></tr>
+            </thead>
+            <tbody id="matrix-body">
+            </tbody>
+        </table>
+        <div id="empty-state" class="p-5 text-center text-muted">
+            Set dates and click "Fetch Attendance Status" to load initial data.
+        </div>
+    </div>
+
+    <!-- Attendance Legend -->
+    <div id="attendance-legend" class="card shadow-sm border bg-light mb-5" style="display: none; font-size: 13px;">
+        <div class="card-body py-3">
+            <h6 class="font-weight-bold mb-2 text-muted" style="font-size: 14px;">Attendance Status Legend</h6>
+            <div class="d-flex flex-wrap text-secondary">
+                <div class="mr-4 mb-1"><strong>P</strong> : Present</div>
+                <div class="mr-4 mb-1"><strong>A</strong> : Absent</div>
+                <div class="mr-4 mb-1"><strong>L</strong> : Leave</div>
+                <div class="mr-4 mb-1"><strong>HD</strong> : Half Day</div>
+                <div class="mr-4 mb-1"><strong>WFH</strong> : Work From Home</div>
+                <div class="mr-4 mb-1"><strong>DO</strong> : Day Off</div>
+                <div class="mr-4 mb-1"><strong>CDO</strong> : Client Day Off</div>
+                <div class="mr-4 mb-1"><strong>FA</strong> : Fingerprint Appointment</div>
+                <div class="mr-4 mb-1"><strong>MA</strong> : Medical Appointment</div>
+                <div class="mr-4 mb-1"><strong>H</strong> : Holiday</div>
+                <div class="mr-4 mb-1"><strong>OH</strong> : On Hold</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row Detail Modal -->
+    <div class="modal fade" id="rowDetailModal" tabindex="-1" role="dialog" aria-labelledby="rowDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rowDetailModalLabel">Attendance Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close" onclick="$('#rowDetailModal').modal('hide');">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 id="detail-employee-name" class="font-weight-bold mb-0"></h6>
+                        <div class="text-right">
+                            <span class="badge badge-success px-2 py-1 mr-2" style="font-size: 13px;" id="detail-working-days"></span>
+                            <span class="badge badge-danger px-2 py-1" style="font-size: 13px;" id="detail-off-days"></span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm" id="detail-days-table">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Date</th>
+                                    <th>Value</th>
+                                    <th>Site</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3">
+                        <h6>Supervisor Remarks:</h6>
+                        <div id="detail-remarks" class="p-3 bg-light border rounded text-muted"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" data-bs-dismiss="modal" onclick="$('#rowDetailModal').modal('hide');">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Attendance Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document" style="max-width: 95%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewModalLabel">Attendance Preview</h5>
+                    <button type="button" class="close" data-dismiss="modal" data-bs-dismiss="modal" aria-label="Close" onclick="$('#previewModal').modal('hide');">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive" style="max-height: 70vh;">
+                        <table class="table table-bordered table-sm attendance-matrix">
+                            <thead class="bg-light">
+                                <tr id="preview-header-days"></tr>
+                                <tr id="preview-header-dates"></tr>
+                            </thead>
+                            <tbody id="preview-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark btn-sm" data-dismiss="modal" data-bs-dismiss="modal" onclick="$('#previewModal').modal('hide');">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    window.ATTENDANCE_CONTEXT = {
+        supplier: "{{ supplier }}",
+        merged_data: {{ merged_data | default ("[]", true) }},
+    from_date: "{{ from_date }}",
+        to_date: "{{ to_date }}",
+            based_on: "{{ based_on }}",
+                compound_state: "{{ compound_state }}"
+    };
+</script>
+{% endblock %}
+
+{% block script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+<script src="/assets/one_fm/js/subcontractor_form.js?v=99"></script>
+{% endblock %}
