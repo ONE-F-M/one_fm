@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import calendar
 from frappe.model.document import Document
+from collections import deque
 
 from frappe.utils import (
     cstr,month_diff,today,getdate,date_diff,add_years, cint, add_to_date, get_first_day,
@@ -21,6 +22,7 @@ from one_fm.utils import get_field_with_label
 class Contracts(Document):
     def validate(self):
         self.calculate_contract_duration()
+        self.sync_contract_item_operations()
         self.validate_no_of_days_off()
         self.validate_off_type_with_daily_operations()
         self.update_contract_dates()
@@ -695,38 +697,56 @@ class Contracts(Document):
             frappe.throw(f"No contracts site for {self.project} between {posting_date.replace(day=1)} AND {posting_date.replace(day=last_day)}")
 
 
-    def submit_to_operations_admin(self):
+    def sync_contract_item_operations(self):
         """
         Auto-populate the Contract Items Operation table from the Contract Item table.
         Each row in the items table is mapped to a corresponding row in contract_items_operation
         by item_code. Existing rows in contract_items_operation are preserved/updated; new ones
-        are appended. This method is called when Finance clicks "Submit to Operations Admin".
+        are appended, while obsolete ones are removed. Duplicate item_codes are also supported.
         """
         if not self.items:
-            frappe.throw(_("No Contract Items found. Please add items before submitting to Operations Admin."))
+            self.set('contract_items_operation', [])
+            return
 
-        # Build a map of existing operation rows by item_code for fast lookup
-        existing_ops_map = {row.item_code: row for row in (self.contract_items_operation or [])}
+        # Create a pool of existing operations grouped by item_code
+        existing_ops_pool = {}
+        for row in (self.contract_items_operation or []):
+            if row.item_code not in existing_ops_pool:
+                existing_ops_pool[row.item_code] = deque()
+            existing_ops_pool[row.item_code].append(row)
+
+        new_ops = []
 
         for item in self.items:
             if not item.item_code:
                 continue
-            if item.item_code in existing_ops_map:
-                # Update count and rate_type on the matching row if they changed
-                ops_row = existing_ops_map[item.item_code]
+
+            ops_row = None
+            if item.item_code in existing_ops_pool and existing_ops_pool[item.item_code]:
+                ops_row = existing_ops_pool[item.item_code].popleft()
+
+            if ops_row:
                 ops_row.count = item.count
                 ops_row.rate_type = item.rate_type
                 ops_row.item_type = item.item_type
+                new_ops.append(ops_row)
             else:
-                # Append a new row to contract_items_operation
-                self.append('contract_items_operation', {
+                new_ops.append({
                     'item_code': item.item_code,
                     'count': item.count,
                     'rate_type': item.rate_type,
                     'item_type': item.item_type,
                 })
 
-        self.save(ignore_permissions=True)
+        self.set('contract_items_operation', new_ops)
+
+    def submit_to_operations_admin(self):
+        """
+        This method is called when Finance clicks "Submit to Operations Admin".
+        """
+        if not self.items:
+            frappe.throw(_("No Contract Items found. Please add items before submitting to Operations Admin."))
+
         frappe.msgprint(
             _("Contract Items have been submitted to Operations Admin. The 'Contract Item Operations' table has been updated."),
             alert=True,
@@ -1401,6 +1421,9 @@ def send_contract_reminders(is_scheduled_event=True):
 
         action_users = frappe.get_all("Action User", {"parent": "ONEFM General Setting", "parenttype": "ONEFM General Setting"}, pluck="user")
         users = list(set(action_users))
+        if not users:
+            return
+
         if contracts_due_internal_notification:
             contracts_due_internal_notification_list = [[i.contract_termination_decision_period,i.contract_end_internal_notification,\
                 get_date_str(i.contract_termination_decision_period_date) if i.contract_termination_decision_period_date else None,i.name,get_date_str(i.start_date),get_date_str(i.contract_end_internal_notification_date) if i.contract_end_internal_notification_date else None,\
@@ -1426,7 +1449,13 @@ def send_contract_reminders(is_scheduled_event=True):
             # Render all expiring contracts into a single email and send once to all recipients
             context = {"contracts_list": contracts_list}
             msg = frappe.render_template('one_fm/templates/emails/contracts_reminder.html', context=context)
-            sendemail(recipients=users, subject="Contract Internal Notification Period for Expiring Contracts", content=msg, is_scheduler_email=is_scheduled_event)
+            sendemail(
+                recipients=[users[0]],
+                cc=users[1:] if len(users) > 1 else None,
+                subject="Contract Internal Notification Period for Expiring Contracts",
+                content=msg, is_scheduler_email=is_scheduled_event,
+                expose_recipients="header"
+            )
     except Exception as e:
         frappe.log_error(message=str(e), title="Contract Reminder Error")
 

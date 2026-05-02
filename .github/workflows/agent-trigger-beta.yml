@@ -1,4 +1,4 @@
-name: "🚀 Trigger AI Agent (Cloud Run)"
+name: "🧪 Trigger AI Agent Beta (V2)"
 
 on:
   issues:
@@ -16,17 +16,17 @@ on:
         type: string
 
 jobs:
-  invoke-agent:
+  invoke-agent-v2:
     # Ensure one agent run per issue to avoid race conditions
     concurrency:
       group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
       cancel-in-progress: true
 
-    # Run if onefm_developer_staging or onefm_developer_hotfix label is present, or if manually triggered
+    # Run if onefm_beta_staging or onefm_beta_hotfix label is present, or if manually triggered
     if: >-
       github.event_name == 'workflow_dispatch' || 
-      (github.event_name == 'issues' && github.event.action != 'labeled' && (contains(github.event.issue.labels.*.name, 'onefm_developer_staging') || contains(github.event.issue.labels.*.name, 'onefm_developer_hotfix'))) ||
-      (github.event_name == 'issues' && github.event.action == 'labeled' && (github.event.label.name == 'onefm_developer_staging' || github.event.label.name == 'onefm_developer_hotfix'))
+      (github.event_name == 'issues' && github.event.action != 'labeled' && (contains(github.event.issue.labels.*.name, 'onefm_beta_staging') || contains(github.event.issue.labels.*.name, 'onefm_beta_hotfix'))) ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' && (github.event.label.name == 'onefm_beta_staging' || github.event.label.name == 'onefm_beta_hotfix'))
     
     # Run on standard GitHub-hosted runner for Cloud Run invocation
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
         uses: google-github-actions/auth@55bd3a7c6e2ae7cf1877fd1ccb9d54c0503c457c # v2.1.2
         with:
           token_format: 'id_token'
-          id_token_audience: ${{ secrets.CLOUD_RUN_URL }}
+          id_token_audience: ${{ secrets.CLOUD_RUN_URL_V2 }}
           id_token_include_email: true
           workload_identity_provider: ${{ secrets.GCP_WIDP }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
@@ -60,9 +60,9 @@ jobs:
       - name: 🛠️ Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@98ddc00a17442e89a24bbf282954a3b65ce6d200 # v2.1.0
 
-      - name: 🤖 Invoke Agent on Cloud Run
+      - name: 🤖 Invoke Agent V2 on Cloud Run
         env:
-          CLOUD_RUN_URL: ${{ secrets.CLOUD_RUN_URL }}
+          CLOUD_RUN_URL: ${{ secrets.CLOUD_RUN_URL_V2 }}
           ISSUE_NUM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
           ACTOR: ${{ github.actor }}
           GCP_ID_TOKEN: ${{ steps.auth.outputs.id_token }}
@@ -76,17 +76,17 @@ jobs:
           BASE_BRANCH="staging"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             BASE_BRANCH="${{ github.event.inputs.base_branch }}"
-          elif [[ "${{ github.event.label.name }}" == "onefm_developer_hotfix" ]] || \
-               echo '${{ toJSON(github.event.issue.labels.*.name) }}' | jq -e '. | index("onefm_developer_hotfix")' > /dev/null 2>&1; then
+          elif [[ "${{ github.event.label.name }}" == "onefm_beta_hotfix" ]] || \
+               echo '${{ toJSON(github.event.issue.labels.*.name) }}' | jq -e '. | index("onefm_beta_hotfix")' > /dev/null 2>&1; then
             BASE_BRANCH="version-15"
           fi
 
-          echo "Connecting to: $CLOUD_RUN_URL"
+          echo "Connecting to V2: $CLOUD_RUN_URL"
           echo "Requesting fix for Issue #$ISSUE_NUM (base: $BASE_BRANCH)"
           echo ""
           echo "💡 NOTE: The AI agent can take 2-15 minutes to complete its reasoning loop."
           echo "📖 VIEW REAL-TIME LOGS HERE:"
-          echo "https://console.cloud.google.com/run/detail/${{ secrets.GCP_LOCATION || 'us-central1' }}/onefm-agent/observability/logs?project=${{ secrets.GCP_PROJECT_ID || 'ai-agents-10' }}"
+          echo "https://console.cloud.google.com/run/detail/${{ secrets.GCP_LOCATION || 'us-central1' }}/onefm-agent-v2/logs?project=${{ secrets.GCP_PROJECT_ID || 'ai-agents-10' }}"
           echo ""
           echo "Waiting for agent to finish..."
 

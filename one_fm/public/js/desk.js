@@ -39,11 +39,16 @@ var show_change_log=function() {
 };
 
 let improve_my_erp = () => {
-	let improveBTN = document.createElement('a');
-	improveBTN.classList = "btn btn-default btn-xs improve-my-erp";
-	improveBTN.textContent = "Improve";
-  improveBTN.href = '/helpdesk/tickets/new'
-	document.querySelector(".form-inline.fill-width.justify-content-end").prepend(improveBTN);
+	let container = document.querySelector(".form-inline.fill-width.justify-content-end");
+	if (container) {
+		let improveBTN = document.createElement("a");
+		improveBTN.classList = "btn btn-default btn-xs improve-my-erp";
+		improveBTN.textContent = "Improve";
+		improveBTN.href = "/helpdesk/tickets/new";
+		improveBTN.target = "_blank";
+		improveBTN.rel = "noopener noreferrer";
+		container.prepend(improveBTN);
+	}
 }
 
 // KNOWLEDGE BASE

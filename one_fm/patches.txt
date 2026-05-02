@@ -285,6 +285,7 @@ one_fm.patches.v15_0.add_assignment_rule_leave_application_pending_confirmation
 one_fm.patches.v15_0.add_leave_application_outcome_custom_field
 one_fm.patches.v15_0.update_subcontract_staff_attendance_web_form
 one_fm.patches.v15_0.fix_contract_currency
+one_fm.patches.v15_0.fix_leave_allocation_carry_forward_hr_emp_02814
 one_fm.patches.v15_0.remove_pathfinder_log_assignment_rules
 one_fm.patches.v15_0.add_workflow_states_penalty_and_investigation
 one_fm.patches.v15_0.add_workflow_actions_penalty_and_investigation
@@ -352,7 +353,6 @@ one_fm.patches.v15_0.add_workflow_resignation_withdrawal
 one_fm.patches.v15_0.update_client_event_workflow_state
 one_fm.patches.v15_0.add_contract_notification_recipients #1
 one_fm.patches.v15_0.populate_expected_arrival_time_at_site
-one_fm.patches.v15_0.delete_attendance_checks_mar18_2026 #3
 one_fm.patches.v15_0.sync_contract_item_type_to_operations
 one_fm.patches.v15_0.delete_pending_off_day_attendance_checks
 one_fm.patches.v15_0.add_stock_entry_custom_fields
@@ -389,3 +389,4 @@ one_fm.patches.v15_0.setup_dmarc_process_task #2026-04-26
 one_fm.patches.v15_0.add_resignation_buttons
 one_fm.patches.v15_0.update_purchase_invoice_property_setter #3
 one_fm.patches.v15_0.fix_dmarc_report_name_column #2026-04-27
+one_fm.patches.v15_0.rename_item_int_civ_000033 #1
