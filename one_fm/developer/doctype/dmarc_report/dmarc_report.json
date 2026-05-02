@@ -1,0 +1,206 @@
+{
+  "actions": [],
+  "allow_copy": 1,
+  "allow_import": 1,
+  "allow_rename": 0,
+  "autoname": "Python",
+  "creation": "2026-04-23 16:39:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "title",
+    "report_id",
+    "org_name",
+    "org_email",
+    "domain",
+    "column_break_1",
+    "begin_date",
+    "end_date",
+    "status",
+    "section_break_policy",
+    "published_policy",
+    "published_spf_alignment",
+    "column_break_policy",
+    "published_dkim_alignment",
+    "published_pct",
+    "section_break_stats",
+    "total_messages",
+    "total_pass",
+    "column_break_stats",
+    "total_fail",
+    "pass_rate",
+    "section_break_records",
+    "records",
+    "section_break_raw",
+    "raw_xml"
+  ],
+  "fields": [
+    {
+      "fieldname": "title",
+      "fieldtype": "Data",
+      "label": "Title",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "report_id",
+      "fieldtype": "Data",
+      "label": "Report ID",
+      "unique": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "org_name",
+      "fieldtype": "Data",
+      "label": "Reporting Organization",
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "org_email",
+      "fieldtype": "Data",
+      "label": "Org Email"
+    },
+    {
+      "fieldname": "domain",
+      "fieldtype": "Data",
+      "label": "Domain",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "begin_date",
+      "fieldtype": "Datetime",
+      "label": "Begin Date",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "end_date",
+      "fieldtype": "Datetime",
+      "label": "End Date"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "Processed\nError",
+      "default": "Processed",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "section_break_policy",
+      "fieldtype": "Section Break",
+      "label": "Policy Settings"
+    },
+    {
+      "fieldname": "published_policy",
+      "fieldtype": "Data",
+      "label": "Published Policy",
+      "description": "none (monitor), quarantine (junk), reject (block)"
+    },
+    {
+      "fieldname": "published_spf_alignment",
+      "fieldtype": "Data",
+      "label": "SPF Alignment",
+      "description": "r (relaxed), s (strict)"
+    },
+    {
+      "fieldname": "column_break_policy",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "published_dkim_alignment",
+      "fieldtype": "Data",
+      "label": "DKIM Alignment",
+      "description": "r (relaxed), s (strict)"
+    },
+    {
+      "fieldname": "published_pct",
+      "fieldtype": "Int",
+      "label": "Published Percentage"
+    },
+    {
+      "fieldname": "section_break_stats",
+      "fieldtype": "Section Break",
+      "label": "Statistics"
+    },
+    {
+      "fieldname": "total_messages",
+      "fieldtype": "Int",
+      "label": "Total Messages",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "total_pass",
+      "fieldtype": "Int",
+      "label": "Total Pass"
+    },
+    {
+      "fieldname": "column_break_stats",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "total_fail",
+      "fieldtype": "Int",
+      "label": "Total Fail"
+    },
+    {
+      "fieldname": "pass_rate",
+      "fieldtype": "Percent",
+      "label": "Pass Rate",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "section_break_records",
+      "fieldtype": "Section Break",
+      "label": "Records"
+    },
+    {
+      "fieldname": "records",
+      "fieldtype": "Table",
+      "label": "Records",
+      "options": "DMARC Record"
+    },
+    {
+      "fieldname": "section_break_raw",
+      "fieldtype": "Section Break",
+      "label": "Raw Content"
+    },
+    {
+      "fieldname": "raw_xml",
+      "fieldtype": "Long Text",
+      "label": "Raw XML",
+      "hidden": 1
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "is_submittable": 0,
+  "modified": "2026-04-25 16:30:00.000000",
+  "modified_by": "Administrator",
+  "module": "Developer",
+  "name": "DMARC Report",
+  "naming_rule": "Python",
+  "show_title_field_in_link": 1,
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "track_changes": 1
+}

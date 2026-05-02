@@ -17,3 +17,4 @@ qrcode==7.4.2
 paramiko==3.4.0
 llama_index==0.10.45
 openai==1.45.0
+parsedmarc

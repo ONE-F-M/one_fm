@@ -214,7 +214,8 @@ function setup_status_indicator(frm) {
 		"In Process": "green",
 		"Completed": "green",
 		"Rejected": "red",
-		"Cancelled": "red"
+		"Cancelled": "red",
+		"Withdrawn": "yellow"
 	};
 	if (frm.doc.workflow_state) {
 		frm.page.set_indicator(__(frm.doc.workflow_state), status_colors[frm.doc.workflow_state] || "gray");

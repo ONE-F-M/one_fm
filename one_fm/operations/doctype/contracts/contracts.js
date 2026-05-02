@@ -593,7 +593,7 @@ frappe.ui.form.on('Contract Item', {
 var set_item_price = function(frm, row) {
 	if(row.item_code && row.rate_type){
 		frappe.call({
-			method: 'frappe.client.get',
+			method: 'frappe.client.get_value',
 			args:{
 				'doctype':'Item Price',
 				'filters':{
@@ -602,10 +602,11 @@ var set_item_price = function(frm, row) {
 					'customer': frm.doc.client,
 					'uom': row.rate_type,
 					'selling': 1
-				}
+				},
+				'fieldname': ['name', 'price_list_rate']
 			},
 			callback:function(r){
-				if(r.message){
+				if(r.message && r.message.name){
 					frappe.model.set_value(row.doctype, row.name, "item_price", r.message.name);
 					frappe.model.set_value(row.doctype, row.name, "price_list_rate", r.message.price_list_rate);
 					frappe.model.set_value(row.doctype, row.name, "rate", r.message.price_list_rate);
@@ -614,7 +615,7 @@ var set_item_price = function(frm, row) {
 					frappe.model.set_value(row.doctype, row.name, "item_price", '');
 					frappe.model.set_value(row.doctype, row.name, "price_list_rate", 0);
 					frappe.model.set_value(row.doctype, row.name, "rate", 0);
-					frappe.msgprint("Rate not found for item" + row.item_code)
+					frappe.msgprint(__("Rate not found for item {0}", [row.item_code]));
 				}
 				frm.refresh_field("items");
 			}

@@ -207,6 +207,7 @@ class SubcontractStaffAttendance(Document):
 				"amount": accepted_qty * c_item.rate
 			})
 
+		pi.is_subcontracted = 1
 		pi.insert()
 		return pi.name
 

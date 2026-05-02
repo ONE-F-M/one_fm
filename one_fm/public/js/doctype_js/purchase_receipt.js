@@ -1,20 +1,26 @@
 frappe.ui.form.on('Purchase Receipt', {
-    onload: function(frm) {
-        setTimeout(() => {
-            set_readonly_for_warehouse_users(frm);
-        }, 100);
+    onload_post_render: function(frm) {
+        set_readonly_for_warehouse_users(frm);
+        hide_finance_fields_for_non_finance_users(frm);
     },
     
     refresh: function(frm) {
-        setTimeout(() => {
+        // frappe.after_ajax ensures all grid DOM elements are fully loaded
+        frappe.after_ajax(() => {
             set_readonly_for_warehouse_users(frm);
-        }, 100);
+            hide_finance_fields_for_non_finance_users(frm);
+        });
     }
 });
 
 frappe.ui.form.on('Purchase Receipt Item', {
+    form_render: function(frm, cdt, cdn) {
+        set_readonly_for_warehouse_users(frm);
+        hide_finance_fields_for_non_finance_users(frm);
+    },
     items_add: function(frm) {
         set_readonly_for_warehouse_users(frm);
+        hide_finance_fields_for_non_finance_users(frm);
     }
 });
 
@@ -95,3 +101,61 @@ function set_readonly_for_warehouse_users(frm) {
 
 
 
+
+/**
+ * Story 7: Restrict visibility of pricing/tax fields on Purchase Receipt to authorized roles
+ */
+function hide_finance_fields_for_non_finance_users(frm) {
+    const allowed_roles = [
+        'Finance User', 
+        'Finance Manager', 
+        'Director', 
+        'Purchase User', 
+        'Purchase Manager', 
+        'Purchase Master Manager', 
+        'System Manager', 
+        'Finance PO Approver', 
+        'Junior Accounts User'
+    ];
+    
+    const has_allowed_role = frappe.user_roles.some(role => allowed_roles.includes(role));
+    
+    if (!has_allowed_role) {
+        // Child fields to hide
+        const child_fields = [
+            'rate', 'price_list_rate', 'base_rate', 'base_price_list_rate', 'net_rate', 'base_net_rate', 'amount', 'base_amount', 'net_amount', 
+            'base_net_amount', 'discount_percentage', 'discount_amount', 'margin_type', 
+            'margin_rate_or_amount', 'rate_with_margin', 'base_rate_with_margin'
+        ];
+        
+        child_fields.forEach(field => {
+            // Update the core meta so the child modal dialog instantly respects the hidden property
+            let df = frappe.meta.get_docfield('Purchase Receipt Item', field);
+            if (df) {
+                df.hidden = 1;
+            }
+            // Also update the visual grid instance
+            if (frm.fields_dict.items && frm.fields_dict.items.grid) {
+                frm.fields_dict.items.grid.update_docfield_property(field, 'hidden', 1);
+            }
+        });
+        
+        // Header fields to hide
+        const header_fields = [
+            'total', 'net_total', 'base_total', 'base_net_total', 
+            'grand_total', 'base_grand_total', 'rounded_total', 
+            'base_rounded_total', 'in_words', 'base_in_words', 
+            'taxes_and_charges_added', 'taxes_and_charges_deducted', 
+            'total_taxes_and_charges', 'taxes_section', 'taxes',
+            'totals_section', 'discount_section', 'sec_tax_breakup',
+            'other_charges_calculation'
+        ];
+        
+        frm.toggle_display(header_fields, false);
+        
+        // Force refresh grid if drawn
+        if (frm.fields_dict.items.grid) {
+            frm.refresh_field('items');
+        }
+    }
+}

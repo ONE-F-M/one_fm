@@ -12,6 +12,7 @@
   "employment_type",
   "project_allocation",
   "resignation_letter",
+  "resignation_letter_date",
   "withdrawal_status",
   "employee_id"
  ],
@@ -57,6 +58,12 @@
    "fieldname": "resignation_letter",
    "fieldtype": "Attach",
    "label": "Resignation Letter"
+  },
+  {
+   "fieldname": "resignation_letter_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Letter Date"
   },
   {
    "fieldname": "withdrawal_status",

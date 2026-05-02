@@ -9,6 +9,25 @@ from calendar import monthrange
 from frappe import _
 
 class AttendanceAmendment(Document):
+	def validate(self):
+		self.recalculate_working_days()
+
+	def recalculate_working_days(self):
+		for row in self.get("attendance_details") + self.get("overtime_details"):
+			working_days = 0 
+			off_days = 0
+			for i in range(1, 32):
+				val = row.get(f"day_{i}")
+				if self.attendance_based_on == "Attendance Status":
+					if val in ["Present", "Working", "Work From Home"]:
+						working_days += 1
+					elif val == "Half Day":
+						working_days += 0.5
+					elif val in ["Day Off", "Client Day Off"]:
+						off_days += 1
+			row.working_days = working_days
+			row.off_days = off_days
+
 	@frappe.whitelist()
 	def fetch_attendance_record(self):
 		filters = self.get_attendance_amendment_filters()
@@ -137,6 +156,10 @@ def get_attendance_map(filters, attendance_based_on=None):
 	return attendance_map
 
 def get_non_day_off_attendance_records(filters):
+	from frappe.utils import get_last_day
+	start_date = f"{filters.year}-{int(filters.month):02d}-01"
+	end_date = get_last_day(start_date)
+
 	Attendance = frappe.qb.DocType("Attendance")
 	OperationsShift = frappe.qb.DocType("Operations Shift")
 
@@ -153,8 +176,8 @@ def get_non_day_off_attendance_records(filters):
 		)
 		.where(
 			(Attendance.docstatus == 1)
-			& (Extract("month", Attendance.attendance_date) == filters.month)
-			& (Extract("year", Attendance.attendance_date) == filters.year)
+			& (Attendance.attendance_date >= start_date)
+			& (Attendance.attendance_date <= end_date)
 			& ~(Attendance.status.isin(["Day Off", "Client Day Off"]))
 			& (Attendance.roster_type == "Basic")
 		)
@@ -199,6 +222,10 @@ def get_rows(employee_details, filters, attendance_map, attendance_based_on):
 	return records
 
 def get_day_off_attendance_map(filters, roster_type="Basic"):
+	from frappe.utils import get_last_day
+	start_date = f"{filters.year}-{int(filters.month):02d}-01"
+	end_date = get_last_day(start_date)
+
 	Attendance = frappe.qb.DocType("Attendance")
 
 	query = (
@@ -211,8 +238,8 @@ def get_day_off_attendance_map(filters, roster_type="Basic"):
 		)
 		.where(
 			(Attendance.docstatus == 1)
-			& (Extract("month", Attendance.attendance_date) == filters.month)
-			& (Extract("year", Attendance.attendance_date) == filters.year)
+			& (Attendance.attendance_date >= start_date)
+			& (Attendance.attendance_date <= end_date)
 			& (Attendance.status.isin(["Day Off", "Client Day Off"]))
 			& (Attendance.roster_type == roster_type)
 		)
@@ -294,6 +321,10 @@ def get_ot_attendance_map(filters):
 	return attendance_map
 
 def get_ot_attendance_records(filters):
+	from frappe.utils import get_last_day
+	start_date = f"{filters.year}-{int(filters.month):02d}-01"
+	end_date = get_last_day(start_date)
+
 	Attendance = frappe.qb.DocType("Attendance")
 	OperationsShift = frappe.qb.DocType("Operations Shift")
 
@@ -310,8 +341,8 @@ def get_ot_attendance_records(filters):
 		)
 		.where(
 			(Attendance.docstatus == 1)
-			& (Extract("month", Attendance.attendance_date) == filters.month)
-			& (Extract("year", Attendance.attendance_date) == filters.year)
+			& (Attendance.attendance_date >= start_date)
+			& (Attendance.attendance_date <= end_date)
 			& ~(Attendance.status.isin(["Day Off", "Client Day Off"]))
 			& (Attendance.roster_type == "Over-Time")
 		)

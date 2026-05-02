@@ -12,6 +12,12 @@
   "relieving_date",
   "date_of_joining",
   "under_company_residency",
+  "approvers_section",
+  "supervisor",
+  "column_break_appr",
+  "operations_manager",
+  "column_break_appr2",
+  "offboarding_officer",
   "table_section",
   "employees",
   "more_information_section",
@@ -111,6 +117,41 @@
    "label": "Withdrawing Employees",
    "options": "Employee Resignation Withdrawal Item",
    "reqd": 1
+  },
+  {
+   "fieldname": "approvers_section",
+   "fieldtype": "Section Break",
+   "label": "Approvers"
+  },
+  {
+   "fieldname": "supervisor",
+   "fieldtype": "Link",
+   "label": "Supervisor",
+   "options": "User",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_appr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "operations_manager",
+   "fieldtype": "Link",
+   "label": "Operations Manager",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_appr2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "offboarding_officer",
+   "fieldtype": "Link",
+   "label": "Offboarding Officer",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "table_section",

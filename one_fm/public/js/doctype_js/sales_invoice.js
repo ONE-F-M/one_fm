@@ -45,6 +45,7 @@ frappe.ui.form.on('Sales Invoice', {
         setup_contract_item_category_filter(frm);
         toggle_items_add_row(frm);
         add_get_items_from_purchase_invoice(frm);
+        add_get_items_from_contracts(frm); // Story 2
         show_currency_exchange_info(frm);
         if(frm.doc.customer){
             frm.set_query("project", function() {
@@ -57,6 +58,15 @@ frappe.ui.form.on('Sales Invoice', {
             frm.refresh_field("project");
             fetch_advances(frm)            
             
+        }
+        
+        // Story 3 & 5: Persist rate and currency protection on reload
+        let has_contract_item = (frm.doc.items || []).some(d => d.custom_contract_item);
+        if (has_contract_item) {
+            if (frm.fields_dict.items && frm.fields_dict.items.grid) {
+                frm.fields_dict.items.grid.update_docfield_property("rate", "read_only", 1);
+            }
+            frm.set_df_property("currency", "read_only", 1);
         }
 
     },
@@ -248,6 +258,61 @@ frappe.ui.form.on('Sales Invoice Item', {
     rate: function(frm, cdt, cdn) {
         calculate_margin_for_item(frm, cdt, cdn);
     },
+    
+    custom_contract_item: function(frm, cdt, cdn) {
+        let row = frappe.get_doc(cdt, cdn);
+        if (row.custom_contract_item) {
+            frm.fields_dict.items.grid.update_docfield_property("rate", "read_only", 1);
+        }
+    }
+});
+
+frappe.ui.form.on('Sales Taxes and Charges', {
+    taxes_add: function(frm, cdt, cdn) {
+        // Story 4: Default Add or Deduct to Deduct for new rows (as per Frappe behavior, defaults can also be set from the field property itself)
+        frappe.model.set_value(cdt, cdn, 'custom_add_or_deduct', 'Deduct');
+    },
+    
+    custom_add_or_deduct: function(frm, cdt, cdn) {
+        let row = frappe.get_doc(cdt, cdn);
+        // We only change the sign to ensure it's correct for the chosen operation.
+        // On Net Total uses rate as percentage, and Frappe standard expects tax_rate to be positive
+        // or negative based on whether it adds or deducts.
+        
+        let rate = flt(row.rate);
+        
+        if (row.custom_add_or_deduct === 'Deduct' && rate > 0) {
+            frappe.model.set_value(cdt, cdn, 'rate', -rate);
+        } else if (row.custom_add_or_deduct === 'Add' && rate < 0) {
+            frappe.model.set_value(cdt, cdn, 'rate', Math.abs(rate));
+        }
+        
+        // Also fix tax_amount if it's independently calculated/modified
+        let tax_amount = flt(row.tax_amount);
+        if (row.custom_add_or_deduct === 'Deduct' && tax_amount > 0) {
+            frappe.model.set_value(cdt, cdn, 'tax_amount', -tax_amount);
+        } else if (row.custom_add_or_deduct === 'Add' && tax_amount < 0) {
+            frappe.model.set_value(cdt, cdn, 'tax_amount', Math.abs(tax_amount));
+        }
+    },
+    
+    rate: function(frm, cdt, cdn) {
+        let row = frappe.get_doc(cdt, cdn);
+        let rate = flt(row.rate);
+        
+        if (row.custom_add_or_deduct === 'Deduct' && rate > 0) {
+            frappe.model.set_value(cdt, cdn, 'rate', -rate);
+        }
+    },
+    
+    tax_amount: function(frm, cdt, cdn) {
+        let row = frappe.get_doc(cdt, cdn);
+        let tax_amount = flt(row.tax_amount);
+        
+        if (row.custom_add_or_deduct === 'Deduct' && tax_amount > 0) {
+            frappe.model.set_value(cdt, cdn, 'tax_amount', -tax_amount);
+        }
+    }
 });
 
 
@@ -811,5 +876,127 @@ function clear_contract_categories(frm) {
             frappe.model.set_value(item.doctype, item.name, 'custom_contract_item_category', '');
         });
     }
+}
+
+// Story 2: Get Items From -> Contracts
+function add_get_items_from_contracts(frm) {
+    if (!frm.doc.customer || frm.doc.docstatus !== 0) return;
+    
+    frm.add_custom_button(__('Contracts'), function() {
+        show_contract_selector(frm);
+    }, __('Get Items From'));
+}
+
+function show_contract_selector(frm) {
+    frappe.call({
+        method: "one_fm.overrides.get_items_from_contracts.get_active_contracts_for_customer",
+        args: {
+            customer: frm.doc.customer
+        },
+        callback: function(r) {
+            if (r.message && r.message.length > 0) {
+                let options = r.message.map(d => ({
+                    label: d.name + (d.project ? ` (${d.project})` : ""),
+                    value: d.name
+                }));
+                
+                let d = new frappe.ui.Dialog({
+                    title: __('Select Contract'),
+                    fields: [
+                        {
+                            label: 'Contract',
+                            fieldname: 'contract',
+                            fieldtype: 'Select',
+                            options: options,
+                            reqd: 1
+                        }
+                    ],
+                    primary_action_label: __('Next'),
+                    primary_action: function(values) {
+                        d.hide();
+                        show_invoice_period_dialog(frm, values.contract);
+                    }
+                });
+                d.show();
+            } else {
+                frappe.msgprint(__('No Active Contracts found for this Customer.'));
+            }
+        }
+    });
+}
+
+function show_invoice_period_dialog(frm, contract) {
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const current_year = new Date().getFullYear();
+    const years = [current_year - 1, current_year, current_year + 1];
+    
+    let current_month = months[new Date().getMonth()];
+    
+    let d = new frappe.ui.Dialog({
+        title: __('Select Invoice Period'),
+        fields: [
+            {
+                label: 'Month',
+                fieldname: 'month',
+                fieldtype: 'Select',
+                options: months,
+                default: current_month,
+                reqd: 1
+            },
+            {
+                label: 'Year',
+                fieldname: 'year',
+                fieldtype: 'Select',
+                options: years,
+                default: current_year,
+                reqd: 1
+            }
+        ],
+        primary_action_label: __('Get Items'),
+        primary_action: function(values) {
+            d.hide();
+            fetch_items_from_contract(frm, contract, values.month, values.year);
+        }
+    });
+    d.show();
+}
+
+function fetch_items_from_contract(frm, contract, month, year) {
+    frappe.call({
+        method: "one_fm.overrides.get_items_from_contracts.get_contract_invoice_items",
+        args: {
+            contract: contract,
+            month: month,
+            year: year
+        },
+        freeze: true,
+        freeze_message: __('Fetching Contract Items and calculating Attendance...'),
+        callback: function(r) {
+            if (r.message) {
+                let data = r.message;
+                
+                if (data.items && data.items.length > 0) {
+                    frappe.run_serially([
+                        () => frm.set_value("project", data.project),
+                        () => frm.set_value("custom_site", data.site),
+                        
+                        // Story 5: Pre-set and read-only lock currency field from selected contract
+                        () => frm.set_value("currency", data.currency),
+                        () => frm.set_df_property("currency", "read_only", 1),
+                        
+                        () => {
+                            data.items.forEach(item => {
+                                let row = frm.add_child("items");
+                                $.extend(row, item); 
+                            });
+                            frm.refresh_field("items");
+                        }
+                    ]);
+                } else {
+                    frappe.msgprint(__('No billable items found for the selected period.'));
+                }
+            }
+        }
+    });
 }
 

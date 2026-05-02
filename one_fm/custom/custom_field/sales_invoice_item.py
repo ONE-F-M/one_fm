@@ -138,6 +138,20 @@ def get_sales_invoice_item_custom_fields():
                 "allow_on_submit": 1,
                 "fetch_if_empty": 1,
                 "mandatory_depends_on": "eval:parent.custom_refundable == 1",
+            },
+            {
+                "fieldname": "custom_contract",
+                "fieldtype": "Link",
+                "insert_after": "pos_invoice_item",
+                "label": "Contract",
+                "options": "Contracts"
+            },
+            {
+                "fieldname": "custom_contract_item",
+                "fieldtype": "Link",
+                "insert_after": "custom_contract",
+                "label": "Contract Item",
+                "options": "Contract Item"
             }
 
 

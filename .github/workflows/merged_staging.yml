@@ -1,36 +1,32 @@
 name: Deploy CI/CD to Staging
 
 on:
-  push: # tells github to run this on any push to the repository
+  push:
     branches:
       - staging
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - name: Deploy to Staging
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.STAGING_HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.STAGING_KEY }}
-        port: 22
-        script: |
-          cd /home/frappe/frappe-bench/apps/one_fm # we move into our app's folder
-          # git pull upstream staging # we pull any changes from git
-          git pull
-          cd /home/frappe          
-          pip3 install --upgrade frappe-bench
-          cd /home/frappe/frappe-bench
-          bench setup requirements one_fm
-          bench migrate # sync database
-          bench restart #${{secrets.PASSKEY}}
-          # we remove any unused dependencies
-          bench doctor
+      - name: Deploy to Staging
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.STAGING_KEY }}
+          port: 22
+          command_timeout: 30m
+          script_stop: true
+          script: |
+            set -x
+            cd /home/frappe/frappe-bench/apps/one_fm
+            git pull upstream staging
+            cd /home/frappe/frappe-bench
+            bench setup requirements one_fm
+            bench migrate
+            bench build --app one_fm
+            bench clear-cache
+            bench restart

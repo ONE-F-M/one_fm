@@ -41,7 +41,15 @@
   "google_tab",
   "google_task_section",
   "google_task_synchronization_enabled",
-  "sync_google_tasks_btn"
+  "sync_google_tasks_btn",
+  "dmarc_settings_tab",
+  "dmarc_fetching_section",
+  "imap_host",
+  "imap_port",
+  "column_break_dmarc",
+  "email_account",
+  "email_password",
+  "last_fetch_time"
  ],
  "fields": [
   {
@@ -249,12 +257,59 @@
    "fieldtype": "Table MultiSelect",
    "label": "Notify Contract Expiry Users",
    "options": "Action User"
+  },
+  {
+   "fieldname": "dmarc_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "DMARC Settings"
+  },
+  {
+   "fieldname": "dmarc_fetching_section",
+   "fieldtype": "Section Break",
+   "label": "DMARC Report Fetching"
+  },
+  {
+   "default": "imap.gmail.com",
+   "description": "IMAP server hostname",
+   "fieldname": "imap_host",
+   "fieldtype": "Data",
+   "label": "IMAP Host"
+  },
+  {
+   "default": "993",
+   "description": "IMAP port",
+   "fieldname": "imap_port",
+   "fieldtype": "Int",
+   "label": "IMAP Port"
+  },
+  {
+   "fieldname": "column_break_dmarc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Email address to fetch reports from",
+   "fieldname": "email_account",
+   "fieldtype": "Data",
+   "label": "Email Account"
+  },
+  {
+   "description": "App Password for IMAP access",
+   "fieldname": "email_password",
+   "fieldtype": "Password",
+   "label": "Email Password"
+  },
+  {
+   "description": "Timestamp of last successful fetch",
+   "fieldname": "last_fetch_time",
+   "fieldtype": "Datetime",
+   "label": "Last Fetch Time",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "issingle": 1,
  "links": [],
- "modified": "2026-03-16 12:54:32.000729",
+ "modified": "2026-04-26 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "ONEFM General Setting",

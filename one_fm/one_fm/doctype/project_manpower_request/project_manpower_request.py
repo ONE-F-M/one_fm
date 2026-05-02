@@ -4,6 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.desk.form.assign_to import add as add_assignment
 
 
 class ProjectManpowerRequest(Document):
@@ -40,7 +41,17 @@ class ProjectManpowerRequest(Document):
 		self.calculate_remaining_qty()
 		self.check_status_lock()
 		self.validate_erf_presence()
+		self.validate_recruiter_presence()
 		self.validate_completion()
+
+	def validate_recruiter_presence(self):
+		if (getattr(self, "workflow_state", None) or "Draft") != "Draft":
+			if not self.recruiter:
+				frappe.throw(
+					_("Please assign a <b>Recruiter</b> before moving this Project Manpower Request past Draft."),
+					title=_("Missing Recruiter")
+				)
+
 
 	def validate_erf_presence(self):
 		if getattr(self, "workflow_state", None) in ["Awaiting Recruiter Approval", "In Process", "Completed"]:
@@ -100,6 +111,44 @@ class ProjectManpowerRequest(Document):
 
 	def on_update(self):
 		self.update_erf_headcount()
+		self.assign_recruiter()
+
+	def assign_recruiter(self):
+		recruiter = self.get("recruiter")
+		if not recruiter:
+			return
+
+		if not self.is_new():
+			old_doc = self.get_doc_before_save()
+			old_recruiter = old_doc.get("recruiter") if old_doc else None
+			if old_recruiter and old_recruiter != recruiter:
+				try:
+					from frappe.desk.form.assign_to import remove as remove_assignment
+					remove_assignment(self.doctype, self.name, old_recruiter)
+				except Exception:
+					pass
+
+		# Check if already assigned to this recruiter
+		is_assigned = frappe.db.exists("ToDo", {
+			"reference_type": self.doctype,
+			"reference_name": self.name,
+			"allocated_to": recruiter,
+			"status": "Open"
+		})
+		
+		if not is_assigned:
+			try:
+				add_assignment({
+					"doctype": self.doctype,
+					"name": self.name,
+					"assign_to": [recruiter],
+					"description": _("Assigned for Recruitment processing"),
+				}, ignore_permissions=True)
+			except Exception as e:
+				frappe.log_error(
+					message=f"Error assigning recruiter for {self.name}: {str(e)}",
+					title="PMR Recruiter Assignment Error"
+				)
 		
 	def before_update_after_submit(self):
 		self.calculate_remaining_qty()
@@ -130,9 +179,10 @@ class ProjectManpowerRequest(Document):
 		if not self.erf:
 			return
 
-		# If it is Draft or Rejected, its contribution should be 0.
-		active_statuses = ["In Process", "Completed", "Awaiting Recruiter Approval", "Pending OM Approval"]
-		target_contribution = self.number_to_hire if getattr(self, "workflow_state", None) in active_statuses else 0
+		# If it is Rejected or Cancelled, its contribution should be 0.
+		# Include Draft and early stages so the message shows immediately on creation
+		active_statuses = ["Draft", "In Process", "Completed", "Awaiting Recruiter Approval", "Pending OM Approval"]
+		target_contribution = self.number_to_hire if getattr(self, "workflow_state", None) in active_statuses or not self.workflow_state else 0
 
 		current_contribution = self.qty_added_to_erf or 0
 		delta = target_contribution - current_contribution
@@ -145,7 +195,7 @@ class ProjectManpowerRequest(Document):
 			
 			direction = "increased" if delta > 0 else "decreased"
 			frappe.msgprint(_("ERF {0} requirement {1} by {2}. Current Total: {3}").format(
-				frappe.bold(self.erf), direction, frappe.bold(abs(delta)), frappe.bold(new_req)), alert=True)
+				frappe.bold(self.erf), direction, frappe.bold(abs(delta)), frappe.bold(new_req)))
 
 	def revert_erf_headcount(self):
 		if self.erf and self.qty_added_to_erf:

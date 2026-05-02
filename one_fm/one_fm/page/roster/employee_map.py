@@ -196,7 +196,7 @@ class CreateMap:
 			SELECT es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, 
 				es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability, 
 				es.day_off_ot, es.project, es.site, emp.project as actual_project,
-				emp.site as actual_site, emp.shift as actual_shift, es.event_location
+				emp.site as actual_site, emp.shift as actual_shift, es.event_location, es.client_event
 			FROM `tabEmployee Schedule` es 
 			JOIN `tabEmployee` emp
 			ON es.employee = emp.name
@@ -339,6 +339,14 @@ class CreateMap:
 				daily_records = []
 				# Add attendance records for the day
 				for attendance in day_row['attendance_records']:
+					# Find the corresponding schedule to fetch missing properties like event_location and datetimes
+					matched_schedule = next(
+						(s for s in day_row['schedule_records'] 
+						 if s.get('roster_type') == attendance.get('roster_type') 
+						 and s.get('day_off_ot') == attendance.get('day_off_ot')), 
+						{}
+					)
+
 					attendance_entry = sanitize_record({
 						'employee': attendance['employee'],
 						'employee_name': attendance['employee_name'],
@@ -351,10 +359,15 @@ class CreateMap:
 						'employee_availability': attendance['status'] if attendance['status'] == "Day Off" else "",
 						'day_off_category': self.employee_period_details[employee_id].get('day_off_category'),
 						'number_of_days_off': self.employee_period_details[employee_id].get('number_of_days_off'),
-						'shift': attendance['operations_shift'],
+						'shift': attendance['operations_shift'] or matched_schedule.get('shift'),
 						'employee_id': self.employee_period_details[employee_id].get('employee_id'),
 						'start_time': attendance['start_time'],
 						'end_time': attendance['end_time'],
+						'start_datetime': matched_schedule.get('start_datetime'),
+						'end_datetime': matched_schedule.get('end_datetime'),
+						'event_location': matched_schedule.get('event_location'),
+						'client_event': matched_schedule.get('client_event'),
+						'post_abbrv': matched_schedule.get('post_abbrv'),
 						'day_off_ot': attendance['day_off_ot'],
 						'actual_shift': attendance.get('actual_shift')
 					})

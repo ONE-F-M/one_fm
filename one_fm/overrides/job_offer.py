@@ -265,6 +265,8 @@ class JobOfferOverride(JobOffer):
         if self.amended_from and self.status == "Rejected":
             self.status = "Awaiting Response"
 
+
+
 def assign_to_onboarding_officer(self):
 	try:
 		description = f'''

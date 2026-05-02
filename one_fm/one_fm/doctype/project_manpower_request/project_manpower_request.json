@@ -12,6 +12,7 @@
   "reason",
   "employee_resignation",
   "priority",
+  "recruiter",
   "count",
   "employment_type",
   "column_break_twru",
@@ -103,6 +104,15 @@
    "label": "Priority",
    "options": "\nHigh\nMedium\nLow",
    "search_index": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "recruiter",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Recruiter",
+   "mandatory_depends_on": "eval:doc.workflow_state && !in_list(['Draft'], doc.workflow_state)",
+   "options": "User"
   },
   {
    "fetch_from": "employee_resignation.employment_type",

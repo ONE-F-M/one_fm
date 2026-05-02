@@ -8,6 +8,7 @@
  "field_order": [
   "resigning_employees_section",
   "employees",
+  "resignation_initiation_date",
   "relieving_date",
   "section_break_xfjj",
   "employee",
@@ -35,6 +36,8 @@
   "column_break_visn",
   "replacement_salary",
   "replacement_priority",
+  "erf",
+  "recruiter",
   "section_break_tdav",
   "language_requirements",
   "skill_requirements",
@@ -112,9 +115,17 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "resignation_initiation_date",
+   "fieldtype": "Date",
+   "label": "Resignation Initiation Date",
+   "reqd": 1
+  },
+  {
+
    "fieldname": "relieving_date",
    "fieldtype": "Date",
-   "label": "Relieving Date"
+   "label": "Relieving Date",
+   "reqd": 1
   },
   {
    "fieldname": "date_of_joining",
@@ -243,6 +254,7 @@
    "label": "Replacement Priority",
    "options": "\nHigh\nMedium\nLow"
   },
+
   {
    "depends_on": "eval: doc.replacement_required == \"Yes\"",
    "fieldname": "section_break_tdav",
@@ -295,6 +307,24 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "operations_manager",
+   "fieldtype": "Link",
+   "label": "Operations Manager",
+   "options": "User",
+   "reqd": 0,
+   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Approved'].includes(doc.workflow_state)"
+  },
+  {
+   "fieldname": "offboarding_officer",
+   "fieldtype": "Link",
+   "label": "Offboarding Officer",
+   "options": "User",
+   "reqd": 0,
+   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Approved'].includes(doc.workflow_state)"
+  },
+
+  {
+
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",

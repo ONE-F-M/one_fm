@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "ATT-.{site}.-.YYYY.-.MM.-.####",
+ "autoname": "ATT-.{project}.-.YYYY.-.MM.-.####",
  "creation": "2025-11-03 16:07:14.149125",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -10,6 +10,7 @@
   "project",
   "project_manager",
   "project_manager_user",
+  "contract",
   "column_break_mqbt",
   "site",
   "site_supervisor",
@@ -47,8 +48,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Site",
-   "options": "Operations Site",
-   "reqd": 1
+   "options": "Operations Site"
   },
   {
    "fieldname": "column_break_mqbt",
@@ -138,6 +138,13 @@
    "options": "User"
   },
   {
+   "fieldname": "contract",
+   "fieldtype": "Link",
+   "label": "Contract",
+   "options": "Contracts",
+   "read_only": 1
+  },
+  {
    "fetch_from": "site.site_supervisor",
    "fieldname": "site_supervisor",
    "fieldtype": "Link",
@@ -177,7 +184,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-08 13:48:23.473781",
+ "modified": "2026-04-24 14:27:04.587189",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Amendment",
