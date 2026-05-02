@@ -394,12 +394,13 @@ def get_employee_day_off_comparison(employee, start_date, end_date, calculated_d
 	day_off_diff = ""
 	employee_number_of_days_off = calculated_day_offs
 
+	total_days_off_count = off_days + ot_days
 
-	if employee_number_of_days_off != off_days: # If has any discrepency
-		if off_days > employee_number_of_days_off:
-			day_off_diff = f"{off_days - employee_number_of_days_off} day(s) off scheduled more, please reduce by {off_days - employee_number_of_days_off}"
-		elif off_days < employee_number_of_days_off:
-			day_off_diff = f"{employee_number_of_days_off - off_days} day(s) off scheduled less, please schedule {employee_number_of_days_off - off_days} more day off"
+	if employee_number_of_days_off != total_days_off_count: # If has any discrepency
+		if total_days_off_count > employee_number_of_days_off:
+			day_off_diff = f"{total_days_off_count - employee_number_of_days_off} day(s) off scheduled more, please reduce by {total_days_off_count - employee_number_of_days_off}"
+		elif total_days_off_count < employee_number_of_days_off:
+			day_off_diff = f"{employee_number_of_days_off - total_days_off_count} day(s) off scheduled less, please schedule {employee_number_of_days_off - total_days_off_count} more day off"
 
 	start_date_split = str(start_date).split("-")
 	end_date_split = str(end_date).split("-")

@@ -1,7 +1,8 @@
 import frappe
+from one_fm.utils import create_process_task as _create_process_task
 
 def execute():
-	process_task = create_process_task()
+	process_task = get_or_create_process_task()
 	
 	assignment_rule_name = "Employee Resignation Withdrawal - Pending Operations Manager"
 	if frappe.db.exists("Assignment Rule", assignment_rule_name):
@@ -70,54 +71,24 @@ def execute():
 	}
 	frappe.get_doc(assignment_rule_data).insert(ignore_permissions=True)
 
-def create_process_task():
+def get_or_create_process_task():
 	process_name = "Resignation"
-	if not frappe.db.exists("Process", process_name):
-		frappe.get_doc({
-			"process_name": process_name,
-			"description": process_name,
-			"doctype": "Process",
-			"process_owner_name": "Administrator",
-			"process_owner": "Administrator",
-			"business_analyst": "Administrator"
-		}).insert(ignore_permissions=True)
-
-	task_type = "Repetitive"
-	if not frappe.db.exists("Task Type", task_type):
-		frappe.get_doc({
-			"name": task_type,
-			"is_routine_task": 0,
-			"doctype": "Task Type"
-		}).insert(ignore_permissions=True)
+	erp_document = "Employee Resignation Withdrawal"
+	task_description = "Review Resignation Withdrawal Action - Operations Manager"
 
 	existing_task = frappe.db.get_value("Process Task", {
 		"process_name": process_name,
-		"erp_document": "Employee Resignation Withdrawal",
-		"task": "Review Resignation Withdrawal Action - Operations Manager"
+		"erp_document": erp_document,
+		"task": task_description
 	}, "name")
 
 	if existing_task:
 		return frappe.get_doc("Process Task", existing_task)
 
-	process_task = frappe.get_doc({
-		"naming_series": "P-TASK-.YYYY.-",
-		"process_name": process_name,
-		"is_erp_task": 1,
-		"is_automated": 0,
-		"is_active": 1,
-		"erp_document": "Employee Resignation Withdrawal",
-		"task": "Review Resignation Withdrawal Action - Operations Manager",
-		"task_type": task_type,
-		"is_routine_task": 0,
-		"coordination_needed": "No",
-		"start_date": "2026-03-02",
-		"employee": "HR-EMP-00001",
-		"employee_name": "Abdullah Moustafa AlMarzouq",
-		"employee_user": "abdullah@one-fm.com",
-		"department": "Management - ONEFM",
-		"doctype": "Process Task",
-		"coordination_method": [],
-		"repeat_on_days": []
-	}).insert(ignore_permissions=True)
-	
-	return process_task
+	return _create_process_task(
+		process_name=process_name,
+		erp_document=erp_document,
+		task_description=task_description,
+		employee="HR-EMP-00001"
+	)
+
