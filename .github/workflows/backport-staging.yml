@@ -1,0 +1,64 @@
+name: Backport hotfix to staging
+
+on:
+  pull_request:
+    branches:
+      - version-15
+    types:
+      - closed
+      - labeled
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  backport:
+    # Only run when PR is merged AND has the hotfix-backport label
+    if: |
+      github.event.pull_request.merged == true &&
+      contains(toJSON(github.event.pull_request.labels.*.name), 'hotfix-backport')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for existing back-merge PR
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING_PR=$(gh pr list \
+            --repo ${{ github.repository }} \
+            --base staging \
+            --head version-15 \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ Back-merge PR #${EXISTING_PR} already exists — skipping"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create back-merge PR
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          gh pr create \
+            --repo ${{ github.repository }} \
+            --base staging \
+            --head version-15 \
+            --title "⬅️ Backport: ${PR_TITLE} (#${PR_NUMBER})" \
+            --body "## Auto Backport
+
+          Hotfix PR #${PR_NUMBER} was merged to \`version-15\` by @${PR_AUTHOR}.
+
+          This PR brings those changes into \`staging\` to keep branches in sync.
+
+          ---
+          Original PR: #${PR_NUMBER}" \
+            --label "backport-staging"
