@@ -19,7 +19,6 @@ jobs:
       github.event.pull_request.merged == true &&
       contains(toJSON(github.event.pull_request.labels.*.name), 'hotfix-backport')
     runs-on: ubuntu-latest
-
     steps:
       - name: Check for existing back-merge PR
         id: check
@@ -62,4 +61,4 @@ jobs:
 
           ---
           Original PR: #${PR_NUMBER}" \
-            --label "backmerge"
+            --label "backport-staging"
