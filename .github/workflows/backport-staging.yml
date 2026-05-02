@@ -1,0 +1,88 @@
+name: Back-merge hotfix to staging
+
+on:
+  pull_request:
+    branches:
+      - version-15
+    types:
+      - closed
+      - labeled
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  backmerge:
+    # Only run when PR is merged AND has the hotfix-backport label
+    if: |
+      github.event.pull_request.merged == true &&
+      contains(toJSON(github.event.pull_request.labels.*.name), 'hotfix-backport')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Attempt back-merge
+        id: merge
+        run: |
+          git checkout staging
+          git pull origin staging
+
+          # Try to merge version-15 into staging
+          if git merge origin/version-15 --no-edit; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+            git push origin staging
+            echo "✅ Clean merge — pushed directly to staging"
+          else
+            git merge --abort
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️ Merge conflicts detected — will create PR for manual resolution"
+          fi
+
+      - name: Create PR if conflicts exist
+        if: steps.merge.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          # Check if a back-merge PR already exists
+          EXISTING_PR=$(gh pr list \
+            --base staging \
+            --head version-15 \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "ℹ️ Back-merge PR #${EXISTING_PR} already exists — skipping"
+            exit 0
+          fi
+
+          gh pr create \
+            --base staging \
+            --head version-15 \
+            --title "⬅️ Back-merge: ${PR_TITLE} (#${PR_NUMBER})" \
+            --body "## Auto Back-merge
+
+          Hotfix PR #${PR_NUMBER} was merged to \`version-15\` by @${PR_AUTHOR}.
+
+          This PR brings those changes into \`staging\` to keep branches in sync.
+
+          > [!WARNING]
+          > **Merge conflicts detected.** Please resolve manually before merging.
+
+          ---
+          Original PR: #${PR_NUMBER}" \
+            --label "backmerge"
