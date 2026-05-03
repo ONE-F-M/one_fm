@@ -30,6 +30,14 @@ class SubcontractStaffAttendance(Document):
 			if getdate(today()) < allowed_date:
 				frappe.throw(f"You cannot select a billing month until the 11th of the following month. For {to_date.strftime('%B %Y')}, you must wait until {allowed_date.strftime('%B %d, %Y')}.")
 
+		# Enforce remarks when returning to Draft
+		if not self.is_new() and self.workflow_state == "Draft":
+			old_state = frappe.db.get_value("Subcontract Staff Attendance", self.name, "workflow_state")
+			if old_state in ["Pending Operations Supervisor", "Pending Project Manager"]:
+				has_remarks = any(row.remarks for row in self.get("subcontractor_staff_attendance_item", []))
+				if not has_remarks:
+					frappe.throw("You must provide a remark for at least one employee when returning the document to Draft.")
+
 		if not self.get("subcontractor_staff_attendance_item") and self.subcontractor_name:
 			self.fetch_subcontractor_staff()
 
@@ -67,14 +75,34 @@ class SubcontractStaffAttendance(Document):
 				compare_field = f"day_{i}" if self.attendance_record_based_on == "Attendance Status" else f"day_{i}_hour"
 
 				new_val = row.get(compare_field)
-				old_val = compare_against.get(compare_field)
+				
+				day_data = compare_against.get("days", {}).get(str(i), {})
+				
+				# Ignore baseline data if it belongs to a different site
+				if day_data.get("site") and day_data.get("site") != self.site:
+					old_val = None
+				else:
+					old_val = day_data.get("value")
 
 				# Normalize
 				if new_val is None: new_val = "" if self.attendance_record_based_on == "Attendance Status" else 0.0
 				if old_val is None: old_val = "" if self.attendance_record_based_on == "Attendance Status" else 0.0
 
-				if str(new_val) != str(old_val):
-					new_logs.append(f"{field_type} for Day {i} has been updated to [{new_val}] from [{old_val}].")
+				if self.attendance_record_based_on == "Shift Hours":
+					try:
+						n_val = float(new_val or 0.0)
+					except (ValueError, TypeError):
+						n_val = 0.0
+					try:
+						o_val = float(old_val or 0.0)
+					except (ValueError, TypeError):
+						o_val = 0.0
+						
+					if n_val != o_val:
+						new_logs.append(f"{field_type} for Day {i} has been updated to [{n_val}] from [{o_val}].")
+				else:
+					if str(new_val) != str(old_val):
+						new_logs.append(f"{field_type} for Day {i} has been updated to [{new_val}] from [{old_val}].")
 					
 				# Recalculate totals dynamically
 				if self.attendance_record_based_on == "Attendance Status":
@@ -243,13 +271,14 @@ def api_fetch_subcontractor_staff(subcontractor_name, from_date, to_date, attend
 			"attendance_date": ["between", [from_date, to_date]],
 			"docstatus": ["<", 2]
 		},
-		fields=["employee", "attendance_date", "status", "working_hours"]
+		fields=["employee", "attendance_date", "status", "working_hours", "site", "project"]
 	)
 
-	# Map attendances: { employee_id: { day_int: { status: "Present", hours: 8.0 } } }
+	# Map attendances: { employee_id: { day_int: { status: "Present", hours: 8.0, site: "Site A" } } }
 	attendance_map = {}
 	for att in attendances:
 		emp = att.employee
+		from frappe.utils import getdate
 		day = getdate(att.attendance_date).day
 		
 		if emp not in attendance_map:
@@ -257,42 +286,164 @@ def api_fetch_subcontractor_staff(subcontractor_name, from_date, to_date, attend
 			
 		attendance_map[emp][day] = {
 			"status": att.status,
-			"hours": att.working_hours or 0.0
+			"hours": att.working_hours or 0.0,
+			"site": att.site,
+			"project": att.project
 		}
 
 	items = []
-	
 	for emp in employees:
 		item = {
 			"employee": emp.name,
 			"employee_id": emp.name,
-			"employee_name": emp.employee_name
+			"employee_name": emp.employee_name,
+			"days": {}
 		}
 		
 		emp_attendance = attendance_map.get(emp.name, {})
 		
-		working_days = 0
-		off_days = 0
-
 		for i in range(1, 32):
 			day_data = emp_attendance.get(i)
-			
-			if attendance_record_based_on == "Attendance Status":
-				status = day_data["status"] if day_data else ""
-				item[f"day_{i}"] = status
-				if status in ["Present", "Half Day", "Work From Home", "Holiday"]:
-					working_days += 1
-				elif status in ["Day Off", "Client Day Off"]:
-					off_days += 1
-			elif attendance_record_based_on == "Shift Hours":
-				hours = day_data["hours"] if day_data else 0.0
-				item[f"day_{i}_hour"] = hours
-				if hours > 0:
-					working_days += 1
-		
-		item["working_days"] = working_days
-		item["off_days"] = off_days
+			if day_data and day_data.get("site"):
+				if attendance_record_based_on == "Attendance Status":
+					item["days"][str(i)] = {
+						"value": day_data["status"],
+						"site": day_data["site"],
+                        "project": day_data["project"],
+						"status": None,  # no workflow state yet
+						"status_val": day_data["status"]
+					}
+				else:
+					item["days"][str(i)] = {
+						"value": day_data["hours"],
+						"site": day_data["site"],
+                        "project": day_data["project"],
+						"status": None,
+						"status_val": day_data["status"]
+					}
 		
 		items.append(item)
 		
 	return items
+
+
+@frappe.whitelist()
+def save_attendance_records(subcontractor_name, from_date, to_date, based_on, rows_json, submit=0):
+	import json
+	rows = json.loads(rows_json)
+	
+	# payload rows: list of { employee, employee_name, days: { "1": { value, site, status, parent_doc, project } } }
+	# Structure the data by site
+	site_data = {} # { site: { project: list_of_flat_rows } }
+
+	for emp in rows:
+		# Group the employee's days by valid site so we can reconstruct flat rows
+		emp_sites = {}
+		
+		for d_str, cell in emp.get("days", {}).items():
+			site = cell.get("site")
+			if not site: continue
+			
+			if site not in emp_sites:
+				emp_sites[site] = {}
+			emp_sites[site][d_str] = cell
+			
+		# Build the flat row dictionary matching the child table for each site
+		for site, site_days in emp_sites.items():
+			project = None
+			for c in site_days.values():
+				if c.get("project"):
+					project = c.get("project")
+					break
+					
+			if site not in site_data:
+				site_data[site] = {"project": project, "employees": []}
+				
+			flat_row = {
+				"employee": emp.get("employee"),
+				"employee_name": emp.get("employee_name")
+			}
+			
+			for i in range(1, 32):
+				cell = site_days.get(str(i))
+				if cell:
+					if based_on == "Attendance Status":
+						flat_row[f"day_{i}"] = cell.get("value")
+					else:
+						flat_row[f"day_{i}_hour"] = cell.get("value")
+						
+			site_data[site]["employees"].append(flat_row)
+            
+	# Now create or update backend records
+	affected_docs = []
+	for site, site_info in site_data.items():
+		project = site_info["project"]
+		
+		# Does doc exist?
+		existing = frappe.get_all(
+			"Subcontract Staff Attendance",
+			filters={
+				"subcontractor_name": subcontractor_name,
+				"from_date": from_date,
+				"to_date": to_date,
+				"site": site
+			},
+			fields=["name", "workflow_state"]
+		)
+		
+		if existing:
+			doc = frappe.get_doc("Subcontract Staff Attendance", existing[0].name)
+			if doc.workflow_state in ["Draft"]:
+				doc.attendance_record_based_on = based_on
+				doc.set("subcontractor_staff_attendance_item", [])
+				for emp_row in site_info["employees"]:
+					doc.append("subcontractor_staff_attendance_item", emp_row)
+				
+				# Call process_audit_logs manually or rely on before_save
+				doc.save(ignore_permissions=True)
+				affected_docs.append(doc)
+		else:
+			doc = frappe.new_doc("Subcontract Staff Attendance")
+			doc.subcontractor_name = subcontractor_name
+			doc.from_date = from_date
+			doc.to_date = to_date
+			doc.attendance_record_based_on = based_on
+			doc.site = site
+			if project:
+				doc.project = project
+				
+			for emp_row in site_info["employees"]:
+				doc.append("subcontractor_staff_attendance_item", emp_row)
+				
+			doc.insert(ignore_permissions=True)
+			affected_docs.append(doc)
+			
+	# Commit the saved drafts first so we don't lose the user's edits
+	frappe.db.commit()
+
+	# If submit == 1, transition all Draft docs in this period stringently
+	if int(submit) == 1:
+		from frappe.model.workflow import apply_workflow
+		all_docs = frappe.get_all(
+			"Subcontract Staff Attendance",
+			filters={
+				"subcontractor_name": subcontractor_name,
+				"from_date": from_date,
+				"to_date": to_date,
+				"workflow_state": "Draft"
+			},
+			fields=["name", "site"]
+		)
+		
+		for d in all_docs:
+			doc_obj = frappe.get_doc("Subcontract Staff Attendance", d.name)
+			try:
+				# Mute messages to prevent "No permission to share" warnings from popping up
+				frappe.flags.mute_messages = True
+				apply_workflow(doc_obj, "Submit for Review")
+			except Exception as e:
+				frappe.log_error(message=str(e), title=f"Error Submitting Subcontract Attendance {d.name}")
+			finally:
+				frappe.flags.mute_messages = False
+
+	return "Success"
