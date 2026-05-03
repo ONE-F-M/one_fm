@@ -389,4 +389,9 @@ one_fm.patches.v15_0.setup_dmarc_process_task #2026-04-26
 one_fm.patches.v15_0.add_resignation_buttons
 one_fm.patches.v15_0.update_purchase_invoice_property_setter #3
 one_fm.patches.v15_0.fix_dmarc_report_name_column #2026-04-27
+one_fm.patches.v15_0.add_bonus_request_workflow
+one_fm.patches.v15_0.add_bonus_request_hr_manager_assignment_rule
+one_fm.patches.v15_0.add_bonus_request_general_manager_assignment_rule
+one_fm.patches.v15_0.add_bonus_request_finance_manager_assignment_rule
+one_fm.patches.v15_0.add_bonus_request_payroll_operator_assignment_rule
 one_fm.patches.v15_0.rename_item_int_civ_000033 #1
