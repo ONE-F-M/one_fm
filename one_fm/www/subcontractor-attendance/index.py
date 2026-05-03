@@ -26,6 +26,7 @@ def get_context(context):
             GROUP_CONCAT(workflow_state) as states
         FROM `tabSubcontract Staff Attendance`
         WHERE subcontractor_name = %s
+            AND docstatus < 2
         GROUP BY from_date, to_date
         ORDER BY from_date DESC
         LIMIT 20 OFFSET %s
