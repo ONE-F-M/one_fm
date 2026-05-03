@@ -86,10 +86,13 @@ class QuotationComparisonSheet(Document):
 		if not self.request_for_quotation:
 			frappe.throw(_("Please select a Request for Quotation first."))
 
-		# Get all Supplier Quotations linked to this RFQ
+		# Get all submitted Supplier Quotations linked to this RFQ
 		all_quotations = frappe.get_list(
 			"Supplier Quotation",
-			filters={"custom_request_for_quotation": self.request_for_quotation},
+			filters={
+				"custom_request_for_quotation": self.request_for_quotation,
+				"docstatus": 1
+			},
 			fields=["name"]
 		)
 
