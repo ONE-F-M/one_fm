@@ -6,17 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>One-FM Route Manifest</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Barlow:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
         :root {
-            --bg: #0d1117;
-            --bg-surface: #161b22;
-            --bg-card: #1c2330;
-            --bg-raised: #21293a;
-            --border: #2d3748;
-            --border-light: #3a4a5c;
+            --bg: #f4f4f5;
+            --bg-surface: #ffffff;
+            --bg-card: #ffffff;
+            --bg-raised: #f9fafb;
+            --border: #e2e2e2;
+            --border-light: #ebebeb;
             --accent: #f97316;
             --accent-dim: rgba(249, 115, 22, 0.15);
             --accent-glow: rgba(249, 115, 22, 0.08);
@@ -24,15 +23,15 @@
             --green-dim: rgba(34, 197, 94, 0.12);
             --red: #ef4444;
             --red-dim: rgba(239, 68, 68, 0.12);
-            --blue: #38bdf8;
-            --blue-dim: rgba(56, 189, 248, 0.12);
-            --purple: #a78bfa;
-            --purple-dim: rgba(167, 139, 250, 0.12);
-            --text: #e2e8f0;
-            --text-muted: #8b99a8;
-            --text-dim: #4a5568;
-            --font-head: 'Barlow Condensed', sans-serif;
-            --font-body: 'Barlow', sans-serif;
+            --blue: #1565c0;
+            --blue-dim: #dbeafe;
+            --purple: #c2410c;
+            --purple-dim: #ffedd5;
+            --text: #111111;
+            --text-muted: #666666;
+            --text-dim: #999999;
+            --font-head: 'Google Sans', Roboto, sans-serif;
+            --font-body: 'Google Sans', Roboto, sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
         }
 
@@ -61,6 +60,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 1px 4px rgba(0,0,0,.05);
         }
 
         .header-left {
@@ -375,17 +375,20 @@
         .stop-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 12px;
             padding: 12px 16px;
             display: grid;
             grid-template-columns: 1fr auto;
             align-items: center;
             gap: 12px;
-            transition: border-color 0.15s;
+            transition: box-shadow 0.18s, border-color 0.18s, transform 0.14s;
+            box-shadow: 0 1px 3px rgba(0,0,0,.04);
         }
 
         .stop-card:hover {
-            border-color: var(--border-light);
+            border-color: #d8d8d8;
+            box-shadow: 0 5px 16px rgba(0,0,0,.10);
+            transform: translateY(-1px);
         }
 
         /* Type colours */
@@ -762,7 +765,7 @@
 
         let activeView = null;
         let shipmentEmployees = {};
-        let shipmentSiteLocations = {};  // ← new
+        let shipmentSiteLocations = {};
         let shipmentShiftNames = {};
 
         function init() {
@@ -775,7 +778,7 @@
             const metrics = res.metrics ?? {};
 
             shipmentEmployees = ROUTE_DATA.shipmentEmployees ?? {};
-            shipmentSiteLocations = ROUTE_DATA.shipmentSiteLocations ?? {};  // ← new
+            shipmentSiteLocations = ROUTE_DATA.shipmentSiteLocations ?? {};
             shipmentShiftNames = ROUTE_DATA.shipmentShiftNames ?? {};
 
             // Build parsed routes
