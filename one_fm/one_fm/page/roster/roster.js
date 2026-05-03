@@ -74,10 +74,9 @@ function load_js(page) {
 				page.filters.operations_role = $(this).attr("data-operations_role");
 				page.filters.employee_search_name = $(this).attr("data-employee_search_name");
 				page.filters.employee_search_id = value;
-				delete page.filters.reliever;
 			}
-			if (filter_type === "reliever") {
-				page.filters.reliever = value;
+			if (filter_type === "event_location") {
+				page.filters.event_location = value;
 			}
 
 			// Clear search text after selection
@@ -144,7 +143,7 @@ function load_js(page) {
 			$(".rosterviewfilterbg").removeClass("d-none");
 			$(".postviewfilterbg").addClass("d-none");
 			$(".employee-section").removeClass("d-none");
-			$(".reliever-section").removeClass("d-none");
+			$(".event-location-section").removeClass("d-none");
 
 			window.currentView = "staff";
 
@@ -166,10 +165,10 @@ function load_js(page) {
 			$(".rosterviewfilterbg").addClass("d-none");
 			$(".postviewfilterbg").removeClass("d-none");
 			$(".employee-section").addClass("d-none");
-			$(".reliever-section").addClass("d-none");
+			$(".event-location-section").addClass("d-none");
 			delete page.filters.employee_search_name;
-			delete page.filters.reliever
 			delete page.filters.employee_search_id
+			delete page.filters.event_location
 			render_selected_tags(page);
 			update_clear_button(page);
 
@@ -479,8 +478,7 @@ function load_js(page) {
 
 function populate_dropdown_options(page, filter = "") {
 	let selected = page.filters || {};
-	let reliever_selected = selected.reliever;
-	const filter_order = ["project", "site", "shift", "operations_role", "employee_search_name", "reliever"];
+	const filter_order = ["project", "site", "shift", "operations_role", "employee_search_name", "event_location"];
 	let last_selected_idx = -1;
 	filter_order.forEach((k, i) => { if (selected[k]) last_selected_idx = i; });
 
@@ -585,11 +583,6 @@ function populate_dropdown_options(page, filter = "") {
 		if (selected.shift && shift !== selected.shift) show = false;
 		if (selected.operations_role && operations_role !== selected.operations_role) show = false;
 
-		// Reliever filter: always applies if selected, regardless of other filters
-		if (reliever_selected !== undefined && reliever_selected !== "") {
-			show = show && (String(is_reliever) === String(reliever_selected));
-		}
-
 		// Search text filtering (only if no filter is selected, or if all main filters are selected)
 		if (shouldFilter(4)) {
 			show = show && (
@@ -614,17 +607,24 @@ function populate_dropdown_options(page, filter = "") {
 		}
 	});
 
-	// RELIEVERS (no hierarchy, just render)
-	let $relieverList = $("#rosteringrelieverselect").empty();
-	(page.search_bar_data["rosteringrelieverselect"] || []).forEach(rel => {
-		let relText = rel.text || rel;
-		$relieverList.append(
-			$("<div class='dropdown-option'></div>")
-				.text(relText)
-				.attr("data-filter", "reliever")
-				.attr("data-filter_name", rel.text)
-				.attr("data-reliever", rel.id)
-		);
+	// EVENT LOCATIONS (independent filter, not hierarchical)
+	let $eventLocationList = $("#rosteringeventlocationselect").empty();
+	(page.search_bar_data["rosteringeventlocationselect"] || []).forEach(loc => {
+		let locText = loc.text || loc;
+		let show = true;
+		// Apply search text filter
+		if (filter && locText.toLowerCase().indexOf(filter.toLowerCase()) === -1) {
+			show = false;
+		}
+		if (show) {
+			$eventLocationList.append(
+				$("<div class='dropdown-option'></div>")
+					.text(locText)
+					.attr("data-filter", "event_location")
+					.attr("data-filter_name", loc.text)
+					.attr("data-event_location", loc.id)
+			);
+		}
 	});
 }
 
@@ -638,7 +638,7 @@ function update_clear_button(page) {
 	}
 }
 
-const filter_order = ["project", "site", "shift", "operations_role", "employee_search_name", "employee_search_id", "reliever"];
+const filter_order = ["project", "site", "shift", "operations_role", "employee_search_name", "employee_search_id", "event_location"];
 
 function render_selected_tags(page) {
 	let $container = $("#search-bar-container");
@@ -646,9 +646,7 @@ function render_selected_tags(page) {
 
 	filter_order.forEach(filterKey => {
 		if (page.filters[filterKey]) {
-			let tag_text = "";
-			if (filterKey == "reliever") { page.filters[filterKey] == "1" ? tag_text = "Relievers Only" : tag_text = "Non-Relievers Only"; }
-			else { tag_text = page.filters[filterKey] }
+			let tag_text = page.filters[filterKey];
 			let $tag = $("<span class='selected-tag'></span>").html(`<span class="selected-tag-text" title="${tag_text}">${tag_text}</span>`);
 			let $close = $("<span class='remove-tag'>&times;</span>");
 			$close.on("click", function (e) {
@@ -656,7 +654,7 @@ function render_selected_tags(page) {
 				// Remove this and all child filters
 				let idx = filter_order.indexOf(filterKey);
 				filter_order.slice(idx).forEach(k => {
-					if (k === "reliever" && filterKey !== "reliever") {
+					if (k === "event_location" && filterKey !== "event_location") {
 						return;
 					}
 					delete page.filters[k];
@@ -767,6 +765,10 @@ function setup_topbar_events(page) {
 
 	$(".change_ot").on("click", function () {
 		change_ot_schedule(page);
+	});
+
+	$(".change_others").on("click", function () {
+		change_others_schedule(page);
 	});
 
 	$(".suspend_employee").on("click", function () {
@@ -1019,7 +1021,7 @@ function setup_filters(page) {
 			await get_shifts(page);
 			await get_operations_roles(page);
 			await get_employees(page);
-			get_relievers(page);
+			await get_event_locations(page);
 
 		})
 		.then(r => {
@@ -1126,25 +1128,31 @@ async function get_designations(page) {
 		})
 }
 
-function get_relievers(page) {
-	let relievers = [
-		{ "id": 1, "text": "Relievers Only" },
-		{ "id": 0, "text": "Non Relievers Only" },
-	];
-	page.search_bar_data["rosteringrelieverselect"] = relievers;
-
+async function get_event_locations(page) {
+	await frappe.xcall("one_fm.one_fm.page.roster.roster.get_event_locations")
+		.then(res => {
+			let event_location_data = [];
+			(res || []).forEach(element => {
+				event_location_data.push({ "id": element.event_location, "text": element.event_location });
+			});
+			page.search_bar_data["rosteringeventlocationselect"] = event_location_data;
+		})
+		.catch(e => {
+			page.search_bar_data["rosteringeventlocationselect"] = [];
+		});
 }
+
 
 function get_roster_data(page) {
 	classgrt = [];
 	let { start_date, end_date } = page;
-	let { employee_search_name, employee_search_id, project, site, shift, department, operations_role, designation, reliever } = page.filters;
+	let { employee_search_name, employee_search_id, project, site, shift, department, operations_role, designation, event_location } = page.filters;
 	let { limit_start } = page.pagination;
 	let limit_page_length = 50; // Set default page length
 
 	page.pagination.limit_page_length = limit_page_length;
 
-	if (project || site || shift || operations_role || reliever || employee_search_id || reliever) {
+	if (project || site || shift || operations_role || employee_search_id || event_location) {
 		$(".clear_roster_filters").removeClass("d-none")
 		$("#cover-spin").show(0);
 		frappe.call({
@@ -1152,7 +1160,7 @@ function get_roster_data(page) {
 			type: "POST",
 			args: {
 				start_date, end_date, employee_search_id, employee_search_name, project, site,
-				shift, department, operations_role, designation, reliever, limit_start, limit_page_length
+				shift, department, operations_role, designation, event_location, limit_start, limit_page_length
 			},
 			callback: function (res) {
 				error_handler(res);
@@ -1372,6 +1380,7 @@ function render_roster(res, page) {
 			let data_ot = ``;
 			let tooltiptext = ``;
 			let bgclass = ``;
+			let data_extra_attrs = ``;
 
 			let is_relieved_this_day = employee_relieving_date && current_day_iter.isAfter(employee_relieving_date);
 			is_not_relieving_day = false;
@@ -1379,7 +1388,7 @@ function render_roster(res, page) {
 			if (employees_data[employee_key][date_key] && employees_data[employee_key][date_key].length > 0) {
 				for (let k = 0; k < employees_data[employee_key][date_key].length; k++) {
 					let record = employees_data[employee_key][date_key][k];
-					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event } = record;
+					let { employee, date, operations_role, post_abbrv, employee_availability, shift, start_datetime, end_datetime, start_time, end_time, roster_type, attendance, day_off_ot, leave_type, leave_application, event_location, actual_site, client_event, on_the_job_training, project, site } = record;
 					// NR Logic: Determine if we are on a foreign grid, and if today's schedule is outside this grid.
 					if (employee_has_relieving_days && page.filters) {
 						let is_foreign_grid = false;
@@ -1407,16 +1416,18 @@ function render_roster(res, page) {
 							basic_count++;
 							bgclass = "samebasic";
 							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
-						} else if (employee_availability && !post_abbrv) {
-							bgclass = classmap[employee_availability];
+						} else if (employee_availability == "Client Event") {
+							bgclass = "cyanboxcolor";
 							data_selectid = `${employee}|${date}|${employee_availability}`;
-							if (employee_availability == "Client Event") {
-								bgclass = "cyanboxcolor";
-							}
+							data_extra_attrs = ` data-event-location="${event_location || ""}" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="0" data-client-event="${client_event || ""}" data-ojt=""`;
 						} else if (employee_availability == "On-the-job Training") {
 							basic_count++;
 							bgclass = "tealboxcolor";
 							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+							data_extra_attrs = ` data-event-location="" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="0" data-client-event="" data-ojt="${on_the_job_training || ""}"`;
+						} else if (employee_availability && !post_abbrv) {
+							bgclass = classmap[employee_availability];
+							data_selectid = `${employee}|${date}|${employee_availability}`;
 						}
 					}
 					else if (!attendance && roster_type == "Basic" && page.filters[applied_filter] != record[applied_filter] && day_off_ot == 0) {
@@ -1424,13 +1435,18 @@ function render_roster(res, page) {
 							basic_count++;
 							bgclass = "diffbasic";
 							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
-						} else if (employee_availability && !post_abbrv) {
-							bgclass = classmap[employee_availability];
+						} else if (employee_availability == "Client Event") {
+							bgclass = "cyanboxcolor";
 							data_selectid = `${employee}|${date}|${employee_availability}`;
+							data_extra_attrs = ` data-event-location="${event_location || ""}" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="0" data-client-event="${client_event || ""}" data-ojt=""`;
 						} else if (employee_availability == "On-the-job Training") {
 							basic_count++;
 							bgclass = "tealboxcolor";
 							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+							data_extra_attrs = ` data-event-location="" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="0" data-client-event="" data-ojt="${on_the_job_training || ""}"`;
+						} else if (employee_availability && !post_abbrv) {
+							bgclass = classmap[employee_availability];
+							data_selectid = `${employee}|${date}|${employee_availability}`;
 						}
 					}
 					else if (!attendance && roster_type == "Over-Time" && page.filters[applied_filter] == record[applied_filter]) {
@@ -1445,13 +1461,33 @@ function render_roster(res, page) {
 					}
 					else if (!attendance && roster_type == "Basic" && page.filters[applied_filter] == record[applied_filter] && day_off_ot == 1) {
 						if (employee_availability == "Working") basic_count++;
-						bgclass = "samedayoffot";
-						data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+						if (employee_availability == "Client Event" || employee_availability == "On-the-job Training") {
+							bgclass = "samedayoffot";
+							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+							if (employee_availability == "Client Event") {
+								data_extra_attrs = ` data-event-location="${event_location || ""}" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="1" data-client-event="${client_event || ""}" data-ojt=""`;
+							} else {
+								data_extra_attrs = ` data-event-location="" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="1" data-client-event="" data-ojt="${on_the_job_training || ""}"`;
+							}
+						} else {
+							bgclass = "samedayoffot";
+							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+						}
 					}
 					else if (!attendance && roster_type == "Basic" && page.filters[applied_filter] != record[applied_filter] && day_off_ot == 1) {
 						if (employee_availability == "Working") basic_count++;
-						bgclass = "diffdayoffot";
-						data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+						if (employee_availability == "Client Event" || employee_availability == "On-the-job Training") {
+							bgclass = "diffdayoffot";
+							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+							if (employee_availability == "Client Event") {
+								data_extra_attrs = ` data-event-location="${event_location || ""}" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="1" data-client-event="${client_event || ""}" data-ojt=""`;
+							} else {
+								data_extra_attrs = ` data-event-location="" data-shift="${shift || ""}" data-operations-role="${operations_role || ""}" data-project="${project || ""}" data-site="${site || ""}" data-day-off-ot="1" data-client-event="" data-ojt="${on_the_job_training || ""}"`;
+							}
+						} else {
+							bgclass = "diffdayoffot";
+							data_selectid = `${employee}|${date}|${operations_role}|${shift}|${employee_availability}`;
+						}
 					}
 					else if (attendance && in_list(["Day Off", "On Leave", "Absent", "On Hold", "Client Day Off", "Fingerprint Appointment", "Medical Appointment", "Client Event"], attendance)) {
 						data_selectid = `${employee}|${date}|${employee_availability}`;
@@ -1582,7 +1618,7 @@ function render_roster(res, page) {
 				sch = `
 					<td class="${todayClass}">
 						<div class="${hoverClass} tablebox bg-blue-500 d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${data_selectid}" data-ot="${data_ot}">${abbrv}${tooltip_html}</div>
+							data-selectid="${data_selectid}" data-ot="${data_ot}"${data_extra_attrs}>${abbrv}${tooltip_html}</div>
 					</td>`;
 			}
 			else {
@@ -1591,7 +1627,7 @@ function render_roster(res, page) {
 				sch = `
 					<td class="${todayClass}">
 						<div class="${hoverClass} tablebox ${bgclass} d-flex justify-content-center align-items-center text-white so customtooltip"
-							data-selectid="${data_selectid}" data-ot="${data_ot}">${abbrv}${tooltip_html}</div>
+							data-selectid="${data_selectid}" data-ot="${data_ot}"${data_extra_attrs}>${abbrv}${tooltip_html}</div>
 					</td>`;
 			}
 			employeeCellsHTML += sch;
@@ -1599,6 +1635,7 @@ function render_roster(res, page) {
 			is_client_event = false;
 			is_medical_appointment = false;
 			is_not_relieving_day = false;
+			data_extra_attrs = ``;
 			current_day_iter.add(1, "days");
 		}
 		$employeeRow.append(employeeCellsHTML);
@@ -2879,6 +2916,186 @@ function change_ot_schedule(page) {
 	d.show();
 }
 
+
+function change_others_schedule(page) {
+	let selected = [...new Set(classgrt)];
+	if (selected.length === 0) {
+		frappe.msgprint(__("Please select at least one Cell."));
+		return;
+	}
+
+	// Gather selected cells and read their data-* attributes from the DOM
+	let ce_cells = [];
+	let ojt_cells = [];
+
+	selected.forEach(function (selectid) {
+		let parts = selectid.split("|");
+		let employee = parts[0];
+		let date = parts[1];
+		let employee_availability = parts.length >= 3 ? parts[parts.length - 1] : "";
+
+		// Find the DOM element for this cell
+		let $cell = $(`div[data-selectid="${selectid}"]`);
+		if ($cell.length === 0) return;
+
+		let cell_data = {
+			employee: employee,
+			date: date,
+			employee_availability: employee_availability,
+			event_location: $cell.attr("data-event-location") || "",
+			shift: $cell.attr("data-shift") || "",
+			operations_role: $cell.attr("data-operations-role") || "",
+			project: $cell.attr("data-project") || "",
+			site: $cell.attr("data-site") || "",
+			day_off_ot: $cell.attr("data-day-off-ot") || "0",
+			client_event: $cell.attr("data-client-event") || "",
+			on_the_job_training: $cell.attr("data-ojt") || ""
+		};
+
+		if (employee_availability === "Client Event") {
+			ce_cells.push(cell_data);
+		} else if (employee_availability === "On-the-job Training") {
+			ojt_cells.push(cell_data);
+		}
+	});
+
+	// Validation: Only CE or OJT cells allowed
+	if (ce_cells.length === 0 && ojt_cells.length === 0) {
+		frappe.msgprint(__("Please select Client Event or On-the-Job Training cells only."));
+		return;
+	}
+
+	// Validation: No mixing CE and OJT
+	if (ce_cells.length > 0 && ojt_cells.length > 0) {
+		frappe.msgprint(__("Mixed selection types not allowed. Please select only Client Events or only OJT records."));
+		return;
+	}
+
+	let is_ce = ce_cells.length > 0;
+	let cells = is_ce ? ce_cells : ojt_cells;
+
+	// Validation: Multiple CE cells must have same event_location
+	if (is_ce && cells.length > 1) {
+		let locations = [...new Set(cells.map(c => c.event_location))];
+		if (locations.length > 1) {
+			frappe.msgprint(__("Multiple selection requires matching Event Location. Selected cells have different locations."));
+			return;
+		}
+	}
+
+	// Validation: Multiple OJT cells must have same shift
+	if (!is_ce && cells.length > 1) {
+		let shifts = [...new Set(cells.map(c => c.shift))];
+		if (shifts.length > 1) {
+			frappe.msgprint(__("Multiple selection requires matching Operations Shift. Selected cells have different shifts."));
+			return;
+		}
+	}
+
+	// Pre-populate from the first cell
+	let first_cell = cells[0];
+	let category = is_ce ? "Client Event" : "On-the-job Training";
+	let current_day_off_ot = parseInt(first_cell.day_off_ot) || 0;
+
+	// Build employees list for the backend
+	let employees = cells.map(c => ({ employee: c.employee, date: c.date }));
+
+	let d = new frappe.ui.Dialog({
+		"title": __("Change Employee Schedule (Others)"),
+		"fields": [
+			{
+				"label": __("Category"), "fieldname": "category", "fieldtype": "Select",
+				"options": "Client Event\nOn-the-job Training",
+				"default": category, "read_only": 1
+			},
+			{ "fieldtype": "Section Break" },
+			{
+				"label": __("Operations Shift"), "fieldname": "operations_shift", "fieldtype": "Data",
+				"default": first_cell.shift, "read_only": 1,
+				"mandatory_depends_on": "eval:doc.category=='On-the-job Training'"
+			},
+			{ "fieldtype": "Column Break" },
+			{
+				"label": __("Operations Role"), "fieldname": "operations_role", "fieldtype": "Data",
+				"default": first_cell.operations_role, "read_only": 1,
+				"mandatory_depends_on": "eval:doc.category=='On-the-job Training'"
+			},
+			{ "fieldtype": "Section Break" },
+			{
+				"label": __("Project"), "fieldname": "project", "fieldtype": "Data",
+				"default": first_cell.project, "read_only": 1
+			},
+			{ "fieldtype": "Column Break" },
+			{
+				"label": __("Site"), "fieldname": "site", "fieldtype": "Data",
+				"default": first_cell.site, "read_only": 1
+			},
+			{
+				"fieldtype": "Section Break",
+				"depends_on": "eval:doc.category=='Client Event'"
+			},
+			{
+				"label": __("Event Location"), "fieldname": "event_location", "fieldtype": "Data",
+				"default": first_cell.event_location, "read_only": 1,
+				"mandatory_depends_on": "eval:doc.category=='Client Event'"
+			},
+			{ "fieldtype": "Section Break" },
+			{
+				"label": __("Day Off OT"), "fieldname": "day_off_ot", "fieldtype": "Check",
+				"default": current_day_off_ot
+			}
+		],
+		primary_action_label: __("Submit"),
+		primary_action: function () {
+			let values = d.get_values();
+			if (!values) return;
+
+			// Validate mandatory fields based on category
+			if (values.category === "Client Event" && !values.event_location) {
+				frappe.msgprint(__("Event Location is mandatory for Client Event."));
+				return;
+			}
+			if (values.category === "On-the-job Training") {
+				if (!values.operations_shift) {
+					frappe.msgprint(__("Operations Shift is mandatory for On-the-Job Training."));
+					return;
+				}
+				if (!values.operations_role) {
+					frappe.msgprint(__("Operations Role is mandatory for On-the-Job Training."));
+					return;
+				}
+			}
+
+			$("#cover-spin").show(0);
+			frappe.call({
+				method: "one_fm.one_fm.page.roster.roster.update_others_schedule",
+				type: "POST",
+				args: {
+					employees: JSON.stringify(employees),
+					day_off_ot: values.day_off_ot ? 1 : 0,
+					category: values.category
+				},
+				callback: function (res) {
+					d.hide();
+					$("#cover-spin").hide();
+					if (res && res.message) {
+						error_handler(res);
+					}
+					let element = get_wrapper_element();
+					if (element) {
+						let element_name = element.slice(1);
+						update_roster_view(element_name, page);
+					}
+					$(".filterhideshow").addClass("d-none");
+				},
+				error: function () {
+					$("#cover-spin").hide();
+				}
+			});
+		}
+	});
+	d.show();
+}
 
 
 async function updateEmployeeDefaults(employees, data) {

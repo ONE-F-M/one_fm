@@ -196,7 +196,8 @@ class CreateMap:
 			SELECT es.employee, es.employee_name, es.date, es.operations_role, es.post_abbrv, 
 				es.shift, es.start_datetime, es.end_datetime, es.roster_type, es.employee_availability, 
 				es.day_off_ot, es.project, es.site, emp.project as actual_project,
-				emp.site as actual_site, emp.shift as actual_shift, es.event_location, es.client_event
+				emp.site as actual_site, emp.shift as actual_shift, es.event_location, es.client_event,
+				es.on_the_job_training
 			FROM `tabEmployee Schedule` es 
 			JOIN `tabEmployee` emp
 			ON es.employee = emp.name
