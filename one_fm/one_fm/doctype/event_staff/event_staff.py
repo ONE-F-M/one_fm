@@ -12,6 +12,7 @@ class EventStaff(Document):
 		self.validate_date()
 		self.validate_staffing_requirement()
 		self.validate_overlapping_event_staff()
+		self.validate_employee_days_off()
 
 	def validate_date(self):
 		if getdate(self.end_date) < getdate(self.start_date):
@@ -74,6 +75,53 @@ class EventStaff(Document):
 		if overlapping:
 			msg = f"{self.employee} already assigned to {self.designation} from {overlapping[0]['start_date']} to {overlapping[0]['end_date']}."
 			frappe.throw(msg)
+
+	def validate_employee_days_off(self):
+		"""
+		Block Client Event assignments when the employee has 0 scheduled days off
+		in any month the event spans. Provides a 'Take Action' button linking
+		to the Roster UI filtered by the employee's allocated shift and ID.
+		"""
+		if not self.employee or not self.start_date or not self.end_date:
+			return
+
+		from frappe.utils import get_first_day, get_last_day, add_months
+
+		start = getdate(self.start_date)
+		end = getdate(self.end_date)
+
+		# Iterate through each month the event spans
+		current_month_start = get_first_day(start)
+		while current_month_start <= end:
+			month_end = get_last_day(current_month_start)
+
+			day_off_count = frappe.db.count("Employee Schedule", {
+				"employee": self.employee,
+				"employee_availability": "Day Off",
+				"date": ["between", [str(current_month_start), str(month_end)]]
+			})
+
+			if day_off_count == 0:
+				employee_shift = frappe.db.get_value("Employee", self.employee, "shift") or ""
+				employee_id = frappe.db.get_value("Employee", self.employee, "employee_id") or ""
+
+				month_label = current_month_start.strftime("%B %Y")
+
+				import urllib.parse
+				roster_params = urllib.parse.urlencode({
+					"shift": employee_shift,
+					"employee_id": employee_id
+				})
+				roster_url = f"/app/roster?{roster_params}"
+
+				frappe.throw(
+					f"Employee <b>{self.employee_name or self.employee}</b> has 0 scheduled days off "
+					f"in <b>{month_label}</b>. Please assign a day off before creating this Client Event assignment."
+					f"<br><br><a href='{roster_url}' target='_blank' class='btn btn-primary btn-sm'>Take Action</a>",
+					title="Client Event Assignment Blocked"
+				)
+
+			current_month_start = get_first_day(add_months(current_month_start, 1))
 
 	def on_submit(self):
 		client_event_state = frappe.db.get_value("Client Event", self.client_event, "workflow_state")

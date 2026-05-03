@@ -110,7 +110,7 @@ def build_employee_filters(Employee, start_date, end_date, employee_search_id, e
 	return combine_filters(filter_params)
 
 
-def build_employee_schedule_filters(EmployeeSchedule, start_date, end_date, employee_search_name, project, site, shift, department, operations_role):
+def build_employee_schedule_filters(EmployeeSchedule, start_date, end_date, employee_search_name, project, site, shift, department, operations_role, event_location=None):
 	filter_params = []
 
 	if start_date and end_date: filter_params.append(EmployeeSchedule.date.between(start_date, end_date)),
@@ -120,6 +120,7 @@ def build_employee_schedule_filters(EmployeeSchedule, start_date, end_date, empl
 	if shift: filter_params.append(EmployeeSchedule.shift == shift),
 	if department: filter_params.append(EmployeeSchedule.department == department),
 	if operations_role: filter_params.append(EmployeeSchedule.operations_role == operations_role),
+	if event_location: filter_params.append(EmployeeSchedule.event_location == event_location),
 
 	return combine_filters(filter_params)
 
@@ -145,7 +146,7 @@ def combine_filters(filters):
 
 def get_employees_for_roster_view(start_date, end_date, employee_search_id=None, employee_search_name=None,
 	project=None, site=None, shift=None, department=None, operations_role=None, designation=None,
-	reliever=False):
+	reliever=False, event_location=None):
 	try:
 		Employee = DocType("Employee")
 		employee_filters = build_employee_filters(Employee, start_date, end_date, employee_search_id, employee_search_name, project, site, shift, department, reliever, operations_role, designation)
@@ -165,7 +166,7 @@ def get_employees_for_roster_view(start_date, end_date, employee_search_id=None,
 			return employees
 
 		EmployeeSchedule = DocType("Employee Schedule")
-		employee_schedule_filters = build_employee_schedule_filters(EmployeeSchedule, start_date, end_date, employee_search_name, project, site, shift, department, operations_role)
+		employee_schedule_filters = build_employee_schedule_filters(EmployeeSchedule, start_date, end_date, employee_search_name, project, site, shift, department, operations_role, event_location)
 
 		# Employee Schedule query (get employee field as name)
 		schedule_query = (
@@ -175,6 +176,19 @@ def get_employees_for_roster_view(start_date, end_date, employee_search_id=None,
 		)
 		if employee_schedule_filters:
 			schedule_query = schedule_query.where(employee_schedule_filters)
+
+		# When event_location is set, the Employee table has no matching field,
+		# so we skip the UNION and query only Employee Schedule records.
+		if event_location:
+			schedule_only_query = (
+				frappe.qb
+				.from_(schedule_query.as_("es_only"))
+				.select("name", "employee_name")
+				.distinct()
+				.orderby("employee_name", order=Order.asc)
+			)
+			employees = frappe.db.sql(schedule_only_query, as_dict=True)
+			return employees
 
 		# Combine both queries using UNION (no need for .distinct(), UNION removes duplicates)
 		# combined_query = employee_query.union(schedule_query).orderby("employee_name", order=Order.asc)
@@ -196,15 +210,26 @@ def get_employees_for_roster_view(start_date, end_date, employee_search_id=None,
 
 
 @frappe.whitelist()
+def get_event_locations():
+	"""Fetch distinct event_location values from Client Event for the filter dropdown."""
+	return frappe.get_all(
+		"Client Event",
+		filters={"event_location": ["is", "set"]},
+		fields=["distinct event_location as event_location"],
+		order_by="event_location asc"
+	)
+
+
+@frappe.whitelist()
 def get_roster_view(start_date, end_date, employee_search_id=None, employee_search_name=None,
 	project=None, site=None, shift=None, department=None, operations_role=None, designation=None,
-	reliever=False, limit_start=0, limit_page_length=9999):
+	reliever=False, event_location=None, limit_start=0, limit_page_length=9999):
 	try:
 		limit_start = cint(limit_start)
 		limit_page_length = cint(limit_page_length)
 		master_data = {}
 		employees = get_employees_for_roster_view(start_date, end_date, employee_search_id, employee_search_name, project,
-			site, shift, department, operations_role, designation, reliever)
+			site, shift, department, operations_role, designation, reliever, event_location)
 		master_data["total"] = len(employees)
 		employees = employees[limit_start:limit_start + limit_page_length]
 
@@ -214,18 +239,23 @@ def get_roster_view(start_date, end_date, employee_search_id=None, employee_sear
 
 
 		#----------------- Get Operations Role count and check fill status -------------------#
-		post_schedule_filters = get_post_schedule_filters(start_date, end_date, project, site, shift, operations_role)
-		operations_roles = frappe.get_all("Post Schedule", post_schedule_filters, ["distinct operations_role", "post_abbrv"])
-		post_map_filters = {}
-		if project:
-			post_map_filters["project"] = project
-		if site:
-			post_map_filters["site"] = site
-		if shift:
-			post_map_filters["shift"] = shift
+		# Skip PostMap when event_location is active without project/site/shift — Client Event
+		# assignments aren't managed through Post Schedules, so this data is irrelevant.
+		if event_location and not (project or site or shift):
+			master_data["operations_roles_data"] = []
+		else:
+			post_schedule_filters = get_post_schedule_filters(start_date, end_date, project, site, shift, operations_role)
+			operations_roles = frappe.get_all("Post Schedule", post_schedule_filters, ["distinct operations_role", "post_abbrv"])
+			post_map_filters = {}
+			if project:
+				post_map_filters["project"] = project
+			if site:
+				post_map_filters["site"] = site
+			if shift:
+				post_map_filters["shift"] = shift
 
-		post_map = PostMap(start=start_date, end=end_date, operations_roles_list=operations_roles, filters=post_map_filters)
-		master_data["operations_roles_data"] = post_map.template
+			post_map = PostMap(start=start_date, end=end_date, operations_roles_list=operations_roles, filters=post_map_filters)
+			master_data["operations_roles_data"] = post_map.template
 
 		response("Success", 200, master_data)
 	except Exception as e:
@@ -610,6 +640,84 @@ def schedule_staff(employees, shift, operations_role, otRoster, start_date, proj
 			response("success", 200, {"message":"Successfully rostered employees"})
 	except Exception as e:
 		frappe.log_error(message=frappe.get_traceback(), title="Schedule Roster")
+		response("error", 200, None, str(e))
+
+@frappe.whitelist()
+def update_others_schedule(employees: str, day_off_ot: int, category: str):
+	"""
+	Update the Day Off OT status on Employee Schedule records for
+	Client Event or On-the-job Training entries.
+	All updates are transactional — if any record fails, the entire batch is rolled back.
+	"""
+	try:
+		user, user_roles, user_employee = get_current_user_details()
+		allowed_roles = {"Operations Manager", "Projects Manager", "Site Supervisor", "Shift Manager", "Shift Supervisor"}
+		if not allowed_roles.intersection(set(user_roles)):
+			frappe.throw(_("Insufficient permissions to update schedule."))
+
+		employees_list = json.loads(employees)
+		if not employees_list:
+			frappe.throw(_("No employees selected."))
+
+		day_off_ot = cint(day_off_ot)
+
+		# Map category to employee_availability value
+		availability_map = {
+			"Client Event": "Client Event",
+			"On-the-job Training": "On-the-job Training"
+		}
+		expected_availability = availability_map.get(category)
+		if not expected_availability:
+			frappe.throw(_("Invalid category. Must be 'Client Event' or 'On-the-job Training'."))
+
+		updated_count = 0
+		errors = []
+
+		for entry in employees_list:
+			employee = entry.get("employee")
+			schedule_date = entry.get("date")
+
+			if not employee or not schedule_date:
+				errors.append(f"Missing employee or date in entry: {entry}")
+				continue
+
+			# Find the matching Employee Schedule record
+			schedule_name = frappe.db.get_value(
+				"Employee Schedule",
+				{
+					"employee": employee,
+					"date": schedule_date,
+					"employee_availability": expected_availability,
+					"roster_type": "Basic"
+				},
+				"name"
+			)
+
+			if not schedule_name:
+				emp_name = frappe.db.get_value("Employee", employee, "employee_name") or employee
+				errors.append(
+					f"No {category} schedule found for {emp_name} on {schedule_date}."
+				)
+				continue
+
+			# Update day_off_ot
+			frappe.db.set_value("Employee Schedule", schedule_name, "day_off_ot", day_off_ot)
+			updated_count += 1
+
+		if errors:
+			frappe.db.rollback()
+			error_msg = "<ul>" + "".join([f"<li>{e}</li>" for e in errors]) + "</ul>"
+			frappe.throw(error_msg, title=_("Schedule Update Failed"))
+
+		# Commit and notify
+		frappe.db.commit()
+		update_roster(key="roster_view")
+
+		response("success", 200, {
+			"message": f"Successfully updated Day Off OT for {updated_count} schedule(s)."
+		})
+	except Exception as e:
+		frappe.log_error(message=frappe.get_traceback(), title="Update Others Schedule")
 		response("error", 200, None, str(e))
 
 def update_roster(key):
