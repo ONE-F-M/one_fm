@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       issue_number:
-        description: 'Issue number to solve (e.g. 94)'
+        description: 'Issue number to solve (e.g. 42)'
         required: true
         type: string
       base_branch:
@@ -17,23 +17,20 @@ on:
 
 jobs:
   invoke-agent-v2:
-    # Ensure one agent run per issue to avoid race conditions
     concurrency:
       group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
       cancel-in-progress: true
 
-    # Run if onefm_beta_staging or onefm_beta_hotfix label is present, or if manually triggered
     if: >-
       github.event_name == 'workflow_dispatch' || 
       (github.event_name == 'issues' && github.event.action != 'labeled' && (contains(github.event.issue.labels.*.name, 'onefm_beta_staging') || contains(github.event.issue.labels.*.name, 'onefm_beta_hotfix'))) ||
       (github.event_name == 'issues' && github.event.action == 'labeled' && (github.event.label.name == 'onefm_beta_staging' || github.event.label.name == 'onefm_beta_hotfix'))
     
-    # Run on standard GitHub-hosted runner for Cloud Run invocation
     runs-on: ubuntu-latest
     
     permissions:
       contents: read
-      id-token: write # Required for GCP OIDC Authentication
+      id-token: write
 
     steps:
       - name: 🔐 Check User Permission
@@ -66,13 +63,13 @@ jobs:
           ISSUE_NUM: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.issue_number || github.event.issue.number }}
           ACTOR: ${{ github.actor }}
           GCP_ID_TOKEN: ${{ steps.auth.outputs.id_token }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           if ! [[ "$ISSUE_NUM" =~ ^[0-9]+$ ]]; then
             echo "Error: Issue number '$ISSUE_NUM' is not a valid number."
             exit 1
           fi
 
-          # Determine base branch from label or workflow_dispatch input
           BASE_BRANCH="staging"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             BASE_BRANCH="${{ github.event.inputs.base_branch }}"
@@ -82,23 +79,22 @@ jobs:
           fi
 
           echo "Connecting to V2: $CLOUD_RUN_URL"
+          echo "Repository: $REPOSITORY"
           echo "Requesting fix for Issue #$ISSUE_NUM (base: $BASE_BRANCH)"
           echo ""
           echo "💡 NOTE: The AI agent can take 2-15 minutes to complete its reasoning loop."
           echo "📖 VIEW REAL-TIME LOGS HERE:"
           echo "https://console.cloud.google.com/run/detail/${{ secrets.GCP_LOCATION || 'us-central1' }}/onefm-agent-v2/logs?project=${{ secrets.GCP_PROJECT_ID || 'ai-agents-10' }}"
           echo ""
-          echo "Waiting for agent to finish..."
 
           PAYLOAD=$(jq -n \
             --arg input "Solve GitHub issue #$ISSUE_NUM" \
+            --argjson issue_number "$ISSUE_NUM" \
             --arg requester "$ACTOR" \
             --arg base_branch "$BASE_BRANCH" \
-            '{input: $input, requester: $requester, base_branch: $base_branch}')
+            --arg repository "$REPOSITORY" \
+            '{input: $input, issue_number: $issue_number, requester: $requester, base_branch: $base_branch, repository: $repository}')
 
-          # Retry loop — handles 503 "Container busy" responses.
-          # When the container lock blocks a request, we wait and retry so
-          # Cloud Run has time to spin up a fresh container for this issue.
           MAX_ATTEMPTS=8
           ATTEMPT=0
           WAIT=15
@@ -115,17 +111,16 @@ jobs:
 
             echo "HTTP $HTTP_CODE — Response: $(cat /tmp/agent_response.json)"
 
-            if [ "$HTTP_CODE" -eq 202 ]; then
+            if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 202 ]; then
               echo "✅ Agent accepted the request. Pipeline started for issue #$ISSUE_NUM."
               break
             elif [ "$HTTP_CODE" -eq 503 ]; then
               if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
-                echo "⏳ Container busy — waiting ${WAIT}s for Cloud Run to scale a fresh container..."
+                echo "⏳ Container busy — waiting ${WAIT}s for Cloud Run to scale..."
                 sleep $WAIT
-                # Exponential backoff: 15s → 30s → 60s (capped)
                 WAIT=$(( WAIT * 2 > 60 ? 60 : WAIT * 2 ))
               else
-                echo "❌ Container still busy after $MAX_ATTEMPTS attempts. Manual retry required."
+                echo "❌ Container still busy after $MAX_ATTEMPTS attempts."
                 exit 1
               fi
             else
