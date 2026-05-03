@@ -18,10 +18,6 @@ document.addEventListener("DOMContentLoaded", function() {
     let grid_data = ctx.merged_data || [];
     let is_fetching = false;
 
-    // Debugging: Log the incoming backend data
-    console.log("Backend Context (ctx):", ctx);
-    console.log("Initial Grid Data:", grid_data);
-
     // Elements
     const btn_fetch = document.getElementById("btn-fetch");
     const btn_save = document.getElementById("btn-save");
