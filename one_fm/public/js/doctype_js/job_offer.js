@@ -16,20 +16,19 @@ frappe.ui.form.on('Job Offer', {
     filterDefaultShift(frm);
     check_and_info_offer_terms(frm, false);
     frm.remove_custom_button("Create Employee");
-    if (frm.doc.status == 'Accepted' && frm.doc.docstatus === 1){
-      frappe.db.get_value('Job Applicant',{'name':frm.doc.job_applicant},'one_fm_nationality',(nationality) => {
-        if(nationality && nationality.one_fm_nationality != "Kuwaiti"){
-          //only for Non-Kuwaiti nationality Transfer Paper Button is shown in job offer
-          frappe.db.get_value('Transfer Paper', {'applicant':frm.doc.job_applicant}, 'name', (r) => {
-            if (r && r.name) {
+    if (frm.doc.status == 'Accepted' && frm.doc.docstatus === 1 && frm.doc.job_applicant) {
+      frappe.db.get_value('Job Applicant', frm.doc.job_applicant, 'one_fm_applicant_is_overseas_or_local', (r) => {
+        if (r && r.one_fm_applicant_is_overseas_or_local === 'Local') {
+          frappe.db.get_value('Transfer Paper', {'applicant': frm.doc.job_applicant}, 'name', (tp) => {
+            if (tp && tp.name) {
               frm.add_custom_button(__('Go to Transfer Paper'),
-              function(){
-                frappe.set_route("Form", "Transfer Paper", r.name)
-              }).addClass('btn-primary');
-            }
-            else{
+                function() {
+                  frappe.set_route("Form", "Transfer Paper", tp.name);
+                }
+              ).addClass('btn-primary');
+            } else {
               frm.add_custom_button(__('Create New Transfer Paper'),
-                function () {
+                function() {
                   frappe.model.open_mapped_doc({
                     method: "one_fm.hiring.utils.make_transfer_paper_from_job_offer",
                     frm: frm,
@@ -40,6 +39,13 @@ frappe.ui.form.on('Job Offer', {
               ).addClass('btn-primary');
             }
           });
+        } else if (r && r.one_fm_applicant_is_overseas_or_local === 'Overseas') {
+          frm.add_custom_button(__('Create Visa Request'), () => {
+            frappe.new_doc('Visa Request', {
+              job_offer: frm.doc.name,
+              job_applicant: frm.doc.job_applicant
+            });
+          }).addClass('btn-primary');
         }
       });
     }
@@ -87,19 +93,6 @@ frappe.ui.form.on('Job Offer', {
       }
     }
     
-    if (frm.doc.workflow_state === 'Accepted' && frm.doc.job_applicant) {
-      frappe.db.get_value('Job Applicant', frm.doc.job_applicant, 'one_fm_applicant_is_overseas_or_local', (r) => {
-        if (r && r.one_fm_applicant_is_overseas_or_local === 'Overseas') {
-          frm.add_custom_button(__('Create Visa Request'), () => {
-            frappe.new_doc('Visa Request', {
-              job_offer: frm.doc.name,
-              job_applicant: frm.doc.job_applicant
-            });
-          }).addClass('btn-primary');
-        }
-      });
-    }
-
     set_filters(frm);
   },
   attendance_by_timesheet: function(frm) {
