@@ -109,7 +109,7 @@
    "fieldname": "quotation",
    "fieldtype": "Link",
    "label": "Quotation",
-   "options": "Quotation From Supplier"
+   "options": "Supplier Quotation"
   },
   {
    "fieldname": "quotation_remarks",
@@ -122,7 +122,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Quotation Item",
-   "options": "Quotation From Supplier Item"
+   "options": "Supplier Quotation Item"
   },
   {
    "fieldname": "rate",
