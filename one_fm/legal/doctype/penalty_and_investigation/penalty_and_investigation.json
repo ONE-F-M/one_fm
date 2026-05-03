@@ -36,12 +36,15 @@
   "investigation_requiref",
   "description",
   "evidence",
+  "supervisor_incident_report",
   "witness",
   "supervisor_remarks",
   "decision",
   "hr_remarks",
+  "hr_investigation_report",
   "general_manager_decision",
   "legal_findings",
+  "legal_investigation_report",
   "additional",
   "company_damage",
   "asset_damage",
@@ -154,6 +157,16 @@
    "mandatory_depends_on": "eval:doc.investigation_requiref"
   },
   {
+   "fieldname": "supervisor_incident_report",
+   "fieldtype": "Attach",
+   "label": "Supervisor Incident Report"
+  },
+  {
+   "fieldname": "legal_investigation_report",
+   "fieldtype": "Attach",
+   "label": "Legal Investigation Report"
+  },
+  {
    "fieldname": "witness",
    "fieldtype": "Data",
    "label": "Witness"
@@ -174,6 +187,11 @@
    "fieldname": "hr_remarks",
    "fieldtype": "Small Text",
    "label": "HR Remarks"
+  },
+  {
+   "fieldname": "hr_investigation_report",
+   "fieldtype": "Attach",
+   "label": "HR Investigation Report"
   },
   {
    "fieldname": "general_manager_decision",
@@ -297,8 +315,8 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-27 20:30:34.195024",
- "modified_by": "Administrator",
+ "modified": "2026-05-03 15:46:48.239047",
+ "modified_by": "c.akeru@one-fm.com",
  "module": "Legal",
  "name": "Penalty And Investigation",
  "naming_rule": "Expression (old style)",
