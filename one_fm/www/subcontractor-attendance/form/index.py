@@ -38,7 +38,8 @@ def get_context(context):
             filters={
                 "subcontractor_name": supplier,
                 "from_date": from_date,
-                "to_date": to_date
+                "to_date": to_date,
+                "docstatus": ["<", 2]
             },
             fields=["name", "site", "workflow_state", "attendance_record_based_on"]
         )
