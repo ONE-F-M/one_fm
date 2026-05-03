@@ -147,8 +147,7 @@
       "avoid_status_override": 0,
       "allow_edit": "HR Supervisor",
       "send_email": 1,
-      "doctype": "Workflow Document State",
-      "__unsaved": 1
+      "doctype": "Workflow Document State"
     }
   ],
   "transitions": [
