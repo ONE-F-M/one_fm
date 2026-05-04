@@ -40,7 +40,9 @@ def generate_invoice_from_amendment(amendment_name):
 
 	if existing_si:
 		frappe.throw(
-			_("Duplicate Invoice detected. Sales Invoice {0} already exists for this Project and Period.").format(existing_si)
+			_("Duplicate Invoice detected. Sales Invoice {0} already exists for this Project and Period.").format(
+				f'<a href="/app/sales-invoice/{existing_si}">{existing_si}</a>'
+			)
 		)
 
 	# Story 4: Currency from Contract
@@ -80,7 +82,7 @@ def generate_invoice_from_amendment(amendment_name):
 				total_hrs = sum(flt(row.get(f"day_{i}_hour")) for i in range(1, 32))
 				item_data[sale_item][site]["total_hours"] += total_hrs
 
-	_accumulate(doc.get("attendance_details") or [], use_hours=True)
+	_accumulate(doc.get("attendance_details") or [], use_hours=True if doc.attendance_based_on == "Shift Hours" else False)
 	_accumulate(doc.get("overtime_details") or [], use_hours=True)
 
 	# ------------------------------------------------------------------
@@ -182,6 +184,7 @@ def generate_invoice_from_amendment(amendment_name):
 		si.project = doc.project
 		si.currency = currency
 		si.contracts = doc.contract
+		si.custom_attendance_amendment = doc.name
 		si.from_date = start_date
 		si.to_date = end_date
 		si.due_date = add_to_date(getdate(), days=1)
