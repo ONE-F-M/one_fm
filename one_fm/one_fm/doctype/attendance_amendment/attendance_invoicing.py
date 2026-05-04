@@ -83,7 +83,7 @@ def generate_invoice_from_amendment(amendment_name):
 				item_data[sale_item][site]["total_hours"] += total_hrs
 
 	_accumulate(doc.get("attendance_details") or [], use_hours=True if doc.attendance_based_on == "Shift Hours" else False)
-	_accumulate(doc.get("overtime_details") or [], use_hours=True if doc.attendance_based_on == "Shift Hours" else False)
+	_accumulate(doc.get("overtime_details") or [], use_hours=True)
 
 	# ------------------------------------------------------------------
 	# Helper: build item rows for a given SI scope (all sites or one site)
