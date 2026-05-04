@@ -48,17 +48,9 @@ function mountRoutePlannerApp(wrapper, data) {
             const planEnd = new Date(data.global_end);
 
             // Smart initial zoom: show a ~10h working-hours window
-            // centred on the shift activity (05:00 – 15:00 local time)
-            const kw = s => {
-                const d = new Date(s);
-                return new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Kuwait' }));
-            };
-            const kwNow = kw(planStart);
-            // Build 05:00 and 15:00 today in Kuwait, then convert back to UTC
-            const base = new Date(planStart);
-            // offset from plan start to 05:00 Kuwait
-            const h05utc = new Date(planStart.getTime() + (5 * 3600000) + (6 * 3600000)); // planStart is midnight-6h local → +11h = 05:00 local
-            const h15utc = new Date(h05utc.getTime() + (10 * 3600000)); // +10h = 15:00 local
+            // planStart is midnight-6h local, so +11h = 05:00 local, +21h = 15:00 local
+            const h05utc = new Date(planStart.getTime() + (11 * 3600000));
+            const h15utc = new Date(h05utc.getTime() + (10 * 3600000));
             const initStart = new Date(Math.max(planStart.getTime(), h05utc.getTime() - 3600000));
             const initEnd = new Date(Math.min(planEnd.getTime(), h15utc.getTime() + 3600000));
 
@@ -771,17 +763,35 @@ function mountRoutePlannerApp(wrapper, data) {
                     clearHighlight();
                     setTimeout(() => { this.isDraggingBlock = false; }, 60);
                     if (moved) {
-                        // If dropped on a different lane, reassign vehicle
+                        // If dropped on a different lane, validate seat capacity first
                         if (targetVehicleId !== origVehicleId) {
                             const targetVehicle = this.planData.vehicles.find(v => v.id === targetVehicleId);
                             if (targetVehicle) {
+                                // Temporarily set vehicleId to check peak load on target
+                                const origVid = item.vehicleId;
                                 item.vehicleId = targetVehicleId;
-                                frappe.show_alert({
-                                    message: `Moved to ${targetVehicle.label}`,
-                                    indicator: 'blue'
-                                }, 3);
+                                const peakLoad = this.peakLoadDuringCardWindows(
+                                    this.planData.shipment_cards.find(c => c.id === item.cardId) || { outbound_window_start: item.start, outbound_window_end: item.end, return_window_start: item.start, return_window_end: item.end },
+                                    targetVehicleId
+                                );
+                                if (peakLoad > targetVehicle.seats) {
+                                    // Revert — capacity exceeded
+                                    item.vehicleId = origVid;
+                                    item.start = new Date(origStart);
+                                    item.end = new Date(origEnd);
+                                    frappe.show_alert({
+                                        message: `Cannot move — ${targetVehicle.label} has only ${targetVehicle.seats} seats (peak load: ${peakLoad})`,
+                                        indicator: 'red'
+                                    }, 4);
+                                } else {
+                                    frappe.show_alert({
+                                        message: `Moved to ${targetVehicle.label}`,
+                                        indicator: 'blue'
+                                    }, 3);
+                                }
                             }
                         }
+                        this.checkConflicts();
                         this.canSave = this.assignedCards.size > 0;
                         this.persistAssignments();
                     }
@@ -1243,22 +1253,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 const shipEmp = {}, shipSite = {}, shipShift = {}, vMeta = {}, cMap = {};
                 let si = 0;
 
-                [...this.assignedCards].forEach(cid => {
-                    const card = this.planData.shipment_cards.find(c => c.id === cid);
+                // Fix #6: Build shipments from swimItems (per direction actually placed)
+                // instead of from assignedCards, to avoid phantom shipments
+                this.swimItems.forEach(item => {
+                    const card = this.planData.shipment_cards.find(c => c.id === item.cardId);
                     if (!card) return;
 
-                    const uid = si;
-                    const outLbl = `${slug(card.accommodation)}_${uid}_${slug(card.site_location)}_OUTBOUND`;
-                    const retLbl = `${slug(card.accommodation)}_${uid}_${slug(card.site_location)}_RETURN`;
-                    const outIdx = si++, retIdx = si++;
+                    const dirKey = `${item.cardId}_${item.direction}`;
+                    if (cMap[dirKey]) return; // already created shipment for this card+direction
 
-                    shipments.push({ label: outLbl, pickups: [{}], deliveries: [{}] });
-                    shipments.push({ label: retLbl, pickups: [{}], deliveries: [{}] });
+                    const lbl = `${slug(card.accommodation)}_${si}_${slug(card.site_location)}_${item.direction}`;
+                    const idx = si++;
 
-                    shipEmp[outLbl] = shipEmp[retLbl] = card.employees;
-                    shipSite[outLbl] = shipSite[retLbl] = card.site_location;
-                    shipShift[outLbl] = shipShift[retLbl] = card.shift_name;
-                    cMap[cid] = { outLbl, retLbl, outIdx, retIdx };
+                    shipments.push({ label: lbl, pickups: [{}], deliveries: [{}] });
+                    shipEmp[lbl] = card.employees;
+                    shipSite[lbl] = card.site_location;
+                    shipShift[lbl] = card.shift_name;
+                    cMap[dirKey] = { lbl, idx };
                 });
 
                 this.planData.vehicles.forEach((v, vi) => {
@@ -1277,8 +1288,9 @@ function mountRoutePlannerApp(wrapper, data) {
                     trans.push({ travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 });
 
                     vItems.forEach((item, idx) => {
-                        const info = cMap[item.cardId]; if (!info) return;
-                        const sIdx = item.direction === 'OUTBOUND' ? info.outIdx : info.retIdx;
+                        const dirKey = `${item.cardId}_${item.direction}`;
+                        const info = cMap[dirKey]; if (!info) return;
+                        const sIdx = info.idx;
                         const hc = item.headcount || 0;
                         const iS = new Date(item.start).toISOString();
                         const iE = new Date(item.end).toISOString();
