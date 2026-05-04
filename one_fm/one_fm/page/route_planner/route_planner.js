@@ -367,15 +367,24 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                // ── Trip chaining: detect existing outbound blocks from same accommodation ──
-                const sameAccOutbound = this.swimItems.filter(i => {
+                // ── Trip chaining: detect nearby outbound blocks from same accommodation ──
+                // Only consider blocks within ±2 hours of this card's outbound window
+                const cardOutStart = new Date(card.outbound_window_start).getTime();
+                const cardOutEnd   = new Date(card.outbound_window_end).getTime();
+                const PROXIMITY_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+                const nearbyOutbound = this.swimItems.filter(i => {
                     if (i.vehicleId !== vehicle.id || i.direction !== 'OUTBOUND') return false;
                     const existingCard = this.planData.shipment_cards.find(c => c.id === i.cardId);
-                    return existingCard && existingCard.accommodation === card.accommodation;
+                    if (!existingCard || existingCard.accommodation !== card.accommodation) return false;
+                    // Time proximity check — block must be within 2h of this card's window
+                    const blockEnd = new Date(i.end).getTime();
+                    const blockStart = new Date(i.start).getTime();
+                    return blockEnd > (cardOutStart - PROXIMITY_MS) && blockStart < (cardOutEnd + PROXIMITY_MS);
                 });
 
-                if (sameAccOutbound.length > 0) {
-                    const existingSites = sameAccOutbound.map(i => {
+                if (nearbyOutbound.length > 0) {
+                    const existingSites = nearbyOutbound.map(i => {
                         const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
                         return c ? c.site_location : i.cardId;
                     });
@@ -384,13 +393,53 @@ function mountRoutePlannerApp(wrapper, data) {
                         `<strong>${vehicle.label}</strong> already picks up from <strong>${card.accommodation}</strong> and drops at:<br><br>` +
                         existingSites.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
                         `<br><br>Add <strong>${card.site_location}</strong> as the next stop on this trip?`,
-                        () => this._chainToTrip(card, sameAccOutbound, vehicle.id),
-                        () => this.placeCard(card, vehicle.id, dropTime)
+                        () => this._chainToTrip(card, nearbyOutbound, vehicle.id),
+                        // "No" → place as a fresh independent card (full direction picker)
+                        () => this._doPlaceWithDialog(card, vehicle.id)
                     );
                     return;
                 }
 
                 this.placeCard(card, vehicle.id, dropTime);
+            },
+
+            // Fresh placement dialog — bypasses "already placed" direction check
+            _doPlaceWithDialog(card, vehicleId) {
+                const self = this;
+                const d = new frappe.ui.Dialog({
+                    title: `New Trip — ${card.site_location}`,
+                    fields: [
+                        {
+                            fieldtype: 'HTML',
+                            options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
+                                <strong>${card.shift_name}</strong><br>
+                                ${card.headcount} employee(s) · Shift ${self.fmtISO(card.shift_start)} – ${self.fmtISO(card.shift_end)}</p>`
+                        },
+                        {
+                            fieldtype: 'Select', fieldname: 'direction',
+                            label: 'Trip Direction', reqd: 1,
+                            options: 'Both (Outbound + Return)\nOutbound Only (→ To Site)\nReturn Only (← From Site)',
+                            default: 'Outbound Only (→ To Site)'
+                        },
+                        {
+                            fieldtype: 'Column Break'
+                        },
+                        {
+                            fieldtype: 'Int', fieldname: 'duration_min',
+                            label: 'Trip Duration (minutes)', default: 60, reqd: 1
+                        }
+                    ],
+                    primary_action_label: 'Place on Timeline',
+                    primary_action(vals) {
+                        d.hide();
+                        const durMs = (vals.duration_min || 60) * 60000;
+                        const choice = vals.direction;
+                        const placeOut = choice.startsWith('Both') || choice.startsWith('Outbound');
+                        const placeRet = choice.startsWith('Both') || choice.startsWith('Return');
+                        self._doPlace(card, vehicleId, durMs, placeOut, placeRet);
+                    }
+                });
+                d.show();
             },
 
             // ── Chain a card as the next stop on an existing trip ──
