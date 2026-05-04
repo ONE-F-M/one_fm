@@ -14,8 +14,9 @@ def get_route_planner_data():
         import pytz
         from datetime import timedelta
 
-        # ── Time bounds (same logic as optimize_transportation_routes) ──
-        site_tz = pytz.timezone(frappe.db.get_single_value("System Settings", "time_zone") or "UTC")
+        # ── Time bounds ──
+        tz_name = frappe.db.get_single_value("System Settings", "time_zone") or "UTC"
+        site_tz = pytz.timezone(tz_name)
         local_today_start = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 00:00:00")) - timedelta(hours=6)
         local_today_end   = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 23:59:59")) + timedelta(hours=6)
         global_start_utc  = local_today_start.astimezone(pytz.utc).replace(tzinfo=None)
@@ -24,29 +25,55 @@ def get_route_planner_data():
         def fmt(dt):
             return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        # ── 1. Vehicles ──────────────────────────────────────────────────
+        def to_utc(dt_str):
+            dt = frappe.utils.get_datetime(f"{frappe.utils.today()} {dt_str}")
+            return site_tz.localize(dt).astimezone(pytz.utc).replace(tzinfo=None)
+
+        # ── Coords cache (avoid repeated DB lookups for same Location) ──
+        _coords_cache = {}
+        def get_coords_cached(doctype, name):
+            key = (doctype, name)
+            if key not in _coords_cache:
+                _coords_cache[key] = get_coords(doctype, name)
+            return _coords_cache[key]
+
+        # ── 1. Vehicles (batch queries) ──
         transport_vehicles = frappe.get_all("Vehicle",
             filters={"transport_stop_vehicle": 1},
             fields=["name", "location", "seats", "one_fm_vehicle_type", "make", "employee"],
             order_by="name asc"
         )
 
+        # Batch-fetch driver names in one query
+        emp_ids_for_drivers = [v.employee for v in transport_vehicles if v.employee]
+        driver_map = {}
+        if emp_ids_for_drivers:
+            for row in frappe.get_all("Employee",
+                filters={"name": ["in", emp_ids_for_drivers]},
+                fields=["name", "employee_name"]
+            ):
+                driver_map[row.name] = row.employee_name
+
+        # Batch-fetch accommodation labels for vehicle locations in one query
+        veh_locations = list({v.location for v in transport_vehicles if v.location})
+        veh_acc_map = {}
+        if veh_locations:
+            for row in frappe.get_all("Accommodation",
+                filters={"transport_stop_location": ["in", veh_locations]},
+                fields=["transport_stop_location", "accommodation"]
+            ):
+                veh_acc_map[row.transport_stop_location] = row.accommodation
+
         MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
 
         vehicles = []
         for v in transport_vehicles:
-            coords = get_coords("Location", v.location)
+            coords = get_coords_cached("Location", v.location)
             if not coords:
                 continue
 
-            driver_name = "—"
-            if v.employee:
-                driver_name = frappe.db.get_value("Employee", v.employee, "employee_name") or "—"
-
-            acc_name = frappe.db.get_value("Accommodation",
-                {"transport_stop_location": v.location},
-                "accommodation"
-            ) or v.location
+            driver_name = driver_map.get(v.employee, "—") if v.employee else "—"
+            acc_name = veh_acc_map.get(v.location, v.location)
             if acc_name in MAHBOULA_LABELS:
                 acc_name = "Mahboula Camp"
 
@@ -79,37 +106,102 @@ def get_route_planner_data():
             )
         }
 
+        # Batch-fetch all shift docs in one query (instead of per-shift frappe.get_doc)
+        all_shift_names = set()
+        for acc_data in nested_map.values():
+            all_shift_names.update(acc_data["shifts"].keys())
+
+        shift_doc_map = {}
+        if all_shift_names:
+            for s in frappe.get_all("Operations Shift",
+                filters={"name": ["in", list(all_shift_names)]},
+                fields=["name", "site", "start_time", "end_time", "expected_arrival_time_at_site"]
+            ):
+                shift_doc_map[s.name] = s
+
+        # Batch-fetch all site locations in one query
+        all_sites = list({s.site for s in shift_doc_map.values() if s.site})
+        site_location_map = {}
+        if all_sites:
+            for row in frappe.get_all("Operations Site",
+                filters={"name": ["in", all_sites]},
+                fields=["name", "site_location"]
+            ):
+                site_location_map[row.name] = row.site_location or row.name
+
+        # Batch-fetch all OSM mappings in two queries (parent + child)
+        osm_by_site = {}
+        if all_sites:
+            osm_records = frappe.get_all("Site Transport Stop Location",
+                filters={"site_arrangement": "One Site Many Locations", "site": ["in", all_sites]},
+                fields=["name", "site"]
+            )
+            if osm_records:
+                osm_parent_names = [r.name for r in osm_records]
+                osm_child_rows = frappe.get_all("Site To Location Mapping",
+                    filters={"parent": ["in", osm_parent_names]},
+                    fields=["parent", "location"]
+                )
+                osm_site_lookup = {r.name: r.site for r in osm_records}
+                for child in osm_child_rows:
+                    site = osm_site_lookup.get(child.parent)
+                    if site:
+                        coords = get_coords_cached("Location", child.location)
+                        if coords:
+                            osm_by_site.setdefault(site, []).append({"name": child.location, "coords": coords})
+
+        # Batch-fetch all OLM mappings in two queries
+        olm_by_site = {}
+        olm_doc_map = {}
+        if all_sites:
+            olm_child_rows = frappe.get_all("Location To Site Mapping",
+                filters={"parenttype": "Site Transport Stop Location"},
+                fields=["parent", "sites"]
+            )
+            olm_parent_names = set()
+            for child in olm_child_rows:
+                if child.sites in all_sites:
+                    olm_by_site.setdefault(child.sites, []).append(child.parent)
+                    olm_parent_names.add(child.parent)
+            if olm_parent_names:
+                for doc in frappe.get_all("Site Transport Stop Location",
+                    filters={"name": ["in", list(olm_parent_names)], "site_arrangement": "One Location Many Sites"},
+                    fields=["name", "transport_stop_location"]
+                ):
+                    olm_doc_map[doc.name] = doc
+
+        # ── Build shipment cards ──
         shipment_cards = []
 
         for acc_name, acc_data in nested_map.items():
             lookup_id  = acc_data["lookup_id"]
-            acc_coords = get_coords("Accommodation", lookup_id)
+            acc_coords = get_coords_cached("Accommodation", lookup_id)
             if not acc_coords:
                 continue
 
             olm_groups = {}
 
             for shift_name, employee_list in acc_data["shifts"].items():
-                shift_doc        = frappe.get_doc("Operations Shift", shift_name)
-                operations_site  = shift_doc.site
-                headcount        = len(employee_list)
+                shift_doc = shift_doc_map.get(shift_name)
+                if not shift_doc:
+                    continue
 
-                # Resolve site location display name
-                site_location = frappe.db.get_value("Operations Site", operations_site, "site_location") or operations_site
-
-                # Resolve expected arrival
-                expected_arrival = getattr(shift_doc, "expected_arrival_time_at_site", None)
-                def to_utc(dt_str):
-                    import pytz
-                    dt = frappe.utils.get_datetime(f"{frappe.utils.today()} {dt_str}")
-                    tz = pytz.timezone(frappe.db.get_single_value("System Settings", "time_zone") or "UTC")
-                    return tz.localize(dt).astimezone(pytz.utc).replace(tzinfo=None)
+                operations_site = shift_doc.site
+                headcount       = len(employee_list)
+                site_location   = site_location_map.get(operations_site, operations_site)
 
                 start_utc = to_utc(shift_doc.start_time)
                 end_utc   = to_utc(shift_doc.end_time)
 
+                # Expected arrival logic
+                expected_arrival = shift_doc.expected_arrival_time_at_site
+                use_expected = False
                 if expected_arrival and str(expected_arrival) != str(shift_doc.start_time):
                     effective_start_utc = to_utc(expected_arrival)
+                    if effective_start_utc < end_utc:
+                        use_expected = True
+
+                if use_expected:
                     outbound_window_start = fmt(effective_start_utc)
                     outbound_window_end   = fmt(effective_start_utc)
                 else:
@@ -118,20 +210,15 @@ def get_route_planner_data():
 
                 employees_named = [emp_name_map.get(e, e) for e in employee_list]
 
-                # ── OSM ──
-                one_site_many_locations = frappe.get_all("Site Transport Stop Location",
-                    filters={"site_arrangement": "One Site Many Locations", "site": operations_site},
-                    fields=["name"]
-                )
-                all_osm_locations = []
-                for osm in one_site_many_locations:
-                    osm_doc = frappe.get_doc("Site Transport Stop Location", osm.name)
-                    for row in osm_doc.transport_stop_locations:
-                        coords = get_coords("Location", row.location)
-                        if coords:
-                            all_osm_locations.append({"name": row.location, "coords": coords})
+                handled = False
+
+                # ── OSM (pre-fetched) ──
+                all_osm_locations = osm_by_site.get(operations_site, [])
+
+                # (handled already set above)
 
                 if all_osm_locations:
+                    handled = True
                     num_locs = len(all_osm_locations)
                     base_h   = headcount // num_locs
                     extra_h  = headcount % num_locs
@@ -165,16 +252,14 @@ def get_route_planner_data():
                             "type":                 "OSM"
                         })
 
-                # ── OLM ──
-                one_location_many_sites = frappe.db.sql("""
-                    SELECT parent FROM `tabLocation To Site Mapping` WHERE sites = %s
-                """, (operations_site,), as_dict=True)
-
-                for olm in one_location_many_sites:
-                    olm_doc = frappe.get_doc("Site Transport Stop Location", olm.parent)
-                    if olm_doc.site_arrangement != "One Location Many Sites":
+                # ── OLM (pre-fetched) ──
+                olm_parents = olm_by_site.get(operations_site, [])
+                for parent_name in olm_parents:
+                    olm_doc = olm_doc_map.get(parent_name)
+                    if not olm_doc:
                         continue
 
+                    handled = True
                     stop_location = olm_doc.transport_stop_location
                     start_dt      = frappe.utils.get_datetime(f"2000-01-01 {shift_doc.start_time}")
                     time_key      = start_dt.hour
@@ -190,10 +275,36 @@ def get_route_planner_data():
                     olm_groups[group_key]["headcount"] += headcount
                     olm_groups[group_key]["employees"].extend(employee_list)
 
+                # ── Default fallback: DIRECT ──
+                if not handled:
+                    site_loc_name = site_location_map.get(operations_site)
+                    site_coords = get_coords_cached("Location", site_loc_name) if site_loc_name else None
+                    if site_coords:
+                        card_id = f"{acc_name}_{shift_name}_{site_loc_name}"
+                        shipment_cards.append({
+                            "id":                   card_id,
+                            "accommodation":        acc_name,
+                            "accommodation_coords": {"lat": acc_coords[0], "lng": acc_coords[1]},
+                            "shift_name":           shift_name,
+                            "site":                 operations_site,
+                            "site_location":        site_location,
+                            "stop_location":        site_loc_name,
+                            "stop_coords":          {"lat": site_coords[0], "lng": site_coords[1]},
+                            "headcount":            headcount,
+                            "employees":            employees_named,
+                            "outbound_window_start": outbound_window_start,
+                            "outbound_window_end":   outbound_window_end,
+                            "return_window_start":   fmt(end_utc),
+                            "return_window_end":     fmt(end_utc + timedelta(minutes=PICKUP_BUFFER)),
+                            "shift_start":           fmt(start_utc),
+                            "shift_end":             fmt(end_utc),
+                            "type":                 "DIRECT"
+                        })
+
             # ── OLM cards ──
             for group_key, group_data in olm_groups.items():
                 stop_location, time_key = group_key
-                stop_coords = get_coords("Location", stop_location)
+                stop_coords = get_coords_cached("Location", stop_location)
                 if not stop_coords:
                     continue
 
@@ -204,12 +315,34 @@ def get_route_planner_data():
                 end_utc        = to_utc(latest_end)
 
                 site_locations = sorted({
-                    frappe.db.get_value("Operations Site", s.site, "site_location") or s.site
+                    site_location_map.get(s.site, s.site)
                     for s in shifts
                 })
                 real_shift_names = " · ".join(sorted(set(s.name for s in shifts)))
 
                 card_id = f"{acc_name}_Grouped_{stop_location}_{time_key}"
+
+                # Build per-site breakdown for OLM detail display
+                site_breakdown = []
+                site_shift_map = {}
+                for s in shifts:
+                    site_name = s.site
+                    if site_name not in site_shift_map:
+                        site_shift_map[site_name] = {
+                            "site": site_name,
+                            "site_location": frappe.db.get_value("Operations Site", site_name, "site_location") or site_name,
+                            "shifts": [],
+                            "employee_count": 0
+                        }
+                    site_shift_map[site_name]["shifts"].append(s.name)
+                # Count employees per site (best effort — grouped by shift)
+                for site_name, info in site_shift_map.items():
+                    # Count how many employees belong to shifts at this site
+                    site_emps = [e for s in shifts if s.site == site_name
+                                 for e in group_data.get("employees", [])]
+                    info["employee_count"] = len(set(site_emps)) if site_emps else 0
+                    site_breakdown.append(info)
+
                 shipment_cards.append({
                     "id":                   card_id,
                     "accommodation":        acc_name,
@@ -227,7 +360,8 @@ def get_route_planner_data():
                     "return_window_end":     fmt(end_utc + timedelta(minutes=PICKUP_BUFFER)),
                     "shift_start":           fmt(start_utc),
                     "shift_end":             fmt(end_utc),
-                    "type":                 "OLM"
+                    "type":                 "OLM",
+                    "sites":                site_breakdown
                 })
 
         return {
@@ -295,60 +429,96 @@ def get_grouped_employees_by_accommodation() -> dict:
     shift_names = [s.name for s in active_shifts]
 
     # 2. Find all employees with a shift allocation matching one of the active shifts
-    employees = frappe.get_all("Employee", 
-        filters={"status": "Active", "shift": ["in", shift_names]}, 
+    employees = frappe.get_all("Employee",
+        filters={"status": "Active", "shift": ["in", shift_names]},
         fields=["name", "shift"]
     )
+    if not employees:
+        return {}
 
-    accommodation_map = {}
-    for emp in employees:
-        # 3. For each employee, look up their current accommodation record ID
-        latest_checkin = frappe.db.get_value("Accommodation Checkin Checkout", 
-            {"employee": emp.name, "type": "IN"}, 
-            ["name", "accommodation"],
-            order_by="creation desc",
-            as_dict=True
+    emp_ids = [e.name for e in employees]
+    emp_shift_map = {e.name: e.shift for e in employees}
+
+    # 3. Bulk-fetch the latest IN checkin per employee (single query instead of N+1)
+    #    Uses a correlated subquery to pick the most recent checkin per employee.
+    checkin_rows = frappe.db.sql("""
+        SELECT c.employee, c.accommodation
+        FROM `tabAccommodation Checkin Checkout` c
+        INNER JOIN (
+            SELECT employee, MAX(creation) AS max_creation
+            FROM `tabAccommodation Checkin Checkout`
+            WHERE type = 'IN'
+              AND employee IS NOT NULL
+              AND employee != ''
+              AND employee IN %(emp_ids)s
+            GROUP BY employee
+        ) latest ON c.employee = latest.employee AND c.creation = latest.max_creation
+        WHERE c.type = 'IN'
+    """, {"emp_ids": emp_ids}, as_dict=True)
+
+    if not checkin_rows:
+        # Log once instead of per-employee to avoid thousands of Error Log entries
+        frappe.log_error(
+            f"No employees (out of {len(emp_ids)}) have Accommodation Checkin Checkout (IN) records",
+            "Route Optimization"
         )
+        return {}
 
-        if not latest_checkin:
-            frappe.log_error(f"{emp.name} has no checkin record", "Route Optimization")
-            continue
+    # 4. Bulk-fetch accommodation labels
+    acc_ids = list({r.accommodation for r in checkin_rows if r.accommodation})
+    acc_labels = {}
+    if acc_ids:
+        for row in frappe.get_all("Accommodation",
+            filters={"name": ["in", acc_ids]},
+            fields=["name", "accommodation"]
+        ):
+            acc_labels[row.name] = row.accommodation
 
-        acc_id = latest_checkin.accommodation
-        acc_label = frappe.db.get_value("Accommodation", acc_id, "accommodation")
-        
+    MAHBOULA_LABELS = {"Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"}
+
+    # 5. Build accommodation → employees map
+    accommodation_map = {}
+    for row in checkin_rows:
+        acc_id = row.accommodation
+        acc_label = acc_labels.get(acc_id)
         if not acc_label:
             continue
-        
-        # 4. Handle Mahboula buildings grouping (3, 12, 13, 15)
-        # We group them under "Mahboula Camp" but keep a valid acc_id for location lookups
-        acc_key = "Mahboula Camp" if acc_label in ["Mahboula 3", "Mahboula 12", "Mahboula 13", "Mahboula 15"] else acc_id
-            
+
+        acc_key = "Mahboula Camp" if acc_label in MAHBOULA_LABELS else acc_id
+
         if acc_key not in accommodation_map:
             accommodation_map[acc_key] = {
                 "lookup_id": acc_id,
                 "employees": []
             }
-        
-        accommodation_map[acc_key]["employees"].append(emp)
 
-    # Group by shift under accommodation
+        emp_name = row.employee
+        if emp_name in emp_shift_map:
+            accommodation_map[acc_key]["employees"].append(
+                frappe._dict({"name": emp_name, "shift": emp_shift_map[emp_name]})
+            )
+
+    # 6. Filter to accommodations with transport_stop_location and group by shift
+    acc_keys_to_check = list({d["lookup_id"] for d in accommodation_map.values()})
+    acc_stop_map = {}
+    if acc_keys_to_check:
+        for row in frappe.get_all("Accommodation",
+            filters={"name": ["in", acc_keys_to_check], "transport_stop_location": ["is", "set"]},
+            fields=["name", "transport_stop_location"]
+        ):
+            acc_stop_map[row.name] = row.transport_stop_location
+
     nested_map = {}
     for acc_key, data in accommodation_map.items():
         lookup_id = data["lookup_id"]
-        emp_list = data["employees"]
-        
-        # 5. Only consider Accommodation entries that have the "Stop Location" field populated.
-        acc_doc = frappe.db.get_value("Accommodation", lookup_id, ["name", "transport_stop_location"], as_dict=True)
-        
-        if not acc_doc or not acc_doc.transport_stop_location:
+        if lookup_id not in acc_stop_map:
             continue
 
         nested_map[acc_key] = {
             "lookup_id": lookup_id,
             "shifts": {}
         }
-        for emp in emp_list:
+        for emp in data["employees"]:
             shift = emp.shift
             if shift not in nested_map[acc_key]["shifts"]:
                 nested_map[acc_key]["shifts"][shift] = []
@@ -856,3 +1026,125 @@ def call_route_optimization_api(payload: dict) -> dict | None:
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "Route Optimization API Call Failed")
         return None
+
+
+# ── Persistence: save / load route planner assignments (DocType-based) ─────
+
+@frappe.whitelist()
+def get_route_plans():
+    """Return all Route Plans for the plan selector dropdown."""
+    plans = frappe.get_list("Route Plan",
+        fields=["name", "title", "status", "effective_from", "effective_until"],
+        order_by="creation desc"
+    )
+    return plans
+
+
+@frappe.whitelist()
+def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
+    """Save route planner swim items into a Route Plan DocType."""
+    import json
+    items = json.loads(swim_items)
+    cards = json.loads(assigned_cards)
+
+    doc = frappe.get_doc("Route Plan", plan_name)
+    doc.check_permission("write")
+
+    # Clear existing assignments and rebuild
+    doc.assignments = []
+    for item in items:
+        doc.append("assignments", {
+            "card_id":       item.get("cardId", ""),
+            "vehicle":       item.get("vehicleId", ""),
+            "direction":     item.get("direction", ""),
+            "stop_index":    item.get("stopIndex", 0),
+            "trip_group":    item.get("tripId", ""),
+            "headcount":     item.get("headcount", 0),
+            "start_time":    item.get("start", ""),
+            "end_time":      item.get("end", ""),
+            "site":          item.get("_site", ""),
+            "shift":         item.get("_shift", ""),
+            "accommodation": item.get("_accommodation", ""),
+            "stop_location": item.get("_stopLocation", ""),
+        })
+
+    doc.save(ignore_permissions=False)
+
+    return {
+        "status": "ok",
+        "plan_name": doc.name,
+        "saved_at": str(doc.last_modified_at or frappe.utils.now()),
+        "assignment_count": len(doc.assignments)
+    }
+
+
+@frappe.whitelist()
+def load_assignments(plan_name: str = ""):
+    """Load saved route planner swim items from a Route Plan.
+    If plan_name is empty, loads the currently Active plan.
+    """
+    if not plan_name:
+        plan_name = frappe.db.get_value("Route Plan", {"status": "Active"}, "name")
+
+    if not plan_name:
+        return {"status": "empty"}
+
+    doc = frappe.get_doc("Route Plan", plan_name)
+    doc.check_permission("read")
+
+    swim_items = []
+    assigned_card_ids = set()
+
+    for row in doc.assignments:
+        swim_items.append({
+            "id":        f"{row.card_id}_{row.direction}_{row.name}",
+            "cardId":    row.card_id,
+            "vehicleId": row.vehicle,
+            "direction": row.direction,
+            "start":     row.start_time,
+            "end":       row.end_time,
+            "headcount": row.headcount or 0,
+            "conflict":  False,
+            "tripId":    row.trip_group or None,
+            "stopIndex": row.stop_index or 0,
+            "totalStops": 0,  # recalculated client-side
+        })
+        assigned_card_ids.add(row.card_id)
+
+    # Recalculate totalStops per trip group
+    trip_counts = {}
+    for item in swim_items:
+        if item["tripId"]:
+            trip_counts[item["tripId"]] = trip_counts.get(item["tripId"], 0) + 1
+    for item in swim_items:
+        if item["tripId"] and item["tripId"] in trip_counts:
+            item["totalStops"] = trip_counts[item["tripId"]]
+
+    return {
+        "status": "ok",
+        "plan_name": doc.name,
+        "plan_title": doc.title,
+        "plan_status": doc.status,
+        "effective_from": str(doc.effective_from) if doc.effective_from else None,
+        "effective_until": str(doc.effective_until) if doc.effective_until else None,
+        "swim_items": swim_items,
+        "assigned_cards": list(assigned_card_ids),
+        "saved_by": doc.last_modified_by_user,
+        "saved_at": str(doc.last_modified_at) if doc.last_modified_at else None
+    }
+
+
+@frappe.whitelist()
+def create_route_plan(title: str, effective_from: str, effective_until: str = ""):
+    """Create a new Route Plan and return its name."""
+    doc = frappe.new_doc("Route Plan")
+    doc.title = title
+    doc.effective_from = effective_from
+    doc.effective_until = effective_until or None
+    doc.status = "Draft"
+    doc.insert()
+    return {
+        "status": "ok",
+        "plan_name": doc.name,
+        "plan_title": doc.title
+    }

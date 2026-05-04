@@ -1,0 +1,134 @@
+{
+  "actions": [],
+  "creation": "2026-05-04 10:00:00.000000",
+  "doctype": "DocType",
+  "editable_grid": 1,
+  "engine": "InnoDB",
+  "field_order": [
+    "card_id",
+    "vehicle",
+    "direction",
+    "column_break_1",
+    "stop_index",
+    "trip_group",
+    "headcount",
+    "section_break_details",
+    "site",
+    "shift",
+    "column_break_2",
+    "accommodation",
+    "stop_location",
+    "section_break_times",
+    "start_time",
+    "end_time"
+  ],
+  "fields": [
+    {
+      "fieldname": "card_id",
+      "fieldtype": "Data",
+      "label": "Card ID",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "vehicle",
+      "fieldtype": "Link",
+      "label": "Vehicle",
+      "options": "Vehicle",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "direction",
+      "fieldtype": "Select",
+      "label": "Direction",
+      "options": "\nOUTBOUND\nRETURN",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "stop_index",
+      "fieldtype": "Int",
+      "label": "Stop Index",
+      "default": "0",
+      "description": "0 = standalone, 1+ = multi-stop trip sequence"
+    },
+    {
+      "fieldname": "trip_group",
+      "fieldtype": "Data",
+      "label": "Trip Group",
+      "description": "Groups multi-stop blocks into one trip"
+    },
+    {
+      "fieldname": "headcount",
+      "fieldtype": "Int",
+      "label": "Headcount",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "section_break_details",
+      "fieldtype": "Section Break",
+      "label": "Details"
+    },
+    {
+      "fieldname": "site",
+      "fieldtype": "Data",
+      "label": "Site"
+    },
+    {
+      "fieldname": "shift",
+      "fieldtype": "Data",
+      "label": "Shift"
+    },
+    {
+      "fieldname": "column_break_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "accommodation",
+      "fieldtype": "Data",
+      "label": "Accommodation"
+    },
+    {
+      "fieldname": "stop_location",
+      "fieldtype": "Data",
+      "label": "Stop Location"
+    },
+    {
+      "fieldname": "section_break_times",
+      "fieldtype": "Section Break",
+      "label": "Time Window"
+    },
+    {
+      "fieldname": "start_time",
+      "fieldtype": "Data",
+      "label": "Start Time",
+      "description": "ISO timestamp of block start on timeline"
+    },
+    {
+      "fieldname": "end_time",
+      "fieldtype": "Data",
+      "label": "End Time",
+      "description": "ISO timestamp of block end on timeline"
+    }
+  ],
+  "index_web_pages_for_search": 0,
+  "istable": 1,
+  "links": [],
+  "modified": "2026-05-04 10:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Operations",
+  "name": "Route Plan Assignment",
+  "naming_rule": "Random",
+  "autoname": "hash",
+  "owner": "Administrator",
+  "permissions": [],
+  "sort_field": "creation",
+  "sort_order": "ASC",
+  "states": [],
+  "track_changes": 0
+}
