@@ -28,7 +28,7 @@ def get(chart_name=None, chart=None,heatmap_year=None, no_cache=None, filters=No
 
 	# Define states
 	cancelled_states = ["Cancelled by GM", "Cancelled by Supervisor"]
-	resolved_states = ["Employee Rejected", "Mark as Completed"]
+	resolved_states = ["Employee Rejected", "Completed"]
 
 	# Base filters for current user and not cancelled
 	base_filters = [
