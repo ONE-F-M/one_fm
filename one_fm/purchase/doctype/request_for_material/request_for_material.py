@@ -161,11 +161,7 @@ class RequestforMaterial(BuyingController):
             for d in self.items:
                 if not d.qty:
                     frappe.throw(_("No quantity set for {item}".format(item=d.item_name)))
-                if d.actual_qty:
-                    if int(d.qty) > d.actual_qty:
-                        d.pur_qty = int(d.qty) - d.actual_qty
-                elif d.actual_qty == 0:
-                    d.pur_qty = d.qty
+                # pur_qty logic removed — tracking is now done by RFP Quantity field
 
                 if d.actual_qty:
                     if d.warehouse and flt(d.actual_qty, d.precision("actual_qty")) < flt(d.qty, d.precision("actual_qty")):
@@ -174,13 +170,7 @@ class RequestforMaterial(BuyingController):
                             + '<br><br>' + _("Available quantity is {0}, Requested quantity is {1}. Please make a purchase request for the remaining.").format(frappe.bold(d.actual_qty),
                                 frappe.bold(d.qty)), title=_('Insufficient Stock'))
 
-                if d.quantity_to_transfer and d.pur_qty:
-                    if (d.quantity_to_transfer+d.pur_qty)>d.qty:
-                        updated_total = d.quantity_to_transfer+d.pur_qty
-                        frappe.throw(_("Row {0}: Total quantity to transfer and purchase cannot exceed the original requested Quantiy: {1} for the Item: {2}").format(d.idx,
-                            frappe.bold(d.qty), frappe.bold(d.item_code))
-                            + '<br><br>' + _("Current total quantity to purchase/transfer is {0}, Requested quantity is {1}. Please make a purchase request for the remaining.").format(frappe.bold(updated_total),
-                                frappe.bold(d.qty)), title=_('Quantity Exceeding'))
+                # pur_qty cross-validation with quantity_to_transfer removed — tracking is now done by RFP Quantity field
 
     def set_item_fields(self):
         if self.items and self.type == 'Stock':
