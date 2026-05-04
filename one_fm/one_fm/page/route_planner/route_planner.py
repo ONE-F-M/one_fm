@@ -151,18 +151,18 @@ def get_route_planner_data():
                             osm_by_site.setdefault(site, []).append({"name": child.location, "coords": coords})
 
         # Batch-fetch all OLM mappings in two queries
+        # Filter at DB level by sites IN all_sites (fix #1: avoid loading all rows)
         olm_by_site = {}
         olm_doc_map = {}
         if all_sites:
             olm_child_rows = frappe.get_all("Location To Site Mapping",
-                filters={"parenttype": "Site Transport Stop Location"},
+                filters={"parenttype": "Site Transport Stop Location", "sites": ["in", all_sites]},
                 fields=["parent", "sites"]
             )
             olm_parent_names = set()
             for child in olm_child_rows:
-                if child.sites in all_sites:
-                    olm_by_site.setdefault(child.sites, []).append(child.parent)
-                    olm_parent_names.add(child.parent)
+                olm_by_site.setdefault(child.sites, []).append(child.parent)
+                olm_parent_names.add(child.parent)
             if olm_parent_names:
                 for doc in frappe.get_all("Site Transport Stop Location",
                     filters={"name": ["in", list(olm_parent_names)], "site_arrangement": "One Location Many Sites"},
@@ -269,11 +269,13 @@ def get_route_planner_data():
                         olm_groups[group_key] = {
                             "shifts":    [],
                             "headcount": 0,
-                            "employees": []
+                            "employees": [],
+                            "shift_employees": {}  # shift_name → [emp_ids] for accurate per-site count
                         }
                     olm_groups[group_key]["shifts"].append(shift_doc)
                     olm_groups[group_key]["headcount"] += headcount
                     olm_groups[group_key]["employees"].extend(employee_list)
+                    olm_groups[group_key]["shift_employees"][shift_name] = employee_list
 
                 # ── Default fallback: DIRECT ──
                 if not handled:
@@ -323,24 +325,28 @@ def get_route_planner_data():
                 card_id = f"{acc_name}_Grouped_{stop_location}_{time_key}"
 
                 # Build per-site breakdown for OLM detail display
+                # Fix #2: use site_location_map (already batch-fetched) instead of N+1 db.get_value
+                # Fix #3: use shift_employees map for accurate per-site headcount
                 site_breakdown = []
                 site_shift_map = {}
+                shift_employees = group_data.get("shift_employees", {})
                 for s in shifts:
                     site_name = s.site
                     if site_name not in site_shift_map:
                         site_shift_map[site_name] = {
                             "site": site_name,
-                            "site_location": frappe.db.get_value("Operations Site", site_name, "site_location") or site_name,
+                            "site_location": site_location_map.get(site_name, site_name),
                             "shifts": [],
                             "employee_count": 0
                         }
                     site_shift_map[site_name]["shifts"].append(s.name)
-                # Count employees per site (best effort — grouped by shift)
+                # Count employees per site using only shifts that belong to that site
                 for site_name, info in site_shift_map.items():
-                    # Count how many employees belong to shifts at this site
-                    site_emps = [e for s in shifts if s.site == site_name
-                                 for e in group_data.get("employees", [])]
-                    info["employee_count"] = len(set(site_emps)) if site_emps else 0
+                    site_emps = set()
+                    for s in shifts:
+                        if s.site == site_name:
+                            site_emps.update(shift_employees.get(s.name, []))
+                    info["employee_count"] = len(site_emps)
                     site_breakdown.append(info)
 
                 shipment_cards.append({
@@ -1030,9 +1036,19 @@ def call_route_optimization_api(payload: dict) -> dict | None:
 
 # ── Persistence: save / load route planner assignments (DocType-based) ─────
 
+def _route_plan_exists():
+    """Check if Route Plan DocType has been migrated."""
+    try:
+        return frappe.db.exists("DocType", "Route Plan") and frappe.db.exists("DocType", "Route Plan Assignment")
+    except Exception:
+        return False
+
+
 @frappe.whitelist()
 def get_route_plans():
     """Return all Route Plans for the plan selector dropdown."""
+    if not _route_plan_exists():
+        return []
     plans = frappe.get_list("Route Plan",
         fields=["name", "title", "status", "effective_from", "effective_until"],
         order_by="creation desc"
@@ -1043,6 +1059,9 @@ def get_route_plans():
 @frappe.whitelist()
 def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
     """Save route planner swim items into a Route Plan DocType."""
+    if not _route_plan_exists():
+        frappe.throw("Route Plan DocType not found. Please run 'bench migrate' on this site first.")
+
     import json
     items = json.loads(swim_items)
     cards = json.loads(assigned_cards)
@@ -1083,6 +1102,9 @@ def load_assignments(plan_name: str = ""):
     """Load saved route planner swim items from a Route Plan.
     If plan_name is empty, loads the currently Active plan.
     """
+    if not _route_plan_exists():
+        return {"status": "empty", "message": "Route Plan DocType not migrated yet."}
+
     if not plan_name:
         plan_name = frappe.db.get_value("Route Plan", {"status": "Active"}, "name")
 
@@ -1137,6 +1159,9 @@ def load_assignments(plan_name: str = ""):
 @frappe.whitelist()
 def create_route_plan(title: str, effective_from: str, effective_until: str = ""):
     """Create a new Route Plan and return its name."""
+    if not _route_plan_exists():
+        frappe.throw("Route Plan DocType not found. Please run 'bench migrate' on this site first.")
+
     doc = frappe.new_doc("Route Plan")
     doc.title = title
     doc.effective_from = effective_from

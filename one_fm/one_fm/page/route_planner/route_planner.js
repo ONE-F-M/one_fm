@@ -48,17 +48,9 @@ function mountRoutePlannerApp(wrapper, data) {
             const planEnd = new Date(data.global_end);
 
             // Smart initial zoom: show a ~10h working-hours window
-            // centred on the shift activity (05:00 – 15:00 local time)
-            const kw = s => {
-                const d = new Date(s);
-                return new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Kuwait' }));
-            };
-            const kwNow = kw(planStart);
-            // Build 05:00 and 15:00 today in Kuwait, then convert back to UTC
-            const base = new Date(planStart);
-            // offset from plan start to 05:00 Kuwait
-            const h05utc = new Date(planStart.getTime() + (5 * 3600000) + (6 * 3600000)); // planStart is midnight-6h local → +11h = 05:00 local
-            const h15utc = new Date(h05utc.getTime() + (10 * 3600000)); // +10h = 15:00 local
+            // planStart is midnight-6h local, so +11h = 05:00 local, +21h = 15:00 local
+            const h05utc = new Date(planStart.getTime() + (11 * 3600000));
+            const h15utc = new Date(h05utc.getTime() + (10 * 3600000));
             const initStart = new Date(Math.max(planStart.getTime(), h05utc.getTime() - 3600000));
             const initEnd = new Date(Math.min(planEnd.getTime(), h15utc.getTime() + 3600000));
 
@@ -76,6 +68,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 selectedItem: null,        // highlighted swim block
                 draggingCard: null,        // card being dragged from pool
                 isDraggingBlock: false,       // block being moved on lane
+                selectedPoolCard: null,    // mobile: tap-to-select card for assignment
                 searchQuery: '',
                 collapsedGroups: {},          // { [accommodation]: boolean }
                 canSave: false,
@@ -325,7 +318,12 @@ function mountRoutePlannerApp(wrapper, data) {
                 this.collapsedGroups[acc] = !this.collapsedGroups[acc];
             },
 
-            // ─ Card drag (pool → lane) ──────────────────────────────────────
+            // ─ Touch/Mobile detection ────────────────────────────────────
+            isMobile() {
+                return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            },
+
+            // ─ Card drag (pool → lane) — desktop ─────────────────────────
 
             onCardDragStart(e, card) {
                 this.draggingCard = card;
@@ -337,7 +335,33 @@ function mountRoutePlannerApp(wrapper, data) {
                 setTimeout(() => { this.draggingCard = null; }, 150);
             },
 
-            // ─ Lane drop ───────────────────────────────────────────────────
+            // ─ Card tap (pool → lane) — mobile ───────────────────────────
+
+            onCardTap(card) {
+                if (!this.isMobile()) return;
+                if (this.selectedPoolCard && this.selectedPoolCard.id === card.id) {
+                    this.selectedPoolCard = null; // deselect
+                } else {
+                    this.selectedPoolCard = card;
+                    frappe.show_alert({
+                        message: `Selected: ${card.site_location} — tap a vehicle lane to assign`,
+                        indicator: 'orange'
+                    }, 3);
+                }
+            },
+
+            onLaneTap(e, vehicle) {
+                if (!this.selectedPoolCard) return;
+                const card = this.selectedPoolCard;
+                this.selectedPoolCard = null;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const touch = e.changedTouches ? e.changedTouches[0] : e;
+                const x = Math.max(0, (touch.clientX || e.clientX) - rect.left);
+                const dropTime = this.xToTime(x);
+                this.handleDrop(card, vehicle, dropTime);
+            },
+
+            // ─ Lane drop — desktop ───────────────────────────────────────
 
             onLaneDragOver(e) {
                 e.preventDefault();
@@ -771,17 +795,35 @@ function mountRoutePlannerApp(wrapper, data) {
                     clearHighlight();
                     setTimeout(() => { this.isDraggingBlock = false; }, 60);
                     if (moved) {
-                        // If dropped on a different lane, reassign vehicle
+                        // If dropped on a different lane, validate seat capacity first
                         if (targetVehicleId !== origVehicleId) {
                             const targetVehicle = this.planData.vehicles.find(v => v.id === targetVehicleId);
                             if (targetVehicle) {
+                                // Temporarily set vehicleId to check peak load on target
+                                const origVid = item.vehicleId;
                                 item.vehicleId = targetVehicleId;
-                                frappe.show_alert({
-                                    message: `Moved to ${targetVehicle.label}`,
-                                    indicator: 'blue'
-                                }, 3);
+                                const peakLoad = this.peakLoadDuringCardWindows(
+                                    this.planData.shipment_cards.find(c => c.id === item.cardId) || { outbound_window_start: item.start, outbound_window_end: item.end, return_window_start: item.start, return_window_end: item.end },
+                                    targetVehicleId
+                                );
+                                if (peakLoad > targetVehicle.seats) {
+                                    // Revert — capacity exceeded
+                                    item.vehicleId = origVid;
+                                    item.start = new Date(origStart);
+                                    item.end = new Date(origEnd);
+                                    frappe.show_alert({
+                                        message: `Cannot move — ${targetVehicle.label} has only ${targetVehicle.seats} seats (peak load: ${peakLoad})`,
+                                        indicator: 'red'
+                                    }, 4);
+                                } else {
+                                    frappe.show_alert({
+                                        message: `Moved to ${targetVehicle.label}`,
+                                        indicator: 'blue'
+                                    }, 3);
+                                }
                             }
                         }
+                        this.checkConflicts();
                         this.canSave = this.assignedCards.size > 0;
                         this.persistAssignments();
                     }
@@ -789,6 +831,42 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
+            },
+
+            // Touch version of block drag (horizontal time repositioning only)
+            onBlockTouchStart(e, item) {
+                e.stopPropagation();
+                const touch = e.touches[0];
+                const startX = touch.clientX;
+                const origStart = new Date(item.start).getTime();
+                const origEnd = new Date(item.end).getTime();
+                let moved = false;
+
+                const onTouchMove = te => {
+                    te.preventDefault();
+                    const t = te.touches[0];
+                    const dx = t.clientX - startX;
+                    if (!moved && Math.abs(dx) > 5) moved = true;
+                    if (!moved) return;
+                    this.isDraggingBlock = true;
+                    const deltaMs = (dx / this.svgWidth) * this.windowDurationMs;
+                    item.start = new Date(origStart + deltaMs);
+                    item.end = new Date(origEnd + deltaMs);
+                };
+
+                const onTouchEnd = () => {
+                    document.removeEventListener('touchmove', onTouchMove);
+                    document.removeEventListener('touchend', onTouchEnd);
+                    setTimeout(() => { this.isDraggingBlock = false; }, 60);
+                    if (moved) {
+                        this.checkConflicts();
+                        this.canSave = this.assignedCards.size > 0;
+                        this.persistAssignments();
+                    }
+                };
+
+                document.addEventListener('touchmove', onTouchMove, { passive: false });
+                document.addEventListener('touchend', onTouchEnd);
             },
 
             closeDetail() { this.selectedItem = null; },
@@ -1243,22 +1321,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 const shipEmp = {}, shipSite = {}, shipShift = {}, vMeta = {}, cMap = {};
                 let si = 0;
 
-                [...this.assignedCards].forEach(cid => {
-                    const card = this.planData.shipment_cards.find(c => c.id === cid);
+                // Fix #6: Build shipments from swimItems (per direction actually placed)
+                // instead of from assignedCards, to avoid phantom shipments
+                this.swimItems.forEach(item => {
+                    const card = this.planData.shipment_cards.find(c => c.id === item.cardId);
                     if (!card) return;
 
-                    const uid = si;
-                    const outLbl = `${slug(card.accommodation)}_${uid}_${slug(card.site_location)}_OUTBOUND`;
-                    const retLbl = `${slug(card.accommodation)}_${uid}_${slug(card.site_location)}_RETURN`;
-                    const outIdx = si++, retIdx = si++;
+                    const dirKey = `${item.cardId}_${item.direction}`;
+                    if (cMap[dirKey]) return; // already created shipment for this card+direction
 
-                    shipments.push({ label: outLbl, pickups: [{}], deliveries: [{}] });
-                    shipments.push({ label: retLbl, pickups: [{}], deliveries: [{}] });
+                    const lbl = `${slug(card.accommodation)}_${si}_${slug(card.site_location)}_${item.direction}`;
+                    const idx = si++;
 
-                    shipEmp[outLbl] = shipEmp[retLbl] = card.employees;
-                    shipSite[outLbl] = shipSite[retLbl] = card.site_location;
-                    shipShift[outLbl] = shipShift[retLbl] = card.shift_name;
-                    cMap[cid] = { outLbl, retLbl, outIdx, retIdx };
+                    shipments.push({ label: lbl, pickups: [{}], deliveries: [{}] });
+                    shipEmp[lbl] = card.employees;
+                    shipSite[lbl] = card.site_location;
+                    shipShift[lbl] = card.shift_name;
+                    cMap[dirKey] = { lbl, idx };
                 });
 
                 this.planData.vehicles.forEach((v, vi) => {
@@ -1277,8 +1356,9 @@ function mountRoutePlannerApp(wrapper, data) {
                     trans.push({ travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 });
 
                     vItems.forEach((item, idx) => {
-                        const info = cMap[item.cardId]; if (!info) return;
-                        const sIdx = item.direction === 'OUTBOUND' ? info.outIdx : info.retIdx;
+                        const dirKey = `${item.cardId}_${item.direction}`;
+                        const info = cMap[dirKey]; if (!info) return;
+                        const sIdx = info.idx;
                         const hc = item.headcount || 0;
                         const iS = new Date(item.start).toISOString();
                         const iE = new Date(item.end).toISOString();
@@ -1430,10 +1510,11 @@ function injectRPVueTemplate() {
 
           <div v-show="!collapsedGroups[group.acc]" class="rp-group-cards">
             <div v-for="card in group.cards" :key="card.id"
-                 class="rp-card"
+                 :class="['rp-card', selectedPoolCard && selectedPoolCard.id === card.id ? 'rp-card-selected' : '']"
                  draggable="true"
                  @dragstart="onCardDragStart($event, card)"
-                 @dragend="onCardDragEnd">
+                 @dragend="onCardDragEnd"
+                 @click="onCardTap(card)">
               <div class="rp-card-header">
                 <span class="rp-card-site">{{ card.site_location }}</span>
                 <span :class="['rp-card-type', card.type === 'OLM' ? 'rp-tag-olm' : 'rp-tag-osm']">{{ card.type }}</span>
@@ -1542,7 +1623,8 @@ function injectRPVueTemplate() {
             <!-- SVG swimlane canvas -->
             <div class="rp-lane-svg-wrap"
                  @dragover="onLaneDragOver"
-                 @drop="onLaneDrop($event, vehicle)">
+                 @drop="onLaneDrop($event, vehicle)"
+                 @click="onLaneTap($event, vehicle)">
               <svg :width="svgWidth" :height="rowHeight"
                    class="rp-lane-svg"
                    @wheel.prevent="onSvgWheel"
@@ -1571,6 +1653,7 @@ function injectRPVueTemplate() {
                 <g v-for="item in itemsByVehicle[vehicle.id]" :key="item.id"
                    :class="isDraggingBlock && bsel(item) ? 'rp-block-grabbing' : 'rp-block-grab'"
                    @mousedown="onBlockMouseDown($event, item)"
+                   @touchstart.prevent="onBlockTouchStart($event, item)"
                    @click.stop="onBlockClick(item, $event)">
 
                   <!-- Drop shadow -->
@@ -1894,6 +1977,11 @@ function injectRPStyles() {
             border-color: #d8d8d8;
         }
         .rp-card:active { cursor: grabbing; }
+        .rp-card-selected {
+            border-color: #f97316 !important;
+            box-shadow: 0 0 0 2px rgba(249,115,22,.25), 0 4px 12px rgba(249,115,22,.15) !important;
+            transform: scale(1.01);
+        }
         .rp-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
         .rp-card-site   { font-size: 13px; font-weight: 700; color: #111; }
         .rp-card-type   { font-size: 9px; font-weight: 700; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; }
@@ -2064,6 +2152,104 @@ function injectRPStyles() {
         .rp-dir-out   { background: #dbeafe; color: #1565c0; }
         .rp-dir-ret   { background: #ffedd5; color: #c2410c; }
         .rp-dir-trip  { background: #f3e8fd; color: #7c3aed; }
+
+        /* ══════════════════════════════════════════════════════════════
+           MOBILE RESPONSIVE (≤ 768px)
+           ══════════════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            /* Shell: allow scroll on mobile */
+            #rp-shell { height: auto; min-height: 100vh; overflow: auto; }
+
+            /* Header: stack vertically */
+            #rp-header {
+                flex-direction: column; gap: 8px;
+                padding: 10px 14px; align-items: stretch;
+            }
+            #rp-title { font-size: 16px; }
+            #rp-date  { font-size: 11px; }
+            .rp-btn { padding: 10px 16px; font-size: 14px; width: 100%; text-align: center; }
+
+            /* Body: stack vertically instead of side-by-side */
+            #rp-body { flex-direction: column; overflow: visible; }
+
+            /* Pool panel: collapsible section on top */
+            #rp-pool-panel {
+                width: 100% !important; min-width: 0 !important;
+                border-right: none; border-bottom: 1px solid #e2e2e2;
+                max-height: 45vh; flex-shrink: 0;
+            }
+            #rp-pool-header { padding: 10px 12px; }
+            .rp-card { padding: 10px; }
+            .rp-card-site { font-size: 12px; }
+            .rp-card-shift { font-size: 10px; }
+            .rp-card-windows { flex-direction: column; gap: 4px; }
+            .rp-card-employees { display: none; } /* Hide employee chips to save space */
+
+            /* Timeline panel */
+            #rp-timeline-panel { flex: none; min-height: 55vh; overflow: visible; }
+
+            /* Timeline toolbar: wrap items */
+            #rp-timeline-toolbar {
+                flex-wrap: wrap; gap: 6px; padding: 6px 10px;
+            }
+            .rp-tb-hint { display: none; } /* Hide "Drag cards..." hint */
+            #rp-timeline-legend { gap: 4px; }
+            .rp-legend-item { font-size: 9px; padding: 2px 6px; }
+
+            /* Lane labels: narrower */
+            .rp-lane-label { width: 100px; min-width: 100px; padding: 4px 8px; }
+            .rp-label-stub { min-height: 36px; }
+            .rp-gv-plate { font-size: 11px; }
+            .rp-gv-meta  { font-size: 9px; }
+            .rp-gv-acc   { display: none; } /* Hide accommodation on label */
+
+            /* Lane rows */
+            .rp-lane-row { min-height: 60px; }
+
+            /* Detail panel: full-screen overlay on mobile */
+            #rp-detail-panel {
+                position: fixed !important; top: 0; left: 0; right: 0; bottom: 0;
+                width: 100% !important; min-width: 0 !important;
+                z-index: 1050; border-left: none;
+                transition: transform .25s ease;
+                transform: translateY(100%);
+            }
+            #rp-detail-panel.rp-detail-open {
+                width: 100% !important; min-width: 0 !important;
+                transform: translateY(0);
+            }
+            #rp-detail-header { padding: 12px 14px; }
+            #rp-detail-close { font-size: 18px; padding: 8px 12px; min-height: 44px; }
+            #rp-detail-body { padding: 10px; }
+            #rp-detail-footer { padding: 10px 12px; }
+            .rp-detail-btn { padding: 12px 0; font-size: 14px; min-height: 44px; }
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+           SMALL MOBILE (≤ 480px)
+           ══════════════════════════════════════════════════════════════ */
+        @media (max-width: 480px) {
+            #rp-header { padding: 8px 10px; }
+            #rp-title { font-size: 14px; }
+
+            /* Pool: shorter on very small screens */
+            #rp-pool-panel { max-height: 35vh; }
+
+            /* Lane labels: even narrower */
+            .rp-lane-label { width: 75px; min-width: 75px; padding: 3px 6px; }
+            .rp-gv-plate { font-size: 10px; }
+            .rp-gv-meta  { display: none; }
+
+            /* Zoom buttons */
+            .rp-btn-icon { padding: 6px 10px; font-size: 16px; min-width: 36px; min-height: 36px; }
+
+            /* Detail panel */
+            .rp-detail-card { padding: 10px; }
+            .rp-detail-row-icon { font-size: 14px; width: 20px; }
+            .rp-detail-row-value { font-size: 12px; }
+            .rp-detail-badges { gap: 4px; }
+            .rp-dir-badge { font-size: 9px; padding: 2px 7px; }
+        }
     `;
     document.head.appendChild(s);
 }
