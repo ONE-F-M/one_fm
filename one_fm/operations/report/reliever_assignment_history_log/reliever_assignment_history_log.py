@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.query_builder import DocType
-from frappe.utils import getdate, add_days, date_diff
+from frappe.utils import getdate
 
 
 def execute(filters=None):
