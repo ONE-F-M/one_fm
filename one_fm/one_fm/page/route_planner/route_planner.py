@@ -1036,9 +1036,19 @@ def call_route_optimization_api(payload: dict) -> dict | None:
 
 # ── Persistence: save / load route planner assignments (DocType-based) ─────
 
+def _route_plan_exists():
+    """Check if Route Plan DocType has been migrated."""
+    try:
+        return frappe.db.exists("DocType", "Route Plan") and frappe.db.exists("DocType", "Route Plan Assignment")
+    except Exception:
+        return False
+
+
 @frappe.whitelist()
 def get_route_plans():
     """Return all Route Plans for the plan selector dropdown."""
+    if not _route_plan_exists():
+        return []
     plans = frappe.get_list("Route Plan",
         fields=["name", "title", "status", "effective_from", "effective_until"],
         order_by="creation desc"
@@ -1049,6 +1059,9 @@ def get_route_plans():
 @frappe.whitelist()
 def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
     """Save route planner swim items into a Route Plan DocType."""
+    if not _route_plan_exists():
+        frappe.throw("Route Plan DocType not found. Please run 'bench migrate' on this site first.")
+
     import json
     items = json.loads(swim_items)
     cards = json.loads(assigned_cards)
@@ -1089,6 +1102,9 @@ def load_assignments(plan_name: str = ""):
     """Load saved route planner swim items from a Route Plan.
     If plan_name is empty, loads the currently Active plan.
     """
+    if not _route_plan_exists():
+        return {"status": "empty", "message": "Route Plan DocType not migrated yet."}
+
     if not plan_name:
         plan_name = frappe.db.get_value("Route Plan", {"status": "Active"}, "name")
 
@@ -1143,6 +1159,9 @@ def load_assignments(plan_name: str = ""):
 @frappe.whitelist()
 def create_route_plan(title: str, effective_from: str, effective_until: str = ""):
     """Create a new Route Plan and return its name."""
+    if not _route_plan_exists():
+        frappe.throw("Route Plan DocType not found. Please run 'bench migrate' on this site first.")
+
     doc = frappe.new_doc("Route Plan")
     doc.title = title
     doc.effective_from = effective_from
