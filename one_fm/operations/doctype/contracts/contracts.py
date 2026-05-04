@@ -740,6 +740,10 @@ class Contracts(Document):
 
         self.set('contract_items_operation', new_ops)
 
+        # Re-index idx values so serial numbers are always sequential (1, 2, 3...)
+        for i, row in enumerate(self.contract_items_operation, start=1):
+            row.idx = i
+
     def submit_to_operations_admin(self):
         """
         This method is called when Finance clicks "Submit to Operations Admin".

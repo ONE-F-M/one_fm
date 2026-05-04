@@ -130,6 +130,14 @@ def get_sales_invoice_custom_fields():
                 "label": "Contract Item Category-wise Summary",
                 "options": "Sales Invoice Contract Item Category Summary"
             },
+            {
+                "fieldname": "custom_attendance_amendment",
+                "fieldtype": "Link",
+                "insert_after": "amended_from",
+                "label": "Attendance Amendment",
+                "options": "Attendance Amendment",
+                "read_only": 1
+            },
 
         ]
     }

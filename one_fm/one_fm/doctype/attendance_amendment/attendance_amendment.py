@@ -383,3 +383,27 @@ def get_ot_rows(employee_details, filters, attendance_map):
 		records.extend(attendance_for_employee)
 
 	return records
+
+
+@frappe.whitelist()
+def get_operations_role_names(amendment_name: str) -> dict:
+	"""Return a map of operations_role name → post_name (Role Name)."""
+	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc.check_permission("read")
+
+	role_names = set()
+	for row in doc.get("attendance_details"):
+		if row.operations_role:
+			role_names.add(row.operations_role)
+	for row in doc.get("overtime_details"):
+		if row.operations_role:
+			role_names.add(row.operations_role)
+
+	if not role_names:
+		return {}
+
+	roles = frappe.get_list("Operations Role",
+		filters={"name": ["in", list(role_names)]},
+		fields=["name", "post_name"]
+	)
+	return {r.name: r.post_name for r in roles}
