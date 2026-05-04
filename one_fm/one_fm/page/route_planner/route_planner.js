@@ -353,12 +353,9 @@ function mountRoutePlannerApp(wrapper, data) {
             onLaneTap(e, vehicle) {
                 if (!this.selectedPoolCard) return;
                 const card = this.selectedPoolCard;
-                this.selectedPoolCard = null;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const touch = e.changedTouches ? e.changedTouches[0] : e;
-                const x = Math.max(0, (touch.clientX || e.clientX) - rect.left);
-                const dropTime = this.xToTime(x);
-                this.handleDrop(card, vehicle, dropTime);
+                // Don't clear selection yet — handleDrop may abort (seat check, etc.)
+                // Selection is cleared inside handleDrop on successful placement
+                this.handleDrop(card, vehicle);
             },
 
             // ─ Lane drop — desktop ───────────────────────────────────────
@@ -373,13 +370,10 @@ function mountRoutePlannerApp(wrapper, data) {
                 const card = this.draggingCard;
                 this.draggingCard = null;
                 if (!card) return;
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = Math.max(0, e.clientX - rect.left);
-                const dropTime = this.xToTime(x);
-                this.handleDrop(card, vehicle, dropTime);
+                this.handleDrop(card, vehicle);
             },
 
-            handleDrop(card, vehicle, dropTime) {
+            handleDrop(card, vehicle) {
                 // ── Seat capacity check (time-aware) ──
                 const peakLoad = this.peakLoadDuringCardWindows(card, vehicle.id);
 
@@ -424,7 +418,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                this.placeCard(card, vehicle.id, dropTime);
+                this.placeCard(card, vehicle.id);
             },
 
             // Fresh placement dialog — bypasses "already placed" direction check
@@ -591,7 +585,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 return null;
             },
 
-            placeCard(card, vehicleId, dropTime) {
+            placeCard(card, vehicleId) {
                 const self = this;
                 const placed = this.placedDirections(card.id);
                 const hasOut = placed.has('OUTBOUND');
@@ -702,6 +696,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 }
 
                 this.assignedCards.add(card.id);
+                this.selectedPoolCard = null; // clear mobile selection on success
                 this.checkConflicts();
                 this.canSave = this.assignedCards.size > 0;
                 this.persistAssignments();
@@ -857,6 +852,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 const onTouchEnd = () => {
                     document.removeEventListener('touchmove', onTouchMove);
                     document.removeEventListener('touchend', onTouchEnd);
+                    document.removeEventListener('touchcancel', onTouchCancel);
                     setTimeout(() => { this.isDraggingBlock = false; }, 60);
                     if (moved) {
                         this.checkConflicts();
@@ -865,8 +861,19 @@ function mountRoutePlannerApp(wrapper, data) {
                     }
                 };
 
+                const onTouchCancel = () => {
+                    document.removeEventListener('touchmove', onTouchMove);
+                    document.removeEventListener('touchend', onTouchEnd);
+                    document.removeEventListener('touchcancel', onTouchCancel);
+                    // Revert position on cancel
+                    item.start = new Date(origStart);
+                    item.end = new Date(origEnd);
+                    setTimeout(() => { this.isDraggingBlock = false; }, 60);
+                };
+
                 document.addEventListener('touchmove', onTouchMove, { passive: false });
                 document.addEventListener('touchend', onTouchEnd);
+                document.addEventListener('touchcancel', onTouchCancel);
             },
 
             closeDetail() { this.selectedItem = null; },

@@ -1060,7 +1060,7 @@ def get_route_plans():
 def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
     """Save route planner swim items into a Route Plan DocType."""
     if not _route_plan_exists():
-        frappe.throw("Route Plan DocType not found. Please run 'bench migrate' on this site first.")
+        frappe.throw(_("Route Plan DocType not found. Please run 'bench migrate' on this site first."))
 
     import json
     items = json.loads(swim_items)
@@ -1103,7 +1103,7 @@ def load_assignments(plan_name: str = ""):
     If plan_name is empty, loads the currently Active plan.
     """
     if not _route_plan_exists():
-        return {"status": "empty", "message": "Route Plan DocType not migrated yet."}
+        return {"status": "empty", "message": _("Route Plan DocType not migrated yet.")}
 
     if not plan_name:
         plan_name = frappe.db.get_value("Route Plan", {"status": "Active"}, "name")
@@ -1160,7 +1160,7 @@ def load_assignments(plan_name: str = ""):
 def create_route_plan(title: str, effective_from: str, effective_until: str = ""):
     """Create a new Route Plan and return its name."""
     if not _route_plan_exists():
-        frappe.throw("Route Plan DocType not found. Please run 'bench migrate' on this site first.")
+        frappe.throw(_("Route Plan DocType not found. Please run 'bench migrate' on this site first."))
 
     doc = frappe.new_doc("Route Plan")
     doc.title = title
