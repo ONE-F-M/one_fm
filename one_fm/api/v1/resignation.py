@@ -60,7 +60,7 @@ def handle_attachment_internal(doc, row, attachment_data, field_name):
                 "content": content,
                 "is_private": 1
             })
-            file_doc.save(ignore_permissions=True)
+            file_doc.save()
             frappe.db.set_value(row.doctype, row.name, field_name, file_doc.file_url)
         except Exception as e:
             frappe.log_error(f"Attachment failed for {file_name}", str(e))
@@ -131,7 +131,7 @@ def create_resignation(
             "resignation_letter_date": rel_date,
         })
 
-        doc.insert(ignore_permissions=True)
+        doc.insert()
 
         # Step 2: Attach the letter (must happen after insert so the row has a name)
         if attachment:
@@ -151,7 +151,7 @@ def create_resignation(
         # Step 3: Advance to Pending Supervisor now that the letter is saved
         doc.reload()
         doc.workflow_state = "Pending Supervisor"
-        doc.save(ignore_permissions=True)
+        doc.save()
         return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
 
     except Exception as e:
@@ -198,8 +198,7 @@ def extend_resignation(
             items = frappe.get_list(
                 "Employee Resignation Item",
                 filters={"employee": employee_name, "parenttype": "Employee Resignation"},
-                fields=["parent"], order_by="creation desc",
-                ignore_permissions=True
+                fields=["parent"], order_by="creation desc"
             )
             parents = [i.parent for i in items] if items else []
             if parents:
@@ -209,7 +208,7 @@ def extend_resignation(
                     filters={"name": ["in", parents], "workflow_state": ["not in", TERMINAL]},
                     fields=["name"],
                     order_by="creation desc",
-                    ignore_permissions=True,
+                    
                     limit=1
                 )
                 if active_resignations:
@@ -237,7 +236,7 @@ def extend_resignation(
                 "reason": reason or "Adjustment requested by employee"
             })
 
-        ext.insert(ignore_permissions=True)
+        ext.insert()
 
         # Attach letter after insert so the row has a name
         if attachment and ext.get("employees"):
@@ -299,8 +298,7 @@ def withdraw_resignation(
             "Employee Resignation Item",
             filters={"employee": employee_name, "parenttype": "Employee Resignation"},
             fields=["parent"],
-            order_by="creation desc",
-            ignore_permissions=True
+            order_by="creation desc"
         )
 
         active_doc = None
@@ -312,7 +310,7 @@ def withdraw_resignation(
                 filters={"name": ["in", parents], "workflow_state": ["not in", TERMINAL]},
                 fields=["name"],
                 order_by="creation desc",
-                ignore_permissions=True,
+                
                 limit=1
             )
             if active_resignations:
@@ -336,7 +334,7 @@ def withdraw_resignation(
                 "reason": reason or "Employee-initiated withdrawal"
             })
 
-        withdrawal.insert(ignore_permissions=True)
+        withdrawal.insert()
 
         if attachment and withdrawal.get("employees"):
             if isinstance(attachment, dict):
@@ -433,7 +431,7 @@ def correct_resignation_date_app(
             for row in doc.employees:
                 handle_attachment_internal(doc, row, att_data, "resignation_letter")
 
-        doc.save(ignore_permissions=True)
+        doc.save()
         doc.db_set("workflow_state", "Pending Supervisor")
 
         return {
@@ -485,8 +483,7 @@ def get_my_active_resignation(employee_id=None, **kwargs):
         "Employee Resignation Item",
         filters={"employee": employee_name, "parenttype": "Employee Resignation"},
         fields=["parent"],
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     if not items:
@@ -498,8 +495,7 @@ def get_my_active_resignation(employee_id=None, **kwargs):
         "Employee Resignation",
         filters={"name": ["in", parents], "workflow_state": ["not in", list(TERMINAL_STATES)]},
         fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     if not resignations:
@@ -530,8 +526,7 @@ def get_all_my_resignations(employee_id=None, **kwargs):
         "Employee Resignation Item",
         filters={"employee": employee_name, "parenttype": "Employee Resignation"},
         fields=["parent"],
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     if not items:
@@ -543,8 +538,7 @@ def get_all_my_resignations(employee_id=None, **kwargs):
         "Employee Resignation",
         filters={"name": ["in", parents]},
         fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
-        order_by="creation desc",
-        ignore_permissions=True
+        order_by="creation desc"
     )
 
     # Check if corporate (works in Head Office)
