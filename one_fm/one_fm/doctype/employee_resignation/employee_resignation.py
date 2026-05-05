@@ -176,34 +176,14 @@ class EmployeeResignation(Document):
 		if not first_emp:
 			return
 
-		# 1. Reports To
-		reports_to = frappe.db.get_value("Employee", first_emp, "reports_to")
-		if reports_to:
-			user_id = frappe.db.get_value("Employee", reports_to, "user_id")
+		from one_fm.utils import get_approver
+		approver_emp = get_approver(first_emp)
+		if approver_emp:
+			user_id = frappe.db.get_value("Employee", approver_emp, "user_id")
 			if user_id and frappe.db.exists("User", user_id):
 				self.supervisor = user_id
 				return
 
-		# 2. Site Supervisor
-		site = frappe.db.get_value("Employee", first_emp, "site")
-		if site:
-			site_supervisor = frappe.db.get_value("Operations Site", site, "site_supervisor")
-			if site_supervisor:
-				user_id = frappe.db.get_value("Employee", site_supervisor, "user_id")
-				if user_id and frappe.db.exists("User", user_id):
-					self.supervisor = user_id
-					return
-
-		# 3. Project Manager
-		project = frappe.db.get_value("Employee", first_emp, "project")
-		if project:
-			project_manager = frappe.db.get_value("Project", project, "project_manager")
-			if project_manager:
-				user_id = frappe.db.get_value("Employee", project_manager, "user_id")
-				if user_id and frappe.db.exists("User", user_id):
-					self.supervisor = user_id
-					return
-		
 		self.supervisor = None
 
 	def on_submit(self):
