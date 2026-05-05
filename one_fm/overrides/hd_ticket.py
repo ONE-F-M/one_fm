@@ -515,12 +515,18 @@ def create_github_issue(name, description):
         url = f"https://api.github.com/repos/{github_repo_owner}/{github_repo_name}/issues"
         response = requests.post(url, headers=headers, json=data, timeout=10)
 
+        # Safe JSON parsing
+        try:
+            resp_json = response.json()
+        except Exception:
+            resp_json = {}
+
         if response.status_code == 201:
-            issue_url = response.json().get("html_url")
+            issue_url = resp_json.get("html_url")
             doc.db_set('custom_github_issue_url', issue_url)
             return {'status': 'success', 'github_issue_url': issue_url}
         else:
-            error_msg = response.json().get("message") or response.text
+            error_msg = resp_json.get("message") or response.text
             frappe.log_error(message=f"GitHub Issue Creation Error: {error_msg}", title="GitHub Integration")
             return {'error': 'GitHub Issue Error', 'message': f"GitHub issue could not be created:\n{error_msg}"}
 
