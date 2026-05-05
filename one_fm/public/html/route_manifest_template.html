@@ -654,6 +654,66 @@
             border-radius: 3px;
             padding: 2px 6px;
         }
+
+        /* ── TRIP GROUP ── */
+        .trip-group {
+            border: 2px solid var(--blue);
+            border-radius: 12px;
+            margin: 16px 0 16px 46px;
+            padding: 0;
+            position: relative;
+            background: rgba(21, 101, 192, 0.02);
+        }
+
+        .trip-group.outbound {
+            border-color: var(--blue);
+            background: rgba(21, 101, 192, 0.02);
+        }
+
+        .trip-group.return {
+            border-color: var(--purple);
+            background: rgba(194, 65, 12, 0.02);
+        }
+
+        .trip-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-raised);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .trip-group-title {
+            font-family: var(--font-head);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--blue);
+            letter-spacing: 0.04em;
+        }
+
+        .trip-group.return .trip-group-title {
+            color: var(--purple);
+        }
+
+        .trip-group-meta {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .trip-group .stop {
+            padding-left: 16px;
+        }
+
+        .trip-group .transit-row {
+            padding-left: 16px;
+        }
+
+        .trip-group .timeline::before {
+            display: none;
+        }
     </style>
 </head>
 
@@ -744,7 +804,9 @@
                     raw: parsed.raw,
                     load: currentLoad,
                     delta: delta,
-                    transition: trans[i + 1]
+                    transition: trans[i + 1],
+                    tripId: v.tripId || null,
+                    stopIndex: v.stopIndex || 0
                 });
             });
 
@@ -882,6 +944,7 @@
             const dur = m.totalDuration ? fmtDuration(m.totalDuration) : "—";
             const trav = m.travelDuration ? fmtDuration(m.travelDuration) : "—";
             const meta = (ROUTE_DATA.vehicleMeta ?? {})[pr.label] ?? {};
+            const accommodation = meta.accommodation || meta.location || "Depot";
             const metaStats = `
     ${meta.driver ? `<div class="stat-box"><div class="stat-val" style="font-size:15px">${meta.driver}</div><div class="stat-lbl">Driver</div></div>` : ""}
     ${meta.make ? `<div class="stat-box"><div class="stat-val" style="font-size:15px">${meta.make}</div><div class="stat-lbl">Make</div></div>` : ""}
@@ -889,11 +952,44 @@
     ${meta.seats ? `<div class="stat-box"><div class="stat-val">${meta.seats}</div><div class="stat-lbl">Seats</div></div>` : ""}
   `;
 
+            // ── Split stops into trips ──
+            // Group non-depot stops by tripId
+            const tripMap = {};   // tripId → [stop, ...]
+            const soloStops = []; // stops without a tripId (non-depot)
+            let depotStart = null;
+            let depotEnd = null;
+
+            pr.stops.forEach((stop, idx) => {
+                if (stop.type === 'depot') { depotStart = stop; return; }
+                if (stop.type === 'end') { depotEnd = stop; return; }
+                if (stop.tripId) {
+                    if (!tripMap[stop.tripId]) tripMap[stop.tripId] = [];
+                    tripMap[stop.tripId].push(stop);
+                } else {
+                    soloStops.push(stop);
+                }
+            });
+
+            const tripIds = Object.keys(tripMap);
+            // Group solo stops into a pseudo-trip if they exist
+            const allTrips = [];
+            tripIds.forEach((tid, i) => {
+                allTrips.push({ id: tid, label: `Trip ${i + 1}`, stops: tripMap[tid] });
+            });
+            if (soloStops.length > 0) {
+                allTrips.push({ id: null, label: allTrips.length > 0 ? `Trip ${allTrips.length + 1} (Independent)` : 'Trip 1', stops: soloStops });
+            }
+
+            // If there's only one group with no tripId differentiation, fall back
+            if (allTrips.length === 0 && depotStart) {
+                allTrips.push({ id: null, label: 'Trip 1', stops: pr.stops.filter(s => s.type !== 'depot' && s.type !== 'end') });
+            }
+
             let html = `
   <div class="vehicle-header">
     <div>
       <div class="vehicle-title">${pr.label}</div>
-      <div class="vehicle-subtitle">${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)}</div>
+      <div class="vehicle-subtitle">${fmtTime(pr.route.vehicleStartTime)} → ${fmtTime(pr.route.vehicleEndTime)} · ${allTrips.length} trip${allTrips.length !== 1 ? 's' : ''}</div>
     </div>
       <div class="vehicle-stats">
         <div class="stat-box">
@@ -901,8 +997,8 @@
           <div class="stat-lbl">Shipments</div>
         </div>
         <div class="stat-box">
-          <div class="stat-val">${dist}</div>
-          <div class="stat-lbl">Distance</div>
+          <div class="stat-val">${allTrips.length}</div>
+          <div class="stat-lbl">Trips</div>
         </div>
         <div class="stat-box">
           <div class="stat-val">${dur}</div>
@@ -914,72 +1010,260 @@
         </div>
         ${metaStats}
       </div>
-  </div>
-  <div class="timeline">`;
+  </div>`;
 
-            pr.stops.forEach((stop, idx) => {
-                const isFirst = idx === 0;
-                const isLast = idx === pr.stops.length - 1;
-                const siteLocation = shipmentSiteLocations[stop.raw] ?? "";
+            // ── Render each trip as a self-contained section ──
+            allTrips.forEach((trip, ti) => {
+                const tripStops = trip.stops;
+                if (!tripStops.length) return;
 
-                // Stop dot
-                const dot = stop.type === "depot" || stop.type === "end" ? "depot" : stop.type;
+                // ── Pair stops: at each site, DROP OFF first then PICK UP ──
+                // Group by site location, then interleave: drop → pick per site
+                const siteStops = {}; // site → { dropoffs: [], pickups: [] }
+                tripStops.forEach(stop => {
+                    const site = shipmentSiteLocations[stop.raw] || stop.title || 'Unknown';
+                    if (!siteStops[site]) siteStops[site] = { dropoffs: [], pickups: [] };
+                    if (stop.type === 'dropoff') siteStops[site].dropoffs.push(stop);
+                    else if (stop.type === 'pickup') siteStops[site].pickups.push(stop);
+                });
 
-                // Tags
-                let tags = "";
-                if (stop.isRest) {
-                    tags += `<span class="stop-type-tag tag-depot">REST</span>`;
-                }
-                if (stop.type === "pickup") {
-                    tags += `<span class="stop-type-tag tag-pickup">PICK UP</span>`;
-                } else if (stop.type === "dropoff") {
-                    tags += `<span class="stop-type-tag tag-dropoff">DROP OFF</span>`;
-                } else if (isFirst) {
-                    tags += `<span class="stop-type-tag tag-depot">DEPART</span>`;
-                } else if (isLast) {
-                    tags += `<span class="stop-type-tag tag-depot">RETURN</span>`;
-                }
-                if (stop.direction === "OUTBOUND") {
-                    tags += `<span class="stop-type-tag tag-out-leg">TO SITE</span>`;
-                } else if (stop.direction === "RETURN") {
-                    tags += `<span class="stop-type-tag tag-return-leg">FROM SITE</span>`;
-                }
+                // Sort sites by earliest stop time
+                const siteOrder = Object.entries(siteStops)
+                    .map(([site, data]) => {
+                        const allS = [...data.dropoffs, ...data.pickups];
+                        const earliest = allS.reduce((m, s) => Math.min(m, new Date(s.time).getTime()), Infinity);
+                        return { site, data, earliest };
+                    })
+                    .sort((a, b) => a.earliest - b.earliest);
 
-                // Load display
-                let loadHtml = "";
-                if (stop.type === "pickup" && stop.delta) {
-                    loadHtml = `<div class="stop-load load-up">+${stop.delta} picked up → ${stop.load} total</div>`;
-                } else if (stop.type === "dropoff" && stop.delta) {
-                    loadHtml = `<div class="stop-load load-down">${stop.delta} dropped off → ${stop.load} onboard</div>`;
-                } else if (stop.load === 0 && (stop.type === "depot" || stop.type === "end")) {
-                    loadHtml = `<div class="stop-load load-zero">0 onboard</div>`;
-                }
+                // Build paired stop list: for each site, dropoffs first then pickups
+                const pairedStops = []; // { stop, siteNum }
+                siteOrder.forEach(({ site, data }, siteIdx) => {
+                    const siteNum = siteIdx + 1;
+                    data.dropoffs.sort((a, b) => new Date(a.time) - new Date(b.time));
+                    data.pickups.sort((a, b) => new Date(a.time) - new Date(b.time));
+                    // Pair: interleave dropoff[i] then pickup[i] for each index
+                    const maxLen = Math.max(data.dropoffs.length, data.pickups.length);
+                    for (let i = 0; i < maxLen; i++) {
+                        if (i < data.dropoffs.length) pairedStops.push({ stop: data.dropoffs[i], siteNum });
+                        if (i < data.pickups.length) pairedStops.push({ stop: data.pickups[i], siteNum });
+                    }
+                });
+
+                const orderedStops = pairedStops;
+
+                const firstTime = tripStops.reduce((min, s) => {
+                    const t = new Date(s.time).getTime();
+                    return t < min ? t : min;
+                }, Infinity);
+                const lastTime = tripStops.reduce((max, s) => {
+                    const t = new Date(s.time).getTime();
+                    return t > max ? t : max;
+                }, 0);
+                const firstTimeISO = new Date(firstTime).toISOString();
+                const lastTimeISO = new Date(lastTime).toISOString();
+
+                const hasOutbound = tripStops.some(s => s.direction === 'OUTBOUND');
+                const hasReturn = tripStops.some(s => s.direction === 'RETURN');
+                const dirClass = !hasOutbound && hasReturn ? 'return' : 'outbound';
+                const dirEmoji = !hasOutbound && hasReturn ? '←' : '→';
 
                 html += `
+  <div class="trip-group ${dirClass}" style="margin-left:0">
+    <div class="trip-group-header">
+      <span class="trip-group-title">${dirEmoji} ${trip.label}</span>
+      <span class="trip-group-meta">${siteOrder.length} site${siteOrder.length !== 1 ? 's' : ''} · ${fmtTime(firstTimeISO)} → ${fmtTime(lastTimeISO)}</span>
+    </div>
+    <div class="timeline" style="padding:12px 0 12px 10px">`;
+
+                // Boarding employees for DEPART (all dropoff employees board at accommodation)
+                const boardingEmployees = [];
+                orderedStops.forEach(item => {
+                    if (item.stop.type === 'dropoff') {
+                        (shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
+                            if (!boardingEmployees.includes(e)) boardingEmployees.push(e);
+                        });
+                    }
+                });
+
+                // DEPART stop
+                html += renderStop({
+                    type: 'depot',
+                    time: firstTimeISO,
+                    title: accommodation,
+                    depotNote: `Vehicle departs — ${boardingEmployees.length} employee${boardingEmployees.length !== 1 ? 's' : ''} boarding`,
+                    load: 0,
+                    _allEmployees: boardingEmployees
+                }, 0, orderedStops.length + 2);
+
+                html += renderTransit({ travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 });
+
+                // ── Each stop individually ──
+                orderedStops.forEach((item, si) => {
+                    const stop = item.stop;
+                    const siteNum = item.siteNum;
+                    const site = shipmentSiteLocations[stop.raw] || stop.title || 'Unknown';
+                    const emps = shipmentEmployees[stop.raw] ?? [];
+                    const shift = shipmentShiftNames[stop.raw] || '';
+                    const isDropoff = stop.type === 'dropoff';
+                    const stopType = isDropoff ? 'dropoff' : 'pickup';
+
+                    let empHtml = '';
+                    if (emps.length > 0 && isDropoff) {
+                        empHtml = `<div style="margin-top:6px">
+                            <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
+                                ⬇ Dropping off — ${emps.length} employee${emps.length !== 1 ? 's' : ''}
+                            </div>
+                            <div class="stop-employees">${emps.map(n => `<span class="emp-chip" style="border-color:var(--accent);color:var(--accent)">${n}</span>`).join("")}</div>
+                        </div>`;
+                    } else if (emps.length > 0) {
+                        empHtml = `<div style="margin-top:6px">
+                            <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
+                                ⬆ Picking up — ${emps.length} employee${emps.length !== 1 ? 's' : ''}
+                            </div>
+                            <div class="stop-employees">${emps.map(n => `<span class="emp-chip" style="border-color:var(--green);color:var(--green)">${n}</span>`).join("")}</div>
+                        </div>`;
+                    }
+
+                    html += `
+    <div class="stop ${stopType}">
+      <div class="stop-dot">${stopDotSVG(stopType)}</div>
+      <div class="stop-card">
+        <div class="stop-main">
+          <div>
+            ${isDropoff ? '<span class="stop-type-tag tag-dropoff">DROP OFF</span>' : '<span class="stop-type-tag tag-pickup">PICK UP</span>'}
+            <span class="stop-type-tag tag-depot">STOP ${siteNum}</span>
+          </div>
+          <div class="stop-title">${site}</div>
+          ${shift ? `<div class="stop-label-raw" style="color:var(--text-muted)">${shift}</div>` : ''}
+          ${empHtml}
+        </div>
+        <div class="stop-right">
+          <div class="stop-time">${fmtTime(stop.time)}</div>
+          ${isDropoff
+            ? `<div class="stop-load load-down">-${emps.length} dropped</div>`
+            : `<div class="stop-load load-up">+${emps.length} picked up</div>`}
+        </div>
+      </div>
+    </div>`;
+
+                    if (si < orderedStops.length - 1 && stop.transition) {
+                        html += renderTransit(stop.transition);
+                    }
+                });
+
+                // RETURN stop
+                const returningEmployees = [];
+                orderedStops.forEach(item => {
+                    if (item.stop.type === 'pickup') {
+                        (shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
+                            if (!returningEmployees.includes(e)) returningEmployees.push(e);
+                        });
+                    }
+                });
+
+                const lastItem = orderedStops[orderedStops.length - 1];
+                html += renderTransit(lastItem?.stop?.transition || { travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 });
+                html += renderStop({
+                    type: 'end',
+                    time: lastTimeISO,
+                    title: `Return to ${accommodation}`,
+                    depotNote: returningEmployees.length > 0 ? `Returning ${returningEmployees.length} employee${returningEmployees.length !== 1 ? 's' : ''} to accommodation` : '',
+                    load: 0,
+                    _allEmployees: returningEmployees
+                }, orderedStops.length + 1, orderedStops.length + 2);
+
+                html += `</div></div>`;
+
+                if (ti < allTrips.length - 1) {
+                    html += `<div style="height:8px"></div>`;
+                }
+            });
+
+            document.getElementById("main").innerHTML = html;
+        }
+
+        function renderStop(stop, idx, totalStops) {
+            const isFirst = idx === 0;
+            const isLast = idx === totalStops - 1;
+            const dot = stop.type === "depot" || stop.type === "end" ? "depot" : stop.type;
+
+            let tags = "";
+            if (stop.isRest) tags += `<span class="stop-type-tag tag-depot">REST</span>`;
+            if (stop.type === "pickup") {
+                tags += `<span class="stop-type-tag tag-pickup">PICK UP</span>`;
+            } else if (stop.type === "dropoff") {
+                tags += `<span class="stop-type-tag tag-dropoff">DROP OFF</span>`;
+            } else if (isFirst) {
+                tags += `<span class="stop-type-tag tag-depot">DEPART</span>`;
+            } else if (isLast) {
+                tags += `<span class="stop-type-tag tag-depot">RETURN</span>`;
+            }
+            if (stop.direction === "OUTBOUND") {
+                tags += `<span class="stop-type-tag tag-out-leg">TO SITE</span>`;
+            } else if (stop.direction === "RETURN") {
+                tags += `<span class="stop-type-tag tag-return-leg">FROM SITE</span>`;
+            }
+            if (stop.stopIndex) {
+                tags += `<span class="stop-type-tag tag-depot">STOP ${stop.stopIndex}</span>`;
+            }
+
+            let loadHtml = "";
+            if (stop.type === "pickup" && stop.delta) {
+                loadHtml = `<div class="stop-load load-up">+${stop.delta} picked up → ${stop.load} total</div>`;
+            } else if (stop.type === "dropoff" && stop.delta) {
+                loadHtml = `<div class="stop-load load-down">${stop.delta} dropped off → ${stop.load} onboard</div>`;
+            } else if (stop.load === 0 && (stop.type === "depot" || stop.type === "end")) {
+                loadHtml = `<div class="stop-load load-zero">0 onboard</div>`;
+            }
+
+            return `
     <div class="stop ${stop.type}">
       <div class="stop-dot">${stopDotSVG(dot)}</div>
       <div class="stop-card">
         <div class="stop-main">
           <div>${tags}</div>
-          <div class="stop-title">
-            ${stop.title}
-          </div>
+          <div class="stop-title">${stop.title}</div>
           ${stop.depotNote ? `<div class="stop-label-raw" style="color:var(--green)">${stop.depotNote}</div>` : ""}
           ${shipmentShiftNames[stop.raw] && !stop.isRest && stop.type !== "depot" && stop.type !== "end"
                         ? `<div class="stop-label-raw" style="color:var(--text-muted)">${shipmentShiftNames[stop.raw]}</div>`
                         : ""}
           ${stop.acc && stop.type !== "depot" && stop.type !== "end"
-                        ? `<div class="stop-label-raw">
-       ${stop.direction === "RETURN" && stop.type === "dropoff"
-                            ? `⬇ Dropping off at ${stop.acc}`
-                            : stop.acc}
-             </div>`
+                        ? `<div class="stop-label-raw">${stop.direction === "RETURN" && stop.type === "dropoff" ? `⬇ Dropping off at ${stop.acc}` : stop.acc}</div>`
                         : (stop.subtitle ? `<div class="stop-label-raw">${stop.subtitle}</div>` : "")}
-          ${(shipmentEmployees[stop.raw] ?? []).length
-                        ? `<div class="stop-employees">
-                ${shipmentEmployees[stop.raw].map(n => `<span class="emp-chip">${n}</span>`).join("")}
-              </div>`
-                        : ""}
+          ${(() => {
+                // Contextual employee display
+                const stopEmps = shipmentEmployees[stop.raw] ?? [];
+                const allEmps = stop._allEmployees ?? [];
+                let empHtml = '';
+
+                if (allEmps.length > 0) {
+                    // DEPART card — show all employees boarding
+                    empHtml = `<div style="margin-top:6px">
+                        <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
+                            🚐 Onboarding — ${allEmps.length} employee${allEmps.length !== 1 ? 's' : ''}
+                        </div>
+                        <div class="stop-employees">${allEmps.map(n => `<span class="emp-chip">${n}</span>`).join("")}</div>
+                    </div>`;
+                } else if (stopEmps.length > 0) {
+                    if (stop.type === 'dropoff') {
+                        empHtml = `<div style="margin-top:6px">
+                            <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
+                                ⬇ Dropping off — ${stopEmps.length} employee${stopEmps.length !== 1 ? 's' : ''}
+                            </div>
+                            <div class="stop-employees">${stopEmps.map(n => `<span class="emp-chip" style="border-color:var(--accent);color:var(--accent)">${n}</span>`).join("")}</div>
+                        </div>`;
+                    } else if (stop.type === 'pickup') {
+                        empHtml = `<div style="margin-top:6px">
+                            <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
+                                ⬆ Picking up — ${stopEmps.length} employee${stopEmps.length !== 1 ? 's' : ''}
+                            </div>
+                            <div class="stop-employees">${stopEmps.map(n => `<span class="emp-chip" style="border-color:var(--green);color:var(--green)">${n}</span>`).join("")}</div>
+                        </div>`;
+                    }
+                }
+                return empHtml;
+            })()}
         </div>
         <div class="stop-right">
           <div class="stop-time">${fmtTime(stop.time)}</div>
@@ -987,28 +1271,22 @@
         </div>
       </div>
     </div>`;
+        }
 
-                // Transit row between stops
-                if (stop.transition && idx < pr.stops.length - 1) {
-                    const t = stop.transition;
-                    const d = fmtDuration(t.travelDuration);
-                    const w = fmtDuration(t.waitDuration);
-                    const km = t.travelDistanceMeters ? fmtKm(t.travelDistanceMeters) : "";
-                    const parts = [];
-                    if (d) parts.push(`🚌 ${d}`);
-                    if (km) parts.push(km);
-                    if (w && w !== "0s") parts.push(`⏳ wait ${w}`);
-                    html += `
+        function renderTransit(t) {
+            const d = fmtDuration(t.travelDuration);
+            const w = fmtDuration(t.waitDuration);
+            const km = t.travelDistanceMeters ? fmtKm(t.travelDistanceMeters) : "";
+            const parts = [];
+            if (d) parts.push(`🚌 ${d}`);
+            if (km) parts.push(km);
+            if (w && w !== "0s") parts.push(`⏳ wait ${w}`);
+            return `
         <div class="transit-row">
           <div class="transit-line"></div>
           <div class="transit-info">${parts.join(" · ") || "—"}</div>
           <div class="transit-line"></div>
         </div>`;
-                }
-            });
-
-            html += `</div>`;
-            document.getElementById("main").innerHTML = html;
         }
 
         function renderSkipped(skipped) {

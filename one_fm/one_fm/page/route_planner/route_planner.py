@@ -370,6 +370,60 @@ def get_route_planner_data():
                     "sites":                site_breakdown
                 })
 
+        # ── Cross-reference: find return-leg employees (previous shift at same stop) ──
+        # For each card, find employees from a DIFFERENT shift at the same stop_location
+        # whose shift ends around the time this card's shift starts.
+        # These are the employees finishing their shift who need to be picked up.
+        from datetime import datetime as dt_cls
+
+        def parse_iso(s):
+            try:
+                return dt_cls.fromisoformat(s.replace("Z", "+00:00")).replace(tzinfo=None)
+            except Exception:
+                return None
+
+        # Build stop_location → [card] index
+        stop_cards = {}
+        for card in shipment_cards:
+            sl = card.get("stop_location", "")
+            if sl:
+                if sl not in stop_cards:
+                    stop_cards[sl] = []
+                stop_cards[sl].append(card)
+
+        # For each card, find the "previous shift" card at the same stop
+        for card in shipment_cards:
+            sl = card.get("stop_location", "")
+            card_shift_start = parse_iso(card.get("shift_start", ""))
+            if not sl or not card_shift_start:
+                card["return_employees"] = []
+                continue
+
+            best_match = None
+            best_gap = float("inf")
+
+            for other in stop_cards.get(sl, []):
+                if other["id"] == card["id"]:
+                    continue  # skip self
+                if other.get("shift_name") == card.get("shift_name"):
+                    continue  # skip same shift
+
+                other_shift_end = parse_iso(other.get("shift_end", ""))
+                if not other_shift_end:
+                    continue
+
+                # How close is other's shift_end to this card's shift_start?
+                gap = abs((card_shift_start - other_shift_end).total_seconds())
+                # Within 2 hours window
+                if gap < 7200 and gap < best_gap:
+                    best_gap = gap
+                    best_match = other
+
+            if best_match:
+                card["return_employees"] = best_match.get("employees", [])
+            else:
+                card["return_employees"] = []
+
         return {
             "status":         "ok",
             "date":           frappe.utils.today(),
@@ -1172,4 +1226,37 @@ def create_route_plan(title: str, effective_from: str, effective_until: str = ""
         "status": "ok",
         "plan_name": doc.name,
         "plan_title": doc.title
+    }
+
+
+@frappe.whitelist()
+def update_route_plan_status(plan_name: str, new_status: str):
+    """Update the status of a Route Plan (Draft / Active / Expired).
+    When activating a plan, deactivate any other currently Active plan.
+    """
+    if not _route_plan_exists():
+        frappe.throw(_("Route Plan DocType not found. Please run 'bench migrate' on this site first."))
+
+    if new_status not in ("Draft", "Active", "Expired"):
+        frappe.throw(_("Invalid status: {0}. Must be Draft, Active, or Expired.").format(new_status))
+
+    doc = frappe.get_doc("Route Plan", plan_name)
+    doc.check_permission("write")
+
+    # Deactivate any currently Active plan before activating this one
+    if new_status == "Active":
+        active_plans = frappe.get_list("Route Plan",
+            filters={"status": "Active", "name": ["!=", plan_name]},
+            fields=["name"]
+        )
+        for ap in active_plans:
+            frappe.db.set_value("Route Plan", ap.name, "status", "Draft")
+
+    doc.db_set("status", new_status)
+    frappe.db.commit()
+
+    return {
+        "status": "ok",
+        "plan_name": doc.name,
+        "new_status": new_status
     }
