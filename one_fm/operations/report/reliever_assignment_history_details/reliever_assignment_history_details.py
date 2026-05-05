@@ -173,7 +173,7 @@ def get_raw_records(filters):
 			OS.site.as_("operations_site"),
 			OS.project,
 			OS.shift_classification,
-			ES.replaced_employee_schedule,
+			ES.relieving_employee_schedule.as_("replaced_employee_schedule"),
 		)
 		.where(ES.is_relieving_schedule == 1)
 		.orderby(ES.date)
