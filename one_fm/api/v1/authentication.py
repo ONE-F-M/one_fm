@@ -556,16 +556,33 @@ def user_login(employee_id, password):
 		auth.authenticate(user=username, pwd=password)
 		auth.post_login()
 		msg={'status':200, 'text':frappe.local.response.message, 'user': frappe.session.user}
-		user = frappe.get_doc('User', frappe.session.user)
-		if(user.api_key and user.api_secret):
-			msg['token'] = f"token {user.api_key}:{user.get_password('api_secret')}"
+		
+		# Fetch OAuth2 Token (replacing the old API Key "OAuth1" method)
+		client_id = frappe.db.get_value("OAuth Client", {"app_name": "OneFM"}, "client_id")
+		if not client_id:
+			response("error", 500, None, "OAuth Client 'OneFM' not configured in the system.")
+			return
+		
+		site = frappe.utils.cstr(frappe.local.conf.app_url)
+		if site.endswith('/'):
+			site = site[:-1]
+			
+		args = {
+			'client_id': client_id,
+			'grant_type': 'password',
+			'username': username,
+			'password': password
+		}
+		
+		auth_api = f"{site}/api/method/frappe.integrations.oauth2.get_token"
+		auth_api_response = requests.post(auth_api, data=args, headers={'Accept': 'application/json'})
+		
+		if auth_api_response.status_code == 200:
+			token_data = auth_api_response.json()
+			msg['token'] = f"Bearer {token_data.get('access_token')}"
+			msg['refresh_token'] = token_data.get('refresh_token')
 		else:
-			session_user = frappe.session.user
-			frappe.set_user('Administrator')
-			generate_keys(user.name)
-			user.reload()
-			msg['token'] = f"token {user.api_key}:{user.get_password('api_secret')}"
-			frappe.set_user(session_user)
+			frappe.throw(_("OAuth2 Authentication Failed"))
 		user, user_roles, user_employee =  get_current_user_details()
 		msg.update(user_employee)
 		msg.update({"roles": user_roles})
