@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Goods and Service Department</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"RFM\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"RFP\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Checkin/Checkout\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Employee Uniform\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Route Planner\",\"col\":3}}]",
+ "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Goods and Service Department</span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"RFM\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"RFP\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Checkin/Checkout\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Employee Uniform\",\"col\":3}}]",
  "creation": "2022-10-31 21:12:45.531143",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -8,7 +8,6 @@
  "hide_custom": 0,
  "icon": "projects",
  "idx": 0,
- "is_standard": 1,
  "label": "GSD",
  "links": [],
  "modified": "2026-05-05 15:34:00.000000",
@@ -49,12 +48,6 @@
    "label": "Employee Uniform",
    "link_to": "Employee Uniform",
    "type": "DocType"
-  },
-  {
-   "color": "Blue",
-   "label": "Route Planner",
-   "link_to": "route_planner",
-   "type": "Page"
   }
  ],
  "title": "GSD"
