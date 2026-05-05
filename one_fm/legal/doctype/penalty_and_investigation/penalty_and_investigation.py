@@ -84,7 +84,7 @@ class PenaltyAndInvestigation(Document):
 				"applied_penalty_code": self.applied_penalty_code,
 				"incident_date": [">=", twelve_months_ago],
 				"name": ["!=", self.name],
-				"docstatus": ["!=", 2],
+				"docstatus": 1,
 			},
 		)
 
