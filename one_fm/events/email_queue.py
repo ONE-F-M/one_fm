@@ -16,7 +16,8 @@ def after_insert(doc, event):
 			send_now,
 			name=doc.name,
 			now=frappe.flags.in_test,
-			enqueue_after_commit=True
+			enqueue_after_commit=True,
+			force_send=True
 		)
 
 def flush_emails():
@@ -25,9 +26,9 @@ def flush_emails():
     :return:
     """
     delete_eid_emails()
-    emails_in_queue = frappe.get_list('Email Queue', filters={'status': 'Not Sent'})
+    emails_in_queue = frappe.get_all('Email Queue', filters={'status': 'Not Sent'})
     for row in emails_in_queue:
-        try:send_now(name=row.name)
+        try:send_now(name=row.name, force_send=True)
         except:pass
     frappe.db.commit()
 
