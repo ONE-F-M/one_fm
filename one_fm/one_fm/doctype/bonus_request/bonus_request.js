@@ -10,6 +10,9 @@ frappe.ui.form.on("Bonus Request", {
 	},
 
 	refresh(frm) {
+		// Hide standard print icon — custom print buttons are used instead
+		frm.page.hide_icon_group();
+
 		// Toggle justification visibility based on others checkbox
 		toggle_justification(frm);
 
