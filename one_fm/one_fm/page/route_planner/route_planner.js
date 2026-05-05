@@ -225,9 +225,137 @@ function mountRoutePlannerApp(wrapper, data) {
                 return map;
             },
 
+            // Merged view: trip-chained items render as a single visual block
+            mergedItemsByVehicle() {
+                const raw = this.itemsByVehicle;
+                const merged = {};
+
+                Object.keys(raw).forEach(vid => {
+                    const items = raw[vid];
+                    const entries = [];
+                    const tripGroups = {};
+
+                    items.forEach(item => {
+                        if (item.tripId) {
+                            if (!tripGroups[item.tripId]) tripGroups[item.tripId] = [];
+                            tripGroups[item.tripId].push(item);
+                        } else {
+                            entries.push({
+                                type: 'single', item,
+                                // Time span for layout calculation
+                                _layoutStart: new Date(item.start).getTime(),
+                                _layoutEnd: new Date(item.end).getTime(),
+                            });
+                        }
+                    });
+
+                    // Build merged blocks for each trip group
+                    Object.keys(tripGroups).forEach(tripId => {
+                        const stops = tripGroups[tripId].sort(
+                            (a, b) => new Date(a.start) - new Date(b.start)
+                        );
+                        const firstItem = stops[0];
+                        const lastItem = stops[stops.length - 1];
+                        const totalHC = stops.reduce((sum, s) => sum + (s.headcount || 0), 0);
+
+                        const stopLabels = stops.map(s => {
+                            const card = this.planData.shipment_cards.find(c => c.id === s.cardId);
+                            return card ? card.site_location : s.cardId;
+                        });
+
+                        entries.push({
+                            type: 'merged',
+                            tripId,
+                            direction: firstItem.direction,
+                            start: firstItem.start,
+                            end: lastItem.end,
+                            headcount: totalHC,
+                            stopLabels,
+                            stops,
+                            conflict: stops.some(s => s.conflict),
+                            primaryItem: firstItem,
+                            // Time span for layout calculation
+                            _layoutStart: new Date(firstItem.start).getTime(),
+                            _layoutEnd: new Date(lastItem.end).getTime(),
+                        });
+                    });
+
+                    // ── Recalculate overlap columns on merged entries ──
+                    if (entries.length <= 1) {
+                        entries.forEach(e => { e._col = 0; e._totalCols = 1; });
+                    } else {
+                        // Sort by start time, then by end time descending
+                        entries.sort((a, b) => {
+                            const d = a._layoutStart - b._layoutStart;
+                            return d !== 0 ? d : b._layoutEnd - a._layoutEnd;
+                        });
+
+                        // Greedy column packing
+                        const columns = [];
+                        entries.forEach(entry => {
+                            let placed = false;
+                            for (let c = 0; c < columns.length; c++) {
+                                const last = columns[c][columns[c].length - 1];
+                                if (last._layoutEnd <= entry._layoutStart) {
+                                    columns[c].push(entry);
+                                    entry._col = c;
+                                    placed = true;
+                                    break;
+                                }
+                            }
+                            if (!placed) {
+                                entry._col = columns.length;
+                                columns.push([entry]);
+                            }
+                        });
+
+                        // Sweep to find connected overlap groups
+                        const groups = [];
+                        let group = [entries[0]];
+                        let groupEnd = entries[0]._layoutEnd;
+
+                        for (let i = 1; i < entries.length; i++) {
+                            if (entries[i]._layoutStart < groupEnd) {
+                                group.push(entries[i]);
+                                groupEnd = Math.max(groupEnd, entries[i]._layoutEnd);
+                            } else {
+                                groups.push(group);
+                                group = [entries[i]];
+                                groupEnd = entries[i]._layoutEnd;
+                            }
+                        }
+                        groups.push(group);
+
+                        // Set _totalCols per overlap group
+                        groups.forEach(g => {
+                            const maxCol = Math.max(...g.map(e => e._col)) + 1;
+                            g.forEach(e => { e._totalCols = maxCol; });
+                        });
+                    }
+
+                    merged[vid] = entries;
+                });
+
+                return merged;
+            },
+
             selectedCard() {
                 if (!this.selectedItem) return null;
                 return this.planData.shipment_cards.find(c => c.id === this.selectedItem.cardId) || null;
+            },
+
+            // All stops in the selected trip chain (empty if not a trip)
+            selectedTripStops() {
+                if (!this.selectedItem || !this.selectedItem.tripId) return [];
+                const tripId = this.selectedItem.tripId;
+                return this.swimItems
+                    .filter(i => i.tripId === tripId)
+                    .sort((a, b) => new Date(a.start) - new Date(b.start))
+                    .map((item, idx) => ({
+                        item,
+                        card: this.planData.shipment_cards.find(c => c.id === item.cardId) || {},
+                        stopNum: idx + 1
+                    }));
             },
         },
 
@@ -395,26 +523,93 @@ function mountRoutePlannerApp(wrapper, data) {
                     if (i.vehicleId !== vehicle.id || i.direction !== 'OUTBOUND') return false;
                     const existingCard = this.planData.shipment_cards.find(c => c.id === i.cardId);
                     if (!existingCard || existingCard.accommodation !== card.accommodation) return false;
-                    // Time proximity check — block must be within 2h of this card's window
                     const blockEnd = new Date(i.end).getTime();
                     const blockStart = new Date(i.start).getTime();
                     return blockEnd > (cardOutStart - PROXIMITY_MS) && blockStart < (cardOutEnd + PROXIMITY_MS);
                 });
 
                 if (nearbyOutbound.length > 0) {
-                    const existingSites = nearbyOutbound.map(i => {
-                        const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
-                        return c ? c.site_location : i.cardId;
+                    // Group by tripId (items without tripId are each their own "trip")
+                    const tripMap = {};
+                    let soloIdx = 0;
+                    nearbyOutbound.forEach(item => {
+                        const key = item.tripId || `_solo_${soloIdx++}`;
+                        if (!tripMap[key]) tripMap[key] = [];
+                        tripMap[key].push(item);
                     });
+                    const tripKeys = Object.keys(tripMap);
 
-                    frappe.confirm(
-                        `<strong>${vehicle.label}</strong> already picks up from <strong>${card.accommodation}</strong> and drops at:<br><br>` +
-                        existingSites.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
-                        `<br><br>Add <strong>${card.site_location}</strong> as the next stop on this trip?`,
-                        () => this._chainToTrip(card, nearbyOutbound, vehicle.id),
-                        // "No" → place as a fresh independent card (full direction picker)
-                        () => this._doPlaceWithDialog(card, vehicle.id)
-                    );
+                    if (tripKeys.length === 1) {
+                        // ── Single trip: simple confirm ──
+                        const existingSites = nearbyOutbound.map(i => {
+                            const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
+                            return c ? c.site_location : i.cardId;
+                        });
+                        frappe.confirm(
+                            `<strong>${vehicle.label}</strong> already picks up from <strong>${card.accommodation}</strong> and drops at:<br><br>` +
+                            existingSites.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
+                            `<br><br>Add <strong>${card.site_location}</strong> as the next stop on this trip?`,
+                            () => this._chainToTrip(card, tripMap[tripKeys[0]], vehicle.id),
+                            () => this._doPlaceWithDialog(card, vehicle.id)
+                        );
+                    } else {
+                        // ── Multiple trips: let user pick which trip to join ──
+                        const self = this;
+                        const tripOptions = tripKeys.map((key, idx) => {
+                            const items = tripMap[key];
+                            const sites = items.map(i => {
+                                const c = self.planData.shipment_cards.find(sc => sc.id === i.cardId);
+                                return c ? c.site_location : i.cardId;
+                            });
+                            const timeRange = self.fmtTime(items[0].start) + '–' + self.fmtTime(items[items.length - 1].end);
+                            return {
+                                key,
+                                label: `Trip ${idx + 1}: ${sites.join(' → ')} (${timeRange})`,
+                                items
+                            };
+                        });
+
+                        const d = new frappe.ui.Dialog({
+                            title: `Add ${card.site_location} to which trip?`,
+                            fields: [
+                                {
+                                    fieldtype: 'HTML',
+                                    options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
+                                        <strong>${vehicle.label}</strong> has <strong>${tripKeys.length} trips</strong>
+                                        from <strong>${card.accommodation}</strong>. Choose which trip to add this stop to:</p>`
+                                },
+                                {
+                                    fieldtype: 'Select', fieldname: 'trip_choice',
+                                    label: 'Select Trip', reqd: 1,
+                                    options: tripOptions.map(t => t.label).join('\n') + '\nCreate New Independent Trip',
+                                    default: tripOptions[0].label
+                                },
+                                { fieldtype: 'Column Break' },
+                                {
+                                    fieldtype: 'Int', fieldname: 'transit_min',
+                                    label: 'Transit Time (minutes)', default: 30, reqd: 1,
+                                    description: 'Only used when adding to an existing trip'
+                                }
+                            ],
+                            primary_action_label: 'Add Stop',
+                            primary_action(vals) {
+                                d.hide();
+                                const choice = vals.trip_choice;
+
+                                if (choice === 'Create New Independent Trip') {
+                                    self._doPlaceWithDialog(card, vehicle.id);
+                                    return;
+                                }
+
+                                // Find selected trip
+                                const selected = tripOptions.find(t => t.label === choice);
+                                if (selected) {
+                                    self._chainToTrip(card, selected.items, vehicle.id, vals.transit_min);
+                                }
+                            }
+                        });
+                        d.show();
+                    }
                     return;
                 }
 
@@ -424,14 +619,52 @@ function mountRoutePlannerApp(wrapper, data) {
             // Fresh placement dialog — bypasses "already placed" direction check
             _doPlaceWithDialog(card, vehicleId) {
                 const self = this;
+
+                // Build context about existing trips on this vehicle
+                const existingOnVehicle = this.swimItems.filter(i => i.vehicleId === vehicleId && i.direction === 'OUTBOUND');
+                let existingHtml = '';
+                if (existingOnVehicle.length > 0) {
+                    // Group by tripId
+                    const trips = {};
+                    let soloIdx = 0;
+                    existingOnVehicle.forEach(item => {
+                        const key = item.tripId || `_solo_${soloIdx++}`;
+                        if (!trips[key]) trips[key] = [];
+                        trips[key].push(item);
+                    });
+
+                    const tripSummaries = Object.values(trips).map(stops => {
+                        const sites = stops.map(s => {
+                            const c = self.planData.shipment_cards.find(sc => sc.id === s.cardId);
+                            return c ? c.site_location : s.cardId;
+                        });
+                        const time = self.fmtTime(stops[0].start) + '–' + self.fmtTime(stops[stops.length - 1].end);
+                        return `<span style="display:block;padding:2px 0;font-size:12px;color:#666">• ${sites.join(' → ')} (${time})</span>`;
+                    });
+
+                    existingHtml = `<div style="background:#f5f5f5;border-radius:6px;padding:8px 10px;margin:0 0 12px">
+                        <div style="font-size:11px;font-weight:600;color:#999;text-transform:uppercase;margin-bottom:4px">
+                            Existing trips on this vehicle
+                        </div>
+                        ${tripSummaries.join('')}
+                    </div>`;
+                }
+
+                const vehicleLabel = this.planData.vehicles.find(v => v.id === vehicleId)?.label || vehicleId;
+
                 const d = new frappe.ui.Dialog({
-                    title: `New Trip — ${card.site_location}`,
+                    title: `New Independent Trip — ${card.site_location}`,
                     fields: [
                         {
                             fieldtype: 'HTML',
-                            options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
+                            options: `<p style="margin:0 0 8px;color:#555;font-size:13px">
+                                Create a <strong>new separate trip</strong> on <strong>${vehicleLabel}</strong>
+                                for <strong>${card.site_location}</strong>.</p>
+                                <p style="margin:0 0 12px;color:#555;font-size:12px">
                                 <strong>${card.shift_name}</strong><br>
-                                ${card.headcount} employee(s) · Shift ${self.fmtISO(card.shift_start)} – ${self.fmtISO(card.shift_end)}</p>`
+                                ${card.headcount} employee(s) · Shift ${self.fmtISO(card.shift_start)} – ${self.fmtISO(card.shift_end)}<br>
+                                Accommodation: ${card.accommodation || '—'}</p>
+                                ${existingHtml}`
                         },
                         {
                             fieldtype: 'Select', fieldname: 'direction',
@@ -447,7 +680,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             label: 'Trip Duration (minutes)', default: 60, reqd: 1
                         }
                     ],
-                    primary_action_label: 'Place on Timeline',
+                    primary_action_label: 'Create Trip',
                     primary_action(vals) {
                         d.hide();
                         const durMs = (vals.duration_min || 60) * 60000;
@@ -461,7 +694,7 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // ── Chain a card as the next stop on an existing trip ──
-            _chainToTrip(newCard, existingItems, vehicleId) {
+            _chainToTrip(newCard, existingItems, vehicleId, presetTransitMin) {
                 const self = this;
 
                 // Find or create trip ID
@@ -476,7 +709,47 @@ function mountRoutePlannerApp(wrapper, data) {
                         });
                 }
 
-                // Find the last stop name for context
+                // Shared placement logic
+                const doChain = (transitMin) => {
+                    const transitMs = (transitMin || 30) * 60000;
+                    const lastEnd = new Date(Math.max(
+                        ...existingItems.map(i => new Date(i.end).getTime())
+                    ));
+                    const totalStops = self.swimItems.filter(i => i.tripId === tripId).length;
+
+                    const segStart = new Date(lastEnd.getTime());
+                    const segEnd = new Date(segStart.getTime() + transitMs);
+                    const uid = Math.random().toString(36).slice(2, 10);
+
+                    self.swimItems.push({
+                        id: `${newCard.id}_OUT_${uid}`, cardId: newCard.id, vehicleId,
+                        direction: 'OUTBOUND', start: segStart, end: segEnd,
+                        headcount: newCard.headcount, conflict: false,
+                        tripId, stopIndex: totalStops + 1
+                    });
+
+                    const allTrip = self.swimItems.filter(i => i.tripId === tripId);
+                    allTrip.forEach(i => { i.totalStops = allTrip.length; });
+
+                    self.assignedCards.add(newCard.id);
+                    self.selectedPoolCard = null;
+                    self.checkConflicts();
+                    self.canSave = self.assignedCards.size > 0;
+                    self.persistAssignments();
+
+                    frappe.show_alert({
+                        message: `Stop ${totalStops + 1}: ${newCard.site_location} (${transitMin}min transit)`,
+                        indicator: 'green'
+                    }, 4);
+                };
+
+                // If transit time was already specified (from multi-trip picker), skip dialog
+                if (presetTransitMin != null) {
+                    doChain(presetTransitMin);
+                    return;
+                }
+
+                // Otherwise show transit time dialog
                 const lastItem = existingItems
                     .sort((a, b) => new Date(a.end) - new Date(b.end))
                     .slice(-1)[0];
@@ -501,37 +774,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     primary_action_label: 'Add Stop',
                     primary_action(vals) {
                         d.hide();
-                        const transitMs = (vals.transit_min || 30) * 60000;
-
-                        const lastEnd = new Date(Math.max(
-                            ...existingItems.map(i => new Date(i.end).getTime())
-                        ));
-                        const totalStops = self.swimItems.filter(i => i.tripId === tripId).length;
-
-                        const segStart = new Date(lastEnd.getTime());
-                        const segEnd = new Date(segStart.getTime() + transitMs);
-                        const uid = Math.random().toString(36).slice(2, 10);
-
-                        self.swimItems.push({
-                            id: `${newCard.id}_OUT_${uid}`, cardId: newCard.id, vehicleId,
-                            direction: 'OUTBOUND', start: segStart, end: segEnd,
-                            headcount: newCard.headcount, conflict: false,
-                            tripId, stopIndex: totalStops + 1
-                        });
-
-                        // Update totalStops on all trip items
-                        const allTrip = self.swimItems.filter(i => i.tripId === tripId);
-                        allTrip.forEach(i => { i.totalStops = allTrip.length; });
-
-                        self.assignedCards.add(newCard.id);
-                        self.checkConflicts();
-                        self.canSave = self.assignedCards.size > 0;
-                        self.persistAssignments();
-
-                        frappe.show_alert({
-                            message: `Stop ${totalStops + 1}: ${newCard.site_location} (${vals.transit_min}min transit)`,
-                            indicator: 'green'
-                        }, 4);
+                        doChain(vals.transit_min);
                     }
                 });
                 d.show();
@@ -1114,6 +1357,48 @@ function mountRoutePlannerApp(wrapper, data) {
                 d.show();
             },
 
+            togglePlanStatus(newStatus) {
+                if (!this.currentPlan) return;
+                const self = this;
+                const planName = this.currentPlan.name;
+                const planTitle = this.currentPlan.title;
+
+                const doUpdate = () => {
+                    frappe.call({
+                        method: 'one_fm.one_fm.page.route_planner.route_planner.update_route_plan_status',
+                        args: { plan_name: planName, new_status: newStatus },
+                        callback: (r) => {
+                            if (r.message && r.message.status === 'ok') {
+                                self.currentPlan.status = newStatus;
+                                // Refresh plan list to reflect status changes (incl. deactivated plans)
+                                self.refreshPlanList();
+                                const indicators = { Active: 'green', Draft: 'orange', Expired: 'grey' };
+                                frappe.show_alert({
+                                    message: `"${planTitle}" is now ${newStatus}`,
+                                    indicator: indicators[newStatus] || 'blue'
+                                }, 4);
+                            }
+                        }
+                    });
+                };
+
+                if (newStatus === 'Active') {
+                    frappe.confirm(
+                        `Activate <strong>"${planTitle}"</strong>?<br><br>` +
+                        `<span style="color:#888;font-size:12px">Any other Active plan will be automatically set to Draft.</span>`,
+                        doUpdate
+                    );
+                } else if (newStatus === 'Expired') {
+                    frappe.confirm(
+                        `Mark <strong>"${planTitle}"</strong> as Expired?<br><br>` +
+                        `<span style="color:#888;font-size:12px">This plan will no longer be available for dispatch.</span>`,
+                        doUpdate
+                    );
+                } else {
+                    doUpdate();
+                }
+            },
+
             refreshPlanList(callback) {
                 frappe.call({
                     method: 'one_fm.one_fm.page.route_planner.route_planner.get_route_plans',
@@ -1235,6 +1520,23 @@ function mountRoutePlannerApp(wrapper, data) {
                 return !!(this.selectedItem && this.selectedItem.id === item.id);
             },
 
+            // ── Merged block position helpers ──
+            mbx(entry) { return this.timeToX(entry.start); },
+            mbw(entry) { return Math.max(8, this.timeToX(entry.end) - this.timeToX(entry.start)); },
+            mby(entry) {
+                const pad = 4;
+                const cols = entry._totalCols || 1;
+                const col = entry._col || 0;
+                const usable = this.rowHeight - pad * 2;
+                return pad + col * (usable / cols);
+            },
+            mbh(entry) {
+                const pad = 4;
+                const cols = entry._totalCols || 1;
+                const usable = this.rowHeight - pad * 2;
+                return (usable / cols) - 2;
+            },
+
             // Build connector lines between consecutive trip stops for a vehicle
             tripConnectors(vehicleId) {
                 const items = this.swimItems.filter(i => i.vehicleId === vehicleId && i.tripId);
@@ -1293,7 +1595,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 let tpl;
                 try {
-                    const res = await fetch('/assets/one_fm/html/route_manifest_template.html');
+                    const res = await fetch('/assets/one_fm/html/route_manifest_template.html?v=' + Date.now());
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     tpl = await res.text();
                 } catch (err) {
@@ -1341,7 +1643,13 @@ function mountRoutePlannerApp(wrapper, data) {
                     const idx = si++;
 
                     shipments.push({ label: lbl, pickups: [{}], deliveries: [{}] });
-                    shipEmp[lbl] = card.employees;
+                    // OUTBOUND uses card.employees (employees being delivered to site)
+                    // RETURN uses card.return_employees (previous shift employees being collected)
+                    if (item.direction === 'RETURN' && card.return_employees && card.return_employees.length > 0) {
+                        shipEmp[lbl] = card.return_employees;
+                    } else {
+                        shipEmp[lbl] = card.employees;
+                    }
                     shipSite[lbl] = card.site_location;
                     shipShift[lbl] = card.shift_name;
                     cMap[dirKey] = { lbl, idx };
@@ -1373,7 +1681,9 @@ function mountRoutePlannerApp(wrapper, data) {
 
                         visits.push({
                             shipmentIndex: sIdx, isPickup: true, startTime: iS,
-                            loadDemands: { seats: { amount: String(hc) } }
+                            loadDemands: { seats: { amount: String(hc) } },
+                            tripId: item.tripId || null,
+                            stopIndex: item.stopIndex || 0
                         });
                         trans.push({
                             travelDuration: `${dSec}s`, waitDuration: '0s',
@@ -1381,7 +1691,9 @@ function mountRoutePlannerApp(wrapper, data) {
                         });
                         visits.push({
                             shipmentIndex: sIdx, isPickup: false, startTime: iE,
-                            loadDemands: { seats: { amount: String(-hc) } }
+                            loadDemands: { seats: { amount: String(-hc) } },
+                            tripId: item.tripId || null,
+                            stopIndex: item.stopIndex || 0
                         });
 
                         const nxt = vItems[idx + 1];
@@ -1474,6 +1786,24 @@ function injectRPVueTemplate() {
               :style="currentPlan.status === 'Active' ? 'background:#e8f5e9;color:#2e7d32' : currentPlan.status === 'Draft' ? 'background:#fff3e0;color:#e65100' : 'background:#fafafa;color:#999'">
           {{ currentPlan.status }}
         </span>
+        <button v-if="currentPlan && currentPlan.status === 'Draft'"
+                class="rp-btn" style="font-size:11px;padding:3px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;font-weight:600"
+                @click="togglePlanStatus('Active')"
+                title="Activate this route plan">
+          ✓ Activate
+        </button>
+        <button v-if="currentPlan && currentPlan.status === 'Active'"
+                class="rp-btn" style="font-size:11px;padding:3px 10px;background:#fff3e0;color:#e65100;border:1px solid #ffe0b2;font-weight:600"
+                @click="togglePlanStatus('Draft')"
+                title="Set back to Draft">
+          ↩ Deactivate
+        </button>
+        <button v-if="currentPlan && (currentPlan.status === 'Draft' || currentPlan.status === 'Active')"
+                class="rp-btn" style="font-size:11px;padding:3px 10px;background:#fafafa;color:#999;border:1px solid #e0e0e0;font-weight:600"
+                @click="togglePlanStatus('Expired')"
+                title="Mark this plan as expired">
+          ✕ Expire
+        </button>
         <span v-if="currentPlan && currentPlan.effective_from" style="font-size:11px;color:#888">
           {{ currentPlan.effective_from }}{{ currentPlan.effective_until ? ' → ' + currentPlan.effective_until : ' → ∞' }}
         </span>
@@ -1656,60 +1986,132 @@ function injectRPVueTemplate() {
                   <circle :cx="conn.x2" :cy="conn.y" r="3" fill="#7c3aed" style="pointer-events:none"/>
                 </template>
 
-                <!-- ── Swim items ── -->
-                <g v-for="item in itemsByVehicle[vehicle.id]" :key="item.id"
-                   :class="isDraggingBlock && bsel(item) ? 'rp-block-grabbing' : 'rp-block-grab'"
-                   @mousedown="onBlockMouseDown($event, item)"
-                   @touchstart.prevent="onBlockTouchStart($event, item)"
-                   @click.stop="onBlockClick(item, $event)">
+                <!-- ── Swim items (merged trip view) ── -->
+                <template v-for="entry in mergedItemsByVehicle[vehicle.id]" :key="entry.type === 'merged' ? 'trip_' + entry.tripId : entry.item.id">
 
-                  <!-- Drop shadow -->
-                  <rect :x="bx(item) + 1" :y="by(item) + 2"
-                        :width="bw(item)" :height="bh(item)"
-                        fill="rgba(0,0,0,0.10)" rx="5"/>
+                  <!-- ═══ Single (non-chained) block ═══ -->
+                  <g v-if="entry.type === 'single'"
+                     :class="isDraggingBlock && bsel(entry.item) ? 'rp-block-grabbing' : 'rp-block-grab'"
+                     @mousedown="onBlockMouseDown($event, entry.item)"
+                     @touchstart.prevent="onBlockTouchStart($event, entry.item)"
+                     @click.stop="onBlockClick(entry.item, $event)">
 
-                  <!-- Block body -->
-                  <rect :x="bx(item)" :y="by(item)"
-                        :width="bw(item)" :height="bh(item)"
-                        :fill="bfill(item)"
-                        :stroke="bsel(item) ? '#f97316' : 'transparent'"
-                        stroke-width="2.5" rx="5"/>
+                    <rect :x="bx(entry.item) + 1" :y="by(entry.item) + 2"
+                          :width="bw(entry.item)" :height="bh(entry.item)"
+                          fill="rgba(0,0,0,0.10)" rx="5"/>
+                    <rect :x="bx(entry.item)" :y="by(entry.item)"
+                          :width="bw(entry.item)" :height="bh(entry.item)"
+                          :fill="bfill(entry.item)"
+                          :stroke="bsel(entry.item) ? '#f97316' : 'transparent'"
+                          stroke-width="2.5" rx="5"/>
 
-                  <!-- Line 1: Direction + Stop number (always visible) -->
-                  <text v-if="bw(item) >= 18"
-                        :x="bx(item) + 6" :y="by(item) + Math.min(15, bh(item) * 0.3)"
-                        fill="rgba(255,255,255,0.9)" :font-size="Math.min(10, bh(item) * 0.28)"
-                        font-weight="700" dominant-baseline="middle"
-                        style="user-select:none;pointer-events:none">
-                    {{ item.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }}{{ item.stopIndex > 0 ? ' Stop ' + item.stopIndex : (item.direction === 'OUTBOUND' ? ' To' : ' From') }}
-                  </text>
+                    <text v-if="bw(entry.item) >= 18"
+                          :x="bx(entry.item) + 6" :y="by(entry.item) + Math.min(15, bh(entry.item) * 0.3)"
+                          fill="rgba(255,255,255,0.9)" :font-size="Math.min(10, bh(entry.item) * 0.28)"
+                          font-weight="700" dominant-baseline="middle"
+                          style="user-select:none;pointer-events:none">
+                      {{ entry.item.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }}{{ entry.item.direction === 'OUTBOUND' ? ' To' : ' From' }}
+                    </text>
+                    <text v-if="bw(entry.item) >= 40 && bh(entry.item) >= 30"
+                          :x="bx(entry.item) + 6" :y="bcy(entry.item)"
+                          fill="white" :font-size="Math.min(11, bh(entry.item) * 0.28)" font-weight="600"
+                          dominant-baseline="middle"
+                          :textLength="Math.max(0, bw(entry.item) - 14)" lengthAdjust="spacing"
+                          style="user-select:none;pointer-events:none;overflow:hidden">
+                      {{ bcard(entry.item).site_location }}
+                    </text>
+                    <text v-if="bw(entry.item) >= 60 && bh(entry.item) >= 40"
+                          :x="bx(entry.item) + 6" :y="by(entry.item) + bh(entry.item) - Math.min(8, bh(entry.item) * 0.15)"
+                          fill="rgba(255,255,255,0.7)" :font-size="Math.min(9, bh(entry.item) * 0.22)"
+                          dominant-baseline="middle"
+                          style="user-select:none;pointer-events:none">
+                      {{ fmtTime(entry.item.start) }}-{{ fmtTime(entry.item.end) }} · &#x1F465;{{ entry.item.headcount }}
+                    </text>
+                    <rect v-if="bw(entry.item) >= 24"
+                          :x="bx(entry.item) + bw(entry.item) - 5" :y="by(entry.item) + 4"
+                          width="3" :height="bh(entry.item) - 8"
+                          fill="rgba(255,255,255,0.22)" rx="1.5"
+                          style="cursor:ew-resize;pointer-events:none"/>
+                  </g>
 
-                  <!-- Line 2: Site name -->
-                  <text v-if="bw(item) >= 40 && bh(item) >= 30"
-                        :x="bx(item) + 6" :y="bcy(item)"
-                        fill="white" :font-size="Math.min(11, bh(item) * 0.28)" font-weight="600"
-                        dominant-baseline="middle"
-                        :textLength="Math.max(0, bw(item) - 14)" lengthAdjust="spacing"
-                        style="user-select:none;pointer-events:none;overflow:hidden">
-                    {{ bcard(item).site_location }}
-                  </text>
+                  <!-- ═══ Merged trip block ═══ -->
+                  <g v-else
+                     class="rp-block-grab"
+                     @click.stop="onBlockClick(entry.primaryItem, $event)">
 
-                  <!-- Line 3: Time range + Headcount -->
-                  <text v-if="bw(item) >= 60 && bh(item) >= 40"
-                        :x="bx(item) + 6" :y="by(item) + bh(item) - Math.min(8, bh(item) * 0.15)"
-                        fill="rgba(255,255,255,0.7)" :font-size="Math.min(9, bh(item) * 0.22)"
-                        dominant-baseline="middle"
-                        style="user-select:none;pointer-events:none">
-                    {{ fmtTime(item.start) }}-{{ fmtTime(item.end) }} · &#x1F465;{{ item.headcount }}
-                  </text>
+                    <!-- Clip path scoped to block bounds -->
+                    <defs>
+                      <clipPath :id="'mclip-' + entry.tripId">
+                        <rect :x="mbx(entry)" :y="mby(entry)"
+                              :width="mbw(entry)" :height="mbh(entry)" rx="5"/>
+                      </clipPath>
+                    </defs>
 
-                  <!-- Resize handle (visual only) -->
-                  <rect v-if="bw(item) >= 24"
-                        :x="bx(item) + bw(item) - 5" :y="by(item) + 4"
-                        width="3" :height="bh(item) - 8"
-                        fill="rgba(255,255,255,0.22)" rx="1.5"
-                        style="cursor:ew-resize;pointer-events:none"/>
-                </g>
+                    <!-- Drop shadow -->
+                    <rect :x="mbx(entry) + 1" :y="mby(entry) + 2"
+                          :width="mbw(entry)" :height="mbh(entry)"
+                          fill="rgba(0,0,0,0.10)" rx="5"/>
+                    <!-- Block body -->
+                    <rect :x="mbx(entry)" :y="mby(entry)"
+                          :width="mbw(entry)" :height="mbh(entry)"
+                          :fill="entry.conflict ? '#c62828' : (entry.direction === 'OUTBOUND' ? '#1565c0' : '#e65100')"
+                          :stroke="selectedItem && entry.stops.some(s => s.id === selectedItem.id) ? '#f97316' : 'transparent'"
+                          stroke-width="2.5" rx="5"/>
+
+                    <!-- Clipped content group -->
+                    <g :clip-path="'url(#mclip-' + entry.tripId + ')'">
+
+                      <!-- Line 1: Direction arrow -->
+                      <text v-if="mbw(entry) >= 18"
+                            :x="mbx(entry) + 6" :y="mby(entry) + 14"
+                            fill="rgba(255,255,255,0.9)" font-size="10"
+                            font-weight="700" dominant-baseline="middle"
+                            style="user-select:none;pointer-events:none">
+                        {{ entry.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }} {{ entry.direction === 'OUTBOUND' ? 'To' : 'From' }}
+                      </text>
+
+                      <!-- Stop names — listed vertically, capped by available height -->
+                      <template v-for="(label, si) in entry.stopLabels" :key="'sl'+si">
+                        <text v-if="mbw(entry) >= 40 && (mby(entry) + 28 + si * 13) < (mby(entry) + mbh(entry) - 16)"
+                              :x="mbx(entry) + 6"
+                              :y="mby(entry) + 27 + si * 13"
+                              fill="white" font-size="10" font-weight="600"
+                              dominant-baseline="middle"
+                              :textLength="Math.min(label.length * 6, Math.max(0, mbw(entry) - 14))"
+                              lengthAdjust="spacing"
+                              style="user-select:none;pointer-events:none">
+                          {{ entry.stopLabels.length > 1 ? '- ' : '' }}{{ label }}
+                        </text>
+                      </template>
+                      <!-- "+N more" if truncated -->
+                      <text v-if="entry.stopLabels.length > Math.floor((mbh(entry) - 44) / 13) && Math.floor((mbh(entry) - 44) / 13) > 0"
+                            :x="mbx(entry) + 6"
+                            :y="mby(entry) + 27 + Math.floor((mbh(entry) - 44) / 13) * 13"
+                            fill="rgba(255,255,255,0.6)" font-size="9" font-weight="600"
+                            dominant-baseline="middle"
+                            style="user-select:none;pointer-events:none">
+                        +{{ entry.stopLabels.length - Math.floor((mbh(entry) - 44) / 13) }} more
+                      </text>
+
+                      <!-- Bottom: Time range + total headcount -->
+                      <text v-if="mbw(entry) >= 60 && mbh(entry) >= 34"
+                            :x="mbx(entry) + 6" :y="mby(entry) + mbh(entry) - 6"
+                            fill="rgba(255,255,255,0.7)" font-size="9"
+                            dominant-baseline="middle"
+                            style="user-select:none;pointer-events:none">
+                        {{ fmtTime(entry.start) }}-{{ fmtTime(entry.end) }} · &#x1F465;{{ entry.headcount }}
+                      </text>
+
+                    </g>
+
+                    <!-- Resize handle (outside clip for visibility) -->
+                    <rect v-if="mbw(entry) >= 24"
+                          :x="mbx(entry) + mbw(entry) - 5" :y="mby(entry) + 4"
+                          width="3" :height="mbh(entry) - 8"
+                          fill="rgba(255,255,255,0.22)" rx="1.5"
+                          style="cursor:ew-resize;pointer-events:none"/>
+                  </g>
+                </template>
 
               </svg>
             </div>
@@ -1739,111 +2141,192 @@ function injectRPVueTemplate() {
             <span :class="['rp-dir-badge', selectedItem.direction === 'OUTBOUND' ? 'rp-dir-out' : 'rp-dir-ret']">
               {{ selectedItem.direction === 'OUTBOUND' ? '\u2192 Outbound' : '\u2190 Return' }}
             </span>
-            <span v-if="selectedItem.tripId" class="rp-dir-badge" style="background:#f3e8fd;color:#7c3aed">
-              Stop {{ selectedItem.stopIndex || '?' }} of {{ selectedItem.totalStops }}
+            <span v-if="selectedTripStops.length > 0" class="rp-dir-badge" style="background:#f3e8fd;color:#7c3aed">
+              {{ selectedTripStops.length }} Stops
             </span>
             <span class="rp-dir-badge" style="background:#e3f2fd;color:#1565c0">
               {{ vehicleLabelForItem(selectedItem) }}
             </span>
           </div>
 
-          <!-- Type badge -->
-          <div v-if="selectedCard.type === 'OLM'" class="rp-detail-card" style="background:#f3e8fd;border-color:#e0cffc;padding:8px 12px">
-            <div style="display:flex;align-items:center;gap:6px">
-              <span style="font-size:14px">\ud83d\udccd</span>
-              <div>
-                <div class="rp-detail-row-label" style="color:#7c3aed;margin:0">Shared Bus Stop</div>
-                <div class="rp-detail-row-value">{{ selectedCard.stop_location }}</div>
+          <!-- ═══ TRIP VIEW: multiple stops ═══ -->
+          <template v-if="selectedTripStops.length > 0">
+
+            <!-- Trip time summary -->
+            <div class="rp-detail-card">
+              <div class="rp-detail-row-label" style="padding:0 0 6px 0">Trip Timeline</div>
+              <div class="rp-detail-time-display">
+                {{ fmtISO(new Date(selectedTripStops[0].item.start).toISOString()) }}
+                <span class="rp-detail-time-arrow">\u2192</span>
+                {{ fmtISO(new Date(selectedTripStops[selectedTripStops.length - 1].item.end).toISOString()) }}
+                <span class="rp-detail-time-dur">({{ Math.round((new Date(selectedTripStops[selectedTripStops.length - 1].item.end) - new Date(selectedTripStops[0].item.start)) / 60000) }} min)</span>
               </div>
             </div>
-          </div>
 
-          <!-- OLM: Per-site route breakdown -->
-          <template v-if="selectedCard.type === 'OLM' && selectedCard.sites && selectedCard.sites.length">
-            <div class="rp-detail-card" v-for="(s, si) in selectedCard.sites" :key="si"
-                 style="border-left:3px solid #7c3aed">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-                <span style="font-size:12px;font-weight:700;background:#f3e8fd;color:#7c3aed;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center">{{ si + 1 }}</span>
-                <div class="rp-detail-row-value" style="font-weight:600">{{ s.site }}</div>
+            <!-- Each stop as a numbered card -->
+            <div v-for="stop in selectedTripStops" :key="stop.item.id"
+                 class="rp-detail-card"
+                 :style="'border-left:3px solid ' + (stop.item.id === selectedItem.id ? '#f97316' : '#1565c0')">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span style="font-size:12px;font-weight:700;background:#dbeafe;color:#1565c0;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ stop.stopNum }}</span>
+                <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
               </div>
-              <div style="font-size:11px;color:#888;margin-left:30px" v-for="sh in s.shifts" :key="sh">
-                \u23f0 {{ sh }}
+              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                <div class="rp-detail-row-icon">\u23f0</div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">Shift</div>
+                  <div class="rp-detail-row-value">{{ stop.card.shift_name || '—' }}</div>
+                </div>
+              </div>
+              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                <div class="rp-detail-row-icon">\ud83d\udccd</div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">Stop Location</div>
+                  <div class="rp-detail-row-value">{{ stop.card.stop_location || '—' }}</div>
+                </div>
+              </div>
+              <div class="rp-detail-row" style="padding:4px 0 3px 30px">
+                <div class="rp-detail-row-icon">\ud83d\udc65</div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">Headcount</div>
+                  <div class="rp-detail-row-value">{{ stop.item.headcount || 0 }} employees</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;margin:6px 0 0 30px">
+                <div style="font-size:10px;padding:2px 8px;border-radius:4px;background:#e8f5e9;color:#2e7d32;font-weight:600">
+                  {{ fmtISO(new Date(stop.item.start).toISOString()) }}
+                </div>
+                <span style="font-size:10px;color:#ccc">\u2192</span>
+                <div style="font-size:10px;padding:2px 8px;border-radius:4px;background:#fff3e0;color:#e65100;font-weight:600">
+                  {{ fmtISO(new Date(stop.item.end).toISOString()) }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Accommodation (shared for all stops) -->
+            <div class="rp-detail-card">
+              <div class="rp-detail-row" style="border:none;padding:4px 0">
+                <div class="rp-detail-row-icon">\ud83c\udfe0</div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">Accommodation</div>
+                  <div class="rp-detail-row-value">{{ selectedCard.accommodation }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- All employees across all stops -->
+            <div class="rp-detail-card">
+              <div class="rp-detail-row-label" style="padding:0 0 8px 0">\ud83d\udc65 All Employees ({{ selectedTripStops.reduce((sum, s) => sum + (s.item.headcount || 0), 0) }})</div>
+              <div class="rp-detail-emp-list">
+                <template v-for="stop in selectedTripStops">
+                  <span v-for="e in stop.card.employees" :key="stop.item.id + '_' + e" class="rp-emp-chip">{{ e }}</span>
+                </template>
               </div>
             </div>
           </template>
 
-          <!-- OLM accommodation -->
-          <div v-if="selectedCard.type === 'OLM'" class="rp-detail-card">
-            <div class="rp-detail-row" style="border:none;padding:4px 0">
-              <div class="rp-detail-row-icon">\ud83c\udfe0</div>
-              <div class="rp-detail-row-content">
-                <div class="rp-detail-row-label">Accommodation</div>
-                <div class="rp-detail-row-value">{{ selectedCard.accommodation }}</div>
-              </div>
-            </div>
-          </div>
+          <!-- ═══ SINGLE ITEM VIEW (non-trip) ═══ -->
+          <template v-else>
 
-          <!-- DIRECT / OSM: Simple info card -->
-          <div v-if="selectedCard.type !== 'OLM'" class="rp-detail-card">
-            <div class="rp-detail-row">
-              <div class="rp-detail-row-icon">\ud83c\udfe2</div>
-              <div class="rp-detail-row-content">
-                <div class="rp-detail-row-label">Site</div>
-                <div class="rp-detail-row-value">{{ selectedCard.site_location }}</div>
+            <!-- Type badge -->
+            <div v-if="selectedCard.type === 'OLM'" class="rp-detail-card" style="background:#f3e8fd;border-color:#e0cffc;padding:8px 12px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:14px">\ud83d\udccd</span>
+                <div>
+                  <div class="rp-detail-row-label" style="color:#7c3aed;margin:0">Shared Bus Stop</div>
+                  <div class="rp-detail-row-value">{{ selectedCard.stop_location }}</div>
+                </div>
               </div>
-            </div>
-            <div class="rp-detail-row">
-              <div class="rp-detail-row-icon">\u23f0</div>
-              <div class="rp-detail-row-content">
-                <div class="rp-detail-row-label">Shift</div>
-                <div class="rp-detail-row-value">{{ selectedCard.shift_name }}</div>
-              </div>
-            </div>
-            <div class="rp-detail-row">
-              <div class="rp-detail-row-icon">\ud83d\udccd</div>
-              <div class="rp-detail-row-content">
-                <div class="rp-detail-row-label">Stop Location</div>
-                <div class="rp-detail-row-value">{{ selectedCard.stop_location }}</div>
-              </div>
-            </div>
-            <div class="rp-detail-row">
-              <div class="rp-detail-row-icon">\ud83c\udfe0</div>
-              <div class="rp-detail-row-content">
-                <div class="rp-detail-row-label">Accommodation</div>
-                <div class="rp-detail-row-value">{{ selectedCard.accommodation }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Time card -->
-          <div class="rp-detail-card">
-            <div class="rp-detail-row-label" style="padding:0 0 6px 0">Time on Lane</div>
-            <div class="rp-detail-time-display">
-              {{ fmtISO(new Date(selectedItem.start).toISOString()) }}
-              <span class="rp-detail-time-arrow">\u2192</span>
-              {{ fmtISO(new Date(selectedItem.end).toISOString()) }}
-              <span class="rp-detail-time-dur">({{ durMin(selectedItem) }} min)</span>
             </div>
 
-            <div class="rp-detail-shift-pills">
-              <div class="rp-detail-pill rp-detail-pill-start">
-                <div class="rp-detail-pill-label">Start</div>
-                <div class="rp-detail-pill-value">{{ fmtISO(selectedCard.shift_start) }}</div>
+            <!-- OLM: Per-site route breakdown -->
+            <template v-if="selectedCard.type === 'OLM' && selectedCard.sites && selectedCard.sites.length">
+              <div class="rp-detail-card" v-for="(s, si) in selectedCard.sites" :key="si"
+                   style="border-left:3px solid #7c3aed">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                  <span style="font-size:12px;font-weight:700;background:#f3e8fd;color:#7c3aed;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center">{{ si + 1 }}</span>
+                  <div class="rp-detail-row-value" style="font-weight:600">{{ s.site }}</div>
+                </div>
+                <div style="font-size:11px;color:#888;margin-left:30px" v-for="sh in s.shifts" :key="sh">
+                  \u23f0 {{ sh }}
+                </div>
               </div>
-              <div class="rp-detail-pill rp-detail-pill-end">
-                <div class="rp-detail-pill-label">End</div>
-                <div class="rp-detail-pill-value">{{ fmtISO(selectedCard.shift_end) }}</div>
-              </div>
-            </div>
-          </div>
+            </template>
 
-          <!-- Employees -->
-          <div class="rp-detail-card">
-            <div class="rp-detail-row-label" style="padding:0 0 8px 0">\ud83d\udc65 Employees ({{ selectedCard.headcount }})</div>
-            <div class="rp-detail-emp-list">
-              <span v-for="e in selectedCard.employees" :key="e" class="rp-emp-chip">{{ e }}</span>
+            <!-- OLM accommodation -->
+            <div v-if="selectedCard.type === 'OLM'" class="rp-detail-card">
+              <div class="rp-detail-row" style="border:none;padding:4px 0">
+                <div class="rp-detail-row-icon">\ud83c\udfe0</div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">Accommodation</div>
+                  <div class="rp-detail-row-value">{{ selectedCard.accommodation }}</div>
+                </div>
+              </div>
             </div>
-          </div>
+
+            <!-- DIRECT / OSM: Simple info card -->
+            <div v-if="selectedCard.type !== 'OLM'" class="rp-detail-card">
+              <div class="rp-detail-row">
+                <div class="rp-detail-row-icon">\ud83c\udfe2</div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">Site</div>
+                  <div class="rp-detail-row-value">{{ selectedCard.site_location }}</div>
+                </div>
+              </div>
+              <div class="rp-detail-row">
+                <div class="rp-detail-row-icon">\u23f0</div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">Shift</div>
+                  <div class="rp-detail-row-value">{{ selectedCard.shift_name }}</div>
+                </div>
+              </div>
+              <div class="rp-detail-row">
+                <div class="rp-detail-row-icon">\ud83d\udccd</div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">Stop Location</div>
+                  <div class="rp-detail-row-value">{{ selectedCard.stop_location }}</div>
+                </div>
+              </div>
+              <div class="rp-detail-row">
+                <div class="rp-detail-row-icon">\ud83c\udfe0</div>
+                <div class="rp-detail-row-content">
+                  <div class="rp-detail-row-label">Accommodation</div>
+                  <div class="rp-detail-row-value">{{ selectedCard.accommodation }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Time card -->
+            <div class="rp-detail-card">
+              <div class="rp-detail-row-label" style="padding:0 0 6px 0">Time on Lane</div>
+              <div class="rp-detail-time-display">
+                {{ fmtISO(new Date(selectedItem.start).toISOString()) }}
+                <span class="rp-detail-time-arrow">\u2192</span>
+                {{ fmtISO(new Date(selectedItem.end).toISOString()) }}
+                <span class="rp-detail-time-dur">({{ durMin(selectedItem) }} min)</span>
+              </div>
+
+              <div class="rp-detail-shift-pills">
+                <div class="rp-detail-pill rp-detail-pill-start">
+                  <div class="rp-detail-pill-label">Start</div>
+                  <div class="rp-detail-pill-value">{{ fmtISO(selectedCard.shift_start) }}</div>
+                </div>
+                <div class="rp-detail-pill rp-detail-pill-end">
+                  <div class="rp-detail-pill-label">End</div>
+                  <div class="rp-detail-pill-value">{{ fmtISO(selectedCard.shift_end) }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Employees -->
+            <div class="rp-detail-card">
+              <div class="rp-detail-row-label" style="padding:0 0 8px 0">\ud83d\udc65 Employees ({{ selectedCard.headcount }})</div>
+              <div class="rp-detail-emp-list">
+                <span v-for="e in selectedCard.employees" :key="e" class="rp-emp-chip">{{ e }}</span>
+              </div>
+            </div>
+
+          </template>
 
         </div>
 
