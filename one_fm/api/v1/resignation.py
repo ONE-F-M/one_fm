@@ -468,14 +468,7 @@ def get_my_active_resignation(employee_id=None, **kwargs):
     EMPLOYEE_ACTION_STATES = ["Pending Relieving Date Correction", "Draft"]
     TERMINAL_STATES = {"Resigned", "Cancelled", "Resignation Withdrawn", "Withdrawn"}
 
-    # Check if corporate (works in Head Office)
-    emp_data = frappe.db.get_value("Employee", employee_name, ["project", "site", "department"], as_dict=True) or {}
-    
-    is_corporate = False
-    if "Head Office" in (emp_data.get("project") or "") or \
-       "Head Office" in (emp_data.get("site") or "") or \
-       "Head Office" in (emp_data.get("department") or ""):
-        is_corporate = True
+
 
     items = frappe.get_list(
         "Employee Resignation Item",
@@ -499,9 +492,7 @@ def get_my_active_resignation(employee_id=None, **kwargs):
     if not resignations:
         return None
 
-    # Attach the is_corporate flag to all records
-    for record in resignations:
-        record["is_corporate"] = is_corporate
+
 
     for record in resignations:
         if record["workflow_state"] in EMPLOYEE_ACTION_STATES:
@@ -539,16 +530,7 @@ def get_all_my_resignations(employee_id=None, **kwargs):
         order_by="creation desc"
     )
 
-    # Check if corporate (works in Head Office)
-    emp_data = frappe.db.get_value("Employee", employee_name, ["project", "site", "department"], as_dict=True) or {}
-    is_corporate = False
-    if "Head Office" in (emp_data.get("project") or "") or \
-       "Head Office" in (emp_data.get("site") or "") or \
-       "Head Office" in (emp_data.get("department") or ""):
-        is_corporate = True
 
-    for record in resignations:
-        record["is_corporate"] = is_corporate
 
     return resignations
 

@@ -6,18 +6,7 @@ frappe.ui.form.on("Employee Resignation", {
 		let show_header = !frm.doc.__islocal && frm.doc.workflow_state && (!["Draft", ""].includes(frm.doc.workflow_state));
 		// frm.toggle_display("relieving_date", show_header);
 		
-		// Determine if Corporate
-		let is_corporate = false;
-		let project = frm.doc.project_allocation || "";
-		let site = frm.doc.site_allocation || "";
-		let dept = frm.doc.department || "";
-		if (project.includes("Head Office") || site.includes("Head Office") || dept.includes("Head Office")) {
-			is_corporate = true;
-		}
-
-		// Hide Operational Impact until Operations Manager stage (or Supervisor stage for Corporate)
-		let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || 
-							  (is_corporate && frm.doc.workflow_state === "Pending Supervisor");
+		let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state);
 		frm.toggle_display("operational_impact_section", show_ops_impact);
 	},
 
@@ -25,18 +14,7 @@ frappe.ui.form.on("Employee Resignation", {
 		let show_header = !frm.doc.__islocal && frm.doc.workflow_state && (!["Draft", ""].includes(frm.doc.workflow_state));
 		// frm.toggle_display("relieving_date", show_header);
 		
-		// Determine if Corporate
-		let is_corporate = false;
-		let project = frm.doc.project_allocation || "";
-		let site = frm.doc.site_allocation || "";
-		let dept = frm.doc.department || "";
-		if (project.includes("Head Office") || site.includes("Head Office") || dept.includes("Head Office")) {
-			is_corporate = true;
-		}
-
-		// Hide Operational Impact until Operations Manager stage (or Supervisor stage for Corporate)
-		let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || 
-							  (is_corporate && frm.doc.workflow_state === "Pending Supervisor");
+		let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state);
 		frm.toggle_display("operational_impact_section", show_ops_impact);
 
 		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
@@ -56,11 +34,11 @@ frappe.ui.form.on("Employee Resignation", {
 			frm.set_df_property('operations_manager', 'reqd', 0);
 			frm.set_df_property('offboarding_officer', 'reqd', 0);
 		} else {
-			frm.set_df_property('operations_manager', 'hidden', is_corporate ? 1 : 0);
+			frm.set_df_property('operations_manager', 'hidden', 0);
 			frm.set_df_property('offboarding_officer', 'hidden', 0);
 			// Mandatory for Operations Manager and onwards
 			let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state);
-			frm.set_df_property('operations_manager', 'reqd', (is_mandatory && !is_corporate) ? 1 : 0);
+			frm.set_df_property('operations_manager', 'reqd', is_mandatory ? 1 : 0);
 			frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
 		}
 
@@ -167,23 +145,13 @@ frappe.ui.form.on("Employee Resignation", {
 	},
 	
 	validate: function(frm) {
-		// Determine if Corporate
-		let is_corporate = false;
-		let project = frm.doc.project_allocation || "";
-		let site = frm.doc.site_allocation || "";
-		let dept = frm.doc.department || "";
-		if (project.includes("Head Office") || site.includes("Head Office") || dept.includes("Head Office")) {
-			is_corporate = true;
-		}
-
-	    // Robust UI validator catch: Managers are NOT mandatory for employees during initial entry/correction
-		if (["Draft", "Pending Relieving Date Correction"].includes(frm.doc.workflow_state) || frm.doc.__islocal) {
+	    if (["Draft", "Pending Relieving Date Correction"].includes(frm.doc.workflow_state) || frm.doc.__islocal) {
 			frm.set_df_property('operations_manager', 'reqd', 0);
 			frm.set_df_property('offboarding_officer', 'reqd', 0);
 		} else {
 			// Enforce mandatory strictly during OM assessment and beyond
 			let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state);
-			frm.set_df_property('operations_manager', 'reqd', (is_mandatory && !is_corporate) ? 1 : 0);
+			frm.set_df_property('operations_manager', 'reqd', is_mandatory ? 1 : 0);
 			frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
 		}
 

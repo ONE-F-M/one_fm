@@ -20,21 +20,13 @@ class EmployeeResignation(Document):
 					title=_("Missing Required Fields")
 				)
 
-		# Check if Corporate (works in Head Office)
-		is_corporate = False
-		if self.get("employees") and len(self.employees) > 0:
-			emp_id = self.employees[0].employee
-			emp_data = frappe.db.get_value("Employee", emp_id, ["project", "site", "department"], as_dict=True) or {}
-			if "Head Office" in (emp_data.get("project") or "") or \
-			   "Head Office" in (emp_data.get("site") or "") or \
-			   "Head Office" in (emp_data.get("department") or ""):
-				is_corporate = True
+
 
 		# Enforce Operations Manager and Offboarding Officer only during Managerial stages
 		state = self.get("workflow_state")
 		if state and state not in ("Draft", "Pending Relieving Date Correction"):
 			if state in ("Pending Operations Manager", "Approved"):
-				if not self.operations_manager and not is_corporate:
+				if not self.operations_manager:
 					frappe.throw(_("Please specify the <b>Operations Manager</b> before saving or submitting."))
 				if not self.offboarding_officer:
 					frappe.throw(_("Please specify the <b>Offboarding Officer</b> before saving or submitting."))
