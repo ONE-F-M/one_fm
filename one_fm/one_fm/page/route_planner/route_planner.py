@@ -408,16 +408,24 @@ def get_route_planner_data():
                 if other.get("shift_name") == card.get("shift_name"):
                     continue  # skip same shift
 
+                if other.get("accommodation") != card.get("accommodation"):
+                    continue
+
                 other_shift_end = parse_iso(other.get("shift_end", ""))
                 if not other_shift_end:
                     continue
 
                 # How close is other's shift_end to this card's shift_start?
-                gap = abs((card_shift_start - other_shift_end).total_seconds())
-                # Within 2 hours window
-                if gap < 7200 and gap < best_gap:
-                    best_gap = gap
-                    best_match = other
+                diff_seconds = (card_shift_start - other_shift_end).total_seconds()
+                
+                # other_shift_end should be around the same time as card_shift_start, or ANY TIME BEFORE it.
+                # Allow shift to end up to 1 hour after dropoff (vehicle waits for them)
+                # No upper limit on how long ago the shift ended (they wait for vehicle)
+                if -3600 <= diff_seconds:
+                    gap = abs(diff_seconds)
+                    if gap < best_gap:
+                        best_gap = gap
+                        best_match = other
 
             if best_match:
                 card["return_employees"] = best_match.get("employees", [])
