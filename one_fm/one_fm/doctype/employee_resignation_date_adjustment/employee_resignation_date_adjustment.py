@@ -35,12 +35,15 @@ class EmployeeResignationDateAdjustment(Document):
                     )
 
     def clear_manual_assignments(self):
-        from frappe.desk.form.assign_to import remove
-        if getattr(self, "supervisor", None):
-            try:
-                remove(self.doctype, self.name, self.supervisor)
-            except Exception:
-                pass
+        if not self.is_new():
+            old_doc = self.get_doc_before_save()
+            if old_doc and old_doc.workflow_state == "Pending Supervisor" and self.workflow_state != "Pending Supervisor":
+                from frappe.desk.form.assign_to import remove
+                if getattr(self, "supervisor", None):
+                    try:
+                        remove(self.doctype, self.name, self.supervisor)
+                    except Exception:
+                        pass
         
     def process_extension_approval(self):
         if not self.is_new():

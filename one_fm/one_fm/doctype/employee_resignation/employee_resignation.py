@@ -247,7 +247,7 @@ class EmployeeResignation(Document):
 				new_row.update(row_dict)
 				
 			pmr.workflow_state = "Draft"
-			pmr.insert(ignore_permissions=True, ignore_mandatory=True)
+			pmr.insert()
 			frappe.db.set_value("Project Manpower Request", pmr.name, "workflow_state", "Draft")
 
 	def on_trash(self):
@@ -268,6 +268,4 @@ class EmployeeResignation(Document):
 					"resignation_date": self.resignation_initiation_date,
 					"relieving_date": self.relieving_date,
 				}
-				if row.resignation_letter:
-					update_data["resignation_letter_date"] = row.get("resignation_letter_date") or self.resignation_initiation_date
 				frappe.db.set_value("Employee", row.employee, update_data, update_modified=False)

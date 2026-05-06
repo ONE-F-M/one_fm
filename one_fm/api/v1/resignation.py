@@ -64,6 +64,7 @@ def handle_attachment_internal(doc, row, attachment_data, field_name):
             frappe.db.set_value(row.doctype, row.name, field_name, file_doc.file_url)
         except Exception as e:
             frappe.log_error(f"Attachment failed for {file_name}", str(e))
+            frappe.throw(_("Failed to process attachment."), frappe.ValidationError)
 
 
 # ---------------------------------------------------------------------------
@@ -136,7 +137,6 @@ def create_resignation(
         # Step 2: Attach the letter (must happen after insert so the row has a name)
         if attachment:
             if isinstance(attachment, str):
-                import json
                 try:
                     attachment = json.loads(attachment)
                 except Exception:
@@ -154,6 +154,8 @@ def create_resignation(
         doc.save()
         return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
 
+    except (frappe.PermissionError, frappe.ValidationError):
+        raise
     except Exception as e:
         frappe.log_error("Create Resignation Error", frappe.get_traceback())
         frappe.throw(str(e), frappe.ValidationError)
@@ -414,12 +416,8 @@ def correct_resignation_date_app(
         if new_initiation:
             doc.resignation_initiation_date = new_initiation
 
-        for row in doc.employees:
-            pass
-
         if attachment:
             if isinstance(attachment, str):
-                import json
                 try:
                     attachment = json.loads(attachment)
                 except Exception:
@@ -431,8 +429,8 @@ def correct_resignation_date_app(
             for row in doc.employees:
                 handle_attachment_internal(doc, row, att_data, "resignation_letter")
 
+        doc.workflow_state = "Pending Supervisor"
         doc.save()
-        doc.db_set("workflow_state", "Pending Supervisor")
 
         return {
             "status": "success",

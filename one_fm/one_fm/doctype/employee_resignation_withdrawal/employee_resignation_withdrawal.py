@@ -81,16 +81,16 @@ class EmployeeResignationWithdrawal(Document):
 							# Increase PMR withdrawal tracking natively in the child table matrix!
 							withdrawal_row_found = False
 							for f_row in pmr.get("fulfillment_actions", []):
-							    if f_row.action_type == "Resignation Withdrawal":
-							        f_row.qty = (f_row.qty or 0) + approved_count
-							        withdrawal_row_found = True
-							        break
-							        
+								if f_row.action_type == "Resignation Withdrawal":
+									f_row.qty = (f_row.qty or 0) + approved_count
+									withdrawal_row_found = True
+									break
+									
 							if not withdrawal_row_found:
-							    pmr.append("fulfillment_actions", {
-							        "action_type": "Resignation Withdrawal",
-							        "qty": approved_count
-							    })
+								pmr.append("fulfillment_actions", {
+									"action_type": "Resignation Withdrawal",
+									"qty": approved_count
+								})
 							
 							# Recalculate remaining quantities automatically
 							if hasattr(pmr, 'calculate_remaining_qty'):
@@ -181,10 +181,23 @@ class EmployeeResignationWithdrawal(Document):
 			approver_user = frappe.db.get_value("Employee", approver_employee, "user_id")
 			if approver_user and frappe.db.exists("User", approver_user):
 				if frappe.db.has_column("Employee Resignation Withdrawal", "supervisor"):
-				    self.supervisor = approver_user
+					self.supervisor = approver_user
 			else:
-			    if frappe.db.has_column("Employee Resignation Withdrawal", "supervisor"):
-			        self.supervisor = None
+				if frappe.db.has_column("Employee Resignation Withdrawal", "supervisor"):
+					self.supervisor = None
+
+		# Set Operations Manager from the resignation document
+		if self.employee_resignation and frappe.db.has_column("Employee Resignation Withdrawal", "operations_manager"):
+			rsgn_om = frappe.db.get_value("Employee Resignation", self.employee_resignation, "operations_manager")
+			if rsgn_om:
+				self.operations_manager = rsgn_om
+
+		# Set Offboarding Officer — first user with that role
+		if not self.get("offboarding_officer") and frappe.db.has_column("Employee Resignation Withdrawal", "offboarding_officer"):
+			from frappe.utils.user import get_users_with_role
+			om_users = get_users_with_role("Offboarding Officer")
+			if om_users:
+				self.offboarding_officer = om_users[0]
 
 
 @frappe.whitelist()
