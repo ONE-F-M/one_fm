@@ -825,8 +825,8 @@
         //  RENDER
         // ════════════════════════════════════════════════════════════════════
 
-        let activeView = null;
         let shipmentEmployees = {};
+        let shipmentReturnEmployees = {};
         let shipmentSiteLocations = {};
         let shipmentShiftNames = {};
 
@@ -840,6 +840,7 @@
             const metrics = res.metrics ?? {};
 
             shipmentEmployees = ROUTE_DATA.shipmentEmployees ?? {};
+            shipmentReturnEmployees = ROUTE_DATA.shipmentReturnEmployees ?? {};
             shipmentSiteLocations = ROUTE_DATA.shipmentSiteLocations ?? {};
             shipmentShiftNames = ROUTE_DATA.shipmentShiftNames ?? {};
 
@@ -1017,10 +1018,35 @@
                 const tripStops = trip.stops;
                 if (!tripStops.length) return;
 
+                function calcTransit(t1, t2) {
+                    const ms = new Date(t2).getTime() - new Date(t1).getTime();
+                    if (ms <= 0) return { travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 };
+                    return { travelDuration: Math.round(ms / 1000) + 's', waitDuration: '0s', travelDistanceMeters: 0 };
+                }
+
                 // ── Pair stops: at each site, DROP OFF first then PICK UP ──
-                // Group by site location, then interleave: drop → pick per site
-                const siteStops = {}; // site → { dropoffs: [], pickups: [] }
+                const actualSiteStops = [];
                 tripStops.forEach(stop => {
+                    if (stop.direction === 'OUTBOUND' && stop.type === 'pickup') return;
+                    if (stop.direction === 'RETURN' && stop.type === 'dropoff') return;
+                    
+                    actualSiteStops.push(stop);
+
+                    if (stop.direction === 'OUTBOUND' && stop.type === 'dropoff') {
+                        const retEmps = shipmentReturnEmployees[stop.raw] || [];
+                        if (retEmps.length > 0) {
+                            actualSiteStops.push({
+                                ...stop,
+                                type: 'pickup',
+                                _isVirtualReturn: true,
+                                _virtualEmps: retEmps
+                            });
+                        }
+                    }
+                });
+
+                const siteStops = {}; // site → { dropoffs: [], pickups: [] }
+                actualSiteStops.forEach(stop => {
                     const site = shipmentSiteLocations[stop.raw] || stop.title || 'Unknown';
                     if (!siteStops[site]) siteStops[site] = { dropoffs: [], pickups: [] };
                     if (stop.type === 'dropoff') siteStops[site].dropoffs.push(stop);
@@ -1037,20 +1063,17 @@
                     .sort((a, b) => a.earliest - b.earliest);
 
                 // Build paired stop list: for each site, dropoffs first then pickups
-                const pairedStops = []; // { stop, siteNum }
+                const orderedStops = []; // { stop, siteNum }
                 siteOrder.forEach(({ site, data }, siteIdx) => {
                     const siteNum = siteIdx + 1;
                     data.dropoffs.sort((a, b) => new Date(a.time) - new Date(b.time));
                     data.pickups.sort((a, b) => new Date(a.time) - new Date(b.time));
-                    // Pair: interleave dropoff[i] then pickup[i] for each index
                     const maxLen = Math.max(data.dropoffs.length, data.pickups.length);
                     for (let i = 0; i < maxLen; i++) {
-                        if (i < data.dropoffs.length) pairedStops.push({ stop: data.dropoffs[i], siteNum });
-                        if (i < data.pickups.length) pairedStops.push({ stop: data.pickups[i], siteNum });
+                        if (i < data.dropoffs.length) orderedStops.push({ stop: data.dropoffs[i], siteNum });
+                        if (i < data.pickups.length) orderedStops.push({ stop: data.pickups[i], siteNum });
                     }
                 });
-
-                const orderedStops = pairedStops;
 
                 const firstTime = tripStops.reduce((min, s) => {
                     const t = new Date(s.time).getTime();
@@ -1096,14 +1119,19 @@
                     _allEmployees: boardingEmployees
                 }, 0, orderedStops.length + 2);
 
-                html += renderTransit({ travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 });
+                const firstSiteStop = orderedStops[0]?.stop;
+                if (firstSiteStop) {
+                    html += renderTransit(calcTransit(firstTimeISO, firstSiteStop.time));
+                } else {
+                    html += renderTransit({ travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 });
+                }
 
                 // ── Each stop individually ──
                 orderedStops.forEach((item, si) => {
                     const stop = item.stop;
                     const siteNum = item.siteNum;
                     const site = shipmentSiteLocations[stop.raw] || stop.title || 'Unknown';
-                    const emps = shipmentEmployees[stop.raw] ?? [];
+                    const emps = stop._isVirtualReturn ? stop._virtualEmps : (shipmentEmployees[stop.raw] ?? []);
                     const shift = shipmentShiftNames[stop.raw] || '';
                     const isDropoff = stop.type === 'dropoff';
                     const stopType = isDropoff ? 'dropoff' : 'pickup';
@@ -1147,8 +1175,13 @@
       </div>
     </div>`;
 
-                    if (si < orderedStops.length - 1 && stop.transition) {
-                        html += renderTransit(stop.transition);
+                    if (si < orderedStops.length - 1) {
+                        const nextStop = orderedStops[si + 1].stop;
+                        if (item.siteNum === orderedStops[si + 1].siteNum) {
+                            html += renderTransit({ travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 });
+                        } else {
+                            html += renderTransit(calcTransit(stop.time, nextStop.time));
+                        }
                     }
                 });
 
@@ -1156,14 +1189,19 @@
                 const returningEmployees = [];
                 orderedStops.forEach(item => {
                     if (item.stop.type === 'pickup') {
-                        (shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
+                        const stopEmps = item.stop._isVirtualReturn ? item.stop._virtualEmps : (shipmentEmployees[item.stop.raw] ?? []);
+                        stopEmps.forEach(e => {
                             if (!returningEmployees.includes(e)) returningEmployees.push(e);
                         });
                     }
                 });
 
-                const lastItem = orderedStops[orderedStops.length - 1];
-                html += renderTransit(lastItem?.stop?.transition || { travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 });
+                const lastSiteStop = orderedStops[orderedStops.length - 1]?.stop;
+                if (lastSiteStop) {
+                    html += renderTransit(calcTransit(lastSiteStop.time, lastTimeISO));
+                } else {
+                    html += renderTransit({ travelDuration: '0s', waitDuration: '0s', travelDistanceMeters: 0 });
+                }
                 html += renderStop({
                     type: 'end',
                     time: lastTimeISO,

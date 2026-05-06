@@ -1627,7 +1627,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 const slug = s => (s || '').replace(/[\s_]+/g, '-').replace(/[^a-zA-Z0-9\-]/g, '');
 
                 const shipments = [], vehiclesList = [], routes = [];
-                const shipEmp = {}, shipSite = {}, shipShift = {}, vMeta = {}, cMap = {};
+                const shipEmp = {}, shipReturnEmp = {}, shipSite = {}, shipShift = {}, vMeta = {}, cMap = {};
                 let si = 0;
 
                 // Fix #6: Build shipments from swimItems (per direction actually placed)
@@ -1645,11 +1645,12 @@ function mountRoutePlannerApp(wrapper, data) {
                     shipments.push({ label: lbl, pickups: [{}], deliveries: [{}] });
                     // OUTBOUND uses card.employees (employees being delivered to site)
                     // RETURN uses card.return_employees (previous shift employees being collected)
-                    if (item.direction === 'RETURN' && card.return_employees && card.return_employees.length > 0) {
-                        shipEmp[lbl] = card.return_employees;
+                    if (item.direction === 'RETURN') {
+                        shipEmp[lbl] = (card.return_employees && card.return_employees.length > 0) ? card.return_employees : [];
                     } else {
-                        shipEmp[lbl] = card.employees;
+                        shipEmp[lbl] = card.employees || [];
                     }
+                    shipReturnEmp[lbl] = card.return_employees || [];
                     shipSite[lbl] = card.site_location;
                     shipShift[lbl] = card.shift_name;
                     cMap[dirKey] = { lbl, idx };
@@ -1730,6 +1731,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     },
                     response: { routes, skippedShipments: [], metrics: { totalCost: 0 } },
                     shipmentEmployees: shipEmp,
+                    shipmentReturnEmployees: shipReturnEmp,
                     shipmentSiteLocations: shipSite,
                     shipmentShiftNames: shipShift,
                     vehicleMeta: vMeta
