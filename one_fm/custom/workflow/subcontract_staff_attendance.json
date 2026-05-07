@@ -178,7 +178,7 @@
     },
     {
       "state": "Pending Project Manager",
-      "action": "Return To Draft",
+      "action": "Return To Operations Supervisor",
       "next_state": "Pending Operations Supervisor",
       "allowed": "Projects Manager",
       "allow_self_approval": 1,
@@ -204,6 +204,19 @@
       "custom_confirm_message": "",
       "require_digital_signature": 0,
       "condition": "",
+      "doctype": "Workflow Transition"
+    },
+    {
+      "state": "Pending Project Manager",
+      "action": "Return to Subcontractor",
+      "next_state": "Draft",
+      "allowed": "Projects Manager",
+      "allow_self_approval": 1,
+      "send_email_to_creator": 0,
+      "skip_multiple_action": 0,
+      "skip_creation_of_workflow_action": 0,
+      "custom_confirm_transition": 0,
+      "require_digital_signature": 0,
       "doctype": "Workflow Transition"
     }
   ]
