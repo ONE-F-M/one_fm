@@ -31,9 +31,9 @@ class SubcontractStaffAttendance(Document):
 			if getdate(today()) < allowed_date:
 				frappe.throw(f"You cannot select a billing month until the 11th of the following month. For {to_date.strftime('%B %Y')}, you must wait until {allowed_date.strftime('%B %d, %Y')}.")
 
+		old_state = frappe.db.get_value("Subcontract Staff Attendance", self.name, "workflow_state")
 		# Enforce remarks when returning to Draft
 		if not self.is_new() and self.workflow_state == "Draft":
-			old_state = frappe.db.get_value("Subcontract Staff Attendance", self.name, "workflow_state")
 			if old_state in ["Pending Operations Supervisor", "Pending Project Manager"]:
 				has_remarks = any(row.remarks for row in self.get("subcontractor_staff_attendance_item", []))
 				if not has_remarks:
@@ -41,7 +41,6 @@ class SubcontractStaffAttendance(Document):
 
 		# Enforce remarks when raising dispute or returning between supervisor/manager
 		if not self.is_new():
-			old_state = frappe.db.get_value("Subcontract Staff Attendance", self.name, "workflow_state")
 
 			# Supervisor raises dispute: Pending Operations Supervisor → Pending Project Manager
 			if old_state == "Pending Operations Supervisor" and self.workflow_state == "Pending Project Manager":
