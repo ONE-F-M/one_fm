@@ -208,7 +208,7 @@
     },
     {
       "state": "Pending Project Manager",
-      "action": "Return to Subcontractor",
+      "action": "Return To Subcontractor",
       "next_state": "Draft",
       "allowed": "Projects Manager",
       "allow_self_approval": 1,
