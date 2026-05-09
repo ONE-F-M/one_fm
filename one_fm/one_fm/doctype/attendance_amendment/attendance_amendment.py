@@ -14,11 +14,26 @@ class AttendanceAmendment(Document):
 
 	def recalculate_working_days(self):
 		for row in self.get("attendance_details") + self.get("overtime_details"):
-			working_days = 0 
+			working_days = 0
 			off_days = 0
+			# OT + Attendance Status stores statuses in day_X; OT + hours modes use day_X_hour
+			use_hours = self.attendance_based_on in ("Shift Hours", "Working Hours")
+
 			for i in range(1, 32):
-				val = row.get(f"day_{i}")
-				if self.attendance_based_on == "Attendance Status":
+				if use_hours:
+					val = row.get(f"day_{i}")
+					hour_val = row.get(f"day_{i}_hour")
+					if isinstance(val, str) and val in ("Day Off", "Client Day Off"):
+						off_days += 1
+					elif hour_val and hour_val not in ("N/A",):
+						try:
+							if float(hour_val) > 0:
+								working_days += 1
+						except (ValueError, TypeError):
+							pass
+				else:
+					# Attendance Status mode (basic rows only)
+					val = row.get(f"day_{i}")
 					if val in ["Present", "Working", "Work From Home"]:
 						working_days += 1
 					elif val == "Half Day":
@@ -40,8 +55,8 @@ class AttendanceAmendment(Document):
 			frappe.msgprint(_("No attendance records found."), alert=True, indicator="orange")
 
 		if self.ot_data_required:
-			ot_attendance_map = get_ot_attendance_map(filters)
-			ot_data = get_ot_rows(employee_details, filters, ot_attendance_map)
+			ot_attendance_map = get_ot_attendance_map(filters, self.attendance_based_on)
+			ot_data = get_ot_rows(employee_details, filters, ot_attendance_map, self.attendance_based_on)
 			if ot_data:
 				self.update_attendance_records(ot_data, type="Overtime")
 			else:
@@ -68,9 +83,25 @@ class AttendanceAmendment(Document):
 			return
 		child_table = "overtime_details" if type == "Overtime" else "attendance_details"
 		self.set(child_table, [])
+
+		# Non-numeric values that are statuses, not hours
+		status_strings = {"Day Off", "Client Day Off", "Absent", "On Leave", "On Hold",
+			"Present", "Half Day", "Work From Home", "Holiday",
+			"Fingerprint Appointment", "Medical Appointment", "Working", "N/A"}
+
 		for record in data:
-			if type == "Overtime" or self.attendance_based_on == "Shift Hours":
-				day_fields = {f"day_{i}_hour": record.get(str(i), 'N/A' if type == "Overtime" else '') for i in range(1, 32)}
+			# Hours mode: Shift Hours / Working Hours → split into day_X (status) + day_X_hour (number)
+			# Status mode: Attendance Status → store everything in day_X
+			use_hours = self.attendance_based_on in ("Shift Hours", "Working Hours")
+
+			if use_hours:
+				day_fields = {}
+				for i in range(1, 32):
+					val = record.get(str(i), "N/A" if type == "Overtime" else "")
+					if isinstance(val, str) and val in status_strings:
+						day_fields[f"day_{i}"] = val
+					else:
+						day_fields[f"day_{i}_hour"] = val
 			else:
 				day_fields = {f"day_{i}": record.get(str(i), '') for i in range(1, 32)}
 
@@ -140,7 +171,13 @@ def get_attendance_map(filters, attendance_based_on=None):
 			d.shift = ""
 
 		attendance_map.setdefault(d.employee, {}).setdefault(d.shift, {})
-		attendance_map[d.employee][d.shift][d.day_of_month] = d.status if attendance_based_on == "Attendance Status" else d.working_hours
+		if attendance_based_on == "Attendance Status":
+			attendance_map[d.employee][d.shift][d.day_of_month] = d.status
+		elif attendance_based_on == "Shift Hours":
+			attendance_map[d.employee][d.shift][d.day_of_month] = d.shift_duration
+		else:
+			# Working Hours — use actual working hours from Attendance
+			attendance_map[d.employee][d.shift][d.day_of_month] = d.working_hours
 
 	# leave is applicable for the entire day so all shifts should show the leave entry
 	for employee, leave_days in leave_map.items():
@@ -162,17 +199,21 @@ def get_non_day_off_attendance_records(filters):
 
 	Attendance = frappe.qb.DocType("Attendance")
 	OperationsShift = frappe.qb.DocType("Operations Shift")
+	ShiftType = frappe.qb.DocType("Shift Type")
 
 	query = (
 		frappe.qb.from_(Attendance)
 		.join(OperationsShift)
 		.on(Attendance.operations_shift == OperationsShift.name)
+		.left_join(ShiftType)
+		.on(OperationsShift.shift_type == ShiftType.name)
 		.select(
 			Attendance.employee,
 			Extract("day", Attendance.attendance_date).as_("day_of_month"),
 			Attendance.status,
 			OperationsShift.shift_classification.as_("shift"),
-			Attendance.working_hours
+			Attendance.working_hours,
+			ShiftType.duration.as_("shift_duration")
 		)
 		.where(
 			(Attendance.docstatus == 1)
@@ -288,10 +329,10 @@ def get_attendance_status(filters, employee_non_day_off_attendance, employee_day
 				if status in ["Present", "Working", "Work From Home"]:
 					working_days += 1
 
-			if attendance_based_on == "Shift Hours":
+			elif attendance_based_on in ("Shift Hours", "Working Hours"):
 				if not status and employee_day_off_attendance:
 					status = employee_day_off_attendance.get(day, 0)
-				if status and status not in ["Day Off", "Client Day Off", "Absent", "On Leave"]: # For Shift Hours, status contains the working hours value
+				if status and status not in ["Day Off", "Client Day Off", "Absent", "On Leave"]:
 					working_days += 1
 
 			if status in ["Day Off", "Client Day Off"]:
@@ -306,7 +347,7 @@ def get_attendance_status(filters, employee_non_day_off_attendance, employee_day
 
 	return attendance_values
 
-def get_ot_attendance_map(filters):
+def get_ot_attendance_map(filters, attendance_based_on=None):
 	non_day_off_attendance_records = get_ot_attendance_records(filters)
 
 	attendance_map = {}
@@ -316,7 +357,12 @@ def get_ot_attendance_map(filters):
 			d.shift = ""
 
 		attendance_map.setdefault(d.employee, {}).setdefault(d.shift, {})
-		attendance_map[d.employee][d.shift][d.day_of_month] = d.working_hours
+		if attendance_based_on == "Shift Hours":
+			attendance_map[d.employee][d.shift][d.day_of_month] = d.shift_duration
+		elif attendance_based_on == "Attendance Status":
+			attendance_map[d.employee][d.shift][d.day_of_month] = d.status
+		else:
+			attendance_map[d.employee][d.shift][d.day_of_month] = d.working_hours
 
 	return attendance_map
 
@@ -327,17 +373,21 @@ def get_ot_attendance_records(filters):
 
 	Attendance = frappe.qb.DocType("Attendance")
 	OperationsShift = frappe.qb.DocType("Operations Shift")
+	ShiftType = frappe.qb.DocType("Shift Type")
 
 	query = (
 		frappe.qb.from_(Attendance)
 		.join(OperationsShift)
 		.on(Attendance.operations_shift == OperationsShift.name)
+		.left_join(ShiftType)
+		.on(OperationsShift.shift_type == ShiftType.name)
 		.select(
 			Attendance.employee,
 			Extract("day", Attendance.attendance_date).as_("day_of_month"),
 			Attendance.status,
 			OperationsShift.shift_classification.as_("shift"),
-			Attendance.working_hours
+			Attendance.working_hours,
+			ShiftType.duration.as_("shift_duration")
 		)
 		.where(
 			(Attendance.docstatus == 1)
@@ -357,10 +407,13 @@ def get_ot_attendance_records(filters):
 
 	return query.run(as_dict=True)
 
-def get_ot_rows(employee_details, filters, attendance_map):
+def get_ot_rows(employee_details, filters, attendance_map, attendance_based_on=None):
 	records = []
 
 	day_off_attendance_map = get_day_off_attendance_map(filters, "Over-Time")
+
+	# Pass the actual mode through so OT respects Attendance Status when selected
+	ot_mode = attendance_based_on or "Working Hours"
 
 	for employee, details in employee_details.items():
 		employee_attendance = attendance_map.get(employee)
@@ -369,7 +422,7 @@ def get_ot_rows(employee_details, filters, attendance_map):
 			# no attendance records found for employee
 			continue
 
-		attendance_for_employee = get_attendance_status(filters, employee_attendance, employee_day_off_attendance, "Shift Hours")
+		attendance_for_employee = get_attendance_status(filters, employee_attendance, employee_day_off_attendance, ot_mode)
 
 		# set employee details in the first row
 		for record in attendance_for_employee:
@@ -386,24 +439,63 @@ def get_ot_rows(employee_details, filters, attendance_map):
 
 
 @frappe.whitelist()
-def get_operations_role_names(amendment_name: str) -> dict:
-	"""Return a map of operations_role name → post_name (Role Name)."""
+def get_sale_item_details(amendment_name: str) -> dict:
+	"""Return a map of sale_item → item_type from Contract Item."""
 	doc = frappe.get_doc("Attendance Amendment", amendment_name)
 	doc.check_permission("read")
 
-	role_names = set()
+	sale_items = set()
 	for row in doc.get("attendance_details"):
-		if row.operations_role:
-			role_names.add(row.operations_role)
+		if row.sale_item:
+			sale_items.add(row.sale_item)
 	for row in doc.get("overtime_details"):
-		if row.operations_role:
-			role_names.add(row.operations_role)
+		if row.sale_item:
+			sale_items.add(row.sale_item)
 
-	if not role_names:
+	if not sale_items:
 		return {}
 
-	roles = frappe.get_list("Operations Role",
-		filters={"name": ["in", list(role_names)]},
-		fields=["name", "post_name"]
+	items = frappe.get_list("Item",
+		filters={"name": ["in", list(sale_items)]},
+		fields=["name", "item_type"]
 	)
-	return {r.name: r.post_name for r in roles}
+	return {i.name: i.item_type or "" for i in items}
+
+
+@frappe.whitelist()
+def get_pdf_header_metadata(amendment_name: str) -> dict:
+	"""Return metadata needed for the PDF header: logo, company, client, project."""
+	doc = frappe.get_doc("Attendance Amendment", amendment_name)
+	doc.check_permission("read")
+
+	company_name = frappe.defaults.get_user_default("Company") or ""
+	logo_url = ""
+	client_name = ""
+
+	# Get Letter Head logo
+	letter_head_name = ""
+	if company_name:
+		letter_head_name = frappe.db.get_value("Company", company_name, "default_letter_head") or ""
+	if not letter_head_name:
+		letter_head_name = frappe.db.get_default("letter_head") or ""
+	if letter_head_name:
+		# Try the image field first (clean URL)
+		logo_url = frappe.db.get_value("Letter Head", letter_head_name, "image") or ""
+		if not logo_url:
+			# Fallback: extract src from the HTML content field
+			import re
+			content = frappe.db.get_value("Letter Head", letter_head_name, "content") or ""
+			match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', content)
+			if match:
+				logo_url = match.group(1)
+
+	# Get client from Contract
+	if doc.contract:
+		client_name = frappe.db.get_value("Contracts", doc.contract, "client") or ""
+
+	return {
+		"logo_url": logo_url,
+		"company_name": company_name,
+		"client_name": client_name,
+		"project_name": doc.project or ""
+	}
