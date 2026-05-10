@@ -124,7 +124,13 @@ def on_update(doc, event):
     if doc.workflow_state in ['Approved', 'Rejected']:
         workflow_approve_reject(doc, [get_employee_user_id(doc.employee)])
 
-    if doc.workflow_state == 'Approved':
+    previous_doc = doc.get_doc_before_save()
+    transitioned_to_approved = (
+        doc.workflow_state == 'Approved'
+        and (not previous_doc or previous_doc.workflow_state != 'Approved')
+    )
+
+    if transitioned_to_approved:
         create_retroactive_day_off_penalty(doc)
 
     if doc.workflow_state == 'Draft':
