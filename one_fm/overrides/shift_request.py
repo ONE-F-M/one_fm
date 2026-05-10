@@ -176,7 +176,7 @@ def create_retroactive_day_off_penalty(doc):
         penalty.issuer = issuer
         penalty.location = doc.site
         penalty.issuance_date = today()
-        penalty.incident_date = today()
+        penalty.incident_date = getdate(doc.from_date)
         penalty.supervisor_remarks = _(
             "Automated penalty issued due to retroactive Day Off request for {0}."
         ).format(doc.name)
