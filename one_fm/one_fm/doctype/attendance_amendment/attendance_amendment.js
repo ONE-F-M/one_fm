@@ -605,7 +605,6 @@ function export_preview_as_pdf(html_content, frm) {
         async: false,
         callback: function(r) {
             if (!r.message) return;
-            console.log("pdf header metadata", r.message);
             let meta = r.message;
             let logo_url = meta.logo_url || "";
             // Convert relative path to absolute URL so it works in Blob-based PDF
