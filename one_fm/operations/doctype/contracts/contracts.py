@@ -1644,7 +1644,7 @@ def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, 
 
     # Convert start_date to "October" and "2025" format
     month, year = start_date.strftime("%B %Y").split(" ")
-    is_hourly = attendance_based_on in ("Shift Hours", "Working Hours")
+    is_hourly = rate_type == "Hourly"
 
     site_quantities = {}
 
