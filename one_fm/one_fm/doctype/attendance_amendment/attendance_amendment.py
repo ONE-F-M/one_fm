@@ -440,7 +440,7 @@ def get_ot_rows(employee_details, filters, attendance_map, attendance_based_on=N
 
 @frappe.whitelist()
 def get_sale_item_details(amendment_name: str) -> dict:
-	"""Return a map of sale_item → item_type from Contract Item."""
+	"""Return a map of sale_item → item_type from Item."""
 	doc = frappe.get_doc("Attendance Amendment", amendment_name)
 	doc.check_permission("read")
 
