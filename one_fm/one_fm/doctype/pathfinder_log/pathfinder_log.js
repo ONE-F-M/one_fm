@@ -2,7 +2,12 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Pathfinder Log", {
+	onload(frm) {
+		set_current_user(frm);
+
+	},
 	refresh(frm) {
+
 		// Hide Status on new documents — it always defaults to Backlog
 		// and cannot be meaningfully interacted with until the doc is saved.
 		frm.toggle_display("status", !frm.is_new());
@@ -18,6 +23,7 @@ frappe.ui.form.on("Pathfinder Log", {
 
 		set_deployed_read_only(frm);
 		setup_process_map_action(frm);
+		set_current_user(frm);
 	},
 
 	status(frm) {
@@ -100,5 +106,11 @@ function setup_process_map_action(frm) {
 			},
 			__("Create")
 		);
+	}
+}
+
+function set_current_user(frm) {
+	if (!frm.doc.business_analyst_user || frm.doc.business_analyst_user == "frappe.session.user") {
+		frm.doc.business_analyst_user = frappe.session.user;
 	}
 }

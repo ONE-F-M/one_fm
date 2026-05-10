@@ -1,311 +1,311 @@
 {
- "actions": [],
- "autoname": "naming_series:",
- "creation": "2025-10-06 12:34:11.847152",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "checklist",
-  "section_break_esrh",
-  "process_name",
-  "process_is_generic",
-  "column_break_iarv",
-  "epic",
-  "column_break_cccw",
-  "process_folder_link",
-  "section_break_wx0s",
-  "goal_description",
-  "column_break_ojgt",
-  "initiated_on",
-  "status",
-  "stakeholders_section",
-  "process_owner_user",
-  "process_owner_name",
-  "column_break_itfw",
-  "business_analyst_user",
-  "business_analyst_name",
-  "section_break_qrox",
-  "naming_series",
-  "amended_from",
-  "change_requests_tab",
-  "section_break_gamf",
-  "change_requests",
-  "timelines_tab",
-  "section_break_gumx",
-  "time_log",
-  "hd_ticket"
- ],
- "fields": [
-  {
-   "bold": 1,
-   "description": "Click to navigate to the checklist that must be followed for the current task.",
-   "fieldname": "checklist",
-   "fieldtype": "Link",
-   "label": "Checklist",
-   "options": "Process Artefact Checklist",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_esrh",
-   "fieldtype": "Section Break",
-   "label": "Process Classification"
-  },
-  {
-   "description": "Only the processes that have gone through Pathfinder are listed. If your process is not listed in the options, select \"Others\".",
-   "fieldname": "process_name",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Process Name",
-   "options": "Process",
-   "remember_last_selected_value": 1,
-   "reqd": 1
-  },
-  {
-   "default": "0",
-   "fetch_from": "process_name.is_generic",
-   "fieldname": "process_is_generic",
-   "fieldtype": "Check",
-   "label": "Process is Generic",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_iarv",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "All user stories under this process need to be added under this epic.",
-   "fieldname": "epic",
-   "fieldtype": "Link",
-   "label": "Epic",
-   "options": "Work Item"
-  },
-  {
-   "fieldname": "column_break_cccw",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "Add the link to the process folder in the shared Google Drive.",
-   "fieldname": "process_folder_link",
-   "fieldtype": "Data",
-   "label": "Process Folder Link",
-   "options": "URL"
-  },
-  {
-   "fieldname": "section_break_wx0s",
-   "fieldtype": "Section Break",
-   "label": "Increment Details"
-  },
-  {
-   "description": "A brief description of what this update is meant to achieve.",
-   "fieldname": "goal_description",
-   "fieldtype": "Small Text",
-   "in_list_view": 1,
-   "label": "Goal Description",
-   "reqd": 1
-  },
-  {
-   "fieldname": "column_break_ojgt",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "Today",
-   "fieldname": "initiated_on",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Initiated On",
-   "read_only": 1
-  },
-  {
-   "default": "Backlog",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Backlog\nPending Process Classification\nUpcoming\nActive\nOn Hold\nDeployed"
-  },
-  {
-   "fieldname": "hd_ticket",
-   "fieldtype": "Link",
-   "label": "HD Ticket",
-   "options": "HD Ticket",
-   "read_only": 1
-  },
-  {
-   "fieldname": "stakeholders_section",
-   "fieldtype": "Section Break",
-   "label": "Stakeholders"
-  },
-  {
-   "fetch_from": "process_name.process_owner",
-   "fieldname": "process_owner_user",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "in_list_view": 1,
-   "label": "Process Owner User",
-   "options": "User",
-   "read_only": 1,
-   "reqd": 1
-  },
-  {
-   "fetch_from": "process_owner_user.full_name",
-   "fieldname": "process_owner_name",
-   "fieldtype": "Data",
-   "label": "Process Owner Name"
-  },
-  {
-   "fieldname": "column_break_itfw",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "business_analyst_user",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "label": "Business Analyst User",
-   "options": "User",
-   "reqd": 1
-  },
-  {
-   "fetch_from": "business_analyst_user.full_name",
-   "fieldname": "business_analyst_name",
-   "fieldtype": "Data",
-   "label": "Business Analyst Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_qrox",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Naming Series",
-   "no_copy": 1,
-   "options": "PAT-LOG-.YYYY.-.MM.-.####",
-   "set_only_once": 1
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Pathfinder Log",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
-   "fieldname": "change_requests_tab",
-   "fieldtype": "Tab Break",
-   "label": "Change Requests"
-  },
-  {
-   "fieldname": "section_break_gamf",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "change_requests",
-   "fieldtype": "Table",
-   "label": "Change Requests",
-   "options": "Pathfinder Log Change Request"
-  },
-  {
-   "fieldname": "timelines_tab",
-   "fieldtype": "Tab Break",
-   "label": "Timelines"
-  },
-  {
-   "fieldname": "section_break_gumx",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "time_log",
-   "fieldtype": "Table",
-   "label": "Time Log",
-   "options": "Pathfinder Log Time",
-   "read_only": 1
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "links": [
-  {
-   "link_doctype": "BPMN Process Model",
-   "link_fieldname": "pathfinder_log"
-  }
- ],
- "modified": "2026-05-10 12:29:46.700814",
- "modified_by": "c.akeru@one-fm.com",
- "module": "One Fm",
- "name": "Pathfinder Log",
- "naming_rule": "By \"Naming Series\" field",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Head Office Employee",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Business Analyst",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [
-  {
-   "color": "Red",
-   "title": "Backlog"
-  },
-  {
-   "color": "Purple",
-   "title": "Pending Process Classification"
-  },
-  {
-   "color": "Orange",
-   "title": "Upcoming"
-  },
-  {
-   "color": "Blue",
-   "title": "Active"
-  },
-  {
-   "color": "Yellow",
-   "title": "On Hold"
-  },
-  {
-   "color": "Green",
-   "title": "Deployed"
-  }
- ],
- "track_changes": 1
+    "actions": [],
+    "autoname": "naming_series:",
+    "creation": "2025-10-06 12:34:11.847152",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "checklist",
+        "section_break_esrh",
+        "process_name",
+        "process_is_generic",
+        "column_break_iarv",
+        "epic",
+        "column_break_cccw",
+        "process_folder_link",
+        "section_break_wx0s",
+        "goal_description",
+        "column_break_ojgt",
+        "initiated_on",
+        "status",
+        "stakeholders_section",
+        "process_owner_user",
+        "process_owner_name",
+        "column_break_itfw",
+        "business_analyst_user",
+        "business_analyst_name",
+        "section_break_qrox",
+        "naming_series",
+        "amended_from",
+        "change_requests_tab",
+        "section_break_gamf",
+        "change_requests",
+        "timelines_tab",
+        "section_break_gumx",
+        "time_log",
+        "hd_ticket"
+    ],
+    "fields": [
+        {
+            "bold": 1,
+            "description": "Click to navigate to the checklist that must be followed for the current task.",
+            "fieldname": "checklist",
+            "fieldtype": "Link",
+            "label": "Checklist",
+            "options": "Process Artefact Checklist",
+            "read_only": 1
+        },
+        {
+            "fieldname": "section_break_esrh",
+            "fieldtype": "Section Break",
+            "label": "Process Classification"
+        },
+        {
+            "description": "Only the processes that have gone through Pathfinder are listed. If your process is not listed in the options, select \"Others\".",
+            "fieldname": "process_name",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Process Name",
+            "options": "Process",
+            "remember_last_selected_value": 1,
+            "reqd": 1
+        },
+        {
+            "default": "0",
+            "fetch_from": "process_name.is_generic",
+            "fieldname": "process_is_generic",
+            "fieldtype": "Check",
+            "label": "Process is Generic",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_iarv",
+            "fieldtype": "Column Break"
+        },
+        {
+            "description": "All user stories under this process need to be added under this epic.",
+            "fieldname": "epic",
+            "fieldtype": "Link",
+            "label": "Epic",
+            "options": "Work Item"
+        },
+        {
+            "fieldname": "column_break_cccw",
+            "fieldtype": "Column Break"
+        },
+        {
+            "description": "Add the link to the process folder in the shared Google Drive.",
+            "fieldname": "process_folder_link",
+            "fieldtype": "Data",
+            "label": "Process Folder Link",
+            "options": "URL"
+        },
+        {
+            "fieldname": "section_break_wx0s",
+            "fieldtype": "Section Break",
+            "label": "Increment Details"
+        },
+        {
+            "description": "A brief description of what this update is meant to achieve.",
+            "fieldname": "goal_description",
+            "fieldtype": "Small Text",
+            "in_list_view": 1,
+            "label": "Goal Description",
+            "reqd": 1
+        },
+        {
+            "fieldname": "column_break_ojgt",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "Today",
+            "fieldname": "initiated_on",
+            "fieldtype": "Date",
+            "in_list_view": 1,
+            "label": "Initiated On",
+            "read_only": 1
+        },
+        {
+            "default": "Backlog",
+            "fieldname": "status",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "in_standard_filter": 1,
+            "label": "Status",
+            "options": "Backlog\nPending Process Classification\nUpcoming\nActive\nOn Hold\nDeployed"
+        },
+        {
+            "fieldname": "hd_ticket",
+            "fieldtype": "Link",
+            "label": "HD Ticket",
+            "options": "HD Ticket",
+            "read_only": 1
+        },
+        {
+            "fieldname": "stakeholders_section",
+            "fieldtype": "Section Break",
+            "label": "Stakeholders"
+        },
+        {
+            "fetch_from": "process_name.process_owner",
+            "fieldname": "process_owner_user",
+            "fieldtype": "Link",
+            "ignore_user_permissions": 1,
+            "in_list_view": 1,
+            "label": "Process Owner User",
+            "options": "User",
+            "read_only": 1,
+            "reqd": 1
+        },
+        {
+            "fetch_from": "process_owner_user.full_name",
+            "fieldname": "process_owner_name",
+            "fieldtype": "Data",
+            "label": "Process Owner Name"
+        },
+        {
+            "fieldname": "column_break_itfw",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "business_analyst_user",
+            "fieldtype": "Link",
+            "ignore_user_permissions": 1,
+            "label": "Business Analyst User",
+            "options": "User",
+            "reqd": 1
+        },
+        {
+            "fetch_from": "business_analyst_user.full_name",
+            "fieldname": "business_analyst_name",
+            "fieldtype": "Data",
+            "label": "Business Analyst Name",
+            "read_only": 1
+        },
+        {
+            "fieldname": "section_break_qrox",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "naming_series",
+            "fieldtype": "Select",
+            "label": "Naming Series",
+            "no_copy": 1,
+            "options": "PAT-LOG-.YYYY.-.MM.-.####",
+            "set_only_once": 1
+        },
+        {
+            "fieldname": "amended_from",
+            "fieldtype": "Link",
+            "label": "Amended From",
+            "no_copy": 1,
+            "options": "Pathfinder Log",
+            "print_hide": 1,
+            "read_only": 1,
+            "search_index": 1
+        },
+        {
+            "fieldname": "change_requests_tab",
+            "fieldtype": "Tab Break",
+            "label": "Change Requests"
+        },
+        {
+            "fieldname": "section_break_gamf",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "change_requests",
+            "fieldtype": "Table",
+            "label": "Change Requests",
+            "options": "Pathfinder Log Change Request"
+        },
+        {
+            "fieldname": "timelines_tab",
+            "fieldtype": "Tab Break",
+            "label": "Timelines"
+        },
+        {
+            "fieldname": "section_break_gumx",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "time_log",
+            "fieldtype": "Table",
+            "label": "Time Log",
+            "options": "Pathfinder Log Time",
+            "read_only": 1
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "links": [
+        {
+            "link_doctype": "BPMN Process Model",
+            "link_fieldname": "pathfinder_log"
+        }
+    ],
+    "modified": "2026-04-28 11:05:58.501850",
+    "modified_by": "Administrator",
+    "module": "One Fm",
+    "name": "Pathfinder Log",
+    "naming_rule": "By \"Naming Series\" field",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Head Office Employee",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Business Analyst",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [
+        {
+            "color": "Red",
+            "title": "Backlog"
+        },
+        {
+            "color": "Purple",
+            "title": "Pending Process Classification"
+        },
+        {
+            "color": "Orange",
+            "title": "Upcoming"
+        },
+        {
+            "color": "Blue",
+            "title": "Active"
+        },
+        {
+            "color": "Yellow",
+            "title": "On Hold"
+        },
+        {
+            "color": "Green",
+            "title": "Deployed"
+        }
+    ],
+    "track_changes": 1
 }
