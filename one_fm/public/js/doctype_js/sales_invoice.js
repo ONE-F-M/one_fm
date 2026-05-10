@@ -950,24 +950,33 @@ function show_invoice_period_dialog(frm, contract) {
                 options: years,
                 default: current_year,
                 reqd: 1
+            },
+            {
+                label: 'Attendance Based On',
+                fieldname: 'attendance_based_on',
+                fieldtype: 'Select',
+                options: ['Attendance Status', 'Shift Hours', 'Working Hours'],
+                default: 'Attendance Status',
+                reqd: 1
             }
         ],
         primary_action_label: __('Get Items'),
         primary_action: function(values) {
             d.hide();
-            fetch_items_from_contract(frm, contract, values.month, values.year);
+            fetch_items_from_contract(frm, contract, values.month, values.year, values.attendance_based_on);
         }
     });
     d.show();
 }
 
-function fetch_items_from_contract(frm, contract, month, year) {
+function fetch_items_from_contract(frm, contract, month, year, attendance_based_on) {
     frappe.call({
         method: "one_fm.overrides.get_items_from_contracts.get_contract_invoice_items",
         args: {
             contract: contract,
             month: month,
-            year: year
+            year: year,
+            attendance_based_on: attendance_based_on || "Attendance Status"
         },
         freeze: true,
         freeze_message: __('Fetching Contract Items and calculating Attendance...'),
