@@ -22,7 +22,7 @@ frappe.ui.form.on('Attendance Check', {
 	},
 	attendance_status: function(frm){
 		if (frm.doc.attendance_status != "Present"){
-			frm.doc.justification = ""
+			frm.set_value("justification", "");
 			frm.set_value("action", "");
 			reset_verification_fields(frm);
 		}
