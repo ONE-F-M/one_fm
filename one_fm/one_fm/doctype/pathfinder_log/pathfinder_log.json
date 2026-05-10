@@ -32,7 +32,8 @@
   "change_requests",
   "timelines_tab",
   "section_break_gumx",
-  "time_log"
+  "time_log",
+  "hd_ticket"
  ],
  "fields": [
   {
@@ -158,13 +159,11 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "process_name.business_analyst",
    "fieldname": "business_analyst_user",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "label": "Business Analyst User",
    "options": "User",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -236,8 +235,8 @@
    "link_fieldname": "pathfinder_log"
   }
  ],
- "modified": "2026-04-28 11:05:58.501850",
- "modified_by": "Administrator",
+ "modified": "2026-05-10 12:29:46.700814",
+ "modified_by": "c.akeru@one-fm.com",
  "module": "One Fm",
  "name": "Pathfinder Log",
  "naming_rule": "By \"Naming Series\" field",
