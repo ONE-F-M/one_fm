@@ -1991,7 +1991,7 @@ def bank_account_on_trash(doc, method):
 def update_onboarding_doc_for_bank_account(doc):
     if doc.onboard_employee:
         progress_wf_list = {'Draft': 0, 'Open Request': 30, 'Processing Bank Account Opening': 70,
-            'Rejected by Accounts': 100, 'Active Account': 100}
+            'Rejected by Accounts': 100, 'Active Account': 100, 'Inactive Account': 100}
         bank_account_status = 1
         if doc.workflow_state == 'Rejected by Accounts':
             bank_account_status = 2
