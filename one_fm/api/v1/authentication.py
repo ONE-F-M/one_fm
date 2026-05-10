@@ -74,7 +74,9 @@ def login(client_id: str = None, grant_type: str = None, employee_id: str = None
 
 	
 	try:
-		site = frappe.utils.cstr(frappe.local.conf.app_url)
+		site = frappe.utils.cstr(frappe.local.conf.app_url) if frappe.local.conf.app_url else "http://127.0.0.1:8000"
+		if site.endswith('/'):
+			site = site[:-1]
 		username =  frappe.db.get_value("Employee", {'employee_id': employee_id}, 'user_id')
 		
 		if not username:
@@ -563,7 +565,7 @@ def user_login(employee_id, password):
 			response("error", 500, None, "OAuth Client 'OneFM' not configured in the system.")
 			return
 		
-		site = frappe.utils.cstr(frappe.local.conf.app_url)
+		site = frappe.utils.cstr(frappe.local.conf.app_url) if frappe.local.conf.app_url else "http://127.0.0.1:8000"
 		if site.endswith('/'):
 			site = site[:-1]
 			

@@ -26,7 +26,7 @@ class EmployeeResignation(Document):
 		state = self.get("workflow_state")
 		if state and state not in ("Draft", "Pending Relieving Date Correction"):
 			if state in ("Pending Operations Manager", "Approved"):
-				if not self.operations_manager:
+				if not self.operations_manager and self.get("project_allocation") != "ONE FM - Head Office":
 					frappe.throw(_("Please specify the <b>Operations Manager</b> before saving or submitting."))
 				if not self.offboarding_officer:
 					frappe.throw(_("Please specify the <b>Offboarding Officer</b> before saving or submitting."))
@@ -261,3 +261,33 @@ class EmployeeResignation(Document):
 					"relieving_date": self.relieving_date,
 				}
 				frappe.db.set_value("Employee", row.employee, update_data, update_modified=False)
+				
+@frappe.whitelist()
+def get_employee_resignation_details(employee):
+	"""Secure backend fetch to bypass frontend permission limits for restricted roles."""
+	if not employee:
+		return {}
+
+	emp_data = frappe.db.get_value("Employee", employee, 
+		["project", "department", "designation", "site", "employment_type", "shift", "custom_operations_role_allocation", "employee_name", "reports_to"], 
+		as_dict=True)
+
+	if not emp_data:
+		return {}
+
+	result = emp_data.copy()
+	
+	# Fetch Supervisor User ID
+	if result.get("reports_to"):
+		result["supervisor_id"] = frappe.db.get_value("Employee", result.get("reports_to"), "user_id")
+
+	# Fetch Site Details
+	if result.get("site"):
+		site_data = frappe.db.get_value("Operations Site", result.get("site"), 
+			["site_supervisor", "operations_manager"], as_dict=True)
+		if site_data:
+			result["operations_manager"] = site_data.get("operations_manager")
+			if site_data.get("site_supervisor"):
+				result["site_supervisor_id"] = frappe.db.get_value("Employee", site_data.get("site_supervisor"), "user_id")
+
+	return result

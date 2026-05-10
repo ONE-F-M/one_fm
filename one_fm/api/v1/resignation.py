@@ -73,15 +73,16 @@ def handle_attachment_internal(doc, row, attachment_data, field_name):
 
 @frappe.whitelist()
 def create_resignation(
-    employee_id: str = None,
-    supervisor: str = None,
-    resignation_initiation_date: str = None,
-    relieving_date: str = None,
-    attachment: str = None,
-    data: dict = None,
+    employee_id=None,
+    supervisor=None,
+    resignation_initiation_date=None,
+    relieving_date=None,
+    attachment=None,
+    data=None,
     **kwargs
 ):
     try:
+        frappe.log_error("HIT create_resignation", "Endpoint reached")
         p = get_all_params(
             "resignation_initiation_date", "relieving_date", "attachment",
             employee_id=employee_id,
@@ -113,6 +114,7 @@ def create_resignation(
 
         doc = frappe.new_doc("Employee Resignation")
         doc.owner = employee_user or frappe.session.user
+        doc.employee = employee_name
         doc.resignation_initiation_date = init_date
         doc.relieving_date = rel_date
         doc.supervisor = supervisor
@@ -154,22 +156,22 @@ def create_resignation(
         doc.save()
         return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
 
-    except (frappe.PermissionError, frappe.ValidationError):
-        raise
     except Exception as e:
-        frappe.log_error("Create Resignation Error", frappe.get_traceback())
+        frappe.log_error("Create Resignation Error", f"Exception: {str(e)}\n\nTraceback:\n{frappe.get_traceback()}")
+        if isinstance(e, frappe.ValidationError) or isinstance(e, frappe.PermissionError):
+            raise
         frappe.throw(str(e), frappe.ValidationError)
 
 
 @frappe.whitelist()
 def extend_resignation(
-    employee_id: str = None,
-    supervisor: str = None,
-    reason: str = None,
-    extended_date: str = None,
-    resignation_id: str = None,
-    attachment: str = None,
-    data: dict = None,
+    employee_id=None,
+    supervisor=None,
+    reason=None,
+    extended_date=None,
+    resignation_id=None,
+    attachment=None,
+    data=None,
     **kwargs
 ):
     """Create an Employee Resignation Date Adjustment for the employee's active resignation."""
@@ -197,24 +199,16 @@ def extend_resignation(
 
         # Find active resignation if not supplied
         if not resignation_id:
-            items = frappe.get_list(
-                "Employee Resignation Item",
-                filters={"employee": employee_name, "parenttype": "Employee Resignation"},
-                fields=["parent"], order_by="creation desc"
+            TERMINAL = ["Resigned", "Cancelled", "Resignation Withdrawn", "Withdrawn"]
+            active_resignations = frappe.get_list(
+                "Employee Resignation",
+                filters={"employee": employee_name, "workflow_state": ["not in", TERMINAL]},
+                fields=["name"],
+                order_by="creation desc",
+                limit=1
             )
-            parents = [i.parent for i in items] if items else []
-            if parents:
-                TERMINAL = ["Resigned", "Cancelled", "Resignation Withdrawn", "Withdrawn"]
-                active_resignations = frappe.get_list(
-                    "Employee Resignation",
-                    filters={"name": ["in", parents], "workflow_state": ["not in", TERMINAL]},
-                    fields=["name"],
-                    order_by="creation desc",
-                    
-                    limit=1
-                )
-                if active_resignations:
-                    resignation_id = active_resignations[0].name
+            if active_resignations:
+                resignation_id = active_resignations[0].name
 
         if not resignation_id:
             frappe.throw("No active resignation found to extend", frappe.ValidationError)
@@ -269,12 +263,12 @@ def extend_resignation(
 
 @frappe.whitelist()
 def withdraw_resignation(
-    employee_id: str = None,
-    reason: str = None,
-    attachment: str = None,
-    employee_resignation: str = None,
-    supervisor: str = None,
-    data: dict = None,
+    employee_id=None,
+    reason=None,
+    attachment=None,
+    employee_resignation=None,
+    supervisor=None,
+    data=None,
     **kwargs
 ):
     try:
@@ -296,27 +290,18 @@ def withdraw_resignation(
             frappe.throw(f"Employee '{input_id}' not found", frappe.ValidationError)
 
         # Find the most recent active resignation
-        items = frappe.get_list(
-            "Employee Resignation Item",
-            filters={"employee": employee_name, "parenttype": "Employee Resignation"},
-            fields=["parent"],
-            order_by="creation desc"
+        TERMINAL = ["Resigned", "Cancelled", "Resignation Withdrawn", "Withdrawn"]
+        active_resignations = frappe.get_list(
+            "Employee Resignation",
+            filters={"employee": employee_name, "workflow_state": ["not in", TERMINAL]},
+            fields=["name"],
+            order_by="creation desc",
+            limit=1
         )
-
+        
         active_doc = None
-        parents = [i.parent for i in items] if items else []
-        if parents:
-            TERMINAL = ["Resigned", "Cancelled", "Resignation Withdrawn", "Withdrawn"]
-            active_resignations = frappe.get_list(
-                "Employee Resignation",
-                filters={"name": ["in", parents], "workflow_state": ["not in", TERMINAL]},
-                fields=["name"],
-                order_by="creation desc",
-                
-                limit=1
-            )
-            if active_resignations:
-                active_doc = frappe.get_doc("Employee Resignation", active_resignations[0].name)
+        if active_resignations:
+            active_doc = frappe.get_doc("Employee Resignation", active_resignations[0].name)
 
         if not active_doc:
             frappe.throw("No active resignation found to withdraw", frappe.ValidationError)
@@ -470,21 +455,9 @@ def get_my_active_resignation(employee_id=None, **kwargs):
 
 
 
-    items = frappe.get_list(
-        "Employee Resignation Item",
-        filters={"employee": employee_name, "parenttype": "Employee Resignation"},
-        fields=["parent"],
-        order_by="creation desc"
-    )
-
-    if not items:
-        return None
-
-    parents = list(set(i.parent for i in items))
-    
     resignations = frappe.get_list(
         "Employee Resignation",
-        filters={"name": ["in", parents], "workflow_state": ["not in", list(TERMINAL_STATES)]},
+        filters={"employee": employee_name, "workflow_state": ["not in", list(TERMINAL_STATES)]},
         fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
         order_by="creation desc"
     )
@@ -510,22 +483,11 @@ def get_all_my_resignations(employee_id=None, **kwargs):
         return []
 
     TERMINAL_STATES = {"Resigned", "Cancelled", "Resignation Withdrawn", "Withdrawn"}
+    EMPLOYEE_ACTION_STATES = ["Pending Relieving Date Correction", "Draft"]
 
-    items = frappe.get_list(
-        "Employee Resignation Item",
-        filters={"employee": employee_name, "parenttype": "Employee Resignation"},
-        fields=["parent"],
-        order_by="creation desc"
-    )
-
-    if not items:
-        return []
-
-    parents = list(set(i.parent for i in items))
-    
     resignations = frappe.get_list(
         "Employee Resignation",
-        filters={"name": ["in", parents]},
+        filters={"employee": employee_name},
         fields=["name", "workflow_state", "resignation_initiation_date", "relieving_date", "creation"],
         order_by="creation desc"
     )
