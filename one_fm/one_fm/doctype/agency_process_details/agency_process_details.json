@@ -27,7 +27,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Responsible",
-   "options": "\nAgency\nGRD",
+   "options": "\nAgency\nRecruiter\nHR\nGeneral Services\nGRD",
    "reqd": 1
   },
   {
