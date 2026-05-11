@@ -6,33 +6,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>One-FM Route Manifest</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
         :root {
-            --bg: #f4f4f5;
-            --bg-surface: #ffffff;
-            --bg-card: #ffffff;
-            --bg-raised: #f9fafb;
-            --border: #e2e2e2;
-            --border-light: #ebebeb;
-            --accent: #f97316;
-            --accent-dim: rgba(249, 115, 22, 0.15);
-            --accent-glow: rgba(249, 115, 22, 0.08);
-            --green: #22c55e;
-            --green-dim: rgba(34, 197, 94, 0.12);
-            --red: #ef4444;
-            --red-dim: rgba(239, 68, 68, 0.12);
-            --blue: #1565c0;
-            --blue-dim: #dbeafe;
-            --purple: #c2410c;
-            --purple-dim: #ffedd5;
-            --text: #111111;
-            --text-muted: #666666;
-            --text-dim: #999999;
+            /* M3 Color Tokens (matching route_planner.js) */
+            --md-sys-color-primary: #9a4500;
+            --md-sys-color-on-primary: #ffffff;
+            --md-sys-color-surface: #ffffff;
+            --md-sys-color-on-surface: #1f1f1f;
+            --md-sys-color-on-surface-variant: #525252;
+            --md-sys-color-outline: #737373;
+            --md-sys-color-outline-variant: #e2e2e2;
+            --md-sys-color-surface-container: #f4f4f5;
+            --md-sys-color-surface-container-low: #fafafa;
+            --md-sys-color-surface-container-high: #f0f0f0;
+            --md-sys-color-surface-bright: #ffffff;
+            --md-sys-color-error: #ba1a1a;
+            --md-sys-color-error-container: #ffdad6;
+
+            /* Semantic role colors */
+            --rp-color-accent: #f97316;
+            --rp-color-accent-dim: rgba(249, 115, 22, 0.15);
+            --rp-color-accent-glow: rgba(249, 115, 22, 0.08);
+            --rp-color-success: #22c55e;
+            --rp-color-success-dim: rgba(34, 197, 94, 0.12);
+            --rp-color-error: #ef4444;
+            --rp-color-error-dim: rgba(239, 68, 68, 0.12);
+            --rp-color-outbound: #1565c0;
+            --rp-color-outbound-container: #dbeafe;
+            --rp-color-return: #c2410c;
+            --rp-color-return-container: #ffedd5;
+
+            /* Legacy aliases for backward compat */
+            --bg: var(--md-sys-color-surface-container);
+            --bg-surface: var(--md-sys-color-surface-bright);
+            --bg-card: var(--md-sys-color-surface-bright);
+            --bg-raised: var(--md-sys-color-surface-container-low);
+            --border: var(--md-sys-color-outline-variant);
+            --border-light: var(--md-sys-color-surface-container-high);
+            --accent: var(--rp-color-accent);
+            --accent-dim: var(--rp-color-accent-dim);
+            --accent-glow: var(--rp-color-accent-glow);
+            --green: var(--rp-color-success);
+            --green-dim: var(--rp-color-success-dim);
+            --red: var(--rp-color-error);
+            --red-dim: var(--rp-color-error-dim);
+            --blue: var(--rp-color-outbound);
+            --blue-dim: var(--rp-color-outbound-container);
+            --purple: var(--rp-color-return);
+            --purple-dim: var(--rp-color-return-container);
+            --text: var(--md-sys-color-on-surface);
+            --text-muted: var(--md-sys-color-on-surface-variant);
+            --text-dim: var(--md-sys-color-outline);
+
+            /* Typography — matches route_planner.js */
             --font-head: 'Google Sans', Roboto, sans-serif;
             --font-body: 'Google Sans', Roboto, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+            --font-mono: 'Google Sans', Roboto, sans-serif;
+
+            /* M3 Elevation */
+            --md-sys-elevation-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+            --md-sys-elevation-2: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15);
+            --md-sys-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3);
         }
 
         * {
@@ -60,7 +97,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 1px 4px rgba(0,0,0,.05);
+            box-shadow: var(--md-sys-elevation-1);
         }
 
         .header-left {
@@ -382,12 +419,12 @@
             align-items: center;
             gap: 12px;
             transition: box-shadow 0.18s, border-color 0.18s, transform 0.14s;
-            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+            box-shadow: var(--md-sys-elevation-1);
         }
 
         .stop-card:hover {
             border-color: #d8d8d8;
-            box-shadow: 0 5px 16px rgba(0,0,0,.10);
+            box-shadow: var(--md-sys-elevation-3);
             transform: translateY(-1px);
         }
 
@@ -607,6 +644,247 @@
         .empty-state p {
             font-size: 13px;
             line-height: 1.6;
+        }
+        /* ── MOBILE RESPONSIVE ── */
+        @media (max-width: 767px) {
+            /* Stack layout vertically */
+            .layout {
+                flex-direction: column;
+                height: auto;
+                min-height: calc(100vh - 65px);
+            }
+
+            /* Sidebar becomes horizontal scrollable strip */
+            .sidebar {
+                width: 100%;
+                min-width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                padding: 8px 0;
+                overflow-y: hidden;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                gap: 0;
+            }
+
+            .sidebar-label {
+                display: none;
+            }
+
+            .sidebar-sep {
+                display: none;
+            }
+
+            .vehicle-btn {
+                display: inline-flex;
+                flex-direction: column;
+                align-items: flex-start;
+                min-width: 120px;
+                max-width: 140px;
+                padding: 6px 12px;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+                flex-shrink: 0;
+            }
+
+            .vehicle-btn.active {
+                border-left-color: transparent;
+                border-bottom-color: var(--accent);
+            }
+
+            .vehicle-btn-label {
+                font-size: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 120px;
+            }
+
+            .vehicle-btn-meta {
+                font-size: 9px;
+            }
+
+            .vehicle-btn-stops {
+                font-size: 9px;
+                margin-top: 2px;
+            }
+
+            .skipped-btn {
+                display: inline-flex;
+                min-width: 100px;
+                padding: 6px 12px;
+                font-size: 12px;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+                flex-shrink: 0;
+            }
+
+            .skipped-btn.active {
+                border-bottom-color: var(--red);
+            }
+
+            /* Compact header */
+            .header {
+                padding: 10px 12px;
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            .header-left {
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .logo {
+                font-size: 16px;
+            }
+
+            .run-meta {
+                font-size: 10px;
+            }
+
+            .summary-pills {
+                gap: 6px;
+            }
+
+            .pill {
+                font-size: 11px;
+                padding: 3px 8px;
+            }
+
+            /* Main content */
+            .main {
+                padding: 14px 12px;
+                overflow-y: visible;
+            }
+
+            /* Vehicle header */
+            .vehicle-header {
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 16px;
+            }
+
+            .vehicle-title {
+                font-size: 20px;
+            }
+
+            .vehicle-subtitle {
+                font-size: 10px;
+            }
+
+            .vehicle-stats {
+                gap: 8px;
+                width: 100%;
+            }
+
+            .stat-box {
+                padding: 8px 10px;
+                min-width: 80px;
+                flex: 1;
+            }
+
+            .stat-val {
+                font-size: 16px;
+            }
+
+            .stat-lbl {
+                font-size: 9px;
+            }
+
+            /* Timeline */
+            .timeline::before {
+                left: 12px;
+            }
+
+            .stop {
+                padding-left: 36px;
+            }
+
+            .stop-dot {
+                left: 5px;
+                top: 12px;
+                width: 15px;
+                height: 15px;
+            }
+
+            .stop-card {
+                grid-template-columns: 1fr;
+                gap: 6px;
+                padding: 10px 12px;
+            }
+
+            .stop-right {
+                flex-direction: row;
+                align-items: center;
+                gap: 8px;
+                white-space: normal;
+            }
+
+            .stop-title {
+                font-size: 13px;
+            }
+
+            .stop-time {
+                font-size: 12px;
+            }
+
+            .stop-type-tag {
+                font-size: 9px;
+                padding: 1px 5px;
+            }
+
+            .transit-row {
+                padding-left: 36px;
+            }
+
+            /* Trip groups */
+            .trip-group {
+                margin-left: 36px;
+            }
+
+            /* Skipped panel */
+            .skipped-title {
+                font-size: 18px;
+            }
+
+            .skipped-item {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            /* Empty state */
+            .empty-state {
+                padding: 40px 20px;
+            }
+
+            .empty-state h2 {
+                font-size: 18px;
+            }
+        }
+
+        /* Tablet tweaks */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .sidebar {
+                width: 180px;
+                min-width: 180px;
+            }
+
+            .header {
+                padding: 12px 20px;
+            }
+
+            .main {
+                padding: 20px 20px;
+            }
+
+            .vehicle-title {
+                font-size: 26px;
+            }
         }
 
         /* ── PRINT ── */
@@ -885,9 +1163,9 @@
         ${dist ? `<span>·</span><span>${dist}</span>` : ""}
         ${dur ? `<span>·</span><span>${dur}</span>` : ""}
       </span>
-      ${meta.driver ? `<span class="vehicle-btn-meta" style="margin-top:5px;color:var(--text-muted)">👤 ${meta.driver}</span>` : ""}
+      ${meta.driver ? `<span class="vehicle-btn-meta" style="margin-top:5px;color:var(--text-muted)"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">person</span> ${meta.driver}</span>` : ""}
       ${meta.make || meta.type ? `<span class="vehicle-btn-meta">${[meta.make, meta.type].filter(Boolean).join(' · ')}</span>` : ""}
-      ${meta.seats ? `<span class="vehicle-btn-meta">🪑 ${meta.seats} seats</span>` : ""}
+      ${meta.seats ? `<span class="vehicle-btn-meta"><span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">event_seat</span> ${meta.seats} seats</span>` : ""}
     `;
                 btn.addEventListener("click", () => {
                     document.querySelectorAll(".vehicle-btn").forEach(b => b.classList.remove("active"));
@@ -910,7 +1188,7 @@
 
                 const sk = document.createElement("button");
                 sk.className = "skipped-btn";
-                sk.innerHTML = `⚠ Skipped <span class="badge">${skipped.length}</span>`;
+                sk.innerHTML = `<span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">warning</span> Skipped <span class="badge">${skipped.length}</span>`;
                 sk.addEventListener("click", () => {
                     document.querySelectorAll(".vehicle-btn").forEach(b => b.classList.remove("active"));
                     document.querySelectorAll(".skipped-btn").forEach(b => b.classList.remove("active"));
@@ -1140,14 +1418,14 @@
                     if (emps.length > 0 && isDropoff) {
                         empHtml = `<div style="margin-top:6px">
                             <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
-                                ⬇ Dropping off — ${emps.length} employee${emps.length !== 1 ? 's' : ''}
+                                <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">arrow_downward</span> Dropping off — ${emps.length} employee${emps.length !== 1 ? 's' : ''}
                             </div>
                             <div class="stop-employees">${emps.map(n => `<span class="emp-chip" style="border-color:var(--accent);color:var(--accent)">${n}</span>`).join("")}</div>
                         </div>`;
                     } else if (emps.length > 0) {
                         empHtml = `<div style="margin-top:6px">
                             <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
-                                ⬆ Picking up — ${emps.length} employee${emps.length !== 1 ? 's' : ''}
+                                <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">arrow_upward</span> Picking up — ${emps.length} employee${emps.length !== 1 ? 's' : ''}
                             </div>
                             <div class="stop-employees">${emps.map(n => `<span class="emp-chip" style="border-color:var(--green);color:var(--green)">${n}</span>`).join("")}</div>
                         </div>`;
@@ -1267,7 +1545,7 @@
                         ? `<div class="stop-label-raw" style="color:var(--text-muted)">${shipmentShiftNames[stop.raw]}</div>`
                         : ""}
           ${stop.acc && stop.type !== "depot" && stop.type !== "end"
-                        ? `<div class="stop-label-raw">${stop.direction === "RETURN" && stop.type === "dropoff" ? `⬇ Dropping off at ${stop.acc}` : stop.acc}</div>`
+                        ? `<div class="stop-label-raw">${stop.direction === "RETURN" && stop.type === "dropoff" ? `<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">arrow_downward</span> Dropping off at ${stop.acc}` : stop.acc}</div>`
                         : (stop.subtitle ? `<div class="stop-label-raw">${stop.subtitle}</div>` : "")}
           ${(() => {
                 // Contextual employee display
@@ -1279,7 +1557,7 @@
                     // DEPART card — show all employees boarding
                     empHtml = `<div style="margin-top:6px">
                         <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
-                            🚐 Onboarding — ${allEmps.length} employee${allEmps.length !== 1 ? 's' : ''}
+                            <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">directions_bus</span> Onboarding — ${allEmps.length} employee${allEmps.length !== 1 ? 's' : ''}
                         </div>
                         <div class="stop-employees">${allEmps.map(n => `<span class="emp-chip">${n}</span>`).join("")}</div>
                     </div>`;
@@ -1287,14 +1565,14 @@
                     if (stop.type === 'dropoff') {
                         empHtml = `<div style="margin-top:6px">
                             <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
-                                ⬇ Dropping off — ${stopEmps.length} employee${stopEmps.length !== 1 ? 's' : ''}
+                                <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">arrow_downward</span> Dropping off — ${stopEmps.length} employee${stopEmps.length !== 1 ? 's' : ''}
                             </div>
                             <div class="stop-employees">${stopEmps.map(n => `<span class="emp-chip" style="border-color:var(--accent);color:var(--accent)">${n}</span>`).join("")}</div>
                         </div>`;
                     } else if (stop.type === 'pickup') {
                         empHtml = `<div style="margin-top:6px">
                             <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
-                                ⬆ Picking up — ${stopEmps.length} employee${stopEmps.length !== 1 ? 's' : ''}
+                                <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">arrow_upward</span> Picking up — ${stopEmps.length} employee${stopEmps.length !== 1 ? 's' : ''}
                             </div>
                             <div class="stop-employees">${stopEmps.map(n => `<span class="emp-chip" style="border-color:var(--green);color:var(--green)">${n}</span>`).join("")}</div>
                         </div>`;
@@ -1316,9 +1594,9 @@
             const w = fmtDuration(t.waitDuration);
             const km = t.travelDistanceMeters ? fmtKm(t.travelDistanceMeters) : "";
             const parts = [];
-            if (d) parts.push(`🚌 ${d}`);
+            if (d) parts.push(`<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">directions_bus</span> ${d}`);
             if (km) parts.push(km);
-            if (w && w !== "0s") parts.push(`⏳ wait ${w}`);
+            if (w && w !== "0s") parts.push(`<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">hourglass_top</span> wait ${w}`);
             return `
         <div class="transit-row">
           <div class="transit-line"></div>
@@ -1328,7 +1606,7 @@
         }
 
         function renderSkipped(skipped) {
-            let html = `<div class="skipped-panel"><div class="skipped-title">⚠ Skipped Shipments (${skipped.length})</div>`;
+            let html = `<div class="skipped-panel"><div class="skipped-title"><span class="material-symbols-outlined" style="font-size:24px;vertical-align:middle">warning</span> Skipped Shipments (${skipped.length})</div>`;
             skipped.forEach(s => {
                 const parsed = s.label ? parseLabel(s.label) : null;
                 const reasons = (s.reasons ?? []).map(r => r.code ?? r.exampleVehicleIndex ?? JSON.stringify(r)).join(", ");
