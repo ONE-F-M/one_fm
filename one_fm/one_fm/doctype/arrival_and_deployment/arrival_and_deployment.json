@@ -63,31 +63,36 @@
    "fieldname": "recruiter",
    "fieldtype": "Link",
    "label": "Recruiter",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   },
   {
    "fieldname": "onboarding_officer",
    "fieldtype": "Link",
    "label": "Onboarding Officer",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   },
   {
    "fieldname": "transportation_manager",
    "fieldtype": "Link",
    "label": "Transportation Manager",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   },
   {
    "fieldname": "general_services",
    "fieldtype": "Link",
    "label": "General Services",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   },
   {
    "fieldname": "finance",
    "fieldtype": "Link",
    "label": "Finance",
-   "options": "User"
+   "options": "User",
+   "reqd": 1
   },
   {
    "fieldname": "column_break_1",
