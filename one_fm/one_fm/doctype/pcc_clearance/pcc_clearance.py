@@ -27,23 +27,40 @@ class PCCClearance(Document):
         """Sync status back to the Candidate Country Process tracker row (non-recursive)."""
         if not self.candidate_country_process:
             return
-        rows = frappe.get_all(
+            
+        # 1. Update PCC Appointment row
+        apt_rows = frappe.get_all(
             "Candidate Country Process Details",
-            filters={"parent": self.candidate_country_process, "process_name": "PCC Clearance"},
+            filters={"parent": self.candidate_country_process, "process_name": "PCC Appointment"},
             fields=["name"],
             limit=1,
         )
-        if not rows:
-            return
+        if apt_rows:
+            frappe.db.set_value(
+                "Candidate Country Process Details", apt_rows[0].name,
+                {
+                    "status": self.appointment_status or "Pending",
+                    "actual_date": self.application_date
+                },
+                update_modified=False
+            )
 
-        updates = {"status": self.status}
-        if self.clearance_date:
-            updates["actual_date"] = self.clearance_date
-        elif self.application_date and self.status == "Applied":
-            updates["actual_date"] = self.application_date
-
-        for field, value in updates.items():
-            frappe.db.set_value("Candidate Country Process Details", rows[0].name, field, value, update_modified=False)
+        # 2. Update PCC Result row
+        result_rows = frappe.get_all(
+            "Candidate Country Process Details",
+            filters={"parent": self.candidate_country_process, "process_name": "PCC Result"},
+            fields=["name"],
+            limit=1,
+        )
+        if result_rows:
+            frappe.db.set_value(
+                "Candidate Country Process Details", result_rows[0].name,
+                {
+                    "status": self.status or "Pending",
+                    "actual_date": self.clearance_date
+                },
+                update_modified=False
+            )
 
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""

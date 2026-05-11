@@ -27,31 +27,39 @@ class VisaStamping(Document):
         """Sync status back to the Candidate Country Process tracker row."""
         if not self.candidate_country_process:
             return
-        rows = frappe.get_all(
+            
+        # 1. Update Visa Stamping Appointment row
+        apt_rows = frappe.get_all(
             "Candidate Country Process Details",
-            filters={
-                "parent": self.candidate_country_process,
-                "process_name": "Visa Stamping",
-            },
+            filters={"parent": self.candidate_country_process, "process_name": "Visa stamping appointment"},
             fields=["name"],
             limit=1,
         )
-        if not rows:
-            return
-
-        updates = {"status": self.status}
-        if self.receiving_date:
-            updates["actual_date"] = self.receiving_date
-        elif self.submission_date:
-            updates["actual_date"] = self.submission_date
-
-        for field, value in updates.items():
+        if apt_rows:
             frappe.db.set_value(
-                "Candidate Country Process Details",
-                rows[0].name,
-                field,
-                value,
-                update_modified=False,
+                "Candidate Country Process Details", apt_rows[0].name,
+                {
+                    "status": self.appointment_status or "Pending",
+                    "actual_date": self.submission_date
+                },
+                update_modified=False
+            )
+
+        # 2. Update Visa Stamping Result row
+        result_rows = frappe.get_all(
+            "Candidate Country Process Details",
+            filters={"parent": self.candidate_country_process, "process_name": "Visa stamping results"},
+            fields=["name"],
+            limit=1,
+        )
+        if result_rows:
+            frappe.db.set_value(
+                "Candidate Country Process Details", result_rows[0].name,
+                {
+                    "status": self.status or "Pending",
+                    "actual_date": self.receiving_date
+                },
+                update_modified=False
             )
 
     def on_update(self):

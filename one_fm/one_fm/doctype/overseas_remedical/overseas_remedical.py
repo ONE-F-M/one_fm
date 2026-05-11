@@ -14,25 +14,39 @@ class OverseasRemedical(Document):
         """Sync status back to the Candidate Country Process tracker row."""
         if not self.candidate_country_process:
             return
-        rows = frappe.get_all(
+            
+        # 1. Update Remedical Appointment row
+        apt_rows = frappe.get_all(
             "Candidate Country Process Details",
-            filters={"parent": self.candidate_country_process, "process_name": "Remedical Test"},
+            filters={"parent": self.candidate_country_process, "process_name": "Remedical appointment"},
             fields=["name"],
             limit=1,
         )
-        if not rows:
-            return
-
-        updates = {"status": self.status}
-        if self.status in ("Fit", "Passed") and self.result_date:
-            updates["actual_date"] = self.result_date
-        elif self.status == "Skipped":
-            updates["actual_date"] = frappe.utils.today()
-
-        for field, value in updates.items():
+        if apt_rows:
             frappe.db.set_value(
-                "Candidate Country Process Details", rows[0].name,
-                field, value, update_modified=False
+                "Candidate Country Process Details", apt_rows[0].name,
+                {
+                    "status": self.appointment_status or "Pending",
+                    "actual_date": self.appointment_date
+                },
+                update_modified=False
+            )
+
+        # 2. Update Remedical Result row
+        result_rows = frappe.get_all(
+            "Candidate Country Process Details",
+            filters={"parent": self.candidate_country_process, "process_name": "Remedical results"},
+            fields=["name"],
+            limit=1,
+        )
+        if result_rows:
+            frappe.db.set_value(
+                "Candidate Country Process Details", result_rows[0].name,
+                {
+                    "status": self.status or "Pending",
+                    "actual_date": self.result_date
+                },
+                update_modified=False
             )
 
     def on_update(self):
