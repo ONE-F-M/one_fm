@@ -3,6 +3,7 @@ import json
 import base64
 from frappe import _
 from frappe.utils.file_manager import save_file
+from frappe.model.workflow import apply_workflow
 from one_fm.api.mobile_utils import get_param, get_all_params
 
 
@@ -82,7 +83,6 @@ def create_resignation(
     **kwargs
 ):
     try:
-        frappe.log_error("HIT create_resignation", "Endpoint reached")
         p = get_all_params(
             "resignation_initiation_date", "relieving_date", "attachment",
             employee_id=employee_id,
@@ -152,8 +152,7 @@ def create_resignation(
 
         # Step 3: Advance to Pending Supervisor now that the letter is saved
         doc.reload()
-        doc.workflow_state = "Pending Supervisor"
-        doc.save()
+        apply_workflow(doc, "Submit to Supervisor")
         return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
 
     except Exception as e:
@@ -414,8 +413,7 @@ def correct_resignation_date_app(
             for row in doc.employees:
                 handle_attachment_internal(doc, row, att_data, "resignation_letter")
 
-        doc.workflow_state = "Pending Supervisor"
-        doc.save()
+        apply_workflow(doc, "Resubmit Date")
 
         return {
             "status": "success",

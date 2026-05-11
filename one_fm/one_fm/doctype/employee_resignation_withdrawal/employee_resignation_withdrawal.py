@@ -101,6 +101,8 @@ class EmployeeResignationWithdrawal(Document):
 								if (pmr.remaining_qty or 0) == 0:
 									withdrawal_qty = sum((row.qty or 0) for row in pmr.get("fulfillment_actions", []) if row.action_type == "Resignation Withdrawal")
 									if withdrawal_qty >= (pmr.count or 0):
+										# Bypass workflow engine: Administrative auto-close.
+										# PMR workflow does not have a user-facing transition to 'Withdrawn'.
 										pmr.db_set("workflow_state", "Withdrawn")
 										if frappe.db.has_column("Project Manpower Request", "status"):
 											pmr.db_set("status", "Withdrawn") # Sync legacy status if it exists
@@ -123,6 +125,8 @@ class EmployeeResignationWithdrawal(Document):
 						if frappe.db.has_column("Employee Resignation", "status"):
 							resignation.db_set("status", "Withdrawn")
 						if frappe.db.has_column("Employee Resignation", "workflow_state"):
+							# Bypass workflow engine: Administrative auto-close.
+							# Employee Resignation workflow does not have a user-facing transition to 'Withdrawn'.
 							resignation.db_set("workflow_state", "Withdrawn")
 
 	def validate(self):
