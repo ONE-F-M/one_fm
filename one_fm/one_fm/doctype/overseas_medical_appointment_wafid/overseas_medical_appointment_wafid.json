@@ -77,7 +77,8 @@
   {
    "fieldname": "appointment_slip",
    "fieldtype": "Attach",
-   "label": "Appointment Slip"
+   "label": "Appointment Slip",
+   "mandatory_depends_on": "eval:doc.appointment_status === 'Booked'"
   },
   {
    "fieldname": "section_break_actual_medical",
@@ -105,7 +106,8 @@
   {
    "fieldname": "wafid_medical_report",
    "fieldtype": "Attach",
-   "label": "Medical Report"
+   "label": "Medical Report",
+   "mandatory_depends_on": "eval:in_list(['Fit', 'Unfit'], doc.status)"
   }
  ],
  "links": [],
