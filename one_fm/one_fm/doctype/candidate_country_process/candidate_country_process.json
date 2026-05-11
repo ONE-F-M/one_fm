@@ -55,7 +55,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected\nFailes",
+   "options": "Pending\nIn Process\nApproved\nRejected\nFailed",
    "read_only": 1
   },
   {
