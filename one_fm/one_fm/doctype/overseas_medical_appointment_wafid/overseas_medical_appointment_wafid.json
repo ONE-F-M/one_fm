@@ -101,13 +101,13 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Yet to apply\nIn process\nFit\nUnfit"
+   "options": "Yet to apply\nIn process\nFit\nUnfit\nMedical failed and Proceeded to Remedical"
   },
   {
    "fieldname": "wafid_medical_report",
    "fieldtype": "Attach",
    "label": "Medical Report",
-   "mandatory_depends_on": "eval:in_list(['Fit', 'Unfit'], doc.status)"
+   "mandatory_depends_on": "eval:in_list(['Fit', 'Unfit', 'Medical failed and Proceeded to Remedical'], doc.status)"
   }
  ],
  "links": [],
