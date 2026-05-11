@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "naming_series:",
- "creation": "2026-04-15 06:45:00",
+ "creation": "2026-04-15 06:45:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -14,9 +14,18 @@
   "appointment_date",
   "result_date",
   "section_break_details",
+  "reason_for_remedical",
+  "medical_center",
+  "medical_center_location",
+  "column_break_2",
+  "original_medical_ref",
+  "country_of_examination",
+  "section_break_results",
+  "fit_for_employment",
   "remarks",
   "section_break_attach",
-  "remedical_report"
+  "remedical_report",
+  "medical_certificate"
  ],
  "fields": [
   {
@@ -60,25 +69,65 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nIn Process\nFit\nUnfit\nPassed\nFailed",
+   "options": "Pending\nSkipped\nIn Process\nFit\nUnfit\nPassed\nFailed",
    "reqd": 1
   },
   {
    "fieldname": "appointment_date",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "Appointment Date"
   },
   {
    "fieldname": "result_date",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "Result Date"
   },
   {
    "fieldname": "section_break_details",
    "fieldtype": "Section Break",
-   "label": "Details"
+   "label": "Remedical Details"
+  },
+  {
+   "fieldname": "reason_for_remedical",
+   "fieldtype": "Small Text",
+   "label": "Reason for Remedical"
+  },
+  {
+   "fieldname": "medical_center",
+   "fieldtype": "Data",
+   "label": "Medical Center"
+  },
+  {
+   "fieldname": "medical_center_location",
+   "fieldtype": "Data",
+   "label": "Medical Center Location"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "original_medical_ref",
+   "fieldtype": "Link",
+   "label": "Original Medical Appointment",
+   "options": "Overseas Medical Appointment WAFID"
+  },
+  {
+   "fieldname": "country_of_examination",
+   "fieldtype": "Link",
+   "label": "Country of Examination",
+   "options": "Country"
+  },
+  {
+   "fieldname": "section_break_results",
+   "fieldtype": "Section Break",
+   "label": "Results"
+  },
+  {
+   "default": "0",
+   "fieldname": "fit_for_employment",
+   "fieldtype": "Check",
+   "label": "Fit for Employment"
   },
   {
    "fieldname": "remarks",
@@ -94,36 +143,15 @@
    "fieldname": "remedical_report",
    "fieldtype": "Attach",
    "label": "Remedical Report"
+  },
+  {
+   "fieldname": "medical_certificate",
+   "fieldtype": "Attach",
+   "label": "Medical Certificate"
   }
  ],
- "links": [
-  {
-   "group": "Process Documents",
-   "link_doctype": "Candidate Country Process",
-   "link_fieldname": "name"
-  },
-  {
-   "group": "Process Documents",
-   "link_doctype": "Overseas Medical Appointment WAFID",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "group": "Process Documents",
-   "link_doctype": "PCC Clearance",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "group": "Process Documents",
-   "link_doctype": "Visa Stamping",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "group": "Process Documents",
-   "link_doctype": "Arrival and Deployment",
-   "link_fieldname": "candidate_country_process"
-  }
- ],
- "modified": "2026-04-15 13:26:49.593575",
+ "links": [],
+ "modified": "2026-04-15 06:45:00.000000",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Overseas Remedical",
@@ -131,58 +159,24 @@
  "owner": "Administrator",
  "permissions": [
   {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
+   "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1,
+   "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1
   },
   {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "HR Manager",
-   "share": 1,
-   "write": 1
+   "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1,
+   "read": 1, "report": 1, "role": "HR Manager", "share": 1, "write": 1
   },
   {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "HR User",
-   "write": 1
+   "create": 1, "email": 1, "export": 1, "print": 1,
+   "read": 1, "report": 1, "role": "HR User", "write": 1
   },
   {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Recruitment Manager",
-   "share": 1,
-   "write": 1
+   "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1,
+   "read": 1, "report": 1, "role": "Recruitment Manager", "share": 1, "write": 1
   }
  ],
- "row_format": "Dynamic",
- "search_fields": "candidate_name,passport_number",
- "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "title_field": "candidate_name",
  "track_changes": 1
 }
