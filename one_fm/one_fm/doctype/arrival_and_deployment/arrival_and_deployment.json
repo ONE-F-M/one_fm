@@ -11,6 +11,9 @@
   "passport_number",
   "recruiter",
   "onboarding_officer",
+  "transportation_manager",
+  "general_services",
+  "finance",
   "column_break_1",
   "status",
   "arrival_date",
@@ -66,6 +69,24 @@
    "fieldname": "onboarding_officer",
    "fieldtype": "Link",
    "label": "Onboarding Officer",
+   "options": "User"
+  },
+  {
+   "fieldname": "transportation_manager",
+   "fieldtype": "Link",
+   "label": "Transportation Manager",
+   "options": "User"
+  },
+  {
+   "fieldname": "general_services",
+   "fieldtype": "Link",
+   "label": "General Services",
+   "options": "User"
+  },
+  {
+   "fieldname": "finance",
+   "fieldtype": "Link",
+   "label": "Finance",
    "options": "User"
   },
   {
