@@ -178,6 +178,43 @@ frappe.ui.form.on('Request for Material', {
 		}
 		add_purchase_rfm_button(frm);
 		frm.events.add_asset_movement_button(frm);
+		frm.events.add_transit_log_button(frm);
+	},
+	add_transit_log_button: function(frm) {
+		if (frm.doc.docstatus !== 1 || frm.doc.workflow_state !== "Approved") {
+			return;
+		}
+		if (frm.doc.purpose !== "Sample Stock Receipt") {
+			return;
+		}
+		// Check if any item has an item_code
+		var has_item_code = frm.doc.items && frm.doc.items.some(function(item) {
+			return item.item_code;
+		});
+		if (!has_item_code) {
+			return;
+		}
+		// Check if Transit Log already exists
+		frappe.db.get_value("Transit Log", {
+			"reference_doctype": "Request for Material",
+			"reference_name": frm.doc.name
+		}, "name").then(function(r) {
+			if (!r.message || !r.message.name) {
+				frm.add_custom_button(__("Transit Log"), function() {
+					frappe.call({
+						method: "one_fm.one_fm.doctype.transit_log.transit_log_utils.create_transit_log_from_rfm",
+						args: { rfm_name: frm.doc.name },
+						freeze: true,
+						freeze_message: __("Creating Transit Log..."),
+						callback: function(r) {
+							if (r.message) {
+								frm.reload_doc();
+							}
+						}
+					});
+				}, __("Create"));
+			}
+		});
 	},
 	add_asset_movement_button: function(frm) {
 		if (frm.doc.docstatus === 1 && frm.doc.workflow_state === 'Approved' && ["Issue", "Transfer"].includes(frm.doc.purpose)) {
@@ -236,7 +273,7 @@ frappe.ui.form.on('Request for Material', {
 					}
 				});
 
-				if(purchase_item_exist && frappe.user_roles.includes("Warehouse Supervisor") && frm.doc.purpose=="Purchase"){
+				if(purchase_item_exist && frappe.user_roles.includes("Warehouse Supervisor") && (frm.doc.purpose=="Purchase" || frm.doc.purpose=="Sample Purchase")){
 					frm.add_custom_button(__("Request for Purchase"),
 						function(){
 							
@@ -283,7 +320,7 @@ frappe.ui.form.on('Request for Material', {
 					}
 				}
 				else {	
-					if(purchase_item_exist && frappe.user_roles.includes("Warehouse Supervisor" && frm.doc.purpose=="Purchase") ){
+					if(purchase_item_exist && frappe.user_roles.includes("Warehouse Supervisor") && (frm.doc.purpose=="Purchase" || frm.doc.purpose=="Sample Purchase")){
 							frm.add_custom_button(__("Request for Purchase"),
 								() => frm.events.make_request_for_purchase(frm), __('Create'));
 					}
@@ -1241,7 +1278,7 @@ function add_purchase_rfm_button(frm){
 
 
 function add_request_for_quotation_button(frm){
-    if (frm.doc.docstatus === 1 && frm.doc.workflow_state === 'Approved' && frm.doc.purpose === 'Purchase') {
+    if (frm.doc.docstatus === 1 && frm.doc.workflow_state === 'Approved' && (frm.doc.purpose === 'Purchase' || frm.doc.purpose === 'Sample Purchase')) {
         let has_pending_items = frm.doc.items.some(item => {
             let ordered = item.ordered_qty || 0;
             let purchase_qty = item.qty || 0;
@@ -1261,7 +1298,7 @@ function add_request_for_quotation_button(frm){
 }
 
 function add_supplier_quotation_button(frm){
-    if (frm.doc.docstatus === 1 && frm.doc.workflow_state === 'Approved' && frm.doc.purpose === 'Purchase') {
+    if (frm.doc.docstatus === 1 && frm.doc.workflow_state === 'Approved' && (frm.doc.purpose === 'Purchase' || frm.doc.purpose === 'Sample Purchase')) {
         let has_pending_items = frm.doc.items.some(item => {
             let ordered = item.ordered_qty || 0;
             let purchase_qty = item.qty || 0;

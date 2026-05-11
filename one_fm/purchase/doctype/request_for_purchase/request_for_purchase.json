@@ -17,6 +17,7 @@
   "request_for_material",
   "notified_the_rfm_requester",
   "type",
+  "purpose",
   "section_break_5",
   "requested_by",
   "employee",
@@ -365,13 +366,20 @@
    "label": "Site",
    "options": "Operations Site",
    "read_only": 1
+  },
+  {
+   "fetch_from": "request_for_material.purpose",
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "label": "Purpose",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "icon": "fa fa-shopping-cart",
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-10 17:30:38.876150",
+ "modified": "2026-05-11 12:11:05.657647",
  "modified_by": "Administrator",
  "module": "Purchase",
  "name": "Request for Purchase",

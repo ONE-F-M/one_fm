@@ -55,5 +55,13 @@ def get_purchase_invoice_custom_fields():
                 "read_only": 1,
                 "hidden": 1
             },
+            {
+                "label": "Purpose",
+                "fieldname": "custom_purpose",
+                "insert_after": "due_date",
+                "fieldtype": "Select",
+                "options": "\nPurchase\nSample Purchase",
+                "read_only": 1
+            },
         ]
     }

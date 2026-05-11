@@ -206,7 +206,24 @@ class PurchaseOrderOverride(PurchaseOrder):
         self.update_ordered_and_pending_quantities()
         if self.one_fm_request_for_purchase:
             update_rfp_status(self.one_fm_request_for_purchase)
-    
+        self._auto_create_transit_log()
+
+    def _auto_create_transit_log(self):
+        """Auto-create a Transit Log when the PO is for 'Sample Purchase'
+        and the courier is NOT hand-carried."""
+        if self.custom_purpose != "Sample Purchase":
+            return
+        if cint(self.custom_is_courier_hand_carried):
+            return
+
+        try:
+            from one_fm.one_fm.doctype.transit_log.transit_log_utils import create_transit_log_from_po
+            create_transit_log_from_po(self.name)
+        except Exception:
+            frappe.log_error(
+                title=_("Transit Log Auto-Creation Failed for PO {0}").format(self.name),
+                message=frappe.get_traceback()
+            )
     def on_update_after_submit(self):
         self.update_purchased_quantities()
         self.update_ordered_and_pending_quantities()

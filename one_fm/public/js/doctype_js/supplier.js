@@ -39,5 +39,40 @@ frappe.ui.form.on('Supplier', {
 		else{
 			frm.set_value('naming_series', 'SUP-.######');
 		}
+	},
+	custom_is_courier: function(frm) {
+		if (!frm.doc.custom_is_courier) {
+			Promise.all([
+				frm.set_value("custom_courier_api_provider", ""),
+				frm.set_value("custom_api_key", ""),
+				frm.set_value("custom_api_secret", ""),
+				frm.set_value("custom_api_account_number", "")
+			]).then(function() {
+				_refresh_password_fields(frm);
+			});
+		}
+	},
+	custom_courier_api_provider: function(frm) {
+		// Clear and refresh credential fields on any provider change
+		Promise.all([
+			frm.set_value("custom_api_key", ""),
+			frm.set_value("custom_api_secret", ""),
+			frm.set_value("custom_api_account_number", "")
+		]).then(function() {
+			_refresh_password_fields(frm);
+		});
 	}
-})
+});
+
+function _refresh_password_fields(frm) {
+	["custom_api_key", "custom_api_secret"].forEach(function(fieldname) {
+		var ctrl = frm.fields_dict[fieldname];
+		if (ctrl) {
+			// Clear the strength indicator and message
+			ctrl.$wrapper.find(".password-strength-indicator").remove();
+			ctrl.$wrapper.find(".password-strength-message").html("");
+			ctrl.refresh();
+		}
+	});
+	frm.refresh_fields();
+}
