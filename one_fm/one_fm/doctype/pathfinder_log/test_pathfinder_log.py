@@ -18,7 +18,7 @@ class TestPathfinderLog(FrappeTestCase):
 				"process_name": self.PROCESS_NAME,
 				"description": "Test process for pathfinder editability checks",
 				"process_owner": "Administrator",
-				"business_analyst": "Administrator",
+				
 			}).insert(ignore_permissions=True)
 
 	def tearDown(self):
@@ -153,7 +153,7 @@ class TestSingleActiveLogValidation(FrappeTestCase):
 					"process_name": proc,
 					"description": "Test process for single-active validation",
 					"process_owner": "Administrator",
-					"business_analyst": "Administrator",
+					
 				}).insert(ignore_permissions=True)
 
 	def tearDown(self):
@@ -223,7 +223,7 @@ class TestProcessClassificationValidation(FrappeTestCase):
 				"process_name": self.GENERIC_PROCESS,
 				"description": "A generic placeholder process",
 				"process_owner": "Administrator",
-				"business_analyst": "Administrator",
+				
 				"is_generic": 1,
 			}).insert(ignore_permissions=True)
 
@@ -233,7 +233,7 @@ class TestProcessClassificationValidation(FrappeTestCase):
 				"process_name": self.SPECIFIC_PROCESS,
 				"description": "An actual specific process",
 				"process_owner": "Administrator",
-				"business_analyst": "Administrator",
+				
 				"is_generic": 0,
 			}).insert(ignore_permissions=True)
 
@@ -315,7 +315,7 @@ class TestActiveStatusValidation(FrappeTestCase):
 				"process_name": self.PROCESS,
 				"description": "Process for active-status validation tests",
 				"process_owner": "Administrator",
-				"business_analyst": "Administrator",
+				
 				"is_generic": 0,
 			}).insert(ignore_permissions=True)
 

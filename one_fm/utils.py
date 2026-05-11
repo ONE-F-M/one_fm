@@ -4612,8 +4612,6 @@ def create_process_if_not_exists(process_name, description=None, process_owner="
             "doctype": "Process",
             "process_owner": process_owner,
             "process_owner_name": process_owner_name,
-            "business_analyst": business_analyst,
-            "business_analyst_name": business_analyst_name
         }).insert(ignore_permissions=True)
 
 def create_method_if_not_exists(method, document_type, description=None):
