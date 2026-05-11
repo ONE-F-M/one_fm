@@ -9,6 +9,8 @@
   "candidate_country_process",
   "candidate_name",
   "passport_number",
+  "recruiter",
+  "onboarding_officer",
   "column_break_1",
   "status",
   "arrival_date",
@@ -53,6 +55,18 @@
    "fieldtype": "Data",
    "label": "Passport Number",
    "read_only": 1
+  },
+  {
+   "fieldname": "recruiter",
+   "fieldtype": "Link",
+   "label": "Recruiter",
+   "options": "User"
+  },
+  {
+   "fieldname": "onboarding_officer",
+   "fieldtype": "Link",
+   "label": "Onboarding Officer",
+   "options": "User"
   },
   {
    "fieldname": "column_break_1",
@@ -118,28 +132,7 @@
    "label": "Notes"
   }
  ],
- "links": [
-  {
-   "link_doctype": "Candidate Country Process",
-   "link_fieldname": "name"
-  },
-  {
-   "link_doctype": "Overseas Medical Appointment WAFID",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "Overseas Remedical",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "PCC Clearance",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "Visa Stamping",
-   "link_fieldname": "candidate_country_process"
-  }
- ],
+ "links": [],
  "modified": "2026-04-15 13:26:50.087268",
  "modified_by": "Administrator",
  "module": "one_fm",
