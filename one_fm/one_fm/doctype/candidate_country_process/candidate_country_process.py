@@ -18,6 +18,7 @@ class CandidateCountryProcess(Document):
     def on_submit(self):
         pass
 
+    @frappe.whitelist()
     def get_workflow(self):
         workflow_list = []
         if self.agency_process_details:
