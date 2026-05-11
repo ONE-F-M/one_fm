@@ -17,9 +17,11 @@
   "column_break_1",
   "status",
   "arrival_date",
+  "arrival_time",
   "section_break_flight",
   "flight_number",
   "airline",
+  "ticket_attachment",
   "arrival_airport",
   "column_break_2",
   "pickup_arranged",
@@ -113,6 +115,11 @@
    "label": "Arrival Date"
   },
   {
+   "fieldname": "arrival_time",
+   "fieldtype": "Time",
+   "label": "Arrival Time"
+  },
+  {
    "fieldname": "section_break_flight",
    "fieldtype": "Section Break",
    "label": "Flight Details"
@@ -126,6 +133,11 @@
    "fieldname": "airline",
    "fieldtype": "Data",
    "label": "Airline"
+  },
+  {
+   "fieldname": "ticket_attachment",
+   "fieldtype": "Attach",
+   "label": "Ticket Attachment"
   },
   {
    "fieldname": "arrival_airport",

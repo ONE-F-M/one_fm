@@ -29,9 +29,14 @@ frappe.ui.form.on("Arrival And Deployment", {
 	},
 	
 	before_workflow_action: function(frm) {
+		if (frappe.selected_workflow_action === "Submit to Onboarding") {
+			if (!frm.doc.arrival_date || !frm.doc.arrival_time || !frm.doc.ticket_attachment) {
+				frappe.throw("Please ensure Arrival Date, Arrival Time, and Ticket Attachment are filled before submitting to Onboarding.");
+			}
+		}
+
 		if (frappe.session.user === frm.doc.transportation_manager && !frm.doc.pickup_contact) {
 			frappe.throw("Please enter the Pickup Contact Person before proceeding.");
-			return false;
 		}
 	}
 });
