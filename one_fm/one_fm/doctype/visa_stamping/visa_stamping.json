@@ -10,6 +10,7 @@
   "candidate_name",
   "passport_number",
   "column_break_1",
+  "appointment_status",
   "status",
   "submission_date",
   "receiving_date",
@@ -63,10 +64,18 @@
   },
   {
    "default": "Pending",
+   "fieldname": "appointment_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Appointment Status",
+   "options": "Pending\nBooked\nCompleted\nCancelled"
+  },
+  {
+   "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Status",
+   "label": "Result Status",
    "options": "Pending\nIn Progress\nStamped\nRejected",
    "reqd": 1
   },

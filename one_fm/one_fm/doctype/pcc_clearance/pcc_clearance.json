@@ -11,6 +11,7 @@
   "passport_number",
   "nationality",
   "column_break_1",
+  "appointment_status",
   "status",
   "application_date",
   "clearance_date",
@@ -66,10 +67,18 @@
   },
   {
    "default": "Pending",
+   "fieldname": "appointment_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Appointment Status",
+   "options": "Pending\nBooked\nCompleted\nCancelled"
+  },
+  {
+   "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Status",
+   "label": "Result Status",
    "options": "Pending\nApplied\nIssued\nRejected",
    "reqd": 1
   },
