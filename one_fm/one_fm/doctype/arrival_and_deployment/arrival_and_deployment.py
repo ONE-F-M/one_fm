@@ -36,8 +36,11 @@ class ArrivalandDeployment(Document):
 
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""
-        if self.candidate_country_process and self.workflow_state == "Completed":
-            frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Joined")
+        if self.candidate_country_process:
+            if self.workflow_state == "Completed":
+                frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Joined")
+            elif self.workflow_state == "Did Not Arrive":
+                frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Did Not Arrive")
             self._notify_ccp()
 
     def _notify_ccp(self):

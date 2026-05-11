@@ -52,6 +52,17 @@ def execute():
             "assignment_days": [{"day": d} for d in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]],
             "field": "warehouse",
             "description": "Dear {{ doc.warehouse }},\n\nKindly arrange their Uniforms and welcome kit accordingly."
+        },
+        {
+            "name": "Arrival - Recruiter Not Arrived",
+            "doctype": "Assignment Rule",
+            "document_type": "Arrival and Deployment",
+            "assign_condition": "doc.workflow_state == 'Did Not Arrive'",
+            "unassign_condition": "doc.workflow_state == 'Completed'",
+            "due_date_based_on": "arrival_date",
+            "assignment_days": [{"day": d} for d in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]],
+            "field": "recruiter",
+            "description": "Dear {{ doc.recruiter }},\n\nThe candidate {{ doc.candidate_name }} did not arrive as scheduled. Please investigate and take appropriate action."
         }
     ]
 

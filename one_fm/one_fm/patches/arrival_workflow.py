@@ -13,6 +13,7 @@ def execute():
         {"name": "Draft", "style": "Primary"},
         {"name": "Pending Onboarding", "style": "Warning"},
         {"name": "Pending Support Departments", "style": "Warning"},
+        {"name": "Did Not Arrive", "style": "Danger"},
         {"name": "Completed", "style": "Success"}
     ]
 
@@ -24,7 +25,7 @@ def execute():
                 "style": s["style"]
             }).insert(ignore_permissions=True)
 
-    actions = ["Submit to Onboarding", "Notify Support Departments", "Mark as Joined"]
+    actions = ["Submit to Onboarding", "Notify Support Departments", "Mark as Joined", "Did Not Arrive"]
     for a in actions:
         if not frappe.db.exists("Workflow Action Master", a):
             frappe.get_doc({
@@ -64,6 +65,13 @@ def execute():
         "update_value": "Arriving"
     })
     wf.append("states", {
+        "state": "Did Not Arrive",
+        "doc_status": 0,
+        "allow_edit": "Recruitment Manager",
+        "update_field": "status",
+        "update_value": "Did Not Arrive"
+    })
+    wf.append("states", {
         "state": "Completed",
         "doc_status": 0,
         "allow_edit": "System Manager",
@@ -88,6 +96,12 @@ def execute():
         "state": "Pending Support Departments",
         "action": "Mark as Joined",
         "next_state": "Completed",
+        "allowed": "Transportation Manager"
+    })
+    wf.append("transitions", {
+        "state": "Pending Support Departments",
+        "action": "Did Not Arrive",
+        "next_state": "Did Not Arrive",
         "allowed": "Transportation Manager"
     })
     

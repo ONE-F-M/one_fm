@@ -70,5 +70,11 @@ frappe.ui.form.on("Arrival And Deployment", {
 				frappe.throw("Cannot mark as Joined. All departments must acknowledge first.");
 			}
 		}
+
+		if (frappe.selected_workflow_action === "Did Not Arrive") {
+			if (!frm.doc.recruiter) {
+				frappe.throw("Please enter the Recruiter before notifying them that the candidate did not arrive.");
+			}
+		}
 	}
 });
