@@ -9,7 +9,6 @@
   "candidate_country_process",
   "candidate_name",
   "passport_number",
-  "recruiter",
   "onboarding_officer",
   "transportation_manager",
   "general_services",
@@ -59,13 +58,6 @@
    "fieldtype": "Data",
    "label": "Passport Number",
    "read_only": 1
-  },
-  {
-   "fieldname": "recruiter",
-   "fieldtype": "Link",
-   "label": "Recruiter",
-   "options": "User",
-   "reqd": 1
   },
   {
    "fieldname": "onboarding_officer",
