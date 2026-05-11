@@ -1,0 +1,210 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-04-15 06:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "candidate_country_process",
+  "candidate_name",
+  "passport_number",
+  "column_break_1",
+  "status",
+  "arrival_date",
+  "section_break_flight",
+  "flight_number",
+  "airline",
+  "arrival_airport",
+  "column_break_2",
+  "pickup_arranged",
+  "pickup_contact",
+  "section_break_notes",
+  "notes"
+ ],
+ "fields": [
+  {
+   "default": "ARD-.YYYY.-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "ARD-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "candidate_country_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Candidate Country Process",
+   "options": "Candidate Country Process",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "candidate_country_process.candidate_name",
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "candidate_country_process.passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nArriving\nCompleted",
+   "reqd": 1
+  },
+  {
+   "fieldname": "arrival_date",
+   "fieldtype": "Date",
+   "label": "Arrival Date"
+  },
+  {
+   "fieldname": "section_break_flight",
+   "fieldtype": "Section Break",
+   "label": "Flight Details"
+  },
+  {
+   "fieldname": "flight_number",
+   "fieldtype": "Data",
+   "label": "Flight Number"
+  },
+  {
+   "fieldname": "airline",
+   "fieldtype": "Data",
+   "label": "Airline"
+  },
+  {
+   "fieldname": "arrival_airport",
+   "fieldtype": "Data",
+   "label": "Arrival Airport"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "pickup_arranged",
+   "fieldtype": "Check",
+   "label": "Pickup Arranged"
+  },
+  {
+   "fieldname": "pickup_contact",
+   "fieldtype": "Data",
+   "label": "Pickup Contact Person"
+  },
+  {
+   "fieldname": "section_break_notes",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "links": [
+  {
+   "group": "Process Documents",
+   "link_doctype": "Candidate Country Process",
+   "link_fieldname": "name"
+  },
+  {
+   "group": "Process Documents",
+   "link_doctype": "Overseas Medical Appointment WAFID",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Process Documents",
+   "link_doctype": "Overseas Remedical",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Process Documents",
+   "link_doctype": "PCC Clearance",
+   "link_fieldname": "candidate_country_process"
+  },
+  {
+   "group": "Process Documents",
+   "link_doctype": "Visa Stamping",
+   "link_fieldname": "candidate_country_process"
+  }
+ ],
+ "modified": "2026-04-15 13:26:50.087268",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Arrival and Deployment",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Recruitment Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "candidate_name,passport_number",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "candidate_name",
+ "track_changes": 1
+}

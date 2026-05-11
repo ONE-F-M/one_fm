@@ -6,7 +6,7 @@ def get_data():
         'fieldname': 'candidate_country_process',
         'transactions': [
             {
-                'items': ['PAM Visa']
+                'items': ['PAM Visa', 'Overseas Medical Appointment WAFID', 'Overseas Remedical', 'PCC Clearance', 'Visa Stamping', 'Arrival and Deployment']
             }
         ],
     }
