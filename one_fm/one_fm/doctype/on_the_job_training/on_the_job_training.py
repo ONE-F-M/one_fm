@@ -93,6 +93,7 @@ class OntheJobTraining(Document):
                 "employee": self.employee,
                 "leave_type": "Annual Leave",
                 "status": "Approved",
+                "docstatus": 1,
                 "from_date": ["<=", end_date],
                 "to_date": [">=", start_date],
             },
