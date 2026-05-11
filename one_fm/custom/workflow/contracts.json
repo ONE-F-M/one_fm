@@ -6,6 +6,78 @@
   "send_email_alert": 0,
   "workflow_state_field": "workflow_state",
   "doctype": "Workflow",
+  "states": [
+    {
+      "state": "Draft",
+      "doc_status": "0",
+      "style": "Danger",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Sales Manager",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Active",
+      "doc_status": "0",
+      "style": "Success",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Operation Admin",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Active",
+      "doc_status": "0",
+      "style": "Success",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Finance Manager",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Inactive",
+      "doc_status": "0",
+      "style": "Inverse",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Finance Manager",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submit to Legal Manager",
+      "doc_status": "0",
+      "style": "Primary",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Legal Manager",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submit to Finance Manager",
+      "doc_status": "0",
+      "style": "Primary",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Finance Manager",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    },
+    {
+      "state": "Submit to Operations Admin",
+      "doc_status": "0",
+      "style": "Primary",
+      "is_optional_state": 0,
+      "avoid_status_override": 0,
+      "allow_edit": "Operation Admin",
+      "send_email": 1,
+      "doctype": "Workflow Document State"
+    }
+  ],
   "transitions": [
     {
       "state": "Draft",
@@ -45,7 +117,8 @@
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
+      "custom_confirm_transition": 1,
+      "custom_confirm_message": "Please confirm that you wish to submit this contract to the Legal Manager for review.",
       "require_digital_signature": 0,
       "doctype": "Workflow Transition"
     },
@@ -86,7 +159,8 @@
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
+      "custom_confirm_transition": 1,
+      "custom_confirm_message": "Please confirm that you wish to submit this contract to the Finance Manager for review.",
       "require_digital_signature": 0,
       "doctype": "Workflow Transition"
     },
@@ -99,7 +173,8 @@
       "send_email_to_creator": 0,
       "skip_multiple_action": 0,
       "skip_creation_of_workflow_action": 0,
-      "custom_confirm_transition": 0,
+      "custom_confirm_transition": 1,
+      "custom_confirm_message": "Please confirm that you wish to submit this contract to the Operations Admin for review.",
       "require_digital_signature": 0,
       "doctype": "Workflow Transition"
     },
@@ -193,78 +268,6 @@
       "custom_confirm_transition": 0,
       "require_digital_signature": 0,
       "doctype": "Workflow Transition"
-    }
-  ],
-  "states": [
-    {
-      "state": "Draft",
-      "doc_status": "0",
-      "style": "Danger",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "Sales Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Active",
-      "doc_status": "0",
-      "style": "Success",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "Operation Admin",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Active",
-      "doc_status": "0",
-      "style": "Success",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "Finance Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Inactive",
-      "doc_status": "0",
-      "style": "Inverse",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "Finance Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Submit to Legal Manager",
-      "doc_status": "0",
-      "style": "Primary",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "Legal Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Submit to Finance Manager",
-      "doc_status": "0",
-      "style": "Primary",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "Finance Manager",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
-    },
-    {
-      "state": "Submit to Operations Admin",
-      "doc_status": "0",
-      "style": "Primary",
-      "is_optional_state": 0,
-      "avoid_status_override": 0,
-      "allow_edit": "Operation Admin",
-      "send_email": 1,
-      "doctype": "Workflow Document State"
     }
   ]
 }

@@ -6,7 +6,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "location"
+  "location",
+  "governorate_area",
+  "governorate"
  ],
  "fields": [
   {
@@ -16,6 +18,26 @@
    "options": "Location",
    "in_list_view": 1,
    "reqd": 1
+  },
+  {
+   "fieldname": "governorate_area",
+   "fieldtype": "Link",
+   "label": "Governorate Area",
+   "options": "Governorate Area",
+   "fetch_from": "location.governorate_area",
+   "fetch_if_empty": 1,
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "governorate",
+   "fieldtype": "Link",
+   "label": "Governorate",
+   "options": "Governorate",
+   "fetch_from": "governorate_area.governorate",
+   "fetch_if_empty": 1,
+   "in_list_view": 1,
+   "read_only": 1
   }
  ],
  "permissions": [],

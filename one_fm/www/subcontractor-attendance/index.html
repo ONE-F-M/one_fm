@@ -1,0 +1,110 @@
+{% extends "templates/web.html" %}
+
+{% block head_include %}
+<style>
+    .indicator-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .indicator-pill.orange {
+        background-color: #ffecd1;
+        color: #cc6600;
+    }
+
+    .indicator-pill.blue {
+        background-color: #d1e7ff;
+        color: #0055cc;
+    }
+
+    .indicator-pill.green {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="mt-4">
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h2 class="mb-0">Subcontract Staff Attendance</h2>
+            {% if supplier %}
+            <p class="text-muted mb-0">{{ supplier }}</p>
+            {% else %}
+            <p class="text-danger mb-0">No Subcontractor profile linked.</p>
+            {% endif %}
+        </div>
+        <div class="col-auto">
+            <a href="/subcontractor-attendance/form" class="btn btn-primary btn-sm">
+                New Submission
+            </a>
+        </div>
+    </div>
+
+    <div class="card bg-white shadow-sm border rounded">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="border-top-0" style="width: 50px;">#</th>
+                        <th class="border-top-0">Subcontractor Name</th>
+                        <th class="border-top-0">Status</th>
+                        <th class="border-top-0">From Date</th>
+                        <th class="border-top-0">To Date</th>
+                        <th class="border-top-0 text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if docs %}
+                    {% for doc in docs %}
+                    <tr>
+                        <td class="align-middle text-muted">{{ loop.index + (frappe.form_dict.start | int) }}</td>
+                        <td class="align-middle">{{ doc.subcontractor_name }}</td>
+                        <td class="align-middle">
+                            <span class="indicator-pill {{ doc.color }}">{{ doc.state }}</span>
+                        </td>
+                        <td class="align-middle">{{ frappe.utils.formatdate(doc.from_date) }}</td>
+                        <td class="align-middle">{{ frappe.utils.formatdate(doc.to_date) }}</td>
+                        <td class="align-middle text-right">
+                            <a href="/subcontractor-attendance/form?from_date={{ doc.from_date }}&to_date={{ doc.to_date }}"
+                                class="btn btn-sm btn-outline-secondary">
+                                View / Edit
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            No attendance records found. Click "New Submission" to start.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if next_start or (frappe.form_dict.start | int) > 0 %}
+        <div class="card-footer bg-white text-right border-top border-light py-3">
+            {% if (frappe.form_dict.start | int) > 0 %}
+            <a href="?start={{ prev_start }}" class="btn btn-sm btn-outline-secondary px-3 mr-2">&larr; Previous</a>
+            {% else %}
+            <button class="btn btn-sm btn-outline-secondary px-3 mr-2" disabled>&larr; Previous</button>
+            {% endif %}
+
+            {% if next_start %}
+            <a href="?start={{ next_start }}" class="btn btn-sm btn-outline-secondary px-3">Next &rarr;</a>
+            {% else %}
+            <button class="btn btn-sm btn-outline-secondary px-3" disabled>Next &rarr;</button>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

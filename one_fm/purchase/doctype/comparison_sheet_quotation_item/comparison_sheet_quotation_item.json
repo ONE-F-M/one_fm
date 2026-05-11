@@ -7,6 +7,8 @@
  "field_order": [
   "quotation_item",
   "quotation",
+  "supplier",
+  "supplier_name",
   "item_name",
   "item_code",
   "description",
@@ -24,7 +26,24 @@
    "fieldname": "quotation",
    "fieldtype": "Link",
    "label": "Quotation",
-   "options": "Quotation From Supplier"
+   "options": "Supplier Quotation"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Supplier",
+   "options": "Supplier",
+   "read_only": 1
+  },
+  {
+   "depends_on": "supplier",
+   "fetch_from": "supplier.supplier_name",
+   "fetch_if_empty": 1,
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "label": "Supplier Name",
+   "read_only": 1
   },
   {
    "columns": 2,
@@ -79,7 +98,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Quotation Item",
-   "options": "Quotation From Supplier Item",
+   "options": "Supplier Quotation Item",
    "reqd": 1
   },
   {

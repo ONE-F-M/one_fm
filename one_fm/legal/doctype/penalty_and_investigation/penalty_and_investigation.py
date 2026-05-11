@@ -33,16 +33,16 @@ class PenaltyAndInvestigation(Document):
 				frappe.throw(_("General Manager Decision is required before moving to Pending Legal Investigation"))
 
 		if old_state_trimmed == "Pending HR Review" and curr_state_trimmed == "Pending GM Decision":
-			if not self.hr_remarks:
-				frappe.throw(_("HR Remarks are required before moving to Pending GM Decision"))
+			if not self.hr_remarks or not self.hr_investigation_report:
+				frappe.throw(_("HR Remarks and HR Investigation Report are required before moving to Pending GM Decision"))
 
 	def _validate_employee_to_supervisor_transition(self):
 		if not self.employee_rejection_remarks:
 			frappe.throw(_("Employee Rejection Remarks are required before moving to Pending Supervisor Review"))
 
 	def _validate_supervisor_to_hr_transition(self):
-		if not self.supervisor_remarks or not self.evidence:
-			frappe.throw(_("Both Supervisor Remarks and Evidence are required before moving to Pending HR Review"))
+		if not self.supervisor_remarks or not self.evidence or not self.supervisor_incident_report:
+			frappe.throw(_("Supervisor Remarks, Evidence, and Supervisor Incident Report are required before moving to Pending HR Review"))
 
 	def validate_duplicate_penalty(self):
 		if not self.employee or not self.applied_penalty_code or not self.incident_date:
@@ -80,10 +80,11 @@ class PenaltyAndInvestigation(Document):
 			"Penalty And Investigation",
 			{
 				"employee": self.employee,
+				"workflow_state": "Completed",
 				"applied_penalty_code": self.applied_penalty_code,
 				"incident_date": [">=", twelve_months_ago],
 				"name": ["!=", self.name],
-				"docstatus": ["!=", 2],
+				"docstatus": 1,
 			},
 		)
 

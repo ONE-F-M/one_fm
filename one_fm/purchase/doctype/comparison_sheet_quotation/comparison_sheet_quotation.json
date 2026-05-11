@@ -23,7 +23,7 @@
    "label": "Quotation",
    "oldfieldname": "item_name",
    "oldfieldtype": "Data",
-   "options": "Quotation From Supplier",
+   "options": "Supplier Quotation",
    "reqd": 1
   },
   {
