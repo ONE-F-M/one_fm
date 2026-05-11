@@ -390,3 +390,4 @@ one_fm.patches.v15_0.add_resignation_buttons
 one_fm.patches.v15_0.update_purchase_invoice_property_setter #3
 one_fm.patches.v15_0.fix_dmarc_report_name_column #2026-04-27
 one_fm.one_fm.patches.arrival_workflow
+one_fm.one_fm.patches.arrival_assignment_rules

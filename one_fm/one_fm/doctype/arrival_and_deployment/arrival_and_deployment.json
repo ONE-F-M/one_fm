@@ -14,6 +14,7 @@
   "transportation_manager",
   "general_services",
   "finance",
+  "warehouse",
   "column_break_1",
   "status",
   "arrival_date",
@@ -91,6 +92,13 @@
    "fieldname": "finance",
    "fieldtype": "Link",
    "label": "Finance",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
    "options": "User",
    "reqd": 1
   },

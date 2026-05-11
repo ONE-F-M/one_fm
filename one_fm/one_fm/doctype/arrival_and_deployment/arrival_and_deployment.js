@@ -21,5 +21,18 @@ frappe.ui.form.on("Arrival And Deployment", {
 			};
 		}
 	}
-
+	},
+	
+	validate: function(frm) {
+		if (frappe.session.user === frm.doc.transportation_manager && !frm.doc.pickup_contact) {
+			frappe.throw("As the Transportation Manager, you must enter the Pickup Contact Person.");
+		}
+	},
+	
+	before_workflow_action: function(frm) {
+		if (frappe.session.user === frm.doc.transportation_manager && !frm.doc.pickup_contact) {
+			frappe.throw("Please enter the Pickup Contact Person before proceeding.");
+			return false;
+		}
+	}
 });
