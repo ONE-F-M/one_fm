@@ -68,7 +68,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "\nPending\nApproved\nRejected\nFailed"
+   "options": "\nPending\nApproved\nRejected\nFailed\nNot Booked\nAccepted\nRemedical Test Done\nFirst Medical Failed\nStamped\nArriving\nMedical Test Done\nIssued\nFit\nBooked"
   },
   {
    "fieldname": "column_break_4",
