@@ -10,23 +10,16 @@
   "candidate_name",
   "passport_number",
   "column_break_1",
-  "appointment_status",
-  "status",
-  "appointment_date",
-  "result_date",
-  "section_break_details",
-  "reason_for_remedical",
-  "medical_center",
-  "medical_center_location",
-  "column_break_2",
   "original_medical_ref",
-  "country_of_examination",
-  "section_break_results",
-  "fit_for_employment",
-  "remarks",
-  "section_break_attach",
-  "remedical_report",
-  "medical_certificate"
+  "section_break_appointment",
+  "appointment_date",
+  "appointment_status",
+  "appointment_slip",
+  "section_break_actual_remedical",
+  "remedical_date",
+  "result_date",
+  "status",
+  "remedical_report"
  ],
  "fields": [
   {
@@ -65,21 +58,15 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Pending",
-   "fieldname": "appointment_status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Appointment Status",
-   "options": "Pending\nBooked\nCompleted\nCancelled"
+   "fieldname": "original_medical_ref",
+   "fieldtype": "Link",
+   "label": "Original Medical Appointment",
+   "options": "Overseas Medical Appointment WAFID"
   },
   {
-   "default": "Pending",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Result Status",
-   "options": "Pending\nSkipped\nIn Process\nFit\nUnfit\nPassed\nFailed",
-   "reqd": 1
+   "fieldname": "section_break_appointment",
+   "fieldtype": "Section Break",
+   "label": "Remedical Appointment"
   },
   {
    "fieldname": "appointment_date",
@@ -87,76 +74,47 @@
    "label": "Appointment Date"
   },
   {
+   "default": "Not Booked",
+   "fieldname": "appointment_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Appointment Status",
+   "options": "Not Booked\nBooked"
+  },
+  {
+   "fieldname": "appointment_slip",
+   "fieldtype": "Attach",
+   "label": "Appointment Slip",
+   "mandatory_depends_on": "eval:doc.appointment_status === 'Booked'"
+  },
+  {
+   "fieldname": "section_break_actual_remedical",
+   "fieldtype": "Section Break",
+   "label": "Actual Remedical"
+  },
+  {
+   "fieldname": "remedical_date",
+   "fieldtype": "Date",
+   "label": "Remedical Date"
+  },
+  {
    "fieldname": "result_date",
    "fieldtype": "Date",
    "label": "Result Date"
   },
   {
-   "fieldname": "section_break_details",
-   "fieldtype": "Section Break",
-   "label": "Remedical Details"
-  },
-  {
-   "fieldname": "reason_for_remedical",
-   "fieldtype": "Small Text",
-   "label": "Reason for Remedical"
-  },
-  {
-   "fieldname": "medical_center",
-   "fieldtype": "Data",
-   "label": "Medical Center"
-  },
-  {
-   "fieldname": "medical_center_location",
-   "fieldtype": "Data",
-   "label": "Medical Center Location"
-  },
-  {
-   "fieldname": "column_break_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "original_medical_ref",
-   "fieldtype": "Link",
-   "label": "Original Medical Appointment",
-   "options": "Overseas Medical Appointment WAFID"
-  },
-  {
-   "fieldname": "country_of_examination",
-   "fieldtype": "Link",
-   "label": "Country of Examination",
-   "options": "Country"
-  },
-  {
-   "fieldname": "section_break_results",
-   "fieldtype": "Section Break",
-   "label": "Results"
-  },
-  {
-   "default": "0",
-   "fieldname": "fit_for_employment",
-   "fieldtype": "Check",
-   "label": "Fit for Employment"
-  },
-  {
-   "fieldname": "remarks",
-   "fieldtype": "Small Text",
-   "label": "Remarks"
-  },
-  {
-   "fieldname": "section_break_attach",
-   "fieldtype": "Section Break",
-   "label": "Attachments"
+   "default": "Yet to apply",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Yet to apply\nSkipped\nIn process\nFit\nUnfit"
   },
   {
    "fieldname": "remedical_report",
    "fieldtype": "Attach",
-   "label": "Remedical Report"
-  },
-  {
-   "fieldname": "medical_certificate",
-   "fieldtype": "Attach",
-   "label": "Medical Certificate"
+   "label": "Remedical Report",
+   "mandatory_depends_on": "eval:in_list(['Fit', 'Unfit'], doc.status)"
   }
  ],
  "links": [],
