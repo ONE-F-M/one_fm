@@ -63,10 +63,10 @@ def _get_raw_body_params():
                     for k, v in parsed_qs.items():
                         result[k] = v[0] if len(v) == 1 else v
 
-                # Handle nested 'data' JSON string (e.g. data={"key":"val"})
-                if 'data' in result and isinstance(result['data'], str):
+                # Handle nested 'data' JSON string or dict (e.g. data={"key":"val"} or {"data": {"key": "val"}})
+                if 'data' in result:
                     try:
-                        nested = json.loads(result['data'])
+                        nested = json.loads(result['data']) if isinstance(result['data'], str) else result['data']
                         if isinstance(nested, dict):
                             # Nested data fills in missing keys only
                             for k, v in nested.items():

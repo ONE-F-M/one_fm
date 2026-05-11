@@ -69,7 +69,7 @@
    "fieldname": "employees",
    "fieldtype": "Table",
    "label": "Employees",
-   "options": "Employee Resignation Extension Item",
+   "options": "Employee Resignation Date Adjustment Item",
    "reqd": 1
   },
   {
@@ -93,7 +93,7 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "Employee Resignation Extension",
+   "options": "Employee Resignation Date Adjustment",
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
@@ -117,7 +117,6 @@
    "label": "Extended Relieving Date",
    "reqd": 1
   },
-
   {
    "fieldname": "supervisor",
    "fieldtype": "Link",
@@ -129,7 +128,8 @@
    "fieldname": "operations_manager",
    "fieldtype": "Link",
    "label": "Operations Manager",
-   "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Accepted by Supervisor', 'Approved'].includes(doc.workflow_state)",
+   "depends_on": "eval:!doc.is_corporate",
+   "mandatory_depends_on": "eval:!doc.is_corporate && !doc.__islocal && ['Pending Operations Manager', 'Accepted by Supervisor', 'Approved'].includes(doc.workflow_state)",
    "options": "User"
   },
   {
@@ -147,24 +147,10 @@
  "modified": "2026-04-21 16:30:35.050528",
  "modified_by": "Administrator",
  "module": "one_fm",
- "name": "Employee Resignation Extension",
+ "name": "Employee Resignation Date Adjustment",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
-  {
-   "amend": 1,
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
   {
    "create": 1,
    "delete": 1,
@@ -178,6 +164,9 @@
    "write": 1
   },
   {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -185,6 +174,7 @@
    "report": 1,
    "role": "Employee",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -197,6 +187,48 @@
    "share": 1,
    "submit": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "write": 1,
+   "role": "Interviewer"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "write": 1,
+   "role": "HR Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "write": 1,
+   "role": "System Manager"
   }
  ],
  "row_format": "Dynamic",

@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class EmployeeResignationExtensionItem(Document):
+class EmployeeResignationDateAdjustmentItem(Document):
 	pass

@@ -20,6 +20,25 @@ class EmployeeResignation(Document):
 					title=_("Missing Required Fields")
 				)
 
+
+
+		# Enforce Operations Manager and Offboarding Officer only during Managerial stages
+		state = self.get("workflow_state")
+		if state and state not in ("Draft", "Pending Relieving Date Correction"):
+			if state in ("Pending Operations Manager", "Approved"):
+				if not self.operations_manager and self.get("project_allocation") != "ONE FM - Head Office":
+					frappe.throw(_("Please specify the <b>Operations Manager</b> before saving or submitting."))
+				if not self.offboarding_officer:
+					frappe.throw(_("Please specify the <b>Offboarding Officer</b> before saving or submitting."))
+
+		# Enforce replacement_required explicitly for Operations Manager / Approved
+		if self.get("workflow_state") == "Approved":
+			if not self.replacement_required:
+				frappe.throw(
+					_("You must explicitly select Yes or No for 'Is a Replacement Required?' before you can approve and spawn a PMR."),
+					title=_("Replacement Required")
+				)
+
 		self.validate_dates()
 
 	def validate_dates(self):
@@ -94,11 +113,9 @@ class EmployeeResignation(Document):
 			recipients.add(self.owner)
 			
 		from frappe.utils.user import get_users_with_role
-		from one_fm.api.v1.utils import resolve_active_user
-		
 		offboarding_officers = get_users_with_role("Offboarding Officer")
 		for user in offboarding_officers:
-			recipients.add(resolve_active_user(user))
+			recipients.add(user)
 
 		subject = _("Employee Resignation Approved: {0}").format(self.name)
 		message = _("The employee resignation {0} has been fully approved by the Operations Manager and is now ready for offboarding processing.").format(self.name)
@@ -137,31 +154,6 @@ class EmployeeResignation(Document):
 
 	def before_save(self):
 		self.set_supervisor()
-		
-		# Enforce relieving_date explicitly for Supervisor before forwarding
-		if self.get("workflow_state") in ("Pending Operations Manager", "Approved"):
-			if not self.relieving_date:
-				frappe.throw(
-					_("Relieving Date is mandatory at this stage. The Supervisor must specify the final date before pushing to Operations Manager."),
-					title=_("Missing Relieving Date")
-				)
-
-		# Enforce Operations Manager and Offboarding Officer only during Managerial stages
-		state = self.get("workflow_state")
-		if state and state not in ("Draft", "Pending Relieving Date Correction"):
-			if state in ("Pending Operations Manager", "Approved"):
-				if not self.operations_manager:
-					frappe.throw(_("Please specify the <b>Operations Manager</b> before saving or submitting."))
-				if not self.offboarding_officer:
-					frappe.throw(_("Please specify the <b>Offboarding Officer</b> before saving or submitting."))
-
-		# Enforce replacement_required explicitly for Operations Manager
-		if self.get("workflow_state") == "Approved":
-			if not self.replacement_required:
-				frappe.throw(
-					_("You must explicitly select Yes or No for 'Is a Replacement Required?' before you can save or approve."),
-					title=_("Replacement Required")
-				)
 
 	def set_supervisor(self):
 		# Only auto-resolve supervisor if it hasn't already been set manually
@@ -176,34 +168,14 @@ class EmployeeResignation(Document):
 		if not first_emp:
 			return
 
-		# 1. Reports To
-		reports_to = frappe.db.get_value("Employee", first_emp, "reports_to")
-		if reports_to:
-			user_id = frappe.db.get_value("Employee", reports_to, "user_id")
+		from one_fm.utils import get_approver
+		approver_emp = get_approver(first_emp)
+		if approver_emp:
+			user_id = frappe.db.get_value("Employee", approver_emp, "user_id")
 			if user_id and frappe.db.exists("User", user_id):
 				self.supervisor = user_id
 				return
 
-		# 2. Site Supervisor
-		site = frappe.db.get_value("Employee", first_emp, "site")
-		if site:
-			site_supervisor = frappe.db.get_value("Operations Site", site, "site_supervisor")
-			if site_supervisor:
-				user_id = frappe.db.get_value("Employee", site_supervisor, "user_id")
-				if user_id and frappe.db.exists("User", user_id):
-					self.supervisor = user_id
-					return
-
-		# 3. Project Manager
-		project = frappe.db.get_value("Employee", first_emp, "project")
-		if project:
-			project_manager = frappe.db.get_value("Project", project, "project_manager")
-			if project_manager:
-				user_id = frappe.db.get_value("Employee", project_manager, "user_id")
-				if user_id and frappe.db.exists("User", user_id):
-					self.supervisor = user_id
-					return
-		
 		self.supervisor = None
 
 	def on_submit(self):
@@ -217,9 +189,9 @@ class EmployeeResignation(Document):
 						if not frappe.db.exists("File", {"attached_to_doctype": "Employee", "attached_to_name": row.employee, "file_url": row.resignation_letter}):
 							try:
 								from frappe.utils.file_manager import save_url
-								save_url(row.resignation_letter, file_name, "Employee", row.employee, "Home/Attachments", 1)
+								save_url(row.resignation_letter, file_name, "Employee", row.employee, "Home/Attachments", is_private=1)
 							except Exception as e:
-								frappe.log_error(frappe.get_traceback(), "Error attaching resignation file to Employee")
+								frappe.log_error("Error attaching resignation file to Employee", str(e))
 					
 					frappe.db.set_value("Employee", row.employee, {
 						"resignation_date": self.resignation_initiation_date,
@@ -245,7 +217,6 @@ class EmployeeResignation(Document):
 			pmr.nationality = self.replacement_nationality
 			pmr.salary = self.replacement_salary
 			pmr.deployment_date = self.relieving_date
-			
 			for row in self.get("language_requirements"):
 				new_row = pmr.append("language_requirements", {})
 				row_dict = row.as_dict().copy()
@@ -268,7 +239,7 @@ class EmployeeResignation(Document):
 				new_row.update(row_dict)
 				
 			pmr.workflow_state = "Draft"
-			pmr.insert(ignore_permissions=True)
+			pmr.insert()
 			frappe.db.set_value("Project Manpower Request", pmr.name, "workflow_state", "Draft")
 
 	def on_trash(self):
@@ -289,6 +260,34 @@ class EmployeeResignation(Document):
 					"resignation_date": self.resignation_initiation_date,
 					"relieving_date": self.relieving_date,
 				}
-				if row.resignation_letter:
-					update_data["resignation_letter_date"] = row.get("resignation_letter_date") or self.resignation_initiation_date
 				frappe.db.set_value("Employee", row.employee, update_data, update_modified=False)
+				
+@frappe.whitelist()
+def get_employee_resignation_details(employee):
+	"""Secure backend fetch to bypass frontend permission limits for restricted roles."""
+	if not employee:
+		return {}
+
+	emp_data = frappe.db.get_value("Employee", employee, 
+		["project", "department", "designation", "site", "employment_type", "shift", "custom_operations_role_allocation", "employee_name", "reports_to"], 
+		as_dict=True)
+
+	if not emp_data:
+		return {}
+
+	result = emp_data.copy()
+	
+	# Fetch Supervisor User ID
+	if result.get("reports_to"):
+		result["supervisor_id"] = frappe.db.get_value("Employee", result.get("reports_to"), "user_id")
+
+	# Fetch Site Details
+	if result.get("site"):
+		site_data = frappe.db.get_value("Operations Site", result.get("site"), 
+			["site_supervisor", "operations_manager"], as_dict=True)
+		if site_data:
+			result["operations_manager"] = site_data.get("operations_manager")
+			if site_data.get("site_supervisor"):
+				result["site_supervisor_id"] = frappe.db.get_value("Employee", site_data.get("site_supervisor"), "user_id")
+
+	return result
