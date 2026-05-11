@@ -26,7 +26,7 @@ frappe.ui.form.on("Arrival And Deployment", {
 			let user = frappe.session.user;
 
 			let add_ack_btn = (field, label) => {
-				if (user === frm.doc[field.replace('_acknowledged', '')] && !frm.doc[field]) {
+				if (!frm.doc[field]) {
 					frm.add_custom_button(__(`Acknowledge ${label}`), function() {
 						frappe.call({
 							method: "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.acknowledge_department",

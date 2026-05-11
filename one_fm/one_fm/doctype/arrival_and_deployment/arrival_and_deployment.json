@@ -32,6 +32,7 @@
   "column_break_ack",
   "general_services_acknowledged",
   "warehouse_acknowledged",
+  "support_assigned_on",
   "section_break_notes",
   "notes"
  ],
@@ -197,6 +198,12 @@
    "fieldtype": "Check",
    "label": "Warehouse Acknowledged",
    "read_only": 1
+  },
+  {
+   "fieldname": "support_assigned_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "Support Assigned On"
   },
   {
    "fieldname": "section_break_notes",

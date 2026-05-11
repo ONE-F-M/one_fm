@@ -10,6 +10,10 @@ class ArrivalandDeployment(Document):
     def validate(self):
         self.update_tracker_status()
 
+    def before_save(self):
+        if self.workflow_state == "Pending Support Departments" and not self.support_assigned_on:
+            self.support_assigned_on = frappe.utils.now_datetime()
+
     def update_tracker_status(self):
         """Sync status back to the Candidate Country Process tracker row (non-recursive)."""
         if not self.candidate_country_process:
