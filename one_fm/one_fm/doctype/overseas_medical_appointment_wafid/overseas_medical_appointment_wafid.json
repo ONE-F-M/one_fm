@@ -10,25 +10,15 @@
   "candidate_name",
   "passport_number",
   "column_break_1",
-  "appointment_status",
-  "status",
+  "section_break_appointment",
   "appointment_date",
+  "appointment_status",
+  "appointment_slip",
+  "section_break_actual_medical",
+  "medical_date",
   "result_date",
-  "section_break_wafid",
-  "wafid_number",
-  "medical_center",
-  "medical_center_location",
-  "column_break_2",
-  "gamca_slip_number",
-  "country_of_examination",
-  "section_break_results",
-  "blood_group",
-  "fit_for_employment",
-  "column_break_3",
-  "remarks",
-  "section_break_attach",
-  "wafid_report",
-  "medical_certificate"
+  "status",
+  "wafid_medical_report"
  ],
  "fields": [
   {
@@ -67,21 +57,9 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Pending",
-   "fieldname": "appointment_status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Appointment Status",
-   "options": "Pending\nBooked\nCompleted\nCancelled"
-  },
-  {
-   "default": "Pending",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Result Status",
-   "options": "Pending\nIn Process\nFit\nUnfit\nPassed\nFailed",
-   "reqd": 1
+   "fieldname": "section_break_appointment",
+   "fieldtype": "Section Break",
+   "label": "Appointment"
   },
   {
    "fieldname": "appointment_date",
@@ -89,85 +67,45 @@
    "label": "Appointment Date"
   },
   {
+   "default": "Not Booked",
+   "fieldname": "appointment_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Appointment Status",
+   "options": "Not Booked\nBooked"
+  },
+  {
+   "fieldname": "appointment_slip",
+   "fieldtype": "Attach",
+   "label": "Appointment Slip"
+  },
+  {
+   "fieldname": "section_break_actual_medical",
+   "fieldtype": "Section Break",
+   "label": "Actual medical"
+  },
+  {
+   "fieldname": "medical_date",
+   "fieldtype": "Date",
+   "label": "Medical Date"
+  },
+  {
    "fieldname": "result_date",
    "fieldtype": "Date",
    "label": "Result Date"
   },
   {
-   "fieldname": "section_break_wafid",
-   "fieldtype": "Section Break",
-   "label": "WAFID / GAMCA Details"
-  },
-  {
-   "fieldname": "wafid_number",
-   "fieldtype": "Data",
-   "label": "WAFID Number"
-  },
-  {
-   "fieldname": "medical_center",
-   "fieldtype": "Data",
-   "label": "Medical Center"
-  },
-  {
-   "fieldname": "medical_center_location",
-   "fieldtype": "Data",
-   "label": "Medical Center Location"
-  },
-  {
-   "fieldname": "column_break_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "gamca_slip_number",
-   "fieldtype": "Data",
-   "label": "GAMCA Slip Number"
-  },
-  {
-   "fieldname": "country_of_examination",
-   "fieldtype": "Link",
-   "label": "Country of Examination",
-   "options": "Country"
-  },
-  {
-   "fieldname": "section_break_results",
-   "fieldtype": "Section Break",
-   "label": "Results"
-  },
-  {
-   "fieldname": "blood_group",
+   "default": "Yet to apply",
+   "fieldname": "status",
    "fieldtype": "Select",
-   "label": "Blood Group",
-   "options": "\nA+\nA-\nB+\nB-\nAB+\nAB-\nO+\nO-"
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Yet to apply\nIn process\nFit\nUnfit"
   },
   {
-   "default": "0",
-   "fieldname": "fit_for_employment",
-   "fieldtype": "Check",
-   "label": "Fit for Employment"
-  },
-  {
-   "fieldname": "column_break_3",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "remarks",
-   "fieldtype": "Small Text",
-   "label": "Remarks"
-  },
-  {
-   "fieldname": "section_break_attach",
-   "fieldtype": "Section Break",
-   "label": "Attachments"
-  },
-  {
-   "fieldname": "wafid_report",
+   "fieldname": "wafid_medical_report",
    "fieldtype": "Attach",
-   "label": "WAFID Report"
-  },
-  {
-   "fieldname": "medical_certificate",
-   "fieldtype": "Attach",
-   "label": "Medical Certificate"
+   "label": "Medical Report"
   }
  ],
  "links": [],
