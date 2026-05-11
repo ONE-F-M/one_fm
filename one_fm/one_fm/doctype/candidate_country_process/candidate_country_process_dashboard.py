@@ -3,10 +3,10 @@ from frappe import _
 
 def get_data():
     return {
-        # 'fieldname': 'candidate_country_process',
-        # 'transactions': [
-        #     {
-        #         'items': ['PAM Visa']
-        #     }
-        # ],
+        'fieldname': 'candidate_country_process',
+        'transactions': [
+            {
+                'items': ['PAM Visa']
+            }
+        ],
     }
