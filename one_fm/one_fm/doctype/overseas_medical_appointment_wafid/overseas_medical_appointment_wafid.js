@@ -21,7 +21,7 @@ frappe.ui.form.on("Overseas Medical Appointment WAFID", {
 	},
 	after_save: function(frm) {
 		if (frm.doc.status === "Medical failed and Proceeded to Remedical") {
-			frappe.db.get_value("Overseas Remedical", {"original_medical_ref": frm.doc.name}, "name", function(r) {
+			frappe.db.get_value("Overseas Remedical", {"candidate_country_process": frm.doc.candidate_country_process}, "name", function(r) {
 				if (!r || !r.message || !r.message.name) {
 					frappe.confirm('Do you want to create the Overseas Remedical record now?', function() {
 						frappe.route_options = {
