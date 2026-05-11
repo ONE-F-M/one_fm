@@ -1,4 +1,10 @@
 frappe.ui.form.on("Overseas Medical Appointment WAFID", {
+	refresh: function(frm) {
+		update_actual_medical_status(frm);
+	},
+	validate: function(frm) {
+		update_actual_medical_status(frm);
+	},
 	appointment_status: function(frm) {
 		update_actual_medical_status(frm);
 	},

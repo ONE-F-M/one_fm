@@ -1,4 +1,10 @@
 frappe.ui.form.on("Overseas Remedical", {
+	refresh: function(frm) {
+		update_actual_remedical_status(frm);
+	},
+	validate: function(frm) {
+		update_actual_remedical_status(frm);
+	},
 	appointment_status: function(frm) {
 		update_actual_remedical_status(frm);
 	},
