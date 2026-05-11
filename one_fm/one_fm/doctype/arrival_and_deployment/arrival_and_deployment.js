@@ -20,7 +20,6 @@ frappe.ui.form.on("Arrival And Deployment", {
 				frappe.set_route("List", doctype);
 			};
 		}
-	}
 	},
 	
 	validate: function(frm) {
