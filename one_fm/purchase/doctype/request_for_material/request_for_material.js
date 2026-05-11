@@ -331,10 +331,8 @@ frappe.ui.form.on('Request for Material', {
 					$.each(r.message, function(k, v) {
 						if(!d[k]) d[k] = v;
 						if(d.qty>d.actual_qty){
-							d.pur_qty = d.qty-d.actual_qty
 							d.quantity_to_transfer = d.actual_qty
 						} else if(d.qty<d.actual_qty){
-							d.pur_qty = 0
 							d.quantity_to_transfer = d.qty
 						}
 					});
@@ -385,11 +383,6 @@ frappe.ui.form.on('Request for Material', {
 			return;
 		}
 
-		const items_to_purchase = frm.doc.items.filter(d => d.pur_qty > 0 && !d.rejected_item);
-		if (items_to_purchase.length === 0) {
-			frappe.msgprint(__("There are no items marked for purchasing."));
-			return;
-		}
 
 		let dialog = new frappe.ui.Dialog({
 			title: __('Create Request for Purchase'),
@@ -891,18 +884,9 @@ frappe.ui.form.on("Request for Material Item", {
 	qty: function (frm, doctype, name) {
         calculate_stock_qty(doctype, name);
 	},
-	pur_qty: function (frm, doctype, name){
-		var d = locals[doctype][name];
-		if (d.quantity_to_transfer > (d.qty+d.pur_qty) || d.quantity_to_transfer > (d.qty+d.pur_qty)){
-			d.quantity_to_transfer = d.qty-d.pur_qty
-		}
-		if ((flt(d.quantity_to_transfer)+flt(d.pur_qty)) > (flt(d.qty))) {
-			frappe.msgprint(__("Warning: Cannot exceed total Material Requested Qty"));
-		}
-	},
 	quantity_to_transfer: function (frm, doctype, name){
 		var d = locals[doctype][name];
-		if ((flt(d.quantity_to_transfer)+flt(d.pur_qty)) > (flt(d.qty))) {
+		if (flt(d.quantity_to_transfer) > flt(d.qty)) {
 			frappe.msgprint(__("Warning: Cannot exceed total Material Requested Qty"));
 		}
 	},

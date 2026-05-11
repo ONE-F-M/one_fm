@@ -127,6 +127,14 @@ def get_purchase_order_custom_fields():
                 "read_only": 1
             },
             {
+                "fieldname": "custom_quotation_comparison_sheet",
+                "label": "Quotation Comparison Sheet",
+                "fieldtype": "Link",
+                "insert_after": "request_for_material",
+                "options": "Quotation Comparison Sheet",
+                "read_only": 1
+            },
+            {
                 "fieldname": "other_conditions",
                 "label": "Notes",
                 "fieldtype": "Text Editor",

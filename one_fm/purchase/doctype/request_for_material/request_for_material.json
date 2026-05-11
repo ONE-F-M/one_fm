@@ -540,6 +540,7 @@
    "fieldname": "target_warehouse",
    "fieldtype": "Link",
    "label": "Target Warehouse",
+   "mandatory_depends_on": "eval:doc.purpose==\"Purchase\" && doc.docstatus==1",
    "options": "Warehouse"
   }
  ],

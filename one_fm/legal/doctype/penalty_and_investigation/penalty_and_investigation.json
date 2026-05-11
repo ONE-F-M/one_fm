@@ -1,423 +1,441 @@
 {
- "actions": [],
- "allow_rename": 1,
- "autoname": "PEN-.MM.-.YYYY.-.####",
- "creation": "2026-04-21 15:49:26.670894",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "section_break_pekz",
-  "issuer",
-  "issuance_date",
-  "employee",
-  "employee_name",
-  "employee_user",
-  "penalty_name",
-  "applied_penalty_code",
-  "amended_from",
-  "column_break_xwza",
-  "incident_date",
-  "reported_by",
-  "series",
-  "department",
-  "penalty_status",
-  "location",
-  "project",
-  "penalty",
-  "offence_count",
-  "applied_level",
-  "column_break_hgui",
-  "deduction_type",
-  "salary_deduction_days",
-  "salary_deduction_amount",
-  "section_break_waiv",
-  "employee_rejection_remarks",
-  "incident_file",
-  "investigation_requiref",
-  "description",
-  "evidence",
-  "witness",
-  "supervisor_remarks",
-  "decision",
-  "hr_remarks",
-  "general_manager_decision",
-  "legal_findings",
-  "additional",
-  "company_damage",
-  "asset_damage",
-  "column_break_rjfg",
-  "customer_property_damage",
-  "other_damages"
- ],
- "fields": [
-  {
-   "fieldname": "section_break_pekz",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "issuance_date",
-   "fieldtype": "Date",
-   "label": "Issuance Date"
-  },
-  {
-   "fieldname": "employee",
-   "fieldtype": "Link",
-   "label": "Employee",
-   "options": "Employee"
-  },
-  {
-   "fieldname": "applied_penalty_code",
-   "fieldtype": "Link",
-   "label": "Applied Penalty Code",
-   "options": "Penalty Code"
-  },
-  {
-   "fetch_from": "applied_penalty_code.penalty_name",
-   "fieldname": "penalty_name",
-   "fieldtype": "Select",
-   "label": "Penalty Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_xwza",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "incident_date",
-   "fieldtype": "Date",
-   "label": "Incident Date"
-  },
-  {
-   "fieldname": "location",
-   "fieldtype": "Link",
-   "label": "Location",
-   "options": "Operations Site"
-  },
-  {
-   "fieldname": "reported_by",
-   "fieldtype": "Data",
-   "label": "Reported By"
-  },
-  {
-   "fetch_from": "employee.department",
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department",
-   "read_only": 1
-  },
-  {
-   "fieldname": "penalty",
-   "fieldtype": "Section Break",
-   "label": "Penalty"
-  },
-  {
-   "fieldname": "offence_count",
-   "fieldtype": "Int",
-   "label": "Offence Count",
-   "read_only": 1
-  },
-  {
-   "fieldname": "applied_level",
-   "fieldtype": "Select",
-   "label": "Applied Level",
-   "options": "1\n2\n3\n4\n5",
-   "read_only": 1
-  },
-  {
-   "fieldname": "salary_deduction_days",
-   "fieldtype": "Float",
-   "label": "Salary Deduction Days",
-   "read_only": 1
-  },
-  {
-   "fieldname": "incident_file",
-   "fieldtype": "Section Break",
-   "label": "Incident File"
-  },
-  {
-   "default": "0",
-   "fieldname": "investigation_requiref",
-   "fieldtype": "Check",
-   "label": "Investigation Required"
-  },
-  {
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "Description",
-   "mandatory_depends_on": "eval:doc.investigation_requiref"
-  },
-  {
-   "fieldname": "evidence",
-   "fieldtype": "Attach",
-   "label": "Evidence",
-   "mandatory_depends_on": "eval:doc.investigation_requiref"
-  },
-  {
-   "fieldname": "witness",
-   "fieldtype": "Data",
-   "label": "Witness"
-  },
-  {
-   "fieldname": "supervisor_remarks",
-   "fieldtype": "Small Text",
-   "in_list_view": 1,
-   "label": "Supervisor Remarks",
-   "reqd": 1
-  },
-  {
-   "fieldname": "decision",
-   "fieldtype": "Section Break",
-   "label": "Decision"
-  },
-  {
-   "fieldname": "hr_remarks",
-   "fieldtype": "Small Text",
-   "label": "HR Remarks"
-  },
-  {
-   "fieldname": "general_manager_decision",
-   "fieldtype": "Small Text",
-   "label": "General Manager Decision "
-  },
-  {
-   "fieldname": "legal_findings",
-   "fieldtype": "Small Text",
-   "label": "Legal Findings"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Penalty And Investigation",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
-  },
-  {
-   "fetch_from": "employee.user_id",
-   "fieldname": "employee_user",
-   "fieldtype": "Link",
-   "hidden": 1,
-   "label": "Employee User",
-   "options": "User"
-  },
-  {
-   "fieldname": "series",
-   "fieldtype": "Select",
-   "hidden": 1,
-   "label": "Series"
-  },
-  {
-   "fieldname": "column_break_hgui",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "deduction_type",
-   "fieldtype": "Data",
-   "label": "Deduction Type",
-   "read_only": 1
-  },
-  {
-   "fieldname": "project",
-   "fieldtype": "Link",
-   "label": "Project",
-   "options": "Project"
-  },
-  {
-   "fieldname": "salary_deduction_amount",
-   "fieldtype": "Currency",
-   "label": "Salary Deduction Amount"
-  },
-  {
-   "fetch_from": "employee.employee_name",
-   "fieldname": "employee_name",
-   "fieldtype": "Data",
-   "label": "Employee Name",
-   "read_only": 1
-  },
-  {
-   "fieldname": "issuer",
-   "fieldtype": "Link",
-   "label": "Issuer",
-   "options": "Employee"
-  },
-  {
-   "fetch_from": "workflow_state",
-   "fieldname": "penalty_status",
-   "fieldtype": "Data",
-   "label": "Penalty Status",
-   "read_only": 1
-  },
-  {
-   "fieldname": "section_break_waiv",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "employee_rejection_remarks",
-   "fieldtype": "Small Text",
-   "label": "Employee Rejection Remark"
-  },
-  {
-   "fieldname": "additional",
-   "fieldtype": "Section Break",
-   "label": "Additional"
-  },
-  {
-   "default": "0",
-   "fieldname": "company_damage",
-   "fieldtype": "Check",
-   "label": "Company Damage"
-  },
-  {
-   "default": "0",
-   "fieldname": "asset_damage",
-   "fieldtype": "Check",
-   "label": "Asset Damage"
-  },
-  {
-   "fieldname": "column_break_rjfg",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "0",
-   "fieldname": "customer_property_damage",
-   "fieldtype": "Check",
-   "label": "Customer Property Damage"
-  },
-  {
-   "default": "0",
-   "fieldname": "other_damages",
-   "fieldtype": "Check",
-   "label": "Other Damages"
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "is_submittable": 1,
- "links": [],
- "modified": "2026-04-27 20:30:34.195024",
- "modified_by": "Administrator",
- "module": "Legal",
- "name": "Penalty And Investigation",
- "naming_rule": "Expression (old style)",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Employee",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "HR Supervisor",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "HR Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "General Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": [
-  {
-   "color": "Blue",
-   "title": "Draft"
-  },
-  {
-   "color": "Blue",
-   "title": "Pending Employee Response"
-  },
-  {
-   "color": "Blue",
-   "title": "Rejected by Employee"
-  },
-  {
-   "color": "Blue",
-   "title": "Pending Supervisor Review"
-  },
-  {
-   "color": "Blue",
-   "title": "Pending HR Review"
-  },
-  {
-   "color": "Blue",
-   "title": "Pending GM Decision"
-  },
-  {
-   "color": "Blue",
-   "title": "Pending Legal Investigation "
-  },
-  {
-   "color": "Blue",
-   "title": "Apply Penalty"
-  },
-  {
-   "color": "Blue",
-   "title": "Mark as Completed "
-  },
-  {
-   "color": "Blue",
-   "title": "Canceled by GM"
-  },
-  {
-   "color": "Blue",
-   "title": "Canceled by Supervisor"
-  },
-  {
-   "color": "Blue",
-   "title": "Accepted by Employee"
-  }
- ],
- "track_changes": 1
+    "actions": [],
+    "allow_rename": 1,
+    "autoname": "PEN-.MM.-.YYYY.-.####",
+    "creation": "2026-04-21 15:49:26.670894",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "section_break_pekz",
+        "issuer",
+        "issuance_date",
+        "employee",
+        "employee_name",
+        "employee_user",
+        "penalty_name",
+        "applied_penalty_code",
+        "amended_from",
+        "column_break_xwza",
+        "incident_date",
+        "reported_by",
+        "series",
+        "department",
+        "penalty_status",
+        "location",
+        "project",
+        "penalty",
+        "offence_count",
+        "applied_level",
+        "column_break_hgui",
+        "deduction_type",
+        "salary_deduction_days",
+        "salary_deduction_amount",
+        "section_break_waiv",
+        "employee_rejection_remarks",
+        "incident_file",
+        "investigation_requiref",
+        "description",
+        "evidence",
+        "supervisor_incident_report",
+        "witness",
+        "supervisor_remarks",
+        "decision",
+        "hr_remarks",
+        "hr_investigation_report",
+        "general_manager_decision",
+        "legal_findings",
+        "legal_investigation_report",
+        "additional",
+        "company_damage",
+        "asset_damage",
+        "column_break_rjfg",
+        "customer_property_damage",
+        "other_damages"
+    ],
+    "fields": [
+        {
+            "fieldname": "section_break_pekz",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "issuance_date",
+            "fieldtype": "Date",
+            "label": "Issuance Date"
+        },
+        {
+            "fieldname": "employee",
+            "fieldtype": "Link",
+            "label": "Employee",
+            "options": "Employee"
+        },
+        {
+            "fieldname": "applied_penalty_code",
+            "fieldtype": "Link",
+            "label": "Applied Penalty Code",
+            "options": "Penalty Code"
+        },
+        {
+            "fetch_from": "applied_penalty_code.penalty_name",
+            "fieldname": "penalty_name",
+            "fieldtype": "Select",
+            "label": "Penalty Name",
+            "read_only": 1
+        },
+        {
+            "fieldname": "column_break_xwza",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "incident_date",
+            "fieldtype": "Date",
+            "label": "Incident Date"
+        },
+        {
+            "fieldname": "location",
+            "fieldtype": "Link",
+            "label": "Location",
+            "options": "Operations Site"
+        },
+        {
+            "fieldname": "reported_by",
+            "fieldtype": "Data",
+            "label": "Reported By"
+        },
+        {
+            "fetch_from": "employee.department",
+            "fieldname": "department",
+            "fieldtype": "Link",
+            "label": "Department",
+            "options": "Department",
+            "read_only": 1
+        },
+        {
+            "fieldname": "penalty",
+            "fieldtype": "Section Break",
+            "label": "Penalty"
+        },
+        {
+            "fieldname": "offence_count",
+            "fieldtype": "Int",
+            "label": "Offence Count",
+            "read_only": 1
+        },
+        {
+            "fieldname": "applied_level",
+            "fieldtype": "Select",
+            "label": "Applied Level",
+            "options": "1\n2\n3\n4\n5",
+            "read_only": 1
+        },
+        {
+            "fieldname": "salary_deduction_days",
+            "fieldtype": "Float",
+            "label": "Salary Deduction Days",
+            "read_only": 1
+        },
+        {
+            "fieldname": "incident_file",
+            "fieldtype": "Section Break",
+            "label": "Incident File"
+        },
+        {
+            "default": "0",
+            "fieldname": "investigation_requiref",
+            "fieldtype": "Check",
+            "label": "Investigation Required"
+        },
+        {
+            "fieldname": "description",
+            "fieldtype": "Small Text",
+            "label": "Description",
+            "mandatory_depends_on": "eval:doc.investigation_requiref"
+        },
+        {
+            "fieldname": "evidence",
+            "fieldtype": "Attach",
+            "label": "Evidence",
+            "mandatory_depends_on": "eval:doc.investigation_requiref"
+        },
+        {
+            "fieldname": "supervisor_incident_report",
+            "fieldtype": "Attach",
+            "label": "Supervisor Incident Report"
+        },
+        {
+            "fieldname": "legal_investigation_report",
+            "fieldtype": "Attach",
+            "label": "Legal Investigation Report"
+        },
+        {
+            "fieldname": "witness",
+            "fieldtype": "Data",
+            "label": "Witness"
+        },
+        {
+            "fieldname": "supervisor_remarks",
+            "fieldtype": "Small Text",
+            "in_list_view": 1,
+            "label": "Supervisor Remarks",
+            "reqd": 1
+        },
+        {
+            "fieldname": "decision",
+            "fieldtype": "Section Break",
+            "label": "Decision"
+        },
+        {
+            "fieldname": "hr_remarks",
+            "fieldtype": "Small Text",
+            "label": "HR Remarks"
+        },
+        {
+            "fieldname": "hr_investigation_report",
+            "fieldtype": "Attach",
+            "label": "HR Investigation Report"
+        },
+        {
+            "fieldname": "general_manager_decision",
+            "fieldtype": "Small Text",
+            "label": "General Manager Decision "
+        },
+        {
+            "fieldname": "legal_findings",
+            "fieldtype": "Small Text",
+            "label": "Legal Findings"
+        },
+        {
+            "fieldname": "amended_from",
+            "fieldtype": "Link",
+            "label": "Amended From",
+            "no_copy": 1,
+            "options": "Penalty And Investigation",
+            "print_hide": 1,
+            "read_only": 1,
+            "search_index": 1
+        },
+        {
+            "fetch_from": "employee.user_id",
+            "fieldname": "employee_user",
+            "fieldtype": "Link",
+            "hidden": 1,
+            "label": "Employee User",
+            "options": "User"
+        },
+        {
+            "fieldname": "series",
+            "fieldtype": "Select",
+            "hidden": 1,
+            "label": "Series"
+        },
+        {
+            "fieldname": "column_break_hgui",
+            "fieldtype": "Column Break"
+        },
+        {
+            "fieldname": "deduction_type",
+            "fieldtype": "Data",
+            "label": "Deduction Type",
+            "read_only": 1
+        },
+        {
+            "fieldname": "project",
+            "fieldtype": "Link",
+            "label": "Project",
+            "options": "Project"
+        },
+        {
+            "fieldname": "salary_deduction_amount",
+            "fieldtype": "Currency",
+            "label": "Salary Deduction Amount"
+        },
+        {
+            "fetch_from": "employee.employee_name",
+            "fieldname": "employee_name",
+            "fieldtype": "Data",
+            "label": "Employee Name",
+            "read_only": 1
+        },
+        {
+            "fieldname": "issuer",
+            "fieldtype": "Link",
+            "label": "Issuer",
+            "options": "Employee"
+        },
+        {
+            "fetch_from": "workflow_state",
+            "fieldname": "penalty_status",
+            "fieldtype": "Data",
+            "label": "Penalty Status",
+            "read_only": 1
+        },
+        {
+            "fieldname": "section_break_waiv",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "employee_rejection_remarks",
+            "fieldtype": "Small Text",
+            "label": "Employee Rejection Remark"
+        },
+        {
+            "fieldname": "additional",
+            "fieldtype": "Section Break",
+            "label": "Additional"
+        },
+        {
+            "default": "0",
+            "fieldname": "company_damage",
+            "fieldtype": "Check",
+            "label": "Company Damage"
+        },
+        {
+            "default": "0",
+            "fieldname": "asset_damage",
+            "fieldtype": "Check",
+            "label": "Asset Damage"
+        },
+        {
+            "fieldname": "column_break_rjfg",
+            "fieldtype": "Column Break"
+        },
+        {
+            "default": "0",
+            "fieldname": "customer_property_damage",
+            "fieldtype": "Check",
+            "label": "Customer Property Damage"
+        },
+        {
+            "default": "0",
+            "fieldname": "other_damages",
+            "fieldtype": "Check",
+            "label": "Other Damages"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "is_submittable": 1,
+    "links": [],
+    "modified": "2026-05-03 15:46:48.239047",
+    "modified_by": "Administrator",
+    "module": "Legal",
+    "name": "Penalty And Investigation",
+    "naming_rule": "Expression (old style)",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "System Manager",
+            "share": 1,
+            "submit": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "Employee",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "HR Supervisor",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "HR Manager",
+            "share": 1,
+            "write": 1
+        },
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "export": 1,
+            "print": 1,
+            "read": 1,
+            "report": 1,
+            "role": "General Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [
+        {
+            "color": "Blue",
+            "title": "Draft"
+        },
+        {
+            "color": "Blue",
+            "title": "Pending Employee Response"
+        },
+        {
+            "color": "Blue",
+            "title": "Rejected by Employee"
+        },
+        {
+            "color": "Blue",
+            "title": "Pending Supervisor Review"
+        },
+        {
+            "color": "Blue",
+            "title": "Pending HR Review"
+        },
+        {
+            "color": "Blue",
+            "title": "Pending GM Decision"
+        },
+        {
+            "color": "Blue",
+            "title": "Pending Legal Investigation "
+        },
+        {
+            "color": "Blue",
+            "title": "Apply Penalty"
+        },
+        {
+            "color": "Blue",
+            "title": "Mark as Completed "
+        },
+        {
+            "color": "Blue",
+            "title": "Canceled by GM"
+        },
+        {
+            "color": "Blue",
+            "title": "Canceled by Supervisor"
+        },
+        {
+            "color": "Blue",
+            "title": "Accepted by Employee"
+        }
+    ],
+    "track_changes": 1
 }

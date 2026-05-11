@@ -10,6 +10,30 @@ frappe.ui.form.on('Site Transport Stop Location', {
     }
 });
 
+frappe.ui.form.on("Site To Location Mapping", {
+	location: function (frm, cdt, cdn) {
+		var row = locals[cdt][cdn];
+		if (row.location) {
+			frappe.db.get_value("Location", row.location, "governorate_area", function (r) {
+				if (r && r.governorate_area) {
+					frappe.model.set_value(cdt, cdn, "governorate_area", r.governorate_area);
+					frappe.db.get_value("Governorate Area", r.governorate_area, "governorate", function (g) {
+						if (g && g.governorate) {
+							frappe.model.set_value(cdt, cdn, "governorate", g.governorate);
+						}
+					});
+				} else {
+					frappe.model.set_value(cdt, cdn, "governorate_area", "");
+					frappe.model.set_value(cdt, cdn, "governorate", "");
+				}
+			});
+		} else {
+			frappe.model.set_value(cdt, cdn, "governorate_area", "");
+			frappe.model.set_value(cdt, cdn, "governorate", "");
+		}
+	}
+});
+
 function apply_location_filters(frm) {
     // Filter the Link field for "One Location Many Sites" arrangement
     frm.set_query("transport_stop_location", function () {

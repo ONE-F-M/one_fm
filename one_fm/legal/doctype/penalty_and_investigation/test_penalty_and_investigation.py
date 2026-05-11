@@ -169,3 +169,86 @@ class TestPenaltyAndInvestigation(FrappeTestCase):
 		self.assertEqual(doc6.applied_level, "5")
 		self.assertEqual(doc6.deduction_type, "Termination")
 		self.assertEqual(doc6.salary_deduction_days, 0)
+
+	def _make_doc(self, **kwargs):
+		"""Helper: insert a minimal Penalty And Investigation document."""
+		defaults = {
+			"doctype": "Penalty And Investigation",
+			"employee": self.employee.name,
+			"applied_penalty_code": self.penalty_code.name,
+			"incident_date": today(),
+			"issuance_date": today(),
+		}
+		defaults.update(kwargs)
+		return frappe.get_doc(defaults).insert(ignore_permissions=True)
+
+	# ------------------------------------------------------------------
+	# Workflow-transition validation tests
+	# ------------------------------------------------------------------
+
+	def test_pending_gm_decision_requires_hr_remarks_and_report(self):
+		"""Transitioning to 'Pending GM Decision' is blocked when hr_remarks or
+		hr_investigation_report is missing."""
+		doc = self._make_doc()
+
+		# Simulate the state machine: old state = Pending HR Review
+		frappe.db.set_value("Penalty And Investigation", doc.name, "workflow_state", "Pending HR Review")
+		doc.reload()
+
+		# Attempt transition without hr_remarks or hr_investigation_report
+		doc.workflow_state = "Pending GM Decision"
+		doc.hr_remarks = None
+		doc.hr_investigation_report = None
+		self.assertRaises(frappe.ValidationError, doc.save)
+
+		# Provide hr_remarks but not the report — still blocked
+		doc.reload()
+		doc.workflow_state = "Pending GM Decision"
+		doc.hr_remarks = "Some remarks"
+		doc.hr_investigation_report = None
+		self.assertRaises(frappe.ValidationError, doc.save)
+
+		# Provide both — transition is allowed
+		doc.reload()
+		frappe.db.set_value("Penalty And Investigation", doc.name, "workflow_state", "Pending HR Review")
+		doc.reload()
+		doc.workflow_state = "Pending GM Decision"
+		doc.hr_remarks = "Some remarks"
+		doc.hr_investigation_report = "test_report.pdf"
+		doc.save()  # should NOT raise
+
+	def test_pending_hr_review_requires_supervisor_fields(self):
+		"""Transitioning to 'Pending HR Review' is blocked when supervisor_remarks,
+		evidence, or supervisor_incident_report is missing."""
+		doc = self._make_doc()
+
+		# Simulate the state machine: old state = Pending Supervisor Review
+		frappe.db.set_value("Penalty And Investigation", doc.name, "workflow_state", "Pending Supervisor Review")
+		doc.reload()
+
+		# All three fields missing — blocked
+		doc.workflow_state = "Pending HR Review"
+		doc.supervisor_remarks = None
+		doc.evidence = None
+		doc.supervisor_incident_report = None
+		self.assertRaises(frappe.ValidationError, doc.save)
+
+		# Only supervisor_incident_report missing — still blocked
+		doc.reload()
+		frappe.db.set_value("Penalty And Investigation", doc.name, "workflow_state", "Pending Supervisor Review")
+		doc.reload()
+		doc.workflow_state = "Pending HR Review"
+		doc.supervisor_remarks = "remarks"
+		doc.evidence = "some evidence"
+		doc.supervisor_incident_report = None
+		self.assertRaises(frappe.ValidationError, doc.save)
+
+		# All three present — transition is allowed
+		doc.reload()
+		frappe.db.set_value("Penalty And Investigation", doc.name, "workflow_state", "Pending Supervisor Review")
+		doc.reload()
+		doc.workflow_state = "Pending HR Review"
+		doc.supervisor_remarks = "remarks"
+		doc.evidence = "some evidence"
+		doc.supervisor_incident_report = "incident_report.pdf"
+		doc.save()  # should NOT raise

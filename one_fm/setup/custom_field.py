@@ -99,6 +99,8 @@ from one_fm.custom.custom_field.workflow_document_state import get_workflow_docu
 from one_fm.custom.custom_field.buying_settings import get_buying_settings_custom_fields
 from one_fm.custom.custom_field.quality_feedback import get_quality_feedback_custom_fields
 from one_fm.custom.custom_field.hd_ticket_type import get_hd_ticket_type_custom_fields
+from one_fm.custom.custom_field.request_for_quotation import get_request_for_quotation_custom_fields
+from one_fm.custom.custom_field.supplier_quotation import get_supplier_quotation_custom_fields
 
 def get_custom_fields():
 	"""ONEFM specific custom fields that need to be added to the masters in ERPNext"""
@@ -203,5 +205,7 @@ def get_custom_fields():
 	custom_fields.update(get_workflow_document_state_custom_fields())
 	custom_fields.update(get_buying_settings_custom_fields())
 	custom_fields.update(get_hd_ticket_type_custom_fields())
+	custom_fields.update(get_request_for_quotation_custom_fields())
+	custom_fields.update(get_supplier_quotation_custom_fields())
 
 	return custom_fields

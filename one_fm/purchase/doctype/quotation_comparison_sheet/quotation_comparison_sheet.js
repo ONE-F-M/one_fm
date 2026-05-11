@@ -4,7 +4,6 @@
 // store request_for_quotation and related data in here
 window.rfq_dataset = {
 	items_filter_arr: {}
-
 }
 
 
@@ -37,15 +36,28 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 		set_filter_for_quotation_item_in_item(frm);
 		set_custom_buttons(frm);
 		frm.trigger('get_rfq');
+
+		// Add "Create Purchase Order" button for submitted QCS
+		if (frm.doc.docstatus === 1) {
+			frm.add_custom_button(__("Create Purchase Order"), function() {
+				create_purchase_order(frm);
+			});
+			frm.change_custom_button_type(__("Create Purchase Order"), null, "primary");
+		}
+
+		// Add "Sync Quotations" button for draft QCS
+		if (frm.doc.docstatus === 0 && !frm.is_new() && frm.doc.request_for_quotation) {
+			frm.add_custom_button(__("Sync New Quotations"), function() {
+				frm.call("sync_quotations").then(res => {
+					frm.reload_doc();
+				});
+			});
+		}
 	},
 	request_for_quotation: function(frm) {
 		set_quotation_against_rfq(frm);
 		set_custom_buttons(frm)
 		frm.clear_table('items');
-
-	},
-	request_for_purchase: function(frm){
-		set_rfq(frm);
 	},
 	set_query: (frm)=>{
 		// filter submitted rfq
@@ -56,8 +68,6 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 		        }
 		    }
 		})
-		// end filter submitted rfq
-
 	},
 	get_rfq: (frm)=>{
 		if(frm.doc.request_for_quotation && frm.doc.request_for_material){
@@ -77,7 +87,7 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 						window.rfq_dataset.quotation_items[item.item_name] = item
 					});
 					res.message.rfm.items.forEach((item, i) => {
-						window.rfq_dataset.items_codes[item.requested_item_name] = item.item_code;
+						window.rfq_dataset.items_codes[item.requested_item_name || item.item_name] = item.item_code;
 					});
 					frm.doc.quotations.forEach((item, i) => {
 						window.rfq_dataset.suppliers_dict[item.quotation] = {supplier:item.supplier, name:item.supplier_name}
@@ -88,15 +98,6 @@ frappe.ui.form.on('Quotation Comparison Sheet', {
 	}
 });
 
-var set_rfq = function(frm) {
-	if(!frm.doc.request_for_quotation && frm.doc.request_for_purchase){
-		frappe.db.get_value('Request for Supplier Quotation', {'request_for_purchase': frm.doc.request_for_purchase}, 'name', function(r) {
-			if(r){
-				frm.set_value('request_for_quotation', r.name);
-			}
-		});
-	}
-};
 
 frappe.ui.form.on('Comparison Sheet Quotation', {
 	quotations_add: function(frm) {
@@ -156,10 +157,9 @@ var set_quotation_against_rfq = function(frm) {
 						var qtn = frm.add_child('quotations');
 						qtn.quotation = quotation.name
 						qtn.supplier = quotation.supplier
-						qtn.estimated_delivery_date = quotation.estimated_delivery_date
+						qtn.estimated_delivery_date = quotation.valid_till
 						qtn.grand_total = quotation.grand_total
 						qtn.item_details = get_quotation_item_details(frm, quotation);
-						qtn.attach_sq = quotation.attach_sq
 					});
 					frm.refresh_field('quotations');
 					frm.refresh_field('quotation_items');
@@ -204,12 +204,15 @@ var set_quotation_item_details = function(frm, item, quotation) {
 	qtn_item.quotation = item.parent
 	qtn_item.quotation_item = item.name
 	qtn_item.item_name = item.item_name
+	qtn_item.item_code = item.item_code
 	qtn_item.description = item.description
-	qtn_item.estimated_delivery_date = quotation.estimated_delivery_date
+	qtn_item.estimated_delivery_date = quotation.valid_till
 	qtn_item.quantity = item.qty
 	qtn_item.uom = item.uom
 	qtn_item.rate = item.rate
 	qtn_item.amount = item.amount
+	qtn_item.supplier = quotation.supplier
+	qtn_item.supplier_name = quotation.supplier_name
 };
 
 
@@ -362,7 +365,7 @@ let custom_filter = (frm)=>{
 				values.items_detail.forEach((item, i) => {
 					if(!item.select_by){
 						frappe.throw(`Please select option for
-							<b>${item.item_name}</b> on row <b>${item.idx}</>`)
+								<b>${item.item_name}</b> on row <b>${item.idx}</b>`)
 					}
 				});
 				// process
@@ -455,7 +458,7 @@ let complete_filters_table = (frm, data, selected_by)=>{
     				items_qty[item] = window.rfq_dataset.items_qtyobj[item]
     				items_qty[item] = items_qty[item] - missing_item.quantity;
 					window.rfq_dataset.items_filter_arr[missing_item.item_name] = window.rfq_dataset.items_filter_arr[missing_item.item_name].filter(
-    					x => x.idx !== missing_item.idx
+    				x => x.idx !== missing_item.idx
     				)
     			}
 			}
@@ -519,9 +522,10 @@ let complete_filters_table = (frm, data, selected_by)=>{
 			schedule_date: window.rfq_dataset.quotation_items[item.item_name].schedule_date,
 			estimated_delivery_date: item.estimated_delivery_date,
 			supplier: window.rfq_dataset.suppliers_dict[item.quotation].supplier,
-			supplier_name: window.rfq_dataset.suppliers_dict[item.quotation].name
+			supplier_name: window.rfq_dataset.suppliers_dict[item.quotation].name,
+			item_code: item.item_code || window.rfq_dataset.items_codes[item.item_name]
 		})
-		grand_total = grand_total + item.amount;
+		grand_total = grand_total + (item.quantity * item.rate);
 	});
 	frm.refresh_field('items');
 	frm.set_value('selected_by', selected_by);
@@ -530,20 +534,48 @@ let complete_filters_table = (frm, data, selected_by)=>{
 }
 
 
+// Dynamic grand_total recalculation when items are manually changed
+frappe.ui.form.on('Quotation Comparison Sheet Item', {
+	items_add: function(frm) {
+		recalculate_grand_total(frm);
+	},
+	items_remove: function(frm) {
+		recalculate_grand_total(frm);
+	},
+	qty: function(frm) {
+		recalculate_grand_total(frm);
+	},
+	rate: function(frm) {
+		recalculate_grand_total(frm);
+	}
+});
+
+function recalculate_grand_total(frm) {
+	let grand_total = 0;
+	(frm.doc.items || []).forEach(function(item) {
+		grand_total += (item.qty || 0) * (item.rate || 0);
+	});
+	frm.set_value("grand_total", grand_total);
+}
+
+
 const create_purchase_order = (frm)=>{
-	frappe.confirm('Are you sure you want to create <b>Purchase Order</b>?',
+	frappe.confirm(__("Are you sure you want to create <b>Purchase Order(s)</b> from this Quotation Comparison Sheet?"),
     () => {
-        // action to perform if Yes is selected
-		frappe.msgprint(__(`
-			Creating Purchase Order.
-		`))
-		frm.call('create_purchase_order').then(res=>{
-			frappe.msgprint(__(`PO creation complete`));
-			frappe.set_route("List", "Purchase Order",
-				{'one_fm_request_for_purchase': frm.doc.request_for_purchase,
-				'status':'Draft'}
-			);
-		})
+		frappe.call({
+			method: "create_purchase_order",
+			doc: frm.doc,
+			freeze: true,
+			freeze_message: __("Creating Purchase Orders..."),
+			callback: function(r) {
+				if (r.message && r.message.length) {
+					frappe.set_route("List", "Purchase Order", {
+						"custom_quotation_comparison_sheet": frm.doc.name,
+						"status": "Draft"
+					});
+				}
+			}
+		});
     }, () => {
         // action to perform if No is selected
     })
