@@ -1,9 +1,9 @@
 // Copyright (c) 2026, ONE FM and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("Arrival and Deployment", {
-// 	refresh(frm) {
+frappe.ui.form.on("Arrival And Deployment", {
 
+	refresh: function(frm) {
 		// Override dashboard link routing for sibling tracking documents
 		if (frm.dashboard) {
 			frm.dashboard.open_document_list = function($link, show_open) {
@@ -20,7 +20,6 @@
 				frappe.set_route("List", doctype);
 			};
 		}
+	}
 
-
-// 	},
-// });
+});
