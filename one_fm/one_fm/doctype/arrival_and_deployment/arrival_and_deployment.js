@@ -20,6 +20,33 @@ frappe.ui.form.on("Arrival And Deployment", {
 				frappe.set_route("List", doctype);
 			};
 		}
+
+		// Acknowledge Buttons for Pending Support Departments
+		if (frm.doc.workflow_state === "Pending Support Departments") {
+			let user = frappe.session.user;
+
+			let add_ack_btn = (field, label) => {
+				if (user === frm.doc[field.replace('_acknowledged', '')] && !frm.doc[field]) {
+					frm.add_custom_button(__(`Acknowledge ${label}`), function() {
+						frappe.call({
+							method: "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.acknowledge_department",
+							args: { docname: frm.doc.name, field: field },
+							callback: function(r) {
+								if (!r.exc) {
+									frappe.show_alert({message:__('Acknowledged Successfully'), indicator:'green'});
+									frm.reload_doc();
+								}
+							}
+						});
+					}).addClass("btn-primary");
+				}
+			};
+
+			add_ack_btn("transport_acknowledged", "Transportation");
+			add_ack_btn("finance_acknowledged", "Finance");
+			add_ack_btn("general_services_acknowledged", "General Services");
+			add_ack_btn("warehouse_acknowledged", "Warehouse");
+		}
 	},
 	
 	validate: function(frm) {
@@ -35,8 +62,13 @@ frappe.ui.form.on("Arrival And Deployment", {
 			}
 		}
 
-		if (frappe.session.user === frm.doc.transportation_manager && !frm.doc.pickup_contact) {
-			frappe.throw("Please enter the Pickup Contact Person before proceeding.");
+		if (frappe.selected_workflow_action === "Mark as Joined") {
+			if (!frm.doc.pickup_contact) {
+				frappe.throw("Please enter the Pickup Contact Person before proceeding.");
+			}
+			if (!frm.doc.transport_acknowledged || !frm.doc.finance_acknowledged || !frm.doc.general_services_acknowledged || !frm.doc.warehouse_acknowledged) {
+				frappe.throw("Cannot mark as Joined. All departments must acknowledge first.");
+			}
 		}
 	}
 });

@@ -24,7 +24,7 @@ def execute():
                 "style": s["style"]
             }).insert(ignore_permissions=True)
 
-    actions = ["Submit to Onboarding", "Notify Support Departments", "Complete Deployment"]
+    actions = ["Submit to Onboarding", "Notify Support Departments", "Mark as Joined"]
     for a in actions:
         if not frappe.db.exists("Workflow Action Master", a):
             frappe.get_doc({
@@ -59,7 +59,7 @@ def execute():
     wf.append("states", {
         "state": "Pending Support Departments",
         "doc_status": 0,
-        "allow_edit": "General Services",
+        "allow_edit": "Transportation Manager",
         "update_field": "status",
         "update_value": "Arriving"
     })
@@ -86,21 +86,9 @@ def execute():
     })
     wf.append("transitions", {
         "state": "Pending Support Departments",
-        "action": "Complete Deployment",
-        "next_state": "Completed",
-        "allowed": "General Services"
-    })
-    wf.append("transitions", {
-        "state": "Pending Support Departments",
-        "action": "Complete Deployment",
+        "action": "Mark as Joined",
         "next_state": "Completed",
         "allowed": "Transportation Manager"
-    })
-    wf.append("transitions", {
-        "state": "Pending Support Departments",
-        "action": "Complete Deployment",
-        "next_state": "Completed",
-        "allowed": "Finance"
     })
     
     wf.insert(ignore_permissions=True)

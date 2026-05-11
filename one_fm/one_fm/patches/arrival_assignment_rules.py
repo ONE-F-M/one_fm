@@ -7,17 +7,6 @@ def execute():
 
     # Update Workflow to include Warehouse
     wf = frappe.get_doc("Workflow", "Arrival and Deployment Workflow")
-    # Add Warehouse to transitions
-    existing_transitions = [t.allowed for t in wf.transitions if t.action == "Complete Deployment"]
-    if "Warehouse" not in existing_transitions:
-        wf.append("transitions", {
-            "state": "Pending Support Departments",
-            "action": "Complete Deployment",
-            "next_state": "Completed",
-            "allowed": "Warehouse"
-        })
-        wf.save(ignore_permissions=True)
-
     # Assignment Rules
     rules = [
         {

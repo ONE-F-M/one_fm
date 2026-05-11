@@ -26,6 +26,12 @@
   "column_break_2",
   "pickup_arranged",
   "pickup_contact",
+  "section_break_ack",
+  "transport_acknowledged",
+  "finance_acknowledged",
+  "column_break_ack",
+  "general_services_acknowledged",
+  "warehouse_acknowledged",
   "section_break_notes",
   "notes"
  ],
@@ -158,6 +164,39 @@
    "fieldname": "pickup_contact",
    "fieldtype": "Data",
    "label": "Pickup Contact Person"
+  },
+  {
+   "fieldname": "section_break_ack",
+   "fieldtype": "Section Break",
+   "label": "Department Acknowledgements"
+  },
+  {
+   "fieldname": "transport_acknowledged",
+   "fieldtype": "Check",
+   "label": "Transportation Acknowledged",
+   "read_only": 1
+  },
+  {
+   "fieldname": "finance_acknowledged",
+   "fieldtype": "Check",
+   "label": "Finance Acknowledged",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ack",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "general_services_acknowledged",
+   "fieldtype": "Check",
+   "label": "General Services Acknowledged",
+   "read_only": 1
+  },
+  {
+   "fieldname": "warehouse_acknowledged",
+   "fieldtype": "Check",
+   "label": "Warehouse Acknowledged",
+   "read_only": 1
   },
   {
    "fieldname": "section_break_notes",

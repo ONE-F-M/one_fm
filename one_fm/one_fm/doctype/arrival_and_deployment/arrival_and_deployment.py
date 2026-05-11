@@ -32,7 +32,8 @@ class ArrivalandDeployment(Document):
 
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""
-        if self.candidate_country_process and self.status == "Completed":
+        if self.candidate_country_process and self.workflow_state == "Completed":
+            frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Joined")
             self._notify_ccp()
 
     def _notify_ccp(self):
@@ -45,3 +46,8 @@ class ArrivalandDeployment(Document):
                 f"Arrival and Deployment {self.name}: failed to notify CCP {self.candidate_country_process}",
                 "CCP Notify Error",
             )
+
+@frappe.whitelist()
+def acknowledge_department(docname, field):
+    frappe.db.set_value("Arrival and Deployment", docname, field, 1)
+    return True
