@@ -94,6 +94,9 @@ def create_resignation(
         rel_date   = p["relieving_date"] or get_param("resignation_date")
         attachment = p["attachment"]
 
+        if not attachment:
+            frappe.throw(_("Attachment is mandatory for resignation submission"), frappe.ValidationError)
+
         employee_name = resolve_employee_name(input_id)
         if not employee_name:
             frappe.throw(f"Employee '{input_id}' not found", frappe.ValidationError)
