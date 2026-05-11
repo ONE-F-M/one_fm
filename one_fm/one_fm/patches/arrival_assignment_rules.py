@@ -11,7 +11,7 @@ def execute():
     existing_transitions = [t.allowed for t in wf.transitions if t.action == "Complete Deployment"]
     if "Warehouse" not in existing_transitions:
         wf.append("transitions", {
-            "state": "Pending Logistics and Finance",
+            "state": "Pending Support Departments",
             "action": "Complete Deployment",
             "next_state": "Completed",
             "allowed": "Warehouse"
@@ -24,7 +24,7 @@ def execute():
             "name": "Arrival - Assign Transportation",
             "doctype": "Assignment Rule",
             "document_type": "Arrival and Deployment",
-            "assign_condition": "doc.workflow_state == 'Pending Logistics and Finance'",
+            "assign_condition": "doc.workflow_state == 'Pending Support Departments'",
             "unassign_condition": "doc.workflow_state == 'Completed'",
             "due_date_based_on": "arrival_date",
             "assignment_days": [{"day": d} for d in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]],
@@ -35,7 +35,7 @@ def execute():
             "name": "Arrival - Assign General Services",
             "doctype": "Assignment Rule",
             "document_type": "Arrival and Deployment",
-            "assign_condition": "doc.workflow_state == 'Pending Logistics and Finance'",
+            "assign_condition": "doc.workflow_state == 'Pending Support Departments'",
             "unassign_condition": "doc.workflow_state == 'Completed'",
             "due_date_based_on": "arrival_date",
             "assignment_days": [{"day": d} for d in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]],
@@ -46,7 +46,7 @@ def execute():
             "name": "Arrival - Assign Finance",
             "doctype": "Assignment Rule",
             "document_type": "Arrival and Deployment",
-            "assign_condition": "doc.workflow_state == 'Pending Logistics and Finance'",
+            "assign_condition": "doc.workflow_state == 'Pending Support Departments'",
             "unassign_condition": "doc.workflow_state == 'Completed'",
             "due_date_based_on": "arrival_date",
             "assignment_days": [{"day": d} for d in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]],
@@ -57,7 +57,7 @@ def execute():
             "name": "Arrival - Assign Warehouse",
             "doctype": "Assignment Rule",
             "document_type": "Arrival and Deployment",
-            "assign_condition": "doc.workflow_state == 'Pending Logistics and Finance'",
+            "assign_condition": "doc.workflow_state == 'Pending Support Departments'",
             "unassign_condition": "doc.workflow_state == 'Completed'",
             "due_date_based_on": "arrival_date",
             "assignment_days": [{"day": d} for d in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]],

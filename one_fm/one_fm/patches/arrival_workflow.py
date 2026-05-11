@@ -12,7 +12,7 @@ def execute():
     states = [
         {"name": "Draft", "style": "Primary"},
         {"name": "Pending Onboarding", "style": "Warning"},
-        {"name": "Pending Logistics and Finance", "style": "Warning"},
+        {"name": "Pending Support Departments", "style": "Warning"},
         {"name": "Completed", "style": "Success"}
     ]
 
@@ -24,7 +24,7 @@ def execute():
                 "style": s["style"]
             }).insert(ignore_permissions=True)
 
-    actions = ["Submit to Onboarding", "Submit to Logistics & Finance", "Complete Deployment"]
+    actions = ["Submit to Onboarding", "Notify Support Departments", "Complete Deployment"]
     for a in actions:
         if not frappe.db.exists("Workflow Action Master", a):
             frappe.get_doc({
@@ -57,7 +57,7 @@ def execute():
         "update_value": "Pending"
     })
     wf.append("states", {
-        "state": "Pending Logistics and Finance",
+        "state": "Pending Support Departments",
         "doc_status": 0,
         "allow_edit": "General Services",
         "update_field": "status",
@@ -80,24 +80,24 @@ def execute():
     })
     wf.append("transitions", {
         "state": "Pending Onboarding",
-        "action": "Submit to Logistics & Finance",
-        "next_state": "Pending Logistics and Finance",
+        "action": "Notify Support Departments",
+        "next_state": "Pending Support Departments",
         "allowed": "Onboarding Officer"
     })
     wf.append("transitions", {
-        "state": "Pending Logistics and Finance",
+        "state": "Pending Support Departments",
         "action": "Complete Deployment",
         "next_state": "Completed",
         "allowed": "General Services"
     })
     wf.append("transitions", {
-        "state": "Pending Logistics and Finance",
+        "state": "Pending Support Departments",
         "action": "Complete Deployment",
         "next_state": "Completed",
         "allowed": "Transportation Manager"
     })
     wf.append("transitions", {
-        "state": "Pending Logistics and Finance",
+        "state": "Pending Support Departments",
         "action": "Complete Deployment",
         "next_state": "Completed",
         "allowed": "Finance"
