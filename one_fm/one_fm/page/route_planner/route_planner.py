@@ -17,8 +17,8 @@ def get_route_planner_data():
         # ── Time bounds ──
         tz_name = frappe.db.get_single_value("System Settings", "time_zone") or "UTC"
         site_tz = pytz.timezone(tz_name)
-        local_today_start = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 00:00:00")) - timedelta(hours=6)
-        local_today_end   = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 23:59:59")) + timedelta(hours=6)
+        local_today_start = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 00:00:00")) - timedelta(hours=3)
+        local_today_end   = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 23:59:59")) + timedelta(hours=3)
         global_start_utc  = local_today_start.astimezone(pytz.utc).replace(tzinfo=None)
         global_end_utc    = local_today_end.astimezone(pytz.utc).replace(tzinfo=None)
 
@@ -463,8 +463,8 @@ def optimize_transportation_routes():
         import pytz
         from datetime import timedelta
         site_tz = pytz.timezone(frappe.db.get_single_value("System Settings", "time_zone") or "UTC")
-        local_today_start = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 00:00:00")) - timedelta(hours=6)
-        local_today_end = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 23:59:59")) + timedelta(hours=6)
+        local_today_start = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 00:00:00")) - timedelta(hours=3)
+        local_today_end = site_tz.localize(frappe.utils.get_datetime(frappe.utils.today() + " 23:59:59")) + timedelta(hours=3)
         
         global_start_utc = local_today_start.astimezone(pytz.utc).replace(tzinfo=None)
         global_end_utc = local_today_end.astimezone(pytz.utc).replace(tzinfo=None)
