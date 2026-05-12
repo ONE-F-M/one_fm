@@ -29,7 +29,7 @@ class OverseasMedicalAppointmentWAFID(Document):
                     "status": self.appointment_status or "Not Booked",
                     "actual_date": self.appointment_date
                 },
-                update_modified=False
+                update_modified=True
             )
 
         # 2. Update Medical Result row
@@ -46,7 +46,7 @@ class OverseasMedicalAppointmentWAFID(Document):
                     "status": self.status or "Yet to apply",
                     "actual_date": self.result_date
                 },
-                update_modified=False
+                update_modified=True
             )
 
     def on_update(self):
@@ -56,15 +56,5 @@ class OverseasMedicalAppointmentWAFID(Document):
             "Unfit",
             "Medical failed and Proceeded to Remedical",
         ):
-            self._notify_ccp()
-
-    def _notify_ccp(self):
-        """Reload and save the parent CCP so its dependency engine runs."""
-        try:
-            ccp = frappe.get_doc("Candidate Country Process", self.candidate_country_process)
-            ccp.save(ignore_permissions=True)
-        except Exception:
-            frappe.log_error(
-                f"Overseas Medical WAFID {self.name}: failed to notify CCP {self.candidate_country_process}",
-                "CCP Notify Error",
-            )
+            from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
+            recalculate_ccp_live_eta(self.candidate_country_process)

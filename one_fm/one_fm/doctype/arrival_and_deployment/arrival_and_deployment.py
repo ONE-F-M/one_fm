@@ -8,23 +8,20 @@ from frappe.model.document import Document
 
 class ArrivalandDeployment(Document):
     def validate(self):
-        if getattr(self, "_action", None) in ["Mark as Joined", "Did Not Arrive"] or self.workflow_state in ["Joined", "Did Not Arrive"]:
+        if self.workflow_state in ["Joined", "Did Not Arrive"]:
             if self.candidate_country_process:
                 if frappe.session.user != self.transportation_manager and "System Manager" not in frappe.get_roles() and frappe.session.user != "Administrator":
-                    frappe.throw("Only the Transportation Manager can perform this action for Overseas hires.")
+                    frappe.throw(_("Only the Transportation Manager can perform this action for Overseas hires."))
                 
                 if not self.pickup_arranged:
-                    frappe.throw("Please check 'Pickup Arranged' before proceeding.")
+                    frappe.throw(_("Please check 'Pickup Arranged' before proceeding."))
                 if not self.pickup_contact:
-                    frappe.throw("Please enter the Pickup Contact Person before proceeding.")
+                    frappe.throw(_("Please enter the Pickup Contact Person before proceeding."))
             else:
                 if frappe.session.user != self.general_services and "System Manager" not in frappe.get_roles() and frappe.session.user != "Administrator":
-                    frappe.throw("Only General Services can perform this action for Local hires.")
+                    frappe.throw(_("Only General Services can perform this action for Local hires."))
 
-        if self.workflow_state == "Joined" or getattr(self, "_action", None) == "Mark as Joined":
-            pass # Acknowledgements are handled via daily reminders, not blocked here.
-
-        if self.workflow_state == "Pending Onboarding" or getattr(self, "_action", None) == "Submit to Onboarding":
+        if self.workflow_state == "Pending Onboarding":
             if not self.arrival_date:
                 frappe.throw("Please ensure Arrival Date is filled before submitting to Onboarding.")
             if self.candidate_country_process:
@@ -61,7 +58,7 @@ class ArrivalandDeployment(Document):
             updates["actual_date"] = self.arrival_date
 
         for field, value in updates.items():
-            frappe.db.set_value("Candidate Country Process Details", rows[0].name, field, value, update_modified=False)
+            frappe.db.set_value("Candidate Country Process Details", rows[0].name, field, value, update_modified=True)
 
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""
@@ -83,7 +80,8 @@ class ArrivalandDeployment(Document):
                 frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Did Not Arrive")
             
             if self.workflow_state != old_state:
-                self._notify_ccp()
+                from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
+                recalculate_ccp_live_eta(self.candidate_country_process)
 
     def assign_support_departments(self):
         from frappe.desk.form.assign_to import add as add_assignment
@@ -141,10 +139,11 @@ class ArrivalandDeployment(Document):
         if not recruiter_email:
             return
             
-        subject = f"Urgent: Candidate Did Not Arrive - {self.candidate_name}"
+        from frappe.utils import escape_html
+        subject = f"Urgent: Candidate Did Not Arrive - {escape_html(self.candidate_name)}"
         message = f'''
         <p>Dear Recruiter,</p>
-        <p>Please be informed that the candidate <b>{self.candidate_name}</b> (Passport: {self.passport_number or 'N/A'}) did not arrive as scheduled.</p>
+        <p>Please be informed that the candidate <b>{escape_html(self.candidate_name)}</b> (Passport: {escape_html(self.passport_number) or 'N/A'}) did not arrive as scheduled.</p>
         <p>Please review the <a href="/app/arrival-and-deployment/{self.name}">Arrival and Deployment Document</a> and take necessary action.</p>
         '''
         
@@ -156,16 +155,7 @@ class ArrivalandDeployment(Document):
             message=message
         )
 
-    def _notify_ccp(self):
-        """Reload and save the parent CCP so its dependency engine runs."""
-        try:
-            ccp = frappe.get_doc("Candidate Country Process", self.candidate_country_process)
-            ccp.save(ignore_permissions=True)
-        except Exception:
-            frappe.log_error(
-                f"Arrival and Deployment {self.name}: failed to notify CCP {self.candidate_country_process}",
-                "CCP Notify Error",
-            )
+
 
 @frappe.whitelist()
 def acknowledge_department(docname, field):

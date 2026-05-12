@@ -29,7 +29,7 @@ class OverseasRemedical(Document):
                     "status": self.appointment_status or "Pending",
                     "actual_date": self.appointment_date
                 },
-                update_modified=False
+                update_modified=True
             )
 
         # 2. Update Remedical Result row
@@ -46,21 +46,11 @@ class OverseasRemedical(Document):
                     "status": self.status or "Pending",
                     "actual_date": self.result_date
                 },
-                update_modified=False
+                update_modified=True
             )
 
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""
         if self.candidate_country_process and self.status in ("Fit", "Unfit", "Skipped"):
-            self._notify_ccp()
-
-    def _notify_ccp(self):
-        """Reload and save the parent CCP so its dependency engine runs."""
-        try:
-            ccp = frappe.get_doc("Candidate Country Process", self.candidate_country_process)
-            ccp.save(ignore_permissions=True)
-        except Exception:
-            frappe.log_error(
-                f"Overseas Remedical {self.name}: failed to notify CCP {self.candidate_country_process}",
-                "CCP Notify Error",
-            )
+            from one_fm.one_fm.doctype.candidate_country_process.candidate_country_process import recalculate_ccp_live_eta
+            recalculate_ccp_live_eta(self.candidate_country_process)

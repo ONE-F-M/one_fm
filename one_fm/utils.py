@@ -4727,7 +4727,7 @@ def get_sibling_counts(doctype, name, items=None):
         # custom count logic for siblings
         try:
             filters = {"candidate_country_process": ccp_name} if ccp_name else {"name": "invalid"}
-            docs = frappe.get_all(d, filters=filters, limit=100, distinct=True, ignore_ifnull=True)
+            docs = frappe.get_list(d, filters=filters, limit=100, distinct=True, ignore_ifnull=True)
             total_count = len(docs)
             out["external_links_found"].append({"doctype": d, "count": total_count, "open_count": 0})
         except Exception as e:

@@ -1,14 +1,11 @@
 # Copyright (c) 2026, ONE FM and Contributors
 # See license.txt
 
-# import frappe
+import frappe
 from frappe.tests.utils import FrappeTestCase
 
 
 class TestArrivalandDeployment(FrappeTestCase):
-	def setUp(self):
-		frappe.db.sql("delete from `tabArrival and Deployment`")
-
 	def test_arrival_date_mandatory_for_onboarding(self):
 		doc = frappe.new_doc("Arrival and Deployment")
 		doc.candidate_name = "Test Candidate"

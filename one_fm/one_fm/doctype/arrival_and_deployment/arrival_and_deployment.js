@@ -110,12 +110,6 @@ frappe.ui.form.on("Arrival and Deployment", {
 			}
 		}
 
-		if (frappe.selected_workflow_action === "Mark as Joined") {
-            let is_overseas = !!frm.doc.candidate_country_process;
-            // Acknowledgement is no longer mandatory to block the workflow.
-            // A background job handles daily reminders.
-		}
-
 		if (frappe.selected_workflow_action === "Did Not Arrive") {
 			if (!frm.doc.recruiter) {
 				frappe.throw("Please enter the Recruiter before notifying them that the candidate did not arrive.");
