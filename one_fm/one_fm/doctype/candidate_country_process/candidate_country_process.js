@@ -7,6 +7,7 @@ frappe.ui.form.on('Candidate Country Process', {
   },
   refresh:  function(frm){
     candidate_country_process_flow_btn(frm);
+    calculate_live_plan_eta(frm);
     
     if (frm.doc.agency_country_process && !frm.doc.__islocal) {
         frm.add_custom_button(__("Sync Process Steps"), function() {
@@ -74,8 +75,30 @@ var set_country_process_details = function(frm) {
         d.expected_date = frappe.datetime.add_days(frm.doc.start_date, row.duration_in_days);
       });
       frm.refresh_field("agency_process_details");
+      
+      if (frm.doc.start_date && agency_country_process.total_duration) {
+          frm.set_value('planned_eta', frappe.datetime.add_days(frm.doc.start_date, agency_country_process.total_duration));
+          frm.set_value('live_plan_eta', frm.doc.planned_eta);
+      }
     });
   }
+};
+
+var calculate_live_plan_eta = function(frm) {
+    if (!frm.doc.planned_eta) return;
+    
+    var total_delay = 0;
+    (frm.doc.agency_process_details || []).forEach(row => {
+        if (row.actual_date && row.expected_date) {
+            var delay_days = frappe.datetime.get_day_diff(row.actual_date, row.expected_date);
+            total_delay += delay_days;
+        }
+    });
+    
+    var new_live_eta = frappe.datetime.add_days(frm.doc.planned_eta, total_delay);
+    if (frm.doc.live_plan_eta !== new_live_eta) {
+        frm.set_value('live_plan_eta', new_live_eta);
+    }
 };
 
 var candidate_country_process_flow_btn = function(frm) {

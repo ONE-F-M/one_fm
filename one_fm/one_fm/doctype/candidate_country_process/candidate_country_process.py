@@ -18,6 +18,24 @@ class CandidateCountryProcess(Document):
     def on_submit(self):
         pass
 
+    def on_update(self):
+        self.calculate_live_plan_eta()
+
+    def calculate_live_plan_eta(self):
+        if not self.planned_eta:
+            return
+
+        total_delay = 0
+        if self.agency_process_details:
+            for row in self.agency_process_details:
+                if row.actual_date and row.expected_date:
+                    delay_days = frappe.utils.date_diff(row.actual_date, row.expected_date)
+                    total_delay += delay_days
+
+        new_live_eta = frappe.utils.add_days(self.planned_eta, total_delay)
+        if self.live_plan_eta != new_live_eta:
+            frappe.db.set_value("Candidate Country Process", self.name, "live_plan_eta", new_live_eta, update_modified=False)
+
     @frappe.whitelist()
     def get_workflow(self):
         workflow_list = []

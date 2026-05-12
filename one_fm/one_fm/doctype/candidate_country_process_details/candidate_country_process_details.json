@@ -11,8 +11,6 @@
   "column_break_4",
   "expected_date",
   "actual_date",
-  "planned_eta",
-  "live_plan_eta",
   "reference_complete_status_field",
   "reference_complete_status_value",
   "status",
@@ -63,18 +61,6 @@
    "in_list_view": 1,
    "label": "Expected Date",
    "read_only": 1
-  },
-  {
-   "fieldname": "planned_eta",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Planned ETA"
-  },
-  {
-   "fieldname": "live_plan_eta",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Live Plan ETA"
   },
   {
    "default": "Pending",
