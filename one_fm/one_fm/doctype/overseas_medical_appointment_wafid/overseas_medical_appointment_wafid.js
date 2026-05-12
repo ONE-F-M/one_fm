@@ -57,6 +57,9 @@ frappe.ui.form.on("Overseas Medical Appointment WAFID", {
 							};
 							frappe.new_doc("Overseas Remedical");
 						});
+					} else {
+						frappe.show_alert({message:__('Redirecting to existing Remedical record...'), indicator:'green'});
+						frappe.set_route("Form", "Overseas Remedical", r.message[0].name);
 					}
 				}
 			});
