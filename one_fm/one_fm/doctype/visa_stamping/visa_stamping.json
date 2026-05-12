@@ -68,7 +68,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Appointment Status",
-   "options": "Pending\nBooked\nCompleted\nCancelled"
+   "options": "Pending\nSubmitted\nCompleted\nCancelled"
   },
   {
    "default": "Pending",
@@ -82,12 +82,14 @@
   {
    "fieldname": "submission_date",
    "fieldtype": "Date",
-   "label": "Submission Date"
+   "label": "Submission Date",
+   "mandatory_depends_on": "eval:doc.status!='Pending' || doc.appointment_status=='Submitted'"
   },
   {
    "fieldname": "receiving_date",
    "fieldtype": "Date",
-   "label": "Receiving Date"
+   "label": "Receiving Date",
+   "mandatory_depends_on": "eval:in_list(['Stamped', 'Rejected'], doc.status)"
   },
   {
    "fieldname": "section_break_visa",
@@ -151,31 +153,11 @@
   {
    "fieldname": "stamped_visa_copy",
    "fieldtype": "Attach",
-   "label": "Stamped Visa Copy"
+   "label": "Stamped Visa Copy",
+   "mandatory_depends_on": "eval:doc.status=='Stamped'"
   }
  ],
- "links": [
-  {
-   "link_doctype": "Candidate Country Process",
-   "link_fieldname": "name"
-  },
-  {
-   "link_doctype": "Overseas Medical Appointment WAFID",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "Overseas Remedical",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "PCC Clearance",
-   "link_fieldname": "candidate_country_process"
-  },
-  {
-   "link_doctype": "Arrival and Deployment",
-   "link_fieldname": "candidate_country_process"
-  }
- ],
+ "links": [],
  "modified": "2026-04-15 13:26:49.918577",
  "modified_by": "Administrator",
  "module": "one_fm",

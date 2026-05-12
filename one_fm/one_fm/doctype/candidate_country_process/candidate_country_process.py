@@ -7,19 +7,82 @@ import frappe
 from frappe.model.document import Document
 
 class CandidateCountryProcess(Document):
+    def before_insert(self):
+        if not self.agency_process_details and self.agency_country_process:
+            acp = frappe.get_doc("Agency Country Process", self.agency_country_process)
+            for row in acp.agency_process_details:
+                # Determine initial status
+                initial_status = "Pending"
+                pname = (row.process_name or "").lower()
+                if "appointment" in pname:
+                    initial_status = "Not Booked"
+                elif "result" in pname:
+                    initial_status = "Yet to apply"
+                    
+                self.append("agency_process_details", {
+                    "process_name": row.process_name,
+                    "responsible": row.responsible,
+                    "expected_date": frappe.utils.add_days(self.start_date, row.duration_in_days) if row.duration_in_days else None,
+                    "reference_type": row.reference_type,
+                    "reference_complete_status_field": row.reference_complete_status_field,
+                    "reference_complete_status_value": row.reference_complete_status_value,
+                    "status": initial_status
+                })
+        
+        if self.agency_process_details:
+            first_step = self.agency_process_details[0]
+            if "offer" in (first_step.process_name or "").lower():
+                first_step.actual_date = self.start_date
+                first_step.status = "Approved"
+
     def after_insert(self):
+        created_refs = set()
         if self.agency_process_details:
             for agency_process_details in self.agency_process_details:
                 if agency_process_details.reference_type:
-                    self.current_process_id = agency_process_details.name
-                    self.db_set('current_process_id', agency_process_details.name)
-                    break
+                    if not self.current_process_id:
+                        self.current_process_id = agency_process_details.name
+                        self.db_set('current_process_id', agency_process_details.name)
+                        
+                    # Autogenerate draft for each unique reference type
+                    ref_type = agency_process_details.reference_type
+                    if ref_type not in created_refs:
+                        try:
+                            new_doc = frappe.new_doc(ref_type)
+                            if new_doc.meta.has_field("candidate_country_process"):
+                                new_doc.candidate_country_process = self.name
+                            if new_doc.meta.has_field("job_applicant"):
+                                new_doc.job_applicant = self.job_applicant
+                            if new_doc.meta.has_field("job_offer"):
+                                new_doc.job_offer = self.job_offer
+                            
+                            new_doc.flags.ignore_mandatory = True
+                            new_doc.flags.ignore_permissions = True
+                            new_doc.insert()
+                            
+                            # Update the reference_name in the grid
+                            for row in self.agency_process_details:
+                                if row.reference_type == ref_type:
+                                    row.reference_name = new_doc.name
+                                    row.db_update()
+                                    
+                            created_refs.add(ref_type)
+                        except Exception as e:
+                            frappe.log_error(f"Failed to auto-generate {ref_type} draft for CCP {self.name}", str(e))
 
     def on_submit(self):
         pass
 
     def on_update(self):
+        self.calculate_planned_eta()
         self.calculate_live_plan_eta()
+
+    def calculate_planned_eta(self):
+        if not self.planned_eta and self.start_date and self.agency_country_process:
+            agency_process = frappe.get_doc("Agency Country Process", self.agency_country_process)
+            if agency_process.total_duration:
+                self.planned_eta = frappe.utils.add_days(self.start_date, agency_process.total_duration)
+                frappe.db.set_value("Candidate Country Process", self.name, "planned_eta", self.planned_eta, update_modified=False)
 
     def calculate_live_plan_eta(self):
         if not self.planned_eta:
@@ -34,6 +97,7 @@ class CandidateCountryProcess(Document):
 
         new_live_eta = frappe.utils.add_days(self.planned_eta, total_delay)
         if self.live_plan_eta != new_live_eta:
+            self.live_plan_eta = new_live_eta
             frappe.db.set_value("Candidate Country Process", self.name, "live_plan_eta", new_live_eta, update_modified=False)
 
     @frappe.whitelist()

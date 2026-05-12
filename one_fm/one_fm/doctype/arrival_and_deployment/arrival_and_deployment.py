@@ -68,6 +68,9 @@ class ArrivalandDeployment(Document):
         if self.workflow_state == "Did Not Arrive" and old_state != "Did Not Arrive":
             self.notify_recruiter_did_not_arrive()
 
+        if self.workflow_state == "Pending Onboarding" and old_state != "Pending Onboarding":
+            self.assign_onboarding_officer()
+
         if self.workflow_state == "Pending Support Departments" and old_state != "Pending Support Departments":
             self.assign_support_departments()
 
@@ -82,6 +85,19 @@ class ArrivalandDeployment(Document):
             
             if self.workflow_state != old_state:
                 self._notify_ccp()
+
+    def assign_onboarding_officer(self):
+        from frappe.desk.form.assign_to import add as add_assignment
+        if self.onboarding_officer:
+            try:
+                add_assignment({
+                    "assign_to": [self.onboarding_officer],
+                    "doctype": self.doctype,
+                    "name": self.name,
+                    "description": "Please review the Arrival details and submit to Support Departments."
+                }, ignore_permissions=True)
+            except Exception as e:
+                frappe.log_error(f"Assignment failed for Onboarding Officer in {self.name}: {str(e)}", "Arrival Assignment Error")
 
     def assign_support_departments(self):
         from frappe.desk.form.assign_to import add as add_assignment

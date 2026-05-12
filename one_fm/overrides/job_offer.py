@@ -137,6 +137,15 @@ class JobOfferOverride(JobOffer):
             elif not self.onboarding_officer:
                 frappe.throw(_(msg.format("<b>Onboarding Officer</b>")))
             assign_to_onboarding_officer(self)
+            
+            frappe.enqueue(
+                "one_fm.overrides.job_offer.create_tracking_docs_for_accepted_offer",
+                job_offer_name=self.name,
+                job_applicant_name=self.job_applicant,
+                onboarding_officer=self.onboarding_officer,
+                queue="long"
+            )
+            
         if self.workflow_state == 'Accepted' and self.get_onload('onboard_employee'):
             close_all_assignments(self.doctype, self.name)
 
@@ -315,3 +324,29 @@ def assign_to_onboarding_officer(self):
 	except DuplicateToDoError:
 		frappe.message_log.pop()
 		pass
+
+def create_tracking_docs_for_accepted_offer(job_offer_name, job_applicant_name, onboarding_officer):
+	applicant = frappe.get_doc('Job Applicant', job_applicant_name)
+	location_type = applicant.one_fm_applicant_is_overseas_or_local
+	
+	if location_type == 'Overseas':
+		if not frappe.db.exists('Candidate Country Process', {'job_offer': job_offer_name}):
+			ccp = frappe.new_doc('Candidate Country Process')
+			ccp.job_applicant = job_applicant_name
+			ccp.job_offer = job_offer_name
+			
+			ccp.flags.ignore_mandatory = True
+			ccp.flags.ignore_permissions = True
+			ccp.insert()
+			
+	elif location_type == 'Local':
+		if not frappe.db.exists('Arrival and Deployment', {'job_offer': job_offer_name}):
+			ard = frappe.new_doc('Arrival and Deployment')
+			ard.job_applicant = job_applicant_name
+			ard.job_offer = job_offer_name
+			ard.onboarding_officer = onboarding_officer
+			
+			ard.flags.ignore_mandatory = True
+			ard.flags.ignore_permissions = True
+			ard.insert()
+
