@@ -8,6 +8,29 @@ from frappe.model.document import Document
 
 class ArrivalandDeployment(Document):
     def validate(self):
+        if getattr(self, "_action", None) in ["Mark as Joined", "Did Not Arrive"] or self.workflow_state in ["Joined", "Did Not Arrive"]:
+            if self.candidate_country_process:
+                if frappe.session.user != self.transportation_manager and "System Manager" not in frappe.get_roles() and frappe.session.user != "Administrator":
+                    frappe.throw("Only the Transportation Manager can perform this action for Overseas hires.")
+                
+                if not self.pickup_arranged:
+                    frappe.throw("Please check 'Pickup Arranged' before proceeding.")
+                if not self.pickup_contact:
+                    frappe.throw("Please enter the Pickup Contact Person before proceeding.")
+            else:
+                if frappe.session.user != self.general_services and "System Manager" not in frappe.get_roles() and frappe.session.user != "Administrator":
+                    frappe.throw("Only General Services can perform this action for Local hires.")
+
+        if self.workflow_state == "Joined" or getattr(self, "_action", None) == "Mark as Joined":
+            pass # Acknowledgements are handled via daily reminders, not blocked here.
+
+        if self.workflow_state == "Pending Onboarding" or getattr(self, "_action", None) == "Submit to Onboarding":
+            if not self.arrival_date:
+                frappe.throw("Please ensure Arrival Date is filled before submitting to Onboarding.")
+            if self.candidate_country_process:
+                if not self.arrival_time or not self.ticket_attachment or not self.flight_number or not self.airline or not self.arrival_airport:
+                    frappe.throw("Please ensure Arrival Time, Flight Number, Airline, Ticket Attachment, and Arrival Airport are filled for Overseas hires before submitting to Onboarding.")
+
         self.update_tracker_status()
 
     def before_save(self):
@@ -40,12 +63,96 @@ class ArrivalandDeployment(Document):
 
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""
+        old_state = self.get_doc_before_save().workflow_state if self.get_doc_before_save() else None
+
+        if self.workflow_state == "Did Not Arrive" and old_state != "Did Not Arrive":
+            self.notify_recruiter_did_not_arrive()
+
+        if self.workflow_state == "Pending Support Departments" and old_state != "Pending Support Departments":
+            self.assign_support_departments()
+
+        if self.workflow_state == "Joined" and old_state != "Joined":
+            self.clear_support_assignments()
+
         if self.candidate_country_process:
-            if self.workflow_state == "Completed":
+            if self.workflow_state == "Joined" and old_state != "Joined":
                 frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Joined")
-            elif self.workflow_state == "Did Not Arrive":
+            elif self.workflow_state == "Did Not Arrive" and old_state != "Did Not Arrive":
                 frappe.db.set_value("Candidate Country Process", self.candidate_country_process, "status", "Did Not Arrive")
-            self._notify_ccp()
+            
+            if self.workflow_state != old_state:
+                self._notify_ccp()
+
+    def assign_support_departments(self):
+        from frappe.desk.form.assign_to import add as add_assignment
+        
+        assignments = []
+        
+        if self.warehouse:
+            assignments.append({
+                "assign_to": [self.warehouse],
+                "description": f"Dear {self.warehouse},\n\nKindly arrange their Uniforms and welcome kit accordingly."
+            })
+            
+        if self.general_services:
+            assignments.append({
+                "assign_to": [self.general_services],
+                "description": f"Dear {self.general_services},\n\nKindly confirm the date and time for GS Orientation."
+            })
+            
+        if self.candidate_country_process:
+            if self.transportation_manager:
+                assignments.append({
+                    "assign_to": [self.transportation_manager],
+                    "description": f"Dear {self.transportation_manager},\n\nKindly arrange Airport Pick Up & Accommodation Accordingly based on the flight schedules."
+                })
+            if self.finance:
+                assignments.append({
+                    "assign_to": [self.finance],
+                    "description": f"Dear {self.finance},\n\nKindly arrange 30 KD as Loan Amount for the arriving employees\n\nPFA: Loan Application form for Arriving employees"
+                })
+
+        for assign in assignments:
+            try:
+                add_assignment({
+                    "assign_to": assign["assign_to"],
+                    "doctype": self.doctype,
+                    "name": self.name,
+                    "description": assign["description"]
+                }, ignore_permissions=True)
+            except Exception as e:
+                frappe.log_error(f"Assignment failed for {self.name}: {str(e)}", "Arrival Assignment Error")
+
+    def clear_support_assignments(self):
+        from frappe.desk.form.assign_to import clear as clear_assignment
+        try:
+            clear_assignment(self.doctype, self.name, ignore_permissions=True)
+        except Exception:
+            pass
+
+
+    def notify_recruiter_did_not_arrive(self):
+        if not self.recruiter:
+            return
+            
+        recruiter_email = frappe.db.get_value("User", self.recruiter, "email")
+        if not recruiter_email:
+            return
+            
+        subject = f"Urgent: Candidate Did Not Arrive - {self.candidate_name}"
+        message = f'''
+        <p>Dear Recruiter,</p>
+        <p>Please be informed that the candidate <b>{self.candidate_name}</b> (Passport: {self.passport_number or 'N/A'}) did not arrive as scheduled.</p>
+        <p>Please review the <a href="/app/arrival-and-deployment/{self.name}">Arrival and Deployment Document</a> and take necessary action.</p>
+        '''
+        
+        frappe.enqueue(
+            method=frappe.sendmail,
+            queue='short',
+            recipients=[recruiter_email],
+            subject=subject,
+            message=message
+        )
 
     def _notify_ccp(self):
         """Reload and save the parent CCP so its dependency engine runs."""
@@ -62,3 +169,36 @@ class ArrivalandDeployment(Document):
 def acknowledge_department(docname, field):
     frappe.db.set_value("Arrival and Deployment", docname, field, 1)
     return True
+
+def send_daily_acknowledgement_reminders():
+    # Fetch documents pending acknowledgement where state is Joined or Pending Support Departments
+    docs = frappe.get_all("Arrival and Deployment", filters={"workflow_state": ["in", ["Pending Support Departments", "Joined"]]}, fields=["name", "candidate_country_process", "general_services", "warehouse", "finance", "transportation_manager", "general_services_acknowledged", "warehouse_acknowledged", "finance_acknowledged", "transport_acknowledged"])
+    
+    for doc in docs:
+        reminders = []
+        is_overseas = bool(doc.candidate_country_process)
+        
+        if not doc.general_services_acknowledged and doc.general_services:
+            reminders.append({"email": doc.general_services, "dept": "General Services"})
+        if not doc.warehouse_acknowledged and doc.warehouse:
+            reminders.append({"email": doc.warehouse, "dept": "Warehouse"})
+            
+        if is_overseas:
+            if not doc.finance_acknowledged and doc.finance:
+                reminders.append({"email": doc.finance, "dept": "Finance"})
+            if not doc.transport_acknowledged and doc.transportation_manager:
+                reminders.append({"email": doc.transportation_manager, "dept": "Transportation"})
+                
+        for reminder in reminders:
+            try:
+                user_email = frappe.db.get_value("User", reminder["email"], "email")
+                if user_email:
+                    frappe.enqueue(
+                        method=frappe.sendmail,
+                        queue='short',
+                        recipients=[user_email],
+                        subject=f"Reminder: Action Required for {doc.name}",
+                        message=f"<p>Dear {reminder['dept']} Team,</p><p>Please note that the Arrival and Deployment document <a href='/app/arrival-and-deployment/{doc.name}'>{doc.name}</a> is pending your acknowledgement.</p><p>Kindly review and acknowledge it at your earliest convenience.</p>"
+                    )
+            except Exception as e:
+                frappe.log_error(f"Failed to send acknowledgement reminder for {doc.name} to {reminder['email']}: {str(e)}", "Acknowledgement Reminder Error")

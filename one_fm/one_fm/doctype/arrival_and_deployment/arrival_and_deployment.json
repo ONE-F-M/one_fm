@@ -120,7 +120,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nArriving\nCompleted",
+   "options": "Pending\nArriving\nJoined\nDid Not Arrive",
    "reqd": 1
   },
   {
@@ -170,8 +170,9 @@
   },
   {
    "fieldname": "pickup_contact",
-   "fieldtype": "Data",
-   "label": "Pickup Contact Person"
+   "fieldtype": "Link",
+   "label": "Pickup Contact Person",
+   "options": "Employee"
   },
   {
    "fieldname": "section_break_ack",
@@ -179,12 +180,14 @@
    "label": "Department Acknowledgements"
   },
   {
+   "default": "0",
    "fieldname": "transport_acknowledged",
    "fieldtype": "Check",
    "label": "Transportation Acknowledged",
    "read_only": 1
   },
   {
+   "default": "0",
    "fieldname": "finance_acknowledged",
    "fieldtype": "Check",
    "label": "Finance Acknowledged",
@@ -195,12 +198,14 @@
    "fieldtype": "Column Break"
   },
   {
+   "default": "0",
    "fieldname": "general_services_acknowledged",
    "fieldtype": "Check",
    "label": "General Services Acknowledged",
    "read_only": 1
   },
   {
+   "default": "0",
    "fieldname": "warehouse_acknowledged",
    "fieldtype": "Check",
    "label": "Warehouse Acknowledged",
@@ -224,7 +229,7 @@
   }
  ],
  "links": [],
- "modified": "2026-04-15 13:26:50.087268",
+ "modified": "2026-05-12 11:55:01.278841",
  "modified_by": "Administrator",
  "module": "one_fm",
  "name": "Arrival and Deployment",

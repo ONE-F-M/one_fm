@@ -716,6 +716,9 @@ scheduler_events = {
 		"05 7 * * *": [ #“At 07:05"
 			'one_fm.utils.check_pam_visa_approval_submission_seven'
 		],
+        "00 12 * * *": [ #“At 12:00 PM"
+            'one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.send_daily_acknowledgement_reminders'
+        ],
 		"30 12 * * *": [
 			'one_fm.utils.check_upload_original_visa_submission_reminder1',
             "one_fm.overrides.job_applicant.notify_hr_manager_about_local_transfer"
