@@ -12,6 +12,7 @@
 				<span class="rp-legend-item rp-legend-out">Outbound</span>
 				<span class="rp-legend-item rp-legend-ret">Return</span>
 				<span class="rp-legend-item rp-legend-conflict">Conflict</span>
+				<span class="rp-legend-item rp-legend-overcap">Overcapacity</span>
 			</div>
 		</div>
 
@@ -223,6 +224,7 @@ function quickPlaceDialog(card, vehicleId, dirLabel, placeOut, placeRet) {
 .rp-legend-out { background: #e3f2fd; color: #1565c0; }
 .rp-legend-ret { background: #fff3e0; color: #e65100; }
 .rp-legend-conflict { background: #ffebee; color: #c62828; }
+.rp-legend-overcap { background: #f3e5f5; color: #7b1fa2; }
 .rp-grid { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 .rp-axis-row { display: flex; border-bottom: 1px solid var(--border-color, #ddd); position: sticky; top: 0; z-index: 5; background: var(--bg-color, #fff); }
 .dark .rp-axis-row { background: #1f2937; border-color: #374151; }

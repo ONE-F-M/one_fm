@@ -185,6 +185,7 @@ export function useTimeline(opts = {}) {
 
 	function bfill(item) {
 		if (item.conflict) return "#c62828";
+		if (item.overcapacity) return "#7b1fa2"; // purple for overcapacity
 		return item.direction === "OUTBOUND" ? "#1565c0" : "#e65100";
 	}
 

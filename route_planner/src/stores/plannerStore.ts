@@ -176,6 +176,19 @@ export const usePlannerStore = defineStore("planner", () => {
 	// ── Trip chaining ──
 
 	function chainToTrip(newCard, existingItems, vehicleId, presetTransitMin) {
+		// ── Capacity check before chaining ──
+		const vehicle = vehicles.value.find((v) => v.id === vehicleId);
+		if (vehicle) {
+			const currentLoad = peakLoadDuringCardWindows(newCard, vehicleId);
+			if (currentLoad + newCard.headcount > vehicle.seats) {
+				frappe.show_alert({
+					message: `Cannot add stop — ${vehicle.label} would exceed capacity (${currentLoad + newCard.headcount}/${vehicle.seats} seats)`,
+					indicator: "red"
+				}, 5);
+				return;
+			}
+		}
+
 		// Find or create trip ID
 		let tripId = existingItems.find((i) => i.tripId)?.tripId;
 		if (!tripId) {
@@ -188,15 +201,17 @@ export const usePlannerStore = defineStore("planner", () => {
 				});
 		}
 
-		// Shared placement logic
-		const doChain = (transitMin) => {
+		// Shared placement logic (transitMin = travel time, dwellMin = buffer at previous stop)
+		const doChain = (transitMin, dwellMin) => {
+			const dwellMs = (dwellMin || 0) * 60000;
 			const transitMs = (transitMin || 30) * 60000;
 			const lastEnd = new Date(Math.max(
 				...existingItems.map((i) => new Date(i.end).getTime())
 			));
 			const totalStops = swimItems.value.filter((i) => i.tripId === tripId).length;
 
-			const segStart = new Date(lastEnd.getTime());
+			// Buffer: gap after last stop ends before transit to next stop begins
+			const segStart = new Date(lastEnd.getTime() + dwellMs);
 			const segEnd = new Date(segStart.getTime() + transitMs);
 			const uid = Math.random().toString(36).slice(2, 10);
 
@@ -216,24 +231,26 @@ export const usePlannerStore = defineStore("planner", () => {
 			canSave.value = assignedCards.value.size > 0;
 			persistAssignments();
 
+			const bufferNote = dwellMin > 0 ? ` +${dwellMin}min buffer` : "";
 			frappe.show_alert({
-				message: `Stop ${totalStops + 1}: ${newCard.site_location} (${transitMin}min transit)`,
+				message: `Stop ${totalStops + 1}: ${newCard.site_location} (${transitMin}min transit${bufferNote})`,
 				indicator: "green"
 			}, 4);
 		};
 
 		// If transit time was already specified (from multi-trip picker), skip dialog
 		if (presetTransitMin != null) {
-			doChain(presetTransitMin);
+			doChain(presetTransitMin, 0);
 			return;
 		}
 
-		// Otherwise show transit time dialog
+		// Otherwise show transit time dialog with buffer field
 		const lastItem = existingItems
 			.sort((a, b) => new Date(a.end) - new Date(b.end))
 			.slice(-1)[0];
 		const lastCard = shipmentCards.value.find((c) => c.id === lastItem.cardId);
 		const lastSiteName = lastCard ? lastCard.site_location : "previous stop";
+		const seatInfo = vehicle ? ` (${vehicle.seats} seats, ${peakLoadDuringCardWindows(newCard, vehicleId) + newCard.headcount} needed)` : "";
 
 		const d = new frappe.ui.Dialog({
 			title: `Transit to ${newCard.site_location}`,
@@ -242,29 +259,39 @@ export const usePlannerStore = defineStore("planner", () => {
 					fieldtype: "HTML",
 					options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
 						How long from <strong>${lastSiteName}</strong>
-						to <strong>${newCard.site_location}</strong>?</p>`
+						to <strong>${newCard.site_location}</strong>?${seatInfo}</p>`
 				},
 				{
 					fieldtype: "Int", fieldname: "transit_min",
-					label: "Transit + Drop-off Time (minutes)",
-					default: 30, reqd: 1
+					label: "Transit Time (minutes)",
+					default: 30, reqd: 1,
+					description: "Driving time between stops"
+				},
+				{ fieldtype: "Column Break" },
+				{
+					fieldtype: "Int", fieldname: "dwell_min",
+					label: "Dwell/Buffer Time (minutes)",
+					default: 10,
+					description: "Loading/unloading time at previous stop before departing"
 				}
 			],
 			primary_action_label: "Add Stop",
 			primary_action(vals) {
 				d.hide();
-				doChain(vals.transit_min);
+				doChain(vals.transit_min, vals.dwell_min || 0);
 			}
 		});
 		d.show();
 	}
 
-	// ── Conflict detection ──
+	// ── Conflict & overcapacity detection ──
 
 	function checkConflicts() {
-		swimItems.value.forEach((i) => { i.conflict = false; });
+		swimItems.value.forEach((i) => { i.conflict = false; i.overcapacity = false; });
 		vehicles.value.forEach((v) => {
 			const vi = swimItems.value.filter((i) => i.vehicleId === v.id);
+
+			// Time overlap detection
 			for (let a = 0; a < vi.length; a++) {
 				for (let b = a + 1; b < vi.length; b++) {
 					const ia = vi[a], ib = vi[b];
@@ -273,6 +300,25 @@ export const usePlannerStore = defineStore("planner", () => {
 					const bS = new Date(ib.start).getTime(), bE = new Date(ib.end).getTime();
 					if (aS < bE && aE > bS) { ia.conflict = true; ib.conflict = true; }
 				}
+			}
+
+			// Overcapacity detection: check headcount at each item's time window
+			if (v.seats && vi.length > 0) {
+				vi.forEach((item) => {
+					const iS = new Date(item.start).getTime();
+					const iE = new Date(item.end).getTime();
+					// Sum all headcounts overlapping this item's time window
+					const load = vi
+						.filter((o) => {
+							const oS = new Date(o.start).getTime();
+							const oE = new Date(o.end).getTime();
+							return oS < iE && oE > iS;
+						})
+						.reduce((sum, o) => sum + (o.headcount || 0), 0);
+					if (load > v.seats) {
+						item.overcapacity = true;
+					}
+				});
 			}
 		});
 	}
@@ -652,33 +698,74 @@ export const usePlannerStore = defineStore("planner", () => {
 			frappe.show_alert({ message: "Create or select a plan first", indicator: "orange" });
 			return;
 		}
-		const items = swimItems.value.map((i) => {
-			const card = shipmentCards.value.find((c) => c.id === i.cardId);
-			return {
-				id: i.id, cardId: i.cardId, vehicleId: i.vehicleId,
-				direction: i.direction,
-				start: new Date(i.start).toISOString(),
-				end: new Date(i.end).toISOString(),
-				headcount: i.headcount, conflict: i.conflict,
-				tripId: i.tripId || null,
-				stopIndex: i.stopIndex || 0,
-				totalStops: i.totalStops || 0,
-				_accommodation: card ? card.accommodation : "",
-				_stopLocation: card ? card.stop_location : "",
-			};
-		});
-		const cards = [...assignedCards.value];
-		frappe.call({
-			method: "one_fm.one_fm.page.route_planner.route_planner.save_assignments",
-			args: {
-				plan_name: currentPlan.value.name,
-				swim_items: JSON.stringify(items),
-				assigned_cards: JSON.stringify(cards)
-			},
-			callback: () => {
-				frappe.show_alert({ message: "Plan saved", indicator: "green" }, 3);
+
+		// ── Pre-save overcapacity audit ──
+		checkConflicts(); // ensure overcapacity flags are fresh
+		const overcapVehicles = [];
+		vehicles.value.forEach((v) => {
+			const vi = swimItems.value.filter((i) => i.vehicleId === v.id);
+			if (vi.some((i) => i.overcapacity)) {
+				const peakLoad = Math.max(...vi.map((item) => {
+					const iS = new Date(item.start).getTime();
+					const iE = new Date(item.end).getTime();
+					return vi
+						.filter((o) => {
+							const oS = new Date(o.start).getTime();
+							const oE = new Date(o.end).getTime();
+							return oS < iE && oE > iS;
+						})
+						.reduce((sum, o) => sum + (o.headcount || 0), 0);
+				}));
+				overcapVehicles.push({ label: v.label, seats: v.seats, peak: peakLoad });
 			}
 		});
+
+		const doSave = () => {
+			const items = swimItems.value.map((i) => {
+				const card = shipmentCards.value.find((c) => c.id === i.cardId);
+				return {
+					id: i.id, cardId: i.cardId, vehicleId: i.vehicleId,
+					direction: i.direction,
+					start: new Date(i.start).toISOString(),
+					end: new Date(i.end).toISOString(),
+					headcount: i.headcount, conflict: i.conflict,
+					tripId: i.tripId || null,
+					stopIndex: i.stopIndex || 0,
+					totalStops: i.totalStops || 0,
+					_accommodation: card ? card.accommodation : "",
+					_stopLocation: card ? card.stop_location : "",
+				};
+			});
+			const cards = [...assignedCards.value];
+			frappe.call({
+				method: "one_fm.one_fm.page.route_planner.route_planner.save_assignments",
+				args: {
+					plan_name: currentPlan.value.name,
+					swim_items: JSON.stringify(items),
+					assigned_cards: JSON.stringify(cards)
+				},
+				callback: () => {
+					frappe.show_alert({ message: "Plan saved", indicator: "green" }, 3);
+				}
+			});
+		};
+
+		// Show warning if overcapacity detected, but allow saving anyway
+		if (overcapVehicles.length > 0) {
+			const list = overcapVehicles.map((v) =>
+				`<li><strong>${v.label}</strong>: ${v.peak} passengers / ${v.seats} seats</li>`
+			).join("");
+			frappe.confirm(
+				`<div style="color:#c62828;font-weight:600;margin-bottom:8px">⚠ Overcapacity Warning</div>` +
+				`<p style="font-size:13px;color:#555">The following vehicles exceed seat capacity:</p>` +
+				`<ul style="font-size:13px;margin:8px 0 12px 16px">${list}</ul>` +
+				`<p style="font-size:13px;color:#555">Save anyway?</p>`,
+				() => doSave(),
+				() => frappe.show_alert({ message: "Save cancelled — fix overcapacity first", indicator: "orange" }, 4)
+			);
+		} else {
+			doSave();
+		}
 	}
 
 	// ── Manifest ──
