@@ -311,12 +311,16 @@ class AttendanceCheck(Document):
 
         # Story 1: Forgot to check in → penalize the employee
         if self.justification == "Forgot to check in":
+
+            # Resolve penalty code: use "1" if it exists, otherwise leave blank
+            applied_penalty_code = "1" if frappe.db.exists("Penalty Code", "1") else None
+
             issuer = self._get_issuer_from_employee_hierarchy()
             location = self._get_location_from_employee_site()
             penalty_params = {
                 "employee": self.employee,
                 "issuer": issuer,
-                "applied_penalty_code": "1",
+                "applied_penalty_code": applied_penalty_code,
                 "incident_date": self.date,
                 "location": location,
                 "supervisor_remarks": "Forgot to check in",
@@ -328,12 +332,16 @@ class AttendanceCheck(Document):
             and self.is_the_employee_assigned_to_the_correct_shift == "Yes"
             and self.did_the_employee_try_to_check_in_outside_working_hours == "Yes"
         ):
+
+            # Resolve penalty code: use "18" if it exists, otherwise leave blank
+            applied_penalty_code = "18" if frappe.db.exists("Penalty Code", "18") else None
+
             issuer = self._get_employee_from_approver()
             location = self._get_location_with_event_fallback()
             penalty_params = {
                 "employee": self.employee,
                 "issuer": issuer,
-                "applied_penalty_code": "18",
+                "applied_penalty_code": applied_penalty_code,
                 "incident_date": self.date,
                 "location": location,
                 "supervisor_remarks": "User not assigned to shift",
@@ -346,6 +354,10 @@ class AttendanceCheck(Document):
         ):
             # The offender is the supervisor (the approver on the Attendance Check)
             offender = self._get_employee_from_approver()
+
+            # Resolve penalty code: use "18" if it exists, otherwise leave blank
+            applied_penalty_code = "18" if frappe.db.exists("Penalty Code", "18") else None
+
             # The issuer is the employee's Reports To
             issuer = frappe.db.get_value("Employee", offender, "reports_to") if offender else None
             location = self._get_location_from_employee_site()
@@ -353,7 +365,7 @@ class AttendanceCheck(Document):
                 penalty_params = {
                     "employee": offender,
                     "issuer": issuer,
-                    "applied_penalty_code": "18",
+                    "applied_penalty_code": applied_penalty_code,
                     "incident_date": self.date,
                     "location": location,
                     "supervisor_remarks": "User not assigned to shift",
