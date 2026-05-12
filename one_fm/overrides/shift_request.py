@@ -11,7 +11,9 @@ from one_fm.utils import (
     workflow_approve_reject, get_approver
 )
 from one_fm.api.notification import get_employee_user_id
-from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
+from one_fm.operations.doctype.operations_shift.operations_shift import (
+    get_supervisor_operations_shifts, get_shift_supervisor
+)
 
 
 class OverlappingShiftError(frappe.ValidationError):
@@ -200,7 +202,7 @@ def create_retroactive_day_off_penalty(doc):
 
 def _resolve_offender_supervisor(doc):
     """Return the Employee ID of the site supervisor for the employee's site.
-    Falls back to the first shift supervisor from the employee's shift."""
+    Falls back to the on-duty shift supervisor for the incident date."""
     # Get employee's site and shift
     emp_site, emp_shift = frappe.db.get_value(
         "Employee", doc.employee, ["site", "shift"]
@@ -214,14 +216,9 @@ def _resolve_offender_supervisor(doc):
         if site_supervisor:
             return site_supervisor
 
-    # Fallback to first shift supervisor (child table sorted by idx)
+    # Fallback to the on-duty shift supervisor for the incident date
     if emp_shift:
-        shift_supervisor = frappe.db.get_value(
-            "Operations Shift Supervisor",
-            {"parent": emp_shift, "parenttype": "Operations Shift"},
-            "supervisor",
-            order_by="idx asc"
-        )
+        shift_supervisor = get_shift_supervisor(emp_shift, getdate(doc.from_date))
         if shift_supervisor:
             return shift_supervisor
 
