@@ -1,0 +1,197 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-05-11 11:17:04.760659",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "document_details_section",
+  "reference_doctype",
+  "status",
+  "column_break_kapf",
+  "reference_name",
+  "purpose",
+  "courier_information_section",
+  "courier",
+  "column_break_djhc",
+  "tracking_number",
+  "tracking_data_section",
+  "expected_delivery_date",
+  "transit_status",
+  "column_break_ltac",
+  "api_sync_status",
+  "last_api_sync",
+  "section_break_cvec",
+  "transit_item_details"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "TL-.MM.-.YYYY.-.####"
+  },
+  {
+   "fieldname": "document_details_section",
+   "fieldtype": "Section Break",
+   "label": "Document Details"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "label": "Reference Doctype",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "column_break_kapf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype"
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "label": "Purpose",
+   "options": "\nPurchase\nSample Stock Issue\nSample Stock Transfer\nSample Purchase\nSample Stock Receipt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "courier_information_section",
+   "fieldtype": "Section Break",
+   "label": "Courier Information"
+  },
+  {
+   "fieldname": "courier",
+   "fieldtype": "Link",
+   "label": "Courier",
+   "options": "Supplier"
+  },
+  {
+   "fieldname": "column_break_djhc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tracking_number",
+   "fieldtype": "Data",
+   "label": "Tracking Number"
+  },
+  {
+   "fieldname": "tracking_data_section",
+   "fieldtype": "Section Break",
+   "label": "Tracking Data"
+  },
+  {
+   "fieldname": "expected_delivery_date",
+   "fieldtype": "Date",
+   "label": "Expected Delivery Date"
+  },
+  {
+   "fieldname": "transit_status",
+   "fieldtype": "Data",
+   "label": "Transit Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_ltac",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "api_sync_status",
+   "fieldtype": "Select",
+   "label": "API Sync Status",
+   "options": "Not Started\nSuccess\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_api_sync",
+   "fieldtype": "Datetime",
+   "label": "Last API Sync",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_cvec",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "transit_item_details",
+   "fieldtype": "Table",
+   "label": "Transit Item Details",
+   "options": "Transit Item"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nPending\nCompleted"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-11 14:24:57.070685",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Transit Log",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Manager",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Officer",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Warehouse Supervisor",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

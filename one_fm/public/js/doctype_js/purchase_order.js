@@ -20,6 +20,35 @@ frappe.ui.form.on('Purchase Order', {
 				filters: {'item_code': child.item_code}
 			}
 		});
+
+		// "Create Transit Log" button for Sample Purchase POs
+		if (frm.doc.docstatus === 1
+			&& frm.doc.custom_purpose === "Sample Purchase"
+			&& !frm.doc.custom_is_courier_hand_carried) {
+			// Defer to ensure ERPNext's standard "Create" group is rendered first
+			setTimeout(function() {
+				frappe.db.get_value("Transit Log", {
+					"reference_doctype": "Purchase Order",
+					"reference_name": frm.doc.name
+				}, "name").then(function(r) {
+					if (!r.message || !r.message.name) {
+						frm.add_custom_button(__("Transit Log"), function() {
+							frappe.call({
+								method: "one_fm.one_fm.doctype.transit_log.transit_log_utils.create_transit_log_from_po",
+								args: { po_name: frm.doc.name },
+								freeze: true,
+								freeze_message: __("Creating Transit Log..."),
+								callback: function(r) {
+									if (r.message) {
+										frm.reload_doc();
+									}
+								}
+							});
+						}, __("Create"));
+					}
+				});
+			}, 0);
+		}
 	},
 	onload_post_render: function(frm){
 		frappe.call({
@@ -58,6 +87,11 @@ frappe.ui.form.on('Purchase Order', {
 	},
 	one_fm_other_documents_required: function(frm) {
 		set_field_property_for_other_documents(frm);
+	},
+	custom_purpose: function(frm) {
+		if (frm.doc.custom_purpose !== "Sample Purchase") {
+			frm.set_value("custom_is_courier_hand_carried", 0);
+		}
 	}
 });
 

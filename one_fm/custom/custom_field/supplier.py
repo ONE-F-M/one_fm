@@ -107,6 +107,54 @@ def get_supplier_custom_fields():
                 "label": "Supplier Name in Arabic",
                 "insert_after": "supplier_name",
                 "translatable": 1
+            },
+            {
+                "fieldname": "custom_is_courier",
+                "fieldtype": "Check",
+                "label": "Is Courier",
+                "insert_after": "is_transporter",
+                "default": "0"
+            },
+            {
+                "fieldname": "custom_api_settings",
+                "fieldtype": "Section Break",
+                "label": "API Settings",
+                "insert_after": "custom_is_courier",
+                "depends_on": "eval:doc.custom_is_courier"
+            },
+            {
+                "fieldname": "custom_courier_api_provider",
+                "fieldtype": "Select",
+                "label": "Courier API Provider",
+                "insert_after": "custom_api_settings",
+                "options": "\nDHL\nFedEx\nUPS",
+                "mandatory_depends_on": "eval:doc.custom_is_courier"
+            },
+            {
+                "fieldname": "custom_column_break_courier",
+                "fieldtype": "Column Break",
+                "insert_after": "custom_courier_api_provider"
+            },
+            {
+                "fieldname": "custom_api_key",
+                "fieldtype": "Password",
+                "label": "API Key",
+                "insert_after": "custom_column_break_courier",
+                "depends_on": "eval:doc.custom_courier_api_provider && doc.custom_courier_api_provider !== ''"
+            },
+            {
+                "fieldname": "custom_api_secret",
+                "fieldtype": "Password",
+                "label": "API Secret",
+                "insert_after": "custom_api_key",
+                "depends_on": "eval:doc.custom_courier_api_provider && doc.custom_courier_api_provider !== ''"
+            },
+            {
+                "fieldname": "custom_api_account_number",
+                "fieldtype": "Data",
+                "label": "API Account Number",
+                "insert_after": "custom_api_secret",
+                "depends_on": "eval:doc.custom_courier_api_provider && doc.custom_courier_api_provider !== ''"
             }
         ]
     }
