@@ -51,8 +51,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Candidate Country Process",
-   "options": "Candidate Country Process",
-   "reqd": 1
+   "options": "Candidate Country Process"
   },
   {
    "fetch_from": "candidate_country_process.candidate_name",
