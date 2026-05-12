@@ -1,22 +1,4 @@
 frappe.ui.form.on("Overseas Medical Appointment WAFID", {
-	// Override dashboard link routing for sibling tracking documents
-		if (frm.dashboard) {
-			frm.dashboard.open_document_list = function($link, show_open) {
-				let doctype = $link.attr("data-doctype");
-				if (doctype && doctype !== "Candidate Country Process") {
-					frappe.route_options = {
-						"candidate_country_process": frm.doc.candidate_country_process
-					};
-				} else {
-					frappe.route_options = {
-						"name": frm.doc.candidate_country_process
-					};
-				}
-				frappe.set_route("List", doctype);
-			};
-		}
-	},
-
 	refresh: function(frm) {
 
 		// Override dashboard link routing for sibling tracking documents
@@ -37,75 +19,15 @@ frappe.ui.form.on("Overseas Medical Appointment WAFID", {
 		}
 
 		update_actual_medical_status(frm);
-		if (frm.dashboard) {
-			frm.dashboard.open_document_list = function($link, show_open) {
-				let doctype = $link.attr("data-doctype");
-				if (doctype && doctype !== "Candidate Country Process") {
-					frappe.route_options = {
-						"candidate_country_process": frm.doc.candidate_country_process
-					};
-				} else {
-					frappe.route_options = {
-						"name": frm.doc.candidate_country_process
-					};
-				}
-				frappe.set_route("List", doctype);
-			};
-		}
 	},
 	validate: function(frm) {
 		update_actual_medical_status(frm);
-		if (frm.dashboard) {
-			frm.dashboard.open_document_list = function($link, show_open) {
-				let doctype = $link.attr("data-doctype");
-				if (doctype && doctype !== "Candidate Country Process") {
-					frappe.route_options = {
-						"candidate_country_process": frm.doc.candidate_country_process
-					};
-				} else {
-					frappe.route_options = {
-						"name": frm.doc.candidate_country_process
-					};
-				}
-				frappe.set_route("List", doctype);
-			};
-		}
 	},
 	appointment_status: function(frm) {
 		update_actual_medical_status(frm);
-		if (frm.dashboard) {
-			frm.dashboard.open_document_list = function($link, show_open) {
-				let doctype = $link.attr("data-doctype");
-				if (doctype && doctype !== "Candidate Country Process") {
-					frappe.route_options = {
-						"candidate_country_process": frm.doc.candidate_country_process
-					};
-				} else {
-					frappe.route_options = {
-						"name": frm.doc.candidate_country_process
-					};
-				}
-				frappe.set_route("List", doctype);
-			};
-		}
 	},
 	appointment_date: function(frm) {
 		update_actual_medical_status(frm);
-		if (frm.dashboard) {
-			frm.dashboard.open_document_list = function($link, show_open) {
-				let doctype = $link.attr("data-doctype");
-				if (doctype && doctype !== "Candidate Country Process") {
-					frappe.route_options = {
-						"candidate_country_process": frm.doc.candidate_country_process
-					};
-				} else {
-					frappe.route_options = {
-						"name": frm.doc.candidate_country_process
-					};
-				}
-				frappe.set_route("List", doctype);
-			};
-		}
 	},
 	status: function(frm) {
 		if (frm.doc.status === "Medical failed and Proceeded to Remedical") {
