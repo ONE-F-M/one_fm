@@ -18,6 +18,25 @@ class CandidateCountryProcess(Document):
     def on_submit(self):
         pass
 
+    def on_update(self):
+        self.calculate_live_plan_eta()
+
+    def calculate_live_plan_eta(self):
+        if not self.planned_eta:
+            return
+
+        total_delay = 0
+        if self.agency_process_details:
+            for row in self.agency_process_details:
+                if row.actual_date and row.expected_date:
+                    delay_days = frappe.utils.date_diff(row.actual_date, row.expected_date)
+                    total_delay += delay_days
+
+        new_live_eta = frappe.utils.add_days(self.planned_eta, total_delay)
+        if self.live_plan_eta != new_live_eta:
+            frappe.db.set_value("Candidate Country Process", self.name, "live_plan_eta", new_live_eta, update_modified=False)
+
+    @frappe.whitelist()
     def get_workflow(self):
         workflow_list = []
         if self.agency_process_details:
@@ -54,3 +73,35 @@ def update_candidate_country_process():
                             if process_list.idx > ccp.idx and process_list.reference_type:
                                 ccp_doc.db_set('current_process_id', process_list.name)
                                 break
+
+def recalculate_ccp_live_eta(ccp_name: str):
+    """Recalculate live ETA directly from child table data.
+    
+    Called by child DocType controllers (WAFID, PCC, etc.) after
+    updating their tracker status. Uses direct DB reads and writes
+    to avoid loading/saving the full CCP document.
+    """
+    planned_eta = frappe.db.get_value("Candidate Country Process", ccp_name, "planned_eta")
+    if not planned_eta:
+        return
+
+    CCP_Detail = frappe.qb.DocType("Candidate Country Process Details")
+    details = (
+        frappe.qb.from_(CCP_Detail)
+        .select(CCP_Detail.actual_date, CCP_Detail.expected_date)
+        .where(CCP_Detail.parent == ccp_name)
+        .where(CCP_Detail.actual_date.isnotnull())
+        .where(CCP_Detail.expected_date.isnotnull())
+    ).run(as_dict=True)
+
+    total_delay = sum(
+        frappe.utils.date_diff(d.actual_date, d.expected_date)
+        for d in details
+    )
+
+    new_eta = frappe.utils.add_days(planned_eta, total_delay)
+    frappe.db.set_value(
+        "Candidate Country Process", ccp_name,
+        "live_plan_eta", new_eta,
+        update_modified=True  # So the CCP shows as recently modified
+    )
