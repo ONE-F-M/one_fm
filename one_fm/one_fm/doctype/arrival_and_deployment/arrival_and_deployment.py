@@ -27,7 +27,11 @@ class ArrivalandDeployment(Document):
         if not rows:
             return
 
-        updates = {"status": self.status}
+        sync_status = self.status
+        if self.status == "Completed":
+            sync_status = "Joined"
+
+        updates = {"status": sync_status}
         if self.arrival_date:
             updates["actual_date"] = self.arrival_date
 
