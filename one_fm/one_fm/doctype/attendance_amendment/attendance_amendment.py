@@ -87,7 +87,14 @@ class AttendanceAmendment(Document):
 		# Non-numeric values that are statuses, not hours
 		status_strings = {"Day Off", "Client Day Off", "Absent", "On Leave", "On Hold",
 			"Present", "Half Day", "Work From Home", "Holiday",
-			"Fingerprint Appointment", "Medical Appointment", "Working", "N/A"}
+			"Fingerprint Appointment", "Medical Appointment", "Working"}
+
+		month_map = {
+			"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6,
+			"July": 7, "August": 8, "September": 9, "October": 10, "November": 11,
+			"December": 12
+		}
+		total_days = monthrange(cint(self.year), month_map.get(self.month, 1))[1]
 
 		for record in data:
 			# Hours mode: Shift Hours / Working Hours → split into day_X (status) + day_X_hour (number)
@@ -96,14 +103,14 @@ class AttendanceAmendment(Document):
 
 			if use_hours:
 				day_fields = {}
-				for i in range(1, 32):
-					val = record.get(str(i), "N/A" if type == "Overtime" else "")
+				for i in range(1, total_days + 1):
+					val = record.get(str(i), "")
 					if isinstance(val, str) and val in status_strings:
 						day_fields[f"day_{i}"] = val
 					else:
 						day_fields[f"day_{i}_hour"] = val
 			else:
-				day_fields = {f"day_{i}": record.get(str(i), '') for i in range(1, 32)}
+				day_fields = {f"day_{i}": record.get(str(i), "") for i in range(1, total_days + 1)}
 
 			self.append(child_table, {
 				"employee": record.get("employee"),
