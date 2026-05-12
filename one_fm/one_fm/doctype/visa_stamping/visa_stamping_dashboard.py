@@ -8,6 +8,6 @@ def get_data():
         'transactions': [
             {'items': ['Candidate Country Process', 'Overseas Medical Appointment WAFID']},
             {'items': ['Overseas Remedical', 'PCC Clearance']},
-            {'items': ['Arrival and Deployment']}
+            {'items': ['Visa Stamping', 'Arrival and Deployment']}
         ],
     }
