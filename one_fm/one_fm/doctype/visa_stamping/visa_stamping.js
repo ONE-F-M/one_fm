@@ -20,6 +20,12 @@ frappe.ui.form.on("Visa Stamping", {
 				frappe.set_route("List", doctype);
 			};
 		}
+	},
+	appointment_status: function(frm) {
+		if (["Submitted", "Booked"].includes(frm.doc.appointment_status)) {
+			if (frm.doc.status === "Pending") {
+				frm.set_value("status", "In Progress");
+			}
+		}
 	}
-
 });
