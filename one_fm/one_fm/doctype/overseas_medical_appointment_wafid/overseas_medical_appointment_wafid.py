@@ -51,7 +51,11 @@ class OverseasMedicalAppointmentWAFID(Document):
 
     def on_update(self):
         """Notify the CCP engine to evaluate downstream triggers."""
-        if self.candidate_country_process and self.status in ("Fit", "Passed", "Unfit", "Failed"):
+        if self.candidate_country_process and self.status in (
+            "Fit",
+            "Unfit",
+            "Medical failed and Proceeded to Remedical",
+        ):
             self._notify_ccp()
 
     def _notify_ccp(self):

@@ -86,7 +86,7 @@
    "fieldtype": "Link",
    "label": "Transportation Manager",
    "options": "User",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.candidate_country_process"
   },
   {
    "fieldname": "general_services",
@@ -100,7 +100,7 @@
    "fieldtype": "Link",
    "label": "Finance",
    "options": "User",
-   "reqd": 1
+   "mandatory_depends_on": "eval:doc.candidate_country_process"
   },
   {
    "fieldname": "warehouse",

@@ -40,8 +40,8 @@ frappe.ui.form.on("Arrival and Deployment", {
 		if (frm.doc.workflow_state === "Pending Support Departments") {
 			let user = frappe.session.user;
 
-			let add_ack_btn = (field, label) => {
-				if (!frm.doc[field]) {
+			let add_ack_btn = (field, label, assignee_field) => {
+				if (!frm.doc[field] && (user === frm.doc[assignee_field] || user === "Administrator")) {
 					frm.add_custom_button(__(`Acknowledge ${label}`), function() {
 						frappe.call({
 							method: "one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.acknowledge_department",
@@ -57,12 +57,12 @@ frappe.ui.form.on("Arrival and Deployment", {
 				}
 			};
 
-			add_ack_btn("general_services_acknowledged", "General Services");
-			add_ack_btn("warehouse_acknowledged", "Warehouse");
+			add_ack_btn("general_services_acknowledged", "General Services", "general_services");
+			add_ack_btn("warehouse_acknowledged", "Warehouse", "warehouse");
             
             if (!is_local) {
-                add_ack_btn("finance_acknowledged", "Finance");
-                add_ack_btn("transport_acknowledged", "Transportation");
+                add_ack_btn("finance_acknowledged", "Finance", "finance");
+                add_ack_btn("transport_acknowledged", "Transportation", "transportation_manager");
             }
 		}
 

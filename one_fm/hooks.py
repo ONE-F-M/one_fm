@@ -576,8 +576,12 @@ override_doctype_class = {
 # ---------------
 
 scheduler_events = {
+	"cron": {
+		"0 12 * * *": [
+			'one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.send_daily_acknowledgement_reminders'
+		]
+	},
 	"daily": [
-		'one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.send_daily_acknowledgement_reminders',
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
 		'one_fm.utils.send_work_anniversary_reminders',

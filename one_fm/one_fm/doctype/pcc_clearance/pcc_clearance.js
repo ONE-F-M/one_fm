@@ -1,7 +1,7 @@
 // Copyright (c) 2026, ONE FM and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Pcc Clearance", {
+frappe.ui.form.on("PCC Clearance", {
 
 	refresh: function(frm) {
 		// Override dashboard link routing for sibling tracking documents

@@ -51,8 +51,10 @@ class ArrivalandDeployment(Document):
             return
 
         sync_status = self.status
-        if self.status == "Completed":
+        if self.workflow_state == "Joined":
             sync_status = "Joined"
+        elif self.workflow_state == "Did Not Arrive":
+            sync_status = "Did Not Arrive"
 
         updates = {"status": sync_status}
         if self.arrival_date:
@@ -167,6 +169,18 @@ class ArrivalandDeployment(Document):
 
 @frappe.whitelist()
 def acknowledge_department(docname, field):
+    doc = frappe.get_doc("Arrival and Deployment", docname)
+    doc.check_permission("write")
+    
+    allowed_fields = [
+        "general_services_acknowledged",
+        "warehouse_acknowledged",
+        "finance_acknowledged",
+        "transport_acknowledged"
+    ]
+    if field not in allowed_fields:
+        frappe.throw("Invalid acknowledgement field.")
+        
     frappe.db.set_value("Arrival and Deployment", docname, field, 1)
     return True
 
