@@ -1,7 +1,7 @@
 // Copyright (c) 2026, ONE FM and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("PAM Visa", {
+frappe.ui.form.on("Visa Stamping", {
 
 	refresh: function(frm) {
 		// Override dashboard link routing for sibling tracking documents

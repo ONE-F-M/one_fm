@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-04-15 06:45:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "candidate_country_process",
+  "candidate_name",
+  "passport_number",
+  "column_break_1",
+  "section_break_appointment",
+  "appointment_date",
+  "appointment_status",
+  "appointment_slip",
+  "section_break_actual_medical",
+  "medical_date",
+  "result_date",
+  "status",
+  "wafid_medical_report"
+ ],
+ "fields": [
+  {
+   "default": "OMAW-.YYYY.-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "OMAW-.YYYY.-.#####"
+  },
+  {
+   "fieldname": "candidate_country_process",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Candidate Country Process",
+   "options": "Candidate Country Process",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "candidate_country_process.candidate_name",
+   "fieldname": "candidate_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "candidate_country_process.passport_number",
+   "fieldname": "passport_number",
+   "fieldtype": "Data",
+   "label": "Passport Number",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_appointment",
+   "fieldtype": "Section Break",
+   "label": "Appointment"
+  },
+  {
+   "fieldname": "appointment_date",
+   "fieldtype": "Date",
+   "label": "Appointment Date"
+  },
+  {
+   "default": "Not Booked",
+   "fieldname": "appointment_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Appointment Status",
+   "options": "Not Booked\nBooked"
+  },
+  {
+   "fieldname": "appointment_slip",
+   "fieldtype": "Attach",
+   "label": "Appointment Slip",
+   "mandatory_depends_on": "eval:doc.appointment_status === 'Booked'"
+  },
+  {
+   "fieldname": "section_break_actual_medical",
+   "fieldtype": "Section Break",
+   "label": "Actual medical"
+  },
+  {
+   "fieldname": "medical_date",
+   "fieldtype": "Date",
+   "label": "Medical Date"
+  },
+  {
+   "fieldname": "result_date",
+   "fieldtype": "Date",
+   "label": "Result Date"
+  },
+  {
+   "default": "Yet to apply",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Yet to apply\nIn process\nFit\nUnfit\nMedical failed and Proceeded to Remedical"
+  },
+  {
+   "fieldname": "wafid_medical_report",
+   "fieldtype": "Attach",
+   "label": "Medical Report",
+   "mandatory_depends_on": "eval:in_list(['Fit', 'Unfit', 'Medical failed and Proceeded to Remedical'], doc.status)"
+  }
+ ],
+ "links": [],
+ "modified": "2026-04-15 06:45:00.000000",
+ "modified_by": "Administrator",
+ "module": "one_fm",
+ "name": "Overseas Medical Appointment WAFID",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1,
+   "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1
+  },
+  {
+   "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1,
+   "read": 1, "report": 1, "role": "HR Manager", "share": 1, "write": 1
+  },
+  {
+   "create": 1, "email": 1, "export": 1, "print": 1,
+   "read": 1, "report": 1, "role": "HR User", "write": 1
+  },
+  {
+   "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1,
+   "read": 1, "report": 1, "role": "Recruitment Manager", "share": 1, "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
