@@ -11,7 +11,9 @@ from one_fm.utils import (
     workflow_approve_reject, get_approver
 )
 from one_fm.api.notification import get_employee_user_id
-from one_fm.operations.doctype.operations_shift.operations_shift import get_supervisor_operations_shifts
+from one_fm.operations.doctype.operations_shift.operations_shift import (
+    get_supervisor_operations_shifts, get_shift_supervisor
+)
 
 
 class OverlappingShiftError(frappe.ValidationError):
@@ -159,19 +161,19 @@ def create_retroactive_day_off_penalty(doc):
     ):
         return
 
-    # Resolve employee (offender): the owner of the Shift Request (Site Supervisor)
-    offender = frappe.db.get_value("Employee", {"user_id": doc.owner}, "name")
+    # Resolve offender: employee's site supervisor, fallback to shift supervisor
+    offender = _resolve_offender_supervisor(doc)
     if not offender:
         frappe.log_error(
             title=_("Retroactive Day Off Penalty - Offender Not Found"),
-            message=_("Could not find Employee record for Shift Request owner {0} on {1}").format(
-                doc.owner, doc.name
+            message=_("Could not find a Site Supervisor or Shift Supervisor for employee {0} on {1}").format(
+                doc.employee, doc.name
             )
         )
         return
 
-    # Resolve issuer: approving user first, fallback to reports_to
-    issuer = _resolve_issuer_employee(doc)
+    # Resolve issuer: offender's reports_to, fallback to approving user
+    issuer = _resolve_issuer_employee(doc, offender)
 
     # Resolve penalty code: use "18" if it exists, otherwise leave blank
     applied_penalty_code = "18" if frappe.db.exists("Penalty Code", "18") else None
@@ -198,15 +200,43 @@ def create_retroactive_day_off_penalty(doc):
         )
 
 
-def _resolve_issuer_employee(doc):
-    """Return the Employee ID of the user who approved the Shift Request.
-    Falls back to the reports_to of the Shift Request owner (Site Supervisor)."""
+def _resolve_offender_supervisor(doc):
+    """Return the Employee ID of the site supervisor for the employee's site.
+    Falls back to the on-duty shift supervisor for the incident date."""
+    # Get employee's site and shift
+    emp_site, emp_shift = frappe.db.get_value(
+        "Employee", doc.employee, ["site", "shift"]
+    ) or (None, None)
+
+    # Try site supervisor first
+    if emp_site:
+        site_supervisor = frappe.db.get_value(
+            "Operations Site", emp_site, "site_supervisor"
+        )
+        if site_supervisor:
+            return site_supervisor
+
+    # Fallback to the on-duty shift supervisor for the incident date
+    if emp_shift:
+        shift_supervisor = get_shift_supervisor(emp_shift, getdate(doc.from_date))
+        if shift_supervisor:
+            return shift_supervisor
+
+    return None
+
+
+def _resolve_issuer_employee(doc, offender):
+    """Return the Employee ID of the offender's reports_to.
+    Falls back to the user who approved the Shift Request."""
+    # Try offender's reports_to first
+    if offender:
+        reports_to = frappe.db.get_value("Employee", offender, "reports_to")
+        if reports_to:
+            return reports_to
+
+    # Fallback to the approving user
     approving_user = frappe.session.user
     issuer = frappe.db.get_value("Employee", {"user_id": approving_user}, "name")
-    if not issuer:
-        owner_employee = frappe.db.get_value("Employee", {"user_id": doc.owner}, "name")
-        if owner_employee:
-            issuer = frappe.db.get_value("Employee", owner_employee, "reports_to")
     return issuer
 
 
