@@ -77,7 +77,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Employee",
-   "options": "Employee"
+   "options": "Employee",
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "full_name_in_english",
@@ -99,7 +100,8 @@
    "hidden": 1,
    "label": "Nationality",
    "options": "Nationality",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "default": "0",
@@ -140,7 +142,8 @@
    "in_standard_filter": 1,
    "label": "Department",
    "options": "Department",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "employment_type",
@@ -149,14 +152,16 @@
    "in_standard_filter": 1,
    "label": "Employment Type",
    "options": "Employment Type",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "designation",
    "fieldtype": "Link",
    "label": "Designation",
    "options": "Designation",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "column_break_pdtv",
@@ -167,28 +172,32 @@
    "fieldtype": "Link",
    "label": "Project Allocation",
    "options": "Project",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "site_allocation",
    "fieldtype": "Link",
    "label": "Site Allocation",
    "options": "Operations Site",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "shift_allocation",
    "fieldtype": "Link",
    "label": "Shift Allocation",
    "options": "Operations Shift",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "operations_role_allocation",
    "fieldtype": "Link",
    "label": "Operations Role Allocation",
    "options": "Operations Role",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "depends_on": "eval: !doc.__islocal",
@@ -201,7 +210,8 @@
    "fieldtype": "Link",
    "label": "Supervisor",
    "options": "User",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "replacement_required",
