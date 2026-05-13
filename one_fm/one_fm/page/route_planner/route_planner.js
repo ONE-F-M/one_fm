@@ -424,6 +424,31 @@ function mountRoutePlannerApp(wrapper, data) {
                 this.windowEnd = new Date(this.planEnd);
             },
 
+            show24h() {
+                // Show full 24h day: midnight to midnight (Kuwait time = UTC+3)
+                const today = new Date(this.planStart);
+                // Set to midnight UTC of the plan day, then offset for Kuwait TZ
+                const dayStart = new Date(today);
+                dayStart.setUTCHours(0, 0, 0, 0);
+                // Subtract 3h to get 00:00 Kuwait = 21:00 UTC previous day
+                const kwMidnightStart = new Date(dayStart.getTime() - (3 * 3600000));
+                const kwMidnightEnd = new Date(kwMidnightStart.getTime() + (24 * 3600000));
+                this.windowStart = kwMidnightStart;
+                this.windowEnd = kwMidnightEnd;
+            },
+
+            showWorkHours() {
+                // Snap to 05:00–19:00 Kuwait time (working hours window)
+                const today = new Date(this.planStart);
+                const dayStart = new Date(today);
+                dayStart.setUTCHours(0, 0, 0, 0);
+                // 05:00 Kuwait = 02:00 UTC, 19:00 Kuwait = 16:00 UTC
+                const workStart = new Date(dayStart.getTime() - (3 * 3600000) + (5 * 3600000));
+                const workEnd = new Date(dayStart.getTime() - (3 * 3600000) + (19 * 3600000));
+                this.windowStart = workStart;
+                this.windowEnd = workEnd;
+            },
+
             onSvgWheel(e) {
                 e.preventDefault();
                 if (e.ctrlKey || e.metaKey) {
@@ -2056,6 +2081,8 @@ function injectRPVueTemplate() {
           <button class="rp-btn-icon" title="Zoom In"  @click="zoomIn">+</button>
           <button class="rp-btn-icon" title="Zoom Out" @click="zoomOut">&#x2212;</button>
           <button class="rp-btn-icon" title="Fit all"  @click="fitAll">&#x229d; Fit</button>
+          <button class="rp-btn-icon rp-btn-icon-label" title="Show full 24 hours" @click="show24h()">24h</button>
+          <button class="rp-btn-icon rp-btn-icon-label" title="Show working hours (05:00–19:00)" @click="showWorkHours()"><span class="rp-icon" style="font-size:14px">schedule</span> Work</button>
         </div>
         <div class="rp-tb-hint">
           Drag cards to lanes &nbsp;&middot;&nbsp; Drag blocks to reposition &nbsp;&middot;&nbsp;
@@ -2793,6 +2820,7 @@ function injectRPStyles() {
         }
         .rp-btn-icon:hover { background: #cfdce5; border-color: #adb5bd; }
         .rp-btn-icon:focus-visible { outline: 2px solid var(--rp-color-accent); outline-offset: 2px; }
+        .rp-btn-icon-label { font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 3px; }
         .rp-tb-hint { font-size: 12px; color: var(--md-sys-color-outline); flex: 1; text-align: center; }
         #rp-timeline-legend { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
         .rp-legend-item     { font-size: 11px; padding: 2px 9px; border-radius: 4px; font-weight: 600; }
