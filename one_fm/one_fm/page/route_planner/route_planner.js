@@ -100,14 +100,15 @@ function mountRoutePlannerApp(wrapper, data) {
             filteredPoolCards() {
                 const q = this.searchQuery.toLowerCase().trim();
                 return this.planData.shipment_cards.filter(c => {
-                    // Fully assigned = both outbound AND return placed
-                    if (this.isFullyAssigned(c.id)) return false;
+                    // Card is assigned when its specific ID is in assignedCards
+                    if (this.assignedCards.has(c.id)) return false;
                     if (!q) return true;
                     return (
                         c.shift_name.toLowerCase().includes(q) ||
                         c.site_location.toLowerCase().includes(q) ||
                         c.accommodation.toLowerCase().includes(q) ||
-                        c.stop_location.toLowerCase().includes(q)
+                        c.stop_location.toLowerCase().includes(q) ||
+                        (c.direction || '').toLowerCase().includes(q)
                     );
                 });
             },
@@ -549,26 +550,29 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                // ── Trip chaining: detect nearby outbound blocks from same accommodation ──
-                // Only consider blocks within ±2 hours of this card's outbound window
-                const cardOutStart = new Date(card.outbound_window_start).getTime();
-                const cardOutEnd   = new Date(card.outbound_window_end).getTime();
+                // ── Trip chaining: detect nearby blocks of SAME direction from same accommodation ──
+                // Use the correct time window based on card direction
+                const isOutbound = card.direction === 'OUTBOUND';
+                const cardWindowStart = new Date(isOutbound ? card.outbound_window_start : card.return_window_start).getTime();
+                const cardWindowEnd   = new Date(isOutbound ? card.outbound_window_end   : card.return_window_end).getTime();
                 const PROXIMITY_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-                const nearbyOutbound = this.swimItems.filter(i => {
-                    if (i.vehicleId !== vehicle.id || i.direction !== 'OUTBOUND') return false;
+                const nearbyBlocks = this.swimItems.filter(i => {
+                    if (i.vehicleId !== vehicle.id) return false;
+                    // Only chain with blocks of the SAME direction
+                    if (i.direction !== card.direction) return false;
                     const existingCard = this.planData.shipment_cards.find(c => c.id === i.cardId);
                     if (!existingCard || existingCard.accommodation !== card.accommodation) return false;
                     const blockEnd = new Date(i.end).getTime();
                     const blockStart = new Date(i.start).getTime();
-                    return blockEnd > (cardOutStart - PROXIMITY_MS) && blockStart < (cardOutEnd + PROXIMITY_MS);
+                    return blockEnd > (cardWindowStart - PROXIMITY_MS) && blockStart < (cardWindowEnd + PROXIMITY_MS);
                 });
 
-                if (nearbyOutbound.length > 0) {
+                if (nearbyBlocks.length > 0) {
                     // Group by tripId (items without tripId are each their own "trip")
                     const tripMap = {};
                     let soloIdx = 0;
-                    nearbyOutbound.forEach(item => {
+                    nearbyBlocks.forEach(item => {
                         const key = item.tripId || `_solo_${soloIdx++}`;
                         if (!tripMap[key]) tripMap[key] = [];
                         tripMap[key].push(item);
@@ -577,7 +581,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                     if (tripKeys.length === 1) {
                         // ── Single trip: simple confirm ──
-                        const existingSites = nearbyOutbound.map(i => {
+                        const existingSites = nearbyBlocks.map(i => {
                             const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
                             return c ? c.site_location : i.cardId;
                         });
@@ -687,6 +691,8 @@ function mountRoutePlannerApp(wrapper, data) {
                 }
 
                 const vehicleLabel = this.planData.vehicles.find(v => v.id === vehicleId)?.label || vehicleId;
+                const isOutbound = card.direction === 'OUTBOUND';
+                const dirLabel = isOutbound ? 'Outbound (→ To Site)' : 'Return (← From Site)';
 
                 const d = new frappe.ui.Dialog({
                     title: `New Independent Trip — ${card.site_location}`,
@@ -699,17 +705,9 @@ function mountRoutePlannerApp(wrapper, data) {
                                 <p style="margin:0 0 12px;color:#555;font-size:12px">
                                 <strong>${card.shift_name}</strong><br>
                                 ${card.headcount} employee(s) · Shift ${self.fmtISO(card.shift_start)} – ${self.fmtISO(card.shift_end)}<br>
-                                Accommodation: ${card.accommodation || '—'}</p>
+                                Accommodation: ${card.accommodation || '—'}<br>
+                                Direction: <strong>${dirLabel}</strong></p>
                                 ${existingHtml}`
-                        },
-                        {
-                            fieldtype: 'Select', fieldname: 'direction',
-                            label: 'Trip Direction', reqd: 1,
-                            options: 'Both (Outbound + Return)\nOutbound Only (→ To Site)\nReturn Only (← From Site)',
-                            default: 'Outbound Only (→ To Site)'
-                        },
-                        {
-                            fieldtype: 'Column Break'
                         },
                         {
                             fieldtype: 'Int', fieldname: 'duration_min',
@@ -720,10 +718,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     primary_action(vals) {
                         d.hide();
                         const durMs = (vals.duration_min || 60) * 60000;
-                        const choice = vals.direction;
-                        const placeOut = choice.startsWith('Both') || choice.startsWith('Outbound');
-                        const placeRet = choice.startsWith('Both') || choice.startsWith('Return');
-                        self._doPlace(card, vehicleId, durMs, placeOut, placeRet);
+                        self._doPlace(card, vehicleId, durMs, isOutbound, !isOutbound);
                     }
                 });
                 d.show();
@@ -773,8 +768,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     const uid = Math.random().toString(36).slice(2, 10);
 
                     self.swimItems.push({
-                        id: `${newCard.id}_OUT_${uid}`, cardId: newCard.id, vehicleId,
-                        direction: 'OUTBOUND', start: segStart, end: segEnd,
+                        id: `${newCard.id}_${newCard.direction === 'RETURN' ? 'RET' : 'OUT'}_${uid}`, cardId: newCard.id, vehicleId,
+                        direction: newCard.direction || 'OUTBOUND', start: segStart, end: segEnd,
                         headcount: newCard.headcount, conflict: false,
                         tripId, stopIndex: totalStops + 1
                     });
@@ -877,125 +872,89 @@ function mountRoutePlannerApp(wrapper, data) {
                 return dirs;
             },
 
+            // Each card is now direction-specific (_OUT or _RET)
+            // A card is fully assigned when it has a swim item placed
             isFullyAssigned(cardId) {
-                const dirs = this.placedDirections(cardId);
-                return dirs.has('OUTBOUND') && dirs.has('RETURN');
+                return this.assignedCards.has(cardId);
             },
 
+            // No longer needed — cards are direction-specific, badge is in the template
             cardAssignmentLabel(cardId) {
-                const dirs = this.placedDirections(cardId);
-                if (dirs.has('OUTBOUND') && !dirs.has('RETURN')) return '→ Outbound placed';
-                if (dirs.has('RETURN') && !dirs.has('OUTBOUND')) return '← Return placed';
                 return null;
             },
 
             placeCard(card, vehicleId) {
                 const self = this;
-                const placed = this.placedDirections(card.id);
-                const hasOut = placed.has('OUTBOUND');
-                const hasRet = placed.has('RETURN');
+                const isOutbound = card.direction === 'OUTBOUND';
+                const dirLabel = isOutbound ? 'Outbound (→ To Site)' : 'Return (← From Site)';
 
-                // If card already has one direction, auto-place the missing one
-                if (hasOut && !hasRet) {
-                    // Only return is needed — skip dialog
-                    const d = new frappe.ui.Dialog({
-                        title: `Assign Return — ${card.site_location}`,
-                        fields: [
-                            {
-                                fieldtype: 'HTML',
-                                options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
-                                    Outbound (→) already placed. Assign <strong>Return (←)</strong> to
-                                    <strong>${self.vehicleLabelForItem({ vehicleId })}</strong>.</p>`
-                            },
-                            { fieldtype: 'Int', fieldname: 'duration_min', label: 'Return Duration (minutes)', default: 60, reqd: 1 }
-                        ],
-                        primary_action_label: 'Place Return',
-                        primary_action(vals) {
-                            d.hide();
-                            self._doPlace(card, vehicleId, (vals.duration_min || 60) * 60000, false, true);
-                        }
-                    });
-                    d.show();
-                    return;
-                }
-                if (hasRet && !hasOut) {
-                    const d = new frappe.ui.Dialog({
-                        title: `Assign Outbound — ${card.site_location}`,
-                        fields: [
-                            {
-                                fieldtype: 'HTML',
-                                options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
-                                    Return (←) already placed. Assign <strong>Outbound (→)</strong> to
-                                    <strong>${self.vehicleLabelForItem({ vehicleId })}</strong>.</p>`
-                            },
-                            { fieldtype: 'Int', fieldname: 'duration_min', label: 'Outbound Duration (minutes)', default: 60, reqd: 1 }
-                        ],
-                        primary_action_label: 'Place Outbound',
-                        primary_action(vals) {
-                            d.hide();
-                            self._doPlace(card, vehicleId, (vals.duration_min || 60) * 60000, true, false);
-                        }
-                    });
-                    d.show();
-                    return;
-                }
-
-                // ── Fresh card — full direction picker ──
+                // ── Duration dialog with buffer + transit ──
                 const d = new frappe.ui.Dialog({
-                    title: `Assign — ${card.site_location}`,
+                    title: `Assign ${dirLabel} — ${card.site_location}`,
                     fields: [
                         {
                             fieldtype: 'HTML',
                             options: `<p style="margin:0 0 12px;color:#555;font-size:13px">
                                 <strong>${card.shift_name}</strong><br>
-                                ${card.headcount} employee(s) · Shift ${self.fmtISO(card.shift_start)} – ${self.fmtISO(card.shift_end)}</p>`
+                                ${card.headcount} employee(s) · Shift ${self.fmtISO(card.shift_start)} – ${self.fmtISO(card.shift_end)}<br>
+                                Direction: <strong>${dirLabel}</strong></p>`
                         },
                         {
-                            fieldtype: 'Select', fieldname: 'direction',
-                            label: 'Trip Direction', reqd: 1,
-                            options: 'Both (Outbound + Return)\nOutbound Only (→ To Site)\nReturn Only (← From Site)',
-                            default: 'Both (Outbound + Return)'
+                            fieldtype: 'Int', fieldname: 'buffer_min',
+                            label: 'Buffer Time (minutes)',
+                            description: isOutbound
+                                ? 'Time for loading employees at accommodation'
+                                : 'Time for loading employees at site',
+                            default: 15, reqd: 1
                         },
                         {
                             fieldtype: 'Column Break'
                         },
                         {
                             fieldtype: 'Int', fieldname: 'duration_min',
-                            label: 'Trip Duration (minutes)', default: 60, reqd: 1
+                            label: 'Transit Time (minutes)',
+                            description: isOutbound
+                                ? 'Driving time from accommodation to site'
+                                : 'Driving time from site to accommodation',
+                            default: 60, reqd: 1
                         }
                     ],
                     primary_action_label: 'Place on Timeline',
                     primary_action(vals) {
                         d.hide();
-                        const durMs = (vals.duration_min || 60) * 60000;
-                        const choice = vals.direction;
-                        const placeOut = choice.startsWith('Both') || choice.startsWith('Outbound');
-                        const placeRet = choice.startsWith('Both') || choice.startsWith('Return');
-                        self._doPlace(card, vehicleId, durMs, placeOut, placeRet);
+                        const bufferMs = (vals.buffer_min || 15) * 60000;
+                        const transitMs = (vals.duration_min || 60) * 60000;
+                        self._doPlace(card, vehicleId, transitMs, isOutbound, !isOutbound, bufferMs);
                     }
                 });
                 d.show();
             },
 
-            _doPlace(card, vehicleId, durMs, placeOutbound, placeReturn) {
+            _doPlace(card, vehicleId, durMs, placeOutbound, placeReturn, bufferMs) {
+                bufferMs = bufferMs || 0;
+                const totalMs = bufferMs + durMs;
                 const outEnd = new Date(card.outbound_window_end);
-                const outStart = new Date(outEnd.getTime() - durMs);
+                const outStart = new Date(outEnd.getTime() - totalMs);
                 const retStart = new Date(card.return_window_start);
-                const retEnd = new Date(retStart.getTime() + durMs);
+                const retEnd = new Date(retStart.getTime() + totalMs);
                 const uid = Math.random().toString(36).slice(2, 10);
 
                 if (placeOutbound) {
                     this.swimItems.push({
                         id: `${card.id}_OUT_${uid}`, cardId: card.id, vehicleId,
                         direction: 'OUTBOUND', start: outStart, end: outEnd,
-                        headcount: card.headcount, conflict: false
+                        headcount: card.headcount, conflict: false,
+                        bufferMin: Math.round(bufferMs / 60000),
+                        transitMin: Math.round(durMs / 60000)
                     });
                 }
                 if (placeReturn) {
                     this.swimItems.push({
                         id: `${card.id}_RET_${uid}`, cardId: card.id, vehicleId,
                         direction: 'RETURN', start: retStart, end: retEnd,
-                        headcount: card.headcount, conflict: false
+                        headcount: card.headcount, conflict: false,
+                        bufferMin: Math.round(bufferMs / 60000),
+                        transitMin: Math.round(durMs / 60000)
                     });
                 }
 
@@ -1005,10 +964,11 @@ function mountRoutePlannerApp(wrapper, data) {
                 this.canSave = this.assignedCards.size > 0;
                 this.persistAssignments();
 
+                const bufferNote = bufferMs > 0 ? ` + ${Math.round(bufferMs/60000)}min buffer` : '';
                 const dirLabel = (placeOutbound && placeReturn) ? 'Both trips'
                     : placeOutbound ? 'Outbound (→)' : 'Return (←)';
                 frappe.show_alert({
-                    message: `${dirLabel} placed on ${this.vehicleLabelForItem({ vehicleId })}`,
+                    message: `${dirLabel} placed on ${this.vehicleLabelForItem({ vehicleId })} (${Math.round(durMs/60000)}min transit${bufferNote})`,
                     indicator: 'green'
                 }, 4);
             },
@@ -2029,12 +1989,10 @@ function injectRPVueTemplate() {
                  @click="onCardTap(card)">
               <div class="rp-card-header">
                 <span class="rp-card-site">{{ card.site_location }}</span>
-                <span :class="['rp-card-type', card.type === 'OLM' ? 'rp-tag-olm' : 'rp-tag-osm']">{{ card.type }}</span>
-              </div>
-              <div v-if="cardAssignmentLabel(card.id)" style="margin-bottom:4px">
-                <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:#e8f5e9;color:#2e7d32">
-                  {{ cardAssignmentLabel(card.id) }} — drag to assign other direction
+                <span :class="['rp-card-dir', card.direction === 'OUTBOUND' ? 'rp-dir-out' : 'rp-dir-ret']">
+                  {{ card.direction === 'OUTBOUND' ? '→ OUT' : '← RET' }}
                 </span>
+                <span :class="['rp-card-type', card.type === 'OLM' ? 'rp-tag-olm' : 'rp-tag-osm']">{{ card.type }}</span>
               </div>
               <div class="rp-card-shift">{{ card.shift_name }}</div>
               <div class="rp-card-meta">
@@ -2047,11 +2005,11 @@ function injectRPVueTemplate() {
               </div>
               <div class="rp-card-windows">
                 <div class="rp-window rp-window-out">
-                  <span class="rp-window-label">SHIFT START TIME</span>
+                  <span class="rp-window-label">SHIFT START</span>
                   <span class="rp-window-time">{{ fmtISO(card.shift_start) }}</span>
                 </div>
                 <div class="rp-window rp-window-ret">
-                  <span class="rp-window-label">SHIFT END TIME</span>
+                  <span class="rp-window-label">SHIFT END</span>
                   <span class="rp-window-time">{{ fmtISO(card.shift_end) }}</span>
                 </div>
               </div>
@@ -2783,9 +2741,12 @@ function injectRPStyles() {
             box-shadow: 0 0 0 2px rgba(249,115,22,.25), 0 4px 12px rgba(249,115,22,.15) !important;
             transform: scale(1.01);
         }
-        .rp-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-        .rp-card-site   { font-size: 14px; font-weight: 600; color: var(--md-sys-color-on-surface); }
-        .rp-card-type   { font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; }
+        .rp-card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+        .rp-card-site   { font-size: 14px; font-weight: 600; color: var(--md-sys-color-on-surface); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .rp-card-type   { font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; }
+        .rp-card-dir    { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; }
+        .rp-dir-out     { background: #e3f2fd; color: #1565c0; }
+        .rp-dir-ret     { background: #fce4ec; color: #c62828; }
         .rp-tag-osm     { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
         .rp-tag-olm     { background: var(--rp-color-trip-container); color: var(--rp-color-trip-chain); }
         .rp-card-shift  { font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-bottom: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -3151,6 +3112,8 @@ function injectRPStyles() {
         #rp-shell.rp-dark .rp-card-meta { color: var(--md-sys-color-outline); }
         #rp-shell.rp-dark .rp-tag-olm { background: #1a3a5c; color: #93c5fd; }
         #rp-shell.rp-dark .rp-tag-osm { background: #4a2800; color: #fdba74; }
+        #rp-shell.rp-dark .rp-dir-out { background: #1a2744; color: #64b5f6; }
+        #rp-shell.rp-dark .rp-dir-ret { background: #3e1e24; color: #ef9a9a; }
         #rp-shell.rp-dark .rp-window-out { background: #1a3a5c; }
         #rp-shell.rp-dark .rp-window-ret { background: #4a2800; }
         #rp-shell.rp-dark .rp-window-label { color: var(--md-sys-color-outline); }

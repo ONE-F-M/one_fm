@@ -432,6 +432,33 @@ def get_route_planner_data():
             else:
                 card["return_employees"] = []
 
+        # ── Split each card into OUTBOUND + RETURN direction-specific cards ──
+        # This gives the dispatcher two separate draggable items per shift×stop
+        expanded_cards = []
+        for card in shipment_cards:
+            original_id = card["id"]
+
+            # Outbound card — employees going TO the site
+            out_card = {**card}
+            out_card["id"] = f"{original_id}_OUT"
+            out_card["direction"] = "OUTBOUND"
+            out_card["shift_direction_label"] = "\u2192 Outbound (To Site)"
+            out_card["pair_id"] = original_id  # links OUT ↔ RET
+            expanded_cards.append(out_card)
+
+            # Return card — employees coming BACK from the site
+            ret_employees = card.get("return_employees", [])
+            ret_card = {**card}
+            ret_card["id"] = f"{original_id}_RET"
+            ret_card["direction"] = "RETURN"
+            ret_card["shift_direction_label"] = "\u2190 Return (From Site)"
+            ret_card["pair_id"] = original_id  # links OUT ↔ RET
+            ret_card["headcount"] = len(ret_employees) if ret_employees else card["headcount"]
+            ret_card["employees"] = ret_employees if ret_employees else card["employees"]
+            expanded_cards.append(ret_card)
+
+        shipment_cards = expanded_cards
+
         return {
             "status":         "ok",
             "date":           frappe.utils.today(),
