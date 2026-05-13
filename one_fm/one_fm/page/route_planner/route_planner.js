@@ -543,10 +543,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 const peakLoad = this.peakLoadDuringCardWindows(card, vehicle.id);
 
                 if (peakLoad + card.headcount > vehicle.seats) {
-                    frappe.show_alert({
-                        message: `Not enough seats — ${vehicle.seats - peakLoad} available on ${vehicle.label} during peak`,
-                        indicator: 'red'
-                    });
+                    const shell = document.getElementById('rp-shell');
+                    if (shell) {
+                        shell.style.transition = 'background-color 0.2s';
+                        shell.style.backgroundColor = '#ffebee';
+                        setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
+                    }
+                    frappe.throw(`Capacity Exceeded: Cannot assign ${card.headcount} employees to a ${vehicle.seats}-seater vehicle.`);
                     return;
                 }
 
@@ -733,10 +736,13 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (vehicle) {
                     const currentLoad = this.peakLoadDuringCardWindows(newCard, vehicleId);
                     if (currentLoad + newCard.headcount > vehicle.seats) {
-                        frappe.show_alert({
-                            message: `Cannot add stop — ${vehicle.label} would exceed capacity (${currentLoad + newCard.headcount}/${vehicle.seats} seats)`,
-                            indicator: 'red'
-                        }, 5);
+                        const shell = document.getElementById('rp-shell');
+                        if (shell) {
+                            shell.style.transition = 'background-color 0.2s';
+                            shell.style.backgroundColor = '#ffebee';
+                            setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
+                        }
+                        frappe.throw(`Capacity Exceeded: Cannot assign ${newCard.headcount} employees to a ${vehicle.seats}-seater vehicle.`);
                         return;
                     }
                 }
@@ -837,6 +843,28 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             // ── Time-aware peak load helper ─────────────────────────────────
+            _getLogicalTrips(vehicleId) {
+                const vi = this.swimItems.filter(i => i.vehicleId === vehicleId);
+                const tripsMap = {};
+                let soloIdx = 0;
+                
+                vi.forEach(item => {
+                    const key = item.tripId || `_solo_${soloIdx++}`;
+                    if (!tripsMap[key]) {
+                        tripsMap[key] = {
+                            start: new Date(item.start).getTime(),
+                            end: new Date(item.end).getTime(),
+                            headcount: item.headcount || 0
+                        };
+                    } else {
+                        tripsMap[key].start = Math.min(tripsMap[key].start, new Date(item.start).getTime());
+                        tripsMap[key].end = Math.max(tripsMap[key].end, new Date(item.end).getTime());
+                        tripsMap[key].headcount += (item.headcount || 0);
+                    }
+                });
+                return Object.values(tripsMap);
+            },
+
             // Returns the maximum simultaneous headcount on a vehicle during
             // the new card's outbound or return windows.
             peakLoadDuringCardWindows(card, vehicleId) {
@@ -846,16 +874,14 @@ function mountRoutePlannerApp(wrapper, data) {
                 const retStart = new Date(card.return_window_start).getTime();
                 const retEnd = retStart + DEF;
 
-                const vItems = this.swimItems.filter(i => i.vehicleId === vehicleId);
+                const logicalTrips = this._getLogicalTrips(vehicleId);
 
                 const loadDuring = (wS, wE) => {
-                    return vItems
-                        .filter(i => {
-                            const iS = new Date(i.start).getTime();
-                            const iE = new Date(i.end).getTime();
-                            return iS < wE && iE > wS;  // overlaps
+                    return logicalTrips
+                        .filter(t => {
+                            return t.start < wE && t.end > wS;  // overlaps
                         })
-                        .reduce((sum, i) => sum + (i.headcount || 0), 0);
+                        .reduce((sum, t) => sum + t.headcount, 0);
                 };
 
                 return Math.max(loadDuring(outStart, outEnd), loadDuring(retStart, retEnd));
@@ -994,16 +1020,15 @@ function mountRoutePlannerApp(wrapper, data) {
 
                     // Overcapacity detection: check headcount at each item's time window
                     if (v.seats && vi.length > 0) {
+                        const logicalTrips = this._getLogicalTrips(v.id);
                         vi.forEach(item => {
                             const iS = new Date(item.start).getTime();
                             const iE = new Date(item.end).getTime();
-                            const load = vi
-                                .filter(o => {
-                                    const oS = new Date(o.start).getTime();
-                                    const oE = new Date(o.end).getTime();
-                                    return oS < iE && oE > iS;
+                            const load = logicalTrips
+                                .filter(t => {
+                                    return t.start < iE && t.end > iS;
                                 })
-                                .reduce((sum, o) => sum + (o.headcount || 0), 0);
+                                .reduce((sum, t) => sum + t.headcount, 0);
                             if (load > v.seats) {
                                 item.overcapacity = true;
                             }
@@ -1090,10 +1115,13 @@ function mountRoutePlannerApp(wrapper, data) {
                                     item.vehicleId = origVid;
                                     item.start = new Date(origStart);
                                     item.end = new Date(origEnd);
-                                    frappe.show_alert({
-                                        message: `Cannot move — ${targetVehicle.label} has only ${targetVehicle.seats} seats (peak load: ${peakLoad})`,
-                                        indicator: 'red'
-                                    }, 4);
+                                    const shell = document.getElementById('rp-shell');
+                                    if (shell) {
+                                        shell.style.transition = 'background-color 0.2s';
+                                        shell.style.backgroundColor = '#ffebee';
+                                        setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
+                                    }
+                                    frappe.throw(`Capacity Exceeded: Cannot assign ${item.headcount} employees to a ${targetVehicle.seats}-seater vehicle.`);
                                 } else {
                                     frappe.show_alert({
                                         message: `Moved to ${targetVehicle.label}`,
@@ -1231,20 +1259,21 @@ function mountRoutePlannerApp(wrapper, data) {
                         // Seat capacity check on target vehicle during this block's time
                         const blockStart = new Date(item.start).getTime();
                         const blockEnd = new Date(item.end).getTime();
-                        const existingLoad = self.swimItems
-                            .filter(i => i.vehicleId === targetVehicle.id)
-                            .filter(i => {
-                                const iS = new Date(i.start).getTime();
-                                const iE = new Date(i.end).getTime();
-                                return iS < blockEnd && iE > blockStart;
+                        const logicalTrips = self._getLogicalTrips(targetVehicle.id);
+                        const existingLoad = logicalTrips
+                            .filter(t => {
+                                return t.start < blockEnd && t.end > blockStart;
                             })
-                            .reduce((sum, i) => sum + (i.headcount || 0), 0);
+                            .reduce((sum, t) => sum + t.headcount, 0);
 
                         if (existingLoad + item.headcount > targetVehicle.seats) {
-                            frappe.show_alert({
-                                message: `Not enough seats — only ${targetVehicle.seats - existingLoad} available on ${targetVehicle.label} at that time`,
-                                indicator: 'red'
-                            });
+                            const shell = document.getElementById('rp-shell');
+                            if (shell) {
+                                shell.style.transition = 'background-color 0.2s';
+                                shell.style.backgroundColor = '#ffebee';
+                                setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
+                            }
+                            frappe.throw(`Capacity Exceeded: Cannot assign ${item.headcount} employees to a ${targetVehicle.seats}-seater vehicle.`);
                             return;
                         }
 
@@ -1491,16 +1520,15 @@ function mountRoutePlannerApp(wrapper, data) {
                 this.planData.vehicles.forEach(v => {
                     const vi = this.swimItems.filter(i => i.vehicleId === v.id);
                     if (vi.some(i => i.overcapacity)) {
+                        const logicalTrips = this._getLogicalTrips(v.id);
                         const peakLoad = Math.max(...vi.map(item => {
                             const iS = new Date(item.start).getTime();
                             const iE = new Date(item.end).getTime();
-                            return vi
-                                .filter(o => {
-                                    const oS = new Date(o.start).getTime();
-                                    const oE = new Date(o.end).getTime();
-                                    return oS < iE && oE > iS;
+                            return logicalTrips
+                                .filter(t => {
+                                    return t.start < iE && t.end > iS;
                                 })
-                                .reduce((sum, o) => sum + (o.headcount || 0), 0);
+                                .reduce((sum, t) => sum + t.headcount, 0);
                         }));
                         overcapVehicles.push({ label: v.label, seats: v.seats, peak: peakLoad });
                     }
