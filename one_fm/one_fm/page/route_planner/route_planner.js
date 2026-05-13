@@ -285,6 +285,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             stopLabels,
                             stops,
                             conflict: stops.some(s => s.conflict),
+                            overcapacity: stops.some(s => s.overcapacity),
                             primaryItem: firstItem,
                             // Time span for layout calculation
                             _layoutStart: new Date(firstItem.start).getTime(),
@@ -1121,7 +1122,12 @@ function mountRoutePlannerApp(wrapper, data) {
                                         shell.style.backgroundColor = '#ffebee';
                                         setTimeout(() => { shell.style.backgroundColor = ''; }, 400);
                                     }
-                                    frappe.throw(`Capacity Exceeded: Cannot assign ${item.headcount} employees to a ${targetVehicle.seats}-seater vehicle.`);
+                                    // Use msgprint (not throw) so checkConflicts() below still runs to clear stale flags
+                                    frappe.msgprint({
+                                        title: __('Capacity Exceeded'),
+                                        indicator: 'red',
+                                        message: __(`Capacity Exceeded: Cannot assign ${item.headcount} employees to a ${targetVehicle.seats}-seater vehicle.`)
+                                    });
                                 } else {
                                     frappe.show_alert({
                                         message: `Moved to ${targetVehicle.label}`,
@@ -2218,7 +2224,7 @@ function injectRPVueTemplate() {
                     <!-- Block body -->
                     <rect :x="mbx(entry)" :y="mby(entry)"
                           :width="mbw(entry)" :height="mbh(entry)"
-                          :fill="entry.conflict ? '#c62828' : (entry.direction === 'OUTBOUND' ? '#1565c0' : '#e65100')"
+                          :fill="entry.conflict ? '#c62828' : entry.overcapacity ? '#7b1fa2' : (entry.direction === 'OUTBOUND' ? '#1565c0' : '#e65100')"
                           :stroke="selectedItem && entry.stops.some(s => s.id === selectedItem.id) ? '#f97316' : 'transparent'"
                           stroke-width="2.5" rx="5"/>
 
