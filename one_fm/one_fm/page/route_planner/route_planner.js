@@ -85,6 +85,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 currentPlan: null,        // { name, title, status, effective_from, effective_until }
                 planList: [],           // all available plans
                 planLoading: false,
+
+                // ── Theme ──
+                isDark: localStorage.getItem('route-planner-theme') === 'dark',
             };
         },
 
@@ -1698,6 +1701,21 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (el && el.clientWidth > 0) this.svgWidth = el.clientWidth;
             },
 
+            // ─ Theme toggle ─────────────────────────────────────────────────
+
+            toggleTheme() {
+                this.isDark = !this.isDark;
+                localStorage.setItem('route-planner-theme', this.isDark ? 'dark' : 'light');
+                this.applyTheme();
+            },
+
+            applyTheme() {
+                const shell = document.getElementById('rp-shell');
+                if (shell) {
+                    shell.classList.toggle('rp-dark', this.isDark);
+                }
+            },
+
             // ─ Manifest generation (ported verbatim from vis version) ───────
 
             async openManifest() {
@@ -1870,6 +1888,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 if (this.$refs.axisWrap) ro.observe(this.$refs.axisWrap);
                 this._ro = ro;
 
+                // Apply saved theme
+                this.applyTheme();
+
                 // Load saved assignments from backend
                 this.loadSavedAssignments();
             });
@@ -1945,6 +1966,9 @@ function injectRPVueTemplate() {
       </button>
       <button class="rp-btn rp-btn-default rp-btn-manifest" :disabled="!canSave || !currentPlan" @click="openManifest">
         <span class="rp-icon">assignment</span> Manifest
+      </button>
+      <button class="rp-btn rp-btn-icon-only" @click="toggleTheme" :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
+        <span class="rp-icon">{{ isDark ? 'light_mode' : 'dark_mode' }}</span>
       </button>
     </div>
   </div>
@@ -3005,6 +3029,188 @@ function injectRPStyles() {
             .rp-detail-badges { gap: 4px; }
             .rp-dir-badge { font-size: 9px; padding: 2px 7px; }
         }
+
+        /* ══════════════════════════════════════════════════════════════
+           DARK MODE
+           ══════════════════════════════════════════════════════════════ */
+        #rp-shell.rp-dark {
+            /* M3 Dark Color Tokens */
+            --md-sys-color-primary: #ffb68e;
+            --md-sys-color-on-primary: #552000;
+            --md-sys-color-primary-container: #783100;
+            --md-sys-color-on-primary-container: #ffdbca;
+            --md-sys-color-secondary: #e7beaf;
+            --md-sys-color-on-secondary: #442a1f;
+            --md-sys-color-secondary-container: #5d4033;
+            --md-sys-color-tertiary: #ceca93;
+            --md-sys-color-error: #ffb4ab;
+            --md-sys-color-on-error: #690005;
+            --md-sys-color-error-container: #93000a;
+            --md-sys-color-surface: #1a1a1a;
+            --md-sys-color-on-surface: #e6e1e0;
+            --md-sys-color-on-surface-variant: #d0c4bf;
+            --md-sys-color-outline: #9a8e89;
+            --md-sys-color-outline-variant: #52443e;
+            --md-sys-color-surface-container: #242424;
+            --md-sys-color-surface-container-low: #1f1f1f;
+            --md-sys-color-surface-container-high: #2e2e2e;
+            --md-sys-color-surface-bright: #2a2a2a;
+            --md-sys-color-inverse-surface: #e6e1e0;
+            --md-sys-color-inverse-on-surface: #1f1f1f;
+
+            /* Dark semantic role colors */
+            --rp-color-outbound: #64b5f6;
+            --rp-color-outbound-container: #1a3a5c;
+            --rp-color-return: #ffab76;
+            --rp-color-return-container: #4a2800;
+            --rp-color-conflict: #ff8a80;
+            --rp-color-conflict-container: #4a0e0e;
+            --rp-color-trip-chain: #b39ddb;
+            --rp-color-trip-container: #2d1f4e;
+            --rp-color-success: #81c784;
+            --rp-color-success-container: #1a3a1c;
+            --rp-color-warning: #ffab76;
+            --rp-color-warning-container: #4a2800;
+            --rp-color-accent: #fb8c00;
+
+            /* Dark elevations */
+            --md-sys-elevation-1: 0 1px 3px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4);
+            --md-sys-elevation-2: 0 2px 6px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4);
+            --md-sys-elevation-3: 0 4px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4);
+        }
+
+        /* ── Dark mode: Buttons ── */
+        #rp-shell.rp-dark .rp-btn-default {
+            background-color: #383838; color: #e0e0e0;
+            border-color: #4a4a4a;
+        }
+        #rp-shell.rp-dark .rp-btn-default:hover:not(:disabled) {
+            background-color: #444; border-color: #555;
+        }
+        #rp-shell.rp-dark .rp-btn-success {
+            background-color: #2e7d32; color: #e8f5e9;
+            border-color: #388e3c;
+        }
+        #rp-shell.rp-dark .rp-btn-warning {
+            background-color: #e65100; color: #fff3e0;
+            border-color: #ef6c00;
+        }
+        #rp-shell.rp-dark .rp-btn-icon {
+            background: #383838; color: #e0e0e0; border-color: #4a4a4a;
+        }
+        #rp-shell.rp-dark .rp-btn-icon:hover { background: #444; }
+
+        /* ── Dark mode: Pool panel ── */
+        #rp-shell.rp-dark #rp-pool-panel { background: var(--md-sys-color-surface); border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark #rp-pool-header { border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark #rp-search-input {
+            background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface);
+            border-color: var(--md-sys-color-outline-variant);
+        }
+        #rp-shell.rp-dark #rp-search-input::placeholder { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark .rp-group-header { color: var(--md-sys-color-on-surface-variant); }
+        #rp-shell.rp-dark .rp-group-header:hover { background: var(--md-sys-color-surface-container-high); }
+        #rp-shell.rp-dark .rp-group-count { background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-outline); }
+
+        /* ── Dark mode: Cards ── */
+        #rp-shell.rp-dark .rp-card {
+            background: var(--md-sys-color-surface-container); border-color: var(--md-sys-color-outline-variant);
+        }
+        #rp-shell.rp-dark .rp-card:hover { border-color: #64b5f6; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        #rp-shell.rp-dark .rp-card-site { color: var(--md-sys-color-on-surface); }
+        #rp-shell.rp-dark .rp-card-shift { color: var(--md-sys-color-on-surface-variant); }
+        #rp-shell.rp-dark .rp-card-meta { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark .rp-tag-olm { background: #1a3a5c; color: #93c5fd; }
+        #rp-shell.rp-dark .rp-tag-osm { background: #4a2800; color: #fdba74; }
+        #rp-shell.rp-dark .rp-window-out { background: #1a3a5c; }
+        #rp-shell.rp-dark .rp-window-ret { background: #4a2800; }
+        #rp-shell.rp-dark .rp-window-label { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark .rp-window-time { color: var(--md-sys-color-on-surface); }
+        #rp-shell.rp-dark .rp-emp-chip { background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface-variant); border-color: var(--md-sys-color-outline-variant); }
+
+        /* ── Dark mode: Timeline ── */
+        #rp-shell.rp-dark #rp-timeline-panel { background: var(--md-sys-color-surface); }
+        #rp-shell.rp-dark #rp-timeline-toolbar { border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark .rp-tb-hint { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark #rp-axis-row { background: var(--md-sys-color-surface-container); border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark .rp-lane-row { border-color: var(--md-sys-color-surface-container); }
+        #rp-shell.rp-dark .rp-lane-alt { background: rgba(255,255,255,0.02); }
+        #rp-shell.rp-dark .rp-lane-label { border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark .rp-gv-plate { color: var(--md-sys-color-on-surface); }
+        #rp-shell.rp-dark .rp-gv-meta { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark .rp-gv-acc { color: var(--md-sys-color-outline); }
+
+        /* ── Dark mode: Legend ── */
+        #rp-shell.rp-dark .rp-legend-out { background: #1a3a5c; color: #93c5fd; }
+        #rp-shell.rp-dark .rp-legend-ret { background: #4a2800; color: #fdba74; }
+        #rp-shell.rp-dark .rp-legend-conflict { background: #4a0e0e; color: #ff8a80; }
+        #rp-shell.rp-dark .rp-legend-overcap { background: #2d1f4e; color: #ce93d8; }
+
+        /* ── Dark mode: Detail Panel ── */
+        #rp-shell.rp-dark #rp-detail-panel { background: var(--md-sys-color-surface); border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark #rp-detail-header { border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark #rp-detail-title { color: var(--md-sys-color-on-surface); }
+        #rp-shell.rp-dark #rp-detail-close { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark #rp-detail-close:hover { background: var(--md-sys-color-surface-container-high); }
+        #rp-shell.rp-dark .rp-detail-card { background: var(--md-sys-color-surface-container); border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark .rp-detail-row { border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark .rp-detail-row-label { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark .rp-detail-row-value { color: var(--md-sys-color-on-surface); }
+        #rp-shell.rp-dark .rp-detail-row-icon { color: var(--md-sys-color-on-surface-variant); }
+        #rp-shell.rp-dark .rp-detail-time-display { color: var(--md-sys-color-on-surface); }
+        #rp-shell.rp-dark .rp-detail-time-arrow { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark .rp-detail-time-dur { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark .rp-time-pill-start { background: #1a3a5c; color: #93c5fd; }
+        #rp-shell.rp-dark .rp-time-pill-end { background: #4a2800; color: #fdba74; }
+        #rp-shell.rp-dark .rp-detail-pill-start { background: #1a3a5c; }
+        #rp-shell.rp-dark .rp-detail-pill-end { background: #4a2800; }
+        #rp-shell.rp-dark .rp-detail-pill-label { color: var(--md-sys-color-outline); }
+        #rp-shell.rp-dark .rp-detail-pill-value { color: var(--md-sys-color-on-surface); }
+        #rp-shell.rp-dark #rp-detail-footer { border-color: var(--md-sys-color-outline-variant); }
+        #rp-shell.rp-dark .rp-detail-btn-primary { background: #1565c0; color: #e3f2fd; }
+        #rp-shell.rp-dark .rp-detail-btn-primary:hover { background: #1976d2; }
+        #rp-shell.rp-dark .rp-detail-btn-danger { background: #4a0e0e; color: #ff8a80; border-color: #6d1a1a; }
+        #rp-shell.rp-dark .rp-detail-btn-danger:hover { background: #5a1212; }
+
+        /* ── Dark mode: Direction badges ── */
+        #rp-shell.rp-dark .rp-dir-out { background: #1a3a5c; color: #93c5fd; }
+        #rp-shell.rp-dark .rp-dir-ret { background: #4a2800; color: #fdba74; }
+        #rp-shell.rp-dark .rp-dir-trip { background: #2d1f4e; color: #ce93d8; }
+
+        /* ── Dark mode: Stop number badges ── */
+        #rp-shell.rp-dark .rp-stop-num-out { background: #1a3a5c; color: #93c5fd; }
+        #rp-shell.rp-dark .rp-stop-num-olm { background: #2d1f4e; color: #ce93d8; }
+
+        /* ── Dark mode: Icon-only button ── */
+        .rp-btn-icon-only {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 4px 8px; border-radius: 6px;
+            border: 1px solid var(--md-sys-color-outline-variant);
+            background: var(--md-sys-color-surface-container);
+            color: var(--md-sys-color-on-surface-variant);
+            cursor: pointer; font-size: 12px;
+            transition: background 0.15s, color 0.15s;
+        }
+        .rp-btn-icon-only:hover {
+            background: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-surface);
+        }
+        .rp-btn-icon-only .rp-icon { font-size: 20px; }
+
+        /* ── Dark mode: Plan selector ── */
+        #rp-shell.rp-dark #rp-plan-selector select.form-control {
+            background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface);
+            border-color: var(--md-sys-color-outline-variant);
+        }
+
+        /* ── Dark mode: Pool empty state ── */
+        #rp-shell.rp-dark .rp-pool-empty { color: var(--md-sys-color-outline); }
+
+        /* ── Dark mode: Scrollbar ── */
+        #rp-shell.rp-dark ::-webkit-scrollbar { width: 6px; }
+        #rp-shell.rp-dark ::-webkit-scrollbar-track { background: transparent; }
+        #rp-shell.rp-dark ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        #rp-shell.rp-dark ::-webkit-scrollbar-thumb:hover { background: #555; }
     `;
     document.head.appendChild(s);
 }
