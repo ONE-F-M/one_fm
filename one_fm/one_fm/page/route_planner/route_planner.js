@@ -2612,6 +2612,7 @@ function injectRPStyles() {
             border-bottom: 1px solid var(--md-sys-color-outline-variant);
             box-shadow: var(--md-sys-elevation-1); flex-shrink: 0;
         }
+        #rp-header-right { display: flex; align-items: center; gap: 8px; }
         #rp-title { font-size: 22px; font-weight: 500; color: var(--md-sys-color-on-surface); }
         #rp-date  { font-size: 12px; color: var(--md-sys-color-on-surface-variant); margin-top: 2px; }
 
