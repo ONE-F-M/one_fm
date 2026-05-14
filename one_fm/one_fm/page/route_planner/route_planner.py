@@ -92,19 +92,26 @@ def get_route_planner_data():
         # ── 2. Shipment cards ────────────────────────────────────────────
         nested_map = get_grouped_employees_by_accommodation()
 
-        # Batch resolve all employee names up front
+        # Batch resolve all employee names + mobile numbers up front
         all_emp_ids = set()
         for acc_data in nested_map.values():
             for emp_list in acc_data["shifts"].values():
                 all_emp_ids.update(emp_list)
 
         emp_name_map = {
-            e.name: e.employee_name
+            e.name: {"employee_name": e.employee_name, "cell_number": e.cell_number or ""}
             for e in frappe.get_all("Employee",
                 filters={"name": ["in", list(all_emp_ids)]},
-                fields=["name", "employee_name"]
+                fields=["name", "employee_name", "cell_number"]
             )
         }
+
+        def emp_to_obj(emp_id):
+            """Convert employee ID to {name, mobile} dict for frontend call action."""
+            info = emp_name_map.get(emp_id, {})
+            if isinstance(info, dict):
+                return {"name": info.get("employee_name", emp_id), "mobile": info.get("cell_number", "")}
+            return {"name": info or emp_id, "mobile": ""}
 
         # Batch-fetch all shift docs in one query (instead of per-shift frappe.get_doc)
         all_shift_names = set()
@@ -208,7 +215,7 @@ def get_route_planner_data():
                     outbound_window_start = fmt(start_utc - timedelta(minutes=PICKUP_BUFFER))
                     outbound_window_end   = fmt(start_utc)
 
-                employees_named = [emp_name_map.get(e, e) for e in employee_list]
+                employees_named = [emp_to_obj(e) for e in employee_list]
 
                 handled = False
 
@@ -242,7 +249,7 @@ def get_route_planner_data():
                             "stop_location":        loc["name"],
                             "stop_coords":          {"lat": loc["coords"][0], "lng": loc["coords"][1]},
                             "headcount":            current_h,
-                            "employees":            [emp_name_map.get(e, e) for e in loc_employees],
+                            "employees":            [emp_to_obj(e) for e in loc_employees],
                             "outbound_window_start": outbound_window_start,
                             "outbound_window_end":   outbound_window_end,
                             "return_window_start":   fmt(end_utc),
@@ -359,7 +366,7 @@ def get_route_planner_data():
                     "stop_location":        stop_location,
                     "stop_coords":          {"lat": stop_coords[0], "lng": stop_coords[1]},
                     "headcount":            group_data["headcount"],
-                    "employees":            [emp_name_map.get(e, e) for e in group_data["employees"]],
+                    "employees":            [emp_to_obj(e) for e in group_data["employees"]],
                     "outbound_window_start": fmt(start_utc - timedelta(minutes=PICKUP_BUFFER)),
                     "outbound_window_end":   fmt(start_utc),
                     "return_window_start":   fmt(end_utc),
@@ -769,14 +776,17 @@ def build_shipments_from_nested_map(nested_map: dict, config: object, global_bou
     
     all_emp_ids  = {eid for emps in all_shipment_employees.values() for eid in emps}
     emp_name_map = {
-        e.name: e.employee_name
+        e.name: {"employee_name": e.employee_name, "cell_number": e.cell_number or ""}
         for e in frappe.get_all("Employee",
             filters={"name": ["in", list(all_emp_ids)]},
-            fields=["name", "employee_name"]
+            fields=["name", "employee_name", "cell_number"]
         )
     }
     shipment_employees_named = {
-        label: [emp_name_map.get(eid, eid) for eid in eids]
+        label: [
+            {"name": emp_name_map.get(eid, {}).get("employee_name", eid), "mobile": emp_name_map.get(eid, {}).get("cell_number", "")}
+            for eid in eids
+        ]
         for label, eids in all_shipment_employees.items()
     }
 
