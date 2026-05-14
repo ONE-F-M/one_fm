@@ -1299,6 +1299,143 @@ function mountRoutePlannerApp(wrapper, data) {
                 d.show();
             },
 
+            mergeSelectedBlock() {
+                if (!this.selectedItem || this.selectedItem.tripId) return;
+                const item = this.selectedItem;
+                const card = this.selectedCard;
+
+                // Find all existing chained trips across all vehicles
+                const tripOptions = [];
+                const tripsMap = {};
+
+                this.swimItems.forEach(i => {
+                    if (i.id === item.id) return; // Exclude the block we are moving
+                    const key = i.tripId || `solo_${i.id}`;
+                    if (!tripsMap[key]) tripsMap[key] = { vehicleId: i.vehicleId, items: [], isSolo: !i.tripId };
+                    tripsMap[key].items.push(i);
+                });
+
+                Object.keys(tripsMap).forEach(tid => {
+                    const t = tripsMap[tid];
+                    t.items.sort((a, b) => new Date(a.start) - new Date(b.start));
+                    const lastItem = t.items[t.items.length - 1];
+                    const lastCard = this.planData.shipment_cards.find(c => c.id === lastItem.cardId);
+                    const vehicle = this.planData.vehicles.find(v => v.id === t.vehicleId);
+
+                    if (vehicle && lastCard && lastItem.direction === item.direction) {
+                        const prefix = t.isSolo ? 'Single stop' : 'Trip';
+                        tripOptions.push({
+                            label: `[${vehicle.label}] ${prefix} ending at ${lastCard.site_location}`,
+                            value: tid,
+                            lastItem, lastCard, vehicle
+                        });
+                    }
+                });
+
+                if (tripOptions.length === 0) {
+                    frappe.show_alert({ message: 'No existing trips available in the same direction', indicator: 'orange' });
+                    return;
+                }
+
+                const self = this;
+                const d = new frappe.ui.Dialog({
+                    title: `Merge ${card.site_location}`,
+                    fields: [
+                        {
+                            fieldtype: 'HTML',
+                            options: `<p style="margin:0 0 12px;color:#555;font-size:13px">Select an existing trip to merge this stop into. It will be appended to the end of the selected trip.</p>`
+                        },
+                        {
+                            fieldtype: 'Select', fieldname: 'target_trip',
+                            label: 'Select Target Trip', reqd: 1,
+                            options: tripOptions.map(o => o.label).join('\n')
+                        },
+                        { fieldtype: 'Section Break' },
+                        {
+                            fieldtype: 'Int', fieldname: 'transit_min',
+                            label: 'Transit Time (minutes)',
+                            default: 30, reqd: 1,
+                            description: 'Driving time from previous stop'
+                        },
+                        { fieldtype: 'Column Break' },
+                        {
+                            fieldtype: 'Int', fieldname: 'dwell_min',
+                            label: 'Dwell/Buffer Time (minutes)',
+                            default: 10,
+                            description: 'Loading/unloading time at previous stop'
+                        }
+                    ],
+                    primary_action_label: 'Merge',
+                    primary_action(vals) {
+                        const selectedOpt = tripOptions.find(o => o.label === vals.target_trip);
+                        if (!selectedOpt) return;
+
+                        let targetTripId = selectedOpt.value;
+                        const targetTripItems = tripsMap[targetTripId].items;
+                        const targetVehicleId = selectedOpt.vehicle.id;
+
+                        // Check logical trip capacity directly instead of peakLoadDuringCardWindows 
+                        // because we want to know the target trip's total capacity + new card
+                        const tripLoad = targetTripItems.reduce((sum, i) => sum + (i.headcount || 0), 0);
+                        if (tripLoad + card.headcount > selectedOpt.vehicle.seats) {
+                            frappe.msgprint({
+                                title: __('Capacity Exceeded'),
+                                indicator: 'red',
+                                message: __(`Capacity Exceeded: Cannot assign ${card.headcount} employees to a ${selectedOpt.vehicle.seats}-seater vehicle.`)
+                            });
+                            return;
+                        }
+
+                        d.hide();
+
+                        // Remove original solo block
+                        self.swimItems = self.swimItems.filter(i => i.id !== item.id);
+
+                        // If merging into a solo block, convert it to a trip first
+                        if (tripsMap[targetTripId].isSolo) {
+                            targetTripId = `TRIP_${targetVehicleId}_${Math.random().toString(36).slice(2, 8)}`;
+                            targetTripItems[0].tripId = targetTripId;
+                            targetTripItems[0].stopIndex = 1;
+                        }
+
+                        // Append logic
+                        const dwellMs = (vals.dwell_min || 0) * 60000;
+                        const transitMs = (vals.transit_min || 30) * 60000;
+                        const lastEnd = new Date(Math.max(...targetTripItems.map(i => new Date(i.end).getTime())));
+
+                        const segStart = new Date(lastEnd.getTime() + dwellMs);
+                        const segEnd = new Date(segStart.getTime() + transitMs);
+                        const totalStops = targetTripItems.length;
+
+                        self.swimItems.push({
+                            id: item.id, // keep original ID
+                            cardId: card.id, 
+                            vehicleId: targetVehicleId,
+                            direction: item.direction, 
+                            start: segStart, 
+                            end: segEnd,
+                            headcount: item.headcount, 
+                            conflict: false,
+                            tripId: targetTripId, 
+                            stopIndex: totalStops + 1,
+                            bufferMin: vals.dwell_min || 0,
+                            transitMin: vals.transit_min || 30
+                        });
+
+                        const allTrip = self.swimItems.filter(i => i.tripId === targetTripId);
+                        allTrip.forEach(i => { i.totalStops = allTrip.length; });
+
+                        self.selectedItem = null;
+                        self.checkConflicts();
+                        self.canSave = self.assignedCards.size > 0;
+                        self.persistAssignments();
+
+                        frappe.show_alert({ message: `Merged into ${selectedOpt.vehicle.label} trip`, indicator: 'green' });
+                    }
+                });
+                d.show();
+            },
+
             vehicleLabelForItem(item) {
                 const v = this.planData.vehicles.find(v => v.id === item.vehicleId);
                 return v ? v.label : item.vehicleId;
@@ -2501,6 +2638,9 @@ function injectRPVueTemplate() {
         </div>
 
         <div id="rp-detail-footer">
+          <button v-if="!selectedItem.tripId" class="rp-detail-btn rp-detail-btn-primary" @click="mergeSelectedBlock" style="background-color: var(--rp-color-trip-chain); border-color: var(--rp-color-trip-chain);">
+            <span class="rp-icon">merge_type</span> Merge into Trip
+          </button>
           <button class="rp-detail-btn rp-detail-btn-primary" @click="reassignSelectedBlock">
             <span class="rp-icon">directions_bus</span> Reassign Vehicle
           </button>
