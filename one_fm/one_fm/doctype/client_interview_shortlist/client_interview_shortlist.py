@@ -247,7 +247,7 @@ def send_pending_operations_supervisor_reminder():
 		reminder_message = _(
 			"Hello, this is an automated reminder. The Client Interview Shortlist {0} you created"
 			" on {1} is currently in Pending Operations Supervisor state."
-			" Please Take necessary action."
+			" Please take necessary action."
 		).format(doc.name, creation_date)
 
 		msg_details = [
