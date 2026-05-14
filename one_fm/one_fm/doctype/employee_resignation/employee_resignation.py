@@ -50,7 +50,7 @@ class EmployeeResignation(Document):
 	def validate_employee_permissions(self):
 		# Standard employees can only resign themselves, unless they are acting in an authorized workflow capacity
 		roles = frappe.get_roles()
-		authorized_roles = ["HR Manager", "System Manager", "Operations Manager", "Interviewer", "Offboarding Officer"]
+		authorized_roles = ["HR Manager", "System Manager"]
 		
 		if any(role in roles for role in authorized_roles):
 			return
