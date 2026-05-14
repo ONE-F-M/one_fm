@@ -2304,7 +2304,7 @@ function injectRPVueTemplate() {
                      @click.stop="onBlockClick(entry.item, $event)">
 
                     <!-- Native tooltip showing full site name + shift + time -->
-                    <title>{{ bcard(entry.item).site_location || 'Unknown' }} — {{ bcard(entry.item).shift_name || '' }}\n{{ fmtTime(entry.item.start) }}–{{ fmtTime(entry.item.end) }} · {{ entry.item.headcount }} pax</title>
+                    <title>{{ bcard(entry.item).site_location || 'Unknown' }} — {{ bcard(entry.item).shift_name || '' }} | {{ fmtTime(entry.item.start) }}–{{ fmtTime(entry.item.end) }} · {{ entry.item.headcount }} pax</title>
 
                     <!-- Clip path for text overflow -->
                     <defs>
@@ -2368,7 +2368,7 @@ function injectRPVueTemplate() {
                      @click.stop="onBlockClick(entry.primaryItem, $event)">
 
                     <!-- Native tooltip showing all stops + time -->
-                    <title>{{ entry.stopLabels.join(' → ') }}\n{{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax</title>
+                    <title>{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax</title>
 
                     <!-- Clip path scoped to block bounds -->
                     <defs>
