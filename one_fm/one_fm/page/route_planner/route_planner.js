@@ -1335,21 +1335,56 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 if (sourceIndex >= tripStops.length || targetIndex >= tripStops.length) return;
 
-                // Perform the reorder: remove source, insert at target
+                // Capture durations and inter-stop gaps BEFORE reorder
+                const durations = tripStops.map(s =>
+                    new Date(s.end).getTime() - new Date(s.start).getTime()
+                );
+                const gaps = []; // gaps[i] = gap AFTER stop i (before stop i+1)
+                for (let i = 0; i < tripStops.length - 1; i++) {
+                    const gapMs = new Date(tripStops[i + 1].start).getTime()
+                               - new Date(tripStops[i].end).getTime();
+                    gaps.push(Math.max(0, gapMs));
+                }
+
+                // Fix #2: adjust target index for downward drags.
+                // After splice(sourceIndex, 1), indices above sourceIndex shift down by 1.
+                let insertAt = targetIndex;
+                if (sourceIndex < targetIndex) {
+                    insertAt = targetIndex - 1;
+                }
+
+                // Perform the reorder: remove source, insert at adjusted target
                 const [moved] = tripStops.splice(sourceIndex, 1);
-                tripStops.splice(targetIndex, 0, moved);
+                const movedDuration = durations.splice(sourceIndex, 1)[0];
+                // Remove the gap that was AFTER the source stop (or before it if at start)
+                const removedGapIdx = Math.min(sourceIndex, gaps.length - 1);
+                const removedGap = gaps.length > 0 ? gaps.splice(removedGapIdx, 1)[0] : 0;
 
-                // Capture the original first-stop start time and each stop's duration
-                const baseStart = new Date(Math.min(...tripStops.map(s => new Date(s.start).getTime())));
-                const durations = tripStops.map(s => new Date(s.end).getTime() - new Date(s.start).getTime());
+                tripStops.splice(insertAt, 0, moved);
+                durations.splice(insertAt, 0, movedDuration);
+                // Re-insert the gap before the moved stop's new position
+                if (gaps.length > 0 && insertAt < gaps.length) {
+                    gaps.splice(insertAt, 0, removedGap);
+                } else {
+                    gaps.push(removedGap);
+                }
 
-                // Reassign stopIndex + recalculate sequential times
+                // Rebuild times: preserve durations + inter-stop gaps
+                const baseStart = new Date(Math.min(
+                    ...this.swimItems
+                        .filter(i => i.tripId === tripId)
+                        .map(s => new Date(s.start).getTime())
+                ));
                 let cursor = baseStart.getTime();
                 tripStops.forEach((stop, idx) => {
                     stop.stopIndex = idx + 1;
                     stop.start = new Date(cursor);
                     stop.end = new Date(cursor + durations[idx]);
-                    cursor = cursor + durations[idx]; // next stop starts after this one ends
+                    cursor = cursor + durations[idx];
+                    // Add inter-stop gap (dwell/buffer) if not the last stop
+                    if (idx < gaps.length) {
+                        cursor += gaps[idx];
+                    }
                 });
 
                 // Update totalStops on all trip items
