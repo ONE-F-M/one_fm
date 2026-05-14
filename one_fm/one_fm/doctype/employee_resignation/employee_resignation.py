@@ -9,6 +9,7 @@ from frappe.model.document import Document
 class EmployeeResignation(Document):
 	def validate(self):
 		self.set_supervisor()
+		self.validate_employee_permissions()
 		self.validate_employees()
 		self.validate_resignation_letters()
 
@@ -45,6 +46,20 @@ class EmployeeResignation(Document):
 		if self.resignation_initiation_date and self.relieving_date:
 			if self.relieving_date < self.resignation_initiation_date:
 				frappe.throw(_("Relieving Date cannot be before Resignation Initiation Date."))
+
+	def validate_employee_permissions(self):
+		# Standard employees can only resign themselves
+		roles = frappe.get_roles()
+		if "HR Manager" in roles or "System Manager" in roles or "Operations Manager" in roles or "Interviewer" in roles:
+			return
+		
+		linked_employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user})
+		if not linked_employee:
+			frappe.throw(_("Your user account is not linked to an Employee profile. You cannot initiate resignations."))
+			
+		for row in self.get("employees", []):
+			if row.employee and row.employee != linked_employee:
+				frappe.throw(_("You can only submit a resignation for yourself."), frappe.PermissionError)
 
 	def validate_employees(self):
 		# Ensure all employees belong to the same project and designation
