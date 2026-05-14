@@ -1054,21 +1054,26 @@
         /** Build an employee chip with call icon for manifest display. */
         function empChipHtml(e, chipStyle) {
             const name = (typeof e === 'object' && e !== null) ? (e.name || '—') : (e || '—');
-            const mobile = (typeof e === 'object' && e !== null) ? (e.mobile || '') : '';
+            const rawMobile = (typeof e === 'object' && e !== null) ? (e.mobile || '') : '';
+            // Normalize: strip everything except digits, +, -, (, ), space for tel: URI
+            const mobile = rawMobile.replace(/[^\d+\-() ]/g, '');
             const styleAttr = chipStyle ? ` style="${chipStyle}"` : '';
-            const safeName = name.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;');
+            // HTML-escape helper for safe attribute interpolation
+            const esc = s => s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const safeName = esc(name);
+            const safeMobile = esc(mobile);
             let icon;
             if (mobile) {
                 const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry/i.test(navigator.userAgent);
                 if (isMobile) {
-                    icon = `<a href="tel:${mobile}" class="emp-call-btn" title="Call ${mobile}" onclick="event.stopPropagation()"><span class="material-symbols-outlined" style="font-size:14px">call</span></a>`;
+                    icon = `<a href="tel:${safeMobile}" class="emp-call-btn" title="Call ${safeMobile}" onclick="event.stopPropagation()"><span class="material-symbols-outlined" style="font-size:14px">call</span></a>`;
                 } else {
-                    icon = `<span class="emp-call-btn" title="Call ${mobile}" onclick="copyNumber(event,&#39;${mobile}&#39;)"><span class="material-symbols-outlined" style="font-size:14px">call</span></span>`;
+                    icon = `<span class="emp-call-btn" title="Call ${safeMobile}" onclick="copyNumber(event,&#39;${safeMobile}&#39;)"><span class="material-symbols-outlined" style="font-size:14px">call</span></span>`;
                 }
             } else {
                 icon = `<span class="emp-call-btn emp-call-disabled" title="No mobile number" onclick="event.stopPropagation();showNoNumber(&#39;${safeName}&#39;)"><span class="material-symbols-outlined" style="font-size:14px">call</span></span>`;
             }
-            return `<span class="emp-chip"${styleAttr}>${name}${icon}</span>`;
+            return `<span class="emp-chip"${styleAttr}>${safeName}${icon}</span>`;
         }
 
         function fmtDuration(secStr) {

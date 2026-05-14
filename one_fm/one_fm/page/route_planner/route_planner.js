@@ -364,11 +364,12 @@ function mountRoutePlannerApp(wrapper, data) {
                 // the underlying employee/shift data has changed since the plan was saved.
                 const item = this.selectedItem;
                 if (item._site || item._shift || item._accommodation || item._stopLocation) {
-                    // Fuzzy-match: find a current card with same accommodation + stop + direction
+                    // Fuzzy-match: find a current card with same accommodation + stop + direction + shift
                     const fuzzy = this.planData.shipment_cards.find(c =>
                         c.accommodation === item._accommodation &&
                         c.stop_location === item._stopLocation &&
-                        c.direction === (item.direction || 'OUTBOUND')
+                        c.direction === (item.direction || 'OUTBOUND') &&
+                        (!item._shift || c.shift_name === item._shift)
                     );
                     return {
                         id: item.cardId,
@@ -404,7 +405,8 @@ function mountRoutePlannerApp(wrapper, data) {
                             const fuzzy = self.planData.shipment_cards.find(c =>
                                 c.accommodation === item._accommodation &&
                                 c.stop_location === item._stopLocation &&
-                                c.direction === (item.direction || 'OUTBOUND')
+                                c.direction === (item.direction || 'OUTBOUND') &&
+                                (!item._shift || c.shift_name === item._shift)
                             );
                             card = {
                                 id: item.cardId,
@@ -2168,7 +2170,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         card = this.planData.shipment_cards.find(c =>
                             c.accommodation === item._accommodation &&
                             c.stop_location === item._stopLocation &&
-                            c.direction === (item.direction || 'OUTBOUND')
+                            c.direction === (item.direction || 'OUTBOUND') &&
+                            (!item._shift || c.shift_name === item._shift)
                         );
                     }
                     if (!card) return;
