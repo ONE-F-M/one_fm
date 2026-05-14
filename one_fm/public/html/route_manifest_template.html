@@ -931,6 +931,26 @@
             border: 1px solid var(--border);
             border-radius: 3px;
             padding: 2px 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .emp-call-btn {
+            color: var(--green);
+            cursor: pointer;
+            text-decoration: none;
+            vertical-align: middle;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+            transition: color 0.15s;
+        }
+        .emp-call-btn:hover { color: #16a34a; }
+        .emp-call-disabled {
+            color: var(--text-dim) !important;
+            opacity: 0.35;
+            cursor: default;
         }
 
         /* ── TRIP GROUP ── */
@@ -1003,6 +1023,57 @@
             if (!isoStr) return "—";
             const d = new Date(isoStr);
             return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kuwait" });
+        }
+
+        /** Show a toast notification (standalone — no Frappe dependency). */
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 18px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity 0.3s;font-family:var(--font-body)';
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => toast.style.opacity = '1');
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2500);
+        }
+
+        /** Warning toast when employee has no mobile number. */
+        function showNoNumber(name) {
+            showToast('No mobile number on file for ' + name);
+        }
+
+        /** Desktop: copy number to clipboard + show toast. */
+        function copyNumber(event, mobile) {
+            event.preventDefault();
+            event.stopPropagation();
+            navigator.clipboard.writeText(mobile).then(() => {
+                showToast('Number Copied: ' + mobile);
+            }).catch(() => {
+                showToast(mobile);
+            });
+        }
+
+        /** Build an employee chip with call icon for manifest display. */
+        function empChipHtml(e, chipStyle) {
+            const name = (typeof e === 'object' && e !== null) ? (e.name || '—') : (e || '—');
+            const rawMobile = (typeof e === 'object' && e !== null) ? (e.mobile || '') : '';
+            // Normalize: strip everything except digits, +, -, (, ), space for tel: URI
+            const mobile = rawMobile.replace(/[^\d+\-() ]/g, '');
+            const styleAttr = chipStyle ? ` style="${chipStyle}"` : '';
+            // HTML-escape helper for safe attribute interpolation
+            const esc = s => s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const safeName = esc(name);
+            const safeMobile = esc(mobile);
+            let icon;
+            if (mobile) {
+                const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry/i.test(navigator.userAgent);
+                if (isMobile) {
+                    icon = `<a href="tel:${safeMobile}" class="emp-call-btn" title="Call ${safeMobile}" onclick="event.stopPropagation()"><span class="material-symbols-outlined" style="font-size:14px">call</span></a>`;
+                } else {
+                    icon = `<span class="emp-call-btn" title="Call ${safeMobile}" onclick="copyNumber(event,&#39;${safeMobile}&#39;)"><span class="material-symbols-outlined" style="font-size:14px">call</span></span>`;
+                }
+            } else {
+                icon = `<span class="emp-call-btn emp-call-disabled" title="No mobile number" onclick="event.stopPropagation();showNoNumber(&#39;${safeName}&#39;)"><span class="material-symbols-outlined" style="font-size:14px">call</span></span>`;
+            }
+            return `<span class="emp-chip"${styleAttr}>${safeName}${icon}</span>`;
         }
 
         function fmtDuration(secStr) {
@@ -1382,10 +1453,15 @@
 
                 // Boarding employees for DEPART (all dropoff employees board at accommodation)
                 const boardingEmployees = [];
+                const boardingNames = new Set();
                 orderedStops.forEach(item => {
                     if (item.stop.type === 'dropoff') {
                         (shipmentEmployees[item.stop.raw] ?? []).forEach(e => {
-                            if (!boardingEmployees.includes(e)) boardingEmployees.push(e);
+                            const eName = (typeof e === 'object' && e !== null) ? (e.name || '') : (e || '');
+                            if (eName && !boardingNames.has(eName)) {
+                                boardingNames.add(eName);
+                                boardingEmployees.push(e);
+                            }
                         });
                     }
                 });
@@ -1423,14 +1499,14 @@
                             <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
                                 <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">arrow_downward</span> Dropping off — ${emps.length} employee${emps.length !== 1 ? 's' : ''}
                             </div>
-                            <div class="stop-employees">${emps.map(n => `<span class="emp-chip" style="border-color:var(--accent);color:var(--accent)">${n}</span>`).join("")}</div>
+                            <div class="stop-employees">${emps.map(n => empChipHtml(n, 'border-color:var(--accent);color:var(--accent)')).join("")}</div>
                         </div>`;
                     } else if (emps.length > 0) {
                         empHtml = `<div style="margin-top:6px">
                             <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
                                 <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">arrow_upward</span> Picking up — ${emps.length} employee${emps.length !== 1 ? 's' : ''}
                             </div>
-                            <div class="stop-employees">${emps.map(n => `<span class="emp-chip" style="border-color:var(--green);color:var(--green)">${n}</span>`).join("")}</div>
+                            <div class="stop-employees">${emps.map(n => empChipHtml(n, 'border-color:var(--green);color:var(--green)')).join("")}</div>
                         </div>`;
                     }
 
@@ -1468,11 +1544,16 @@
 
                 // RETURN stop
                 const returningEmployees = [];
+                const returningNames = new Set();
                 orderedStops.forEach(item => {
                     if (item.stop.type === 'pickup') {
                         const stopEmps = item.stop._isVirtualReturn ? item.stop._virtualEmps : (shipmentEmployees[item.stop.raw] ?? []);
                         stopEmps.forEach(e => {
-                            if (!returningEmployees.includes(e)) returningEmployees.push(e);
+                            const eName = (typeof e === 'object' && e !== null) ? (e.name || '') : (e || '');
+                            if (eName && !returningNames.has(eName)) {
+                                returningNames.add(eName);
+                                returningEmployees.push(e);
+                            }
                         });
                     }
                 });
@@ -1562,7 +1643,7 @@
                         <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
                             <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">directions_bus</span> Onboarding — ${allEmps.length} employee${allEmps.length !== 1 ? 's' : ''}
                         </div>
-                        <div class="stop-employees">${allEmps.map(n => `<span class="emp-chip">${n}</span>`).join("")}</div>
+                        <div class="stop-employees">${allEmps.map(n => empChipHtml(n)).join("")}</div>
                     </div>`;
                 } else if (stopEmps.length > 0) {
                     if (stop.type === 'dropoff') {
@@ -1570,14 +1651,14 @@
                             <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
                                 <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">arrow_downward</span> Dropping off — ${stopEmps.length} employee${stopEmps.length !== 1 ? 's' : ''}
                             </div>
-                            <div class="stop-employees">${stopEmps.map(n => `<span class="emp-chip" style="border-color:var(--accent);color:var(--accent)">${n}</span>`).join("")}</div>
+                            <div class="stop-employees">${stopEmps.map(n => empChipHtml(n, 'border-color:var(--accent);color:var(--accent)')).join("")}</div>
                         </div>`;
                     } else if (stop.type === 'pickup') {
                         empHtml = `<div style="margin-top:6px">
                             <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
                                 <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">arrow_upward</span> Picking up — ${stopEmps.length} employee${stopEmps.length !== 1 ? 's' : ''}
                             </div>
-                            <div class="stop-employees">${stopEmps.map(n => `<span class="emp-chip" style="border-color:var(--green);color:var(--green)">${n}</span>`).join("")}</div>
+                            <div class="stop-employees">${stopEmps.map(n => empChipHtml(n, 'border-color:var(--green);color:var(--green)')).join("")}</div>
                         </div>`;
                     }
                 }

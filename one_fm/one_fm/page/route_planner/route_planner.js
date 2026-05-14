@@ -364,17 +364,27 @@ function mountRoutePlannerApp(wrapper, data) {
                 // the underlying employee/shift data has changed since the plan was saved.
                 const item = this.selectedItem;
                 if (item._site || item._shift || item._accommodation || item._stopLocation) {
+                    // Fuzzy-match: find a current card with same accommodation + stop + direction + shift
+                    const fuzzy = this.planData.shipment_cards.find(c =>
+                        c.accommodation === item._accommodation &&
+                        c.stop_location === item._stopLocation &&
+                        c.direction === (item.direction || 'OUTBOUND') &&
+                        (!item._shift || c.shift_name === item._shift)
+                    );
                     return {
                         id: item.cardId,
                         site: item._site || '',
                         site_location: item._stopLocation || item._site || 'Unknown Site',
-                        shift_name: item._shift || '—',
-                        accommodation: item._accommodation || '—',
-                        stop_location: item._stopLocation || '—',
-                        headcount: item.headcount || 0,
-                        employees: [],
+                        shift_name: fuzzy ? fuzzy.shift_name : (item._shift || '\u2014'),
+                        accommodation: item._accommodation || '\u2014',
+                        stop_location: item._stopLocation || '\u2014',
+                        headcount: fuzzy ? fuzzy.headcount : (item.headcount || 0),
+                        employees: fuzzy ? fuzzy.employees : [],
+                        return_employees: fuzzy ? (fuzzy.return_employees || []) : [],
                         direction: item.direction || 'OUTBOUND',
-                        type: 'LOADED',
+                        shift_start: fuzzy ? fuzzy.shift_start : null,
+                        shift_end: fuzzy ? fuzzy.shift_end : null,
+                        type: fuzzy ? fuzzy.type : 'LOADED',
                     };
                 }
                 return null;
@@ -391,14 +401,21 @@ function mountRoutePlannerApp(wrapper, data) {
                     .map((item, idx) => {
                         let card = self.planData.shipment_cards.find(c => c.id === item.cardId);
                         if (!card && (item._site || item._shift || item._accommodation || item._stopLocation)) {
+                            // Fuzzy-match for trip stops too
+                            const fuzzy = self.planData.shipment_cards.find(c =>
+                                c.accommodation === item._accommodation &&
+                                c.stop_location === item._stopLocation &&
+                                c.direction === (item.direction || 'OUTBOUND') &&
+                                (!item._shift || c.shift_name === item._shift)
+                            );
                             card = {
                                 id: item.cardId,
                                 site_location: item._stopLocation || item._site || 'Unknown Site',
-                                shift_name: item._shift || '—',
-                                accommodation: item._accommodation || '—',
-                                stop_location: item._stopLocation || '—',
-                                headcount: item.headcount || 0,
-                                employees: [],
+                                shift_name: fuzzy ? fuzzy.shift_name : (item._shift || '\u2014'),
+                                accommodation: item._accommodation || '\u2014',
+                                stop_location: item._stopLocation || '\u2014',
+                                headcount: fuzzy ? fuzzy.headcount : (item.headcount || 0),
+                                employees: fuzzy ? fuzzy.employees : [],
                             };
                         }
                         return { item, card: card || {}, stopNum: idx + 1 };
@@ -436,6 +453,36 @@ function mountRoutePlannerApp(wrapper, data) {
 
             durMin(item) {
                 return Math.round((new Date(item.end) - new Date(item.start)) / 60000);
+            },
+
+            /** Safe accessor: extract display name from employee (object or legacy string). */
+            empName(e) {
+                return (typeof e === 'object' && e !== null) ? (e.name || '—') : (e || '—');
+            },
+
+            /** Safe accessor: extract mobile from employee object. */
+            empMobile(e) {
+                return (typeof e === 'object' && e !== null) ? (e.mobile || '') : '';
+            },
+
+            /** Handle click on employee phone icon — tel: on mobile, clipboard on desktop. */
+            handleEmployeeCall(e) {
+                const name = this.empName(e);
+                const mobile = this.empMobile(e);
+                if (!mobile) {
+                    frappe.show_alert({ message: __('No mobile number on file for ' + name), indicator: 'orange' }, 3);
+                    return;
+                }
+                const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry/i.test(navigator.userAgent);
+                if (isMobile) {
+                    window.location.href = 'tel:' + mobile;
+                } else {
+                    navigator.clipboard.writeText(mobile).then(() => {
+                        frappe.show_alert({ message: __('Number Copied: ') + mobile, indicator: 'green' }, 3);
+                    }).catch(() => {
+                        frappe.show_alert({ message: mobile, indicator: 'blue' }, 5);
+                    });
+                }
             },
 
             // ─ Zoom / Pan ──────────────────────────────────────────────────
@@ -2117,7 +2164,16 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Fix #6: Build shipments from swimItems (per direction actually placed)
                 // instead of from assignedCards, to avoid phantom shipments
                 this.swimItems.forEach(item => {
-                    const card = this.planData.shipment_cards.find(c => c.id === item.cardId);
+                    let card = this.planData.shipment_cards.find(c => c.id === item.cardId);
+                    // Fuzzy-match for loaded plans where card IDs may have shifted
+                    if (!card && (item._accommodation || item._stopLocation)) {
+                        card = this.planData.shipment_cards.find(c =>
+                            c.accommodation === item._accommodation &&
+                            c.stop_location === item._stopLocation &&
+                            c.direction === (item.direction || 'OUTBOUND') &&
+                            (!item._shift || c.shift_name === item._shift)
+                        );
+                    }
                     if (!card) return;
 
                     const dirKey = `${item.cardId}_${item.direction}`;
@@ -2382,7 +2438,10 @@ function injectRPVueTemplate() {
                 </div>
               </div>
               <div class="rp-card-employees">
-                <span v-for="e in card.employees.slice(0,3)" :key="e" class="rp-emp-chip">{{ e }}</span>
+                <span v-for="(e, ei) in card.employees.slice(0,3)" :key="card.id + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                  {{ empName(e) }}
+                  <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
+                </span>
                 <span v-if="card.employees.length > 3" class="rp-emp-chip rp-emp-more">+{{ card.employees.length - 3 }} more</span>
               </div>
             </div>
@@ -2754,8 +2813,11 @@ function injectRPVueTemplate() {
             <div class="rp-detail-card">
               <div class="rp-detail-row-label" style="padding:0 0 8px 0"><span class="rp-icon" style="font-size:16px">group</span> All Employees ({{ selectedTripStops.reduce((sum, s) => sum + (s.item.headcount || 0), 0) }})</div>
               <div class="rp-detail-emp-list">
-                <template v-for="stop in selectedTripStops">
-                  <span v-for="e in stop.card.employees" :key="stop.item.id + '_' + e" class="rp-emp-chip">{{ e }}</span>
+                <template v-for="(stop, si) in selectedTripStops">
+                  <span v-for="(e, ei) in stop.card.employees" :key="si + '_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                    {{ empName(e) }}
+                    <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
+                  </span>
                 </template>
               </div>
             </div>
@@ -2858,7 +2920,10 @@ function injectRPVueTemplate() {
             <div class="rp-detail-card">
               <div class="rp-detail-row-label" style="padding:0 0 8px 0"><span class="rp-icon" style="font-size:16px">group</span> Employees ({{ selectedCard.headcount }})</div>
               <div class="rp-detail-emp-list">
-                <span v-for="e in selectedCard.employees" :key="e" class="rp-emp-chip">{{ e }}</span>
+                <span v-for="(e, ei) in selectedCard.employees" :key="'emp_' + ei" class="rp-emp-chip rp-emp-chip-call" @click.stop="handleEmployeeCall(e)" :title="empMobile(e) ? 'Call ' + empMobile(e) : 'No mobile number'">
+                  {{ empName(e) }}
+                  <span class="rp-icon rp-call-icon" :class="empMobile(e) ? '' : 'rp-call-disabled'">call</span>
+                </span>
               </div>
             </div>
 
@@ -3177,8 +3242,13 @@ function injectRPStyles() {
         .rp-window-label{ display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--md-sys-color-on-surface-variant); }
         .rp-window-time { display: block; font-size: 12px; font-weight: 600; color: var(--md-sys-color-on-surface); }
         .rp-card-employees { display: flex; flex-wrap: wrap; gap: 3px; }
-        .rp-emp-chip    { font-size: 11px; background: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 4px; padding: 2px 6px; color: var(--md-sys-color-on-surface-variant); }
+        .rp-emp-chip    { font-size: 11px; background: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 4px; padding: 2px 6px; color: var(--md-sys-color-on-surface-variant); display: inline-flex; align-items: center; gap: 3px; }
         .rp-emp-more    { background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-outline); }
+        .rp-emp-chip-call { cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+        .rp-emp-chip-call:hover { border-color: var(--rp-color-success); background: rgba(34,197,94,0.06); }
+        .rp-call-icon { font-size: 13px !important; color: var(--rp-color-success); transition: color 0.15s; }
+        .rp-emp-chip-call:hover .rp-call-icon { color: #16a34a; }
+        .rp-call-disabled { color: var(--md-sys-color-outline) !important; opacity: 0.35; cursor: default; }
 
         /* ── Timeline Panel ── */
         #rp-timeline-panel {
