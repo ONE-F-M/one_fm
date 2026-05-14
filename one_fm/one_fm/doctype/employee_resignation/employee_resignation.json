@@ -77,8 +77,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Employee",
-   "options": "Employee",
-   "ignore_user_permissions": 1
+   "options": "Employee"
   },
   {
    "fieldname": "full_name_in_english",
