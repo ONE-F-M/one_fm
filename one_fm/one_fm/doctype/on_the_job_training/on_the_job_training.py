@@ -11,9 +11,10 @@ class OntheJobTraining(Document):
     def validate(self):
         self.validate_workflow_transition()
         self.validate_dates()
+        self.validate_annual_leave_conflict()
         self.validate_extension_request()
         self.calculate_total_scheduled_ojt_days()
-        
+
 
     def validate_workflow_transition(self):
         if self.is_new():
@@ -77,6 +78,42 @@ class OntheJobTraining(Document):
                 frappe.throw(
                     _("The scheduled end date must be later than Start Date. Please adjust the event details.")
                 )
+
+    def validate_annual_leave_conflict(self):
+        """Block saving when OJT date range overlaps with an approved Annual Leave."""
+        if not self.employee or not self.start_date:
+            return
+
+        start_date = getdate(self.start_date)
+        end_date = getdate(self.end_date) if self.end_date else start_date
+
+        leave_applications = frappe.get_list(
+            "Leave Application",
+            filters={
+                "employee": self.employee,
+                "leave_type": "Annual Leave",
+                "status": "Approved",
+                "docstatus": 1,
+                "from_date": ["<=", end_date],
+                "to_date": [">=", start_date],
+            },
+            fields=["name", "from_date", "to_date"],
+        )
+
+        if leave_applications:
+            leave = leave_applications[0]
+            frappe.throw(
+                _("Cannot create On the Job Training for {0} from {1} to {2} "
+                  "because it conflicts with an approved Annual Leave ({3}) "
+                  "from {4} to {5}. Please adjust the training dates.").format(
+                    self.employee_name or self.employee,
+                    frappe.utils.formatdate(start_date),
+                    frappe.utils.formatdate(end_date),
+                    leave.name,
+                    frappe.utils.formatdate(leave.from_date),
+                    frappe.utils.formatdate(leave.to_date),
+                )
+            )
     
     def on_update(self):
         if self.workflow_state == "Pending Approval":

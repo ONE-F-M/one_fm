@@ -17,7 +17,6 @@
    "in_list_view": 1,
    "label": "Action Type",
    "options": "Cancelled\nManaged by OT\nManaged by SubContractor\nInternal Transfer\nResignation Withdrawal",
-   "read_only": 1,
    "reqd": 1
   },
   {

@@ -21,9 +21,15 @@
   "column_break_wtkg0",
   "mobile_brand",
   "mobile_model",
+  "is_the_mobile_specification_up_to_the_standard",
+  "is_the_employee_physically_onsite",
+  "were_proper_permissions_given_to_the_app",
+  "is_the_employee_assigned_to_the_correct_shift",
+  "did_the_employee_try_to_check_in_outside_working_hours",
   "screenshot",
   "other_reason",
   "penalty_serial_no",
+  "action",
   "employee_checkin_details_section",
   "checkin_record",
   "column_break_eekf",
@@ -46,7 +52,8 @@
   "attendance_request",
   "section_break_xzkb1",
   "comment",
-  "amended_from"
+  "amended_from",
+  "is_unscheduled"
  ],
  "fields": [
   {
@@ -95,7 +102,7 @@
    "fieldtype": "Select",
    "label": "Justification",
    "mandatory_depends_on": "eval:doc.attendance_status=='Present'",
-   "options": "\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nChecked in and out at the same time\nForgot to check in\nOther\nApproved by Administrator\nApplication is missing geolocation permissions"
+   "options": "\nMobile isn't supporting the app\nOut-of-site location\nUser not assigned to shift\nForgot to check in\nOther\nApproved by Administrator\nApplication is missing geolocation permissions"
   },
   {
    "fieldname": "attendance_status",
@@ -277,12 +284,12 @@
    "mandatory_depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\""
   },
   {
-   "depends_on": "eval:[\"User not assigned to shift\",\"Out-of-site location\",\"Forgot to check in\", \"Mobile isn't supporting the app\", \"Other\", \"Checked in and out at the same time\", \"Application is missing geolocation permissions\"].includes(doc.justification)",
+   "depends_on": "eval:[\"User not assigned to shift\",\"Out-of-site location\",\"Forgot to check in\", \"Mobile isn't supporting the app\", \"Other\", \"Application is missing geolocation permissions\"].includes(doc.justification)",
    "description": "Upload screenshot with the same issue!",
    "fieldname": "screenshot",
    "fieldtype": "Attach",
    "label": "Screenshot",
-   "mandatory_depends_on": "eval:[\"User not assigned to shift\",\"Out-of-site location\",\"Forgot to check in\", \"Mobile isn't supporting the app\", \"Other\", \"Checked in and out at the same time\", \"Application is missing geolocation permissions\"].includes(doc.justification)"
+   "mandatory_depends_on": "eval:[\"User not assigned to shift\",\"Out-of-site location\",\"Forgot to check in\", \"Mobile isn't supporting the app\", \"Other\", \"Application is missing geolocation permissions\"].includes(doc.justification)"
   },
   {
    "depends_on": "eval:doc.justification == \"Other\"",
@@ -304,17 +311,71 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:[\"Forgot to check in\",\"Checked in and out at the same time\"].includes(doc.justification)",
+   "depends_on": "eval:[\"Forgot to check in\"].includes(doc.justification)",
    "fieldname": "penalty_serial_no",
    "fieldtype": "Data",
-   "label": "Penalty Serial No",
-   "mandatory_depends_on": "eval:[\"Forgot to check in\",\"Checked in and out at the same time\"].includes(doc.justification)"
+   "label": "Penalty Serial No"
   },
   {
    "fieldname": "operations_site",
    "fieldtype": "Link",
    "label": "Operations Site",
    "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\"",
+   "fieldname": "is_the_mobile_specification_up_to_the_standard",
+   "fieldtype": "Select",
+   "label": "Is the Mobile Specification up to the Standard?",
+   "mandatory_depends_on": "eval:doc.justification == \"Mobile isn't supporting the app\"",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.justification == \"Out-of-site location\"",
+   "description": "Select Yes if the employee is physically on-site. Select No if the employee is actually at the wrong location.",
+   "fieldname": "is_the_employee_physically_onsite",
+   "fieldtype": "Select",
+   "label": "Is the Employee Physically Onsite?",
+   "mandatory_depends_on": "eval:doc.justification == \"Out-of-site location\"",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.justification == \"Application is missing geolocation permissions\"",
+   "fieldname": "were_proper_permissions_given_to_the_app",
+   "fieldtype": "Select",
+   "label": "Were Proper Permissions Given to the app?",
+   "mandatory_depends_on": "eval:doc.justification == \"Application is missing geolocation permissions\"",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.justification == \"User not assigned to shift\"",
+   "fieldname": "is_the_employee_assigned_to_the_correct_shift",
+   "fieldtype": "Select",
+   "label": "Is the employee assigned to the correct shift?",
+   "mandatory_depends_on": "eval:doc.justification == \"User not assigned to shift\"",
+   "options": "\nYes\nNo"
+  },
+  {
+   "depends_on": "eval:doc.justification == \"User not assigned to shift\" && doc.is_the_employee_assigned_to_the_correct_shift == \"Yes\"",
+   "fieldname": "did_the_employee_try_to_check_in_outside_working_hours",
+   "fieldtype": "Select",
+   "label": "Did the employee try to check in outside working hours?",
+   "mandatory_depends_on": "eval:doc.justification == \"User not assigned to shift\" && doc.is_the_employee_assigned_to_the_correct_shift == \"Yes\"",
+   "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "action",
+   "fieldtype": "Select",
+   "label": "Action",
+   "options": "\nIssue a New Mobile\nPenalize the Supervisor\nPenalize the Employee\nEmployee must correct app settings\nEmployee must check in at correct place\nRaise Ticket to Helpdesk\nNo Action Required",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_unscheduled",
+   "fieldtype": "Check",
+   "label": "Has No Shift Assignment",
    "read_only": 1
   }
  ],
@@ -326,7 +387,7 @@
    "link_fieldname": "reference_docname"
   }
  ],
- "modified": "2026-02-09 03:46:34.549905",
+ "modified": "2026-05-10 04:44:15.993432",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Check",

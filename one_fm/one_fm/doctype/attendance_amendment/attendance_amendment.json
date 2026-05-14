@@ -87,7 +87,7 @@
    "fieldname": "attendance_based_on",
    "fieldtype": "Select",
    "label": "Attendance Record Based On",
-   "options": "\nAttendance Status\nShift Hours",
+   "options": "\nAttendance Status\nShift Hours\nWorking Hours",
    "reqd": 1
   },
   {
@@ -184,7 +184,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-24 14:27:04.587189",
+ "modified": "2026-05-08 17:13:26.969250",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Attendance Amendment",

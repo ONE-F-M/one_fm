@@ -19,7 +19,7 @@ def get_active_contracts_for_customer(customer):
 
 
 @frappe.whitelist()
-def get_contract_invoice_items(contract, month, year):
+def get_contract_invoice_items(contract, month, year, attendance_based_on="Attendance Status"):
     """
     Core function for 'Get Items From -> Contracts' in Sales Invoice.
     Returns:
@@ -34,11 +34,12 @@ def get_contract_invoice_items(contract, month, year):
     start_date = getdate(f"{year}-{month_num:02d}-01")
     end_date = get_last_day(start_date)
 
-    # 1. Check for Approved Attendance Amendment
+    # 1. Check for Approved Attendance Amendment matching the selected basis
     amendments = frappe.get_all("Attendance Amendment", filters={
         "contract": contract, 
         "month": month, 
         "year": year,
+        "attendance_based_on": attendance_based_on,
         "workflow_state": "Approved"
     }, pluck="name")
 
@@ -54,6 +55,8 @@ def get_contract_invoice_items(contract, month, year):
             rows = frappe.get_all("Employee", filters={"name": ["in", emp_names]}, fields=["name", "site"])
             employee_sites = {r.name: r.site for r in rows}
 
+        is_hourly = attendance_based_on in ("Shift Hours", "Working Hours")
+
         def _accumulate(rows, use_hours=False):
             for row in rows:
                 if not row.sale_item: continue
@@ -64,44 +67,75 @@ def get_contract_invoice_items(contract, month, year):
                     total_hrs = sum(flt(row.get(f"day_{i}_hour")) for i in range(1, 32))
                     item_data[row.sale_item][site]["total_hours"] += total_hrs
 
-        _accumulate(amend_doc.get("attendance_details", []), use_hours=True)
+        _accumulate(amend_doc.get("attendance_details", []), use_hours=is_hourly)
         _accumulate(amend_doc.get("overtime_details", []), use_hours=True)
 
     else:
-        # Fallback to Frappe HR Attendance
+        # Fallback to Frappe HR Attendance — query directly using sale_item on Attendance
         c_items = [i for i in contract_doc.get("items") if i.item_type == "Service"]
         sale_items = [i.item_code for i in c_items]
         
         if sale_items:
-            ops_roles = frappe.get_all("Operations Role", filters={"sale_item": ["in", sale_items]}, fields=["name", "sale_item"])
-            role_to_sale_item = {r.name: r.sale_item for r in ops_roles}
+            attendances = frappe.get_all("Attendance", filters={
+                "attendance_date": ["between", [start_date, end_date]],
+                "project": contract_doc.project,
+                "sale_item": ["in", sale_items],
+                "status": "Present",
+                "docstatus": 1
+            }, fields=["sale_item", "site", "working_hours", "operations_shift"])
             
-            if role_to_sale_item:
-                # Find employees allocated to these roles
-                employees = frappe.get_all("Employee", filters={
-                    "custom_operations_role_allocation": ["in", list(role_to_sale_item.keys())]
-                }, fields=["name", "custom_operations_role_allocation", "site"])
+            # Build set of valid sites per sale_item from Post Schedules
+            valid_sites_per_item = {}
+            for si in sale_items:
+                roles = frappe.get_all("Operations Role",
+                    filters={"sale_item": si, "status": "Active", "project": contract_doc.project},
+                    pluck="name"
+                )
+                if not roles:
+                    continue
+                posts = frappe.get_all("Operations Post",
+                    filters={"project": contract_doc.project, "post_template": ["in", roles], "status": "Active"},
+                    pluck="name"
+                )
+                if not posts:
+                    continue
+                ps_sites = frappe.get_all("Post Schedule",
+                    filters={
+                        "post": ["in", posts],
+                        "date": ["between", [start_date, end_date]],
+                        "post_status": "Planned"
+                    },
+                    pluck="site"
+                )
+                valid_sites_per_item[si] = set(ps_sites)
+
+            # For Shift Hours, fetch duration from Operations Shift
+            shift_duration_cache = {}
+            if attendance_based_on == "Shift Hours":
+                ops_shift_names = list({a.operations_shift for a in attendances if a.operations_shift})
+                if ops_shift_names:
+                    ops_shifts = frappe.get_all("Operations Shift",
+                        filters={"name": ["in", ops_shift_names]},
+                        fields=["name", "duration"]
+                    )
+                    shift_duration_cache = {s.name: flt(s.duration) for s in ops_shifts}
+
+            for att in attendances:
+                sale_item = att.sale_item
+                site = att.site or ""
                 
-                emp_to_role = {e.name: e.custom_operations_role_allocation for e in employees}
-                emp_to_site = {e.name: e.site for e in employees}
+                # Skip attendance for sites without post schedules
+                if sale_item not in valid_sites_per_item:
+                    continue
+                if site not in valid_sites_per_item[sale_item]:
+                    continue
                 
-                if emp_to_role:
-                    attendances = frappe.get_all("Attendance", filters={
-                        "employee": ["in", list(emp_to_role.keys())],
-                        "attendance_date": ["between", [start_date, end_date]],
-                        "status": "Present",
-                        "docstatus": 1
-                    }, fields=["employee", "attendance_date", "working_hours"])
-                    
-                    for att in attendances:
-                        role = emp_to_role.get(att.employee)
-                        if role:
-                            sale_item = role_to_sale_item[role]
-                            site = emp_to_site.get(att.employee) or ""
-                            
-                            item_data.setdefault(sale_item, {}).setdefault(site, {"actual_days": 0.0, "total_hours": 0.0})
-                            item_data[sale_item][site]["actual_days"] += 1.0
-                            item_data[sale_item][site]["total_hours"] += flt(att.working_hours)
+                item_data.setdefault(sale_item, {}).setdefault(site, {"actual_days": 0.0, "total_hours": 0.0})
+                item_data[sale_item][site]["actual_days"] += 1.0
+                if attendance_based_on == "Shift Hours":
+                    item_data[sale_item][site]["total_hours"] += shift_duration_cache.get(att.operations_shift, 0)
+                elif attendance_based_on == "Working Hours":
+                    item_data[sale_item][site]["total_hours"] += flt(att.working_hours)
 
 
     # 2. Calculate quantities and build items list

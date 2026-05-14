@@ -263,7 +263,7 @@ class Contracts(Document):
             self.duration = "0 days"
 
     @frappe.whitelist()
-    def generate_sales_invoice(self, month, year):
+    def generate_sales_invoice(self, month, year, attendance_based_on="Attendance Status"):
         """
         Generate a Sales Invoice for this contract for a specific month and year.
 
@@ -318,7 +318,7 @@ class Contracts(Document):
                             frappe.throw(_(f"Post Schedule missing for {post_name}"))
 
                         quantity = get_billable_quantity_for_item(item.item_code, item.rate_type, item.count, post_schedules, self.project,
-                                                                   selected_period_start_date, selected_period_end_date)
+                                                                   selected_period_start_date, selected_period_end_date, attendance_based_on=attendance_based_on)
 
                         if item.rate_type == "Monthly" and quantity > item.count:
                             frappe.msgprint(
@@ -378,7 +378,7 @@ class Contracts(Document):
                             frappe.throw(_(f"Post Schedule missing for {post_name}"))
 
                         quantity = get_billable_quantity_for_item(item.item_code, item.rate_type, item.count, post_schedules, self.project,
-                                                                   selected_period_start_date, selected_period_end_date)
+                                                                   selected_period_start_date, selected_period_end_date, attendance_based_on=attendance_based_on)
 
                         if item.rate_type == "Monthly" and quantity > item.count:
                             frappe.msgprint(
@@ -458,7 +458,7 @@ class Contracts(Document):
                             frappe.throw(_(f"Post Schedule missing for {post_name}"))
 
                         site_quantities = get_billable_quantity_for_item(item.item_code, item.rate_type, item.count, post_schedules, self.project,
-                                                                   selected_period_start_date, selected_period_end_date, group_by_site=True)
+                                                                   selected_period_start_date, selected_period_end_date, group_by_site=True, attendance_based_on=attendance_based_on)
 
                         if item.rate_type == "Monthly" and sum(site_quantities.values()) > item.count:
                             frappe.throw(
@@ -1621,7 +1621,7 @@ def get_post_name_for_item(item_code, project):
     )
     return post_name or item_code
 
-def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, project, start_date, end_date, group_by_site=False):
+def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, project, start_date, end_date, group_by_site=False, attendance_based_on="Attendance Status"):
     """Get billable quantity for a given item code and date range.
 
     Returns the total billable quantity as a number by default. When
@@ -1650,7 +1650,7 @@ def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, 
 
     for site in site_names:
         site_quantity = 0
-        existing_attendance_amendment = frappe.db.get_all("Attendance Amendment", {"month": month, "year": year, "project": project, "site": site, "attendance_based_on": "Shift Hours" if is_hourly else "Attendance Status", "workflow_state": "Approved"}, pluck="name")
+        existing_attendance_amendment = frappe.db.get_all("Attendance Amendment", {"month": month, "year": year, "project": project, "site": site, "attendance_based_on": attendance_based_on, "workflow_state": "Approved"}, pluck="name")
         
         if existing_attendance_amendment:
             # Case: Approved Attendance Amendment exists - fetch EXCLUSIVELY from Amendment
@@ -1743,10 +1743,23 @@ def get_billable_quantity_for_item(item_code, rate_type, count, post_schedules, 
                     hourly_attendance = frappe.get_list(
                         "Attendance",
                         filters=attendance_filters,
-                        fields=["working_hours"]
+                        fields=["working_hours", "operations_shift"]
                     )
 
-                    site_quantity += sum(flt(att.get("working_hours") or 0) for att in hourly_attendance)
+                    if attendance_based_on == "Shift Hours":
+                        # Fetch duration from Operations Shift for each attendance record
+                        ops_shift_names = list({att.operations_shift for att in hourly_attendance if att.operations_shift})
+                        shift_duration_cache = {}
+                        if ops_shift_names:
+                            ops_shifts = frappe.get_all("Operations Shift",
+                                filters={"name": ["in", ops_shift_names]},
+                                fields=["name", "duration"]
+                            )
+                            shift_duration_cache = {s.name: flt(s.duration) for s in ops_shifts}
+                        site_quantity += sum(shift_duration_cache.get(att.operations_shift, 0) for att in hourly_attendance)
+                    else:
+                        # Working Hours - use actual working hours from Attendance
+                        site_quantity += sum(flt(att.get("working_hours") or 0) for att in hourly_attendance)
                 else:
                     site_quantity += frappe.db.count("Attendance", attendance_filters)
 

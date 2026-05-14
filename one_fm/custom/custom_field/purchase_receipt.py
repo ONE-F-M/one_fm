@@ -61,5 +61,13 @@ def get_purchase_receipt_custom_fields():
                 "fieldtype": "Float",
                 "read_only": 1,
             },
+            {
+                "label": "Purpose",
+                "fieldname": "custom_purpose",
+                "insert_after": "return_against",
+                "fieldtype": "Select",
+                "options": "\nPurchase\nSample Purchase",
+                "read_only": 1
+            },
         ]
     }

@@ -190,7 +190,7 @@ def get_handover_data(leave_application):
 	employee_user_id = frappe.db.get_value("Employee", employee, "user_id")
 	if employee_user_id:
 		add_to_handover_items(handover_items, "Process", {"process_owner": employee_user_id}, "Process Owner")
-		add_to_handover_items(handover_items, "Process", {"business_analyst": employee_user_id}, "Business Analyst")
+		
 
 	return {
 		"employee": leave_application_doc.employee,

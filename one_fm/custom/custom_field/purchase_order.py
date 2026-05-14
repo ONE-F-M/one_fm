@@ -286,6 +286,23 @@ def get_purchase_order_custom_fields():
                 "fieldtype": "Float",
                 "read_only": 1,
             },
+            {
+                "label": "Purpose",
+                "fieldname": "custom_purpose",
+                "insert_after": "custom_purchase_order_approver_name",
+                "fieldtype": "Select",
+                "options": "\nPurchase\nSample Stock Receipt\nSample Purchase",
+                "fetch_from": "request_for_material.purpose",
+                "read_only": 1
+            },
+            {
+                "label": "Is Courier Hand Carried?",
+                "fieldname": "custom_is_courier_hand_carried",
+                "insert_after": "custom_purpose",
+                "fieldtype": "Check",
+                "default": "0",
+                "depends_on": "eval:doc.custom_purpose == 'Sample Purchase'"
+            },
             
         ]
     }

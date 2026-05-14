@@ -26,7 +26,11 @@
   "operations_supervisor",
   "operations_supervisor_user",
   "section_break_wham",
-  "subcontractor_staff_attendance_item"
+  "subcontractor_staff_attendance_item",
+  "notes_section",
+  "remarks_from_operations_supervisor",
+  "column_break_eobt",
+  "remarks_from_projects_manager"
  ],
  "fields": [
   {
@@ -150,13 +154,32 @@
    "fieldtype": "Link",
    "label": "Operations Supervisor User",
    "options": "User"
+  },
+  {
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "remarks_from_operations_supervisor",
+   "fieldtype": "Small Text",
+   "label": "Remarks from Operations Supervisor"
+  },
+  {
+   "fieldname": "column_break_eobt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "remarks_from_projects_manager",
+   "fieldtype": "Small Text",
+   "label": "Remarks from Projects Manager"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-04-30 19:06:42.652129",
+ "modified": "2026-05-07 00:42:45.857805",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Subcontract Staff Attendance",

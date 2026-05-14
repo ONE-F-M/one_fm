@@ -2,6 +2,16 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("On the Job Training", {
+    setup(frm) {
+        frm.set_query("employee", function () {
+            return {
+                filters: {
+                    status: ["in", ["Active", "Vacation"]]
+                }
+            };
+        });
+    },
+
     refresh(frm) {
         if (frm.doc.docstatus === 1 && !frm.doc.is_extension_request) {
             frm.add_custom_button(__("OJT Extension"), function() {

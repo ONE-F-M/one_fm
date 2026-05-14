@@ -188,6 +188,14 @@ frappe.ui.form.on('Contracts', {
 								options: year_options,
 								default: current_year_str,
 								reqd: 1
+						},
+						{
+								label: __('Attendance Based On'),
+								fieldname: 'attendance_based_on',
+								fieldtype: 'Select',
+								options: ['Attendance Status', 'Shift Hours', 'Working Hours'],
+								default: 'Attendance Status',
+								reqd: 1
 						}
 					],
 					primary_action_label: __('Generate'),

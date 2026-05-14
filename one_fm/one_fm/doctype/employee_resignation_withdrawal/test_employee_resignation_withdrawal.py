@@ -111,9 +111,7 @@ class TestEmployeeResignationWithdrawal(FrappeTestCase):
 				"project": _get_or_create_project(),
 				"title": "Test PMR",
 				"workflow_state": "Completed"
-			})
-			pmr.flags.ignore_mandatory = True
-			pmr.insert(ignore_permissions=True)
+			}).insert(ignore_permissions=True)
 			
 			erw = frappe.get_doc({
 				"doctype": "Employee Resignation Withdrawal",
