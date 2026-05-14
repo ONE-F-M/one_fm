@@ -48,9 +48,15 @@ class EmployeeResignation(Document):
 				frappe.throw(_("Relieving Date cannot be before Resignation Initiation Date."))
 
 	def validate_employee_permissions(self):
-		# Standard employees can only resign themselves
+		# Standard employees can only resign themselves, unless they are acting in an authorized workflow capacity
 		roles = frappe.get_roles()
-		if "HR Manager" in roles or "System Manager" in roles or "Operations Manager" in roles or "Interviewer" in roles:
+		authorized_roles = ["HR Manager", "System Manager", "Operations Manager", "Interviewer", "Offboarding Officer"]
+		
+		if any(role in roles for role in authorized_roles):
+			return
+			
+		# Allow workflow assignees to modify the document
+		if frappe.session.user in [self.supervisor, self.operations_manager, self.offboarding_officer]:
 			return
 		
 		linked_employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user})
