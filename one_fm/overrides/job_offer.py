@@ -144,6 +144,52 @@ class JobOfferOverride(JobOffer):
         if self.workflow_state == 'Submit to Onboarding Officer' and not self.one_fm_offer_accepted_date:
             self.one_fm_offer_accepted_date = nowdate()
             self.save(ignore_permissions=True)
+            
+        # Auto-create Candidate Country Process if applicable
+        if self.workflow_state in ['Submit to Onboarding Officer', 'Accepted']:
+            self.create_candidate_country_process()
+
+    def create_candidate_country_process(self):
+        if not getattr(self, "agency_country_process", None):
+            return
+
+        # Check if already exists
+        if frappe.db.exists("Candidate Country Process", {"job_offer": self.name}):
+            return
+
+        # Create Candidate Country Process
+        ccp = frappe.new_doc("Candidate Country Process")
+        ccp.job_offer = self.name
+        ccp.job_applicant = self.job_applicant
+        ccp.agency_country_process = self.agency_country_process
+        ccp.start_date = self.one_fm_offer_accepted_date or nowdate()
+
+        # Get Agency template to pull steps
+        acp = frappe.get_doc("Agency Country Process", self.agency_country_process)
+        
+        # Copy tracking rows
+        if hasattr(acp, "agency_process_details"):
+            for row in acp.agency_process_details:
+                d = ccp.append("agency_process_details", {})
+                d.process_name = row.process_name
+                d.responsible = row.responsible
+                d.duration_in_days = row.duration_in_days
+                d.attachment_required = row.attachment_required
+                d.notes_required = row.notes_required
+                d.reference_type = row.reference_type
+                d.reference_complete_status_field = row.reference_complete_status_field
+                d.reference_complete_status_value = row.reference_complete_status_value
+                if ccp.start_date and row.duration_in_days:
+                    d.expected_date = frappe.utils.add_days(ccp.start_date, row.duration_in_days)
+
+        if ccp.start_date and getattr(acp, "total_duration", 0):
+            ccp.planned_eta = frappe.utils.add_days(ccp.start_date, acp.total_duration)
+            ccp.live_plan_eta = ccp.planned_eta
+
+        ccp.insert(ignore_permissions=True)
+        frappe.msgprint(_("Candidate Country Process Tracker ({0}) automatically generated.").format(
+            get_link_to_form("Candidate Country Process", ccp.name)
+        ), alert=True)
 
     def validate_job_offer_mandatory_fields(self):
         if self.workflow_state == 'Submit for Candidate Response':
