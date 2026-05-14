@@ -72,7 +72,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 planStart,
                 planEnd,
                 svgWidth: 800,         // updated by ResizeObserver
-                rowHeight: 100,
+                rowHeight: 120,
                 selectedItem: null,        // highlighted swim block
                 draggingCard: null,        // card being dragged from pool
                 isDraggingBlock: false,       // block being moved on lane
@@ -2303,6 +2303,17 @@ function injectRPVueTemplate() {
                      @touchstart.prevent="onBlockTouchStart($event, entry.item)"
                      @click.stop="onBlockClick(entry.item, $event)">
 
+                    <!-- Native tooltip showing full site name + shift + time -->
+                    <title>{{ bcard(entry.item).site_location || 'Unknown' }} — {{ bcard(entry.item).shift_name || '' }} | {{ fmtTime(entry.item.start) }}–{{ fmtTime(entry.item.end) }} · {{ entry.item.headcount }} pax</title>
+
+                    <!-- Clip path for text overflow -->
+                    <defs>
+                      <clipPath :id="'sclip-' + entry.item.id">
+                        <rect :x="bx(entry.item)" :y="by(entry.item)"
+                              :width="bw(entry.item)" :height="bh(entry.item)" rx="5"/>
+                      </clipPath>
+                    </defs>
+
                     <rect :x="bx(entry.item) + 1" :y="by(entry.item) + 2"
                           :width="bw(entry.item)" :height="bh(entry.item)"
                           fill="rgba(0,0,0,0.10)" rx="5"/>
@@ -2312,28 +2323,38 @@ function injectRPVueTemplate() {
                           :stroke="bsel(entry.item) ? '#f97316' : 'transparent'"
                           stroke-width="2.5" rx="5"/>
 
-                    <text v-if="bw(entry.item) >= 18"
-                          :x="bx(entry.item) + 6" :y="by(entry.item) + Math.min(15, bh(entry.item) * 0.3)"
-                          fill="rgba(255,255,255,0.9)" :font-size="Math.min(10, bh(entry.item) * 0.28)"
-                          font-weight="700" dominant-baseline="middle"
-                          style="user-select:none;pointer-events:none">
-                      {{ entry.item.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }}{{ entry.item.direction === 'OUTBOUND' ? ' To' : ' From' }}
-                    </text>
-                    <text v-if="bw(entry.item) >= 40 && bh(entry.item) >= 30"
-                          :x="bx(entry.item) + 6" :y="bcy(entry.item)"
-                          fill="white" :font-size="Math.min(11, bh(entry.item) * 0.28)" font-weight="600"
-                          dominant-baseline="middle"
-                          :textLength="Math.max(0, bw(entry.item) - 14)" lengthAdjust="spacing"
-                          style="user-select:none;pointer-events:none;overflow:hidden">
-                      {{ bcard(entry.item).site_location }}
-                    </text>
-                    <text v-if="bw(entry.item) >= 60 && bh(entry.item) >= 40"
-                          :x="bx(entry.item) + 6" :y="by(entry.item) + bh(entry.item) - Math.min(8, bh(entry.item) * 0.15)"
-                          fill="rgba(255,255,255,0.7)" :font-size="Math.min(9, bh(entry.item) * 0.22)"
-                          dominant-baseline="middle"
-                          style="user-select:none;pointer-events:none">
-                      {{ fmtTime(entry.item.start) }}-{{ fmtTime(entry.item.end) }} · <span class="rp-icon" style="font-size:14px">group</span>{{ entry.item.headcount }}
-                    </text>
+                    <!-- Clipped text group -->
+                    <g :clip-path="'url(#sclip-' + entry.item.id + ')'">
+
+                      <!-- Line 1: Direction arrow -->
+                      <text v-if="bw(entry.item) >= 18"
+                            :x="bx(entry.item) + 8" :y="by(entry.item) + 18"
+                            fill="white" font-size="12"
+                            font-weight="700" dominant-baseline="middle"
+                            style="user-select:none;pointer-events:none">
+                        {{ entry.item.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }}{{ entry.item.direction === 'OUTBOUND' ? ' To' : ' From' }}
+                      </text>
+
+                      <!-- Line 2: Site name (bold, large) -->
+                      <text v-if="bw(entry.item) >= 40 && bh(entry.item) >= 36"
+                            :x="bx(entry.item) + 8" :y="bcy(entry.item) + 2"
+                            fill="white" font-size="14" font-weight="700"
+                            dominant-baseline="middle"
+                            style="user-select:none;pointer-events:none">
+                        {{ bcard(entry.item).site_location }}
+                      </text>
+
+                      <!-- Line 3: Time range + headcount -->
+                      <text v-if="bw(entry.item) >= 60 && bh(entry.item) >= 50"
+                            :x="bx(entry.item) + 8" :y="by(entry.item) + bh(entry.item) - 12"
+                            fill="rgba(255,255,255,0.85)" font-size="12"
+                            dominant-baseline="middle"
+                            style="user-select:none;pointer-events:none">
+                        {{ fmtTime(entry.item.start) }}–{{ fmtTime(entry.item.end) }} · {{ entry.item.headcount }} pax
+                      </text>
+
+                    </g>
+
                     <rect v-if="bw(entry.item) >= 24"
                           :x="bx(entry.item) + bw(entry.item) - 5" :y="by(entry.item) + 4"
                           width="3" :height="bh(entry.item) - 8"
@@ -2345,6 +2366,9 @@ function injectRPVueTemplate() {
                   <g v-else
                      class="rp-block-grab"
                      @click.stop="onBlockClick(entry.primaryItem, $event)">
+
+                    <!-- Native tooltip showing all stops + time -->
+                    <title>{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax</title>
 
                     <!-- Clip path scoped to block bounds -->
                     <defs>
@@ -2370,8 +2394,8 @@ function injectRPVueTemplate() {
 
                       <!-- Line 1: Direction arrow -->
                       <text v-if="mbw(entry) >= 18"
-                            :x="mbx(entry) + 6" :y="mby(entry) + 14"
-                            fill="rgba(255,255,255,0.9)" font-size="10"
+                            :x="mbx(entry) + 8" :y="mby(entry) + 16"
+                            fill="white" font-size="12"
                             font-weight="700" dominant-baseline="middle"
                             style="user-select:none;pointer-events:none">
                         {{ entry.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }} {{ entry.direction === 'OUTBOUND' ? 'To' : 'From' }}
@@ -2379,34 +2403,32 @@ function injectRPVueTemplate() {
 
                       <!-- Stop names — listed vertically, capped by available height -->
                       <template v-for="(label, si) in entry.stopLabels" :key="'sl'+si">
-                        <text v-if="mbw(entry) >= 40 && (mby(entry) + 28 + si * 13) < (mby(entry) + mbh(entry) - 16)"
-                              :x="mbx(entry) + 6"
-                              :y="mby(entry) + 27 + si * 13"
-                              fill="white" font-size="10" font-weight="600"
+                        <text v-if="mbw(entry) >= 40 && (mby(entry) + 34 + si * 18) < (mby(entry) + mbh(entry) - 22)"
+                              :x="mbx(entry) + 8"
+                              :y="mby(entry) + 33 + si * 18"
+                              fill="white" font-size="13" font-weight="700"
                               dominant-baseline="middle"
-                              :textLength="Math.min(label.length * 6, Math.max(0, mbw(entry) - 14))"
-                              lengthAdjust="spacing"
                               style="user-select:none;pointer-events:none">
-                          {{ entry.stopLabels.length > 1 ? '- ' : '' }}{{ label }}
+                          {{ entry.stopLabels.length > 1 ? '• ' : '' }}{{ label }}
                         </text>
                       </template>
                       <!-- "+N more" if truncated -->
-                      <text v-if="entry.stopLabels.length > Math.floor((mbh(entry) - 44) / 13) && Math.floor((mbh(entry) - 44) / 13) > 0"
-                            :x="mbx(entry) + 6"
-                            :y="mby(entry) + 27 + Math.floor((mbh(entry) - 44) / 13) * 13"
-                            fill="rgba(255,255,255,0.6)" font-size="9" font-weight="600"
+                      <text v-if="entry.stopLabels.length > Math.floor((mbh(entry) - 56) / 18) && Math.floor((mbh(entry) - 56) / 18) > 0"
+                            :x="mbx(entry) + 8"
+                            :y="mby(entry) + 33 + Math.floor((mbh(entry) - 56) / 18) * 18"
+                            fill="rgba(255,255,255,0.75)" font-size="11" font-weight="600"
                             dominant-baseline="middle"
                             style="user-select:none;pointer-events:none">
-                        +{{ entry.stopLabels.length - Math.floor((mbh(entry) - 44) / 13) }} more
+                        +{{ entry.stopLabels.length - Math.floor((mbh(entry) - 56) / 18) }} more
                       </text>
 
                       <!-- Bottom: Time range + total headcount -->
-                      <text v-if="mbw(entry) >= 60 && mbh(entry) >= 34"
-                            :x="mbx(entry) + 6" :y="mby(entry) + mbh(entry) - 6"
-                            fill="rgba(255,255,255,0.7)" font-size="9"
+                      <text v-if="mbw(entry) >= 60 && mbh(entry) >= 40"
+                            :x="mbx(entry) + 8" :y="mby(entry) + mbh(entry) - 10"
+                            fill="rgba(255,255,255,0.85)" font-size="12"
                             dominant-baseline="middle"
                             style="user-select:none;pointer-events:none">
-                        {{ fmtTime(entry.start) }}-{{ fmtTime(entry.end) }} · <span class="rp-icon" style="font-size:14px">group</span>{{ entry.headcount }}
+                        {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax
                       </text>
 
                     </g>
