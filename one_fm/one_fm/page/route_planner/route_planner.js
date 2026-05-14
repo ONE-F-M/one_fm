@@ -80,6 +80,8 @@ function mountRoutePlannerApp(wrapper, data) {
                 searchQuery: '',
                 collapsedGroups: {},          // { [accommodation]: boolean }
                 canSave: false,
+                stopDragSourceIndex: null,  // drag-reorder: source stop index
+                stopDragOverIndex: null,    // drag-reorder: hovered stop index
 
                 // ── Plan management ──
                 currentPlan: null,        // { name, title, status, effective_from, effective_until }
@@ -264,7 +266,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     // Build merged blocks for each trip group
                     Object.keys(tripGroups).forEach(tripId => {
                         const stops = tripGroups[tripId].sort(
-                            (a, b) => new Date(a.start) - new Date(b.start)
+                            (a, b) => (a.stopIndex || 0) - (b.stopIndex || 0)
                         );
                         const firstItem = stops[0];
                         const lastItem = stops[stops.length - 1];
@@ -363,7 +365,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 const tripId = this.selectedItem.tripId;
                 return this.swimItems
                     .filter(i => i.tripId === tripId)
-                    .sort((a, b) => new Date(a.start) - new Date(b.start))
+                    .sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0))
                     .map((item, idx) => ({
                         item,
                         card: this.planData.shipment_cards.find(c => c.id === item.cardId) || {},
@@ -1299,6 +1301,83 @@ function mountRoutePlannerApp(wrapper, data) {
                 d.show();
             },
 
+            // ─ Stop drag-to-reorder handlers ──────────────────────────────
+            onStopDragStart(event, sourceIndex) {
+                this.stopDragSourceIndex = sourceIndex;
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', String(sourceIndex));
+                // Slight delay to allow the drag image to render
+                requestAnimationFrame(() => {
+                    event.target.style.opacity = '0.4';
+                });
+            },
+
+            onStopDragOver(event, targetIndex) {
+                event.dataTransfer.dropEffect = 'move';
+                this.stopDragOverIndex = targetIndex;
+            },
+
+            onStopDrop(event, targetIndex) {
+                const sourceIndex = this.stopDragSourceIndex;
+                if (sourceIndex === null || sourceIndex === targetIndex) {
+                    this.stopDragSourceIndex = null;
+                    this.stopDragOverIndex = null;
+                    return;
+                }
+
+                const tripId = this.selectedItem.tripId;
+                if (!tripId) return;
+
+                // Get trip stops sorted by current stopIndex
+                const tripStops = this.swimItems
+                    .filter(i => i.tripId === tripId)
+                    .sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0));
+
+                if (sourceIndex >= tripStops.length || targetIndex >= tripStops.length) return;
+
+                // Perform the reorder: remove source, insert at target
+                const [moved] = tripStops.splice(sourceIndex, 1);
+                tripStops.splice(targetIndex, 0, moved);
+
+                // Capture the original first-stop start time and each stop's duration
+                const baseStart = new Date(Math.min(...tripStops.map(s => new Date(s.start).getTime())));
+                const durations = tripStops.map(s => new Date(s.end).getTime() - new Date(s.start).getTime());
+
+                // Reassign stopIndex + recalculate sequential times
+                let cursor = baseStart.getTime();
+                tripStops.forEach((stop, idx) => {
+                    stop.stopIndex = idx + 1;
+                    stop.start = new Date(cursor);
+                    stop.end = new Date(cursor + durations[idx]);
+                    cursor = cursor + durations[idx]; // next stop starts after this one ends
+                });
+
+                // Update totalStops on all trip items
+                tripStops.forEach(s => { s.totalStops = tripStops.length; });
+
+                // Trigger Vue reactivity
+                this.swimItems = [...this.swimItems];
+
+                // Clear drag state
+                this.stopDragSourceIndex = null;
+                this.stopDragOverIndex = null;
+
+                // Re-check conflicts and persist
+                this.checkConflicts();
+                this.persistAssignments();
+
+                frappe.show_alert({
+                    message: `Stop reordered — now ${tripStops.map((s, i) => `${i + 1}. ${(this.planData.shipment_cards.find(c => c.id === s.cardId) || {}).site_location || 'Unknown'}`).join(' → ')}`,
+                    indicator: 'blue'
+                }, 4);
+            },
+
+            onStopDragEnd(event) {
+                event.target.style.opacity = '';
+                this.stopDragSourceIndex = null;
+                this.stopDragOverIndex = null;
+            },
+
             mergeSelectedBlock() {
                 if (!this.selectedItem || this.selectedItem.tripId) return;
                 const item = this.selectedItem;
@@ -1960,9 +2039,17 @@ function mountRoutePlannerApp(wrapper, data) {
                         seats: v.seats, location: v.accommodation
                     };
 
+                    // Sort vehicle items: trip stops by stopIndex, solo items by start time
                     const vItems = this.swimItems
                         .filter(i => i.vehicleId === v.id)
-                        .sort((a, b) => new Date(a.start) - new Date(b.start));
+                        .sort((a, b) => {
+                            // If both are in the same trip, sort by stopIndex
+                            if (a.tripId && b.tripId && a.tripId === b.tripId) {
+                                return (a.stopIndex || 0) - (b.stopIndex || 0);
+                            }
+                            // Otherwise sort by start time
+                            return new Date(a.start) - new Date(b.start);
+                        });
                     if (!vItems.length) return;
 
                     const visits = [], trans = [];
@@ -2492,11 +2579,18 @@ function injectRPVueTemplate() {
               </div>
             </div>
 
-            <!-- Each stop as a numbered card -->
-            <div v-for="stop in selectedTripStops" :key="stop.item.id"
-                 class="rp-detail-card"
+            <!-- Each stop as a numbered card (draggable for reorder) -->
+            <div v-for="(stop, si) in selectedTripStops" :key="stop.item.id"
+                 class="rp-detail-card rp-stop-draggable"
+                 draggable="true"
+                 @dragstart="onStopDragStart($event, si)"
+                 @dragover.prevent="onStopDragOver($event, si)"
+                 @dragend="onStopDragEnd($event)"
+                 @drop.prevent="onStopDrop($event, si)"
+                 :class="{ 'rp-stop-drag-over': stopDragOverIndex === si && stopDragSourceIndex !== null && stopDragSourceIndex !== si }"
                  :style="'border-left:3px solid ' + (stop.item.id === selectedItem.id ? '#f97316' : '#1565c0')">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span class="rp-icon rp-stop-drag-handle" title="Drag to reorder">drag_indicator</span>
                 <span class="rp-stop-num rp-stop-num-out">{{ stop.stopNum }}</span>
                 <div style="font-size:13px;font-weight:700;color:#111">{{ stop.card.site_location || 'Unknown' }}</div>
               </div>
@@ -2861,6 +2955,20 @@ function injectRPStyles() {
         }
         .rp-stop-num-out { background: var(--rp-color-outbound-container); color: var(--rp-color-outbound); }
         .rp-stop-num-olm { background: var(--rp-color-trip-container); color: var(--rp-color-trip-chain); }
+
+        /* Drag-to-reorder affordances */
+        .rp-stop-drag-handle {
+            cursor: grab; opacity: 0.35; font-size: 18px;
+            transition: opacity 0.15s; flex-shrink: 0;
+            color: var(--md-sys-color-on-surface-variant);
+        }
+        .rp-stop-draggable:hover .rp-stop-drag-handle { opacity: 0.7; }
+        .rp-stop-draggable:active .rp-stop-drag-handle { cursor: grabbing; }
+        .rp-stop-drag-over {
+            border-top: 2.5px solid var(--rp-color-trip-chain) !important;
+            padding-top: 10px;
+            transition: border-top 0.12s, padding-top 0.12s;
+        }
 
         /* Helper: time pill badges */
         .rp-time-pill {
