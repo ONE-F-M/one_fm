@@ -1167,6 +1167,7 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
             "direction":     item.get("direction", ""),
             "stop_index":    item.get("stopIndex", 0),
             "trip_group":    item.get("tripId", ""),
+            "trip_name":     item.get("tripName", ""),
             "headcount":     item.get("headcount", 0),
             "start_time":    item.get("start", ""),
             "end_time":      item.get("end", ""),
@@ -1217,8 +1218,14 @@ def load_assignments(plan_name: str = ""):
             "headcount": row.headcount or 0,
             "conflict":  False,
             "tripId":    row.trip_group or None,
+            "tripName":  row.trip_name or None,
             "stopIndex": row.stop_index or 0,
             "totalStops": 0,  # recalculated client-side
+            # Saved metadata for detail panel fallback
+            "_site":          row.site or "",
+            "_shift":         row.shift or "",
+            "_accommodation": row.accommodation or "",
+            "_stopLocation":  row.stop_location or "",
         })
         assigned_card_ids.add(row.card_id)
 

@@ -11,6 +11,7 @@
     "column_break_1",
     "stop_index",
     "trip_group",
+    "trip_name",
     "headcount",
     "section_break_details",
     "site",
@@ -62,6 +63,12 @@
       "fieldtype": "Data",
       "label": "Trip Group",
       "description": "Groups multi-stop blocks into one trip"
+    },
+    {
+      "fieldname": "trip_name",
+      "fieldtype": "Data",
+      "label": "Trip Name",
+      "description": "User-defined name for the trip"
     },
     {
       "fieldname": "headcount",
