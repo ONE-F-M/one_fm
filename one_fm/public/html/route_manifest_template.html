@@ -1084,6 +1084,7 @@
                     delta: delta,
                     transition: trans[i + 1],
                     tripId: v.tripId || null,
+                    tripName: v.tripName || null,
                     stopIndex: v.stopIndex || 0
                 });
             });
@@ -1253,7 +1254,9 @@
             // Group solo stops into a pseudo-trip if they exist
             const allTrips = [];
             tripIds.forEach((tid, i) => {
-                allTrips.push({ id: tid, label: `Trip ${i + 1}`, stops: tripMap[tid] });
+                const tripStops = tripMap[tid];
+                const name = tripStops.find(s => s.tripName)?.tripName || `Trip ${i + 1}`;
+                allTrips.push({ id: tid, label: name, stops: tripStops });
             });
             if (soloStops.length > 0) {
                 allTrips.push({ id: null, label: allTrips.length > 0 ? `Trip ${allTrips.length + 1} (Independent)` : 'Trip 1', stops: soloStops });

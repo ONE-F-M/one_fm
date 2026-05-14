@@ -274,12 +274,13 @@ function mountRoutePlannerApp(wrapper, data) {
 
                         const stopLabels = stops.map(s => {
                             const card = this.planData.shipment_cards.find(c => c.id === s.cardId);
-                            return card ? card.site_location : s.cardId;
+                            return card ? card.site_location : (s._stopLocation || s._site || s.cardId);
                         });
 
                         entries.push({
                             type: 'merged',
                             tripId,
+                            tripName: stops.find(s => s.tripName)?.tripName || null,
                             direction: firstItem.direction,
                             start: firstItem.start,
                             end: lastItem.end,
@@ -356,21 +357,52 @@ function mountRoutePlannerApp(wrapper, data) {
 
             selectedCard() {
                 if (!this.selectedItem) return null;
-                return this.planData.shipment_cards.find(c => c.id === this.selectedItem.cardId) || null;
+                const found = this.planData.shipment_cards.find(c => c.id === this.selectedItem.cardId);
+                if (found) return found;
+                // Fallback: build a synthetic card from saved metadata on the swim item
+                // This allows the detail panel to open for loaded plans even when
+                // the underlying employee/shift data has changed since the plan was saved.
+                const item = this.selectedItem;
+                if (item._site || item._shift || item._accommodation || item._stopLocation) {
+                    return {
+                        id: item.cardId,
+                        site: item._site || '',
+                        site_location: item._stopLocation || item._site || 'Unknown Site',
+                        shift_name: item._shift || '—',
+                        accommodation: item._accommodation || '—',
+                        stop_location: item._stopLocation || '—',
+                        headcount: item.headcount || 0,
+                        employees: [],
+                        direction: item.direction || 'OUTBOUND',
+                        type: 'LOADED',
+                    };
+                }
+                return null;
             },
 
             // All stops in the selected trip chain (empty if not a trip)
             selectedTripStops() {
                 if (!this.selectedItem || !this.selectedItem.tripId) return [];
                 const tripId = this.selectedItem.tripId;
+                const self = this;
                 return this.swimItems
                     .filter(i => i.tripId === tripId)
                     .sort((a, b) => (a.stopIndex || 0) - (b.stopIndex || 0))
-                    .map((item, idx) => ({
-                        item,
-                        card: this.planData.shipment_cards.find(c => c.id === item.cardId) || {},
-                        stopNum: idx + 1
-                    }));
+                    .map((item, idx) => {
+                        let card = self.planData.shipment_cards.find(c => c.id === item.cardId);
+                        if (!card && (item._site || item._shift || item._accommodation || item._stopLocation)) {
+                            card = {
+                                id: item.cardId,
+                                site_location: item._stopLocation || item._site || 'Unknown Site',
+                                shift_name: item._shift || '—',
+                                accommodation: item._accommodation || '—',
+                                stop_location: item._stopLocation || '—',
+                                headcount: item.headcount || 0,
+                                employees: [],
+                            };
+                        }
+                        return { item, card: card || {}, stopNum: idx + 1 };
+                    });
             },
         },
 
@@ -608,9 +640,11 @@ function mountRoutePlannerApp(wrapper, data) {
                                 return c ? c.site_location : i.cardId;
                             });
                             const timeRange = self.fmtTime(items[0].start) + '–' + self.fmtTime(items[items.length - 1].end);
+                            const tName = items.find(i => i.tripName)?.tripName;
+                            const tripLabel = tName || `Trip ${idx + 1}`;
                             return {
                                 key,
-                                label: `Trip ${idx + 1}: ${sites.join(' → ')} (${timeRange})`,
+                                label: `${tripLabel}: ${sites.join(' → ')} (${timeRange})`,
                                 items
                             };
                         });
@@ -716,6 +750,13 @@ function mountRoutePlannerApp(wrapper, data) {
                                 ${existingHtml}`
                         },
                         {
+                            fieldtype: 'Data', fieldname: 'trip_name',
+                            label: 'Trip Name', reqd: 1,
+                            description: 'Name this trip (e.g. "Morning Run 2", "Evening Pickup B")',
+                            placeholder: 'e.g. Morning Run 2'
+                        },
+                        { fieldtype: 'Section Break' },
+                        {
                             fieldtype: 'Int', fieldname: 'duration_min',
                             label: 'Trip Duration (minutes)', default: 60, reqd: 1
                         }
@@ -724,7 +765,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     primary_action(vals) {
                         d.hide();
                         const durMs = (vals.duration_min || 60) * 60000;
-                        self._doPlace(card, vehicleId, durMs, isOutbound, !isOutbound);
+                        self._doPlace(card, vehicleId, durMs, isOutbound, !isOutbound, 0, vals.trip_name || '');
                     }
                 });
                 d.show();
@@ -752,6 +793,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 // Find or create trip ID
                 let tripId = existingItems.find(i => i.tripId)?.tripId;
+                const existingTripName = existingItems.find(i => i.tripName)?.tripName || null;
                 if (!tripId) {
                     tripId = `TRIP_${vehicleId}_${Math.random().toString(36).slice(2, 8)}`;
                     existingItems
@@ -780,7 +822,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         id: `${newCard.id}_${newCard.direction === 'RETURN' ? 'RET' : 'OUT'}_${uid}`, cardId: newCard.id, vehicleId,
                         direction: newCard.direction || 'OUTBOUND', start: segStart, end: segEnd,
                         headcount: newCard.headcount, conflict: false,
-                        tripId, stopIndex: totalStops + 1
+                        tripId, tripName: existingTripName, stopIndex: totalStops + 1
                     });
 
                     const allTrip = self.swimItems.filter(i => i.tripId === tripId);
@@ -929,6 +971,13 @@ function mountRoutePlannerApp(wrapper, data) {
                                 Direction: <strong>${dirLabel}</strong></p>`
                         },
                         {
+                            fieldtype: 'Data', fieldname: 'trip_name',
+                            label: 'Trip Name',
+                            description: 'Give this trip a name (e.g. "Morning Shift A")',
+                            placeholder: 'e.g. Morning Shift A'
+                        },
+                        { fieldtype: 'Section Break' },
+                        {
                             fieldtype: 'Int', fieldname: 'buffer_min',
                             label: 'Buffer Time (minutes)',
                             description: isOutbound
@@ -953,14 +1002,15 @@ function mountRoutePlannerApp(wrapper, data) {
                         d.hide();
                         const bufferMs = (vals.buffer_min || 15) * 60000;
                         const transitMs = (vals.duration_min || 60) * 60000;
-                        self._doPlace(card, vehicleId, transitMs, isOutbound, !isOutbound, bufferMs);
+                        self._doPlace(card, vehicleId, transitMs, isOutbound, !isOutbound, bufferMs, vals.trip_name || '');
                     }
                 });
                 d.show();
             },
 
-            _doPlace(card, vehicleId, durMs, placeOutbound, placeReturn, bufferMs) {
+            _doPlace(card, vehicleId, durMs, placeOutbound, placeReturn, bufferMs, tripName) {
                 bufferMs = bufferMs || 0;
+                tripName = tripName || '';
                 const totalMs = bufferMs + durMs;
                 const outEnd = new Date(card.outbound_window_end);
                 const outStart = new Date(outEnd.getTime() - totalMs);
@@ -968,13 +1018,18 @@ function mountRoutePlannerApp(wrapper, data) {
                 const retEnd = new Date(retStart.getTime() + totalMs);
                 const uid = Math.random().toString(36).slice(2, 10);
 
+                // Auto-generate a tripId if a trip name was given
+                const autoTripId = tripName ? `TRIP_${vehicleId}_${uid}` : null;
+
                 if (placeOutbound) {
                     this.swimItems.push({
                         id: `${card.id}_OUT_${uid}`, cardId: card.id, vehicleId,
                         direction: 'OUTBOUND', start: outStart, end: outEnd,
                         headcount: card.headcount, conflict: false,
                         bufferMin: Math.round(bufferMs / 60000),
-                        transitMin: Math.round(durMs / 60000)
+                        transitMin: Math.round(durMs / 60000),
+                        tripId: autoTripId, tripName: tripName || null,
+                        stopIndex: 1
                     });
                 }
                 if (placeReturn) {
@@ -983,7 +1038,9 @@ function mountRoutePlannerApp(wrapper, data) {
                         direction: 'RETURN', start: retStart, end: retEnd,
                         headcount: card.headcount, conflict: false,
                         bufferMin: Math.round(bufferMs / 60000),
-                        transitMin: Math.round(durMs / 60000)
+                        transitMin: Math.round(durMs / 60000),
+                        tripId: autoTripId, tripName: tripName || null,
+                        stopIndex: 1
                     });
                 }
 
@@ -996,8 +1053,9 @@ function mountRoutePlannerApp(wrapper, data) {
                 const bufferNote = bufferMs > 0 ? ` + ${Math.round(bufferMs/60000)}min buffer` : '';
                 const dirLabel = (placeOutbound && placeReturn) ? 'Both trips'
                     : placeOutbound ? 'Outbound (→)' : 'Return (←)';
+                const tripNote = tripName ? ` · Trip: ${tripName}` : '';
                 frappe.show_alert({
-                    message: `${dirLabel} placed on ${this.vehicleLabelForItem({ vehicleId })} (${Math.round(durMs/60000)}min transit${bufferNote})`,
+                    message: `${dirLabel} placed on ${this.vehicleLabelForItem({ vehicleId })} (${Math.round(durMs/60000)}min transit${bufferNote})${tripNote}`,
                     indicator: 'green'
                 }, 4);
             },
@@ -1437,11 +1495,13 @@ function mountRoutePlannerApp(wrapper, data) {
                     const vehicle = this.planData.vehicles.find(v => v.id === t.vehicleId);
 
                     if (vehicle && lastCard && lastItem.direction === item.direction) {
-                        const prefix = t.isSolo ? 'Single stop' : 'Trip';
+                        const tName = t.items.find(i => i.tripName)?.tripName;
+                        const prefix = tName ? tName : (t.isSolo ? 'Single stop' : 'Trip');
                         tripOptions.push({
                             label: `[${vehicle.label}] ${prefix} ending at ${lastCard.site_location}`,
                             value: tid,
-                            lastItem, lastCard, vehicle
+                            lastItem, lastCard, vehicle,
+                            tripName: tName || null
                         });
                     }
                 });
@@ -1521,6 +1581,8 @@ function mountRoutePlannerApp(wrapper, data) {
                         const segEnd = new Date(segStart.getTime() + transitMs);
                         const totalStops = targetTripItems.length;
 
+                        const existingTripName = targetTripItems.find(i => i.tripName)?.tripName || selectedOpt.tripName || null;
+
                         self.swimItems.push({
                             id: item.id, // keep original ID
                             cardId: card.id, 
@@ -1531,6 +1593,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             headcount: item.headcount, 
                             conflict: false,
                             tripId: targetTripId, 
+                            tripName: existingTripName,
                             stopIndex: totalStops + 1,
                             bufferMin: vals.dwell_min || 0,
                             transitMin: vals.transit_min || 30
@@ -1909,7 +1972,17 @@ function mountRoutePlannerApp(wrapper, data) {
             },
 
             bcard(item) {
-                return this.planData.shipment_cards.find(c => c.id === item.cardId) || {};
+                const found = this.planData.shipment_cards.find(c => c.id === item.cardId);
+                if (found) return found;
+                // Fallback for loaded plan items
+                if (item._site || item._stopLocation) {
+                    return {
+                        site_location: item._stopLocation || item._site || '—',
+                        shift_name: item._shift || '—',
+                        stop_location: item._stopLocation || '—',
+                    };
+                }
+                return {};
             },
 
             bsel(item) {
@@ -2103,6 +2176,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             shipmentIndex: sIdx, isPickup: true, startTime: iS,
                             loadDemands: { seats: { amount: String(hc) } },
                             tripId: item.tripId || null,
+                            tripName: item.tripName || null,
                             stopIndex: item.stopIndex || 0
                         });
                         trans.push({
@@ -2113,6 +2187,7 @@ function mountRoutePlannerApp(wrapper, data) {
                             shipmentIndex: sIdx, isPickup: false, startTime: iE,
                             loadDemands: { seats: { amount: String(-hc) } },
                             tripId: item.tripId || null,
+                            tripName: item.tripName || null,
                             stopIndex: item.stopIndex || 0
                         });
 
@@ -2448,13 +2523,13 @@ function injectRPVueTemplate() {
                     <!-- Clipped text group -->
                     <g :clip-path="'url(#sclip-' + entry.item.id + ')'">
 
-                      <!-- Line 1: Direction arrow -->
+                      <!-- Line 1: Direction arrow + trip name -->
                       <text v-if="bw(entry.item) >= 18"
                             :x="bx(entry.item) + 8" :y="by(entry.item) + 18"
                             fill="white" font-size="12"
                             font-weight="700" dominant-baseline="middle"
                             style="user-select:none;pointer-events:none">
-                        {{ entry.item.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }}{{ entry.item.direction === 'OUTBOUND' ? ' To' : ' From' }}
+                        {{ entry.item.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }}{{ entry.item.tripName ? ' ' + entry.item.tripName : (entry.item.direction === 'OUTBOUND' ? ' To' : ' From') }}
                       </text>
 
                       <!-- Line 2: Site name (bold, large) -->
@@ -2490,7 +2565,7 @@ function injectRPVueTemplate() {
                      @click.stop="onBlockClick(entry.primaryItem, $event)">
 
                     <!-- Native tooltip showing all stops + time -->
-                    <title>{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax</title>
+                    <title>{{ entry.tripName ? entry.tripName + ' — ' : '' }}{{ entry.stopLabels.join(' → ') }} | {{ fmtTime(entry.start) }}–{{ fmtTime(entry.end) }} · {{ entry.headcount }} pax</title>
 
                     <!-- Clip path scoped to block bounds -->
                     <defs>
@@ -2514,13 +2589,13 @@ function injectRPVueTemplate() {
                     <!-- Clipped content group -->
                     <g :clip-path="'url(#mclip-' + entry.tripId + ')'">
 
-                      <!-- Line 1: Direction arrow -->
+                      <!-- Line 1: Trip name + direction arrow -->
                       <text v-if="mbw(entry) >= 18"
                             :x="mbx(entry) + 8" :y="mby(entry) + 16"
                             fill="white" font-size="12"
                             font-weight="700" dominant-baseline="middle"
                             style="user-select:none;pointer-events:none">
-                        {{ entry.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }} {{ entry.direction === 'OUTBOUND' ? 'To' : 'From' }}
+                        {{ entry.direction === 'OUTBOUND' ? '\u2192' : '\u2190' }} {{ entry.tripName || (entry.direction === 'OUTBOUND' ? 'To' : 'From') }}
                       </text>
 
                       <!-- Stop names — listed vertically, capped by available height -->
@@ -2592,6 +2667,9 @@ function injectRPVueTemplate() {
             <span :class="['rp-dir-badge', selectedItem.direction === 'OUTBOUND' ? 'rp-dir-out' : 'rp-dir-ret']">
               {{ selectedItem.direction === 'OUTBOUND' ? '\u2192 Outbound' : '\u2190 Return' }}
             </span>
+            <span v-if="selectedItem.tripName" class="rp-dir-badge" style="background:#e8f5e9;color:#2e7d32">
+              {{ selectedItem.tripName }}
+            </span>
             <span v-if="selectedTripStops.length > 0" class="rp-dir-badge" style="background:#f3e8fd;color:#7c3aed">
               {{ selectedTripStops.length }} Stops
             </span>
@@ -2605,7 +2683,7 @@ function injectRPVueTemplate() {
 
             <!-- Trip time summary -->
             <div class="rp-detail-card">
-              <div class="rp-detail-row-label" style="padding:0 0 6px 0">Trip Timeline</div>
+              <div class="rp-detail-row-label" style="padding:0 0 6px 0">{{ selectedItem.tripName ? selectedItem.tripName + ' — ' : '' }}Trip Timeline</div>
               <div class="rp-detail-time-display">
                 {{ fmtISO(new Date(selectedTripStops[0].item.start).toISOString()) }}
                 <span class="rp-detail-time-arrow">\u2192</span>
