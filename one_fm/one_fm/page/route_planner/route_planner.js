@@ -272,7 +272,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                         const stopLabels = stops.map(s => {
                             const card = this.planData.shipment_cards.find(c => c.id === s.cardId);
-                            return card ? card.site_location : (s._site || s._stopLocation || s.cardId);
+                            return card ? card.site_location : (s._stopLocation || s._site || s.cardId);
                         });
 
                         entries.push({
@@ -365,7 +365,7 @@ function mountRoutePlannerApp(wrapper, data) {
                     return {
                         id: item.cardId,
                         site: item._site || '',
-                        site_location: item._site || item._stopLocation || 'Unknown Site',
+                        site_location: item._stopLocation || item._site || 'Unknown Site',
                         shift_name: item._shift || '—',
                         accommodation: item._accommodation || '—',
                         stop_location: item._stopLocation || '—',
@@ -391,7 +391,7 @@ function mountRoutePlannerApp(wrapper, data) {
                         if (!card && (item._site || item._shift || item._accommodation || item._stopLocation)) {
                             card = {
                                 id: item.cardId,
-                                site_location: item._site || item._stopLocation || 'Unknown Site',
+                                site_location: item._stopLocation || item._site || 'Unknown Site',
                                 shift_name: item._shift || '—',
                                 accommodation: item._accommodation || '—',
                                 stop_location: item._stopLocation || '—',
@@ -1863,7 +1863,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 // Fallback for loaded plan items
                 if (item._site || item._stopLocation) {
                     return {
-                        site_location: item._site || item._stopLocation || '—',
+                        site_location: item._stopLocation || item._site || '—',
                         shift_name: item._shift || '—',
                         stop_location: item._stopLocation || '—',
                     };
