@@ -40,7 +40,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Responsible",
-   "options": "Agency\nGRD",
+   "options": "Agency\nRecruiter\nHR\nGeneral Services\nGRD",
    "read_only": 1
   },
   {
@@ -68,7 +68,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "\nPending\nApproved\nRejected\nFailed"
+   "options": "\nPending\nApproved\nRejected\nFailed\nNot Booked\nAccepted\nRemedical Test Done\nFirst Medical Failed\nStamped\nArriving\nMedical Test Done\nIssued\nFit\nBooked\nYet to apply\nIn process\nUnfit\nCancelled\nSkipped\nMedical failed and Proceeded to Remedical\nCompleted\nDid Not Arrive\nJoined"
   },
   {
    "fieldname": "column_break_4",

@@ -2,6 +2,24 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on('PAM Visa', {
+	refresh: function(frm) {
+		// Override dashboard link routing for sibling tracking documents
+		if (frm.dashboard) {
+			frm.dashboard.open_document_list = function($link, show_open) {
+				let doctype = $link.attr("data-doctype");
+				if (doctype && doctype !== "Candidate Country Process") {
+					frappe.route_options = {
+						"candidate_country_process": frm.doc.candidate_country_process
+					};
+				} else {
+					frappe.route_options = {
+						"name": frm.doc.candidate_country_process
+					};
+				}
+				frappe.set_route("List", doctype);
+			};
+		}
+	},
 	candidate_country_process: function(frm) {
 		frappe.call({
 			method: "get_applicant_data",

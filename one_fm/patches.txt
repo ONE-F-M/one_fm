@@ -367,7 +367,7 @@ one_fm.patches.v15_0.add_assignment_rule_client_interview_shortlist_pending_oper
 one_fm.patches.v15_0.add_hd_ticket_type_custom_field #2026-04-05
 one_fm.patches.v15_0.add_assignment_rule_process_change_request_business_analyst #2026-04-05
 one_fm.patches.v15_0.setup_scaffold_matrix #2026-04-08
-one_fm.patches.v15_0.add_subcontract_staff_attendance_workflow #2026-04-27 #2
+one_fm.patches.v15_0.add_subcontract_staff_attendance_workflow #2026-05-06 #2
 one_fm.patches.v15_0.add_employee_subcontractor_name
 one_fm.patches.v15_0.resync_matrix_layout #2026-04-09
 one_fm.patches.v15_0.remove_pathfinder_log_workflow #2026-04-09
@@ -400,3 +400,5 @@ one_fm.patches.v15_0.add_qcs_link_to_purchase_order
 one_fm.patches.v15_0.add_rfq_and_sq_custom_fields
 one_fm.patches.v15_0.add_attendance_amendment_to_sales_invoice
 one_fm.patches.v15_0.backfill_governorate_in_site_to_location_mapping
+one_fm.patches.v15_0.update_bank_account_workflow
+one_fm.patches.v15_0.add_courier_tracking_custom_fields

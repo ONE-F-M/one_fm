@@ -12,18 +12,16 @@
   "relieving_date",
   "date_of_joining",
   "under_company_residency",
-  "approvers_section",
-  "supervisor",
-  "column_break_appr",
-  "operations_manager",
-  "column_break_appr2",
-  "offboarding_officer",
   "table_section",
   "employees",
   "more_information_section",
   "naming_series",
   "column_break_fhar",
   "amended_from",
+  "approvers_section",
+  "supervisor",
+  "operations_manager",
+  "offboarding_officer",
   "column_break_wetd",
   "column_break_pdtv",
   "column_break_szbe"
@@ -102,6 +100,36 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "approvers_section",
+   "fieldtype": "Section Break",
+   "label": "Workflow Approvers"
+  },
+  {
+   "fieldname": "supervisor",
+   "fieldtype": "Link",
+   "label": "Supervisor",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "operations_manager",
+   "fieldtype": "Link",
+   "label": "Operations Manager",
+   "options": "User",
+   "reqd": 0,
+   "depends_on": "eval:!doc.is_corporate && doc.workflow_state && (doc.workflow_state == 'Pending Operations Manager' || doc.workflow_state == 'Approved')",
+   "mandatory_depends_on": "eval:!doc.is_corporate && doc.workflow_state && (doc.workflow_state == 'Pending Operations Manager' || doc.workflow_state == 'Approved')"
+  },
+  {
+   "fieldname": "offboarding_officer",
+   "fieldtype": "Link",
+   "label": "Offboarding Officer",
+   "options": "User",
+   "reqd": 0,
+   "depends_on": "eval: doc.workflow_state && (doc.workflow_state == 'Pending Operations Manager' || doc.workflow_state == 'Approved')",
+   "mandatory_depends_on": "eval: doc.workflow_state && (doc.workflow_state == 'Pending Operations Manager' || doc.workflow_state == 'Approved')"
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -117,41 +145,6 @@
    "label": "Withdrawing Employees",
    "options": "Employee Resignation Withdrawal Item",
    "reqd": 1
-  },
-  {
-   "fieldname": "approvers_section",
-   "fieldtype": "Section Break",
-   "label": "Approvers"
-  },
-  {
-   "fieldname": "supervisor",
-   "fieldtype": "Link",
-   "label": "Supervisor",
-   "options": "User",
-   "read_only": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "column_break_appr",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "operations_manager",
-   "fieldtype": "Link",
-   "label": "Operations Manager",
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_appr2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "offboarding_officer",
-   "fieldtype": "Link",
-   "label": "Offboarding Officer",
-   "options": "User",
-   "read_only": 1
   },
   {
    "fieldname": "table_section",
@@ -171,20 +164,6 @@
  "owner": "Administrator",
  "permissions": [
   {
-   "amend": 1,
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "System Manager",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -197,6 +176,9 @@
    "write": 1
   },
   {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -204,6 +186,7 @@
    "report": 1,
    "role": "Employee",
    "share": 1,
+   "submit": 1,
    "write": 1
   },
   {
@@ -216,6 +199,48 @@
    "share": 1,
    "submit": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "write": 1,
+   "role": "Interviewer"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "write": 1,
+   "role": "HR Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "cancel": 1,
+   "write": 1,
+   "role": "System Manager"
   }
  ],
  "row_format": "Dynamic",

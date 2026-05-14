@@ -43,6 +43,8 @@ def update_data(cur_date, column_date_field, datapack):
     # Set Justification details of attendance check for the day
     set_justification_details(cur_date, column_date_field, datapack, row_index)
 
+    # Set Action details of attendance check for the day (Story 6)
+    set_action_details(cur_date, column_date_field, datapack)
 
     return datapack
 
@@ -174,6 +176,56 @@ def set_justification_details(cur_date, column_date_field, datapack, row_index):
         row_index += 1
 
     return datapack
+
+
+def set_action_details(cur_date, column_date_field, datapack):
+    """Story 6: Add Action option rows to the report.
+
+    Action rows appear after justification rows in a fixed order.
+    Records without an action field (non-Present statuses) are counted under "No Action Required".
+    The sum of all action rows must equal the Cumulative Total.
+    """
+    # Fixed order of action rows as specified in the acceptance criteria
+    action_options = [
+        "Issue a New Mobile",
+        "Penalize the Supervisor",
+        "Penalize the Employee",
+        "Employee must correct app settings",
+        "Employee must check in at correct place",
+        "Raise Ticket to Helpdesk",
+        "No Action Required",
+    ]
+
+    # Get action counts for the date (all Attendance Checks, not just approved)
+    action_counts = frappe.db.sql(f"""
+        SELECT
+            IFNULL(NULLIF(action, ''), 'No Action Required') as action_value,
+            COUNT(*) as action_count
+        FROM
+            `tabAttendance Check`
+        WHERE
+            date = "{cur_date}" AND docstatus < 2
+        GROUP BY
+            action_value
+    """, as_dict=1)
+
+    action_count_map = {row.action_value: row.action_count for row in action_counts}
+
+    for action_option in action_options:
+        count = action_count_map.get(action_option, 0)
+
+        # Find existing row or create new one
+        existing_row = None
+        for row in datapack:
+            if row.get("justification_value") == action_option:
+                existing_row = row
+                break
+
+        if existing_row:
+            existing_row.update({column_date_field: count})
+        else:
+            datapack.append({"justification_value": action_option, column_date_field: count})
+
 
 def get_columns(filters):
     if getdate(filters.get('from_date')) > getdate(filters.get('to_date')):

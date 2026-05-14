@@ -240,6 +240,7 @@ doc_events = {
 		],
 		"on_submit": [
 			"one_fm.api.doc_methods.stock_entry.validate_budget",
+			"one_fm.one_fm.doctype.transit_log.transit_log_utils.update_transit_log_from_stock_entry"
 		],
 	},
 	"Purchase Order": {
@@ -331,7 +332,8 @@ doc_events = {
 		"on_submit": [
 			"one_fm.one_fm.doctype.customer_asset.customer_asset.on_purchase_receipt_submit",
 			"one_fm.overrides.purchase_receipt.update_received_qty",
-            "one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt"
+			"one_fm.purchase.doctype.request_for_material.request_for_material.update_rfm_status_against_purchase_receipt",
+			"one_fm.one_fm.doctype.transit_log.transit_log_utils.update_transit_log_from_purchase_receipt"
 		],
 		"on_cancel": [
             "one_fm.overrides.purchase_receipt.update_received_qty",
@@ -515,8 +517,7 @@ website_route_rules = [
 		"from_route": "/employee-info/<path:employee_id>",
 		"to_route": "employee-info"
 	},
-    # {"from_route": "/job_applicant_magic_link/<path:app_path>", "to_route": "job_applicant_magic_link"},
-
+	# {"from_route": "/job_applicant_magic_link/<path:app_path>", "to_route": "job_applicant_magic_link"},
 ]
 
 # doc_events = {
@@ -575,6 +576,11 @@ override_doctype_class = {
 # ---------------
 
 scheduler_events = {
+	"cron": {
+		"0 12 * * *": [
+			'one_fm.one_fm.doctype.arrival_and_deployment.arrival_and_deployment.send_daily_acknowledgement_reminders'
+		]
+	},
 	"daily": [
 		'one_fm.utils.pam_salary_certificate_expiry_date',
 		'one_fm.utils.pam_authorized_signatory',
@@ -786,7 +792,10 @@ scheduler_events = {
         ],
         "* * * * *": [ # Runs every minute
             "one_fm.operations.doctype.process_task.process_task.create_task_on_cron_process_task"
-        ]
+        ],
+		"0 */12 * * *": [ # Sync courier transit log statuses every 12 hours
+			"one_fm.one_fm.doctype.transit_log.transit_log_utils.sync_transit_log_status"
+		]
 	}
 }
 

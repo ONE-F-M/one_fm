@@ -50,7 +50,7 @@
  "modified": "2026-04-20 13:53:15.284743",
  "modified_by": "Administrator",
  "module": "one_fm",
- "name": "Employee Resignation Extension Item",
+ "name": "Employee Resignation Date Adjustment Item",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",

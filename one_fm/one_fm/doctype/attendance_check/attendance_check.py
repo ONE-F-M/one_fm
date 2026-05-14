@@ -208,6 +208,7 @@ class AttendanceCheck(Document):
     def validate(self):
         self.validate_is_replaced_shift_assignment()
         self.validate_justification()
+        self.set_action()
 
     def validate_is_replaced_shift_assignment(self):
         if self.attendance_status and self.attendance_status == "Present" and self.shift_assignment:
@@ -235,7 +236,7 @@ class AttendanceCheck(Document):
                 self.mobile_brand = ""
                 self.mobile_model = ""
 
-            if self.justification in ["Out-of-site location", "User not assigned to shift", "Forgot to check in", "Checked in and out at the same time"]:
+            if self.justification in ["Out-of-site location", "User not assigned to shift", "Forgot to check in"]:
                 if not self.screenshot:
                     frappe.throw("Please Attach ScreenShot")
             else:
@@ -245,6 +246,47 @@ class AttendanceCheck(Document):
 
         if self.justification == "Approved by Administrator" and not check_attendance_manager(email=frappe.session.user):
             frappe.throw("Only the Attendance manager can select 'Approved by Administrator' ")
+
+    def set_action(self):
+        """Server-side logic to auto-populate the action field based on justification and verification answers."""
+        if self.attendance_status != "Present" or not self.justification:
+            self.action = ""
+            return
+
+        justification = self.justification
+
+        if justification == "Forgot to check in":
+            self.action = "Penalize the Employee"
+
+        elif justification in ("Other", "Approved by Administrator"):
+            self.action = "No Action Required"
+
+        elif justification == "Out-of-site location":
+            if self.is_the_employee_physically_onsite == "Yes":
+                self.action = "Issue a New Mobile"
+            elif self.is_the_employee_physically_onsite == "No":
+                self.action = "Employee must check in at correct place"
+
+        elif justification == "User not assigned to shift":
+            if self.is_the_employee_assigned_to_the_correct_shift == "No":
+                self.action = "Penalize the Supervisor"
+            elif self.is_the_employee_assigned_to_the_correct_shift == "Yes":
+                if self.did_the_employee_try_to_check_in_outside_working_hours == "Yes":
+                    self.action = "Penalize the Employee"
+                elif self.did_the_employee_try_to_check_in_outside_working_hours == "No":
+                    self.action = "Raise Ticket to Helpdesk"
+
+        elif justification == "Mobile isn't supporting the app":
+            if self.is_the_mobile_specification_up_to_the_standard == "No":
+                self.action = "Issue a New Mobile"
+            elif self.is_the_mobile_specification_up_to_the_standard == "Yes":
+                self.action = "Raise Ticket to Helpdesk"
+
+        elif justification == "Application is missing geolocation permissions":
+            if self.were_proper_permissions_given_to_the_app == "No":
+                self.action = "Employee must correct app settings"
+            elif self.were_proper_permissions_given_to_the_app == "Yes":
+                self.action = "Issue a New Mobile"
 
     def on_submit(self):
         if not self.attendance_status:
@@ -257,6 +299,125 @@ class AttendanceCheck(Document):
             self.validate_day_off()
         if self.attendance_status != "On Leave":
             self.mark_attendance()
+        # Auto-create Penalty And Investigation on approval (Stories 1, 2, 3)
+        self.create_penalty_on_approval()
+
+    def create_penalty_on_approval(self):
+        """Evaluate the justification gateway and trigger background penalty creation if applicable."""
+        if self.attendance_status != "Present" or not self.justification:
+            return
+
+        penalty_params = None
+
+        # Story 1: Forgot to check in → penalize the employee
+        if self.justification == "Forgot to check in":
+
+            # Resolve penalty code: use "1" if it exists, otherwise leave blank
+            applied_penalty_code = "1" if frappe.db.exists("Penalty Code", "1") else None
+
+            issuer = self._get_issuer_from_employee_hierarchy()
+            location = self._get_location_from_employee_site()
+            penalty_params = {
+                "employee": self.employee,
+                "issuer": issuer,
+                "applied_penalty_code": applied_penalty_code,
+                "incident_date": self.date,
+                "location": location,
+                "supervisor_remarks": "Forgot to check in",
+            }
+
+        # Story 2: User not assigned to shift — employee timing error
+        elif (
+            self.justification == "User not assigned to shift"
+            and self.is_the_employee_assigned_to_the_correct_shift == "Yes"
+            and self.did_the_employee_try_to_check_in_outside_working_hours == "Yes"
+        ):
+
+            # Resolve penalty code: use "18" if it exists, otherwise leave blank
+            applied_penalty_code = "18" if frappe.db.exists("Penalty Code", "18") else None
+
+            issuer = self._get_employee_from_approver()
+            location = self._get_location_with_event_fallback()
+            penalty_params = {
+                "employee": self.employee,
+                "issuer": issuer,
+                "applied_penalty_code": applied_penalty_code,
+                "incident_date": self.date,
+                "location": location,
+                "supervisor_remarks": "User not assigned to shift",
+            }
+
+        # Story 3: User not assigned to shift — supervisor roster error
+        elif (
+            self.justification == "User not assigned to shift"
+            and self.is_the_employee_assigned_to_the_correct_shift == "No"
+        ):
+            # The offender is the supervisor (the approver on the Attendance Check)
+            offender = self._get_employee_from_approver()
+
+            # Resolve penalty code: use "18" if it exists, otherwise leave blank
+            applied_penalty_code = "18" if frappe.db.exists("Penalty Code", "18") else None
+
+            # The issuer is the employee's Reports To
+            issuer = frappe.db.get_value("Employee", offender, "reports_to") if offender else None
+            location = self._get_location_from_employee_site()
+            if offender:
+                penalty_params = {
+                    "employee": offender,
+                    "issuer": issuer,
+                    "applied_penalty_code": applied_penalty_code,
+                    "incident_date": self.date,
+                    "location": location,
+                    "supervisor_remarks": "User not assigned to shift",
+                }
+
+        if penalty_params:
+            frappe.enqueue(
+                _create_penalty_document,
+                queue="short",
+                timeout=120,
+                penalty_params=penalty_params,
+                attendance_check_name=self.name,
+            )
+
+    def _get_issuer_from_employee_hierarchy(self):
+        """Get the Site Supervisor / Shift Supervisor / Reports To for the employee."""
+        approver_employee = self.get_approver(self.employee)
+        return approver_employee if approver_employee else None
+
+    def _get_employee_from_approver(self):
+        """Get the Employee record whose user_id matches the Attendance Check's approver."""
+        if not self.approver:
+            return None
+        return frappe.db.get_value("Employee", {"user_id": self.approver, "status": "Active"}, "name")
+
+    def _get_location_from_employee_site(self):
+        """Get the Operations Site from the Employee's allocated site (or from the Attendance Check)."""
+        # Prefer the operations_site already set on this Attendance Check
+        if self.operations_site:
+            return self.operations_site
+        # Fall back to the Employee's site allocation
+        site = frappe.db.get_value("Employee", self.employee, "site")
+        return site if site else None
+
+    def _get_location_with_event_fallback(self):
+        """Try to get event_location from Shift Assignment, fall back to Employee's Operations Site.
+
+        Note: event_location is a Data field on Shift Assignment (not a Link to Operations Site).
+        If event_location is set, try to find a matching Operations Site by name.
+        If not found, fall back to Employee's Operations Site.
+        """
+        if self.shift_assignment:
+            event_location = frappe.db.get_value("Shift Assignment", self.shift_assignment, "event_location")
+            if event_location:
+                # event_location is a Data field — check if it matches an Operations Site
+                if frappe.db.exists("Operations Site", event_location):
+                    return event_location
+                # If not a valid Operations Site, try the site from shift assignment
+                sa_site = frappe.db.get_value("Shift Assignment", self.shift_assignment, "site")
+                if sa_site:
+                    return sa_site
+        return self._get_location_from_employee_site()
 
     def update_employee_checkin_records(self):
         if self.attendance_status == "Present":
@@ -507,6 +668,40 @@ class AttendanceCheck(Document):
             working_hours = 8 if self.attendance_status == 'Present' else 0
         return working_hours
 
+def _create_penalty_document(penalty_params, attendance_check_name):
+    """Background job: Create a Draft Penalty And Investigation document.
+
+    Args:
+        penalty_params (dict): Fields to set on the Penalty And Investigation document.
+        attendance_check_name (str): Name of the originating Attendance Check (for logging).
+    """
+    try:
+        penalty = frappe.new_doc("Penalty And Investigation")
+        penalty.employee = penalty_params.get("employee")
+        penalty.issuer = penalty_params.get("issuer")
+        penalty.applied_penalty_code = penalty_params.get("applied_penalty_code")
+        penalty.incident_date = penalty_params.get("incident_date")
+        penalty.issuance_date = frappe.utils.today()
+        penalty.supervisor_remarks = penalty_params.get("supervisor_remarks")
+
+        # Location is a Link to Operations Site — only set if the site_location resolves
+        location = penalty_params.get("location")
+        if location:
+            penalty.location = location
+
+        penalty.flags.ignore_mandatory = True
+        penalty.insert(ignore_permissions=True)
+
+        frappe.db.commit()
+        frappe.logger().info(
+            f"Penalty And Investigation {penalty.name} created from Attendance Check {attendance_check_name}"
+        )
+    except Exception:
+        frappe.log_error(
+            title="Auto Penalty Creation Failed",
+            message=f"Attendance Check: {attendance_check_name}\n{frappe.get_traceback()}"
+        )
+
 def create_attendance_check(attendance_date=None):
     if production_domain():
         if not attendance_date:
@@ -594,6 +789,10 @@ def insert_attendance_check_records(details, attendance_date):
     )
     employees_with_timesheet = {emp.name for emp in employees_by_timesheet}
 
+    # Story 7: Pre-fetch yesterday's "Issue a New Mobile" records for carryover
+    yesterday = add_days(attendance_date, -1)
+    yesterday_carryover = _get_yesterday_carryover_data(employee_ids, yesterday)
+
     for count, data in enumerate(details):
         try:
             employee = data.get("employee")
@@ -614,6 +813,21 @@ def insert_attendance_check_records(details, attendance_date):
                     "comment": data.get("attendance_comment", ""),
                 }
 
+                # Story 7: Apply carryover from yesterday if "Issue a New Mobile"
+                carryover = yesterday_carryover.get(employee)
+                if carryover:
+                    filters.update({
+                        "justification": carryover.get("justification", ""),
+                        "action": carryover.get("action", ""),
+                        "is_the_employee_physically_onsite": carryover.get("is_the_employee_physically_onsite", ""),
+                        "is_the_mobile_specification_up_to_the_standard": carryover.get("is_the_mobile_specification_up_to_the_standard", ""),
+                        "were_proper_permissions_given_to_the_app": carryover.get("were_proper_permissions_given_to_the_app", ""),
+                        "mobile_brand": carryover.get("mobile_brand", ""),
+                        "mobile_model": carryover.get("mobile_model", ""),
+                        "screenshot": carryover.get("screenshot", ""),
+                        "attendance_status": "Present",
+                    })
+
                 doc = frappe.get_doc(filters)
                 doc.flags.ignore_mandatory = 1
                 doc.insert(ignore_permissions=1)
@@ -623,6 +837,39 @@ def insert_attendance_check_records(details, attendance_date):
         if count % 10 == 0:
             frappe.db.commit()
     frappe.db.commit()
+
+
+def _get_yesterday_carryover_data(employee_ids, yesterday):
+    """Fetch yesterday's Attendance Check records that had action = 'Issue a New Mobile'.
+
+    Returns a dict keyed by employee ID with the fields to carry over.
+    """
+    if not employee_ids:
+        return {}
+
+    yesterday_records = frappe.get_all(
+        "Attendance Check",
+        filters={
+            "employee": ["in", employee_ids],
+            "date": yesterday,
+            "action": "Issue a New Mobile",
+            "docstatus": ["<", 2],
+        },
+        fields=[
+            "employee", "justification", "action",
+            "is_the_employee_physically_onsite",
+            "is_the_mobile_specification_up_to_the_standard",
+            "were_proper_permissions_given_to_the_app",
+            "mobile_brand", "mobile_model", "screenshot",
+        ],
+    )
+
+    carryover_map = {}
+    for rec in yesterday_records:
+        carryover_map[rec.employee] = rec
+
+    return carryover_map
+
 
 @frappe.whitelist()
 def check_attendance_manager(email: str) -> bool:

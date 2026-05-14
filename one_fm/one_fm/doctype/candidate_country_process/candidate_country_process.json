@@ -20,6 +20,10 @@
   "current_process_id",
   "section_break_3",
   "agency_process_details",
+  "section_break_eta",
+  "planned_eta",
+  "column_break_eta",
+  "live_plan_eta",
   "amended_from"
  ],
  "fields": [
@@ -55,7 +59,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nApproved\nRejected\nFailes",
+   "options": "Pending\nIn Process\nApproved\nRejected\nFailed\nJoined\nDid Not Arrive",
    "read_only": 1
   },
   {
@@ -131,6 +135,27 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Current Process ID"
+  },
+  {
+   "fieldname": "section_break_eta",
+   "fieldtype": "Section Break",
+   "label": "ETA Tracking"
+  },
+  {
+   "fieldname": "planned_eta",
+   "fieldtype": "Date",
+   "label": "Planned ETA",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_eta",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "live_plan_eta",
+   "fieldtype": "Date",
+   "label": "Live Plan ETA",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
