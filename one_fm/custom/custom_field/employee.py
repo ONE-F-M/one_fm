@@ -997,6 +997,15 @@ def get_employee_custom_fields():
 				"options": "Supplier",
 			},
 			{
+				"fetch_from": "current_resignation.workflow_state",
+				"fieldname": "resignation_status",
+				"fieldtype": "Data",
+				"insert_after": "feedback",
+				"is_system_generated": 1,
+				"label": "Resignation Workflow Status",
+				"read_only": 1,
+			},
+			{
 				"fieldname": "current_resignation",
 				"fieldtype": "Link",
 				"hidden": 1,
@@ -1005,14 +1014,6 @@ def get_employee_custom_fields():
 				"label": "Current Resignation",
 				"options": "Employee Resignation",
 				"read_only": 1,
-			},
-			{
-				"fetch_from": "current_resignation.workflow_state",
-				"fieldname": "resignation_status",
-				"fieldtype": "Data",
-				"insert_after": "feedback",
-				"is_system_generated": 1,
-				"label": "Resignation Workflow Status",
 			},
 			{
 				"dt": 'Employee',
