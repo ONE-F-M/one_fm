@@ -995,6 +995,24 @@ def get_employee_custom_fields():
 				"insert_after": "employee_number",
 				"label": "Subcontractor Name",
 				"options": "Supplier",
+			},
+			{
+				"fieldname": "current_resignation",
+				"fieldtype": "Link",
+				"hidden": 1,
+				"insert_after": "resignation_status",
+				"is_system_generated": 1,
+				"label": "Current Resignation",
+				"options": "Employee Resignation",
+				"read_only": 1,
+			},
+			{
+				"fetch_from": "current_resignation.workflow_state",
+				"fieldname": "resignation_status",
+				"fieldtype": "Data",
+				"insert_after": "feedback",
+				"is_system_generated": 1,
+				"label": "Resignation Workflow Status",
 			}
 		]
 	}
