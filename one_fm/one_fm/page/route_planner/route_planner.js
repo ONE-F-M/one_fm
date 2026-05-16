@@ -635,8 +635,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                // ── Trip chaining: detect nearby blocks of SAME direction from same accommodation ──
-                // Use the correct time window based on card direction
+                // ── Trip chaining: detect nearby blocks from same accommodation (any direction) ──
+                // Mixed-direction trips are valid: OUT drops + RET pickups on the same trip
                 const isOutbound = card.direction === 'OUTBOUND';
                 const cardWindowStart = new Date(isOutbound ? card.outbound_window_start : card.return_window_start).getTime();
                 const cardWindowEnd   = new Date(isOutbound ? card.outbound_window_end   : card.return_window_end).getTime();
@@ -644,8 +644,6 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 const nearbyBlocks = this.swimItems.filter(i => {
                     if (i.vehicleId !== vehicle.id) return false;
-                    // Only chain with blocks of the SAME direction
-                    if (i.direction !== card.direction) return false;
                     const existingCard = this.planData.shipment_cards.find(c => c.id === i.cardId);
                     if (!existingCard || existingCard.accommodation !== card.accommodation) return false;
                     const blockEnd = new Date(i.end).getTime();
@@ -666,14 +664,17 @@ function mountRoutePlannerApp(wrapper, data) {
 
                     if (tripKeys.length === 1) {
                         // ── Single trip: simple confirm ──
-                        const existingSites = nearbyBlocks.map(i => {
+                        const existingStops = nearbyBlocks.map(i => {
                             const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
-                            return c ? c.site_location : i.cardId;
+                            const siteName = c ? c.site_location : i.cardId;
+                            const dirBadge = i.direction === 'RETURN' ? '← RET' : '→ OUT';
+                            return `${siteName} <span style="font-size:11px;color:#888">(${dirBadge})</span>`;
                         });
+                        const newDirBadge = card.direction === 'RETURN' ? '← RET' : '→ OUT';
                         frappe.confirm(
-                            `<strong>${vehicle.label}</strong> already picks up from <strong>${card.accommodation}</strong> and drops at:<br><br>` +
-                            existingSites.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
-                            `<br><br>Add <strong>${card.site_location}</strong> as the next stop on this trip?`,
+                            `<strong>${vehicle.label}</strong> already has stops from <strong>${card.accommodation}</strong>:<br><br>` +
+                            existingStops.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
+                            `<br><br>Add <strong>${card.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
                             () => this._chainToTrip(card, tripMap[tripKeys[0]], vehicle.id),
                             () => this._doPlaceWithDialog(card, vehicle.id)
                         );
@@ -684,7 +685,9 @@ function mountRoutePlannerApp(wrapper, data) {
                             const items = tripMap[key];
                             const sites = items.map(i => {
                                 const c = self.planData.shipment_cards.find(sc => sc.id === i.cardId);
-                                return c ? c.site_location : i.cardId;
+                                const siteName = c ? c.site_location : i.cardId;
+                                const dir = i.direction === 'RETURN' ? '←' : '→';
+                                return `${dir} ${siteName}`;
                             });
                             const timeRange = self.fmtTime(items[0].start) + '–' + self.fmtTime(items[items.length - 1].end);
                             const tName = items.find(i => i.tripName)?.tripName;
@@ -853,8 +856,8 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 // Shared placement logic (transitMin = travel, dwellMin = buffer at prev stop)
                 const doChain = (transitMin, dwellMin) => {
-                    const dwellMs = (dwellMin || 0) * 60000;
-                    const transitMs = (transitMin || 30) * 60000;
+                    const dwellMs = (dwellMin != null ? dwellMin : 0) * 60000;
+                    const transitMs = Math.max((transitMin != null ? transitMin : 30), 5) * 60000; // min 5min block for visibility
                     const lastEnd = new Date(Math.max(
                         ...existingItems.map(i => new Date(i.end).getTime())
                     ));
@@ -1474,13 +1477,27 @@ function mountRoutePlannerApp(wrapper, data) {
                     gaps.push(removedGap);
                 }
 
-                // Rebuild times: preserve durations + inter-stop gaps
-                const baseStart = new Date(Math.min(
-                    ...this.swimItems
-                        .filter(i => i.tripId === tripId)
-                        .map(s => new Date(s.start).getTime())
-                ));
-                let cursor = baseStart.getTime();
+                // Rebuild times: recalculate from the NEW first stop's shift window
+                // The first stop's time window determines the trip start, not the old order
+                const firstStop = tripStops[0];
+                const firstCard = this.planData.shipment_cards.find(c => c.id === firstStop.cardId);
+                let baseStartMs;
+                if (firstCard) {
+                    // Use the card's actual shift window as the anchor
+                    const isOut = firstStop.direction === 'OUTBOUND' || (firstStop.direction !== 'RETURN');
+                    const windowField = isOut ? 'outbound_window_start' : 'return_window_start';
+                    const windowTime = new Date(firstCard[windowField]).getTime();
+                    // Subtract the first stop's duration (transit time) to get departure time
+                    baseStartMs = windowTime - durations[0];
+                } else {
+                    // Fallback: use the old minimum if card not found
+                    baseStartMs = Math.min(
+                        ...this.swimItems
+                            .filter(i => i.tripId === tripId)
+                            .map(s => new Date(s.start).getTime())
+                    );
+                }
+                let cursor = baseStartMs;
                 tripStops.forEach((stop, idx) => {
                     stop.stopIndex = idx + 1;
                     stop.start = new Date(cursor);
