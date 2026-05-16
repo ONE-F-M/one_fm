@@ -705,6 +705,9 @@ def assign_day_off(shift_request):
             if s.start_date >= getdate():
                 frappe.db.sql(f"""DELETE from `tabShift Assignment` WHERE name='{s.name}'""")
 
+    # Fetch employee's project allocation
+    employee_project = frappe.db.get_value("Employee", shift_request.employee, "project")
+
     employee_schedule = frappe.get_list('Employee Schedule', {'employee': shift_request.employee, 'roster_type': "Basic",'date': ["between", (
     shift_request.from_date, shift_request.to_date)]}, ['name'])
     if employee_schedule:
@@ -713,6 +716,8 @@ def assign_day_off(shift_request):
             schedule.reference_doctype = "Shift Request"
             schedule.reference_docname = shift_request.name
             schedule.employee_availability = 'Day Off'
+            if employee_project:
+                schedule.project = employee_project
             schedule.save(ignore_permissions=True)
     else:
         start_date = getdate(shift_request.from_date)
@@ -725,6 +730,8 @@ def assign_day_off(shift_request):
             schedule.reference_doctype = "Shift Request"
             schedule.reference_docname = shift_request.name
             schedule.employee_availability = 'Day Off'
+            if employee_project:
+                schedule.project = employee_project
             schedule.save(ignore_permissions=True)
             start_date += delta
     frappe.set_user(current_user)
@@ -738,12 +745,17 @@ def assign_client_day_off(shift_request):
             if s.start_date >= getdate():
                 frappe.db.sql("""DELETE from `tabShift Assignment` WHERE name=%s""", (s.name,))
 
+    # Fetch employee's project allocation
+    employee_project = frappe.db.get_value("Employee", shift_request.employee, "project")
+
     employee_schedule = frappe.get_list('Employee Schedule', {'employee': shift_request.employee,'date': ["between", (shift_request.from_date, shift_request.to_date)]}, ['name', 'roster_type'])
     if employee_schedule:
         for es in employee_schedule:
             if es.roster_type == "Basic":
                 schedule = frappe.get_doc("Employee Schedule", es.name)
                 schedule.employee_availability = 'Client Day Off'
+                if employee_project:
+                    schedule.project = employee_project
                 schedule.save(ignore_permissions=True)
             else:
                 frappe.delete_doc("Employee Schedule", es.name)
@@ -756,6 +768,8 @@ def assign_client_day_off(shift_request):
             schedule.employee = shift_request.employee
             schedule.date = start_date
             schedule.employee_availability = 'Client Day Off'
+            if employee_project:
+                schedule.project = employee_project
             schedule.save(ignore_permissions=True)
             start_date += delta
     frappe.db.commit()

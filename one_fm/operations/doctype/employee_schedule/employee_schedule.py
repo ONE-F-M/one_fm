@@ -90,7 +90,6 @@ class EmployeeSchedule(Document):
 			self.shift_type = ''
 			self.start_datetime = ''
 			self.end_datetime = ''
-			self.project = ''
 
 		# validate_operations_post_overfill({self.date: 1}, self.shift)
 
