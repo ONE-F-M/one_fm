@@ -110,8 +110,8 @@ def get_route_planner_data():
             """Convert employee ID to {name, mobile} dict for frontend call action."""
             info = emp_name_map.get(emp_id, {})
             if isinstance(info, dict):
-                return {"name": info.get("employee_name", emp_id), "mobile": info.get("cell_number", "")}
-            return {"name": info or emp_id, "mobile": ""}
+                return {"id": emp_id, "name": info.get("employee_name", emp_id), "mobile": info.get("cell_number", "")}
+            return {"id": emp_id, "name": info or emp_id, "mobile": ""}
 
         # Batch-fetch all shift docs in one query (instead of per-shift frappe.get_doc)
         all_shift_names = set()
@@ -1311,4 +1311,103 @@ def update_route_plan_status(plan_name: str, new_status: str):
         "status": "ok",
         "plan_name": doc.name,
         "new_status": new_status
+    }
+@frappe.whitelist()
+def get_available_rambo_relievers(shift_name: str, date: str):
+    """
+    Fetch available Rambo relievers for a specific date and shift.
+    - custom_is_rambo_reliever = 1
+    - status = 'Active'
+    - No active shift assignment for the given date.
+    """
+    shift = frappe.get_doc("Operations Shift", shift_name) if shift_name else None
+    
+    # Get all active rambo relievers
+    rambos = frappe.get_all("Employee",
+        filters={
+            "custom_is_rambo_reliever": 1,
+            "status": "Active"
+        },
+        fields=["name", "employee_name", "designation", "cell_number"]
+    )
+    
+    if not rambos:
+        return []
+        
+    rambo_ids = [r.name for r in rambos]
+    
+    # Check shift assignments for conflicts on the same date
+    conflicts = frappe.get_all("Shift Assignment",
+        filters={
+            "employee": ["in", rambo_ids],
+            "start_date": ["<=", date],
+            "end_date": [">=", date],
+            "docstatus": 1,
+            "status": "Active"
+        },
+        fields=["employee"]
+    )
+    
+    conflict_ids = set([c.employee for c in conflicts])
+    
+    available = []
+    for r in rambos:
+        if r.name not in conflict_ids:
+            available.append({
+                "name": r.name,
+                "employee_name": r.employee_name,
+                "designation": r.designation or "—",
+                "mobile": r.cell_number or ""
+            })
+            
+    return available
+
+@frappe.whitelist()
+def process_rambo_replacement(original_employee: str, replacement_employee: str, shift_name: str, site: str):
+    """
+    Processes the swap by sending an email notification.
+    The UI will update its own DOM/State dynamically.
+    """
+    orig_emp = frappe.db.get_value("Employee", original_employee, "employee_name") or original_employee
+    new_emp = frappe.db.get_value("Employee", replacement_employee, "employee_name") or replacement_employee
+    
+    # Send Email Notification
+    recipients = ["helpdesk@one-fm.com"]
+    
+    # Find operations supervisor for the shift/site
+    if shift_name:
+        supervisor = frappe.db.get_value("Operations Shift", shift_name, "operations_supervisor")
+        if supervisor:
+            user_email = frappe.db.get_value("User", supervisor, "email")
+            if user_email:
+                recipients.append(user_email)
+                
+    # Also add Mr Yaser if known email (hardcoded for now, or assume system finds it)
+    recipients.append("yaser@one-fm.com") # Placeholder for Mr Yaser's email
+    
+    subject = f"Rambo Reliever Swap: {orig_emp} replaced by {new_emp}"
+    message = f"""
+    <p>A Rambo Reliever replacement has been processed from the Route Planner Manifest.</p>
+    <ul>
+        <li><b>Site:</b> {site}</li>
+        <li><b>Shift:</b> {shift_name}</li>
+        <li><b>Original Employee (Absent/Fail):</b> {orig_emp}</li>
+        <li><b>Rambo Reliever (Replacement):</b> {new_emp}</li>
+    </ul>
+    <p>Please note that this is an automated message.</p>
+    """
+    
+    try:
+        frappe.sendmail(
+            recipients=recipients,
+            subject=subject,
+            message=message,
+            now=True
+        )
+    except Exception as e:
+        frappe.log_error(f"Error sending Rambo Reliever notification: {str(e)}", "Rambo Reliever Notification")
+        
+    return {
+        "status": "success",
+        "message": "Replacement processed and notification sent."
     }

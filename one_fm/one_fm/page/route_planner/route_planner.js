@@ -1888,86 +1888,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
             },
 
-            savePlan() {
-                if (!this.currentPlan) {
-                    frappe.show_alert({ message: 'Select or create a plan first', indicator: 'orange' }, 3);
-                    return;
-                }
-                if (this.swimItems.length === 0) {
-                    frappe.show_alert({ message: 'No assignments to save', indicator: 'orange' }, 3);
-                    return;
-                }
 
-                // ── Pre-save overcapacity audit ──
-                this.checkConflicts();
-                const overcapVehicles = [];
-                this.planData.vehicles.forEach(v => {
-                    const vi = this.swimItems.filter(i => i.vehicleId === v.id);
-                    if (vi.some(i => i.overcapacity)) {
-                        const logicalTrips = this._getLogicalTrips(v.id);
-                        const peakLoad = Math.max(...vi.map(item => {
-                            const iS = new Date(item.start).getTime();
-                            const iE = new Date(item.end).getTime();
-                            return logicalTrips
-                                .filter(t => {
-                                    return t.start < iE && t.end > iS;
-                                })
-                                .reduce((sum, t) => sum + t.headcount, 0);
-                        }));
-                        overcapVehicles.push({ label: v.label, seats: v.seats, peak: peakLoad });
-                    }
-                });
-
-                const self = this;
-                const doSave = () => {
-                    const items = self.swimItems.map(i => {
-                        const card = self.planData.shipment_cards.find(c => c.id === i.cardId);
-                        return {
-                            ...i,
-                            start: new Date(i.start).toISOString(),
-                            end:   new Date(i.end).toISOString(),
-                            _site: card ? card.site : '',
-                            _shift: card ? card.shift_name : '',
-                            _accommodation: card ? card.accommodation : '',
-                            _stopLocation: card ? card.stop_location : '',
-                        };
-                    });
-                    const cards = [...self.assignedCards];
-                    frappe.call({
-                        method: 'one_fm.one_fm.page.route_planner.route_planner.save_assignments',
-                        args: {
-                            plan_name: self.currentPlan.name,
-                            swim_items: JSON.stringify(items),
-                            assigned_cards: JSON.stringify(cards)
-                        },
-                        callback: (r) => {
-                            if (r.message && r.message.status === 'ok') {
-                                frappe.show_alert({
-                                    message: `Plan "${self.currentPlan.title}" saved — ${r.message.assignment_count} assignments`,
-                                    indicator: 'green'
-                                }, 4);
-                            }
-                        }
-                    });
-                };
-
-                // Show warning if overcapacity detected
-                if (overcapVehicles.length > 0) {
-                    const list = overcapVehicles.map(v =>
-                        `<li><strong>${v.label}</strong>: ${v.peak} passengers / ${v.seats} seats</li>`
-                    ).join('');
-                    frappe.confirm(
-                        `<div style="color:#c62828;font-weight:600;margin-bottom:8px">⚠ Overcapacity Warning</div>` +
-                        `<p style="font-size:13px;color:#555">The following vehicles exceed seat capacity:</p>` +
-                        `<ul style="font-size:13px;margin:8px 0 12px 16px">${list}</ul>` +
-                        `<p style="font-size:13px;color:#555">Save anyway?</p>`,
-                        () => doSave(),
-                        () => frappe.show_alert({ message: 'Save cancelled — fix overcapacity first', indicator: 'orange' }, 4)
-                    );
-                } else {
-                    doSave();
-                }
-            },
 
             persistAssignments() {
                 if (!this.currentPlan) return; // no plan selected — skip
@@ -2155,7 +2076,7 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 const safeJson = JSON.stringify(routeData).replace(/<\//g, '<\\/');
                 // Inject ROUTE_DATA inside the template's existing <body><script>
-                const dataLine = 'const ROUTE_DATA = ' + safeJson + ';\n';
+                const dataLine = 'const ROUTE_DATA = ' + safeJson + ';\nconst FRAPPE_CSRF_TOKEN = "' + frappe.csrf_token + '";\nconst SITE_URL = window.location.origin;\n';
                 // Use regex to insert after first <script> in <body>
                 const finalHtml = tpl.replace(/(<body>[\s\S]*?<script>)/, '$1\n' + dataLine);
                 const blob = new Blob([finalHtml], { type: 'text/html' });
@@ -2384,12 +2305,9 @@ function injectRPVueTemplate() {
       </div>
     </div>
     <div id="rp-header-right">
-      <button id="rp-save-btn" class="rp-btn rp-btn-primary"
-              :disabled="!currentPlan"
-              @click="savePlan"
-              :title="!currentPlan ? 'Create or select a plan first' : ''">
-        <span class="rp-icon">save</span> Save Plan
-      </button>
+      <div v-if="currentPlan" class="text-muted" style="font-size:12px; margin-right: 12px; display: flex; align-items: center; gap: 4px; color: var(--green, #16a34a)">
+        <span class="rp-icon" style="font-size:16px;">check_circle</span> Auto-Saved
+      </div>
       <button class="rp-btn rp-btn-default rp-btn-manifest" :disabled="!canSave || !currentPlan" @click="openManifest">
         <span class="rp-icon">assignment</span> Manifest
       </button>
