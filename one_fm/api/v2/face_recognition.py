@@ -359,12 +359,58 @@ def get_site_location(employee_id: str = None, latitude: float = None, longitude
                     location = frappe.get_list("Location", {'name':shift.site_location}, ["latitude","longitude", "geofence_radius"])
                 elif shift.shift:
                     site = frappe.get_value("Operations Shift", shift.shift, "site")
-                    location= frappe.db.sql("""
-                        SELECT loc.latitude, loc.longitude, loc.geofence_radius
-                        FROM `tabLocation` as loc
-                        WHERE
-                        loc.name IN (SELECT site_location FROM `tabOperations Site` where name="{site}")
-                        """.format(site=site), as_dict=1)
+
+                    # Check for multi-location support
+                    multi_locations = frappe.get_all(
+                        "Operations Site Location Items",
+                        filters={"parent": site, "parenttype": "Operations Site"},
+                        fields=["site_location", "disabled"]
+                    )
+
+                    if multi_locations:
+                        # Multi-location mode: check against all locations
+                        best_match = None
+                        matched_disabled = False
+
+                        for loc_row in multi_locations:
+                            if not loc_row.site_location:
+                                continue
+                            loc_data = frappe.db.get_value(
+                                "Location", loc_row.site_location,
+                                ["latitude", "longitude", "geofence_radius"], as_dict=True
+                            )
+                            if not loc_data:
+                                continue
+                            dist = float(haversine(loc_data.latitude, loc_data.longitude, latitude, longitude))
+
+                            if dist <= float(loc_data.geofence_radius):
+                                if not loc_row.disabled:
+                                    # Active match found
+                                    best_match = loc_data
+                                    best_match["distance"] = dist
+                                    break
+                                else:
+                                    matched_disabled = True
+                            elif best_match is None or dist < best_match.get("distance", float("inf")):
+                                if not loc_row.disabled:
+                                    best_match = loc_data
+                                    best_match["distance"] = dist
+
+                        if matched_disabled and not best_match:
+                            return response("Bad Request", 400, None, "Check-in failed: This site location is currently disabled.")
+
+                        if best_match:
+                            location = [best_match]
+                        else:
+                            location = []
+                    else:
+                        # Single location fallback
+                        location = frappe.db.sql("""
+                            SELECT loc.latitude, loc.longitude, loc.geofence_radius
+                            FROM `tabLocation` as loc
+                            WHERE
+                            loc.name IN (SELECT site_location FROM `tabOperations Site` where name="{site}")
+                            """.format(site=site), as_dict=1)
 
 
         if not site:
