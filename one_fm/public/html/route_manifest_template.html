@@ -1012,12 +1012,161 @@
         .trip-group .timeline::before {
             display: none;
         }
+        /* CHECKER MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background: var(--bg-surface);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: var(--md-sys-elevation-3);
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-header {
+            font-family: var(--font-head);
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-close {
+            background: none; border: none; cursor: pointer; color: var(--text-muted);
+        }
+        .toggle-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .toggle-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 100px;
+            background: transparent;
+            color: var(--md-sys-color-on-surface);
+            font-family: var(--font-head);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toggle-btn:hover {
+            background: rgba(31, 31, 31, 0.08);
+        }
+        .toggle-btn.active-present, .toggle-btn.active-pass {
+            background: var(--md-sys-color-primary);
+            border-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+        .toggle-btn.active-absent, .toggle-btn.active-fail {
+            background: var(--md-sys-color-error);
+            border-color: var(--md-sys-color-error);
+            color: var(--md-sys-color-on-primary);
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 8px 12px;
+            background: #171717; /* Frappe UI default primary (Gray 900) */
+            color: #ffffff;
+            border: 1px solid transparent;
+            border-radius: 6px; /* Frappe UI standard shape */
+            font-family: var(--font-head);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: #262626; /* hover state */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary:disabled {
+            background: #e5e5e5;
+            color: #a3a3a3;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .checker-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        /* DYNAMIC CHIP STYLES */
+        .emp-chip.interactive { cursor: pointer; }
+        .emp-chip.state-success {
+            background: var(--green-dim);
+            border-color: var(--green);
+            color: #166534;
+        }
+        .emp-chip.state-warning {
+            background: rgba(245, 158, 11, 0.12);
+            border-color: #f59e0b;
+            color: #b45309;
+        }
+        .emp-chip.state-error {
+            background: var(--red-dim);
+            border-color: var(--red);
+            color: #991b1b;
+            text-decoration: line-through;
+        }
+        .emp-chip.state-replacement {
+            background: var(--blue-dim);
+            border-color: var(--blue);
+            color: #1e3a8a;
+        }
+        .depart-header-right {
+            border: 1px solid var(--red);
+            color: var(--red);
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        select.form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-family: var(--font-body);
+        }
     </style>
 </head>
 
 <body>
 
     <script>
+        let activeView = null; // Track current route for re-rendering
 
         function fmtTime(isoStr) {
             if (!isoStr) return "—";
@@ -1052,28 +1201,61 @@
         }
 
         /** Build an employee chip with call icon for manifest display. */
-        function empChipHtml(e, chipStyle) {
+        function empChipHtml(e, chipStyle, interactive = false) {
+            const id = (typeof e === 'object' && e !== null) ? (e.id || e.name || '—') : (e || '—');
             const name = (typeof e === 'object' && e !== null) ? (e.name || '—') : (e || '—');
             const rawMobile = (typeof e === 'object' && e !== null) ? (e.mobile || '') : '';
             // Normalize: strip everything except digits, +, -, (, ), space for tel: URI
             const mobile = rawMobile.replace(/[^\d+\-() ]/g, '');
-            const styleAttr = chipStyle ? ` style="${chipStyle}"` : '';
+            
+            window.checkerState = window.checkerState || {};
+            const state = window.checkerState[id] || {};
+            
+            let displayStyleAttr = chipStyle ? ` style="${chipStyle}"` : '';
+            let classes = "emp-chip";
+            let displayName = name;
+            let displayIcon = "";
+            
+            if (state.replacement) {
+                classes += " state-replacement";
+                displayName = state.replacement.name;
+                displayStyleAttr = ""; 
+            } else if (state.attendance === 'Absent') {
+                classes += " state-error";
+                displayIcon = `<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-left:4px">close</span>`;
+                displayStyleAttr = "";
+            } else if (state.attendance === 'Present' && state.qoa === 'Fail') {
+                classes += " state-warning";
+                displayStyleAttr = "";
+            } else if (state.attendance === 'Present' && state.qoa === 'Pass') {
+                classes += " state-success";
+                displayIcon = `<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-left:4px">check</span>`;
+                displayStyleAttr = "";
+            }
+            
+            if (interactive) {
+                classes += " interactive";
+            }
+            
             // HTML-escape helper for safe attribute interpolation
             const esc = s => s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            const safeName = esc(name);
+            const safeName = esc(displayName);
             const safeMobile = esc(mobile);
             let icon;
-            if (mobile) {
+            if (mobile || (state.replacement && state.replacement.mobile)) {
+                const mobToUse = (state.replacement && state.replacement.mobile) ? state.replacement.mobile.replace(/[^\d+\-() ]/g, '') : safeMobile;
                 const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry/i.test(navigator.userAgent);
                 if (isMobile) {
-                    icon = `<a href="tel:${safeMobile}" class="emp-call-btn" title="Call ${safeMobile}" onclick="event.stopPropagation()"><span class="material-symbols-outlined" style="font-size:14px">call</span></a>`;
+                    icon = `<a href="tel:${mobToUse}" class="emp-call-btn" title="Call ${mobToUse}" onclick="event.stopPropagation()"><span class="material-symbols-outlined" style="font-size:14px">call</span></a>`;
                 } else {
-                    icon = `<span class="emp-call-btn" title="Call ${safeMobile}" onclick="copyNumber(event,&#39;${safeMobile}&#39;)"><span class="material-symbols-outlined" style="font-size:14px">call</span></span>`;
+                    icon = `<span class="emp-call-btn" title="Call ${mobToUse}" onclick="copyNumber(event,'${mobToUse}')"><span class="material-symbols-outlined" style="font-size:14px">call</span></span>`;
                 }
             } else {
-                icon = `<span class="emp-call-btn emp-call-disabled" title="No mobile number" onclick="event.stopPropagation();showNoNumber(&#39;${safeName}&#39;)"><span class="material-symbols-outlined" style="font-size:14px">call</span></span>`;
+                icon = `<span class="emp-call-btn emp-call-disabled" title="No mobile number" onclick="event.stopPropagation();showNoNumber('${safeName}')"><span class="material-symbols-outlined" style="font-size:14px">call</span></span>`;
             }
-            return `<span class="emp-chip"${styleAttr}>${safeName}${icon}</span>`;
+            
+            const onclickAttr = interactive ? ` onclick="openCheckInModal('${esc(id)}', '${safeName}')"` : '';
+            return `<span class="${classes}"${displayStyleAttr}${onclickAttr}>${safeName}${displayIcon}${icon}</span>`;
         }
 
         function fmtDuration(secStr) {
@@ -1640,10 +1822,13 @@
                 if (allEmps.length > 0) {
                     // DEPART card — show all employees boarding
                     empHtml = `<div style="margin-top:6px">
-                        <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">
-                            <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">directions_bus</span> Onboarding — ${allEmps.length} employee${allEmps.length !== 1 ? 's' : ''}
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4px">
+                            <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;">
+                                <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">directions_bus</span> Onboarding — ${allEmps.length} employee${allEmps.length !== 1 ? 's' : ''}
+                            </div>
+                            <div class="depart-header-right">Attendance and QOA Check</div>
                         </div>
-                        <div class="stop-employees">${allEmps.map(n => empChipHtml(n)).join("")}</div>
+                        <div class="stop-employees">${allEmps.map(n => empChipHtml(n, null, true)).join("")}</div>
                     </div>`;
                 } else if (stopEmps.length > 0) {
                     if (stop.type === 'dropoff') {
@@ -1735,6 +1920,244 @@
         <main class="main" id="main"></main>
     </div>
 
+    <!-- CHECK-IN MODAL -->
+    <div class="modal-overlay" id="checkinModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="checkinEmpName">Employee Name</span>
+                <button class="modal-close" onclick="closeCheckInModal()"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            
+            <div class="checker-label">Attendance</div>
+            <div class="toggle-group">
+                <button class="toggle-btn" id="btn-present" onclick="setAttendance('Present')">Present</button>
+                <button class="toggle-btn" id="btn-absent" onclick="setAttendance('Absent')">Absent</button>
+            </div>
+            
+            <div class="checker-label">Quality of Appearance (QoA)</div>
+            <div class="toggle-group" style="margin-bottom:0;">
+                <button class="toggle-btn" id="btn-pass" onclick="setQoa('Pass')">Pass</button>
+                <button class="toggle-btn" id="btn-fail" onclick="setQoa('Fail')">Fail</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- REPLACEMENT MODAL -->
+    <div class="modal-overlay" id="replacementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Assign Rambo Reliever</span>
+                <button class="modal-close" onclick="closeReplacementModal()"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            
+            <div style="margin-bottom:16px; font-size:13px; color:var(--text-muted)">
+                Replacing: <strong id="replaceOrigName" style="color:var(--text)"></strong>
+            </div>
+            
+            <div class="checker-label">Select Available Reliever</div>
+            <select id="relieverSelect" class="form-control">
+                <option value="">Loading...</option>
+            </select>
+            
+            <button class="btn-primary" onclick="confirmReplacement()" id="btn-confirm-replace">Confirm Replacement</button>
+        </div>
+    </div>
+
+    <script>
+        window.checkerState = window.checkerState || {};
+        let currentCheckInEmpId = null;
+        let currentCheckInEmpName = null;
+        
+        let tempAttendance = null;
+        let tempQoa = null;
+
+        function openCheckInModal(empId, empName) {
+            currentCheckInEmpId = empId;
+            currentCheckInEmpName = empName;
+            
+            const state = window.checkerState[empId] || {};
+            tempAttendance = state.attendance || null;
+            tempQoa = state.qoa || null;
+            
+            document.getElementById('checkinEmpName').textContent = empName;
+            updateCheckInUI();
+            
+            document.getElementById('checkinModal').classList.add('active');
+        }
+
+        function closeCheckInModal() {
+            document.getElementById('checkinModal').classList.remove('active');
+        }
+
+        function setAttendance(val) {
+            tempAttendance = val;
+            if (val === 'Absent') {
+                tempQoa = null; // Auto clear QoA if Absent
+            }
+            updateCheckInUI();
+            autoSaveCheckIn();
+        }
+
+        function setQoa(val) {
+            if (tempAttendance === 'Absent') return; // Disabled
+            tempQoa = val;
+            updateCheckInUI();
+            autoSaveCheckIn();
+        }
+
+        function updateCheckInUI() {
+            document.getElementById('btn-present').className = 'toggle-btn' + (tempAttendance === 'Present' ? ' active-present' : '');
+            document.getElementById('btn-absent').className = 'toggle-btn' + (tempAttendance === 'Absent' ? ' active-absent' : '');
+            
+            const qoaDisabled = (tempAttendance === 'Absent');
+            document.getElementById('btn-pass').className = 'toggle-btn' + (tempQoa === 'Pass' ? ' active-pass' : '');
+            document.getElementById('btn-fail').className = 'toggle-btn' + (tempQoa === 'Fail' ? ' active-fail' : '');
+            document.getElementById('btn-pass').style.opacity = qoaDisabled ? '0.5' : '1';
+            document.getElementById('btn-fail').style.opacity = qoaDisabled ? '0.5' : '1';
+        }
+
+        function autoSaveCheckIn() {
+            window.checkerState[currentCheckInEmpId] = window.checkerState[currentCheckInEmpId] || {};
+            window.checkerState[currentCheckInEmpId].attendance = tempAttendance;
+            window.checkerState[currentCheckInEmpId].qoa = tempQoa;
+            
+            if (activeView) {
+                renderRoute(activeView);
+            } else {
+                init(); // Fallback
+            }
+            
+            if (tempAttendance === 'Absent' || tempQoa === 'Fail') {
+                // Delay slightly to let them see the button turn red
+                setTimeout(() => {
+                    closeCheckInModal();
+                    openReplacementModal(currentCheckInEmpId, currentCheckInEmpName);
+                }, 150);
+            } else if (tempAttendance === 'Present' && tempQoa === 'Pass') {
+                // Perfect check-in, auto close!
+                setTimeout(() => {
+                    closeCheckInModal();
+                }, 150);
+            }
+            // If they only clicked Present, stay open for QoA
+        }
+
+        // --- REPLACEMENT MODAL LOGIC ---
+        
+        let availableRelievers = [];
+
+        function findShiftForEmp(empId) {
+            // Find the shift info from the window.manifestData
+            if (!window.manifestData || !window.manifestData.swim_items) return null;
+            for (let item of window.manifestData.swim_items) {
+                // To be precise we would need to know the employee is in this item's _card
+                // But simpler: just find the shift of the first loaded shipment since usually 1 site/shift per manifest.
+                // Or look in window.manifestData.swim_items
+                if (item._shift) return { shift: item._shift, site: item._site };
+            }
+            return null;
+        }
+
+        function openReplacementModal(empId, empName) {
+            document.getElementById('replaceOrigName').textContent = empName;
+            document.getElementById('relieverSelect').innerHTML = '<option value="">Loading available relievers...</option>';
+            document.getElementById('btn-confirm-replace').disabled = true;
+            document.getElementById('replacementModal').classList.add('active');
+            
+            let shiftInfo = findShiftForEmp(empId) || { shift: "", site: "" };
+            
+            const req = ROUTE_DATA.request || {};
+            const routes = ROUTE_DATA.response?.routes || [];
+            const firstTime = routes[0]?.vehicleStartTime ?? req.model?.globalStartTime;
+            let date = new Date().toISOString().split('T')[0];
+            if (firstTime) {
+                date = new Date(firstTime).toLocaleDateString("en-CA", { timeZone: "Asia/Kuwait" });
+            }
+
+            const baseUrl = typeof SITE_URL !== 'undefined' ? SITE_URL : '';
+            fetch(baseUrl + '/api/method/one_fm.one_fm.page.route_planner.route_planner.get_available_rambo_relievers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (typeof FRAPPE_CSRF_TOKEN !== 'undefined' ? FRAPPE_CSRF_TOKEN : '') },
+                body: JSON.stringify({ shift_name: shiftInfo.shift, date: date })
+            })
+            .then(r => r.json())
+            .then(res => {
+                availableRelievers = res.message || [];
+                const sel = document.getElementById('relieverSelect');
+                if (availableRelievers.length === 0) {
+                    sel.innerHTML = '<option value="">No available Rambo Relievers found for this time slot.</option>';
+                    sel.disabled = true;
+                } else {
+                    sel.disabled = false;
+                    sel.innerHTML = '<option value="">-- Select Reliever --</option>' + 
+                        availableRelievers.map(r => `<option value="${r.name}">${r.employee_name} (${r.designation})</option>`).join("");
+                    document.getElementById('btn-confirm-replace').disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('relieverSelect').innerHTML = '<option value="">Error loading relievers.</option>';
+            });
+        }
+
+        function closeReplacementModal() {
+            document.getElementById('replacementModal').classList.remove('active');
+            if (activeView) {
+                renderRoute(activeView);
+            } else {
+                init();
+            }
+        }
+
+        function confirmReplacement() {
+            const sel = document.getElementById('relieverSelect').value;
+            if (!sel) return;
+            
+            const reliever = availableRelievers.find(r => r.name === sel);
+            if (!reliever) return;
+            
+            // Mark replacement in state
+            window.checkerState[currentCheckInEmpId].replacement = {
+                id: reliever.name,
+                name: reliever.employee_name,
+                mobile: reliever.mobile
+            };
+            
+            let shiftInfo = findShiftForEmp(currentCheckInEmpId) || { shift: "", site: "" };
+            
+            document.getElementById('btn-confirm-replace').innerText = "Processing...";
+            
+            // Call backend to send email
+            const baseUrl = typeof SITE_URL !== 'undefined' ? SITE_URL : '';
+            fetch(baseUrl + '/api/method/one_fm.one_fm.page.route_planner.route_planner.process_rambo_replacement', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': (typeof FRAPPE_CSRF_TOKEN !== 'undefined' ? FRAPPE_CSRF_TOKEN : '') },
+                body: JSON.stringify({
+                    original_employee: currentCheckInEmpId,
+                    replacement_employee: reliever.name,
+                    shift_name: shiftInfo.shift,
+                    site: shiftInfo.site
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP Error " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if (data.exc) throw new Error("Server Error");
+                
+                document.getElementById('btn-confirm-replace').innerText = "Confirm Replacement";
+                showToast("Replacement confirmed and supervisor notified.");
+                closeReplacementModal();
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('btn-confirm-replace').innerText = "Confirm Replacement";
+                showToast("Replacement UI updated, but failed to send email.");
+                closeReplacementModal();
+            });
+        }
+    </script>
 </body>
 
 </html>
