@@ -2057,10 +2057,12 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                const btn = document.getElementById('rp-save-btn');
-                const orig = btn.textContent;
-                btn.disabled = true;
-                btn.textContent = 'Generating...';
+                const btn = document.querySelector('.rp-btn-manifest');
+                const orig = btn ? btn.innerHTML : '';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="rp-icon">sync</span> Generating...';
+                }
 
                 let tpl;
                 try {
@@ -2069,8 +2071,10 @@ function mountRoutePlannerApp(wrapper, data) {
                     tpl = await res.text();
                 } catch (err) {
                     frappe.show_alert({ message: `Template load failed: ${err.message}`, indicator: 'red' }, 8);
-                    btn.disabled = false;
-                    btn.textContent = orig;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = orig;
+                    }
                     return;
                 }
 
@@ -2084,8 +2088,10 @@ function mountRoutePlannerApp(wrapper, data) {
                 window.open(url, '_blank');
                 setTimeout(() => URL.revokeObjectURL(url), 60000);
 
-                btn.disabled = false;
-                btn.textContent = orig;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                }
                 frappe.show_alert({
                     message: `Manifest opened — ${routeData.response.routes.length} vehicles`,
                     indicator: 'green'

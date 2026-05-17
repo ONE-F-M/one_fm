@@ -1166,6 +1166,7 @@
 <body>
 
     <script>
+        let activeView = null; // Track current route for re-rendering
 
         function fmtTime(isoStr) {
             if (!isoStr) return "—";
@@ -2020,7 +2021,11 @@
             window.checkerState[currentCheckInEmpId].attendance = tempAttendance;
             window.checkerState[currentCheckInEmpId].qoa = tempQoa;
             
-            init(); // Re-render instantly so background UI updates
+            if (activeView) {
+                renderRoute(activeView);
+            } else {
+                init(); // Fallback
+            }
             
             if (tempAttendance === 'Absent' || tempQoa === 'Fail') {
                 // Delay slightly to let them see the button turn red
@@ -2060,8 +2065,14 @@
             document.getElementById('replacementModal').classList.add('active');
             
             let shiftInfo = findShiftForEmp(empId) || { shift: "", site: "" };
-            // Format today's date YYYY-MM-DD
-            const date = new Date().toISOString().split('T')[0];
+            
+            const req = ROUTE_DATA.request || {};
+            const routes = ROUTE_DATA.response?.routes || [];
+            const firstTime = routes[0]?.vehicleStartTime ?? req.model?.globalStartTime;
+            let date = new Date().toISOString().split('T')[0];
+            if (firstTime) {
+                date = new Date(firstTime).toLocaleDateString("en-CA", { timeZone: "Asia/Kuwait" });
+            }
 
             const baseUrl = typeof SITE_URL !== 'undefined' ? SITE_URL : '';
             fetch(baseUrl + '/api/method/one_fm.one_fm.page.route_planner.route_planner.get_available_rambo_relievers', {
@@ -2091,7 +2102,11 @@
 
         function closeReplacementModal() {
             document.getElementById('replacementModal').classList.remove('active');
-            init(); // render in case absent state needs to show
+            if (activeView) {
+                renderRoute(activeView);
+            } else {
+                init();
+            }
         }
 
         function confirmReplacement() {
@@ -2124,15 +2139,22 @@
                     site: shiftInfo.site
                 })
             })
-            .then(() => {
+            .then(res => {
+                if (!res.ok) throw new Error("HTTP Error " + res.status);
+                return res.json();
+            })
+            .then(data => {
+                if (data.exc) throw new Error("Server Error");
+                
                 document.getElementById('btn-confirm-replace').innerText = "Confirm Replacement";
-                closeReplacementModal();
                 showToast("Replacement confirmed and supervisor notified.");
+                closeReplacementModal();
             })
             .catch(err => {
                 console.error(err);
-                closeReplacementModal();
+                document.getElementById('btn-confirm-replace').innerText = "Confirm Replacement";
                 showToast("Replacement UI updated, but failed to send email.");
+                closeReplacementModal();
             });
         }
     </script>

@@ -1320,7 +1320,6 @@ def get_available_rambo_relievers(shift_name: str, date: str):
     - status = 'Active'
     - No active shift assignment for the given date.
     """
-    shift = frappe.get_doc("Operations Shift", shift_name) if shift_name else None
     
     # Get all active rambo relievers
     rambos = frappe.get_all("Employee",
@@ -1372,7 +1371,7 @@ def process_rambo_replacement(original_employee: str, replacement_employee: str,
     new_emp = frappe.db.get_value("Employee", replacement_employee, "employee_name") or replacement_employee
     
     # Send Email Notification
-    recipients = ["helpdesk@one-fm.com"]
+    recipients = []
     
     # Find operations supervisor for the shift/site
     if shift_name:
@@ -1381,31 +1380,29 @@ def process_rambo_replacement(original_employee: str, replacement_employee: str,
             user_email = frappe.db.get_value("User", supervisor, "email")
             if user_email:
                 recipients.append(user_email)
-                
-    # Also add Mr Yaser if known email (hardcoded for now, or assume system finds it)
-    recipients.append("yaser@one-fm.com") # Placeholder for Mr Yaser's email
     
-    subject = f"Rambo Reliever Swap: {orig_emp} replaced by {new_emp}"
-    message = f"""
-    <p>A Rambo Reliever replacement has been processed from the Route Planner Manifest.</p>
-    <ul>
-        <li><b>Site:</b> {site}</li>
-        <li><b>Shift:</b> {shift_name}</li>
-        <li><b>Original Employee (Absent/Fail):</b> {orig_emp}</li>
-        <li><b>Rambo Reliever (Replacement):</b> {new_emp}</li>
-    </ul>
-    <p>Please note that this is an automated message.</p>
-    """
-    
-    try:
-        frappe.sendmail(
-            recipients=recipients,
-            subject=subject,
-            message=message,
-            now=True
-        )
-    except Exception as e:
-        frappe.log_error(f"Error sending Rambo Reliever notification: {str(e)}", "Rambo Reliever Notification")
+    if recipients:
+        subject = f"Rambo Reliever Swap: {orig_emp} replaced by {new_emp}"
+        message = f"""
+        <p>A Rambo Reliever replacement has been processed from the Route Planner Manifest.</p>
+        <ul>
+            <li><b>Site:</b> {site}</li>
+            <li><b>Shift:</b> {shift_name}</li>
+            <li><b>Original Employee (Absent/Fail):</b> {orig_emp}</li>
+            <li><b>Rambo Reliever (Replacement):</b> {new_emp}</li>
+        </ul>
+        <p>Please note that this is an automated message.</p>
+        """
+        
+        try:
+            frappe.sendmail(
+                recipients=recipients,
+                subject=subject,
+                message=message,
+                now=True
+            )
+        except Exception as e:
+            frappe.log_error(f"Error sending Rambo Reliever notification: {str(e)}", "Rambo Reliever Notification")
         
     return {
         "status": "success",
