@@ -26,9 +26,17 @@ def execute():
 	)
 	if ps_name:
 		ps = frappe.get_doc("Property Setter", ps_name)
-		field_order = json.loads(ps.value)
-		if "custom_is_rambo_reliever" not in field_order:
-			idx = field_order.index("custom_is_weekend_reliever")
-			field_order.insert(idx + 1, "custom_is_rambo_reliever")
+		try:
+			field_order = frappe.parse_json(ps.value)
+		except Exception:
+			field_order = []
+
+		if isinstance(field_order, list) and "custom_is_rambo_reliever" not in field_order:
+			if "custom_is_weekend_reliever" in field_order:
+				idx = field_order.index("custom_is_weekend_reliever")
+				field_order.insert(idx + 1, "custom_is_rambo_reliever")
+			else:
+				field_order.append("custom_is_rambo_reliever")
+			
 			ps.value = json.dumps(field_order)
 			ps.save(ignore_permissions=True)
