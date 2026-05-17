@@ -345,8 +345,13 @@ class EmployeeOverride(EmployeeMaster):
                 NotifyAttendanceManagerOnStatusChange(employee_object=self).notify_authorities()
 
     def validate_reliever(self):
-        if self.custom_is_reliever == 1 and self.custom_is_weekend_reliever == 1:
-            frappe.throw("Employee can either marked as Day Off reliever or Weekend reliever")
+        reliever_flags = [
+            self.custom_is_reliever,
+            self.custom_is_weekend_reliever,
+            self.custom_is_rambo_reliever,
+        ]
+        if sum(1 for flag in reliever_flags if flag) > 1:
+            frappe.throw(_("Employee can only be marked as one reliever type at a time: Day Off, Weekend, or Rambo."))
 
     def validate_status_change(self):
         last_doc = self.get_doc_before_save()

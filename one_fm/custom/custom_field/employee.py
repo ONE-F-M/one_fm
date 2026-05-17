@@ -10,6 +10,14 @@ def get_employee_custom_fields():
 				"label": "Is Weekend Reliever",
 			},
 			{
+				"depends_on": "eval:!doc.attendance_by_timesheet",
+				"description": "If checked, the Employee is categorized as a Rambo reliever in Roster.",
+				"fieldname": "custom_is_rambo_reliever",
+				"fieldtype": "Check",
+				"insert_after": "custom_is_weekend_reliever",
+				"label": "Is Rambo Reliever",
+			},
+			{
 				"fieldname": "custom_enable_face_recognition",
 				"fieldtype": "Check",
 				"insert_after": "checkin_location",

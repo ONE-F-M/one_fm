@@ -117,6 +117,24 @@ frappe.ui.form.on('Employee', {
 	validate: function(frm) {
         handle_not_returned_from_leave_status_change(frm);
     },
+	custom_is_reliever: function(frm) {
+		if (frm.doc.custom_is_reliever) {
+			frm.set_value("custom_is_weekend_reliever", 0);
+			frm.set_value("custom_is_rambo_reliever", 0);
+		}
+	},
+	custom_is_weekend_reliever: function(frm) {
+		if (frm.doc.custom_is_weekend_reliever) {
+			frm.set_value("custom_is_reliever", 0);
+			frm.set_value("custom_is_rambo_reliever", 0);
+		}
+	},
+	custom_is_rambo_reliever: function(frm) {
+		if (frm.doc.custom_is_rambo_reliever) {
+			frm.set_value("custom_is_reliever", 0);
+			frm.set_value("custom_is_weekend_reliever", 0);
+		}
+	},
 });
 
 
