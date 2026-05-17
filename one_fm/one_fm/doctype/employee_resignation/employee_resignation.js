@@ -304,7 +304,9 @@ frappe.ui.form.on('Employee Resignation Item', {
                         if (!frm.doc.project_allocation) frm.set_value('project_allocation', d.project);
                         if (!frm.doc.department) frm.set_value('department', d.department);
                         if (!frm.doc.designation) frm.set_value('designation', d.designation);
-                        if (!frm.doc.site_allocation) frm.set_value('site_allocation', d.site);
+                        // WAF BYPASS: We no longer pull site_allocation to the frontend.
+                        // The backend 'before_save' hook will fetch it securely to prevent '@' blocks.
+                        // if (!frm.doc.site_allocation) frm.set_value('site_allocation', d.site);
                         if (!frm.doc.employment_type) frm.set_value('employment_type', d.employment_type);
                         if (!frm.doc.shift_allocation) frm.set_value('shift_allocation', d.shift);
                         if (!frm.doc.operations_role_allocation) frm.set_value('operations_role_allocation', d.custom_operations_role_allocation);

@@ -175,6 +175,33 @@ class EmployeeResignation(Document):
 
 	def before_save(self):
 		self.set_supervisor()
+		self.set_allocations()
+
+	def set_allocations(self):
+		# Securely fetch allocations on the backend to avoid WAF blocks caused by frontend literal strings
+		if not self.get("employees"):
+			return
+			
+		first_emp = self.employees[0].employee
+		if not first_emp:
+			return
+
+		emp_data = frappe.db.get_value("Employee", first_emp, ["project", "designation", "department", "custom_operations_role_allocation", "site", "shift", "employment_type"], as_dict=True)
+		if emp_data:
+			if not self.project_allocation:
+				self.project_allocation = emp_data.project
+			if not self.designation:
+				self.designation = emp_data.designation
+			if not self.department:
+				self.department = emp_data.department
+			if not self.site_allocation:
+				self.site_allocation = emp_data.site
+			if not self.shift_allocation:
+				self.shift_allocation = emp_data.shift
+			if not self.operations_role_allocation:
+				self.operations_role_allocation = emp_data.custom_operations_role_allocation
+			if not self.employment_type:
+				self.employment_type = emp_data.employment_type
 
 	def set_supervisor(self):
 		# Only auto-resolve supervisor if it hasn't already been set manually
