@@ -101,3 +101,8 @@ AssignmentRule.get_user = get_user
 
 from one_fm.overrides.reports.stock_balance_override import override_stock_balance
 override_stock_balance()
+
+# Override workspace sidebar to sort alphabetically
+from one_fm.overrides.workspace import get_workspace_sidebar_items
+import frappe.desk.desktop
+frappe.desk.desktop.get_workspace_sidebar_items = get_workspace_sidebar_items
