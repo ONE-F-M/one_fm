@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:Fl-{maintenance_floor}-{building_name}-{operations_site}-{project}",
+ "autoname": "format:Fl-{maintenance_floor}-{operations_site}-{project}",
  "creation": "2026-05-16 20:29:14.886710",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -39,13 +39,15 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Operations Site",
-   "options": "Operations Site"
+   "options": "Operations Site",
+   "read_only": 1
   },
   {
    "fetch_from": "operations_site.project",
    "fieldname": "project",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "label": "Project",
+   "options": "Project",
    "read_only": 1
   },
   {
@@ -62,7 +64,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-16 22:33:57.182350",
+ "modified": "2026-05-18 21:50:21.949647",
  "modified_by": "Administrator",
  "module": "One Fm",
  "name": "Maintenance Floor",
