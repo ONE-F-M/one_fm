@@ -2,7 +2,8 @@ include MANIFEST.in
 include requirements.txt
 include *.json
 include *.md
-include *.py
+include pyproject.toml
+exclude setup.py
 include *.txt
 recursive-include one_fm *.css
 recursive-include one_fm *.csv
