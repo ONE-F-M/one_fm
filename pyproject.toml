@@ -35,7 +35,10 @@ build-backend = "flit_core.buildapi"
 
 # These dependencies are only installed when developer mode is enabled
 [tool.bench.dev-dependencies]
-# package_name = "~=1.1.0"
+basedmypy = "~=2.0.0"
+types-requests = "~=2.31.0"
+types-PyYAML = "~=6.0.12"
+types-python-dateutil = "~=2.8.19"
 
 [tool.ruff]
 line-length = 110
@@ -75,3 +78,24 @@ docstring-code-format = true
 
 [tool.bench.frappe-dependencies]
 one_fm = ">=15.0.0,<16.0.0"
+
+[tool.mypy]
+strict = false
+pretty = true
+incremental = true
+sqlite_cache = true
+files = [
+    "one_fm/__init__.py",
+    "one_fm/api/__init__.py",
+    "one_fm/utils/__init__.py",
+    "one_fm/permissions.py",
+]
+exclude = "^one_fm/patches|/test_.*\.py$"
+
+[[tool.mypy.overrides]]
+module = [
+    "frappe.*",
+    "erpnext.*",
+    "hrms.*",
+]
+ignore_missing_imports = true
