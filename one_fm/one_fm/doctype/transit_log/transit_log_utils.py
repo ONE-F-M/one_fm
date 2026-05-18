@@ -280,17 +280,30 @@ def sync_transit_log_status():
 	)
 
 	for tl in transit_logs:
-		try:
-			_sync_single_transit_log(tl)
-		except Exception:
-			frappe.log_error(
-				title=_("Transit Log API Sync Failed: {0}").format(tl.name),
-				message=frappe.get_traceback()
-			)
-			frappe.db.set_value("Transit Log", tl.name, {
-				"api_sync_status": "Failed",
-				"last_api_sync": now_datetime()
-			})
+		frappe.enqueue(
+			"one_fm.one_fm.doctype.transit_log.transit_log_utils.process_single_transit_log_sync",
+			queue="short",
+			timeout=300,
+			tl=tl
+		)
+
+
+def process_single_transit_log_sync(tl):
+	"""Background job wrapper to sync a single Transit Log."""
+	if isinstance(tl, dict):
+		tl = frappe._dict(tl)
+
+	try:
+		_sync_single_transit_log(tl)
+	except Exception:
+		frappe.log_error(
+			title=_("Transit Log API Sync Failed: {0}").format(tl.name),
+			message=frappe.get_traceback()
+		)
+		frappe.db.set_value("Transit Log", tl.name, {
+			"api_sync_status": "Failed",
+			"last_api_sync": now_datetime()
+		})
 
 
 def _sync_single_transit_log(tl):
