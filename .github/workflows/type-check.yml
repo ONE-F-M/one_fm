@@ -1,0 +1,40 @@
+name: Type Check
+
+on:
+  pull_request:
+    branches: [staging, test-production, version-15]
+    paths:
+      - "one_fm/api/__init__.py"
+      - "one_fm/api/api.py"
+      - "one_fm/utils.py"
+      - "one_fm/permissions.py"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typecheck-one_fm-${{ github.event_name }}-${{ github.event.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: Type Check with basedmypy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install checker
+        run: |
+          pip install basedmypy~=2.0.0 types-requests types-PyYAML types-python-dateutil
+
+      - name: Run mypy on typed files only
+        run: |
+          mypy one_fm/api/__init__.py one_fm/api/api.py one_fm/utils.py one_fm/permissions.py --ignore-missing-imports
