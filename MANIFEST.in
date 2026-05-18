@@ -3,7 +3,6 @@ include requirements.txt
 include *.json
 include *.md
 include pyproject.toml
-exclude setup.py
 include *.txt
 recursive-include one_fm *.css
 recursive-include one_fm *.csv
