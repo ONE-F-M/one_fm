@@ -293,6 +293,7 @@ one_fm.patches.v15_0.add_sales_invoice_contract_fields #3
 one_fm.patches.v15_0.add_sales_taxes_charges_add_or_deduct_field
 one_fm.patches.v15_0.add_workflow_penalty_and_investigation
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow
+one_fm.patches.v15_0.add_rambo_reliever_custom_field #2026-05-14
 
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
@@ -402,4 +403,5 @@ one_fm.patches.v15_0.add_attendance_amendment_to_sales_invoice
 one_fm.patches.v15_0.backfill_governorate_in_site_to_location_mapping
 one_fm.patches.v15_0.update_bank_account_workflow
 one_fm.patches.v15_0.add_courier_tracking_custom_fields
+one_fm.patches.v15_0.update_client_interview_shortlist_workflow #2026-05-13
 one_fm.patches.v15_0.add_resignation_fields_to_employee

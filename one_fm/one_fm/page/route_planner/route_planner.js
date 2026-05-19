@@ -635,8 +635,8 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                // ── Trip chaining: detect nearby blocks of SAME direction from same accommodation ──
-                // Use the correct time window based on card direction
+                // ── Trip chaining: detect nearby blocks from same accommodation (any direction) ──
+                // Mixed-direction trips are valid: OUT drops + RET pickups on the same trip
                 const isOutbound = card.direction === 'OUTBOUND';
                 const cardWindowStart = new Date(isOutbound ? card.outbound_window_start : card.return_window_start).getTime();
                 const cardWindowEnd   = new Date(isOutbound ? card.outbound_window_end   : card.return_window_end).getTime();
@@ -644,8 +644,6 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 const nearbyBlocks = this.swimItems.filter(i => {
                     if (i.vehicleId !== vehicle.id) return false;
-                    // Only chain with blocks of the SAME direction
-                    if (i.direction !== card.direction) return false;
                     const existingCard = this.planData.shipment_cards.find(c => c.id === i.cardId);
                     if (!existingCard || existingCard.accommodation !== card.accommodation) return false;
                     const blockEnd = new Date(i.end).getTime();
@@ -666,14 +664,17 @@ function mountRoutePlannerApp(wrapper, data) {
 
                     if (tripKeys.length === 1) {
                         // ── Single trip: simple confirm ──
-                        const existingSites = nearbyBlocks.map(i => {
+                        const existingStops = nearbyBlocks.map(i => {
                             const c = this.planData.shipment_cards.find(sc => sc.id === i.cardId);
-                            return c ? c.site_location : i.cardId;
+                            const siteName = c ? c.site_location : i.cardId;
+                            const dirBadge = i.direction === 'RETURN' ? '← RET' : '→ OUT';
+                            return `${siteName} <span style="font-size:11px;color:#888">(${dirBadge})</span>`;
                         });
+                        const newDirBadge = card.direction === 'RETURN' ? '← RET' : '→ OUT';
                         frappe.confirm(
-                            `<strong>${vehicle.label}</strong> already picks up from <strong>${card.accommodation}</strong> and drops at:<br><br>` +
-                            existingSites.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
-                            `<br><br>Add <strong>${card.site_location}</strong> as the next stop on this trip?`,
+                            `<strong>${vehicle.label}</strong> already has stops from <strong>${card.accommodation}</strong>:<br><br>` +
+                            existingStops.map((s, i) => `&nbsp;&nbsp;${i + 1}. ${s}`).join('<br>') +
+                            `<br><br>Add <strong>${card.site_location}</strong> <span style="font-size:11px;color:#888">(${newDirBadge})</span> as the next stop on this trip?`,
                             () => this._chainToTrip(card, tripMap[tripKeys[0]], vehicle.id),
                             () => this._doPlaceWithDialog(card, vehicle.id)
                         );
@@ -684,7 +685,9 @@ function mountRoutePlannerApp(wrapper, data) {
                             const items = tripMap[key];
                             const sites = items.map(i => {
                                 const c = self.planData.shipment_cards.find(sc => sc.id === i.cardId);
-                                return c ? c.site_location : i.cardId;
+                                const siteName = c ? c.site_location : i.cardId;
+                                const dir = i.direction === 'RETURN' ? '←' : '→';
+                                return `${dir} ${siteName}`;
                             });
                             const timeRange = self.fmtTime(items[0].start) + '–' + self.fmtTime(items[items.length - 1].end);
                             const tName = items.find(i => i.tripName)?.tripName;
@@ -853,8 +856,8 @@ function mountRoutePlannerApp(wrapper, data) {
 
                 // Shared placement logic (transitMin = travel, dwellMin = buffer at prev stop)
                 const doChain = (transitMin, dwellMin) => {
-                    const dwellMs = (dwellMin || 0) * 60000;
-                    const transitMs = (transitMin || 30) * 60000;
+                    const dwellMs = (dwellMin != null ? dwellMin : 0) * 60000;
+                    const transitMs = Math.max((transitMin != null ? transitMin : 30), 5) * 60000; // min 5min block for visibility
                     const lastEnd = new Date(Math.max(
                         ...existingItems.map(i => new Date(i.end).getTime())
                     ));
@@ -1474,13 +1477,27 @@ function mountRoutePlannerApp(wrapper, data) {
                     gaps.push(removedGap);
                 }
 
-                // Rebuild times: preserve durations + inter-stop gaps
-                const baseStart = new Date(Math.min(
-                    ...this.swimItems
-                        .filter(i => i.tripId === tripId)
-                        .map(s => new Date(s.start).getTime())
-                ));
-                let cursor = baseStart.getTime();
+                // Rebuild times: recalculate from the NEW first stop's shift window
+                // The first stop's time window determines the trip start, not the old order
+                const firstStop = tripStops[0];
+                const firstCard = this.planData.shipment_cards.find(c => c.id === firstStop.cardId);
+                let baseStartMs;
+                if (firstCard) {
+                    // Use the card's actual shift window as the anchor
+                    const isOut = firstStop.direction === 'OUTBOUND' || (firstStop.direction !== 'RETURN');
+                    const windowField = isOut ? 'outbound_window_start' : 'return_window_start';
+                    const windowTime = new Date(firstCard[windowField]).getTime();
+                    // Subtract the first stop's duration (transit time) to get departure time
+                    baseStartMs = windowTime - durations[0];
+                } else {
+                    // Fallback: use the old minimum if card not found
+                    baseStartMs = Math.min(
+                        ...this.swimItems
+                            .filter(i => i.tripId === tripId)
+                            .map(s => new Date(s.start).getTime())
+                    );
+                }
+                let cursor = baseStartMs;
                 tripStops.forEach((stop, idx) => {
                     stop.stopIndex = idx + 1;
                     stop.start = new Date(cursor);
@@ -1871,86 +1888,7 @@ function mountRoutePlannerApp(wrapper, data) {
                 });
             },
 
-            savePlan() {
-                if (!this.currentPlan) {
-                    frappe.show_alert({ message: 'Select or create a plan first', indicator: 'orange' }, 3);
-                    return;
-                }
-                if (this.swimItems.length === 0) {
-                    frappe.show_alert({ message: 'No assignments to save', indicator: 'orange' }, 3);
-                    return;
-                }
 
-                // ── Pre-save overcapacity audit ──
-                this.checkConflicts();
-                const overcapVehicles = [];
-                this.planData.vehicles.forEach(v => {
-                    const vi = this.swimItems.filter(i => i.vehicleId === v.id);
-                    if (vi.some(i => i.overcapacity)) {
-                        const logicalTrips = this._getLogicalTrips(v.id);
-                        const peakLoad = Math.max(...vi.map(item => {
-                            const iS = new Date(item.start).getTime();
-                            const iE = new Date(item.end).getTime();
-                            return logicalTrips
-                                .filter(t => {
-                                    return t.start < iE && t.end > iS;
-                                })
-                                .reduce((sum, t) => sum + t.headcount, 0);
-                        }));
-                        overcapVehicles.push({ label: v.label, seats: v.seats, peak: peakLoad });
-                    }
-                });
-
-                const self = this;
-                const doSave = () => {
-                    const items = self.swimItems.map(i => {
-                        const card = self.planData.shipment_cards.find(c => c.id === i.cardId);
-                        return {
-                            ...i,
-                            start: new Date(i.start).toISOString(),
-                            end:   new Date(i.end).toISOString(),
-                            _site: card ? card.site : '',
-                            _shift: card ? card.shift_name : '',
-                            _accommodation: card ? card.accommodation : '',
-                            _stopLocation: card ? card.stop_location : '',
-                        };
-                    });
-                    const cards = [...self.assignedCards];
-                    frappe.call({
-                        method: 'one_fm.one_fm.page.route_planner.route_planner.save_assignments',
-                        args: {
-                            plan_name: self.currentPlan.name,
-                            swim_items: JSON.stringify(items),
-                            assigned_cards: JSON.stringify(cards)
-                        },
-                        callback: (r) => {
-                            if (r.message && r.message.status === 'ok') {
-                                frappe.show_alert({
-                                    message: `Plan "${self.currentPlan.title}" saved — ${r.message.assignment_count} assignments`,
-                                    indicator: 'green'
-                                }, 4);
-                            }
-                        }
-                    });
-                };
-
-                // Show warning if overcapacity detected
-                if (overcapVehicles.length > 0) {
-                    const list = overcapVehicles.map(v =>
-                        `<li><strong>${v.label}</strong>: ${v.peak} passengers / ${v.seats} seats</li>`
-                    ).join('');
-                    frappe.confirm(
-                        `<div style="color:#c62828;font-weight:600;margin-bottom:8px">⚠ Overcapacity Warning</div>` +
-                        `<p style="font-size:13px;color:#555">The following vehicles exceed seat capacity:</p>` +
-                        `<ul style="font-size:13px;margin:8px 0 12px 16px">${list}</ul>` +
-                        `<p style="font-size:13px;color:#555">Save anyway?</p>`,
-                        () => doSave(),
-                        () => frappe.show_alert({ message: 'Save cancelled — fix overcapacity first', indicator: 'orange' }, 4)
-                    );
-                } else {
-                    doSave();
-                }
-            },
 
             persistAssignments() {
                 if (!this.currentPlan) return; // no plan selected — skip
@@ -2119,10 +2057,12 @@ function mountRoutePlannerApp(wrapper, data) {
                     return;
                 }
 
-                const btn = document.getElementById('rp-save-btn');
-                const orig = btn.textContent;
-                btn.disabled = true;
-                btn.textContent = 'Generating...';
+                const btn = document.querySelector('.rp-btn-manifest');
+                const orig = btn ? btn.innerHTML : '';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="rp-icon">sync</span> Generating...';
+                }
 
                 let tpl;
                 try {
@@ -2131,14 +2071,16 @@ function mountRoutePlannerApp(wrapper, data) {
                     tpl = await res.text();
                 } catch (err) {
                     frappe.show_alert({ message: `Template load failed: ${err.message}`, indicator: 'red' }, 8);
-                    btn.disabled = false;
-                    btn.textContent = orig;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = orig;
+                    }
                     return;
                 }
 
                 const safeJson = JSON.stringify(routeData).replace(/<\//g, '<\\/');
                 // Inject ROUTE_DATA inside the template's existing <body><script>
-                const dataLine = 'const ROUTE_DATA = ' + safeJson + ';\n';
+                const dataLine = 'const ROUTE_DATA = ' + safeJson + ';\nconst FRAPPE_CSRF_TOKEN = "' + frappe.csrf_token + '";\nconst SITE_URL = window.location.origin;\n';
                 // Use regex to insert after first <script> in <body>
                 const finalHtml = tpl.replace(/(<body>[\s\S]*?<script>)/, '$1\n' + dataLine);
                 const blob = new Blob([finalHtml], { type: 'text/html' });
@@ -2146,8 +2088,10 @@ function mountRoutePlannerApp(wrapper, data) {
                 window.open(url, '_blank');
                 setTimeout(() => URL.revokeObjectURL(url), 60000);
 
-                btn.disabled = false;
-                btn.textContent = orig;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                }
                 frappe.show_alert({
                     message: `Manifest opened — ${routeData.response.routes.length} vehicles`,
                     indicator: 'green'
@@ -2367,12 +2311,9 @@ function injectRPVueTemplate() {
       </div>
     </div>
     <div id="rp-header-right">
-      <button id="rp-save-btn" class="rp-btn rp-btn-primary"
-              :disabled="!currentPlan"
-              @click="savePlan"
-              :title="!currentPlan ? 'Create or select a plan first' : ''">
-        <span class="rp-icon">save</span> Save Plan
-      </button>
+      <div v-if="currentPlan" class="text-muted" style="font-size:12px; margin-right: 12px; display: flex; align-items: center; gap: 4px; color: var(--green, #16a34a)">
+        <span class="rp-icon" style="font-size:16px;">check_circle</span> Auto-Saved
+      </div>
       <button class="rp-btn rp-btn-default rp-btn-manifest" :disabled="!canSave || !currentPlan" @click="openManifest">
         <span class="rp-icon">assignment</span> Manifest
       </button>

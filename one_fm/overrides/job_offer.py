@@ -142,8 +142,7 @@ class JobOfferOverride(JobOffer):
 
         # Set offer accepted date
         if self.workflow_state == 'Submit to Onboarding Officer' and not self.one_fm_offer_accepted_date:
-            self.one_fm_offer_accepted_date = nowdate()
-            self.save(ignore_permissions=True)
+            self.db_set('one_fm_offer_accepted_date', nowdate())
             
         # Auto-create Candidate Country Process if applicable
         if self.workflow_state in ['Submit to Onboarding Officer', 'Accepted']:
@@ -193,7 +192,7 @@ class JobOfferOverride(JobOffer):
             ), alert=True)
         except Exception as e:
             frappe.log_error(title="Failed to Auto-Generate CCP", message=frappe.get_traceback())
-            frappe.msgprint(_("Warning: Could not automatically generate the Candidate Country Process tracker. Please create it manually. ({0})").format(str(e)), alert=True, indicator='orange')
+            frappe.msgprint(_("Warning: Could not automatically generate the Candidate Country Process tracker. Please create it manually. Check the Error Log for details."), alert=True, indicator='orange')
 
     def validate_job_offer_mandatory_fields(self):
         if self.workflow_state == 'Submit for Candidate Response':
