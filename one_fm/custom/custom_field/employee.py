@@ -1008,7 +1008,7 @@ def get_employee_custom_fields():
 				"fetch_from": "current_resignation.workflow_state",
 				"fieldname": "resignation_status",
 				"fieldtype": "Data",
-				"insert_after": "feedback",
+				"insert_after": "resignation_section",
 				"is_system_generated": 1,
 				"label": "Resignation Workflow Status",
 				"read_only": 1,
