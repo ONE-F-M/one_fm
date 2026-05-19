@@ -404,3 +404,4 @@ one_fm.patches.v15_0.backfill_governorate_in_site_to_location_mapping
 one_fm.patches.v15_0.update_bank_account_workflow
 one_fm.patches.v15_0.add_courier_tracking_custom_fields
 one_fm.patches.v15_0.update_client_interview_shortlist_workflow #2026-05-13
+one_fm.patches.v15_0.add_resignation_fields_to_employee
