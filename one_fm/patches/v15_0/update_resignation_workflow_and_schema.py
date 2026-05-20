@@ -112,6 +112,39 @@ def execute():
 		}
 	]
 	
+	for dt in ["Employee Resignation Date Adjustment", "Employee Resignation Withdrawal"]:
+		assignment_rules.extend([
+			{
+				"name": f"{dt} - FYI Offboarding Officer",
+				"document_type": dt,
+				"description": f"FYI: An employee has submitted a {dt} and it is pending supervisor review.",
+				"assign_condition": "workflow_state == 'Pending Supervisor'",
+				"unassign_condition": "workflow_state != 'Pending Supervisor'",
+				"rule": "Round Robin",
+				"assign_to_role": "Offboarding Officer"
+			},
+			{
+				"name": f"{dt} - Pending Supervisor",
+				"document_type": dt,
+				"description": f"Please review the {dt}.",
+				"assign_condition": "workflow_state == 'Pending Supervisor'",
+				"unassign_condition": "workflow_state != 'Pending Supervisor'",
+				"rule": "Based on Field",
+				"field": "supervisor",
+				"assign_to": []
+			},
+			{
+				"name": f"{dt} - Pending Operations Manager",
+				"document_type": dt,
+				"description": f"Please review and approve this {dt}.",
+				"assign_condition": "workflow_state == 'Accepted by Supervisor'",
+				"unassign_condition": "workflow_state != 'Accepted by Supervisor'",
+				"rule": "Based on Field",
+				"field": "operations_manager",
+				"assign_to": []
+			}
+		])
+	
 	for ar in assignment_rules:
 		target_name = ar["name"]
 		if not frappe.db.exists("Assignment Rule", target_name):
