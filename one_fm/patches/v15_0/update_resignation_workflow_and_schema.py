@@ -143,6 +143,7 @@ def execute():
 				"field": "operations_manager",
 				"assign_to": []
 			}
+
 		])
 	
 	for ar in assignment_rules:
@@ -181,3 +182,13 @@ def execute():
 					message=frappe.get_traceback(),
 					title=f"Assignment Rule Update Failed: {target_name}"
 				)
+
+	# Clear any aggressive Property Setters that are overriding the new WAF-safe naming series defaults
+	frappe.db.delete("Property Setter", {
+		"doc_type": ("in", ["Employee Resignation", "Employee Resignation Withdrawal", "Employee Resignation Date Adjustment"]),
+		"field_name": "naming_series",
+		"property": "options"
+	})
+	frappe.clear_cache(doctype="Employee Resignation")
+	frappe.clear_cache(doctype="Employee Resignation Withdrawal")
+	frappe.clear_cache(doctype="Employee Resignation Date Adjustment")
