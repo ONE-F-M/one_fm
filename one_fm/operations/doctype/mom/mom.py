@@ -38,40 +38,46 @@ class MOM(Document):
 		table_checks  = [int(i.attended_meeting) for i in self.attendees]
 		if not any(table_checks):
 		#Create POC Check if no row in the POC table is marked
-			poc_check = frappe._dict()
-			poc_check.doctype = "POC Check"
+			poc_check = frappe.new_doc("POC Check")
 			poc_check.project = self.project
 			poc_check.site = self.site
 			poc_check.supervisor = self.supervisor
 			poc_check.supervisor_name = self.supervisor_name
 			poc_check.mom = self.name
-			attendees_list = []
-			general_attendees_list = []
 			for each in self.attendees:
-				attendees_list.append({'poc_name':each.poc_name,'poc_designation':each.poc_designation})
+				poc_check.append("mom_poc_table", {
+					"poc_name": each.poc_name,
+					"poc_designation": each.poc_designation
+				})
 
 			for attendees in self.general_attendance:
 				parts = attendees.attendee_name.split()
 				first_name = parts[0]
 				last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
-				general_attendees_list.append({'first_name': first_name, 'last_name': last_name})
+				poc_check.append("general_attendees", {
+					"first_name": first_name,
+					"last_name": last_name
+				})
 
-			poc_check.general_attendees = general_attendees_list
-			poc_check.mom_poc_table = attendees_list
-			poc_check_doc = frappe.get_doc(poc_check)
-			poc_check_doc.save()
-			mom_user  = frappe.get_value("Employee",self.supervisor,'user_id')
-			if mom_user:
-				add_assignment({
-						'doctype': "POC Check",
-						'name': poc_check_doc.name,
-						'assign_to': [mom_user],
-						'description':f"Kindly fill and submit this document to update the POC details for Site: {self.site} and Project: {self.project}",
-						"date": frappe.utils.getdate(),
-						"priority": "Medium"
-					})
-				frappe.db.commit()
-			frappe.msgprint(_(f"POC Check {poc_check_doc.name} Created!"),
+			current_user = frappe.session.user
+			try:
+				frappe.set_user("Administrator")
+				poc_check.save(ignore_permissions=True)
+				mom_user  = frappe.get_value("Employee",self.supervisor,'user_id')
+				if mom_user:
+					add_assignment({
+							'doctype': "POC Check",
+							'name': poc_check.name,
+							'assign_to': [mom_user],
+							'allocated_to': mom_user,
+							'description':f"Kindly fill and submit this document to update the POC details for Site: {self.site} and Project: {self.project}",
+							"date": frappe.utils.getdate(),
+							"priority": "Medium"
+						})
+					frappe.db.commit()
+			finally:
+				frappe.set_user(current_user)
+			frappe.msgprint(_(f"POC Check {poc_check.name} Created!"),
                 alert=True, indicator='green')
 
 
@@ -114,6 +120,7 @@ class MOM(Document):
 						'doctype': "Task",
 						'name': op_task.name,
 						'assign_to': [issue.user],
+						'allocated_to': issue.user,
 						"date": issue.due_date,
 						"priority": issue.priority if issue.priority in {"Low", "Medium", "High"} else "High"
 					})
