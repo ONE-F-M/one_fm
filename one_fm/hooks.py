@@ -849,6 +849,18 @@ fixtures = [
 		"dt": "HD Ticket Template",
 		"filters": [["name", "in",["Default"]]]
 	},
+	{
+		"dt": "Workflow",
+		"filters": [["document_type", "in", ["Employee Resignation Withdrawal", "Employee Resignation Date Adjustment"]]]
+	},
+	{
+		"dt": "Workflow State",
+		"filters": [["name", "in", ["Pending Supervisor", "Accepted by Supervisor", "Rejected By Supervisor", "Rejected", "Approved"]]]
+	},
+	{
+		"dt": "Workflow Action Master",
+		"filters": [["name", "in", ["Accept", "Reject", "Approve"]]]
+	}
 ]
 
 # before_tests = "one_fm.install.before_tests"

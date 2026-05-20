@@ -1,0 +1,47 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "ok-sign",
+  "modified": "2026-05-17 23:48:37.698521",
+  "name": "Approved",
+  "style": "Success",
+  "workflow_state_name": "Approved"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "remove",
+  "modified": "2026-05-17 23:48:37.698991",
+  "name": "Rejected",
+  "style": "Danger",
+  "workflow_state_name": "Rejected"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-05-19 08:59:45.721787",
+  "name": "Pending Supervisor",
+  "style": "Warning",
+  "workflow_state_name": "Pending Supervisor"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-05-19 09:01:15.591835",
+  "name": "Accepted by Supervisor",
+  "style": "Warning",
+  "workflow_state_name": "Accepted by Supervisor"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-05-19 09:01:15.613280",
+  "name": "Rejected By Supervisor",
+  "style": "",
+  "workflow_state_name": "Rejected By Supervisor"
+ }
+]

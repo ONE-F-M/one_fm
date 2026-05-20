@@ -147,6 +147,13 @@
    "reqd": 1
   },
   {
+   "fieldname": "workflow_state",
+   "fieldtype": "Data",
+   "label": "Workflow State",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
    "fieldname": "table_section",
    "fieldtype": "Section Break",
    "label": "Candidates"
