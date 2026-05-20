@@ -189,6 +189,7 @@ def execute():
 		"field_name": "naming_series",
 		"property": "options"
 	})
+	print("Successfully cleared legacy Naming Series Property Setters to enforce WAF bypass schema.")
 	frappe.clear_cache(doctype="Employee Resignation")
 	frappe.clear_cache(doctype="Employee Resignation Withdrawal")
 	frappe.clear_cache(doctype="Employee Resignation Date Adjustment")
