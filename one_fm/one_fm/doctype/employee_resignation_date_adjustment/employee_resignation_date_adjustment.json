@@ -81,7 +81,7 @@
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Naming Series",
-   "options": "HR-ERE-.YYYY.-.MM.-",
+   "options": "HR-ERE-.YYYY.MM.-",
    "read_only": 1
   },
   {
