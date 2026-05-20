@@ -70,9 +70,9 @@ frappe.ui.form.on("Employee Resignation", {
 		// Bring the standard workflow button to the front
 		setTimeout(() => {
 			if (frm.page.custom_buttons) {
-				let btn = frm.page.custom_buttons['Submit to Supervisor'];
+				let btn = frm.page.custom_buttons['Submit for Review'];
 				if (btn) {
-					frm.page.change_custom_button_type('Submit to Supervisor', null, 'primary');
+					frm.page.change_custom_button_type('Submit for Review', null, 'primary');
 				}
 			}
 		}, 200);
@@ -172,7 +172,7 @@ frappe.ui.form.on("Employee Resignation", {
 	},
 
 	before_workflow_action: function(frm) {
-		if (frm.selected_workflow_action === "Submit to Supervisor") {
+		if (frm.selected_workflow_action === "Submit for Review") {
 			return new Promise((resolve, reject) => {
 				let missing = [];
 				if (frm.doc.employees) {

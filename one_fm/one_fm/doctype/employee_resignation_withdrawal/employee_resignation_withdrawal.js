@@ -55,12 +55,11 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 				});
 		}
 
-		// Bring the standard workflow button to the front
 		setTimeout(() => {
 			if (frm.page.custom_buttons) {
-				let btn = frm.page.custom_buttons['Submit to Supervisor'];
+				let btn = frm.page.custom_buttons['Accept'];
 				if (btn) {
-					frm.page.change_custom_button_type('Submit to Supervisor', null, 'primary');
+					frm.page.change_custom_button_type('Accept', null, 'primary');
 				}
 			}
 		}, 200);
