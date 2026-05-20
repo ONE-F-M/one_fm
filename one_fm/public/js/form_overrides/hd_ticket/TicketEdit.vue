@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
-import { call, Button, FormControl } from "frappe-ui";
+import { call, Button, FormControl, createResource } from "frappe-ui";
 import { usePageMeta } from "frappe-ui";
 import { globalStore } from "@/stores/globalStore";
 import { LayoutHeader, UniInput } from "@/components";
@@ -130,9 +130,7 @@ const visibleFields = computed(() =>
 );
 
 const filteredFields = computed(() =>
-  visibleFields.value.filter((f) =>
-    ["priority", "process"].includes(f.fieldname)
-  )
+  visibleFields.value
 );
 
 function applyFilters(fieldname, filters = null) {
@@ -158,6 +156,15 @@ function handleOnFieldChange(e, fieldname, fieldtype) {
   templateFields[fieldname] = e.value;
 }
 
+// Create a resource to fetch the template using the Frappe API
+const templateResource = createResource({
+  url: "helpdesk.helpdesk.doctype.hd_ticket_template.api.get_one",
+  makeParams: () => ({
+    name: "Default", // We'll update this after fetching the ticket's template
+  }),
+  auto: false,
+});
+
 async function fetchTicketDetails() {
   if (!ticketName) return;
 
@@ -170,23 +177,29 @@ async function fetchTicketDetails() {
     subject.value = data.subject || "";
     description.value = data.description || "";
 
-    if (data.fields && data.fields.length) {
-      templateData.value.fields = data.fields;
-    } else {
-      injectFallbackFields();
+    // Fetch template using the template name from ticket
+    const templateName = "Default";
+    
+    const templateRes = await call("helpdesk.helpdesk.doctype.hd_ticket_template.api.get_one", {
+      name: templateName,
+    });
+    
+    if (templateRes && templateRes.fields && templateRes.fields.length) {
+      templateData.value.fields = templateRes.fields;
+      oldFields = JSON.parse(JSON.stringify(templateRes.fields));
     }
 
-    oldFields = JSON.parse(JSON.stringify(templateData.value.fields));
-
-    // Assign values only for fields that exist
     for (const field of templateData.value.fields) {
       const key = field.fieldname;
       if (key === "priority") {
         templateFields.priority = data.priority;
-      } else if (key === "process") {
+      } else if (key === "process" || key === "custom_process") {
         templateFields.process = data.custom_process || data.process;
-      } else if (data.custom_fields?.hasOwnProperty(key)) {
-        templateFields[key] = data.custom_fields[key];
+      } else {
+        // Try to get custom field value from ticket document
+        const customKey = key.startsWith("custom_") ? key : `custom_${key}`;
+        const value = data[customKey] || data[key] || "";
+        templateFields[key] = value;
       }
     }
 
@@ -268,7 +281,10 @@ onMounted(async () => {
 
   await fetchTicketDetails();
 
-  injectFallbackFields();
+  // Only inject fallback fields if no fields were loaded from the template
+  if (!templateData.value.fields || templateData.value.fields.length === 0) {
+    injectFallbackFields();
+  }
   // applyFilters("priority");
   // applyFilters("process");
 });
