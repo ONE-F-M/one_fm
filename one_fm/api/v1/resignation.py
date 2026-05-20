@@ -155,7 +155,7 @@ def create_resignation(
 
         # Step 3: Advance to Pending Supervisor now that the letter is saved
         doc.reload()
-        apply_workflow(doc, "Submit to Supervisor")
+        apply_workflow(doc, "Submit for Review")
         return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
 
     except Exception as e:
