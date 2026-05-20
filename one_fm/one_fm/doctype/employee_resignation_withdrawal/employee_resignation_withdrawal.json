@@ -19,6 +19,7 @@
   "column_break_fhar",
   "amended_from",
   "approvers_section",
+  "workflow_state",
   "supervisor",
   "operations_manager",
   "offboarding_officer",
