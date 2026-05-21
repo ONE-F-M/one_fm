@@ -47,7 +47,8 @@ def execute():
 			
 		transitions_data = [
 			{"state": "Draft", "action": "Submit for Review", "next_state": "Pending Supervisor", "allowed": "Employee"},
-			{"state": "Pending Supervisor", "action": "Submit for Approval", "next_state": "Pending Operations Manager", "allowed": "Employee", "allowed_user_field": "supervisor"},
+			{"state": "Pending Supervisor", "action": "Submit for Approval", "next_state": "Pending Operations Manager", "allowed": "Employee", "allowed_user_field": "supervisor", "condition": "frappe.db.get_value('Employee', doc.employees[0].employee, 'shift_working') == 1"},
+			{"state": "Pending Supervisor", "action": "Approve", "next_state": "Approved", "allowed": "Employee", "allowed_user_field": "supervisor", "condition": "frappe.db.get_value('Employee', doc.employees[0].employee, 'shift_working') == 0"},
 			{"state": "Pending Supervisor", "action": "Request Relieving Date Change", "next_state": "Pending Relieving Date Correction", "allowed": "Employee", "allowed_user_field": "supervisor"},
 			{"state": "Pending Relieving Date Correction", "action": "Resubmit Date", "next_state": "Pending Supervisor", "allowed": "Employee"},
 			{"state": "Pending Operations Manager", "action": "Approve", "next_state": "Approved", "allowed": "Operations Manager"}
