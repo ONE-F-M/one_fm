@@ -1,4 +1,4 @@
-name: Server Tests
+name: Server Tests with Coverage
 
 on:
   pull_request:
@@ -14,117 +14,64 @@ concurrency:
 
 jobs:
   tests:
-    name: Server Tests
+    name: Server Tests with Coverage
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
     services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
       redis-cache:
-        image: redis:alpine
+        image: redis:7-alpine
         ports:
           - 13000:6379
       redis-queue:
-        image: redis:alpine
+        image: redis:7-alpine
         ports:
           - 11000:6379
       redis-socketio:
-        image: redis:alpine
+        image: redis:7-alpine
         ports:
           - 12000:6379
-      mariadb:
-        image: docker.io/mariadb:10.6
-        ports:
-          - 3306:3306
-        env:
-          MYSQL_ROOT_PASSWORD: root
-        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: setup python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
-      - name: setup node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          check-latest: true
-
+          node-version: 18
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libfontconfig wkhtmltopdf
-
-      - name: setup cache for bench
-        uses: actions/cache@v4
-        with:
-          path: ~/bench-cache
-          key: ${{ runner.os }}-bench-${{ hashFiles('**/requirements.txt', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-bench-
-
-      - name: install bench
+          sudo apt-get install -y redis-server mariadb-client xvfb libfontconfig wkhtmltopdf
+      - name: Install bench and coverage tools
         run: |
-          pip3 install frappe-bench
-          which bench
-
-      - name: bench init
+          pip install frappe-bench pytest-cov coverage
+      - name: Setup bench
         run: |
-          # Apply mysql configs to the service container (must run on every job, not cached)
-          mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
-          mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
-          
-          if [ -d ~/bench-cache/bench.tgz ]
-          then
-             (cd && tar xzf ~/bench-cache/bench.tgz)
-          else
-            bench init ~/frappe-bench --skip-redis-config-generation --skip-assets --frappe-branch version-15 --python "$(which python)"
-            mkdir -p ~/bench-cache
-            (cd && tar czf ~/bench-cache/bench.tgz frappe-bench)
-          fi
-
-      - name: configure bench connections
-        working-directory: /home/runner/frappe-bench
-        run: |
+          bench init --skip-redis-config-generation --frappe-branch version-15 --python "$(which python)" ~/frappe-bench
+          cd ~/frappe-bench
           bench set-mariadb-host 127.0.0.1
           bench set-redis-cache-host 127.0.0.1:13000
           bench set-redis-queue-host 127.0.0.1:11000
           bench set-redis-socketio-host 127.0.0.1:12000
-
-      - name: add apps to bench
-        working-directory: /home/runner/frappe-bench
-        run: |
-          bench get-app erpnext https://github.com/frappe/erpnext --branch version-15
-          bench get-app telephony https://github.com/frappe/telephony --branch develop
-          bench get-app helpdesk https://github.com/frappe/helpdesk --branch main
-          bench get-app hrms https://github.com/frappe/hrms --branch version-15
-          bench get-app lending https://github.com/frappe/lending --branch version-15
-          bench get-app payments https://github.com/frappe/payments --branch version-15
+          bench get-app erpnext --branch version-15
+          bench get-app hrms --branch version-15
           bench get-app one_fm "$GITHUB_WORKSPACE"
-
-      - name: create bench site
-        working-directory: /home/runner/frappe-bench
-        run: bench new-site --mariadb-root-password root --admin-password admin frappe.test
-
-      - name: Set Face-Reg
-        working-directory: /home/runner/frappe-bench
-        run: bench --site frappe.test set-config face_recognition_service_url [${{secrets.FACE_REG_URL}}]
-
-      - name: install apps
-        working-directory: /home/runner/frappe-bench
-        run: bench --site frappe.test install-app erpnext telephony helpdesk hrms lending payments one_fm
-
-      - name: setup requirements
-        working-directory: /home/runner/frappe-bench
-        run: bench setup requirements --dev
-
-      - name: allow tests
-        working-directory: /home/runner/frappe-bench
-        run: bench --site frappe.test set-config allow_tests true
-
-      - name: run tests
-        working-directory: /home/runner/frappe-bench
-        run: bench --site frappe.test --verbose run-tests --skip-test-records --app one_fm
+          bench new-site --db-root-password root --admin-password admin --mariadb-root-password root test_site
+          bench --site test_site set-config allow_tests true
+          bench --site test_site install-app erpnext
+          bench --site test_site install-app hrms
+          bench --site test_site install-app one_fm
+      - name: Run tests with coverage
+        run: |
+          cd ~/frappe-bench
+          coverage run --source apps/one_fm/one_fm -m frappe.commands.utils run-tests --app one_fm --site test_site --failfast
+          coverage report --fail-under=30
+          coverage xml

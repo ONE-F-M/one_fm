@@ -90,7 +90,7 @@ files = [
     "one_fm/utils/__init__.py",
     "one_fm/permissions.py",
 ]
-exclude = "^one_fm/patches|/test_.*\.py$"
+exclude = '^one_fm/patches|/test_.*\.py$'
 
 [[tool.mypy.overrides]]
 module = [
@@ -99,3 +99,22 @@ module = [
     "hrms.*",
 ]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=one_fm --cov-report=term-missing --cov-fail-under=30"
+
+[tool.coverage.run]
+source = ["one_fm"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/patches/*",
+    "*/hooks.py",
+    "*/config/*",
+]
+
+[tool.coverage.report]
+fail_under = 30
+show_missing = true
+skip_covered = false
+

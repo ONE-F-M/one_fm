@@ -1,0 +1,84 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-05-18 17:44:45.258803",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "checklist_name",
+  "column_break_kbfr",
+  "object_category",
+  "naming_series",
+  "task_list_section",
+  "object_maintenance_checklist_items"
+ ],
+ "fields": [
+  {
+   "fieldname": "checklist_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Checklist Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_kbfr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "object_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Object Category",
+   "options": "Object Category",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "OMC-.####."
+  },
+  {
+   "fieldname": "task_list_section",
+   "fieldtype": "Section Break",
+   "label": "Task List"
+  },
+  {
+   "fieldname": "object_maintenance_checklist_items",
+   "fieldtype": "Table",
+   "label": "Tasks",
+   "options": "Object Maintenance Checklist Items",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-18 18:14:30.506188",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Object Maintenance Checklist",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
