@@ -248,28 +248,37 @@ frappe.ui.form.on("Employee Resignation", {
 			return;
 		}
 
-		let is_shift_worker = frm.doc.shift_working || 0;
-		let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && !is_shift_worker);
-		frm.toggle_display("operational_impact_section", show_ops_impact);
+		frappe.db.get_value('Employee', first_emp, 'shift_working')
+		.then(r => {
+			let is_shift_worker = r.message ? r.message.shift_working : 0;
+			
+			// Dynamically sync frm.doc.shift_working in-memory to prevent desync
+			if (frm.doc.shift_working !== is_shift_worker) {
+				frm.doc.shift_working = is_shift_worker;
+			}
 
-		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
-		let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
+			let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && !is_shift_worker);
+			frm.toggle_display("operational_impact_section", show_ops_impact);
 
-		if (is_restricted_stage) {
-			frm.set_df_property('operations_manager', 'hidden', 1);
-			frm.set_df_property('offboarding_officer', 'hidden', 1);
-			frm.set_df_property('operations_manager', 'reqd', 0);
-			frm.set_df_property('offboarding_officer', 'reqd', 0);
-		} else {
-			frm.set_df_property('operations_manager', 'hidden', 0);
-			frm.set_df_property('operations_manager', 'read_only', !is_shift_worker ? 1 : 0);
-			frm.set_df_property('offboarding_officer', 'hidden', 0);
+			let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
+			let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
 
-			// Mandatory for Operations Manager and onwards, OR for Corporate (non-shift) in Pending Supervisor (since they skip OM)
-			let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && !is_shift_worker);
-			frm.set_df_property('operations_manager', 'reqd', (is_mandatory && is_shift_worker) ? 1 : 0);
-			frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
-		}
+			if (is_restricted_stage) {
+				frm.set_df_property('operations_manager', 'hidden', 1);
+				frm.set_df_property('offboarding_officer', 'hidden', 1);
+				frm.set_df_property('operations_manager', 'reqd', 0);
+				frm.set_df_property('offboarding_officer', 'reqd', 0);
+			} else {
+				frm.set_df_property('operations_manager', 'hidden', 0);
+				frm.set_df_property('operations_manager', 'read_only', !is_shift_worker ? 1 : 0);
+				frm.set_df_property('offboarding_officer', 'hidden', 0);
+
+				// Mandatory for Operations Manager and onwards, OR for Corporate (non-shift) in Pending Supervisor (since they skip OM)
+				let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && !is_shift_worker);
+				frm.set_df_property('operations_manager', 'reqd', (is_mandatory && is_shift_worker) ? 1 : 0);
+				frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
+			}
+		});
 	}
 });
 
