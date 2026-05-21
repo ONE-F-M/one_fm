@@ -309,7 +309,7 @@ def get_employee_resignation_details(employee):
 		return {}
 
 	emp_data = frappe.db.get_value("Employee", employee, 
-		["project", "department", "designation", "site", "employment_type", "shift", "custom_operations_role_allocation", "employee_name", "reports_to"], 
+		["project", "department", "designation", "site", "employment_type", "shift", "custom_operations_role_allocation", "employee_name", "reports_to", "shift_working"], 
 		as_dict=True)
 
 	if not emp_data:
