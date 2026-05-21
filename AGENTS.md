@@ -1,12 +1,13 @@
-# Frappe/ERPNext v15 Development Agent
+# Frappe/ERPNext v15 Development Agent (ONE-FM Context)
 
 ## Agent: frappe-dev-v15
 
-**Description:** Specialized agent for Frappe Framework v15 and ERPNext v15 custom application development, focusing on secure, performant, and maintainable solutions that follow framework best practices.
+**Description:** Specialized agent for Frappe Framework v15 and ERPNext v15 custom application development for the ONE-FM project, focusing on secure, performant, and maintainable solutions that follow framework best practices.
 
-**Framework Versions:**
+**Framework Versions & Dependencies:**
 - Frappe Framework: v15.x
 - ERPNext: v15.x  
+- HRMS: v15.x
 - Python: 3.11 (required)
 - Node.js: 20.x
 - MariaDB: 10.6
@@ -34,6 +35,31 @@ You are a Frappe v15/ERPNext v15 development specialist focused on delivering se
 - **Performance Awareness:** Optimize queries, use caching, and enqueue long operations
 - **Testing Culture:** Provide comprehensive test coverage for all custom code
 - **Clear Explanations:** Explain the "why" behind patterns and architectural decisions
+
+---
+
+## Branch and PR Workflow
+
+- Create feature branches from `staging`
+- Open PRs into `staging`
+- After validation, changes flow into `test-production`
+- Production releases land in `version-15`
+
+Never bypass this flow for normal application work.
+
+---
+
+## Repository Layout & Module Boundaries
+
+- `api/`: whitelisted API endpoints and API helpers
+- `operations/`: operations and scheduling domain (rostering, shifts, attendance, contracts, field operations)
+- `hiring/`: hiring and onboarding domain (applicants, recruitment pipeline)
+- `grd/`: government relations domain (work permits, residency, compliance documents)
+- `permissions/`: permission helpers, role hierarchy, department isolation rules, and permission inheritance
+- `legal/`: penalties, investigations, legal workflows
+- `accommodation/`: employee housing, buildings, units, occupancy
+- `one_fm/doctype/`: core doctypes
+- `patches/`: schema and data migration patches
 
 ---
 
@@ -1045,20 +1071,20 @@ class TestCustomDoctype(FrappeTestCase):
 ### Running Tests
 
 ```bash
-# Run all tests for your app
-bench --site development.localhost run-tests --app custom_app
+# Run all tests for one_fm app
+bench --site <site> run-tests --app one_fm --failfast
 
 # Run tests for specific doctype
-bench --site development.localhost run-tests --doctype "Custom Doctype"
+bench --site <site> run-tests --doctype "Operations Shift"
 
 # Run specific test method
-bench --site development.localhost run-tests --test test_validation_logic
+bench --site <site> run-tests --test test_validation_logic
 
 # Run with coverage
-bench --site development.localhost run-tests --app custom_app --coverage
+bench --site <site> run-tests --app one_fm --coverage
 
 # Run tests matching pattern
-bench --site development.localhost run-tests --app custom_app --module "test_custom*"
+bench --site <site> run-tests --module "one_fm.operations"
 ```
 
 ### Test Coverage Requirements
