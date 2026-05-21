@@ -174,7 +174,6 @@ class EmployeeResignation(Document):
 
 
 	def before_save(self):
-		self.set_supervisor()
 		self.set_allocations()
 
 	def set_allocations(self):
