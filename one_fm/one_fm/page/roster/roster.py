@@ -2073,11 +2073,6 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 			check_day_off_preference_validation([emp_mapped], dates_mapped, attempt_type=employee_availability, is_update=False)
 
 		if cint(selected_dates):
-			# Build employee -> project lookup for Day Off schedules
-			emp_project_map = {}
-			for employee_item in employees_list:
-				if employee_item["employee"] not in emp_project_map:
-					emp_project_map[employee_item["employee"]] = frappe.db.get_value("Employee", employee_item["employee"], "project") or ""
 			for employee_item in employees_list:
 				date_val = employee_item["date"]
 				start_date_val = getdate(date_val)
@@ -2106,9 +2101,8 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 							)
 					# ----------------------------------------
 					name = f"{date_val}_{employee_item['employee']}_{roster_type}"
-					emp_proj = emp_project_map.get(employee_item["employee"], "")
 					query_values_dayoff.append(f"""(
-						"{name}", "{employee_item["employee"]}", "{date_val}", "", "", "{emp_proj}",
+						"{name}", "{employee_item["employee"]}", "{date_val}", "", "", "",
 						"", "{employee_availability}", "", "", "Basic",
 						0, "{owner}", "{owner}", "{creation}", "{creation}"
 					)""")
@@ -2121,11 +2115,6 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 					if update_day_off_ot_doc:
 						frappe.db.set_value("Employee Schedule", update_day_off_ot_doc, "day_off_ot", 0)
 		else: # Not selected_dates
-			# Build employee -> project lookup for Day Off schedules
-			emp_project_map_repeat = {}
-			for emp_item in json.loads(employees):
-				if emp_item["employee"] not in emp_project_map_repeat:
-					emp_project_map_repeat[emp_item["employee"]] = frappe.db.get_value("Employee", emp_item["employee"], "project") or ""
 			effective_end_date = None
 			if repeat_till and not cint(project_end_date):
 				effective_end_date = getdate(repeat_till)
@@ -2165,9 +2154,8 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 									)
 							# ---------------------------------------------------------
 							name = f"{date_iter.date()}_{employee_item['employee']}_{roster_type}"
-							emp_proj_weekly = emp_project_map_repeat.get(employee_item["employee"], "")
 							query_values_dayoff.append(f"""(
-								"{name}", "{employee_item["employee"]}", "{date_iter.date()}", "", "", "{emp_proj_weekly}",
+								"{name}", "{employee_item["employee"]}", "{date_iter.date()}", "", "", "",
 								"", "{employee_availability}", "", "", "Basic",
 								0, "{owner}", "{owner}", "{creation}", "{creation}"
 							)""")
@@ -2202,9 +2190,8 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 									)
 							# ----------------------------------------------------------
 							name = f"{date_iter.date()}_{employee_item['employee']}_{roster_type}"
-							emp_proj_monthly = emp_project_map_repeat.get(employee_item["employee"], "")
 							query_values_dayoff.append(f"""(
-								"{name}", "{employee_item["employee"]}", "{date_iter.date()}", "", "", "{emp_proj_monthly}",
+								"{name}", "{employee_item["employee"]}", "{date_iter.date()}", "", "", "",
 								"", "{employee_availability}", "", "", "Basic",
 								0, "{owner}", "{owner}", "{creation}", "{creation}"
 							)""")
@@ -2238,7 +2225,7 @@ def dayoff(employees, client_day_off=0, selected_dates=0, selected_reliever=None
 				post_abbrv = "",
 				roster_type = "Basic",
 				shift = "",
-				project = VALUES(project),
+				project = "",
 				site = "",
 				shift_type = "",
 				day_off_ot = 0,

@@ -19,18 +19,6 @@ frappe.ui.form.on("Event Staff", {
 			);
 		}
 	},
-	start_date(frm) {
-		if (frm.doc.start_date) {
-			let time_part = "00:00:00";
-			if (frm.doc.start_datetime) {
-				let parts = frm.doc.start_datetime.split(" ");
-				if (parts[1]) {
-					time_part = parts[1];
-				}
-			}
-			frm.set_value("start_datetime", frm.doc.start_date + " " + time_part);
-		}
-	},
 	end_date(frm) {
 		if (frm.doc.end_date && frm.doc.end_datetime) {
 			let time_part = frm.doc.end_datetime.split(" ")[1];

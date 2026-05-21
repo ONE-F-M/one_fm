@@ -2,46 +2,8 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Client Event", {
-    setup(frm) {
-        // Filter original_client_event to only show Approved events that haven't been extended
-        frm.set_query("original_client_event", function() {
-            return {
-                query: "one_fm.one_fm.doctype.client_event.client_event.get_extensible_client_events"
-            };
-        });
-    },
     refresh(frm) {
         frm.events.add_event_staff(frm);
-        frm.events.add_extension_button(frm);
-    },
-    add_extension_button(frm) {
-        if (frm.doc.workflow_state !== "Approved" || frm.doc.docstatus !== 1) {
-            return;
-        }
-        // Check if extension already exists
-        frappe.xcall("frappe.client.get_count", {
-            doctype: "Client Event",
-            filters: {
-                "original_client_event": frm.doc.name,
-                "docstatus": ["<", 2]
-            }
-        }).then((count) => {
-            if (!count) {
-                frm.add_custom_button(__("Client Event Extension"), function() {
-                    frappe.call({
-                        method: "one_fm.one_fm.doctype.client_event.client_event.create_client_event_extension",
-                        args: { source_name: frm.doc.name },
-                        callback: function(r) {
-                            if (r.message) {
-                                let new_doc = r.message;
-                                frappe.model.sync(new_doc);
-                                frappe.set_route("Form", "Client Event", new_doc.name);
-                            }
-                        }
-                    });
-                });
-            }
-        });
     },
     add_event_staff(frm) {
         if (["Approved", "Pending Operations Manager"].includes(frm.doc.workflow_state)) {

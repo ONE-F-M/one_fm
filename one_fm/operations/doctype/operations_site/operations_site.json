@@ -15,8 +15,6 @@
   "column_break_7",
   "site_supervisor",
   "site_supervisor_name",
-  "multiple_location_details_section",
-  "operations_site_location",
   "site_allowance_section",
   "include_site_allowance",
   "allowance_amount",
@@ -194,21 +192,10 @@
    "in_standard_filter": 1,
    "label": "Supervisor Name",
    "read_only": 1
-  },
-  {
-   "fieldname": "multiple_location_details_section",
-   "fieldtype": "Section Break",
-   "label": "Multiple Location Details"
-  },
-  {
-   "fieldname": "operations_site_location",
-   "fieldtype": "Table",
-   "label": "Operations Site Location",
-   "options": "Operations Site Location Items"
   }
  ],
  "links": [],
- "modified": "2026-05-14 18:38:11.393030",
+ "modified": "2026-01-04 10:25:50.345146",
  "modified_by": "Administrator",
  "module": "Operations",
  "name": "Operations Site",
