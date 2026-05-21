@@ -3,44 +3,16 @@
 
 frappe.ui.form.on("Employee Resignation", {
 	onload: function(frm) {
-		let show_header = !frm.doc.__islocal && frm.doc.workflow_state && (!["Draft", ""].includes(frm.doc.workflow_state));
-		let is_corporate = frm.doc.project_allocation === "ONE FM - Head Office";
-		let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && is_corporate);
-		frm.toggle_display("operational_impact_section", show_ops_impact);
+		frm.trigger('update_ops_manager_mandatory');
 	},
 
 	refresh: function (frm) {
-		let show_header = !frm.doc.__islocal && frm.doc.workflow_state && (!["Draft", ""].includes(frm.doc.workflow_state));
-		let is_corporate = frm.doc.project_allocation === "ONE FM - Head Office";
-		let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && is_corporate);
-		frm.toggle_display("operational_impact_section", show_ops_impact);
+		frm.trigger('update_ops_manager_mandatory');
 
 		let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
-		
 		let is_editable = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
 		frm.set_df_property('resignation_initiation_date', 'read_only', is_editable ? 0 : 1);
 		frm.set_df_property('relieving_date', 'read_only', is_editable ? 0 : 1);
-
-
-
-		// Hide Operational Impact for Employee Draft and Correction stages
-		let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
-		
-		if (is_restricted_stage) {
-			frm.set_df_property('operations_manager', 'hidden', 1);
-			frm.set_df_property('offboarding_officer', 'hidden', 1);
-			frm.set_df_property('operations_manager', 'reqd', 0);
-			frm.set_df_property('offboarding_officer', 'reqd', 0);
-		} else {
-			let is_corporate = frm.doc.project_allocation === "ONE FM - Head Office";
-			frm.set_df_property('operations_manager', 'hidden', 0); // Keep visible to prevent column collapse
-			frm.set_df_property('operations_manager', 'read_only', is_corporate ? 1 : 0);
-			frm.set_df_property('offboarding_officer', 'hidden', 0);
-			// Mandatory for Operations Manager and onwards, OR for Corporate in Pending Supervisor (since they skip OM)
-			let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && is_corporate);
-			frm.set_df_property('operations_manager', 'reqd', (is_mandatory && !is_corporate) ? 1 : 0);
-			frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
-		}
 
 		// Filter Offboarding Officer to only show users with the 'Offboarding Officer' role
 		frm.set_query('offboarding_officer', () => {
@@ -155,17 +127,6 @@ frappe.ui.form.on("Employee Resignation", {
 	},
 	
 	validate: function(frm) {
-	    if (["Draft", "Pending Relieving Date Correction"].includes(frm.doc.workflow_state) || frm.doc.__islocal) {
-			frm.set_df_property('operations_manager', 'reqd', 0);
-			frm.set_df_property('offboarding_officer', 'reqd', 0);
-		} else {
-			// Enforce mandatory strictly during OM assessment and beyond
-			let is_corporate = frm.doc.project_allocation === "ONE FM - Head Office";
-			let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && is_corporate);
-			frm.set_df_property('operations_manager', 'reqd', (is_mandatory && !is_corporate) ? 1 : 0);
-			frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
-		}
-
 	    if (!frm.doc.employees || frm.doc.employees.length === 0) {
 	        frappe.msgprint({
 	            title: __('Missing Information'),
@@ -276,6 +237,41 @@ frappe.ui.form.on("Employee Resignation", {
 
 	replacement_required: function(frm) {
 		// Field trigger handled in server-side logic
+	},
+
+	update_ops_manager_mandatory: function(frm) {
+		let first_emp = frm.doc.employees && frm.doc.employees[0] ? frm.doc.employees[0].employee : null;
+		if (!first_emp) {
+			frm.toggle_display("operational_impact_section", false);
+			frm.set_df_property('operations_manager', 'reqd', 0);
+			frm.set_df_property('offboarding_officer', 'reqd', 0);
+			return;
+		}
+
+		frappe.db.get_value("Employee", first_emp, "shift_working").then(r => {
+			let is_shift_worker = r.message ? r.message.shift_working : 0;
+			let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && !is_shift_worker);
+			frm.toggle_display("operational_impact_section", show_ops_impact);
+
+			let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
+			let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
+
+			if (is_restricted_stage) {
+				frm.set_df_property('operations_manager', 'hidden', 1);
+				frm.set_df_property('offboarding_officer', 'hidden', 1);
+				frm.set_df_property('operations_manager', 'reqd', 0);
+				frm.set_df_property('offboarding_officer', 'reqd', 0);
+			} else {
+				frm.set_df_property('operations_manager', 'hidden', 0);
+				frm.set_df_property('operations_manager', 'read_only', !is_shift_worker ? 1 : 0);
+				frm.set_df_property('offboarding_officer', 'hidden', 0);
+
+				// Mandatory for Operations Manager and onwards, OR for Corporate (non-shift) in Pending Supervisor (since they skip OM)
+				let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && !is_shift_worker);
+				frm.set_df_property('operations_manager', 'reqd', (is_mandatory && is_shift_worker) ? 1 : 0);
+				frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
+			}
+		});
 	}
 });
 
@@ -334,6 +330,8 @@ frappe.ui.form.on('Employee Resignation Item', {
                         if (d.site_supervisor_id && !supervisor_found) {
                             frm.set_value('supervisor', d.site_supervisor_id);
                         }
+                        
+                        frm.trigger('update_ops_manager_mandatory');
                         
                         // Validate live Project AND Designation mismatch
                         let errors = [];
