@@ -27,13 +27,7 @@ class EmployeeResignation(Document):
 		state = self.get("workflow_state")
 		if state and state not in ("Draft", "Pending Relieving Date Correction"):
 			if state in ("Pending Operations Manager", "Approved"):
-				is_shift_worker = False
-				if self.get("employees"):
-					first_emp = self.employees[0].employee
-					if first_emp:
-						is_shift_worker = frappe.db.get_value("Employee", first_emp, "shift_working")
-
-				if not self.operations_manager and is_shift_worker:
+				if not self.operations_manager and self.shift_working:
 					frappe.throw(_("Please specify the <b>Operations Manager</b> before saving or submitting."))
 				if not self.offboarding_officer:
 					frappe.throw(_("Please specify the <b>Offboarding Officer</b> before saving or submitting."))
@@ -186,13 +180,14 @@ class EmployeeResignation(Document):
 		if self.get("employees"):
 			first_emp = self.employees[0].employee
 			if first_emp:
-				emp = frappe.db.get_value("Employee", first_emp, ["site", "project", "department", "shift", "custom_operations_role_allocation"], as_dict=True)
+				emp = frappe.db.get_value("Employee", first_emp, ["site", "project", "department", "shift", "custom_operations_role_allocation", "shift_working"], as_dict=True)
 				if emp:
 					self.site_allocation = emp.site
 					self.project_allocation = emp.project
 					self.department = emp.department
 					self.shift_allocation = emp.shift
 					self.operations_role_allocation = emp.custom_operations_role_allocation
+					self.shift_working = emp.shift_working or 0
 
 
 	def set_supervisor(self):

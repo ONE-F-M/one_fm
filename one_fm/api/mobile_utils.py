@@ -49,8 +49,15 @@ def _get_raw_body_params():
 
     result = {}
     try:
-        if hasattr(frappe, 'request'):
-            body = frappe.request.get_data(as_text=True)
+        request = None
+        try:
+            if frappe.request:
+                request = frappe.request
+        except RuntimeError:
+            pass
+
+        if request:
+            body = request.get_data(as_text=True)
             if body:
                 # Try JSON first
                 try:
@@ -113,8 +120,15 @@ def get_param(key, explicit_value=None, default=None):
         return form_val
 
     # 3. request.args (GET query string under token auth)
-    if hasattr(frappe, 'request') and hasattr(frappe.request, 'args'):
-        args_val = frappe.request.args.get(key)
+    request = None
+    try:
+        if frappe.request:
+            request = frappe.request
+    except RuntimeError:
+        pass
+
+    if request and hasattr(request, 'args'):
+        args_val = request.args.get(key)
         if args_val is not None:
             return args_val
 
