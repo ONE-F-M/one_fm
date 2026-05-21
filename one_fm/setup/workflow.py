@@ -67,6 +67,8 @@ def create_workflows():
 	create_workflow(get_workflow_json_file("on_the_job_training.json"))
 	create_workflow(get_workflow_json_file("temporary_deployment.json"))
 	create_workflow(get_workflow_json_file("formal_hearing.json"))
+	create_workflow(get_workflow_json_file("employee_resignation_withdrawal.json"))
+	create_workflow(get_workflow_json_file("employee_resignation_date_adjustment.json"))
 
 def delete_workflows():
 	delete_workflow(get_workflow_json_file("erf.json"))
@@ -126,3 +128,5 @@ def delete_workflows():
 	delete_workflow(get_workflow_json_file("leave_extension_request.json"))
 	delete_workflow(get_workflow_json_file("loan_application.json"))
 	delete_workflow(get_workflow_json_file("formal_hearing.json"))
+	delete_workflow(get_workflow_json_file("employee_resignation_withdrawal.json"))
+	delete_workflow(get_workflow_json_file("employee_resignation_date_adjustment.json"))

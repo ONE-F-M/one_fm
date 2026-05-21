@@ -20,6 +20,7 @@
   "column_break_wetd",
   "column_break_pdtv",
   "column_break_szbe",
+  "workflow_state",
   "extended_relieving_date",
   "supervisor",
   "operations_manager",
@@ -81,7 +82,7 @@
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Naming Series",
-   "options": "HR-ERE-.YYYY.-.MM.-",
+   "options": "HR-ERE-.YYYY.MM.-",
    "read_only": 1
   },
   {
@@ -138,6 +139,13 @@
    "label": "Offboarding Officer",
    "mandatory_depends_on": "eval:!doc.__islocal && ['Pending Operations Manager', 'Accepted by Supervisor', 'Approved'].includes(doc.workflow_state)",
    "options": "User"
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Data",
+   "label": "Workflow State",
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "grid_page_length": 50,

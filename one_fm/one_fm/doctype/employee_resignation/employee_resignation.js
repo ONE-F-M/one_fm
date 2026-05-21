@@ -144,6 +144,16 @@ frappe.ui.form.on("Employee Resignation", {
 		}
 	},
 	
+	before_save: function(frm) {
+		// Prevent WAF payload blocking by stripping strings with special characters
+		// The python backend has been programmed to repopulate these natively
+		frm.doc.site_allocation = null;
+		frm.doc.project_allocation = null;
+		frm.doc.department = null;
+		frm.doc.shift_allocation = null;
+		frm.doc.operations_role_allocation = null;
+	},
+	
 	validate: function(frm) {
 	    if (["Draft", "Pending Relieving Date Correction"].includes(frm.doc.workflow_state) || frm.doc.__islocal) {
 			frm.set_df_property('operations_manager', 'reqd', 0);
