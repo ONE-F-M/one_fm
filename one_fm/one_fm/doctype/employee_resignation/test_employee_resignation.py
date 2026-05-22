@@ -32,7 +32,10 @@ class TestEmployeeResignation(FrappeTestCase):
 			})
 			return emp_name
 
-		company = frappe.db.get_single_value("Global Defaults", "default_company") or "ONE FM"
+		company = frappe.db.get_single_value("Global Defaults", "default_company")
+		if not company or not frappe.db.exists("Company", company):
+			companies = frappe.get_all("Company", limit=1)
+			company = companies[0].name if companies else "ONE FM"
 		emp = frappe.get_doc({
 			"doctype": "Employee",
 			"employee": emp_name,
@@ -159,47 +162,133 @@ class TestEmployeeResignation(FrappeTestCase):
 
 	def test_shift_worker_requires_operations_manager(self):
 		"""Test that shift workers must specify an operations manager in managerial stages."""
-		emp_name = self._make_employee("SHIFT-VAL")
-		frappe.db.set_value("Employee", emp_name, "shift_working", 1)
+		emp_name = "TEST-SHIFT-VAL-EMP"
 		
-		doc = self._make_resignation(emp_name)
-		doc.resignation_initiation_date = "2026-10-10"
-		doc.relieving_date = "2026-10-15"
-		
-		doc.append("employees", {
-			"employee": emp_name,
-			"resignation_letter": "/files/test_letter.pdf"
-		})
-		
-		doc.workflow_state = "Pending Operations Manager"
-		doc.offboarding_officer = "test-rsgn-manager@example.com"
-		
-		# 1. Validation must fail because operations_manager is empty and shift_working = 1
-		with self.assertRaises(frappe.ValidationError) as context:
+		original_get_value = frappe.db.get_value
+		def mock_get_value(doctype, filters=None, fieldname=None, *args, **kwargs):
+			if doctype == "Employee" and filters == emp_name:
+				if fieldname == ["site", "project", "department", "shift", "custom_operations_role_allocation", "shift_working"]:
+					return frappe._dict({
+						"site": "Test Site",
+						"project": "Test Project",
+						"department": "Test Dept",
+						"shift": "Test Shift",
+						"custom_operations_role_allocation": "Test Role",
+						"shift_working": 1
+					})
+				if fieldname == ["project", "designation", "employee_name"]:
+					return frappe._dict({
+						"project": "Test Project",
+						"designation": "Test Designation",
+						"employee_name": "Test Employee"
+					})
+				if fieldname == ["user_id", "reports_to", "shift", "site", "shift_working", "employee_name"]:
+					return frappe._dict({
+						"user_id": "test-rsgn-manager@example.com",
+						"reports_to": "Supervisor-Name",
+						"shift": "Test Shift",
+						"site": "Test Site",
+						"shift_working": 1,
+						"employee_name": "Test Employee"
+					})
+			return original_get_value(doctype, filters, fieldname, *args, **kwargs)
+			
+		original_exists = frappe.db.exists
+		def mock_exists(dt, name=None, *args, **kwargs):
+			if dt == "Employee":
+				if isinstance(name, dict) and name.get("name") in (emp_name, "TEST-SHIFT-VAL-EMP", "TEST-CORP-VAL-EMP"):
+					return True
+				if name in (emp_name, "TEST-SHIFT-VAL-EMP", "TEST-CORP-VAL-EMP"):
+					return True
+			return original_exists(dt, name, *args, **kwargs)
+
+		frappe.db.get_value = mock_get_value
+		frappe.db.exists = mock_exists
+		try:
+			doc = self._make_resignation(emp_name)
+			doc.resignation_initiation_date = "2026-10-10"
+			doc.relieving_date = "2026-10-15"
+			
+			doc.append("employees", {
+				"employee": emp_name,
+				"resignation_letter": "/files/test_letter.pdf"
+			})
+			
+			doc.workflow_state = "Pending Operations Manager"
+			doc.offboarding_officer = "test-rsgn-manager@example.com"
+			
+			# 1. Validation must fail because operations_manager is empty and shift_working = 1
+			with self.assertRaises(frappe.ValidationError) as context:
+				doc.validate()
+			self.assertIn("Please specify the Operations Manager", str(context.exception))
+			
+			# 2. Validation must pass when operations_manager is provided
+			doc.operations_manager = "test-rsgn-manager@example.com"
 			doc.validate()
-		self.assertIn("Please specify the Operations Manager", str(context.exception))
-		
-		# 2. Validation must pass when operations_manager is provided
-		doc.operations_manager = "test-rsgn-manager@example.com"
-		doc.validate()
+		finally:
+			frappe.db.get_value = original_get_value
+			frappe.db.exists = original_exists
 
 	def test_corporate_worker_does_not_require_operations_manager(self):
 		"""Test that corporate workers do not require an operations manager."""
-		emp_name = self._make_employee("CORP-VAL")
-		frappe.db.set_value("Employee", emp_name, "shift_working", 0)
+		emp_name = "TEST-CORP-VAL-EMP"
 		
-		doc = self._make_resignation(emp_name)
-		doc.resignation_initiation_date = "2026-10-10"
-		doc.relieving_date = "2026-10-15"
-		
-		doc.append("employees", {
-			"employee": emp_name,
-			"resignation_letter": "/files/test_letter.pdf"
-		})
-		
-		doc.workflow_state = "Pending Operations Manager"
-		doc.offboarding_officer = "test-rsgn-manager@example.com"
-		doc.operations_manager = ""
-		
-		# Validation must pass successfully since shift_working = 0
-		doc.validate()
+		original_get_value = frappe.db.get_value
+		def mock_get_value(doctype, filters=None, fieldname=None, *args, **kwargs):
+			if doctype == "Employee" and filters == emp_name:
+				if fieldname == ["site", "project", "department", "shift", "custom_operations_role_allocation", "shift_working"]:
+					return frappe._dict({
+						"site": "Test Site",
+						"project": "Test Project",
+						"department": "Test Dept",
+						"shift": "Test Shift",
+						"custom_operations_role_allocation": "Test Role",
+						"shift_working": 0
+					})
+				if fieldname == ["project", "designation", "employee_name"]:
+					return frappe._dict({
+						"project": "Test Project",
+						"designation": "Test Designation",
+						"employee_name": "Test Employee"
+					})
+				if fieldname == ["user_id", "reports_to", "shift", "site", "shift_working", "employee_name"]:
+					return frappe._dict({
+						"user_id": "test-rsgn-manager@example.com",
+						"reports_to": "Supervisor-Name",
+						"shift": "Test Shift",
+						"site": "Test Site",
+						"shift_working": 0,
+						"employee_name": "Test Employee"
+					})
+			return original_get_value(doctype, filters, fieldname, *args, **kwargs)
+			
+		original_exists = frappe.db.exists
+		def mock_exists(dt, name=None, *args, **kwargs):
+			if dt == "Employee":
+				if isinstance(name, dict) and name.get("name") in (emp_name, "TEST-SHIFT-VAL-EMP", "TEST-CORP-VAL-EMP"):
+					return True
+				if name in (emp_name, "TEST-SHIFT-VAL-EMP", "TEST-CORP-VAL-EMP"):
+					return True
+			return original_exists(dt, name, *args, **kwargs)
+
+		frappe.db.get_value = mock_get_value
+		frappe.db.exists = mock_exists
+		try:
+			doc = self._make_resignation(emp_name)
+			doc.resignation_initiation_date = "2026-10-10"
+			doc.relieving_date = "2026-10-15"
+			
+			doc.append("employees", {
+				"employee": emp_name,
+				"resignation_letter": "/files/test_letter.pdf"
+			})
+			
+			doc.workflow_state = "Pending Operations Manager"
+			doc.offboarding_officer = "test-rsgn-manager@example.com"
+			doc.operations_manager = ""
+			
+			# Validation must pass successfully since shift_working = 0
+			doc.validate()
+		finally:
+			frappe.db.get_value = original_get_value
+			frappe.db.exists = original_exists
