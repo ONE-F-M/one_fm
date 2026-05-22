@@ -1,5 +1,4 @@
 import frappe
-from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 def execute():
 	# 1. Sync Employee Resignation schema to ensure shift_working field exists in DB
@@ -7,17 +6,24 @@ def execute():
 	frappe.clear_cache(doctype="Employee Resignation")
 	frappe.db.updatedb("Employee Resignation")
 
-
-
-
-
 	# 2. Backfill shift_working field for all existing Employee Resignation documents
-	resignations = frappe.get_all("Employee Resignation", fields=["name"])
-	for r in resignations:
-		doc = frappe.get_doc("Employee Resignation", r.name)
-		if doc.employees and doc.employees[0].employee:
-			shift_working = frappe.db.get_value("Employee", doc.employees[0].employee, "shift_working") or 0
-			frappe.db.set_value("Employee Resignation", doc.name, "shift_working", shift_working, update_modified=False)
+	items = frappe.get_all(
+		"Employee Resignation Item",
+		filters={"parenttype": "Employee Resignation", "idx": 1},
+		fields=["parent", "employee"]
+	)
+	if items:
+		emp_names = list(set(item.employee for item in items if item.employee))
+		emp_shift_map = {}
+		if emp_names:
+			emp_shift_map = {
+				emp.name: (emp.shift_working or 0)
+				for emp in frappe.get_all("Employee", filters={"name": ["in", emp_names]}, fields=["name", "shift_working"])
+			}
+		for item in items:
+			if item.employee:
+				shift_working = emp_shift_map.get(item.employee, 0)
+				frappe.db.set_value("Employee Resignation", item.parent, "shift_working", shift_working, update_modified=False)
 
 	# 3. Rebuild Workflow with simplified shift_working condition
 	workflow_name = "Employee Resignation"

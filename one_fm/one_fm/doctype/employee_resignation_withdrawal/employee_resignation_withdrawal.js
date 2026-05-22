@@ -117,8 +117,8 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 		if (frm.doc.employee_resignation) {
 			frappe.db.get_value('Employee Resignation', frm.doc.employee_resignation, 'shift_working')
 			.then(r => {
-				let is_shift_worker = r.message ? r.message.shift_working : 0;
-				frm.doc.is_corporate = is_shift_worker ? 0 : 1;
+				let is_shift_worker = r.message ? cint(r.message.shift_working) : 0;
+				frm.set_value('is_corporate', is_shift_worker ? 0 : 1);
 				frm.refresh_fields();
 			});
 		}

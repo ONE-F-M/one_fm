@@ -250,11 +250,11 @@ frappe.ui.form.on("Employee Resignation", {
 
 		frappe.db.get_value('Employee', first_emp, 'shift_working')
 		.then(r => {
-			let is_shift_worker = r.message ? r.message.shift_working : 0;
+			let is_shift_worker = r.message ? cint(r.message.shift_working) : 0;
 			
 			// Dynamically sync frm.doc.shift_working in-memory to prevent desync
-			if (frm.doc.shift_working !== is_shift_worker) {
-				frm.doc.shift_working = is_shift_worker;
+			if (cint(frm.doc.shift_working) !== is_shift_worker) {
+				frm.set_value('shift_working', is_shift_worker);
 			}
 
 			let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && !is_shift_worker);
@@ -322,7 +322,7 @@ frappe.ui.form.on('Employee Resignation Item', {
                         if (!frm.doc.shift_allocation) frm.set_value('shift_allocation', d.shift);
                         if (!frm.doc.operations_role_allocation) frm.set_value('operations_role_allocation', d.custom_operations_role_allocation);
                         
-                        frm.set_value('shift_working', d.shift_working || 0);
+                        frm.set_value('shift_working', cint(d.shift_working) || 0);
                         
                         // Automatically fetch Supervisor (Priority: Line Manager -> Site Supervisor)
                         let supervisor_found = false;

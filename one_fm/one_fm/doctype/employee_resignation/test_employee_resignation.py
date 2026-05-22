@@ -156,3 +156,50 @@ class TestEmployeeResignation(FrappeTestCase):
 			doc.validate_dates()
 		
 		self.assertTrue("Relieving Date cannot be before Resignation Initiation Date" in str(context.exception))
+
+	def test_shift_worker_requires_operations_manager(self):
+		"""Test that shift workers must specify an operations manager in managerial stages."""
+		emp_name = self._make_employee("SHIFT-VAL")
+		frappe.db.set_value("Employee", emp_name, "shift_working", 1)
+		
+		doc = self._make_resignation(emp_name)
+		doc.resignation_initiation_date = "2026-10-10"
+		doc.relieving_date = "2026-10-15"
+		
+		doc.append("employees", {
+			"employee": emp_name,
+			"resignation_letter": "/files/test_letter.pdf"
+		})
+		
+		doc.workflow_state = "Pending Operations Manager"
+		doc.offboarding_officer = "test-rsgn-manager@example.com"
+		
+		# 1. Validation must fail because operations_manager is empty and shift_working = 1
+		with self.assertRaises(frappe.ValidationError) as context:
+			doc.validate()
+		self.assertIn("Please specify the Operations Manager", str(context.exception))
+		
+		# 2. Validation must pass when operations_manager is provided
+		doc.operations_manager = "test-rsgn-manager@example.com"
+		doc.validate()
+
+	def test_corporate_worker_does_not_require_operations_manager(self):
+		"""Test that corporate workers do not require an operations manager."""
+		emp_name = self._make_employee("CORP-VAL")
+		frappe.db.set_value("Employee", emp_name, "shift_working", 0)
+		
+		doc = self._make_resignation(emp_name)
+		doc.resignation_initiation_date = "2026-10-10"
+		doc.relieving_date = "2026-10-15"
+		
+		doc.append("employees", {
+			"employee": emp_name,
+			"resignation_letter": "/files/test_letter.pdf"
+		})
+		
+		doc.workflow_state = "Pending Operations Manager"
+		doc.offboarding_officer = "test-rsgn-manager@example.com"
+		doc.operations_manager = ""
+		
+		# Validation must pass successfully since shift_working = 0
+		doc.validate()

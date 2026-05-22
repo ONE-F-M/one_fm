@@ -8,6 +8,7 @@ from frappe.model.document import Document
 
 class EmployeeResignation(Document):
 	def validate(self):
+		self.set_allocations()
 		self.set_supervisor()
 		self.validate_employee_permissions()
 		self.validate_employees()
