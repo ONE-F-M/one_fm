@@ -1,6 +1,6 @@
 {
-    "workflow_name": "Employee Resignation Withdrawal",
-    "document_type": "Employee Resignation Withdrawal",
+    "workflow_name": "Employee Resignation Date Adjustment",
+    "document_type": "Employee Resignation Date Adjustment",
     "is_active": 1,
     "override_status": 0,
     "send_email_alert": 0,
@@ -42,7 +42,7 @@
         {
             "state": "Rejected",
             "doc_status": "1",
-            "style": "Inverse",
+            "style": "Danger",
             "is_optional_state": 0,
             "avoid_status_override": 0,
             "allow_edit": "System Manager",

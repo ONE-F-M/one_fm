@@ -8,6 +8,7 @@ from frappe.model.document import Document
 
 class EmployeeResignation(Document):
 	def validate(self):
+		self.set_allocations()
 		self.set_supervisor()
 		self.validate_employee_permissions()
 		self.validate_employees()
@@ -27,7 +28,7 @@ class EmployeeResignation(Document):
 		state = self.get("workflow_state")
 		if state and state not in ("Draft", "Pending Relieving Date Correction"):
 			if state in ("Pending Operations Manager", "Approved"):
-				if not self.operations_manager and self.get("project_allocation") != "ONE FM - Head Office":
+				if not self.operations_manager and self.shift_working:
 					frappe.throw(_("Please specify the <b>Operations Manager</b> before saving or submitting."))
 				if not self.offboarding_officer:
 					frappe.throw(_("Please specify the <b>Offboarding Officer</b> before saving or submitting."))
@@ -174,7 +175,21 @@ class EmployeeResignation(Document):
 
 
 	def before_save(self):
-		self.set_supervisor()
+		self.set_allocations()
+
+	def set_allocations(self):
+		if self.get("employees"):
+			first_emp = self.employees[0].employee
+			if first_emp:
+				emp = frappe.db.get_value("Employee", first_emp, ["site", "project", "department", "shift", "custom_operations_role_allocation", "shift_working"], as_dict=True)
+				if emp:
+					self.site_allocation = emp.site
+					self.project_allocation = emp.project
+					self.department = emp.department
+					self.shift_allocation = emp.shift
+					self.operations_role_allocation = emp.custom_operations_role_allocation
+					self.shift_working = emp.shift_working or 0
+
 
 	def set_supervisor(self):
 		# Only auto-resolve supervisor if it hasn't already been set manually
@@ -290,7 +305,7 @@ def get_employee_resignation_details(employee):
 		return {}
 
 	emp_data = frappe.db.get_value("Employee", employee, 
-		["project", "department", "designation", "site", "employment_type", "shift", "custom_operations_role_allocation", "employee_name", "reports_to"], 
+		["project", "department", "designation", "site", "employment_type", "shift", "custom_operations_role_allocation", "employee_name", "reports_to", "shift_working"], 
 		as_dict=True)
 
 	if not emp_data:

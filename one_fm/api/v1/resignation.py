@@ -84,9 +84,11 @@ def create_resignation(
 ):
     try:
         p = get_all_params(
-            "resignation_initiation_date", "relieving_date", "attachment",
             employee_id=employee_id,
             supervisor=supervisor,
+            resignation_initiation_date=resignation_initiation_date,
+            relieving_date=relieving_date,
+            attachment=attachment,
         )
         input_id   = p["employee_id"]
         supervisor = p["supervisor"]
@@ -155,7 +157,7 @@ def create_resignation(
 
         # Step 3: Advance to Pending Supervisor now that the letter is saved
         doc.reload()
-        apply_workflow(doc, "Submit to Supervisor")
+        apply_workflow(doc, "Submit for Review")
         return {"status": "success", "message": "Resignation submitted successfully", "name": doc.name}
 
     except Exception as e:

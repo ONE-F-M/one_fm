@@ -19,6 +19,7 @@
   "column_break_fhar",
   "amended_from",
   "approvers_section",
+  "workflow_state",
   "supervisor",
   "operations_manager",
   "offboarding_officer",
@@ -92,7 +93,7 @@
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Naming Series",
-   "options": "HR-ERW-.YYYY.-.MM.-",
+   "options": "HR-ERW-.YYYY.MM.-",
    "read_only": 1
   },
   {
@@ -145,6 +146,13 @@
    "label": "Withdrawing Employees",
    "options": "Employee Resignation Withdrawal Item",
    "reqd": 1
+  },
+  {
+   "fieldname": "workflow_state",
+   "fieldtype": "Data",
+   "label": "Workflow State",
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "table_section",
