@@ -18,12 +18,12 @@ def execute():
 	# 3. Update Workflow for Employee Resignation
 	workflow_name = "Employee Resignation"
 	
-	new_states = {"Draft": "Primary", "Pending Offboarding Officer": "Warning", "Pending Relieving Date Correction": "Danger", "Pending Supervisor": "Warning", "Pending Operations Manager": "Warning", "Approved": "Success", "Withdrawn": "Inverse"}
+	new_states = {"Draft": "Primary", "Pending Relieving Date Correction": "Danger", "Pending Supervisor": "Warning", "Pending Operations Manager": "Warning", "Approved": "Success", "Withdrawn": "Inverse"}
 	for state, style in new_states.items():
 		if not frappe.db.exists("Workflow State", state):
 			frappe.get_doc({"doctype": "Workflow State", "workflow_state_name": state, "style": style}).insert(ignore_permissions=True)
 			
-	new_actions = ["Submit to Offboarding Officer", "Review Completed", "Submit for Review", "Request Relieving Date Change", "Resubmit Date", "Approve"]
+	new_actions = ["Submit for Review", "Submit for Approval", "Request Relieving Date Change", "Resubmit Date", "Approve"]
 	for action in new_actions:
 		if not frappe.db.exists("Workflow Action Master", action):
 			frappe.get_doc({"doctype": "Workflow Action Master", "workflow_action_name": action}).insert(ignore_permissions=True)
@@ -36,7 +36,6 @@ def execute():
 		
 		states_data = [
 			{"state": "Draft", "doc_status": 0, "update_field": "status", "update_value": "Pending", "allow_edit": "Employee", "style": "Primary"},
-			{"state": "Pending Offboarding Officer", "doc_status": 0, "update_field": "status", "update_value": "Pending", "allow_edit": "Offboarding Officer", "style": "Warning"},
 			{"state": "Pending Supervisor", "doc_status": 0, "update_field": "status", "update_value": "Pending", "allow_edit": "Employee", "style": "Warning"},
 			{"state": "Pending Relieving Date Correction", "doc_status": 0, "update_field": "status", "update_value": "Pending", "allow_edit": "Employee", "style": "Danger"},
 			{"state": "Pending Operations Manager", "doc_status": 0, "update_field": "status", "update_value": "Pending", "allow_edit": "Operations Manager", "style": "Warning"},
@@ -47,9 +46,8 @@ def execute():
 			wf.append("states", s)
 			
 		transitions_data = [
-			{"state": "Draft", "action": "Submit to Offboarding Officer", "next_state": "Pending Offboarding Officer", "allowed": "Employee"},
-			{"state": "Pending Offboarding Officer", "action": "Review Completed", "next_state": "Pending Supervisor", "allowed": "Offboarding Officer"},
-			{"state": "Pending Supervisor", "action": "Submit for Review", "next_state": "Pending Operations Manager", "allowed": "Employee", "allowed_user_field": "supervisor"},
+			{"state": "Draft", "action": "Submit for Review", "next_state": "Pending Supervisor", "allowed": "Employee"},
+			{"state": "Pending Supervisor", "action": "Submit for Approval", "next_state": "Pending Operations Manager", "allowed": "Employee", "allowed_user_field": "supervisor"},
 			{"state": "Pending Supervisor", "action": "Request Relieving Date Change", "next_state": "Pending Relieving Date Correction", "allowed": "Employee", "allowed_user_field": "supervisor"},
 			{"state": "Pending Relieving Date Correction", "action": "Resubmit Date", "next_state": "Pending Supervisor", "allowed": "Employee"},
 			{"state": "Pending Operations Manager", "action": "Approve", "next_state": "Approved", "allowed": "Operations Manager"}
@@ -59,14 +57,26 @@ def execute():
 			
 		wf.save(ignore_permissions=True)
 
+	# 3.5 Cleanup stale assignment rule and migrate stuck documents
+	stale_rule = "Resignation - Pending Offboarding Officer"
+	if frappe.db.exists("Assignment Rule", stale_rule):
+		frappe.delete_doc("Assignment Rule", stale_rule, ignore_permissions=True, force=True)
+
+	# Migrate existing stuck documents to Pending Supervisor
+	frappe.db.sql("""
+		UPDATE `tabEmployee Resignation`
+		SET workflow_state = 'Pending Supervisor'
+		WHERE workflow_state = 'Pending Offboarding Officer'
+	""")
+
 	# 4. Create/Update Assignment Rules
 	assignment_rules = [
 		{
-			"name": "Resignation - Pending Offboarding Officer",
+			"name": "Resignation - FYI Offboarding Officer",
 			"document_type": "Employee Resignation",
-			"description": "Please review this resignation as Offboarding Officer.",
-			"assign_condition": "doc.workflow_state == 'Pending Offboarding Officer'",
-			"unassign_condition": "doc.workflow_state != 'Pending Offboarding Officer'",
+			"description": "FYI: An employee has submitted a resignation and it is pending supervisor review.",
+			"assign_condition": "workflow_state == 'Pending Supervisor'",
+			"unassign_condition": "workflow_state != 'Pending Supervisor'",
 			"rule": "Round Robin",
 			"assign_to_role": "Offboarding Officer"
 		},
@@ -74,8 +84,8 @@ def execute():
 			"name": "Resignation - Pending Supervisor",
 			"document_type": "Employee Resignation",
 			"description": "Please review the Resignation and Relieving date.",
-			"assign_condition": "doc.workflow_state == 'Pending Supervisor'",
-			"unassign_condition": "doc.workflow_state != 'Pending Supervisor'",
+			"assign_condition": "workflow_state == 'Pending Supervisor'",
+			"unassign_condition": "workflow_state != 'Pending Supervisor'",
 			"rule": "Based on Field",
 			"field": "supervisor",
 			"assign_to": []
@@ -84,8 +94,8 @@ def execute():
 			"name": "Resignation - Pending Operations Manager",
 			"document_type": "Employee Resignation",
 			"description": "Please review and approve this Resignation.",
-			"assign_condition": "doc.workflow_state == 'Pending Operations Manager'",
-			"unassign_condition": "doc.workflow_state != 'Pending Operations Manager'",
+			"assign_condition": "workflow_state == 'Pending Operations Manager'",
+			"unassign_condition": "workflow_state != 'Pending Operations Manager'",
 			"rule": "Based on Field",
 			"field": "operations_manager",
 			"assign_to": []
@@ -94,13 +104,47 @@ def execute():
 			"name": "Resignation - Relieving Date Correction",
 			"document_type": "Employee Resignation",
 			"description": "Your supervisor has requested an adjustment to your Relieving Date.",
-			"assign_condition": "doc.workflow_state == 'Pending Relieving Date Correction'",
-			"unassign_condition": "doc.workflow_state != 'Pending Relieving Date Correction'",
+			"assign_condition": "workflow_state == 'Pending Relieving Date Correction'",
+			"unassign_condition": "workflow_state != 'Pending Relieving Date Correction'",
 			"rule": "Based on Field",
 			"field": "owner",
 			"assign_to": []
 		}
 	]
+	
+	for dt in ["Employee Resignation Date Adjustment", "Employee Resignation Withdrawal"]:
+		assignment_rules.extend([
+			{
+				"name": f"{dt} - FYI Offboarding Officer",
+				"document_type": dt,
+				"description": f"FYI: An employee has submitted a {dt} and it is pending supervisor review.",
+				"assign_condition": "workflow_state == 'Pending Supervisor'",
+				"unassign_condition": "workflow_state != 'Pending Supervisor'",
+				"rule": "Round Robin",
+				"assign_to_role": "Offboarding Officer"
+			},
+			{
+				"name": f"{dt} - Pending Supervisor",
+				"document_type": dt,
+				"description": f"Please review the {dt}.",
+				"assign_condition": "workflow_state == 'Pending Supervisor'",
+				"unassign_condition": "workflow_state != 'Pending Supervisor'",
+				"rule": "Based on Field",
+				"field": "supervisor",
+				"assign_to": []
+			},
+			{
+				"name": f"{dt} - Pending Operations Manager",
+				"document_type": dt,
+				"description": f"Please review and approve this {dt}.",
+				"assign_condition": "workflow_state == 'Accepted by Supervisor'",
+				"unassign_condition": "workflow_state != 'Accepted by Supervisor'",
+				"rule": "Based on Field",
+				"field": "operations_manager",
+				"assign_to": []
+			}
+
+		])
 	
 	for ar in assignment_rules:
 		target_name = ar["name"]
@@ -138,3 +182,14 @@ def execute():
 					message=frappe.get_traceback(),
 					title=f"Assignment Rule Update Failed: {target_name}"
 				)
+
+	# Clear any aggressive Property Setters that are overriding the new WAF-safe naming series defaults
+	frappe.db.delete("Property Setter", {
+		"doc_type": ("in", ["Employee Resignation", "Employee Resignation Withdrawal", "Employee Resignation Date Adjustment"]),
+		"field_name": "naming_series",
+		"property": "options"
+	})
+	print("Successfully cleared legacy Naming Series Property Setters to enforce WAF bypass schema.")
+	frappe.clear_cache(doctype="Employee Resignation")
+	frappe.clear_cache(doctype="Employee Resignation Withdrawal")
+	frappe.clear_cache(doctype="Employee Resignation Date Adjustment")

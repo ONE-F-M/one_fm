@@ -92,19 +92,26 @@ def get_route_planner_data():
         # ── 2. Shipment cards ────────────────────────────────────────────
         nested_map = get_grouped_employees_by_accommodation()
 
-        # Batch resolve all employee names up front
+        # Batch resolve all employee names + mobile numbers up front
         all_emp_ids = set()
         for acc_data in nested_map.values():
             for emp_list in acc_data["shifts"].values():
                 all_emp_ids.update(emp_list)
 
         emp_name_map = {
-            e.name: e.employee_name
+            e.name: {"employee_name": e.employee_name, "cell_number": e.cell_number or ""}
             for e in frappe.get_all("Employee",
                 filters={"name": ["in", list(all_emp_ids)]},
-                fields=["name", "employee_name"]
+                fields=["name", "employee_name", "cell_number"]
             )
         }
+
+        def emp_to_obj(emp_id):
+            """Convert employee ID to {name, mobile} dict for frontend call action."""
+            info = emp_name_map.get(emp_id, {})
+            if isinstance(info, dict):
+                return {"id": emp_id, "name": info.get("employee_name", emp_id), "mobile": info.get("cell_number", "")}
+            return {"id": emp_id, "name": info or emp_id, "mobile": ""}
 
         # Batch-fetch all shift docs in one query (instead of per-shift frappe.get_doc)
         all_shift_names = set()
@@ -208,7 +215,7 @@ def get_route_planner_data():
                     outbound_window_start = fmt(start_utc - timedelta(minutes=PICKUP_BUFFER))
                     outbound_window_end   = fmt(start_utc)
 
-                employees_named = [emp_name_map.get(e, e) for e in employee_list]
+                employees_named = [emp_to_obj(e) for e in employee_list]
 
                 handled = False
 
@@ -242,7 +249,7 @@ def get_route_planner_data():
                             "stop_location":        loc["name"],
                             "stop_coords":          {"lat": loc["coords"][0], "lng": loc["coords"][1]},
                             "headcount":            current_h,
-                            "employees":            [emp_name_map.get(e, e) for e in loc_employees],
+                            "employees":            [emp_to_obj(e) for e in loc_employees],
                             "outbound_window_start": outbound_window_start,
                             "outbound_window_end":   outbound_window_end,
                             "return_window_start":   fmt(end_utc),
@@ -359,7 +366,7 @@ def get_route_planner_data():
                     "stop_location":        stop_location,
                     "stop_coords":          {"lat": stop_coords[0], "lng": stop_coords[1]},
                     "headcount":            group_data["headcount"],
-                    "employees":            [emp_name_map.get(e, e) for e in group_data["employees"]],
+                    "employees":            [emp_to_obj(e) for e in group_data["employees"]],
                     "outbound_window_start": fmt(start_utc - timedelta(minutes=PICKUP_BUFFER)),
                     "outbound_window_end":   fmt(start_utc),
                     "return_window_start":   fmt(end_utc),
@@ -431,6 +438,33 @@ def get_route_planner_data():
                 card["return_employees"] = best_match.get("employees", [])
             else:
                 card["return_employees"] = []
+
+        # ── Split each card into OUTBOUND + RETURN direction-specific cards ──
+        # This gives the dispatcher two separate draggable items per shift×stop
+        expanded_cards = []
+        for card in shipment_cards:
+            original_id = card["id"]
+
+            # Outbound card — employees going TO the site
+            out_card = {**card}
+            out_card["id"] = f"{original_id}_OUT"
+            out_card["direction"] = "OUTBOUND"
+            out_card["shift_direction_label"] = "\u2192 Outbound (To Site)"
+            out_card["pair_id"] = original_id  # links OUT ↔ RET
+            expanded_cards.append(out_card)
+
+            # Return card — employees coming BACK from the site
+            ret_employees = card.get("return_employees", [])
+            ret_card = {**card}
+            ret_card["id"] = f"{original_id}_RET"
+            ret_card["direction"] = "RETURN"
+            ret_card["shift_direction_label"] = "\u2190 Return (From Site)"
+            ret_card["pair_id"] = original_id  # links OUT ↔ RET
+            ret_card["headcount"] = len(ret_employees) if ret_employees else card["headcount"]
+            ret_card["employees"] = ret_employees if ret_employees else card["employees"]
+            expanded_cards.append(ret_card)
+
+        shipment_cards = expanded_cards
 
         return {
             "status":         "ok",
@@ -742,14 +776,17 @@ def build_shipments_from_nested_map(nested_map: dict, config: object, global_bou
     
     all_emp_ids  = {eid for emps in all_shipment_employees.values() for eid in emps}
     emp_name_map = {
-        e.name: e.employee_name
+        e.name: {"employee_name": e.employee_name, "cell_number": e.cell_number or ""}
         for e in frappe.get_all("Employee",
             filters={"name": ["in", list(all_emp_ids)]},
-            fields=["name", "employee_name"]
+            fields=["name", "employee_name", "cell_number"]
         )
     }
     shipment_employees_named = {
-        label: [emp_name_map.get(eid, eid) for eid in eids]
+        label: [
+            {"name": emp_name_map.get(eid, {}).get("employee_name", eid), "mobile": emp_name_map.get(eid, {}).get("cell_number", "")}
+            for eid in eids
+        ]
         for label, eids in all_shipment_employees.items()
     }
 
@@ -1140,6 +1177,7 @@ def save_assignments(plan_name: str, swim_items: str, assigned_cards: str):
             "direction":     item.get("direction", ""),
             "stop_index":    item.get("stopIndex", 0),
             "trip_group":    item.get("tripId", ""),
+            "trip_name":     item.get("tripName", ""),
             "headcount":     item.get("headcount", 0),
             "start_time":    item.get("start", ""),
             "end_time":      item.get("end", ""),
@@ -1190,8 +1228,14 @@ def load_assignments(plan_name: str = ""):
             "headcount": row.headcount or 0,
             "conflict":  False,
             "tripId":    row.trip_group or None,
+            "tripName":  row.trip_name or None,
             "stopIndex": row.stop_index or 0,
             "totalStops": 0,  # recalculated client-side
+            # Saved metadata for detail panel fallback
+            "_site":          row.site or "",
+            "_shift":         row.shift or "",
+            "_accommodation": row.accommodation or "",
+            "_stopLocation":  row.stop_location or "",
         })
         assigned_card_ids.add(row.card_id)
 
@@ -1267,4 +1311,100 @@ def update_route_plan_status(plan_name: str, new_status: str):
         "status": "ok",
         "plan_name": doc.name,
         "new_status": new_status
+    }
+@frappe.whitelist()
+def get_available_rambo_relievers(shift_name: str, date: str):
+    """
+    Fetch available Rambo relievers for a specific date and shift.
+    - custom_is_rambo_reliever = 1
+    - status = 'Active'
+    - No active shift assignment for the given date.
+    """
+    
+    # Get all active rambo relievers
+    rambos = frappe.get_all("Employee",
+        filters={
+            "custom_is_rambo_reliever": 1,
+            "status": "Active"
+        },
+        fields=["name", "employee_name", "designation", "cell_number"]
+    )
+    
+    if not rambos:
+        return []
+        
+    rambo_ids = [r.name for r in rambos]
+    
+    # Check shift assignments for conflicts on the same date
+    conflicts = frappe.get_all("Shift Assignment",
+        filters={
+            "employee": ["in", rambo_ids],
+            "start_date": ["<=", date],
+            "end_date": [">=", date],
+            "docstatus": 1,
+            "status": "Active"
+        },
+        fields=["employee"]
+    )
+    
+    conflict_ids = set([c.employee for c in conflicts])
+    
+    available = []
+    for r in rambos:
+        if r.name not in conflict_ids:
+            available.append({
+                "name": r.name,
+                "employee_name": r.employee_name,
+                "designation": r.designation or "—",
+                "mobile": r.cell_number or ""
+            })
+            
+    return available
+
+@frappe.whitelist()
+def process_rambo_replacement(original_employee: str, replacement_employee: str, shift_name: str, site: str):
+    """
+    Processes the swap by sending an email notification.
+    The UI will update its own DOM/State dynamically.
+    """
+    orig_emp = frappe.db.get_value("Employee", original_employee, "employee_name") or original_employee
+    new_emp = frappe.db.get_value("Employee", replacement_employee, "employee_name") or replacement_employee
+    
+    # Send Email Notification
+    recipients = []
+    
+    # Find operations supervisor for the shift/site
+    if shift_name:
+        supervisor = frappe.db.get_value("Operations Shift", shift_name, "operations_supervisor")
+        if supervisor:
+            user_email = frappe.db.get_value("User", supervisor, "email")
+            if user_email:
+                recipients.append(user_email)
+    
+    if recipients:
+        subject = f"Rambo Reliever Swap: {orig_emp} replaced by {new_emp}"
+        message = f"""
+        <p>A Rambo Reliever replacement has been processed from the Route Planner Manifest.</p>
+        <ul>
+            <li><b>Site:</b> {site}</li>
+            <li><b>Shift:</b> {shift_name}</li>
+            <li><b>Original Employee (Absent/Fail):</b> {orig_emp}</li>
+            <li><b>Rambo Reliever (Replacement):</b> {new_emp}</li>
+        </ul>
+        <p>Please note that this is an automated message.</p>
+        """
+        
+        try:
+            frappe.sendmail(
+                recipients=recipients,
+                subject=subject,
+                message=message,
+                now=True
+            )
+        except Exception as e:
+            frappe.log_error(f"Error sending Rambo Reliever notification: {str(e)}", "Rambo Reliever Notification")
+        
+    return {
+        "status": "success",
+        "message": "Replacement processed and notification sent."
     }

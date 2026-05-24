@@ -294,6 +294,7 @@ one_fm.patches.v15_0.add_sales_taxes_charges_add_or_deduct_field
 one_fm.patches.v15_0.add_workflow_penalty_and_investigation
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow
 one_fm.patches.v15_0.update_day_off_category_erf_2025_00030
+one_fm.patches.v15_0.add_rambo_reliever_custom_field #2026-05-14
 
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
@@ -382,7 +383,7 @@ one_fm.patches.v15_0.create_attendance_query_process_task
 one_fm.patches.v15_0.add_formal_hearing_workflow #2026-04-19
 one_fm.patches.v15_0.add_formal_hearing_process_tasks_and_assignment_rules
 one_fm.patches.v15_0.add_absence_case_hr_officer_process_task_and_assignment_rule #2026-04-16
-one_fm.patches.v15_0.update_resignation_workflow_and_schema
+one_fm.patches.v15_0.update_resignation_workflow_and_schema #2026-05-20-v2
 one_fm.patches.v15_0.remove_pathfinder_log_type_field #2026-04-19
 one_fm.patches.v15_0.add_assignment_rule_recruiter_visa_request
 one_fm.patches.v15_0.add_assignment_rule_groperator_visa_request
@@ -401,5 +402,6 @@ one_fm.patches.v15_0.add_qcs_link_to_purchase_order
 one_fm.patches.v15_0.add_rfq_and_sq_custom_fields
 one_fm.patches.v15_0.add_attendance_amendment_to_sales_invoice
 one_fm.patches.v15_0.backfill_governorate_in_site_to_location_mapping
-one_fm.patches.v15_0.update_bank_account_workflow
 one_fm.patches.v15_0.add_courier_tracking_custom_fields
+one_fm.patches.v15_0.update_client_interview_shortlist_workflow #2026-05-13
+one_fm.patches.v15_0.add_resignation_fields_to_employee

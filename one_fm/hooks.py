@@ -795,6 +795,9 @@ scheduler_events = {
         ],
 		"0 */12 * * *": [ # Sync courier transit log statuses every 12 hours
 			"one_fm.one_fm.doctype.transit_log.transit_log_utils.sync_transit_log_status"
+		],
+		"45 7 * * *": [ # Story 1: Remind creators of stale Client Interview Shortlists at 7:45 AM
+			"one_fm.one_fm.doctype.client_interview_shortlist.client_interview_shortlist.send_pending_operations_supervisor_reminder"
 		]
 	}
 }
@@ -845,7 +848,7 @@ fixtures = [
 	{
 		"dt": "HD Ticket Template",
 		"filters": [["name", "in",["Default"]]]
-	},
+	}
 ]
 
 # before_tests = "one_fm.install.before_tests"

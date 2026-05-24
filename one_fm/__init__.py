@@ -56,7 +56,7 @@ from one_fm.overrides.workflow import confirm_action as custom_confirm_action
 from one_fm.overrides.purchase_order import calculate_margin
 
 
-__version__ = '15.6.0'
+__version__ = '15.8.0'
 
 wa.confirm_action = custom_confirm_action
 user_permission.get_user_permissions = get_custom_user_permissions
@@ -101,3 +101,8 @@ AssignmentRule.get_user = get_user
 
 from one_fm.overrides.reports.stock_balance_override import override_stock_balance
 override_stock_balance()
+
+# Override workspace sidebar to sort alphabetically
+from one_fm.overrides.workspace import get_workspace_sidebar_items
+import frappe.desk.desktop
+frappe.desk.desktop.get_workspace_sidebar_items = get_workspace_sidebar_items

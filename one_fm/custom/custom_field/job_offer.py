@@ -253,7 +253,8 @@ def get_job_offer_custom_fields():
                 "fieldtype": "Link",
                 "insert_after": "applicant_name",
                 "label": "Agency Country Process",
-                "options": "Agency Country Process"
+                "options": "Agency Country Process",
+                "allow_on_submit": 1
             },
             {
                 "fieldname": "agency",
@@ -262,7 +263,8 @@ def get_job_offer_custom_fields():
                 "label": "Agency",
                 "options": "Agency",
                 "fetch_from": "job_applicant.one_fm_agency",
-                "fetch_if_empty": 1
+                "fetch_if_empty": 1,
+                "allow_on_submit": 1
             },
             {
                 "fieldname": "one_fm_erf",

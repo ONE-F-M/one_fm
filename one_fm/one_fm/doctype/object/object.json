@@ -1,0 +1,235 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-05-18 16:24:04.848706",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_7znc",
+  "amended_from",
+  "column_break_hxhc",
+  "naming_series",
+  "object_identity_section",
+  "object_template",
+  "object_name",
+  "column_break_snol",
+  "object_category",
+  "status",
+  "location_details_section",
+  "space",
+  "floor",
+  "building",
+  "column_break_befw",
+  "operations_site",
+  "project",
+  "technical_details_section",
+  "manufacturer",
+  "column_break_emrh",
+  "model_number",
+  "serial_number",
+  "lifecycle_details_section",
+  "commissioning_date",
+  "column_break_xkay",
+  "last_service_date",
+  "section_break_dbjz",
+  "object_items"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_7znc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Object",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_hxhc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "OB-.object_name.-.#####."
+  },
+  {
+   "fieldname": "object_identity_section",
+   "fieldtype": "Section Break",
+   "label": "Object Identity"
+  },
+  {
+   "fieldname": "object_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Object Template",
+   "options": "Object Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "object_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Object Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_snol",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "object_template.object_category",
+   "fieldname": "object_category",
+   "fieldtype": "Link",
+   "label": "Object Category",
+   "options": "Object Category"
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nActive\nUnder Maintenance\nScrapped"
+  },
+  {
+   "fieldname": "location_details_section",
+   "fieldtype": "Section Break",
+   "label": "Location Details"
+  },
+  {
+   "fieldname": "space",
+   "fieldtype": "Link",
+   "label": "Space",
+   "options": "Space",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "space.maintenance_floor",
+   "fieldname": "floor",
+   "fieldtype": "Link",
+   "label": "Floor",
+   "options": "Maintenance Floor",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "space.building_name",
+   "fieldname": "building",
+   "fieldtype": "Link",
+   "label": "Building",
+   "options": "Building",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_befw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "space.operations_site",
+   "fieldname": "operations_site",
+   "fieldtype": "Link",
+   "label": "Operations Site",
+   "options": "Operations Site",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "space.project",
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project",
+   "read_only": 1
+  },
+  {
+   "fieldname": "technical_details_section",
+   "fieldtype": "Section Break",
+   "label": "Technical Details"
+  },
+  {
+   "fetch_from": "object_template.manufacturer",
+   "fieldname": "manufacturer",
+   "fieldtype": "Link",
+   "label": "Manufacturer",
+   "options": "Manufacturer"
+  },
+  {
+   "fieldname": "column_break_emrh",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "model_number",
+   "fieldtype": "Data",
+   "label": "Model Number"
+  },
+  {
+   "fieldname": "serial_number",
+   "fieldtype": "Data",
+   "label": "Serial Number"
+  },
+  {
+   "fieldname": "lifecycle_details_section",
+   "fieldtype": "Section Break",
+   "label": "Lifecycle Details"
+  },
+  {
+   "fieldname": "commissioning_date",
+   "fieldtype": "Date",
+   "label": "Commissioning Date"
+  },
+  {
+   "fieldname": "column_break_xkay",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_service_date",
+   "fieldtype": "Date",
+   "label": "Last Service Date"
+  },
+  {
+   "fieldname": "section_break_dbjz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "object_items",
+   "fieldtype": "Table",
+   "label": "Parts Name",
+   "options": "Object Items"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-05-18 17:30:07.237661",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Object",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
