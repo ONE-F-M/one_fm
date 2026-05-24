@@ -114,24 +114,12 @@ frappe.ui.form.on("Employee Resignation Withdrawal", {
 			}
 		}
 
-		if (frm.doc.employees && frm.doc.employees.length > 0 && frm.doc.employees[0].employee) {
-			frappe.db.get_value('Employee', frm.doc.employees[0].employee, 'shift_working')
+		if (frm.doc.employee_resignation) {
+			frappe.db.get_value('Employee Resignation', frm.doc.employee_resignation, 'shift_working')
 			.then(r => {
-				let is_shift_worker = r.message ? r.message.shift_working : 0;
-				frm.doc.is_corporate = is_shift_worker ? 0 : 1;
+				let is_shift_worker = r.message ? cint(r.message.shift_working) : 0;
+				frm.set_value('is_corporate', is_shift_worker ? 0 : 1);
 				frm.refresh_fields();
-			});
-		} else if (frm.doc.employee_resignation) {
-			frappe.db.get_doc("Employee Resignation", frm.doc.employee_resignation).then(parent_doc => {
-				let parent_emp = parent_doc.employees && parent_doc.employees[0] ? parent_doc.employees[0].employee : null;
-				if (parent_emp) {
-					frappe.db.get_value('Employee', parent_emp, 'shift_working')
-					.then(r => {
-						let is_shift_worker = r.message ? r.message.shift_working : 0;
-						frm.doc.is_corporate = is_shift_worker ? 0 : 1;
-						frm.refresh_fields();
-					});
-				}
 			});
 		}
 	},

@@ -200,6 +200,14 @@
             "ignore_user_permissions": 1
         },
         {
+            "default": "0",
+            "fieldname": "shift_working",
+            "fieldtype": "Check",
+            "label": "Shift Working",
+            "read_only": 1,
+            "hidden": 1
+        },
+        {
             "depends_on": "eval: !doc.__islocal",
             "fieldname": "operational_impact_section",
             "fieldtype": "Section Break",
