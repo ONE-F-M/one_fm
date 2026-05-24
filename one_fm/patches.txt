@@ -293,6 +293,7 @@ one_fm.patches.v15_0.add_sales_invoice_contract_fields #3
 one_fm.patches.v15_0.add_sales_taxes_charges_add_or_deduct_field
 one_fm.patches.v15_0.add_workflow_penalty_and_investigation
 one_fm.patches.v15_0.update_penalty_and_investigation_workflow
+one_fm.patches.v15_0.update_day_off_category_erf_2025_00030
 
 [post_model_sync]
 one_fm.patches.v15_0.process_task_for_wiki_employee_task
