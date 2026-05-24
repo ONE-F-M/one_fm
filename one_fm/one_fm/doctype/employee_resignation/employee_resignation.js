@@ -257,11 +257,11 @@ frappe.ui.form.on("Employee Resignation", {
 				frm.set_value('shift_working', is_shift_worker);
 			}
 
-			let show_ops_impact = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && !is_shift_worker);
-			frm.toggle_display("operational_impact_section", show_ops_impact);
-
 			let is_draft = frm.doc.__islocal || frm.doc.workflow_state === 'Draft';
 			let is_restricted_stage = is_draft || frm.doc.workflow_state === 'Pending Relieving Date Correction';
+
+			let show_ops_impact = !is_restricted_stage;
+			frm.toggle_display("operational_impact_section", show_ops_impact);
 
 			if (is_restricted_stage) {
 				frm.set_df_property('operations_manager', 'hidden', 1);
@@ -273,10 +273,9 @@ frappe.ui.form.on("Employee Resignation", {
 				frm.set_df_property('operations_manager', 'read_only', !is_shift_worker ? 1 : 0);
 				frm.set_df_property('offboarding_officer', 'hidden', 0);
 
-				// Mandatory for Operations Manager and onwards, OR for Corporate (non-shift) in Pending Supervisor (since they skip OM)
-				let is_mandatory = ["Pending Operations Manager", "Approved"].includes(frm.doc.workflow_state) || (frm.doc.workflow_state === "Pending Supervisor" && !is_shift_worker);
-				frm.set_df_property('operations_manager', 'reqd', (is_mandatory && is_shift_worker) ? 1 : 0);
-				frm.set_df_property('offboarding_officer', 'reqd', is_mandatory ? 1 : 0);
+				// Mandatory for all non-restricted stages (Pending Supervisor, Pending Operations Manager, Approved)
+				frm.set_df_property('operations_manager', 'reqd', is_shift_worker ? 1 : 0);
+				frm.set_df_property('offboarding_officer', 'reqd', 1);
 			}
 		});
 	}
