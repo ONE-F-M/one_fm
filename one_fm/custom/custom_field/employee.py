@@ -10,6 +10,14 @@ def get_employee_custom_fields():
 				"label": "Is Weekend Reliever",
 			},
 			{
+				"depends_on": "eval:!doc.attendance_by_timesheet",
+				"description": "If checked, the Employee is categorized as a Rambo reliever in Roster.",
+				"fieldname": "custom_is_rambo_reliever",
+				"fieldtype": "Check",
+				"insert_after": "custom_is_weekend_reliever",
+				"label": "Is Rambo Reliever",
+			},
+			{
 				"fieldname": "custom_enable_face_recognition",
 				"fieldtype": "Check",
 				"insert_after": "checkin_location",
@@ -995,6 +1003,48 @@ def get_employee_custom_fields():
 				"insert_after": "employee_number",
 				"label": "Subcontractor Name",
 				"options": "Supplier",
+			},
+			{
+				"fetch_from": "current_resignation.workflow_state",
+				"fieldname": "resignation_status",
+				"fieldtype": "Data",
+				"insert_after": "resignation_section",
+				"is_system_generated": 1,
+				"label": "Resignation Workflow Status",
+				"read_only": 1,
+			},
+			{
+				"fieldname": "current_resignation",
+				"fieldtype": "Link",
+				"hidden": 1,
+				"insert_after": "resignation_status",
+				"is_system_generated": 1,
+				"label": "Current Resignation",
+				"options": "Employee Resignation",
+				"read_only": 1,
+			},
+			{
+				"label": "Current Withdrawal",
+				"fieldname": "current_withdrawal",
+				"insert_after": "current_resignation",
+				"fieldtype": "Link",
+				"options": "Employee Resignation Withdrawal",
+				"is_system_generated": 1
+			},
+			{
+				"label": "Resignation Status & Documents",
+				"fieldname": "resignation_section",
+				"insert_after": "feedback",
+				"fieldtype": "Section Break",
+				"is_system_generated": 1
+			},
+			{
+				"label": "Resignation Date",
+				"fieldname": "resignation_date",
+				"insert_after": "date_of_joining",
+				"fieldtype": "Date",
+				"read_only": 1,
+				"is_system_generated": 1
 			}
 		]
 	}

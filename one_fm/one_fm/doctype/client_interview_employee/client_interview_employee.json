@@ -47,7 +47,6 @@
   {
    "allow_on_submit": 1,
    "default": "0",
-   "depends_on": "attended",
    "fieldname": "attended",
    "fieldtype": "Check",
    "in_list_view": 1,

@@ -19,6 +19,7 @@
   {
    "fieldname": "employee",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "label": "Employee",
    "options": "Employee",
@@ -37,13 +38,15 @@
    "in_list_view": 1,
    "label": "Designation",
    "options": "Designation",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "employment_type",
    "fieldtype": "Link",
    "label": "Employment Type",
-   "options": "Employment Type"
+   "options": "Employment Type",
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "project_allocation",
@@ -51,7 +54,8 @@
    "in_list_view": 1,
    "label": "Project Allocation",
    "options": "Project",
-   "read_only": 1
+   "read_only": 1,
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "resignation_letter",

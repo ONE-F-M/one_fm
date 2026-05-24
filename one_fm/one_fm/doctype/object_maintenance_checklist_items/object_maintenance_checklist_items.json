@@ -1,0 +1,86 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-18 17:32:09.400147",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "task_details_section",
+  "sequence_no",
+  "task_description",
+  "column_break_mjnz",
+  "photo_required",
+  "reference_image",
+  "maintenance_frequency",
+  "frequency_days"
+ ],
+ "fields": [
+  {
+   "fieldname": "task_details_section",
+   "fieldtype": "Section Break",
+   "label": "Task Details"
+  },
+  {
+   "fieldname": "sequence_no",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "No.",
+   "read_only": 1
+  },
+  {
+   "fieldname": "task_description",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Task Description",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_mjnz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "photo_required",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Photo Required"
+  },
+  {
+   "fieldname": "reference_image",
+   "fieldtype": "Attach Image",
+   "label": "Reference Image"
+  },
+  {
+   "fieldname": "maintenance_frequency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Maintenance Frequency",
+   "options": "Maintenance Frequency",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "maintenance_frequency.frequency_days",
+   "fieldname": "frequency_days",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Frequency (Days)",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-18 23:23:59.600072",
+ "modified_by": "Administrator",
+ "module": "One Fm",
+ "name": "Object Maintenance Checklist Items",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

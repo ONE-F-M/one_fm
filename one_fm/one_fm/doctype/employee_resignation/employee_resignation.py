@@ -9,6 +9,7 @@ from frappe.model.document import Document
 class EmployeeResignation(Document):
 	def validate(self):
 		self.set_supervisor()
+		self.validate_employee_permissions()
 		self.validate_employees()
 		self.validate_resignation_letters()
 
@@ -45,6 +46,26 @@ class EmployeeResignation(Document):
 		if self.resignation_initiation_date and self.relieving_date:
 			if self.relieving_date < self.resignation_initiation_date:
 				frappe.throw(_("Relieving Date cannot be before Resignation Initiation Date."))
+
+	def validate_employee_permissions(self):
+		# Standard employees can only resign themselves, unless they are acting in an authorized workflow capacity
+		roles = frappe.get_roles()
+		authorized_roles = ["HR Manager", "System Manager"]
+		
+		if any(role in roles for role in authorized_roles):
+			return
+			
+		# Allow workflow assignees to modify the document
+		if frappe.session.user in [self.supervisor, self.operations_manager, self.offboarding_officer]:
+			return
+		
+		linked_employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user})
+		if not linked_employee:
+			frappe.throw(_("Your user account is not linked to an Employee profile. You cannot initiate resignations."))
+			
+		for row in self.get("employees", []):
+			if row.employee and row.employee != linked_employee:
+				frappe.throw(_("You can only submit a resignation for yourself."), frappe.PermissionError)
 
 	def validate_employees(self):
 		# Ensure all employees belong to the same project and designation
@@ -153,7 +174,20 @@ class EmployeeResignation(Document):
 
 
 	def before_save(self):
-		self.set_supervisor()
+		self.set_allocations()
+
+	def set_allocations(self):
+		if self.get("employees"):
+			first_emp = self.employees[0].employee
+			if first_emp:
+				emp = frappe.db.get_value("Employee", first_emp, ["site", "project", "department", "shift", "custom_operations_role_allocation"], as_dict=True)
+				if emp:
+					self.site_allocation = emp.site
+					self.project_allocation = emp.project
+					self.department = emp.department
+					self.shift_allocation = emp.shift
+					self.operations_role_allocation = emp.custom_operations_role_allocation
+
 
 	def set_supervisor(self):
 		# Only auto-resolve supervisor if it hasn't already been set manually

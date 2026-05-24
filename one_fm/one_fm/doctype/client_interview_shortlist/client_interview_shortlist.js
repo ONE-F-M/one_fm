@@ -24,6 +24,36 @@ frappe.ui.form.on("Client Interview Shortlist", {
                 indicator: 'blue'
             }, 3);
         }
+    },
+
+    before_workflow_action(frm) {
+        // Story 2: Show informational warning for unchecked attendance/selection
+        // when the Operations Supervisor clicks Submit
+        if (frm.selected_workflow_action === "Submit") {
+            let unchecked_rows = [];
+            (frm.doc.client_interview_employee || []).forEach(function(row) {
+                if (!row.attended || !row.selected) {
+                    unchecked_rows.push(row);
+                }
+            });
+
+            if (unchecked_rows.length > 0) {
+                let row_details = unchecked_rows.map(function(row) {
+                    return __("Row {0}: {1}", [row.idx, row.employee_name || row.employee]);
+                }).join("<br>");
+
+                frappe.msgprint({
+                    title: __("Attendance / Selection Status"),
+                    indicator: "red",
+                    message: __(
+                        "The following Employees Attendance or Selection status have not been checked for client interview:<br><br>"
+                        + "{0}"
+                        + "<br><br>But, if the employee has not been attended or has not been selected, then you can keep it unchecked.",
+                        [row_details]
+                    )
+                });
+            }
+        }
     }
 });
 
